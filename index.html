@@ -1775,9 +1775,22 @@
   // on plain http:// or file:// for security reasons.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('service-worker.js').catch(() => {
+      navigator.serviceWorker.register('service-worker.js').then((reg) => {
+        // Check for a newer service-worker.js right away, since browsers
+        // don't always do this on their own before serving cached content.
+        reg.update();
+      }).catch(() => {
         // Offline support just won't be available; the game still works normally.
       });
+    });
+
+    // Once a new service worker takes over, reload so the page actually
+    // picks up the files it just cached (skipWaiting alone doesn't do this).
+    let reloadedForUpdate = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloadedForUpdate) return;
+      reloadedForUpdate = true;
+      window.location.reload();
     });
   }
 </script>
