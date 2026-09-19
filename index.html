@@ -320,11 +320,6 @@
 
   .actor.gone { opacity: 0; transition: opacity 0.3s ease; }
 
-  .actor.boss, .actor.minion, .actor.chest, .actor.rune, .actor.encounter {
-    pointer-events: auto;
-    cursor: pointer;
-  }
-
   .actor.targeted::after {
     content: '';
     position: absolute;
@@ -371,6 +366,21 @@
   .dpad-center { grid-column: 2; grid-row: 2; font-size: 15px; }
   .dpad-e { grid-column: 3; grid-row: 2; }
   .dpad-s { grid-column: 2; grid-row: 3; }
+
+  /* ---- Battle screen ---- */
+  .battle-opponent {
+    margin-bottom: 16px;
+  }
+
+  .battle-glyph {
+    font-family: 'Cinzel', serif;
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--torch-bright);
+    text-shadow: 0 0 14px rgba(244,185,92,0.5);
+    margin-bottom: 8px;
+  }
 
   /* ---- Combat panel ---- */
   .panel {
@@ -529,7 +539,6 @@
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">👁 Fog: ON (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">⏭ Skip room (dev)</button>
     </div>
-    <div class="combat-status" id="combatStatus">Boss HP: ♦♦♦ · Minions: 0</div>
 
     <div class="grid-wrap">
       <div class="grid" id="grid">
@@ -548,11 +557,21 @@
       <button class="dpad-e" id="btnE" type="button" aria-label="Move east">▶</button>
       <button class="dpad-s" id="btnS" type="button" aria-label="Move south">▼</button>
     </div>
+  </section>
+
+  <!-- Battle screen: shown whenever the player is adjacent to something
+       engageable (boss, minion, chest, rune, or vocab encounter). The room
+       behind it is frozen — nothing moves until this is resolved. -->
+  <section class="screen" id="battleScreen">
+    <div class="battle-opponent">
+      <div class="battle-glyph" id="battleGlyph">D</div>
+      <div class="target-label" id="targetLabel">Target: Boss</div>
+      <div class="combat-status" id="combatStatus">HP: ♦♦♦</div>
+    </div>
 
     <div class="panel">
       <div class="enemy-name" id="enemyName">CPU</div>
-      <div class="target-label" id="targetLabel">Target: none — move next to an enemy</div>
-      <div class="enemy-prompt">Move next to an enemy to auto-target it. If more than one is adjacent, tap the one you want to attack instead.</div>
+      <div class="enemy-prompt">Answer to defeat or resolve what you're facing. If more than one thing was in your way, you'll face each in turn.</div>
       <form id="answerForm" autocomplete="off">
         <input type="text" id="answerInput" placeholder="Your answer" autofocus>
         <button type="button" id="attackBtn">Attack</button>

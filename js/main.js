@@ -27,6 +27,8 @@ const loadListBtn = document.getElementById('loadListBtn');
 const resetListBtn = document.getElementById('resetListBtn');
 const loaderStatus = document.getElementById('loaderStatus');
 const roomScreen = document.getElementById('roomScreen');
+const battleScreen = document.getElementById('battleScreen');
+const battleGlyphEl = document.getElementById('battleGlyph');
 const winScreen = document.getElementById('winScreen');
 const loseScreen = document.getElementById('loseScreen');
 
@@ -71,15 +73,12 @@ const dpadButtons = {
 };
 
 initRender({
-  startScreen, roomScreen, winScreen, loseScreen,
+  startScreen, roomScreen, battleScreen, winScreen, loseScreen,
   grid, playerActor, bossActor, coinActor, chestActor, runeActor,
   heartsEl, timerEl, combatStatusEl, targetLabelEl, attackBtn
 });
 
-initCombat({
-  grid, playerActor, turnCountEl,
-  onMinionClick: selectTarget
-});
+initCombat({ grid, playerActor, turnCountEl });
 
 toggleLoaderBtn.addEventListener('click', () => {
   loaderPanel.classList.toggle('show');
@@ -170,15 +169,24 @@ function syncQuestionForTarget() {
   }
 }
 
-function selectTarget(target) {
-  if (answerInput.disabled) return; // room already cleared, or game over
-  if (!isAdjacentToPlayer(target)) {
-    feedback.innerHTML = '<span class="block-msg">Too far away — move next to it first.</span>';
-    return;
+// Switches between the room/map view and the battle screen to match whether
+// something is currently targeted — battle screen while state.selectedTarget
+// is set (an encounter is engaged), room screen once it's null (nothing left
+// adjacent). Call this anywhere state.selectedTarget might have just changed;
+// it's a no-op if the right screen is already showing. Also refreshes the
+// battle screen's opponent glyph/HP display for whichever target is current,
+// so resolving one adjacent thing and chaining straight into the next (e.g.
+// boxed in by two minions) updates in place without a spurious round trip
+// through the room screen.
+function syncBattleScreen() {
+  if (state.selectedTarget) {
+    const target = state.selectedTarget;
+    battleGlyphEl.textContent = target.el ? target.el.textContent : bossActor.textContent;
+    renderCombatStatus();
+    if (!battleScreen.classList.contains('show')) showScreen(battleScreen);
+  } else if (battleScreen.classList.contains('show')) {
+    showScreen(roomScreen);
   }
-  state.selectedTarget = target;
-  renderTargeting();
-  syncQuestionForTarget();
 }
 
 // Re-places every actor at its current world position relative to the
@@ -194,10 +202,6 @@ function repositionActors() {
   if (state.rune) positionActor(runeActor, state.rune.row, state.rune.col, true);
   state.encounters.forEach(e => positionActor(e.el, e.row, e.col, true));
 }
-
-bossActor.addEventListener('click', () => selectTarget(state.boss));
-chestActor.addEventListener('click', () => { if (state.chest) selectTarget(state.chest); });
-runeActor.addEventListener('click', () => { if (state.rune) selectTarget(state.rune); });
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
 function pickCoinTile(walls, avoidList, allowedTiles) {
@@ -323,7 +327,6 @@ function loadRoom() {
     el.textContent = glyph;
     grid.appendChild(el);
     const encounter = { row: tile.row, col: tile.col, el, kind: 'encounter', category, pool: byCategory.get(category) };
-    el.addEventListener('click', () => selectTarget(encounter));
     positionActor(el, encounter.row, encounter.col, true);
     state.encounters.push(encounter);
     takenTiles.push(encounter);
@@ -336,6 +339,7 @@ function loadRoom() {
 
   state.selectedTarget = null;
   renderTargeting();
+  syncBattleScreen(); // nothing's adjacent at spawn — makes sure we're back on the room screen
 
   setQuestion(pickQuestion(null));
   renderCombatStatus();
@@ -356,6 +360,7 @@ function setControlsEnabled(enabled) {
 function applyTurnOutcome(actionMessage, extraHtml) {
   const notes = advanceMonsters();
   syncQuestionForTarget();
+  syncBattleScreen();
   extraHtml = extraHtml || '';
 
   if (state.hearts <= 0) {
@@ -494,6 +499,7 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
     setControlsEnabled(false);
     nextWrap.classList.add('show');
     nextBtn.textContent = (state.roomIndex === state.order.length - 1) ? 'See results →' : 'Next room →';
+    syncBattleScreen(); // stays on the battle screen per design — victory state, not a return to the room
     state.turnLocked = false;
     return;
   }
@@ -503,6 +509,7 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
   if (!state.mcMode) answerInput.focus();
   const notes = advanceMonsters();
   syncQuestionForTarget();
+  syncBattleScreen();
 
   if (state.hearts <= 0) {
     let html = '<span class="hit-msg">' + hitMsg + '</span>' +
@@ -570,6 +577,7 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
 
   refreshTargetValidity();
   syncQuestionForTarget();
+  syncBattleScreen();
 
   if (state.hearts <= 0) {
     feedback.innerHTML = outcomeHtml + '<span class="warn-msg">You are out of hearts.</span>';
@@ -582,6 +590,7 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
 
   const notes = advanceMonsters();
   syncQuestionForTarget();
+  syncBattleScreen();
   let html = outcomeHtml;
   if (notes.hitNote) html += '<span class="warn-msg">' + notes.hitNote.trim() + '</span>';
   if (notes.spawnNote) html += '<span class="move-msg">' + notes.spawnNote.trim() + '</span>';

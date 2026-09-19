@@ -11,11 +11,9 @@ import { MINION_ICONS, MINION_HP, SPAWN_INTERVAL, MAX_MINIONS } from './config.j
 import { positionActor, renderCombatStatus, renderFog, renderTargeting, renderHearts } from './render.js';
 
 let combatEls = {};
-let onMinionClick = null;
 
-export function initCombat({ grid, playerActor, turnCountEl, onMinionClick: clickHandler }) {
+export function initCombat({ grid, playerActor, turnCountEl }) {
   combatEls = { grid, playerActor, turnCountEl };
-  onMinionClick = clickHandler;
 }
 
 export function isAdjacentToPlayer(entity) {
@@ -145,7 +143,6 @@ export function spawnMinion() {
   el.textContent = MINION_ICONS[state.minions.length % MINION_ICONS.length];
   combatEls.grid.appendChild(el);
   const m = { row: spot.row, col: spot.col, hp: MINION_HP, el, kind: 'minion' };
-  el.addEventListener('click', () => onMinionClick(m));
   positionActor(el, m.row, m.col, true); // freshly spawned — appears in place, doesn't slide in
   state.minions.push(m);
 }

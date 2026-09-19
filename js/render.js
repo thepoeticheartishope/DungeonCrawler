@@ -15,7 +15,7 @@ export function initRender(elements) {
 }
 
 export function showScreen(el) {
-  [els.startScreen, els.roomScreen, els.winScreen, els.loseScreen].forEach(s => s.classList.remove('show'));
+  [els.startScreen, els.roomScreen, els.battleScreen, els.winScreen, els.loseScreen].forEach(s => s.classList.remove('show'));
   el.classList.add('show');
 }
 
@@ -159,12 +159,24 @@ export function renderHearts() {
   els.heartsEl.textContent = '♥'.repeat(state.hearts) + '♡'.repeat(MAX_HEARTS - state.hearts);
 }
 
+// HP pips for whichever target is currently engaged on the battle screen.
+// Only shown for a multi-hit fight — the boss, under the current constants
+// (MINION_HP is always 1, and chest/rune/encounters have no hp at all).
+// Gating on `target.kind === 'boss'` rather than `target.hp > 1` matters:
+// hp is exactly 1 right before the boss's final, most dramatic hit, and the
+// pips need to still show at that moment (and at hp 0, right after) rather
+// than vanishing early.
 export function renderCombatStatus() {
-  const full = Math.max(state.boss.hp, 0);
+  const target = state.selectedTarget;
+  if (!target || target.kind !== 'boss') {
+    els.combatStatusEl.innerHTML = '';
+    return;
+  }
+  const full = Math.max(target.hp, 0);
   const empty = Math.max(BOSS_HP - full, 0);
   const pips = '<span class="pip-full">' + '♦'.repeat(full) + '</span>' +
     '<span class="pip-empty">' + '♦'.repeat(empty) + '</span>';
-  els.combatStatusEl.innerHTML = 'Boss HP: ' + pips + ' · Minions: ' + state.minions.length;
+  els.combatStatusEl.innerHTML = 'HP: ' + pips;
 }
 
 export function renderTargeting() {
