@@ -30,6 +30,9 @@ export function findAdjacentEnemies() {
   }
   if (state.chest && isAdjacentToPlayer(state.chest)) result.push(state.chest);
   if (state.rune && isAdjacentToPlayer(state.rune)) result.push(state.rune);
+  for (const e of state.encounters) {
+    if (isAdjacentToPlayer(e)) result.push(e);
+  }
   return result;
 }
 
@@ -53,6 +56,7 @@ export function tileOccupied(row, col, excludeMinion) {
   if (state.playerRow === row && state.playerCol === col) return true;
   if (state.chest && state.chest.row === row && state.chest.col === col) return true;
   if (state.rune && state.rune.row === row && state.rune.col === col) return true;
+  if (state.encounters.some(e => e.row === row && e.col === col)) return true;
   for (const m of state.minions) {
     if (m === excludeMinion) continue;
     if (m.row === row && m.col === col) return true;
@@ -93,6 +97,7 @@ export function blockedTilesFor(minion) {
   if (state.boss) blocked.add(key(state.boss.row, state.boss.col));
   if (state.chest) blocked.add(key(state.chest.row, state.chest.col));
   if (state.rune) blocked.add(key(state.rune.row, state.rune.col));
+  state.encounters.forEach(e => blocked.add(key(e.row, e.col)));
   for (const other of state.minions) {
     if (other === minion) continue;
     blocked.add(key(other.row, other.col));

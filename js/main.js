@@ -1,9 +1,12 @@
 import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
-import { MAX_HEARTS, ROOM_COUNT, BOSS_HP, BOSS_ICONS, GRID_SIZES, CHAMBER_TARGETS } from './config.js';
+import {
+  MAX_HEARTS, ROOM_COUNT, BOSS_HP, BOSS_ICONS, GRID_SIZES, CHAMBER_TARGETS,
+  DIFFICULTY_COIN_REWARD, ENCOUNTER_GLYPHS
+} from './config.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
-  buildChoices, normalizeSpaces, buildHint
+  buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory
 } from './quiz.js';
 import {
   initRender, showScreen, buildGridTiles, renderWalls, computeVisibility,
@@ -162,7 +165,18 @@ function setQuestion(q) {
 }
 
 function nextQuestion() {
-  setQuestion(pickQuestion(state.currentQuestion));
+  setQuestion(pickQuestion(state.currentQuestion, poolFor(state.selectedTarget)));
+}
+
+// If the current target changed (a fresh click, or an auto-pick after a
+// move/turn) and the showing question isn't from that target's pool — e.g.
+// it's a leftover boss/global question but an encounter is now targeted, or
+// vice versa — reroll it from the right pool. A no-op the rest of the time.
+function syncQuestionForTarget() {
+  const pool = poolFor(state.selectedTarget);
+  if (!pool.includes(state.currentQuestion)) {
+    setQuestion(pickQuestion(state.currentQuestion, pool));
+  }
 }
 
 function selectTarget(target) {
@@ -173,6 +187,7 @@ function selectTarget(target) {
   }
   state.selectedTarget = target;
   renderTargeting();
+  syncQuestionForTarget();
 }
 
 // Re-places every actor at its current world position relative to the
@@ -186,6 +201,7 @@ function repositionActors() {
   if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col);
   if (state.chest) positionActor(chestActor, state.chest.row, state.chest.col);
   if (state.rune) positionActor(runeActor, state.rune.row, state.rune.col);
+  state.encounters.forEach(e => positionActor(e.el, e.row, e.col));
 }
 
 bossActor.addEventListener('click', () => selectTarget(state.boss));
@@ -243,6 +259,9 @@ function loadRoom() {
   state.minions = [];
   state.turnsSinceSpawn = 0;
 
+  state.encounters.forEach(e => e.el.remove());
+  state.encounters = [];
+
   state.playerRow = state.PLAYER_START.row;
   state.playerCol = state.PLAYER_START.col;
   updateCamera();
@@ -281,7 +300,43 @@ function loadRoom() {
   const runeTile = pickRoomTile(takenTiles);
   state.rune = runeTile ? { row: runeTile.row, col: runeTile.col, el: runeActor, kind: 'rune' } : null;
   runeActor.classList.toggle('gone', !state.rune);
-  if (state.rune) positionActor(runeActor, state.rune.row, state.rune.col);
+  if (state.rune) { positionActor(runeActor, state.rune.row, state.rune.col); takenTiles.push(state.rune); }
+
+  // Vocab encounters: one per category present in the active list (entries
+  // with no category never spawn one), capped at 3 per room so a large
+  // custom list still shows variety across rooms/replays rather than
+  // flooding a single one.
+  const byCategory = new Map();
+  state.activeData.forEach(item => {
+    if (!item.category) return;
+    if (!byCategory.has(item.category)) byCategory.set(item.category, []);
+    byCategory.get(item.category).push(item);
+  });
+  const categories = shuffle(Array.from(byCategory.keys())).slice(0, 3);
+  // glyphForCategory is a hash, so two categories can land on the same
+  // glyph by coincidence — harmless normally, but confusing if both show up
+  // in the same room. Reassign a collision (within this room only) to the
+  // next unused glyph in the palette, so the handful on screen at once are
+  // always visually distinct.
+  const usedGlyphs = new Set();
+  categories.forEach(category => {
+    const tile = pickRoomTile(takenTiles);
+    if (!tile) return; // room too packed — skip this encounter rather than overlap something
+    let glyph = glyphForCategory(category);
+    if (usedGlyphs.has(glyph)) {
+      glyph = ENCOUNTER_GLYPHS.find(g => !usedGlyphs.has(g)) || glyph;
+    }
+    usedGlyphs.add(glyph);
+    const el = document.createElement('div');
+    el.className = 'actor encounter';
+    el.textContent = glyph;
+    grid.appendChild(el);
+    const encounter = { row: tile.row, col: tile.col, el, kind: 'encounter', category, pool: byCategory.get(category) };
+    el.addEventListener('click', () => selectTarget(encounter));
+    positionActor(el, encounter.row, encounter.col);
+    state.encounters.push(encounter);
+    takenTiles.push(encounter);
+  });
 
   state.visibleSet = new Set();
   state.exploredSet = new Set();
@@ -309,6 +364,7 @@ function setControlsEnabled(enabled) {
 
 function applyTurnOutcome(actionMessage, extraHtml) {
   const notes = advanceMonsters();
+  syncQuestionForTarget();
   extraHtml = extraHtml || '';
 
   if (state.hearts <= 0) {
@@ -352,6 +408,11 @@ function movePlayer(dRow, dCol, dirName) {
     feedback.innerHTML = '<span class="block-msg">A glowing rune blocks that path. Tap it from beside it.</span>';
     return;
   }
+  const blockingEncounter = state.encounters.find(e => e.row === newRow && e.col === newCol);
+  if (blockingEncounter) {
+    feedback.innerHTML = '<span class="block-msg">A ' + blockingEncounter.category + ' challenge blocks that path. Tap it from beside it.</span>';
+    return;
+  }
 
   state.turnLocked = true;
   state.playerRow = newRow;
@@ -387,7 +448,7 @@ function skipTurn() {
 // and counted the attempt.
 function applyAnswerResult(isCorrect, hadExtraSpace) {
   const kind = state.selectedTarget ? state.selectedTarget.kind : null;
-  if (kind === 'chest' || kind === 'rune') {
+  if (kind === 'chest' || kind === 'rune' || kind === 'encounter') {
     resolveObjectAttempt(state.selectedTarget, isCorrect, hadExtraSpace);
     return;
   }
@@ -450,6 +511,7 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
   nextQuestion();
   if (!state.mcMode) answerInput.focus();
   const notes = advanceMonsters();
+  syncQuestionForTarget();
 
   if (state.hearts <= 0) {
     let html = '<span class="hit-msg">' + hitMsg + '</span>' +
@@ -481,7 +543,9 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
   if (!state.mcMode) answerInput.focus();
 
   target.el.classList.add('gone');
-  if (target.kind === 'chest') state.chest = null; else state.rune = null;
+  if (target.kind === 'chest') state.chest = null;
+  else if (target.kind === 'rune') state.rune = null;
+  else if (target.kind === 'encounter') state.encounters = state.encounters.filter(e => e !== target);
   state.selectedTarget = null;
 
   let outcomeHtml;
@@ -490,6 +554,12 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
       state.coinsTotal += 2;
       coinsTotalEl.textContent = state.coinsTotal;
       outcomeHtml = '<span class="hit-msg">The chest opens — you find 2 coins!</span>';
+    } else if (target.kind === 'encounter') {
+      const reward = DIFFICULTY_COIN_REWARD[missed.difficulty] || DIFFICULTY_COIN_REWARD.medium;
+      state.coinsTotal += reward;
+      coinsTotalEl.textContent = state.coinsTotal;
+      outcomeHtml = '<span class="hit-msg">Correct! You earn ' + reward + ' coin' + (reward === 1 ? '' : 's') +
+        ' for mastering ' + escapeHtml(target.category) + '.</span>';
     } else {
       outcomeHtml = '<span class="hit-msg">The rune glows: ' + buildHint(state.currentQuestion) + '</span>';
     }
@@ -502,12 +572,13 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
     playerActor.classList.remove('hit-flash');
     void playerActor.offsetWidth;
     playerActor.classList.add('hit-flash');
-    const noun = target.kind === 'chest' ? 'chest' : 'rune';
+    const noun = target.kind === 'chest' ? 'chest' : target.kind === 'encounter' ? escapeHtml(target.category) + ' challenge' : 'rune';
     outcomeHtml = '<span class="warn-msg">Wrong! The ' + noun + ' was trapped and strikes you!</span>';
     if (state.revealOnWrong) outcomeHtml += '<span class="tip">' + missed.term + ' = ' + missed.meaning + '</span>';
   }
 
   refreshTargetValidity();
+  syncQuestionForTarget();
 
   if (state.hearts <= 0) {
     feedback.innerHTML = outcomeHtml + '<span class="warn-msg">You are out of hearts.</span>';
@@ -519,6 +590,7 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
   }
 
   const notes = advanceMonsters();
+  syncQuestionForTarget();
   let html = outcomeHtml;
   if (notes.hitNote) html += '<span class="warn-msg">' + notes.hitNote.trim() + '</span>';
   if (notes.spawnNote) html += '<span class="move-msg">' + notes.spawnNote.trim() + '</span>';

@@ -50,6 +50,7 @@ export const state = {
   coin: null,            // { row, col } or null once collected
   chest: null,           // { row, col, el, kind: 'chest' } or null once opened/trapped
   rune: null,            // { row, col, el, kind: 'rune' } or null once read/trapped
+  encounters: [],        // [{ row, col, el, kind: 'encounter', category, pool }], per-room, up to 3
 
   usingSample: true, // false once the person loads their own list
   activeData: TYPING_SAMPLE_DATA, // whichever list is currently in play

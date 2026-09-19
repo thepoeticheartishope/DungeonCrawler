@@ -119,6 +119,7 @@ export function renderFog() {
   els.coinActor.classList.toggle('fog-hidden', !!state.coin && !isLit(state.coin.row, state.coin.col));
   els.chestActor.classList.toggle('fog-hidden', !!state.chest && !isLit(state.chest.row, state.chest.col));
   els.runeActor.classList.toggle('fog-hidden', !!state.rune && !isLit(state.rune.row, state.rune.col));
+  state.encounters.forEach(e => e.el.classList.toggle('fog-hidden', !isLit(e.row, e.col)));
 }
 
 // row/col are world coordinates; this converts them to a position within
@@ -154,13 +155,19 @@ export function renderTargeting() {
   state.minions.forEach(m => m.el.classList.toggle('targeted', state.selectedTarget === m));
   els.chestActor.classList.toggle('targeted', state.selectedTarget === state.chest);
   els.runeActor.classList.toggle('targeted', state.selectedTarget === state.rune);
+  state.encounters.forEach(e => e.el.classList.toggle('targeted', state.selectedTarget === e));
 
   const kindLabels = { boss: 'Boss', minion: 'Minion', chest: 'Chest', rune: 'Rune' };
-  els.targetLabelEl.textContent = state.selectedTarget
-    ? 'Target: ' + (kindLabels[state.selectedTarget.kind] || 'Minion')
-    : 'Target: none — move next to something';
+  let label = 'Target: none — move next to something';
+  if (state.selectedTarget) {
+    label = state.selectedTarget.kind === 'encounter'
+      ? 'Target: ' + state.selectedTarget.category
+      : 'Target: ' + (kindLabels[state.selectedTarget.kind] || 'Minion');
+  }
+  els.targetLabelEl.textContent = label;
 
-  const isObject = state.selectedTarget && (state.selectedTarget.kind === 'chest' || state.selectedTarget.kind === 'rune');
+  const isObject = state.selectedTarget &&
+    (state.selectedTarget.kind === 'chest' || state.selectedTarget.kind === 'rune' || state.selectedTarget.kind === 'encounter');
   els.attackBtn.textContent = isObject ? 'Attempt' : 'Attack';
 }
 

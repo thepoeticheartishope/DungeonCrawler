@@ -2,7 +2,9 @@
 // selection, and multiple-choice option building. No DOM access here.
 
 import { state } from './state.js';
-import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA } from './config.js';
+import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS } from './config.js';
+
+const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
 
 // Whichever built-in list matches the current mode (used whenever no
 // custom list has been loaded).
@@ -35,13 +37,19 @@ export function parseListInput(text) {
     }
     if (!Array.isArray(parsed)) return { error: 'JSON must be an array of {"term","meaning"} objects.' };
     const cleaned = parsed
-      .map(item => ({
-        term: String((item && item.term) || '').trim(),
-        meaning: String((item && item.meaning) || '').trim(),
-        options: Array.isArray(item && item.options)
-          ? item.options.map(o => String(o).trim()).filter(Boolean)
-          : undefined
-      }))
+      .map(item => {
+        const category = String((item && item.category) || '').trim();
+        const rawDifficulty = String((item && item.difficulty) || '').trim().toLowerCase();
+        return {
+          term: String((item && item.term) || '').trim(),
+          meaning: String((item && item.meaning) || '').trim(),
+          options: Array.isArray(item && item.options)
+            ? item.options.map(o => String(o).trim()).filter(Boolean)
+            : undefined,
+          category: category || undefined,
+          difficulty: VALID_DIFFICULTIES.includes(rawDifficulty) ? rawDifficulty : 'medium'
+        };
+      })
       .filter(item => item.term && item.meaning);
     if (cleaned.length < 2) return { error: 'Need at least 2 valid entries with both a term and meaning.' };
     return { data: cleaned };
@@ -67,14 +75,36 @@ export function parseListInput(text) {
   return result;
 }
 
-// Picks a random term from the full list, avoiding an immediate repeat
-// of whatever question is currently showing.
-export function pickQuestion(exclude) {
-  let pool = state.activeData;
-  if (exclude && state.activeData.length > 1) {
-    pool = state.activeData.filter(d => d.term !== exclude.term);
+// Picks a random term from `pool` (the full active list, by default),
+// avoiding an immediate repeat of whatever question is currently showing.
+export function pickQuestion(exclude, pool) {
+  pool = pool || state.activeData;
+  let candidates = pool;
+  if (exclude && pool.length > 1) {
+    candidates = pool.filter(d => d.term !== exclude.term);
   }
-  return pool[Math.floor(Math.random() * pool.length)];
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+// Which pool a question should be drawn from for the given target: an
+// encounter's own category pool, or the full active list for anything else
+// (boss, minion, chest, rune, or no target at all).
+export function poolFor(target) {
+  return target && target.kind === 'encounter' ? target.pool : state.activeData;
+}
+
+// Deterministic glyph for a category name, so the same category always
+// renders the same encounter icon. Uses djb2 (a standard string hash with
+// decent bit dispersion) rather than a plain char-code sum — a sum collides
+// constantly for short, similar-length names (e.g. "Hardware" and
+// "Networking" land on the same bucket), which defeats the point when a
+// room can show a few categories side by side.
+export function glyphForCategory(category) {
+  let hash = 5381;
+  for (let i = 0; i < category.length; i++) {
+    hash = ((hash * 33) ^ category.charCodeAt(i)) >>> 0;
+  }
+  return ENCOUNTER_GLYPHS[hash % ENCOUNTER_GLYPHS.length];
 }
 
 export function escapeHtml(s) {

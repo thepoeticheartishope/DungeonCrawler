@@ -3,17 +3,22 @@
 
 // ---- Sample data. Replaced at runtime if the player loads their own list. ----
 // Each entry needs a "term" and its "meaning".
+// "category" and "difficulty" are optional. When present, category groups
+// entries into a world-placed vocab encounter (see main.js loadRoom), and
+// difficulty ("easy"/"medium"/"hard") scales that encounter's coin reward.
 export const TYPING_SAMPLE_DATA = [
-  { term: "CPU", meaning: "Central Processing Unit" },
-  { term: "RAM", meaning: "Random Access Memory" },
-  { term: "SSD", meaning: "Solid State Drive" },
-  { term: "DNS", meaning: "Domain Name System" }
+  { term: "CPU", meaning: "Central Processing Unit", category: "Hardware", difficulty: "easy" },
+  { term: "RAM", meaning: "Random Access Memory", category: "Hardware", difficulty: "easy" },
+  { term: "SSD", meaning: "Solid State Drive", category: "Hardware", difficulty: "medium" },
+  { term: "DNS", meaning: "Domain Name System", category: "Networking", difficulty: "medium" }
 ];
 
 export const MC_SAMPLE_DATA = [
   {
     term: "RAID",
     meaning: "Redundant Array of Independent Disks",
+    category: "Hardware",
+    difficulty: "medium",
     options: [
       "Redundant Array of Independent Disks",
       "Random Access Interface Device",
@@ -24,6 +29,8 @@ export const MC_SAMPLE_DATA = [
   {
     term: "HTTP",
     meaning: "Hypertext Transfer Protocol",
+    category: "Networking",
+    difficulty: "easy",
     options: [
       "Hypertext Transfer Protocol",
       "High Throughput Transmission Protocol",
@@ -34,6 +41,8 @@ export const MC_SAMPLE_DATA = [
   {
     term: "VPN",
     meaning: "Virtual Private Network",
+    category: "Networking",
+    difficulty: "hard",
     options: [
       "Virtual Private Network",
       "Verified Public Node",
@@ -44,6 +53,8 @@ export const MC_SAMPLE_DATA = [
   {
     term: "DHCP",
     meaning: "Dynamic Host Configuration Protocol",
+    category: "Networking",
+    difficulty: "medium",
     options: [
       "Dynamic Host Configuration Protocol",
       "Direct Hardware Control Panel",
@@ -56,10 +67,20 @@ export const MC_SAMPLE_DATA = [
 export const BOSS_ICONS = ['👹', '🐉', '🧟', '👺', '🐍', '👻', '🦂', '🕷️'];
 export const MINION_ICONS = ['👾', '🦇', '🐀', '🐛'];
 
+// Glyphs for category-tagged vocab encounters. glyphForCategory() in
+// quiz.js picks one deterministically from a category's name, so the same
+// category always renders the same glyph.
+export const ENCOUNTER_GLYPHS = ['🗡️', '🛡️', '📡', '🔧', '🧪', '📖', '⚙️', '🔬', '🧭', '🪙'];
+
+// Coins awarded for correctly answering a vocab encounter, by the
+// question's own difficulty tier. Falls back to "medium" if a question is
+// missing or has an invalid difficulty.
+export const DIFFICULTY_COIN_REWARD = { easy: 1, medium: 2, hard: 3 };
+
 // Grid size and chamber count both grow as the run progresses.
 // Index 0 = Room 1, index 1 = Room 2, index 2 = Room 3.
-export const GRID_SIZES = [11, 13, 15];
-export const CHAMBER_TARGETS = [4, 5, 6];
+export const GRID_SIZES = [19, 23, 27];
+export const CHAMBER_TARGETS = [6, 8, 10];
 
 export const MAX_HEARTS = 3;
 export const ROOM_COUNT = 3;
