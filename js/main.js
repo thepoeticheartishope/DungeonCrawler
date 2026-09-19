@@ -58,6 +58,7 @@ const attackBtn = document.getElementById('attackBtn');
 const mcToggle = document.getElementById('mcToggle');
 const mcOptionsEl = document.getElementById('mcOptions');
 const feedback = document.getElementById('feedback');
+const roomFeedback = document.getElementById('roomFeedback');
 const nextWrap = document.getElementById('nextWrap');
 const nextBtn = document.getElementById('nextBtn');
 
@@ -178,6 +179,22 @@ function syncQuestionForTarget() {
 // so resolving one adjacent thing and chaining straight into the next (e.g.
 // boxed in by two minions) updates in place without a spurious round trip
 // through the room screen.
+// Clear correct/wrong signal on the battle screen itself. The room's own
+// hit-flash/shake effects live on the grid and player icon, which sit
+// behind (and are invisible during) the battle screen, so a fight needs
+// its own visible feedback distinct from the feedback text alone.
+function flashBattleResult(isCorrect) {
+  const cls = isCorrect ? 'flash-correct' : 'flash-wrong';
+  battleGlyphEl.classList.remove('flash-correct', 'flash-wrong');
+  void battleGlyphEl.offsetWidth;
+  battleGlyphEl.classList.add(cls);
+  if (!isCorrect) {
+    heartsEl.classList.remove('hit-flash');
+    void heartsEl.offsetWidth;
+    heartsEl.classList.add('hit-flash');
+  }
+}
+
 function syncBattleScreen() {
   if (state.selectedTarget) {
     const target = state.selectedTarget;
@@ -344,6 +361,7 @@ function loadRoom() {
   setQuestion(pickQuestion(null));
   renderCombatStatus();
   feedback.innerHTML = '';
+  roomFeedback.innerHTML = '';
   nextWrap.classList.remove('show');
   answerInput.value = '';
   setControlsEnabled(true);
@@ -364,7 +382,7 @@ function applyTurnOutcome(actionMessage, extraHtml) {
   extraHtml = extraHtml || '';
 
   if (state.hearts <= 0) {
-    feedback.innerHTML = '<span class="warn-msg">' + actionMessage + notes.hitNote + ' You are out of hearts.</span>' + extraHtml;
+    roomFeedback.innerHTML = '<span class="warn-msg">' + actionMessage + notes.hitNote + ' You are out of hearts.</span>' + extraHtml;
     setControlsEnabled(false);
     clearInterval(state.timerHandle);
     setTimeout(endLose, 900);
@@ -372,7 +390,7 @@ function applyTurnOutcome(actionMessage, extraHtml) {
   }
 
   const cls = notes.hitNote ? 'warn-msg' : 'move-msg';
-  feedback.innerHTML = '<span class="' + cls + '">' + actionMessage + notes.hitNote + notes.spawnNote + '</span>' + extraHtml;
+  roomFeedback.innerHTML = '<span class="' + cls + '">' + actionMessage + notes.hitNote + notes.spawnNote + '</span>' + extraHtml;
 }
 
 function movePlayer(dRow, dCol, dirName) {
@@ -381,32 +399,32 @@ function movePlayer(dRow, dCol, dirName) {
   const newCol = state.playerCol + dCol;
 
   if (newRow < 0 || newRow >= state.GRID_SIZE || newCol < 0 || newCol >= state.GRID_SIZE) {
-    feedback.innerHTML = '<span class="block-msg">The dungeon wall blocks that path.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">The dungeon wall blocks that path.</span>';
     return;
   }
   if (state.wallSet.has(key(newRow, newCol))) {
-    feedback.innerHTML = '<span class="block-msg">The dungeon wall blocks that path.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">The dungeon wall blocks that path.</span>';
     return;
   }
   if (state.boss.row === newRow && state.boss.col === newCol) {
-    feedback.innerHTML = '<span class="block-msg">The boss blocks that path.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">The boss blocks that path.</span>';
     return;
   }
   if (state.minions.some(m => m.row === newRow && m.col === newCol)) {
-    feedback.innerHTML = '<span class="block-msg">A minion blocks that path.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">A minion blocks that path.</span>';
     return;
   }
   if (state.chest && state.chest.row === newRow && state.chest.col === newCol) {
-    feedback.innerHTML = '<span class="block-msg">A locked chest blocks that path. Tap it from beside it.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">A locked chest blocks that path. Tap it from beside it.</span>';
     return;
   }
   if (state.rune && state.rune.row === newRow && state.rune.col === newCol) {
-    feedback.innerHTML = '<span class="block-msg">A glowing rune blocks that path. Tap it from beside it.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">A glowing rune blocks that path. Tap it from beside it.</span>';
     return;
   }
   const blockingEncounter = state.encounters.find(e => e.row === newRow && e.col === newCol);
   if (blockingEncounter) {
-    feedback.innerHTML = '<span class="block-msg">A ' + blockingEncounter.category + ' challenge blocks that path. Tap it from beside it.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">A ' + blockingEncounter.category + ' challenge blocks that path. Tap it from beside it.</span>';
     return;
   }
 
@@ -456,12 +474,7 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
 
     state.hearts--;
     renderHearts();
-    grid.classList.remove('shake');
-    void grid.offsetWidth;
-    grid.classList.add('shake');
-    playerActor.classList.remove('hit-flash');
-    void playerActor.offsetWidth;
-    playerActor.classList.add('hit-flash');
+    flashBattleResult(false);
     let html = '<span class="warn-msg">Wrong! The spell fizzles and you take a hit.</span>';
     if (state.revealOnWrong) html += '<span class="tip">' + missed.term + ' = ' + missed.meaning + '</span>';
 
@@ -519,6 +532,7 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
 
   renderCombatStatus();
   renderTargeting();
+  flashBattleResult(true);
 
   if (state.boss.hp <= 0) {
     bossActor.classList.add('gone');
@@ -566,6 +580,7 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
 
   let outcomeHtml;
   if (isCorrect) {
+    flashBattleResult(true);
     if (target.kind === 'chest') {
       state.coinsTotal += 2;
       coinsTotalEl.textContent = state.coinsTotal;
@@ -582,12 +597,7 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
   } else {
     state.hearts--;
     renderHearts();
-    grid.classList.remove('shake');
-    void grid.offsetWidth;
-    grid.classList.add('shake');
-    playerActor.classList.remove('hit-flash');
-    void playerActor.offsetWidth;
-    playerActor.classList.add('hit-flash');
+    flashBattleResult(false);
     const noun = target.kind === 'chest' ? 'chest' : target.kind === 'encounter' ? escapeHtml(target.category) + ' challenge' : 'rune';
     outcomeHtml = '<span class="warn-msg">Wrong! The ' + noun + ' was trapped and strikes you!</span>';
     if (state.revealOnWrong) outcomeHtml += '<span class="tip">' + missed.term + ' = ' + missed.meaning + '</span>';
