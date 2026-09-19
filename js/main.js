@@ -2,7 +2,7 @@ import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, BOSS_ICONS, GRID_SIZES, CHAMBER_TARGETS,
-  DIFFICULTY_COIN_REWARD, ENCOUNTER_GLYPHS
+  DIFFICULTY_COIN_REWARD, ENCOUNTER_GLYPHS, PLAYER_ICON
 } from './config.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
@@ -54,7 +54,6 @@ const answerForm = document.getElementById('answerForm');
 const answerInput = document.getElementById('answerInput');
 const attackBtn = document.getElementById('attackBtn');
 const mcToggle = document.getElementById('mcToggle');
-const heroOptions = document.getElementById('heroOptions');
 const mcOptionsEl = document.getElementById('mcOptions');
 const feedback = document.getElementById('feedback');
 const nextWrap = document.getElementById('nextWrap');
@@ -130,14 +129,6 @@ mcToggle.addEventListener('change', () => {
   if (!state.usingSample) return;
   state.activeData = defaultSample(mcToggle.checked);
   showSampleStatus();
-});
-
-heroOptions.addEventListener('click', (e) => {
-  const btn = e.target.closest('.hero-option');
-  if (!btn) return;
-  heroOptions.querySelectorAll('.hero-option').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  state.selectedPlayerIcon = btn.dataset.icon;
 });
 
 function renderChoices() {
@@ -234,7 +225,7 @@ function startGame() {
   state.coinsTotal = 0;
   state.revealOnWrong = revealToggle.checked;
   state.mcMode = mcToggle.checked;
-  playerActor.textContent = state.selectedPlayerIcon;
+  playerActor.textContent = PLAYER_ICON;
   answerForm.style.display = state.mcMode ? 'none' : 'flex';
   mcOptionsEl.classList.toggle('show', state.mcMode);
   renderHearts();

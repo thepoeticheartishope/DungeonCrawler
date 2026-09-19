@@ -54,5 +54,4 @@ export const state = {
 
   usingSample: true, // false once the person loads their own list
   activeData: TYPING_SAMPLE_DATA, // whichever list is currently in play
-  selectedPlayerIcon: '🧙',
 };

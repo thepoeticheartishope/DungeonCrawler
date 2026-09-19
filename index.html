@@ -113,40 +113,6 @@
     cursor: pointer;
   }
 
-  .hero-picker {
-    margin-bottom: 22px;
-  }
-  .hero-picker-label {
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
-  .hero-options {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-  }
-  .hero-option {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 8px 14px;
-    background: var(--stone-light);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    color: var(--muted);
-    cursor: pointer;
-  }
-  .hero-option:hover { border-color: var(--torch); }
-  .hero-option.selected {
-    border-color: var(--torch-bright);
-    color: var(--torch-bright);
-    background: var(--stone);
-  }
-  .hero-emoji { font-size: 24px; }
-  .hero-name { font-size: 11px; }
-
   .loader {
     max-width: 400px;
     margin: 0 auto 20px;
@@ -529,24 +495,6 @@
       <input type="checkbox" id="mcToggle">
       Multiple choice mode (4 options, no typing)
     </label>
-
-    <div class="hero-picker">
-      <div class="hero-picker-label">Choose your hero</div>
-      <div class="hero-options" id="heroOptions">
-        <button type="button" class="hero-option" data-icon="🥷" title="Bounty Hunter">
-          <span class="hero-emoji">🥷</span>
-          <span class="hero-name">Bounty Hunter</span>
-        </button>
-        <button type="button" class="hero-option selected" data-icon="🧙" title="Wizard">
-          <span class="hero-emoji">🧙</span>
-          <span class="hero-name">Wizard</span>
-        </button>
-        <button type="button" class="hero-option" data-icon="🧝" title="Elf">
-          <span class="hero-emoji">🧝</span>
-          <span class="hero-name">Elf</span>
-        </button>
-      </div>
-    </div>
 
     <div class="loader">
       <button type="button" class="ghost small" id="toggleLoader">Load your own term list ▾</button>

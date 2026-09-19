@@ -64,13 +64,17 @@ export const MC_SAMPLE_DATA = [
   }
 ];
 
-export const BOSS_ICONS = ['👹', '🐉', '🧟', '👺', '🐍', '👻', '🦂', '🕷️'];
-export const MINION_ICONS = ['👾', '🦇', '🐀', '🐛'];
+// Classic roguelike convention: uppercase for bosses, lowercase for minions.
+export const BOSS_ICONS = ['D', 'T', 'O', 'B', 'S', 'W', 'C', 'V'];
+export const MINION_ICONS = ['a', 'b', 'r', 'w'];
 
-// Glyphs for category-tagged vocab encounters. glyphForCategory() in
-// quiz.js picks one deterministically from a category's name, so the same
-// category always renders the same glyph.
-export const ENCOUNTER_GLYPHS = ['🗡️', '🛡️', '📡', '🔧', '🧪', '📖', '⚙️', '🔬', '🧭', '🪙'];
+// Symbols for category-tagged vocab encounters — distinct from the letters
+// used by bosses/minions, since these represent a learning choice, not a
+// monster. glyphForCategory() in quiz.js picks one deterministically from
+// a category's name, so the same category always renders the same symbol.
+export const ENCOUNTER_GLYPHS = ['?', '!', '$', '%', '&', '*', '+', '~', '^', '='];
+
+export const PLAYER_ICON = '@';
 
 // Coins awarded for correctly answering a vocab encounter, by the
 // question's own difficulty tier. Falls back to "medium" if a question is
