@@ -92,12 +92,14 @@ export function findFreeTileNear(row, col) {
 // Walls plus every other occupant's current tile, from one minion's point
 // of view — so it paths around the boss and other minions instead of
 // computing the same blocked step every turn.
+// Walls and other monsters block a minion's path, but items (chest, rune,
+// encounters) don't — a monster paths straight through an item tile rather
+// than detouring around it or getting stuck when one sits in a one-wide
+// corridor. Items are only obstacles to the player, who must stand beside
+// one to interact with it.
 export function blockedTilesFor(minion) {
   const blocked = new Set(state.wallSet);
   if (state.boss) blocked.add(key(state.boss.row, state.boss.col));
-  if (state.chest) blocked.add(key(state.chest.row, state.chest.col));
-  if (state.rune) blocked.add(key(state.rune.row, state.rune.col));
-  state.encounters.forEach(e => blocked.add(key(e.row, e.col)));
   for (const other of state.minions) {
     if (other === minion) continue;
     blocked.add(key(other.row, other.col));
