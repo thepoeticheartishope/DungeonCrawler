@@ -70,3 +70,8 @@ export const SPAWN_INTERVAL = 7; // turns between the boss summoning a minion
 export const MAX_MINIONS = 3;    // hard cap so minions can't snowball
 
 export const VISION_RADIUS = 5; // how many open-floor steps the player can see
+
+// The camera always renders a fixed VIEWPORT_SIZE x VIEWPORT_SIZE window of
+// the room, panning to follow the player. Must stay smaller than every
+// value in GRID_SIZES, or there'd be nothing to pan.
+export const VIEWPORT_SIZE = 9;

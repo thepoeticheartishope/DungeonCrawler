@@ -6,7 +6,7 @@
 // of each one threading them through as parameters.
 
 import { state, key } from './state.js';
-import { MAX_HEARTS, BOSS_HP, VISION_RADIUS } from './config.js';
+import { MAX_HEARTS, BOSS_HP, VISION_RADIUS, VIEWPORT_SIZE } from './config.js';
 
 let els = {};
 
@@ -19,27 +19,54 @@ export function showScreen(el) {
   el.classList.add('show');
 }
 
+// The rendered grid is always VIEWPORT_SIZE x VIEWPORT_SIZE, regardless of
+// how big the room's own data (state.GRID_SIZE) is — the camera pans that
+// fixed window over the larger world. Rebuilt once per room load; walls,
+// fog, and the checkerboard are re-applied on every camera move instead
+// (see renderWalls/renderFog), since which world tile lands in which
+// viewport cell changes as the camera pans.
 export function buildGridTiles() {
   els.grid.querySelectorAll('.tile').forEach(t => t.remove());
-  els.grid.style.gridTemplateColumns = 'repeat(' + state.GRID_SIZE + ', 1fr)';
-  els.grid.style.gridTemplateRows = 'repeat(' + state.GRID_SIZE + ', 1fr)';
-  state.tileEls = new Array(state.GRID_SIZE * state.GRID_SIZE);
-  for (let r = 0; r < state.GRID_SIZE; r++) {
-    for (let c = 0; c < state.GRID_SIZE; c++) {
+  els.grid.style.gridTemplateColumns = 'repeat(' + VIEWPORT_SIZE + ', 1fr)';
+  els.grid.style.gridTemplateRows = 'repeat(' + VIEWPORT_SIZE + ', 1fr)';
+  state.tileEls = new Array(VIEWPORT_SIZE * VIEWPORT_SIZE);
+  for (let vr = 0; vr < VIEWPORT_SIZE; vr++) {
+    for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
       const tile = document.createElement('div');
-      tile.className = 'tile' + ((r + c) % 2 === 0 ? '' : ' b');
+      tile.className = 'tile';
       els.grid.insertBefore(tile, els.playerActor);
-      state.tileEls[r * state.GRID_SIZE + c] = tile;
+      state.tileEls[vr * VIEWPORT_SIZE + vc] = tile;
     }
   }
 }
 
+function clamp(v, lo, hi) {
+  return Math.max(lo, Math.min(v, hi));
+}
+
+// Centers the viewport on the player, clamped so it never shows past the
+// room's edge. Call this any time the player moves (or a room loads),
+// before renderWalls()/renderFog()/positionActor() — they all read
+// state.camRow/camCol to know which world tile belongs in which cell.
+export function updateCamera() {
+  state.camRow = clamp(state.playerRow - Math.floor(VIEWPORT_SIZE / 2), 0, state.GRID_SIZE - VIEWPORT_SIZE);
+  state.camCol = clamp(state.playerCol - Math.floor(VIEWPORT_SIZE / 2), 0, state.GRID_SIZE - VIEWPORT_SIZE);
+}
+
+// Walls plus the checkerboard both key off world coordinates, so both are
+// re-applied here from the current camera offset rather than only once at
+// build time — the checkerboard would otherwise stay fixed to the screen
+// instead of panning with the world.
 export function renderWalls() {
-  state.tileEls.forEach(t => t.classList.remove('wall'));
-  state.wallSet.forEach(k => {
-    const [r, c] = k.split(',').map(Number);
-    state.tileEls[r * state.GRID_SIZE + c].classList.add('wall');
-  });
+  for (let vr = 0; vr < VIEWPORT_SIZE; vr++) {
+    for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
+      const worldRow = state.camRow + vr;
+      const worldCol = state.camCol + vc;
+      const tile = state.tileEls[vr * VIEWPORT_SIZE + vc];
+      tile.classList.toggle('b', (worldRow + worldCol) % 2 !== 0);
+      tile.classList.toggle('wall', state.wallSet.has(key(worldRow, worldCol)));
+    }
+  }
 }
 
 // Sweeps outward from the player through open floor, stopping at walls
@@ -72,12 +99,14 @@ export function computeVisibility() {
 // minions, and coin based on whether their tile is currently lit.
 // Explored-but-not-currently-visible tiles stay dimly remembered.
 export function renderFog() {
-  for (let r = 0; r < state.GRID_SIZE; r++) {
-    for (let c = 0; c < state.GRID_SIZE; c++) {
-      const el = state.tileEls[r * state.GRID_SIZE + c];
+  for (let vr = 0; vr < VIEWPORT_SIZE; vr++) {
+    for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
+      const worldRow = state.camRow + vr;
+      const worldCol = state.camCol + vc;
+      const el = state.tileEls[vr * VIEWPORT_SIZE + vc];
       el.classList.remove('fog-hidden', 'fog-dim');
       if (!state.fogEnabled) continue;
-      const k = key(r, c);
+      const k = key(worldRow, worldCol);
       if (state.visibleSet.has(k)) continue;
       el.classList.add(state.exploredSet.has(k) ? 'fog-dim' : 'fog-hidden');
     }
@@ -92,10 +121,18 @@ export function renderFog() {
   els.runeActor.classList.toggle('fog-hidden', !!state.rune && !isLit(state.rune.row, state.rune.col));
 }
 
+// row/col are world coordinates; this converts them to a position within
+// the current camera window, and hides the actor entirely (off-screen)
+// if the camera has panned past it.
 export function positionActor(el, row, col) {
-  const cell = 100 / state.GRID_SIZE;
-  el.style.left = (col * cell) + '%';
-  el.style.top = (row * cell) + '%';
+  const screenRow = row - state.camRow;
+  const screenCol = col - state.camCol;
+  const offScreen = screenRow < 0 || screenRow >= VIEWPORT_SIZE || screenCol < 0 || screenCol >= VIEWPORT_SIZE;
+  el.classList.toggle('off-screen', offScreen);
+  if (offScreen) return;
+  const cell = 100 / VIEWPORT_SIZE;
+  el.style.left = (screenCol * cell) + '%';
+  el.style.top = (screenRow * cell) + '%';
   el.style.width = cell + '%';
   el.style.height = cell + '%';
 }

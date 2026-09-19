@@ -8,7 +8,7 @@ import {
 import {
   initRender, showScreen, buildGridTiles, renderWalls, computeVisibility,
   renderFog, positionActor, renderHearts, renderCombatStatus, renderTargeting,
-  formatTime, startTimer
+  formatTime, startTimer, updateCamera
 } from './render.js';
 import {
   initCombat, isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
@@ -175,6 +175,19 @@ function selectTarget(target) {
   renderTargeting();
 }
 
+// Re-places every actor at its current world position relative to the
+// camera. Needed whenever the camera itself moves — the boss, minions,
+// coin, chest, and rune haven't moved in world space, but the viewport
+// window that maps world coordinates onto the screen has.
+function repositionActors() {
+  positionActor(playerActor, state.playerRow, state.playerCol);
+  if (state.boss) positionActor(bossActor, state.boss.row, state.boss.col);
+  state.minions.forEach(m => positionActor(m.el, m.row, m.col));
+  if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col);
+  if (state.chest) positionActor(chestActor, state.chest.row, state.chest.col);
+  if (state.rune) positionActor(runeActor, state.rune.row, state.rune.col);
+}
+
 bossActor.addEventListener('click', () => selectTarget(state.boss));
 chestActor.addEventListener('click', () => { if (state.chest) selectTarget(state.chest); });
 runeActor.addEventListener('click', () => { if (state.rune) selectTarget(state.rune); });
@@ -232,6 +245,7 @@ function loadRoom() {
 
   state.playerRow = state.PLAYER_START.row;
   state.playerCol = state.PLAYER_START.col;
+  updateCamera();
   positionActor(playerActor, state.playerRow, state.playerCol);
 
   const layout = generateDungeonLayout(state.PLAYER_START, state.GRID_SIZE, state.CHAMBER_TARGET);
@@ -342,7 +356,9 @@ function movePlayer(dRow, dCol, dirName) {
   state.turnLocked = true;
   state.playerRow = newRow;
   state.playerCol = newCol;
-  positionActor(playerActor, state.playerRow, state.playerCol);
+  updateCamera();
+  renderWalls();
+  repositionActors();
   computeVisibility();
   renderFog();
 

@@ -32,6 +32,8 @@ export const state = {
 
   playerRow: undefined,
   playerCol: undefined,
+  camRow: 0, // world-space row/col of the viewport's top-left corner
+  camCol: 0,
   wallSet: new Set(),
   tileEls: [],
   turnLocked: false,
