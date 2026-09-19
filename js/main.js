@@ -481,9 +481,16 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
 
   if (hadExtraSpace) state.extraSpaceCount++;
 
-  // Safety net: if the selected target vanished somehow, retarget sensibly.
+  // Safety net: if the selected target vanished or is no longer adjacent,
+  // let refreshTargetValidity() pick a genuinely adjacent replacement (or
+  // null) rather than attacking an arbitrary minion elsewhere on the map.
   if (state.selectedTarget !== state.boss && !state.minions.includes(state.selectedTarget)) {
-    state.selectedTarget = state.minions.length > 0 ? state.minions[0] : state.boss;
+    refreshTargetValidity();
+    if (!state.selectedTarget) {
+      syncBattleScreen();
+      state.turnLocked = false;
+      return;
+    }
   }
 
   let hitMsg;
@@ -494,7 +501,12 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
       target.el.remove();
       state.minions = state.minions.filter(m => m !== target);
       hitMsg = 'Hit! Your target falls.';
-      state.selectedTarget = state.minions.length > 0 ? state.minions[0] : state.boss;
+      // Only chain into another target if one is still adjacent — grabbing
+      // any remaining minion on the map (regardless of distance) left the
+      // battle screen stuck showing something the player could never reach,
+      // since there's no way to move while it's up.
+      state.selectedTarget = null;
+      refreshTargetValidity();
     } else {
       hitMsg = 'Hit! Your target staggers (' + target.hp + ' HP left).';
     }
