@@ -58,6 +58,7 @@ const attackBtn = document.getElementById('attackBtn');
 const mcToggle = document.getElementById('mcToggle');
 const mcOptionsEl = document.getElementById('mcOptions');
 const feedback = document.getElementById('feedback');
+const roomFeedback = document.getElementById('roomFeedback');
 const nextWrap = document.getElementById('nextWrap');
 const nextBtn = document.getElementById('nextBtn');
 
@@ -360,6 +361,7 @@ function loadRoom() {
   setQuestion(pickQuestion(null));
   renderCombatStatus();
   feedback.innerHTML = '';
+  roomFeedback.innerHTML = '';
   nextWrap.classList.remove('show');
   answerInput.value = '';
   setControlsEnabled(true);
@@ -380,7 +382,7 @@ function applyTurnOutcome(actionMessage, extraHtml) {
   extraHtml = extraHtml || '';
 
   if (state.hearts <= 0) {
-    feedback.innerHTML = '<span class="warn-msg">' + actionMessage + notes.hitNote + ' You are out of hearts.</span>' + extraHtml;
+    roomFeedback.innerHTML = '<span class="warn-msg">' + actionMessage + notes.hitNote + ' You are out of hearts.</span>' + extraHtml;
     setControlsEnabled(false);
     clearInterval(state.timerHandle);
     setTimeout(endLose, 900);
@@ -388,7 +390,7 @@ function applyTurnOutcome(actionMessage, extraHtml) {
   }
 
   const cls = notes.hitNote ? 'warn-msg' : 'move-msg';
-  feedback.innerHTML = '<span class="' + cls + '">' + actionMessage + notes.hitNote + notes.spawnNote + '</span>' + extraHtml;
+  roomFeedback.innerHTML = '<span class="' + cls + '">' + actionMessage + notes.hitNote + notes.spawnNote + '</span>' + extraHtml;
 }
 
 function movePlayer(dRow, dCol, dirName) {
@@ -397,32 +399,32 @@ function movePlayer(dRow, dCol, dirName) {
   const newCol = state.playerCol + dCol;
 
   if (newRow < 0 || newRow >= state.GRID_SIZE || newCol < 0 || newCol >= state.GRID_SIZE) {
-    feedback.innerHTML = '<span class="block-msg">The dungeon wall blocks that path.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">The dungeon wall blocks that path.</span>';
     return;
   }
   if (state.wallSet.has(key(newRow, newCol))) {
-    feedback.innerHTML = '<span class="block-msg">The dungeon wall blocks that path.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">The dungeon wall blocks that path.</span>';
     return;
   }
   if (state.boss.row === newRow && state.boss.col === newCol) {
-    feedback.innerHTML = '<span class="block-msg">The boss blocks that path.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">The boss blocks that path.</span>';
     return;
   }
   if (state.minions.some(m => m.row === newRow && m.col === newCol)) {
-    feedback.innerHTML = '<span class="block-msg">A minion blocks that path.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">A minion blocks that path.</span>';
     return;
   }
   if (state.chest && state.chest.row === newRow && state.chest.col === newCol) {
-    feedback.innerHTML = '<span class="block-msg">A locked chest blocks that path. Tap it from beside it.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">A locked chest blocks that path. Tap it from beside it.</span>';
     return;
   }
   if (state.rune && state.rune.row === newRow && state.rune.col === newCol) {
-    feedback.innerHTML = '<span class="block-msg">A glowing rune blocks that path. Tap it from beside it.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">A glowing rune blocks that path. Tap it from beside it.</span>';
     return;
   }
   const blockingEncounter = state.encounters.find(e => e.row === newRow && e.col === newCol);
   if (blockingEncounter) {
-    feedback.innerHTML = '<span class="block-msg">A ' + blockingEncounter.category + ' challenge blocks that path. Tap it from beside it.</span>';
+    roomFeedback.innerHTML = '<span class="block-msg">A ' + blockingEncounter.category + ' challenge blocks that path. Tap it from beside it.</span>';
     return;
   }
 
