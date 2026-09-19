@@ -186,13 +186,13 @@ function selectTarget(target) {
 // coin, chest, and rune haven't moved in world space, but the viewport
 // window that maps world coordinates onto the screen has.
 function repositionActors() {
-  positionActor(playerActor, state.playerRow, state.playerCol);
-  if (state.boss) positionActor(bossActor, state.boss.row, state.boss.col);
-  state.minions.forEach(m => positionActor(m.el, m.row, m.col));
-  if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col);
-  if (state.chest) positionActor(chestActor, state.chest.row, state.chest.col);
-  if (state.rune) positionActor(runeActor, state.rune.row, state.rune.col);
-  state.encounters.forEach(e => positionActor(e.el, e.row, e.col));
+  positionActor(playerActor, state.playerRow, state.playerCol, true);
+  if (state.boss) positionActor(bossActor, state.boss.row, state.boss.col, true);
+  state.minions.forEach(m => positionActor(m.el, m.row, m.col, true));
+  if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col, true);
+  if (state.chest) positionActor(chestActor, state.chest.row, state.chest.col, true);
+  if (state.rune) positionActor(runeActor, state.rune.row, state.rune.col, true);
+  state.encounters.forEach(e => positionActor(e.el, e.row, e.col, true));
 }
 
 bossActor.addEventListener('click', () => selectTarget(state.boss));
@@ -256,7 +256,7 @@ function loadRoom() {
   state.playerRow = state.PLAYER_START.row;
   state.playerCol = state.PLAYER_START.col;
   updateCamera();
-  positionActor(playerActor, state.playerRow, state.playerCol);
+  positionActor(playerActor, state.playerRow, state.playerCol, true);
 
   const layout = generateDungeonLayout(state.PLAYER_START, state.GRID_SIZE, state.CHAMBER_TARGET);
   state.wallSet = layout.walls;
@@ -265,7 +265,7 @@ function loadRoom() {
   state.boss = { row: layout.spawn.row, col: layout.spawn.col, hp: BOSS_HP, kind: 'boss' };
   bossActor.textContent = BOSS_ICONS[state.roomIndex % BOSS_ICONS.length];
   bossActor.classList.remove('gone');
-  positionActor(bossActor, state.boss.row, state.boss.col);
+  positionActor(bossActor, state.boss.row, state.boss.col, true);
 
   // Coin, chest, and rune only ever land in a room, never a hallway — a
   // hallway is one tile wide, so an object sitting in one would block
@@ -278,7 +278,7 @@ function loadRoom() {
   const coinTile = pickRoomTile([state.PLAYER_START, { row: state.boss.row, col: state.boss.col }]);
   state.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
   coinActor.classList.toggle('gone', !state.coin);
-  if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col);
+  if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col, true);
 
   const takenTiles = [state.PLAYER_START, { row: state.boss.row, col: state.boss.col }];
   if (state.coin) takenTiles.push(state.coin);
@@ -286,12 +286,12 @@ function loadRoom() {
   const chestTile = pickRoomTile(takenTiles);
   state.chest = chestTile ? { row: chestTile.row, col: chestTile.col, el: chestActor, kind: 'chest' } : null;
   chestActor.classList.toggle('gone', !state.chest);
-  if (state.chest) { positionActor(chestActor, state.chest.row, state.chest.col); takenTiles.push(state.chest); }
+  if (state.chest) { positionActor(chestActor, state.chest.row, state.chest.col, true); takenTiles.push(state.chest); }
 
   const runeTile = pickRoomTile(takenTiles);
   state.rune = runeTile ? { row: runeTile.row, col: runeTile.col, el: runeActor, kind: 'rune' } : null;
   runeActor.classList.toggle('gone', !state.rune);
-  if (state.rune) { positionActor(runeActor, state.rune.row, state.rune.col); takenTiles.push(state.rune); }
+  if (state.rune) { positionActor(runeActor, state.rune.row, state.rune.col, true); takenTiles.push(state.rune); }
 
   // Vocab encounters: one per category present in the active list (entries
   // with no category never spawn one), capped at 3 per room so a large
@@ -324,7 +324,7 @@ function loadRoom() {
     grid.appendChild(el);
     const encounter = { row: tile.row, col: tile.col, el, kind: 'encounter', category, pool: byCategory.get(category) };
     el.addEventListener('click', () => selectTarget(encounter));
-    positionActor(el, encounter.row, encounter.col);
+    positionActor(el, encounter.row, encounter.col, true);
     state.encounters.push(encounter);
     takenTiles.push(encounter);
   });

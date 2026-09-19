@@ -125,13 +125,30 @@ export function renderFog() {
 // row/col are world coordinates; this converts them to a position within
 // the current camera window, and hides the actor entirely (off-screen)
 // if the camera has panned past it.
-export function positionActor(el, row, col) {
+//
+// `instant` skips the actor's usual sliding transition. Use it whenever the
+// screen position changes because the CAMERA panned (the actor's own world
+// position didn't move) — otherwise every on-screen actor visibly drifts
+// into place each time the player takes a step, since the camera re-centers
+// on nearly every move. Real movement (a minion actually stepping to an
+// adjacent tile) should keep the smooth slide, so leave `instant` false there.
+export function positionActor(el, row, col, instant = false) {
   const screenRow = row - state.camRow;
   const screenCol = col - state.camCol;
   const offScreen = screenRow < 0 || screenRow >= VIEWPORT_SIZE || screenCol < 0 || screenCol >= VIEWPORT_SIZE;
   el.classList.toggle('off-screen', offScreen);
   if (offScreen) return;
   const cell = 100 / VIEWPORT_SIZE;
+  if (instant) {
+    el.classList.add('no-transition');
+    el.style.left = (screenCol * cell) + '%';
+    el.style.top = (screenRow * cell) + '%';
+    el.style.width = cell + '%';
+    el.style.height = cell + '%';
+    void el.offsetWidth; // force layout so the class change above applies before it's removed
+    el.classList.remove('no-transition');
+    return;
+  }
   el.style.left = (screenCol * cell) + '%';
   el.style.top = (screenRow * cell) + '%';
   el.style.width = cell + '%';

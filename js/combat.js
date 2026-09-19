@@ -146,7 +146,7 @@ export function spawnMinion() {
   combatEls.grid.appendChild(el);
   const m = { row: spot.row, col: spot.col, hp: MINION_HP, el, kind: 'minion' };
   el.addEventListener('click', () => onMinionClick(m));
-  positionActor(el, m.row, m.col);
+  positionActor(el, m.row, m.col, true); // freshly spawned — appears in place, doesn't slide in
   state.minions.push(m);
 }
 
