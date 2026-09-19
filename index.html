@@ -382,6 +382,31 @@
     margin-bottom: 8px;
   }
 
+  /* Clear correct/wrong signal on the battle screen — the room's own
+     hit-flash/shake effects live on elements hidden behind this screen,
+     so a battle needs its own visible feedback. */
+  .battle-glyph.flash-correct { animation: battleCorrect 0.5s ease; }
+  @keyframes battleCorrect {
+    0% { transform: scale(1); color: var(--torch-bright); }
+    40% { transform: scale(1.3); color: var(--hit); text-shadow: 0 0 24px rgba(111,207,151,0.9); }
+    100% { transform: scale(1); color: var(--torch-bright); }
+  }
+
+  .battle-glyph.flash-wrong { animation: battleWrong 0.4s ease; }
+  @keyframes battleWrong {
+    0%, 100% { transform: translateX(0); color: var(--torch-bright); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+    50% { color: var(--block); text-shadow: 0 0 24px rgba(217,83,79,0.9); }
+  }
+
+  .hearts.hit-flash { animation: heartsHit 0.4s ease; }
+  @keyframes heartsHit {
+    0% { transform: scale(1); color: inherit; }
+    40% { transform: scale(1.4); color: var(--block); }
+    100% { transform: scale(1); color: inherit; }
+  }
+
   /* ---- Combat panel ---- */
   .panel {
     border: 1px solid var(--line);
@@ -450,6 +475,8 @@
     text-align: left;
   }
   .feedback .hit-msg { color: var(--hit); display: block; }
+  .feedback .hit-msg::before { content: '✓ '; }
+  .feedback .warn-msg::before { content: '✗ '; }
   .feedback .block-msg { color: var(--block); }
   .feedback .warn-msg { color: var(--block); font-weight: 600; display: block; }
   .feedback .move-msg { color: var(--muted); display: block; }
