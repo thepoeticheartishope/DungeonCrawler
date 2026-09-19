@@ -453,10 +453,28 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
     const missed = state.currentQuestion;
     nextQuestion();
     if (!state.mcMode) answerInput.focus();
-    const revealHtml = state.revealOnWrong
-      ? '<span class="tip">' + missed.term + ' = ' + missed.meaning + '</span>'
-      : '';
-    applyTurnOutcome('Wrong. The spell fizzles.', revealHtml);
+
+    state.hearts--;
+    renderHearts();
+    grid.classList.remove('shake');
+    void grid.offsetWidth;
+    grid.classList.add('shake');
+    playerActor.classList.remove('hit-flash');
+    void playerActor.offsetWidth;
+    playerActor.classList.add('hit-flash');
+    let html = '<span class="warn-msg">Wrong! The spell fizzles and you take a hit.</span>';
+    if (state.revealOnWrong) html += '<span class="tip">' + missed.term + ' = ' + missed.meaning + '</span>';
+
+    if (state.hearts <= 0) {
+      feedback.innerHTML = html + '<span class="warn-msg">You are out of hearts.</span>';
+      setControlsEnabled(false);
+      clearInterval(state.timerHandle);
+      setTimeout(endLose, 900);
+      state.turnLocked = false;
+      return;
+    }
+
+    feedback.innerHTML = html;
     state.turnLocked = false;
     return;
   }
@@ -504,27 +522,15 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
     return;
   }
 
-  // Boss still standing: the fight continues, so minions act and the spawn timer ticks.
+  // Boss still standing: the fight continues, but other minions don't get a
+  // turn — they're frozen while a battle is in progress, so the only way to
+  // take damage here is missing the question in front of you.
   nextQuestion();
   if (!state.mcMode) answerInput.focus();
-  const notes = advanceMonsters();
   syncQuestionForTarget();
   syncBattleScreen();
 
-  if (state.hearts <= 0) {
-    let html = '<span class="hit-msg">' + hitMsg + '</span>' +
-      '<span class="warn-msg">' + notes.hitNote + ' You are out of hearts.</span>';
-    feedback.innerHTML = html;
-    setControlsEnabled(false);
-    clearInterval(state.timerHandle);
-    setTimeout(endLose, 900);
-    state.turnLocked = false;
-    return;
-  }
-
   let html = '<span class="hit-msg">' + hitMsg + '</span>';
-  if (notes.hitNote) html += '<span class="warn-msg">' + notes.hitNote.trim() + '</span>';
-  if (notes.spawnNote) html += '<span class="move-msg">' + notes.spawnNote.trim() + '</span>';
   if (hadExtraSpace) html += '<span class="tip">Tip: watch for extra spaces in your answer next time.</span>';
   feedback.innerHTML = html;
   state.turnLocked = false;
@@ -588,23 +594,7 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
     return;
   }
 
-  const notes = advanceMonsters();
-  syncQuestionForTarget();
-  syncBattleScreen();
-  let html = outcomeHtml;
-  if (notes.hitNote) html += '<span class="warn-msg">' + notes.hitNote.trim() + '</span>';
-  if (notes.spawnNote) html += '<span class="move-msg">' + notes.spawnNote.trim() + '</span>';
-
-  if (state.hearts <= 0) {
-    feedback.innerHTML = html + '<span class="warn-msg">You are out of hearts.</span>';
-    setControlsEnabled(false);
-    clearInterval(state.timerHandle);
-    setTimeout(endLose, 900);
-    state.turnLocked = false;
-    return;
-  }
-
-  feedback.innerHTML = html;
+  feedback.innerHTML = outcomeHtml;
   state.turnLocked = false;
 }
 
