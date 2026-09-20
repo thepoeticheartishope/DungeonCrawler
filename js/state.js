@@ -49,6 +49,7 @@ export const state = {
   currentQuestion: null, // { term, meaning } — reshuffles after every attempt
   selectedTarget: null,  // boss, or one of the minions
   coin: null,            // { row, col } or null once collected
+  stairs: null,          // { row, col } — sits inside the boss chamber, past the boss
   chest: null,           // { row, col, el, kind: 'chest' } or null once opened/trapped
   rune: null,            // { row, col, el, kind: 'rune' } or null once read/trapped
   encounters: [],        // [{ row, col, el, kind: 'encounter', category, pool }], per-room, up to 3

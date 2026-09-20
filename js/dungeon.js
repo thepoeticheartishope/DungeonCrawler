@@ -319,6 +319,11 @@ function attemptGenerate(playerPos, gridSize, chamberTarget) {
   // with exactly one incoming corridor — its single entrance. Corridors
   // between two other chambers steer away from the boss room's floor, so
   // they never graze it and accidentally open a second way in.
+  // Captured when the boss chamber's one incoming corridor is carved below —
+  // this is the exact tile the boss stands on, physically blocking the
+  // chamber's only entrance until it's defeated.
+  let bossDoorway = null;
+
   const connected = [0];
   while (connected.length < chambers.length) {
     let best = null;
@@ -341,6 +346,7 @@ function attemptGenerate(playerPos, gridSize, chamberTarget) {
       : bossFloorTiles;
     carveCorridor(floorSet, aPoint, bPoint, avoidTiles);
     connected.push(best.cj);
+    if (isBossEntrance) bossDoorway = bPoint;
   }
 
   // Extra loop corridors give the dungeon more than one route between
@@ -366,10 +372,23 @@ function attemptGenerate(playerPos, gridSize, chamberTarget) {
 
   if (countRoomEntrances(floorSet, bossFloorTiles) !== 1) return null;
 
-  const spawnCell = bossChamber.floorCells[Math.floor(Math.random() * bossChamber.floorCells.length)];
-  const spawn = { row: spawnCell.row, col: spawnCell.col };
+  // The boss stands exactly on its chamber's one doorway tile, physically
+  // blocking entry — defeating it (main.js sets state.boss = null) is what
+  // opens the way to the stairs sitting further inside the same chamber.
+  // bossDoorway is only ever null if the boss chamber somehow never got
+  // connected above, which the entrance-count check just ruled out; the
+  // anyDoor() fallback is defensive, not expected to ever trigger.
+  const doorway = bossDoorway || anyDoor(bossChamber);
+  const spawn = { row: doorway.row, col: doorway.col };
 
-  return { walls, spawn, roomTiles };
+  const doorwayKey = key(spawn.row, spawn.col);
+  const stairsCandidates = bossChamber.floorCells.filter(p => key(p.row, p.col) !== doorwayKey);
+  const stairsCell = stairsCandidates.length > 0
+    ? stairsCandidates[Math.floor(Math.random() * stairsCandidates.length)]
+    : bossChamber.floorCells[0]; // defensive only — every shape has >=4 floor cells
+  const stairs = { row: stairsCell.row, col: stairsCell.col };
+
+  return { walls, spawn, roomTiles, stairs };
 }
 
 // Builds a small dungeon, retrying from scratch if the boss room didn't
@@ -395,5 +414,8 @@ export function generateDungeonLayout(playerPos, gridSize, chamberTarget) {
       if (!roomTiles.has(k)) walls.add(k);
     }
   }
-  return { walls, spawn: { row: r0, col: c0 }, roomTiles };
+  const spawn = { row: r0, col: c0 };
+  const stairsCandidates = room.floorCells.filter(p => !(p.row === spawn.row && p.col === spawn.col));
+  const stairsCell = stairsCandidates.length > 0 ? stairsCandidates[0] : room.floorCells[0];
+  return { walls, spawn, roomTiles, stairs: { row: stairsCell.row, col: stairsCell.col } };
 }

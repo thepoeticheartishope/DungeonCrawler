@@ -484,6 +484,18 @@
     50% { filter: drop-shadow(0 0 7px rgba(230,230,230,0.85)); }
   }
 
+  .actor.stairs {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--torch-bright);
+    z-index: 0;
+    animation: stairsGlow 1.8s ease-in-out infinite;
+  }
+  @keyframes stairsGlow {
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(180,180,180,0.4)); }
+    50% { filter: drop-shadow(0 0 7px rgba(230,230,230,0.85)); }
+  }
+
   .actor.hit-flash { animation: actorHit 0.4s ease; }
   @keyframes actorHit {
     0% { transform: scale(1.5); filter: brightness(1.8); }
@@ -749,9 +761,6 @@
   .feedback .source-tip { color: var(--muted); font-style: italic; }
   .feedback .source-tip::before { content: '— '; }
 
-  .next-wrap { margin-top: 16px; display: none; }
-  .next-wrap.show { display: block; }
-
   /* ---- Win / lose screens ---- */
   .win p, .lose p { color: var(--muted); font-size: 14px; margin-bottom: 22px; }
   .win .big, .lose .big {
@@ -865,6 +874,7 @@
         <div class="actor coin" id="coinActor">$</div>
         <div class="actor chest" id="chestActor">[]</div>
         <div class="actor rune" id="runeActor">?</div>
+        <div class="actor stairs" id="stairsActor">&gt;&gt;</div>
         <div class="actor" id="playerActor">@</div>
         <div class="actor boss" id="bossActor">D</div>
       </div>
@@ -911,9 +921,6 @@
         <div class="mc-options" id="mcOptions"></div>
 
         <div class="feedback" id="feedback"></div>
-        <div class="next-wrap" id="nextWrap">
-          <button class="ghost" id="nextBtn">Next room →</button>
-        </div>
       </div>
     </div>
   </section>
