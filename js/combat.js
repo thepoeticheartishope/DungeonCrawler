@@ -164,7 +164,7 @@ export function advanceMonsters() {
   let spawnNote = '';
   if (state.turnsSinceSpawn >= SPAWN_INTERVAL) {
     state.turnsSinceSpawn = 0;
-    if (state.minions.length < MAX_MINIONS) {
+    if (state.boss && state.minions.length < MAX_MINIONS) {
       spawnMinion();
       spawnNote = ' The boss summons a minion!';
     }

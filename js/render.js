@@ -140,6 +140,7 @@ export function renderFog() {
   if (state.boss) els.bossActor.classList.toggle('fog-hidden', !isLit(state.boss.row, state.boss.col));
   state.minions.forEach(m => m.el.classList.toggle('fog-hidden', !isLit(m.row, m.col)));
   els.coinActor.classList.toggle('fog-hidden', !!state.coin && !isLit(state.coin.row, state.coin.col));
+  if (state.stairs) els.stairsActor.classList.toggle('fog-hidden', !isLit(state.stairs.row, state.stairs.col));
   els.chestActor.classList.toggle('fog-hidden', !!state.chest && !isLit(state.chest.row, state.chest.col));
   els.runeActor.classList.toggle('fog-hidden', !!state.rune && !isLit(state.rune.row, state.rune.col));
   state.encounters.forEach(e => e.el.classList.toggle('fog-hidden', !isLit(e.row, e.col)));
@@ -203,7 +204,7 @@ export function renderCombatStatus() {
 }
 
 export function renderTargeting() {
-  els.bossActor.classList.toggle('targeted', state.selectedTarget === state.boss);
+  els.bossActor.classList.toggle('targeted', !!state.boss && state.selectedTarget === state.boss);
   state.minions.forEach(m => m.el.classList.toggle('targeted', state.selectedTarget === m));
   els.chestActor.classList.toggle('targeted', state.selectedTarget === state.chest);
   els.runeActor.classList.toggle('targeted', state.selectedTarget === state.rune);

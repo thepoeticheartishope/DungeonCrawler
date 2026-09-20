@@ -63,6 +63,7 @@ const bossActor = document.getElementById('bossActor');
 const coinActor = document.getElementById('coinActor');
 const chestActor = document.getElementById('chestActor');
 const runeActor = document.getElementById('runeActor');
+const stairsActor = document.getElementById('stairsActor');
 
 const enemyName = document.getElementById('enemyName');
 const queryImage = document.getElementById('queryImage');
@@ -74,8 +75,6 @@ const mcToggle = document.getElementById('mcToggle');
 const mcOptionsEl = document.getElementById('mcOptions');
 const feedback = document.getElementById('feedback');
 const roomFeedback = document.getElementById('roomFeedback');
-const nextWrap = document.getElementById('nextWrap');
-const nextBtn = document.getElementById('nextBtn');
 
 const winStats = document.getElementById('winStats');
 const loseStats = document.getElementById('loseStats');
@@ -90,7 +89,7 @@ const dpadButtons = {
 
 initRender({
   startScreen, introGlitch, roomScreen, battleScreen, winScreen, loseScreen,
-  grid, playerActor, bossActor, coinActor, chestActor, runeActor,
+  grid, playerActor, bossActor, coinActor, chestActor, runeActor, stairsActor,
   heartsEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl
 });
 
@@ -389,6 +388,7 @@ function repositionActors() {
   if (state.boss) positionActor(bossActor, state.boss.row, state.boss.col, true);
   state.minions.forEach(m => positionActor(m.el, m.row, m.col, true));
   if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col, true);
+  if (state.stairs) positionActor(stairsActor, state.stairs.row, state.stairs.col, true);
   if (state.chest) positionActor(chestActor, state.chest.row, state.chest.col, true);
   if (state.rune) positionActor(runeActor, state.rune.row, state.rune.col, true);
   state.encounters.forEach(e => positionActor(e.el, e.row, e.col, true));
@@ -490,6 +490,12 @@ function loadRoom() {
   bossActor.classList.remove('gone');
   positionActor(bossActor, state.boss.row, state.boss.col, true);
 
+  // The boss stands on the chamber's one doorway, so the stairs behind it
+  // are unreachable until it's defeated and state.boss is nulled.
+  state.stairs = { row: layout.stairs.row, col: layout.stairs.col };
+  stairsActor.classList.remove('gone');
+  positionActor(stairsActor, state.stairs.row, state.stairs.col, true);
+
   // Coin and the room's one special item only ever land in an actual room
   // tile, never a hallway — a hallway is one tile wide, so an object
   // sitting in one would force answering it (with a wrong-answer trap, for
@@ -498,12 +504,12 @@ function loadRoom() {
   const roomTiles = layout.roomTiles;
   const pickRoomTile = (avoidList) => pickCoinTile(state.wallSet, avoidList, roomTiles);
 
-  const coinTile = pickRoomTile([state.PLAYER_START, { row: state.boss.row, col: state.boss.col }]);
+  const coinTile = pickRoomTile([state.PLAYER_START, { row: state.boss.row, col: state.boss.col }, state.stairs]);
   state.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
   coinActor.classList.toggle('gone', !state.coin);
   if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col, true);
 
-  const takenTiles = [state.PLAYER_START, { row: state.boss.row, col: state.boss.col }];
+  const takenTiles = [state.PLAYER_START, { row: state.boss.row, col: state.boss.col }, state.stairs];
   if (state.coin) takenTiles.push(state.coin);
 
   // Exactly one special interactive extra per room — a chest, a rune, or a
@@ -566,10 +572,19 @@ function loadRoom() {
   renderCombatStatus();
   feedback.innerHTML = '';
   roomFeedback.innerHTML = '';
-  nextWrap.classList.remove('show');
   answerInput.value = '';
   setControlsEnabled(true);
   answerInput.focus();
+}
+
+// Shared by the stairs (reaching them mid-move) and the dev skip button.
+function advanceRoom() {
+  state.roomIndex++;
+  if (state.roomIndex >= state.order.length) {
+    endWin();
+  } else {
+    loadRoom();
+  }
 }
 
 function setControlsEnabled(enabled) {
@@ -622,7 +637,7 @@ function movePlayer(dRow, dCol, dirName) {
     roomFeedback.innerHTML = '<span class="block-msg">The dungeon wall blocks that path.</span>';
     return;
   }
-  if (state.boss.row === newRow && state.boss.col === newCol) {
+  if (state.boss && state.boss.row === newRow && state.boss.col === newCol) {
     roomFeedback.innerHTML = '<span class="block-msg">The boss blocks that path.</span>';
     return;
   }
@@ -652,6 +667,12 @@ function movePlayer(dRow, dCol, dirName) {
   repositionActors();
   computeVisibility();
   renderFog();
+
+  if (state.stairs && state.playerRow === state.stairs.row && state.playerCol === state.stairs.col) {
+    state.turnLocked = false;
+    advanceRoom();
+    return;
+  }
 
   let actionMessage = 'You move ' + dirName + '.';
   if (state.coin && state.coin.row === state.playerRow && state.coin.col === state.playerCol) {
@@ -725,8 +746,9 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
     }
   }
 
+  const attackingBoss = state.selectedTarget === state.boss;
   let hitMsg;
-  if (state.selectedTarget !== state.boss) {
+  if (!attackingBoss) {
     const target = state.selectedTarget;
     target.hp--;
     if (target.hp <= 0) {
@@ -753,16 +775,23 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
   renderTargeting();
   flashBattleResult(true);
 
-  if (state.boss.hp <= 0) {
+  // Only the boss branch above can make the boss's hp reach 0 — checking
+  // this after a minion hit too, once the boss is already dead (null) from
+  // an earlier kill this room, threw on state.boss.hp and permanently
+  // stuck state.turnLocked at true (a real softlock: a minion surviving
+  // past the boss's death, then landing a hit on it, crashed here).
+  if (attackingBoss && state.boss.hp <= 0) {
     bossActor.classList.add('gone');
-    let html = '<span class="hit-msg">' + hitMsg + '</span>';
+    state.boss = null; // clears the doorway it was blocking
+
+    let html = '<span class="hit-msg">' + hitMsg + ' The way to the stairs is open.</span>';
     if (hadExtraSpace) html += '<span class="tip">Tip: watch for extra spaces in your answer next time.</span>';
     feedback.innerHTML = html;
 
-    setControlsEnabled(false);
-    nextWrap.classList.add('show');
-    nextBtn.textContent = (state.roomIndex === state.order.length - 1) ? 'See results →' : 'Next room →';
-    syncBattleScreen(); // stays on the battle screen per design — victory state, not a return to the room
+    state.selectedTarget = null;
+    refreshTargetValidity();
+    syncQuestionForTarget();
+    syncBattleScreen(); // nothing's targeted now — drops back to the room screen
     state.turnLocked = false;
     return;
   }
@@ -907,15 +936,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-nextBtn.addEventListener('click', () => {
-  state.roomIndex++;
-  if (state.roomIndex >= state.order.length) {
-    endWin();
-  } else {
-    loadRoom();
-  }
-});
-
 devToggleBtn.addEventListener('click', () => {
   devPanel.classList.toggle('show');
 });
@@ -924,12 +944,7 @@ devToggleBtn.addEventListener('click', () => {
 // faster testing of dungeon generation across levels.
 devSkipBtn.addEventListener('click', () => {
   if (state.hearts <= 0) return;
-  state.roomIndex++;
-  if (state.roomIndex >= state.order.length) {
-    endWin();
-  } else {
-    loadRoom();
-  }
+  advanceRoom();
 });
 
 // Dev tool: reveal the whole map instantly, to check that the layout,

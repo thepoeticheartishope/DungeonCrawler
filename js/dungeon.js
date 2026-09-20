@@ -257,14 +257,21 @@ function chamberDist(a, b) {
   return Math.abs(a.center.row - b.center.row) + Math.abs(a.center.col - b.center.col);
 }
 
-// Counts how many separate places a corridor touches the given room's
-// floor tiles — the boss room must end up with exactly one, its single
-// entrance. Two shapes' worth of L-bend hallway can, in rare geometries,
-// each legally avoid the room individually yet still leave it with a
-// second point of contact, so this checks the real result rather than
-// trusting the avoidance heuristic used while carving.
-function countRoomEntrances(floorSet, roomFloorTiles) {
-  let entrances = 0;
+// Finds every room floor tile that touches the outside world (a corridor
+// or another room) — the boss room must end up with exactly one, its
+// single entrance. Two shapes' worth of L-bend hallway can, in rare
+// geometries, each legally avoid the room individually yet still leave
+// it with a second point of contact, so this checks the real result
+// rather than trusting the avoidance heuristic used while carving. It
+// also matters which *specific* tile this is: the L-bend corridor picked
+// by pickDoorPair() doesn't always finish by walking straight into the
+// chamber's designated door tile (it can turn the corner one tile early
+// or late), so the tile that actually ends up touching the outside can
+// differ from the doorway pickDoorPair predicted. The boss must stand on
+// this real, verified tile — not the prediction — or a gap is left next
+// to it that the player can slip through untouched.
+function findRoomEntrances(floorSet, roomFloorTiles) {
+  const entrances = [];
   for (const tileKey of roomFloorTiles) {
     const [r, c] = tileKey.split(',').map(Number);
     let touchesOutside = false;
@@ -272,7 +279,7 @@ function countRoomEntrances(floorSet, roomFloorTiles) {
       const nk = key(r + dr, c + dc);
       if (floorSet.has(nk) && !roomFloorTiles.has(nk)) touchesOutside = true;
     }
-    if (touchesOutside) entrances++;
+    if (touchesOutside) entrances.push({ row: r, col: c });
   }
   return entrances;
 }
@@ -364,12 +371,26 @@ function attemptGenerate(playerPos, gridSize, chamberTarget) {
     }
   }
 
-  if (countRoomEntrances(floorSet, bossFloorTiles) !== 1) return null;
+  const realEntrances = findRoomEntrances(floorSet, bossFloorTiles);
+  if (realEntrances.length !== 1) return null;
 
-  const spawnCell = bossChamber.floorCells[Math.floor(Math.random() * bossChamber.floorCells.length)];
-  const spawn = { row: spawnCell.row, col: spawnCell.col };
+  // The boss stands exactly on its chamber's one real, verified entrance
+  // tile, physically blocking entry — defeating it (main.js sets
+  // state.boss = null) is what opens the way to the stairs sitting
+  // further inside the same chamber. This must be the tile findRoomEntrances
+  // actually found, not the bossDoorway/bPoint pickDoorPair predicted:
+  // the two aren't always the same tile (see findRoomEntrances above),
+  // and spawning the boss on the wrong one leaves the real entrance open.
+  const spawn = realEntrances[0];
 
-  return { walls, spawn, roomTiles };
+  const doorwayKey = key(spawn.row, spawn.col);
+  const stairsCandidates = bossChamber.floorCells.filter(p => key(p.row, p.col) !== doorwayKey);
+  const stairsCell = stairsCandidates.length > 0
+    ? stairsCandidates[Math.floor(Math.random() * stairsCandidates.length)]
+    : bossChamber.floorCells[0]; // defensive only — every shape has >=4 floor cells
+  const stairs = { row: stairsCell.row, col: stairsCell.col };
+
+  return { walls, spawn, roomTiles, stairs };
 }
 
 // Builds a small dungeon, retrying from scratch if the boss room didn't
@@ -395,5 +416,8 @@ export function generateDungeonLayout(playerPos, gridSize, chamberTarget) {
       if (!roomTiles.has(k)) walls.add(k);
     }
   }
-  return { walls, spawn: { row: r0, col: c0 }, roomTiles };
+  const spawn = { row: r0, col: c0 };
+  const stairsCandidates = room.floorCells.filter(p => !(p.row === spawn.row && p.col === spawn.col));
+  const stairsCell = stairsCandidates.length > 0 ? stairsCandidates[0] : room.floorCells[0];
+  return { walls, spawn, roomTiles, stairs: { row: stairsCell.row, col: stairsCell.col } };
 }
