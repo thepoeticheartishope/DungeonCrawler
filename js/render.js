@@ -72,10 +72,27 @@ export function renderWalls() {
   }
 }
 
+// Facing vectors for the cone test below.
+const FACING_VECTORS = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] };
+
+// True if the tile at (row, col) falls within a 90-degree cone opening in
+// `facing`'s direction from the player — a diamond that widens as it gets
+// further away, using only integer math (no trig needed on a square grid).
+// The player's own tile always passes (forward = lateral = 0).
+function inFacingCone(row, col) {
+  const [fr, fc] = FACING_VECTORS[state.facing];
+  const dr = row - state.playerRow;
+  const dc = col - state.playerCol;
+  const forward = dr * fr + dc * fc;       // distance projected along facing
+  const lateral = dr * fc - dc * fr;       // signed distance perpendicular to it
+  return forward >= 0 && Math.abs(lateral) <= forward;
+}
+
 // Sweeps outward from the player through open floor, stopping at walls
-// and at VISION_RADIUS steps. This is what makes fog "line-of-sight
-// aware" — vision travels down corridors and fills rooms, but never
-// passes through a wall.
+// and at VISION_RADIUS steps, then keeps only the tiles inside the facing
+// cone. Walls still fully block vision (so a lit cone never bleeds through
+// a wall into an adjacent corridor), but nothing behind or beside the
+// player lights up now — turning to face a direction is what reveals it.
 export function computeVisibility() {
   state.visibleSet = new Set();
   const startKey = key(state.playerRow, state.playerCol);
@@ -91,7 +108,9 @@ export function computeVisibility() {
       const nk = key(nr, nc);
       if (seen.has(nk) || state.wallSet.has(nk)) continue;
       seen.add(nk);
-      state.visibleSet.add(nk);
+      // Still traverse through out-of-cone tiles (a corridor can bend into
+      // view further on), but only mark in-cone ones as actually visible.
+      if (inFacingCone(nr, nc)) state.visibleSet.add(nk);
       queue.push({ row: nr, col: nc, dist: cur.dist + 1 });
     }
   }
