@@ -7,7 +7,7 @@
 
 <!-- PWA: installability -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1F1A16">
+<meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="icons/icon-192.png">
 
 <!-- iOS: "Add to Home Screen" needs its own tags, separate from the manifest -->
@@ -17,20 +17,22 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   :root {
-    --stone-dark: #14100D;
-    --stone: #1F1A16;
-    --stone-light: #2C2420;
-    --tile-a: #241E19;
-    --tile-b: #2A231D;
-    --wall: #17110D;
-    --line: #4A3B2E;
-    --text: #EDE3D3;
-    --muted: #9C8B75;
-    --torch: #E0973B;
-    --torch-bright: #F4B95C;
+    /* Monochrome CRT terminal palette — grey/white phosphor on near-black,
+       not the warm amber/green found on most retro-arcade references. */
+    --stone-dark: #0A0A0A;
+    --stone: #141414;
+    --stone-light: #1E1E1E;
+    --tile-a: #161616;
+    --tile-b: #1C1C1C;
+    --wall: #050505;
+    --line: #3A3A3A;
+    --text: #D8D8D8;
+    --muted: #7A7A7A;
+    --torch: #A8A8A8;
+    --torch-bright: #F0F0F0;
     --hit: #6FCF97;
     --block: #D9534F;
   }
@@ -40,13 +42,32 @@
   body {
     margin: 0;
     min-height: 100vh;
-    background:
-      radial-gradient(ellipse at top, var(--stone-light) 0%, var(--stone-dark) 70%);
+    background: var(--stone-dark);
     color: var(--text);
     font-family: 'IBM Plex Mono', monospace;
     display: flex;
     justify-content: center;
     padding: 32px 16px 64px;
+    position: relative;
+  }
+
+  /* CRT scanlines + vignette — a static overlay, not animated, to keep it
+     readable and avoid any flicker/strobe accessibility concerns. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.035) 0px,
+        rgba(255,255,255,0.035) 1px,
+        transparent 1px,
+        transparent 3px
+      ),
+      radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%);
   }
 
   main {
@@ -64,11 +85,12 @@
   }
 
   h1 {
-    font-family: 'Cinzel', serif;
-    font-size: 22px;
-    font-weight: 700;
+    font-family: 'Press Start 2P', 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 400;
     margin: 0;
     color: var(--torch-bright);
+    text-shadow: 0 0 8px rgba(240,240,240,0.5);
     letter-spacing: 0.5px;
   }
 
@@ -330,8 +352,8 @@
     z-index: 1;
   }
   @keyframes bossPulse {
-    0%, 100% { filter: drop-shadow(0 0 3px rgba(224,151,59,0.55)); }
-    50% { filter: drop-shadow(0 0 9px rgba(244,185,92,0.9)); }
+    0%, 100% { filter: drop-shadow(0 0 3px rgba(200,200,200,0.5)); }
+    50% { filter: drop-shadow(0 0 9px rgba(255,255,255,0.9)); }
   }
 
   .actor.minion { font-size: 16px; }
@@ -354,8 +376,8 @@
     animation: runeGlow 1.8s ease-in-out infinite;
   }
   @keyframes runeGlow {
-    0%, 100% { filter: drop-shadow(0 0 2px rgba(138,110,255,0.4)); }
-    50% { filter: drop-shadow(0 0 7px rgba(178,150,255,0.85)); }
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(180,180,180,0.4)); }
+    50% { filter: drop-shadow(0 0 7px rgba(230,230,230,0.85)); }
   }
 
   .actor.hit-flash { animation: actorHit 0.4s ease; }
@@ -419,12 +441,12 @@
   }
 
   .battle-glyph {
-    font-family: 'Cinzel', serif;
-    font-size: 48px;
-    font-weight: 700;
+    font-family: 'Press Start 2P', 'IBM Plex Mono', monospace;
+    font-size: 40px;
+    font-weight: 400;
     line-height: 1;
     color: var(--torch-bright);
-    text-shadow: 0 0 14px rgba(244,185,92,0.5);
+    text-shadow: 0 0 14px rgba(240,240,240,0.5);
     margin-bottom: 8px;
   }
 
@@ -463,9 +485,10 @@
   }
 
   .enemy-name {
-    font-family: 'Cinzel', serif;
-    font-size: 19px;
-    font-weight: 700;
+    font-family: 'Press Start 2P', 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 400;
     color: var(--torch-bright);
     margin-bottom: 4px;
   }
@@ -534,7 +557,8 @@
   /* ---- Win / lose screens ---- */
   .win p, .lose p { color: var(--muted); font-size: 14px; margin-bottom: 22px; }
   .win .big, .lose .big {
-    font-size: 18px; margin-bottom: 8px; font-family: 'Cinzel', serif;
+    font-size: 14px; line-height: 1.6; margin-bottom: 12px;
+    font-family: 'Press Start 2P', 'IBM Plex Mono', monospace;
   }
   .win .big { color: var(--torch-bright); }
   .lose .big { color: var(--block); }
