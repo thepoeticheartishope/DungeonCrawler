@@ -8,7 +8,7 @@
   {
     "id": "bible-trivia",
     "name": "Bible Trivia",
-    "description": "Old and New Testament people and events.",
+    "description": "30 questions on Old and New Testament people and events, across easy/medium/hard difficulty.",
     "file": "bible-trivia.json"
   }
 ]
