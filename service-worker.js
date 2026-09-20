@@ -1,9 +1,9 @@
-// Term Dungeon service worker.
+// Noesis Protocol service worker.
 // Caches the app shell on install, then serves from cache first so the
 // game loads instantly and still works with no connection. Bump
 // CACHE_NAME whenever the cached files change, so old caches get cleared.
 
-const CACHE_NAME = 'term-dungeon-v13';
+const CACHE_NAME = 'term-dungeon-v14';
 const APP_SHELL = [
   './',
   './index.html',

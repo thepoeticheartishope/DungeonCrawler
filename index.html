@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Term Dungeon</title>
+<title>Noesis Protocol</title>
 
 <!-- PWA: installability -->
 <link rel="manifest" href="manifest.json">
@@ -13,7 +13,7 @@
 <!-- iOS: "Add to Home Screen" needs its own tags, separate from the manifest -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Term Dungeon">
+<meta name="apple-mobile-web-app-title" content="Noesis Protocol">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -97,11 +97,12 @@
   .stats {
     font-size: 12px;
     color: var(--muted);
-    display: flex;
+    display: none;
     gap: 12px;
     align-items: center;
     flex-wrap: wrap;
   }
+  .stats.show { display: flex; }
 
   .stats strong { color: var(--text); }
   .hearts { letter-spacing: 2px; font-size: 13px; }
@@ -109,14 +110,6 @@
   /* ---- Screens ---- */
   .screen { display: none; text-align: center; }
   .screen.show { display: block; }
-
-  .intro p {
-    color: var(--muted);
-    font-size: 14px;
-    line-height: 1.6;
-    max-width: 400px;
-    margin: 0 auto 24px;
-  }
 
   .option-toggle {
     display: flex;
@@ -573,8 +566,8 @@
 <body>
 <main>
   <header>
-    <h1>Term Dungeon</h1>
-    <div class="stats">
+    <h1>Noesis Protocol</h1>
+    <div class="stats" id="statsBar">
       <span class="hearts" id="hearts">♥♥♥</span>
       <span>🪙 <strong id="coinsTotal">0</strong></span>
       <span>Turn <strong id="turnCount">0</strong></span>
@@ -585,16 +578,6 @@
 
   <!-- Start screen -->
   <section class="screen show intro" id="startScreen">
-    <p>
-      A small dungeon stands between you and the exit. Each room holds a boss
-      that never moves, camped in the farthest chamber. Every 7 turns it
-      summons a minion that hunts you down. Move next to an enemy and it
-      auto-targets — if more than one is adjacent, tap the one you want to
-      hit instead. Type the correct answer to strike. Minions fall in one
-      hit; the boss takes three. Move (N/S/E/W) to close the distance or
-      dodge, or hold your ground — one action per turn. Three hits on you
-      and it's over.
-    </p>
     <label class="option-toggle">
       <input type="checkbox" id="revealToggle">
       Reveal the correct answer after a wrong attempt

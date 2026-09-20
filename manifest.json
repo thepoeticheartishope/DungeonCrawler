@@ -1,13 +1,13 @@
 {
-  "name": "Term Dungeon",
-  "short_name": "Term Dungeon",
-  "description": "A vocabulary quiz game with dungeon-crawler combat.",
+  "name": "Noesis Protocol",
+  "short_name": "Noesis Protocol",
+  "description": "A quiz game with dungeon-crawler combat — load any question set.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1F1A16",
-  "theme_color": "#1F1A16",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
   "icons": [
     {
       "src": "icons/icon-192.png",
