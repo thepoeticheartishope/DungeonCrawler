@@ -141,6 +141,10 @@ export function spawnMinion() {
   const el = document.createElement('div');
   el.className = 'actor minion';
   el.textContent = MINION_ICONS[state.minions.length % MINION_ICONS.length];
+  // Offsets this minion's warp animation out of sync with any others already
+  // on screen — several identical creatures warping in perfect lockstep
+  // reads as mechanical, not unsettling.
+  el.style.animationDelay = (Math.random() * -3.6).toFixed(2) + 's';
   combatEls.grid.appendChild(el);
   const m = { row: spot.row, col: spot.col, hp: MINION_HP, el, kind: 'minion' };
   positionActor(el, m.row, m.col, true); // freshly spawned — appears in place, doesn't slide in
