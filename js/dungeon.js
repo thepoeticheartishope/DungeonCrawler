@@ -257,14 +257,21 @@ function chamberDist(a, b) {
   return Math.abs(a.center.row - b.center.row) + Math.abs(a.center.col - b.center.col);
 }
 
-// Counts how many separate places a corridor touches the given room's
-// floor tiles — the boss room must end up with exactly one, its single
-// entrance. Two shapes' worth of L-bend hallway can, in rare geometries,
-// each legally avoid the room individually yet still leave it with a
-// second point of contact, so this checks the real result rather than
-// trusting the avoidance heuristic used while carving.
-function countRoomEntrances(floorSet, roomFloorTiles) {
-  let entrances = 0;
+// Finds every room floor tile that touches the outside world (a corridor
+// or another room) — the boss room must end up with exactly one, its
+// single entrance. Two shapes' worth of L-bend hallway can, in rare
+// geometries, each legally avoid the room individually yet still leave
+// it with a second point of contact, so this checks the real result
+// rather than trusting the avoidance heuristic used while carving. It
+// also matters which *specific* tile this is: the L-bend corridor picked
+// by pickDoorPair() doesn't always finish by walking straight into the
+// chamber's designated door tile (it can turn the corner one tile early
+// or late), so the tile that actually ends up touching the outside can
+// differ from the doorway pickDoorPair predicted. The boss must stand on
+// this real, verified tile — not the prediction — or a gap is left next
+// to it that the player can slip through untouched.
+function findRoomEntrances(floorSet, roomFloorTiles) {
+  const entrances = [];
   for (const tileKey of roomFloorTiles) {
     const [r, c] = tileKey.split(',').map(Number);
     let touchesOutside = false;
@@ -272,7 +279,7 @@ function countRoomEntrances(floorSet, roomFloorTiles) {
       const nk = key(r + dr, c + dc);
       if (floorSet.has(nk) && !roomFloorTiles.has(nk)) touchesOutside = true;
     }
-    if (touchesOutside) entrances++;
+    if (touchesOutside) entrances.push({ row: r, col: c });
   }
   return entrances;
 }
@@ -319,11 +326,6 @@ function attemptGenerate(playerPos, gridSize, chamberTarget) {
   // with exactly one incoming corridor — its single entrance. Corridors
   // between two other chambers steer away from the boss room's floor, so
   // they never graze it and accidentally open a second way in.
-  // Captured when the boss chamber's one incoming corridor is carved below —
-  // this is the exact tile the boss stands on, physically blocking the
-  // chamber's only entrance until it's defeated.
-  let bossDoorway = null;
-
   const connected = [0];
   while (connected.length < chambers.length) {
     let best = null;
@@ -346,7 +348,6 @@ function attemptGenerate(playerPos, gridSize, chamberTarget) {
       : bossFloorTiles;
     carveCorridor(floorSet, aPoint, bPoint, avoidTiles);
     connected.push(best.cj);
-    if (isBossEntrance) bossDoorway = bPoint;
   }
 
   // Extra loop corridors give the dungeon more than one route between
@@ -370,16 +371,17 @@ function attemptGenerate(playerPos, gridSize, chamberTarget) {
     }
   }
 
-  if (countRoomEntrances(floorSet, bossFloorTiles) !== 1) return null;
+  const realEntrances = findRoomEntrances(floorSet, bossFloorTiles);
+  if (realEntrances.length !== 1) return null;
 
-  // The boss stands exactly on its chamber's one doorway tile, physically
-  // blocking entry — defeating it (main.js sets state.boss = null) is what
-  // opens the way to the stairs sitting further inside the same chamber.
-  // bossDoorway is only ever null if the boss chamber somehow never got
-  // connected above, which the entrance-count check just ruled out; the
-  // anyDoor() fallback is defensive, not expected to ever trigger.
-  const doorway = bossDoorway || anyDoor(bossChamber);
-  const spawn = { row: doorway.row, col: doorway.col };
+  // The boss stands exactly on its chamber's one real, verified entrance
+  // tile, physically blocking entry — defeating it (main.js sets
+  // state.boss = null) is what opens the way to the stairs sitting
+  // further inside the same chamber. This must be the tile findRoomEntrances
+  // actually found, not the bossDoorway/bPoint pickDoorPair predicted:
+  // the two aren't always the same tile (see findRoomEntrances above),
+  // and spawning the boss on the wrong one leaves the real entrance open.
+  const spawn = realEntrances[0];
 
   const doorwayKey = key(spawn.row, spawn.col);
   const stairsCandidates = bossChamber.floorCells.filter(p => key(p.row, p.col) !== doorwayKey);
