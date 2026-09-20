@@ -1,0 +1,12 @@
+[
+  { "term": "Who built the ark?", "meaning": "Noah", "category": "Old Testament", "difficulty": "easy" },
+  { "term": "Who led the Israelites out of Egypt?", "meaning": "Moses", "category": "Old Testament", "difficulty": "easy" },
+  { "term": "Who was swallowed by a great fish?", "meaning": "Jonah", "category": "Old Testament", "difficulty": "easy" },
+  { "term": "Whose hair was the source of his great strength?", "meaning": "Samson", "category": "Old Testament", "difficulty": "medium" },
+  { "term": "Who was thrown into a lions' den for praying?", "meaning": "Daniel", "category": "Old Testament", "difficulty": "medium" },
+  { "term": "Who was Jesus' mother?", "meaning": "Mary", "category": "New Testament", "difficulty": "easy" },
+  { "term": "How many disciples did Jesus choose?", "meaning": "Twelve", "category": "New Testament", "difficulty": "easy" },
+  { "term": "Who baptized Jesus in the Jordan River?", "meaning": "John the Baptist", "category": "New Testament", "difficulty": "medium" },
+  { "term": "Who denied knowing Jesus three times?", "meaning": "Peter", "category": "New Testament", "difficulty": "medium" },
+  { "term": "Who betrayed Jesus for thirty pieces of silver?", "meaning": "Judas Iscariot", "category": "New Testament", "difficulty": "hard" }
+]
