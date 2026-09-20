@@ -536,6 +536,14 @@
     color: var(--torch-bright);
     margin-bottom: 10px;
   }
+  .enemy-name::after {
+    content: '_';
+    animation: cursorBlink 1s step-end infinite;
+  }
+  @keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
 
   .enemy-prompt {
     font-size: 12px;

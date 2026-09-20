@@ -270,9 +270,30 @@ function renderChoices() {
 }
 
 // Sets the active question, and (in MC mode) its answer choices.
+// Types `text` into `el` one character at a time, terminal-style, instead
+// of setting it all at once. Cancels any typing already in progress on
+// that element first, so rapid-fire question changes (a quick correct
+// answer against the boss, say) never leave two runs racing each other.
+const typewriterTimers = new WeakMap();
+function typeText(el, text, speedMs = 18) {
+  const existing = typewriterTimers.get(el);
+  if (existing) clearInterval(existing);
+  el.textContent = '';
+  let i = 0;
+  const timer = setInterval(() => {
+    i++;
+    el.textContent = text.slice(0, i);
+    if (i >= text.length) {
+      clearInterval(timer);
+      typewriterTimers.delete(el);
+    }
+  }, speedMs);
+  typewriterTimers.set(el, timer);
+}
+
 function setQuestion(q) {
   state.currentQuestion = q;
-  enemyName.textContent = q.term;
+  typeText(enemyName, q.term);
   answerInput.value = '';
   if (state.mcMode) {
     state.currentChoices = buildChoices(q);
