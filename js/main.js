@@ -652,7 +652,10 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
     renderHearts();
     flashBattleResult(false);
     let html = '<span class="warn-msg">Wrong! The spell fizzles and you take a hit.</span>';
-    if (state.revealOnWrong) html += '<span class="tip">' + missed.term + ' = ' + missed.meaning + '</span>';
+    if (state.revealOnWrong) {
+      html += '<span class="tip">' + missed.term + ' = ' + missed.meaning + '</span>';
+      if (missed.source) html += '<span class="tip source-tip">' + escapeHtml(missed.source) + '</span>';
+    }
 
     if (state.hearts <= 0) {
       feedback.innerHTML = html + '<span class="warn-msg">You are out of hearts.</span>';
@@ -776,7 +779,10 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
     flashBattleResult(false);
     const noun = target.kind === 'chest' ? 'chest' : target.kind === 'encounter' ? escapeHtml(target.category) + ' challenge' : 'rune';
     outcomeHtml = '<span class="warn-msg">Wrong! The ' + noun + ' was trapped and strikes you!</span>';
-    if (state.revealOnWrong) outcomeHtml += '<span class="tip">' + missed.term + ' = ' + missed.meaning + '</span>';
+    if (state.revealOnWrong) {
+      outcomeHtml += '<span class="tip">' + missed.term + ' = ' + missed.meaning + '</span>';
+      if (missed.source) outcomeHtml += '<span class="tip source-tip">' + escapeHtml(missed.source) + '</span>';
+    }
   }
 
   refreshTargetValidity();
