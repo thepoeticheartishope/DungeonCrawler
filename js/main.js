@@ -43,7 +43,8 @@ const loseScreen = document.getElementById('loseScreen');
 
 const roomNumEl = document.getElementById('roomNum');
 const roomTotalEl = document.getElementById('roomTotal');
-const roomLabelEl = document.getElementById('roomLabel');
+const devToggleBtn = document.getElementById('devToggleBtn');
+const devPanel = document.getElementById('devPanel');
 const devSkipBtn = document.getElementById('devSkipBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const combatStatusEl = document.getElementById('combatStatus');
@@ -384,7 +385,6 @@ function startGame() {
 
 function loadRoom() {
   roomNumEl.textContent = state.roomIndex + 1;
-  roomLabelEl.textContent = 'ROOM ' + (state.roomIndex + 1);
 
   state.GRID_SIZE = GRID_SIZES[Math.min(state.roomIndex, GRID_SIZES.length - 1)];
   state.CHAMBER_TARGET = CHAMBER_TARGETS[Math.min(state.roomIndex, CHAMBER_TARGETS.length - 1)];
@@ -816,6 +816,10 @@ nextBtn.addEventListener('click', () => {
   } else {
     loadRoom();
   }
+});
+
+devToggleBtn.addEventListener('click', () => {
+  devPanel.classList.toggle('show');
 });
 
 // Dev tool: jump to the next room instantly, skipping combat, for
