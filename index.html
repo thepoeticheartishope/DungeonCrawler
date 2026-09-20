@@ -545,12 +545,6 @@
     50% { opacity: 0; }
   }
 
-  .enemy-prompt {
-    font-size: 12px;
-    color: var(--muted);
-    margin-bottom: 16px;
-  }
-
   input[type="text"] {
     flex: 1;
     background: var(--stone-dark);
@@ -573,7 +567,9 @@
   .term-prompt {
     color: var(--torch-bright);
     font-weight: 700;
+    white-space: nowrap;
   }
+  .term-prompt .term-path { color: var(--muted); font-weight: 400; }
   .term-input-row input[type="text"] {
     background: transparent;
     border: none;
@@ -600,7 +596,6 @@
     width: 100%;
     background: transparent;
     border: none;
-    border-left: 2px solid transparent;
     color: var(--text);
     padding: 7px 8px;
     font-family: 'IBM Plex Mono', monospace;
@@ -608,7 +603,18 @@
     text-align: left;
     cursor: pointer;
   }
-  .mc-option:hover:not(:disabled) { border-left-color: var(--torch); background: var(--stone); color: var(--torch-bright); }
+  .mc-option::before { content: '$ '; color: var(--muted); }
+  /* Hovering/focusing an option inverts it, like a terminal's own text
+     selection highlight, rather than a bordered "card" hover state. */
+  .mc-option:hover:not(:disabled), .mc-option:focus-visible:not(:disabled) {
+    background: var(--torch-bright);
+    color: var(--stone-dark);
+    outline: none;
+  }
+  .mc-option:hover:not(:disabled)::before,
+  .mc-option:focus-visible:not(:disabled)::before { color: var(--stone-dark); }
+  .mc-option:hover:not(:disabled) .letter,
+  .mc-option:focus-visible:not(:disabled) .letter { color: var(--stone-dark); }
   .mc-option:disabled { opacity: .55; cursor: default; }
   .mc-option .letter { color: var(--torch-bright); font-weight: 700; margin-right: 8px; }
 
@@ -772,10 +778,9 @@
 
         <div class="term-line term-label">QUERY:</div>
         <div class="enemy-name" id="enemyName">CPU</div>
-        <div class="enemy-prompt">Answer to defeat or resolve what you're facing. If more than one thing was in your way, you'll face each in turn.</div>
 
         <form id="answerForm" class="term-input-row" autocomplete="off">
-          <span class="term-prompt">&gt;</span>
+          <span class="term-prompt">guest@noesis<span class="term-path">:~$</span></span>
           <input type="text" id="answerInput" placeholder="type your answer" autofocus>
           <button type="button" id="attackBtn">Attack</button>
         </form>
