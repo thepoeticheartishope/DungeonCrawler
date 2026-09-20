@@ -275,7 +275,13 @@ function renderChoices() {
 // that element first, so rapid-fire question changes (a quick correct
 // answer against the boss, say) never leave two runs racing each other.
 const typewriterTimers = new WeakMap();
-function typeText(el, text, speedMs = 18) {
+// A fixed per-character delay made short answers ("CPU") finish in ~50ms —
+// too fast to read as typing at all. Instead, aim for a roughly constant
+// total reveal time and derive the per-character delay from the string's
+// length, clamped so short strings type slowly enough to notice and long
+// ones don't drag.
+function typeText(el, text, targetDurationMs = 450) {
+  const speedMs = Math.min(90, Math.max(12, targetDurationMs / Math.max(text.length, 1)));
   const existing = typewriterTimers.get(el);
   if (existing) clearInterval(existing);
   el.textContent = '';
