@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Term Dungeon</title>
+<title>Noesis Protocol</title>
 
 <!-- PWA: installability -->
 <link rel="manifest" href="manifest.json">
@@ -13,7 +13,7 @@
 <!-- iOS: "Add to Home Screen" needs its own tags, separate from the manifest -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Term Dungeon">
+<meta name="apple-mobile-web-app-title" content="Noesis Protocol">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -76,9 +76,7 @@
   }
 
   header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+    text-align: center;
     border-bottom: 1px solid var(--line);
     padding-bottom: 14px;
     margin-bottom: 20px;
@@ -94,29 +92,35 @@
     letter-spacing: 0.5px;
   }
 
+  /* Boxed like an old status/instruction card — a bordered panel with a
+     fixed monospace grid, instead of a loose row of stats crowding the
+     title bar. */
   .stats {
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 24px;
     font-size: 12px;
     color: var(--muted);
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
+    border: 1px solid var(--line);
+    background: var(--stone);
+    padding: 12px 16px;
+    margin-bottom: 20px;
   }
+  .stats.show { display: grid; }
 
-  .stats strong { color: var(--text); }
+  .stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .stat-wide { grid-column: 1 / -1; }
+  .stat-label { letter-spacing: 1px; }
+  .stats strong { color: var(--text); font-weight: 600; }
   .hearts { letter-spacing: 2px; font-size: 13px; }
 
   /* ---- Screens ---- */
   .screen { display: none; text-align: center; }
   .screen.show { display: block; }
-
-  .intro p {
-    color: var(--muted);
-    font-size: 14px;
-    line-height: 1.6;
-    max-width: 400px;
-    margin: 0 auto 24px;
-  }
 
   .option-toggle {
     display: flex;
@@ -259,22 +263,6 @@
   button.ghost:hover { background: var(--stone-light); }
 
   /* ---- Room screen ---- */
-  .room-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  .room-label {
-    text-align: center;
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 1px;
-  }
-
   .dev-skip {
     font-size: 10px;
     padding: 3px 8px;
@@ -284,6 +272,14 @@
     border-radius: 4px;
   }
   .dev-skip:hover { color: var(--torch-bright); border-color: var(--torch-bright); }
+
+  .dev-panel {
+    display: none;
+    grid-column: 1 / -1;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .dev-panel.show { display: flex; }
 
   .combat-status {
     text-align: center;
@@ -573,28 +569,24 @@
 <body>
 <main>
   <header>
-    <h1>Term Dungeon</h1>
-    <div class="stats">
-      <span class="hearts" id="hearts">♥♥♥</span>
-      <span>🪙 <strong id="coinsTotal">0</strong></span>
-      <span>Turn <strong id="turnCount">0</strong></span>
-      <span>Room <strong id="roomNum">0</strong>/<strong id="roomTotal">0</strong></span>
-      <span>Time <strong id="timer">0:00</strong></span>
-    </div>
+    <h1>Noesis Protocol</h1>
   </header>
+
+  <div class="stats" id="statsBar">
+    <div class="stat"><span class="stat-label">HP</span><span class="hearts" id="hearts">♥♥♥</span></div>
+    <div class="stat"><span class="stat-label">GOLD</span><strong id="coinsTotal">0</strong></div>
+    <div class="stat"><span class="stat-label">TURN</span><strong id="turnCount">0</strong></div>
+    <div class="stat"><span class="stat-label">ROOM</span><strong id="roomNum">0</strong>/<strong id="roomTotal">0</strong></div>
+    <div class="stat stat-wide"><span class="stat-label">TIME</span><strong id="timer">0:00</strong></div>
+    <button type="button" class="dev-skip stat-wide" id="devToggleBtn" title="Testing tools">⚙ Dev tools ▾</button>
+    <div class="dev-panel" id="devPanel">
+      <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">👁 Fog: ON (dev)</button>
+      <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">⏭ Skip room (dev)</button>
+    </div>
+  </div>
 
   <!-- Start screen -->
   <section class="screen show intro" id="startScreen">
-    <p>
-      A small dungeon stands between you and the exit. Each room holds a boss
-      that never moves, camped in the farthest chamber. Every 7 turns it
-      summons a minion that hunts you down. Move next to an enemy and it
-      auto-targets — if more than one is adjacent, tap the one you want to
-      hit instead. Type the correct answer to strike. Minions fall in one
-      hit; the boss takes three. Move (N/S/E/W) to close the distance or
-      dodge, or hold your ground — one action per turn. Three hits on you
-      and it's over.
-    </p>
     <label class="option-toggle">
       <input type="checkbox" id="revealToggle">
       Reveal the correct answer after a wrong attempt
@@ -656,12 +648,6 @@
 
   <!-- Room screen -->
   <section class="screen" id="roomScreen">
-    <div class="room-header">
-      <div class="room-label" id="roomLabel">ROOM 1</div>
-      <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">👁 Fog: ON (dev)</button>
-      <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">⏭ Skip room (dev)</button>
-    </div>
-
     <div class="grid-wrap">
       <div class="grid" id="grid">
         <div class="actor coin" id="coinActor">🪙</div>

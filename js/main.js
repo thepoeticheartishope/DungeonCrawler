@@ -43,12 +43,14 @@ const loseScreen = document.getElementById('loseScreen');
 
 const roomNumEl = document.getElementById('roomNum');
 const roomTotalEl = document.getElementById('roomTotal');
-const roomLabelEl = document.getElementById('roomLabel');
+const devToggleBtn = document.getElementById('devToggleBtn');
+const devPanel = document.getElementById('devPanel');
 const devSkipBtn = document.getElementById('devSkipBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const combatStatusEl = document.getElementById('combatStatus');
 const timerEl = document.getElementById('timer');
 const heartsEl = document.getElementById('hearts');
+const statsEl = document.getElementById('statsBar');
 const turnCountEl = document.getElementById('turnCount');
 const coinsTotalEl = document.getElementById('coinsTotal');
 
@@ -85,10 +87,43 @@ const dpadButtons = {
 initRender({
   startScreen, roomScreen, battleScreen, winScreen, loseScreen,
   grid, playerActor, bossActor, coinActor, chestActor, runeActor,
-  heartsEl, timerEl, combatStatusEl, targetLabelEl, attackBtn
+  heartsEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl
 });
 
 initCombat({ grid, playerActor, turnCountEl });
+
+// ---- Remember the reveal/multiple-choice option toggles across sessions ----
+// localStorage access is wrapped in try/catch — private browsing or disabled
+// storage should degrade to "just use the checkbox defaults" rather than
+// break the start screen.
+const OPTION_STORAGE_KEY = 'noesisProtocol.options';
+
+function loadSavedOptions() {
+  try {
+    const raw = localStorage.getItem(OPTION_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveOptions() {
+  try {
+    localStorage.setItem(OPTION_STORAGE_KEY, JSON.stringify({
+      revealOnWrong: revealToggle.checked,
+      mcMode: mcToggle.checked,
+    }));
+  } catch (e) {
+    // Storage unavailable — the checkboxes still work for this session.
+  }
+}
+
+const savedOptions = loadSavedOptions();
+if (typeof savedOptions.revealOnWrong === 'boolean') revealToggle.checked = savedOptions.revealOnWrong;
+if (typeof savedOptions.mcMode === 'boolean') mcToggle.checked = savedOptions.mcMode;
+
+revealToggle.addEventListener('change', saveOptions);
+mcToggle.addEventListener('change', saveOptions);
 
 toggleLoaderBtn.addEventListener('click', () => {
   loaderPanel.classList.toggle('show');
@@ -350,7 +385,6 @@ function startGame() {
 
 function loadRoom() {
   roomNumEl.textContent = state.roomIndex + 1;
-  roomLabelEl.textContent = 'ROOM ' + (state.roomIndex + 1);
 
   state.GRID_SIZE = GRID_SIZES[Math.min(state.roomIndex, GRID_SIZES.length - 1)];
   state.CHAMBER_TARGET = CHAMBER_TARGETS[Math.min(state.roomIndex, CHAMBER_TARGETS.length - 1)];
@@ -782,6 +816,10 @@ nextBtn.addEventListener('click', () => {
   } else {
     loadRoom();
   }
+});
+
+devToggleBtn.addEventListener('click', () => {
+  devPanel.classList.toggle('show');
 });
 
 // Dev tool: jump to the next room instantly, skipping combat, for
