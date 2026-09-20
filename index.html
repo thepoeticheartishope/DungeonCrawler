@@ -493,6 +493,20 @@
 
   .term-label { margin-bottom: 2px; }
 
+  /* Question images are desaturated/high-contrast so they read as part of
+     the terminal transmission rather than a photo pasted on top of it. */
+  .query-image {
+    display: block;
+    max-width: 100%;
+    max-height: 140px;
+    margin: 0 auto 10px;
+    border: 1px solid var(--line);
+    background: var(--stone-dark);
+    padding: 8px;
+    filter: grayscale(100%) contrast(1.1);
+  }
+  .query-image[hidden] { display: none; }
+
   .battle-glyph {
     font-family: 'Press Start 2P', 'IBM Plex Mono', monospace;
     font-size: 32px;
@@ -709,6 +723,8 @@
           from the rest of the list. An optional <code>"source"</code> string
           (a reference or short reasoning) shows up alongside the correct
           answer when "Reveal the correct answer" is on and you miss one.
+          An optional <code>"image"</code> field (a URL, or a path relative
+          to a bundled set's own folder) displays above the question.
         </p>
         <input type="file" id="fileInput" accept=".txt,.csv,.json">
         <textarea id="dataInput" rows="6" placeholder="CPU | Central Processing Unit&#10;RAM | Random Access Memory"></textarea>
@@ -776,6 +792,7 @@
           </div>
         </div>
 
+        <img class="query-image" id="queryImage" alt="" hidden>
         <div class="term-line term-label">QUERY:</div>
         <div class="enemy-name" id="enemyName">CPU</div>
 

@@ -6,7 +6,8 @@ import {
 } from './config.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
-  buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory
+  buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory,
+  resolveImageSrc
 } from './quiz.js';
 import {
   initRender, showScreen, buildGridTiles, renderWalls, computeVisibility,
@@ -62,6 +63,7 @@ const chestActor = document.getElementById('chestActor');
 const runeActor = document.getElementById('runeActor');
 
 const enemyName = document.getElementById('enemyName');
+const queryImage = document.getElementById('queryImage');
 const targetLabelEl = document.getElementById('targetLabel');
 const answerForm = document.getElementById('answerForm');
 const answerInput = document.getElementById('answerInput');
@@ -301,6 +303,14 @@ function setQuestion(q) {
   state.currentQuestion = q;
   typeText(enemyName, q.term);
   answerInput.value = '';
+  const imageSrc = resolveImageSrc(q.image);
+  if (imageSrc) {
+    queryImage.src = imageSrc;
+    queryImage.hidden = false;
+  } else {
+    queryImage.hidden = true;
+    queryImage.removeAttribute('src');
+  }
   if (state.mcMode) {
     state.currentChoices = buildChoices(q);
     renderChoices();
