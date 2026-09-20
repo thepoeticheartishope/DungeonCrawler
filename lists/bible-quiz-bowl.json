@@ -1,0 +1,33 @@
+[
+  { "term": "When a Jewish couple got married how long did the law permit the honeymoon to be?", "meaning": "One year", "category": "OT", "difficulty": "hard", "source": "Deut 24:5" },
+  { "term": "Which Emperor of Rome commissioned the introduction of the Roman calendar?", "meaning": "Justinian", "category": "HG", "difficulty": "hard" },
+  { "term": "What is another name for the second death recorded in Revelation?", "meaning": "The Lake of Fire", "category": "P", "difficulty": "hard", "source": "Rev 20:14" },
+  { "term": "What does the name \"Boanerges\" mean, which Jesus gave to James and John?", "meaning": "The sons of thunder", "category": "N", "difficulty": "hard", "source": "Mark 3:17" },
+  { "term": "Which book in the Bible immediately precedes Philemon?", "meaning": "Titus", "category": "LNS", "difficulty": "hard" },
+  { "term": "To whom did Jesus say the following: \"It is written, 'My house shall be called a house of prayer'; but you are making it a robber's den\"?", "meaning": "The moneychangers", "category": "NT", "difficulty": "hard", "source": "Matt 21:12-13" },
+  { "term": "Recite Psalm 23:6.", "meaning": "Surely goodness and mercy shall follow me all the days of my life: and I will dwell in the house of the Lord forever.", "category": "W", "difficulty": "hard", "source": "Ps 23:6" },
+
+  { "term": "What did God condemn the serpent to eat the rest of his days?", "meaning": "Dust", "category": "OT", "difficulty": "hard", "source": "Gen 3:14" },
+  { "term": "What term was used to refer to the disciples for the first time in Antioch?", "meaning": "Christians", "category": "HG", "difficulty": "hard", "source": "Acts 11:26" },
+  { "term": "Paul in 2 Thessalonians 2:3 refers to the man Christians sometimes call the anti-Christ as the \"man of sin\" and what other term?", "meaning": "Son of perdition", "category": "P", "difficulty": "hard", "source": "2 Thess 2:3" },
+  { "term": "Who in the NT was a grandson of Eli?", "meaning": "Jesus", "category": "N", "difficulty": "hard", "source": "Luke 3:23 — Luke's genealogy gives Mary's bloodline but, per custom, under her husband Joseph's name." },
+  { "term": "What two Latin words do A.D. stand for when we talk of dates?", "meaning": "Anno Domini", "category": "LNS", "difficulty": "hard" },
+  { "term": "What event caused Jesus to desire solitude in a boat?", "meaning": "The death of John the Baptist", "category": "NT", "difficulty": "hard", "source": "Matt 14:13" },
+  { "term": "Complete the following command of scripture: \"Choose you this day...\"", "meaning": "whom ye will serve.", "category": "W", "difficulty": "hard", "source": "Josh 24:14" },
+
+  { "term": "How did the Israelites decide the division of the land of Canaan among their tribes?", "meaning": "By casting lots", "category": "OT", "difficulty": "hard", "source": "Num 26:53-56" },
+  { "term": "What Israelite leader's army was reduced from 32,000 to 300 soldiers?", "meaning": "Gideon", "category": "HG", "difficulty": "hard", "source": "Judges 7:1-8" },
+  { "term": "Which prophet earned a living as a herdsman and a fruit gatherer?", "meaning": "Amos", "category": "P", "difficulty": "hard", "source": "Amos 7:14" },
+  { "term": "Who gave the first kiss in the Bible?", "meaning": "Jacob", "category": "N", "difficulty": "hard", "source": "Gen 27:27" },
+  { "term": "For how many years of David's reign was his government based in Hebron?", "meaning": "7½ years", "category": "LNS", "difficulty": "hard", "source": "2 Sam 2:11" },
+  { "term": "Who helped Saul teach in Antioch?", "meaning": "Barnabas", "category": "NT", "difficulty": "hard", "source": "Acts 13:1" },
+  { "term": "Who in the Bible originally said, \"Whosoever shall call on the name of the Lord shall be delivered\"?", "meaning": "Joel", "category": "W", "difficulty": "hard", "source": "Joel 2:32" },
+
+  { "term": "What was the name of the ruined city which Solomon received as a dowry?", "meaning": "Gezer", "category": "OT", "difficulty": "hard", "source": "1 Kings 9:16-17" },
+  { "term": "To what city did the Roman Emperor Constantine move the capital after becoming a Christian?", "meaning": "Constantinople", "category": "HG", "difficulty": "hard", "options": ["Constantinople", "Byzantium", "Rome", "Antioch"] },
+  { "term": "Which book refers to the bottomless pit?", "meaning": "Revelation", "category": "P", "difficulty": "hard", "source": "Rev 9" },
+  { "term": "Who was the violent daughter of Ahab and Jezebel?", "meaning": "Athaliah", "category": "N", "difficulty": "hard", "source": "2 Kings 8:18-26; 2 Chron 22:2-3" },
+  { "term": "Which book in the Bible immediately precedes Zechariah?", "meaning": "Haggai", "category": "LNS", "difficulty": "hard" },
+  { "term": "Who wrote about a man being caught up to the third Heaven?", "meaning": "Paul", "category": "NT", "difficulty": "hard", "source": "2 Cor 12:2" },
+  { "term": "Complete the following statement of Paul: \"God hath chosen the foolish things of the world to...\"", "meaning": "confound the wise.", "category": "W", "difficulty": "hard", "source": "1 Cor 1:27" }
+]
