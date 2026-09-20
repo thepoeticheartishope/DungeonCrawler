@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round">
+  <rect x="28" y="28" width="44" height="44" />
+  <rect x="40" y="40" width="20" height="20" />
+  <!-- pins -->
+  <line x1="38" y1="28" x2="38" y2="16" />
+  <line x1="50" y1="28" x2="50" y2="16" />
+  <line x1="62" y1="28" x2="62" y2="16" />
+  <line x1="38" y1="72" x2="38" y2="84" />
+  <line x1="50" y1="72" x2="50" y2="84" />
+  <line x1="62" y1="72" x2="62" y2="84" />
+  <line x1="28" y1="38" x2="16" y2="38" />
+  <line x1="28" y1="50" x2="16" y2="50" />
+  <line x1="28" y1="62" x2="16" y2="62" />
+  <line x1="72" y1="38" x2="84" y2="38" />
+  <line x1="72" y1="50" x2="84" y2="50" />
+  <line x1="72" y1="62" x2="84" y2="62" />
+</svg>

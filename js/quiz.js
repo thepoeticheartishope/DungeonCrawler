@@ -41,6 +41,7 @@ export function parseListInput(text) {
         const category = String((item && item.category) || '').trim();
         const rawDifficulty = String((item && item.difficulty) || '').trim().toLowerCase();
         const source = String((item && item.source) || '').trim();
+        const image = String((item && item.image) || '').trim();
         return {
           term: String((item && item.term) || '').trim(),
           meaning: String((item && item.meaning) || '').trim(),
@@ -49,7 +50,8 @@ export function parseListInput(text) {
             : undefined,
           category: category || undefined,
           difficulty: VALID_DIFFICULTIES.includes(rawDifficulty) ? rawDifficulty : 'medium',
-          source: source || undefined
+          source: source || undefined,
+          image: image || undefined
         };
       })
       .filter(item => item.term && item.meaning);
@@ -107,6 +109,17 @@ export function glyphForCategory(category) {
     hash = ((hash * 33) ^ category.charCodeAt(i)) >>> 0;
   }
   return ENCOUNTER_GLYPHS[hash % ENCOUNTER_GLYPHS.length];
+}
+
+// Bundled-set images are authored as plain relative paths (e.g.
+// "images/cpu-chip.svg") resolved against the lists/ folder they ship
+// alongside; a custom list can instead give a full URL (http(s):// or a
+// data: URI) if the author wants to reference something external, at the
+// cost of it not being cached for offline play.
+export function resolveImageSrc(image) {
+  if (!image) return null;
+  if (/^(https?:|data:)/i.test(image)) return image;
+  return 'lists/' + image;
 }
 
 export function escapeHtml(s) {
