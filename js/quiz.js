@@ -51,7 +51,7 @@ export function parseListInput(text) {
         };
       })
       .filter(item => item.term && item.meaning);
-    if (cleaned.length < 2) return { error: 'Need at least 2 valid entries with both a term and meaning.' };
+    if (cleaned.length < 2) return { error: 'Need at least 2 valid entries with both a prompt and an answer.' };
     return { data: cleaned };
   }
 
@@ -67,7 +67,7 @@ export function parseListInput(text) {
     else badLines.push(i + 1);
   });
 
-  if (cleaned.length < 2) return { error: 'Need at least 2 valid "TERM | Meaning" lines.' };
+  if (cleaned.length < 2) return { error: 'Need at least 2 valid "Prompt | Answer" lines.' };
   const result = { data: cleaned };
   if (badLines.length > 0) {
     result.warning = 'Skipped line' + (badLines.length > 1 ? 's' : '') + ' ' + badLines.join(', ') + ' (missing a "|" separator).';

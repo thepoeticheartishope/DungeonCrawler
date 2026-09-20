@@ -16,6 +16,9 @@ import {
 import {
   initCombat, isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
 } from './combat.js';
+import {
+  fetchManifest, fetchBundledSet, listSavedSets, saveSet, loadSavedSet, deleteSet
+} from './sets.js';
 
 const startScreen = document.getElementById('startScreen');
 const revealToggle = document.getElementById('revealToggle');
@@ -26,6 +29,12 @@ const dataInput = document.getElementById('dataInput');
 const loadListBtn = document.getElementById('loadListBtn');
 const resetListBtn = document.getElementById('resetListBtn');
 const loaderStatus = document.getElementById('loaderStatus');
+const builtinSetSelect = document.getElementById('builtinSetSelect');
+const loadBuiltinBtn = document.getElementById('loadBuiltinBtn');
+const saveSetName = document.getElementById('saveSetName');
+const saveSetBtn = document.getElementById('saveSetBtn');
+const savedSetsList = document.getElementById('savedSetsList');
+let builtinSets = [];
 const roomScreen = document.getElementById('roomScreen');
 const battleScreen = document.getElementById('battleScreen');
 const battleGlyphEl = document.getElementById('battleGlyph');
@@ -104,7 +113,7 @@ loadListBtn.addEventListener('click', () => {
   }
   state.activeData = result.data;
   state.usingSample = false;
-  let msg = 'Loaded ' + state.activeData.length + ' terms — this list will be used for the next run.';
+  let msg = 'Loaded ' + state.activeData.length + ' items — this set will be used for the next run.';
   if (result.warning) msg += ' ' + result.warning;
   loaderStatus.innerHTML = '<span class="loader-ok">' + msg + '</span>';
 });
@@ -112,7 +121,7 @@ loadListBtn.addEventListener('click', () => {
 function showSampleStatus() {
   const label = mcToggle.checked ? 'multiple choice' : 'typing';
   loaderStatus.innerHTML = '<span class="loader-ok">Using the built-in ' + label + ' sample list (' +
-    defaultSample(mcToggle.checked).length + ' terms).</span>';
+    defaultSample(mcToggle.checked).length + ' items).</span>';
 }
 
 resetListBtn.addEventListener('click', () => {
@@ -122,6 +131,87 @@ resetListBtn.addEventListener('click', () => {
   fileInput.value = '';
   showSampleStatus();
 });
+
+// ---- Built-in and saved item sets ----
+
+builtinSetSelect.addEventListener('change', () => {
+  loadBuiltinBtn.disabled = !builtinSetSelect.value;
+});
+loadBuiltinBtn.disabled = true;
+
+fetchManifest().then((sets) => {
+  builtinSets = sets;
+  sets.forEach((set) => {
+    const opt = document.createElement('option');
+    opt.value = set.id;
+    opt.textContent = set.name;
+    if (set.description) opt.title = set.description;
+    builtinSetSelect.appendChild(opt);
+  });
+});
+
+loadBuiltinBtn.addEventListener('click', async () => {
+  const chosen = builtinSets.find((set) => set.id === builtinSetSelect.value);
+  if (!chosen) return;
+  loaderStatus.innerHTML = '<span class="loader-ok">Loading ' + escapeHtml(chosen.name) + '…</span>';
+  const data = await fetchBundledSet(chosen.file);
+  if (!data) {
+    loaderStatus.innerHTML = '<span class="loader-error">Could not load that set. Try again.</span>';
+    return;
+  }
+  state.activeData = data;
+  state.usingSample = false;
+  loaderStatus.innerHTML = '<span class="loader-ok">Loaded "' + escapeHtml(chosen.name) + '" (' +
+    data.length + ' items) — this set will be used for the next run.</span>';
+});
+
+function renderSavedSets() {
+  const sets = listSavedSets();
+  if (sets.length === 0) {
+    savedSetsList.innerHTML = '<p class="saved-sets-empty">Nothing saved yet — load a set above and save it to reuse later.</p>';
+    return;
+  }
+  savedSetsList.innerHTML = '';
+  sets.forEach((set) => {
+    const row = document.createElement('div');
+    row.className = 'saved-set-row';
+    row.innerHTML = '<span class="saved-set-name">' + escapeHtml(set.name) + '</span>' +
+      '<span class="saved-set-count">' + set.count + '</span>' +
+      '<button type="button" class="ghost load-saved-set">Load</button>' +
+      '<button type="button" class="ghost delete-saved-set">Delete</button>';
+    row.querySelector('.load-saved-set').addEventListener('click', () => {
+      const data = loadSavedSet(set.name);
+      if (!data) return;
+      state.activeData = data;
+      state.usingSample = false;
+      loaderStatus.innerHTML = '<span class="loader-ok">Loaded "' + escapeHtml(set.name) + '" (' +
+        data.length + ' items) — this set will be used for the next run.</span>';
+    });
+    row.querySelector('.delete-saved-set').addEventListener('click', () => {
+      deleteSet(set.name);
+      renderSavedSets();
+    });
+    savedSetsList.appendChild(row);
+  });
+}
+
+saveSetBtn.addEventListener('click', () => {
+  const name = saveSetName.value.trim();
+  if (!name) {
+    loaderStatus.innerHTML = '<span class="loader-error">Give this set a name first.</span>';
+    return;
+  }
+  if (state.usingSample || !state.activeData || state.activeData.length === 0) {
+    loaderStatus.innerHTML = '<span class="loader-error">Load a set (built-in, pasted, or a file) before saving.</span>';
+    return;
+  }
+  saveSet(name, state.activeData);
+  saveSetName.value = '';
+  loaderStatus.innerHTML = '<span class="loader-ok">Saved "' + escapeHtml(name) + '" — it now appears under My saved sets.</span>';
+  renderSavedSets();
+});
+
+renderSavedSets();
 
 // If no custom list has been loaded, switching modes swaps in the sample
 // list built for that mode (typing vs. multiple choice).

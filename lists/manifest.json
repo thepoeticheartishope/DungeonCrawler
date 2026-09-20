@@ -1,0 +1,14 @@
+[
+  {
+    "id": "comptia-aplus",
+    "name": "CompTIA A+ Sample",
+    "description": "Hardware and networking acronyms (CPU, RAID, DNS, VPN, and more).",
+    "file": "comptia-aplus.json"
+  },
+  {
+    "id": "bible-trivia",
+    "name": "Bible Trivia",
+    "description": "Old and New Testament people and events.",
+    "file": "bible-trivia.json"
+  }
+]

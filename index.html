@@ -169,9 +169,55 @@
     margin-bottom: 10px;
   }
   .loader-actions button { flex: 1; padding: 8px 10px; font-size: 12px; }
+  .loader-actions select,
+  .loader-actions input[type="text"] {
+    flex: 1;
+    background: var(--stone-dark);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    min-width: 0;
+  }
+  .loader-actions select:focus,
+  .loader-actions input[type="text"]:focus { outline: none; border-color: var(--torch); }
   .loader-status { font-size: 12px; color: var(--muted); line-height: 1.5; }
   .loader-status .loader-ok { color: var(--hit); }
   .loader-status .loader-error { color: var(--block); }
+
+  .loader-section { margin-bottom: 14px; }
+  .loader-section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .loader-divider {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 14px 0;
+  }
+  .saved-sets { display: flex; flex-direction: column; gap: 6px; }
+  .saved-set-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--stone-dark);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .saved-set-name { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .saved-set-count { color: var(--muted); font-size: 11px; }
+  .saved-set-row button {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .saved-sets-empty { font-size: 12px; color: var(--muted); font-style: italic; }
 
   button {
     font-family: 'IBM Plex Mono', monospace;
@@ -520,7 +566,7 @@
       that never moves, camped in the farthest chamber. Every 7 turns it
       summons a minion that hunts you down. Move next to an enemy and it
       auto-targets — if more than one is adjacent, tap the one you want to
-      hit instead. Type what it stands for to strike. Minions fall in one
+      hit instead. Type the correct answer to strike. Minions fall in one
       hit; the boss takes three. Move (N/S/E/W) to close the distance or
       dodge, or hold your ground — one action per turn. Three hits on you
       and it's over.
@@ -535,14 +581,27 @@
     </label>
 
     <div class="loader">
-      <button type="button" class="ghost small" id="toggleLoader">Load your own term list ▾</button>
+      <button type="button" class="ghost small" id="toggleLoader">Load your own question set ▾</button>
       <div class="loader-panel" id="loaderPanel">
+
+        <div class="loader-section">
+          <div class="loader-section-label">Built-in sets</div>
+          <div class="loader-actions">
+            <select id="builtinSetSelect">
+              <option value="">Choose a set…</option>
+            </select>
+            <button type="button" class="ghost" id="loadBuiltinBtn">Load</button>
+          </div>
+        </div>
+
+        <hr class="loader-divider">
+
         <p class="loader-hint">
-          Paste one term per line as <code>TERM | Meaning</code>, or paste a JSON
+          Paste one item per line as <code>Prompt | Answer</code>, or paste a JSON
           array of <code>{"term","meaning"}</code> objects. You can also load a
           text file instead of pasting. For multiple choice mode, a JSON entry
           may add an <code>"options"</code> array with 2–4 answer choices
-          (the correct meaning is added in if you leave it out); entries
+          (the correct answer is added in if you leave it out); entries
           without <code>"options"</code> get 3 distractors picked at random
           from the rest of the list.
         </p>
@@ -550,9 +609,21 @@
         <textarea id="dataInput" rows="6" placeholder="CPU | Central Processing Unit&#10;RAM | Random Access Memory"></textarea>
         <div class="loader-actions">
           <button type="button" id="loadListBtn">Use this list</button>
-          <button type="button" class="ghost" id="resetListBtn">Use sample list</button>
+          <button type="button" class="ghost" id="resetListBtn">Use built-in sample</button>
         </div>
-        <div class="loader-status" id="loaderStatus">Using the built-in typing sample list (4 terms).</div>
+        <div class="loader-actions">
+          <input type="text" id="saveSetName" placeholder="Name this set to save it">
+          <button type="button" class="ghost" id="saveSetBtn">Save set</button>
+        </div>
+        <div class="loader-status" id="loaderStatus">Using the built-in typing sample list (4 items).</div>
+
+        <hr class="loader-divider">
+
+        <div class="loader-section">
+          <div class="loader-section-label">My saved sets</div>
+          <div class="saved-sets" id="savedSetsList"></div>
+        </div>
+
       </div>
     </div>
 
