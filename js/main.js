@@ -270,9 +270,36 @@ function renderChoices() {
 }
 
 // Sets the active question, and (in MC mode) its answer choices.
+// Types `text` into `el` one character at a time, terminal-style, instead
+// of setting it all at once. Cancels any typing already in progress on
+// that element first, so rapid-fire question changes (a quick correct
+// answer against the boss, say) never leave two runs racing each other.
+const typewriterTimers = new WeakMap();
+// A fixed per-character delay made short answers ("CPU") finish in ~50ms —
+// too fast to read as typing at all. Instead, aim for a roughly constant
+// total reveal time and derive the per-character delay from the string's
+// length, clamped so short strings type slowly enough to notice and long
+// ones don't drag.
+function typeText(el, text, targetDurationMs = 450) {
+  const speedMs = Math.min(140, Math.max(12, targetDurationMs / Math.max(text.length, 1)));
+  const existing = typewriterTimers.get(el);
+  if (existing) clearInterval(existing);
+  el.textContent = '';
+  let i = 0;
+  const timer = setInterval(() => {
+    i++;
+    el.textContent = text.slice(0, i);
+    if (i >= text.length) {
+      clearInterval(timer);
+      typewriterTimers.delete(el);
+    }
+  }, speedMs);
+  typewriterTimers.set(el, timer);
+}
+
 function setQuestion(q) {
   state.currentQuestion = q;
-  enemyName.textContent = q.term;
+  typeText(enemyName, q.term);
   answerInput.value = '';
   if (state.mcMode) {
     state.currentChoices = buildChoices(q);
@@ -325,7 +352,17 @@ function syncBattleScreen() {
     const target = state.selectedTarget;
     battleGlyphEl.textContent = target.el ? target.el.textContent : bossActor.textContent;
     renderCombatStatus();
-    if (!battleScreen.classList.contains('show')) showScreen(battleScreen);
+    if (!battleScreen.classList.contains('show')) {
+      showScreen(battleScreen);
+      // The question was very likely already set (and its typewriter
+      // animation already finished) well before this moment — loadRoom()
+      // sets one immediately at room load, off-screen, and syncQuestionForTarget()
+      // only rerolls it when the target's pool actually changes, which
+      // isn't the case the first time you approach something drawing from
+      // the same pool (e.g. the boss). Re-type it fresh every time the
+      // screen actually becomes visible, so the effect is never skipped.
+      typeText(enemyName, state.currentQuestion.term);
+    }
   } else if (battleScreen.classList.contains('show')) {
     showScreen(roomScreen);
   }
