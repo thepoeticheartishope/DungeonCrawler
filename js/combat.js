@@ -143,8 +143,11 @@ export function spawnMinion() {
   el.textContent = MINION_ICONS[state.minions.length % MINION_ICONS.length];
   // Offsets this minion's warp animation out of sync with any others already
   // on screen — several identical creatures warping in perfect lockstep
-  // reads as mechanical, not unsettling.
+  // reads as mechanical, not unsettling. Same idea for the glitch-bar
+  // dropout, via a custom property its ::after reads (a pseudo-element
+  // isn't a real node, so its own animation-delay can't be set directly).
   el.style.animationDelay = (Math.random() * -3.6).toFixed(2) + 's';
+  el.style.setProperty('--glitch-delay', (Math.random() * -6.5).toFixed(2) + 's');
   combatEls.grid.appendChild(el);
   const m = { row: spot.row, col: spot.col, hp: MINION_HP, el, kind: 'minion' };
   positionActor(el, m.row, m.col, true); // freshly spawned — appears in place, doesn't slide in

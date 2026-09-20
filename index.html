@@ -435,6 +435,33 @@
     animation: monsterWarp 3.6s ease-in-out infinite;
   }
 
+  /* An occasional black bar sweeps over the glyph and fades back out, like
+     a brief signal dropout — a longer, rarer cycle than the constant warp,
+     so it reads as "something just glitched" rather than a steady effect.
+     --glitch-delay is set per-minion in JS so several on screen don't drop
+     out in sync. */
+  .actor.minion::after {
+    content: '';
+    position: absolute;
+    left: -20%;
+    right: -20%;
+    top: 15%;
+    height: 70%;
+    background: #000;
+    opacity: 0;
+    z-index: 5;
+    pointer-events: none;
+    animation: minionGlitchBar 6.5s ease-in-out infinite;
+    animation-delay: var(--glitch-delay, 0s);
+  }
+  @keyframes minionGlitchBar {
+    0%, 84%, 100% { opacity: 0; }
+    87% { opacity: 1; }
+    90% { opacity: 0; }
+    93% { opacity: 0.85; }
+    95% { opacity: 0; }
+  }
+
   .actor.coin {
     font-size: 15px;
     z-index: 0;
