@@ -409,7 +409,7 @@
 
   .actor.boss {
     font-size: 25px;
-    animation: bossPulse 2s ease-in-out infinite;
+    animation: bossPulse 2s ease-in-out infinite, monsterWarp 3.6s ease-in-out infinite;
     z-index: 1;
   }
   @keyframes bossPulse {
@@ -417,7 +417,50 @@
     50% { filter: drop-shadow(0 0 9px rgba(255,255,255,0.9)); }
   }
 
-  .actor.minion { font-size: 16px; }
+  /* A slight, irregular warp on hostile glyphs — not a clean bounce, just
+     enough asymmetry in the skew/scale timing that the shape reads as
+     subtly wrong rather than animated. Kept small (a few percent/degrees)
+     so it stays "unsettling," not cartoonish. */
+  @keyframes monsterWarp {
+    0%, 100% { transform: scale(1, 1) skew(0deg, 0deg); }
+    18%      { transform: scale(1.06, 0.94) skew(-4deg, 1deg); }
+    34%      { transform: scale(0.95, 1.05) skew(2deg, -3deg); }
+    52%      { transform: scale(1.03, 0.97) skew(3deg, 1deg); }
+    71%      { transform: scale(0.97, 1.04) skew(-2deg, -2deg); }
+    85%      { transform: scale(1.02, 0.98) skew(1deg, 2deg); }
+  }
+
+  .actor.minion {
+    font-size: 16px;
+    animation: monsterWarp 3.6s ease-in-out infinite;
+  }
+
+  /* An occasional black bar sweeps over the glyph and fades back out, like
+     a brief signal dropout — a longer, rarer cycle than the constant warp,
+     so it reads as "something just glitched" rather than a steady effect.
+     --glitch-delay is set per-minion in JS so several on screen don't drop
+     out in sync. */
+  .actor.minion::after {
+    content: '';
+    position: absolute;
+    left: -20%;
+    right: -20%;
+    top: 15%;
+    height: 70%;
+    background: #000;
+    opacity: 0;
+    z-index: 5;
+    pointer-events: none;
+    animation: minionGlitchBar 6.5s ease-in-out infinite;
+    animation-delay: var(--glitch-delay, 0s);
+  }
+  @keyframes minionGlitchBar {
+    0%, 84%, 100% { opacity: 0; }
+    87% { opacity: 1; }
+    90% { opacity: 0; }
+    93% { opacity: 0.85; }
+    95% { opacity: 0; }
+  }
 
   .actor.coin {
     font-size: 15px;
