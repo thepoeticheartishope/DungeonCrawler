@@ -22,6 +22,8 @@ import {
 } from './sets.js';
 
 const startScreen = document.getElementById('startScreen');
+const introGlitch = document.getElementById('introGlitch');
+const glitchCode = document.getElementById('glitchCode');
 const revealToggle = document.getElementById('revealToggle');
 const toggleLoaderBtn = document.getElementById('toggleLoader');
 const loaderPanel = document.getElementById('loaderPanel');
@@ -87,7 +89,7 @@ const dpadButtons = {
 };
 
 initRender({
-  startScreen, roomScreen, battleScreen, winScreen, loseScreen,
+  startScreen, introGlitch, roomScreen, battleScreen, winScreen, loseScreen,
   grid, playerActor, bossActor, coinActor, chestActor, runeActor,
   heartsEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl
 });
@@ -408,6 +410,25 @@ function pickCoinTile(walls, avoidList, allowedTiles) {
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
+const INTRO_GLITCH_DURATION_MS = 2000;
+const GLITCH_CHARS = '01{}[]<>/\\;:=+*#$%&^~ABCDEF0123456789';
+
+// Fills the intro glitch screen's backdrop with a block of random
+// code-like garbage, tall enough that the CSS scroll animation (which
+// moves it by a third of its own height) never runs out of content mid-loop.
+function randomGlitchCode() {
+  const lines = [];
+  for (let i = 0; i < 90; i++) {
+    let line = '';
+    const len = 40 + Math.floor(Math.random() * 20);
+    for (let j = 0; j < len; j++) {
+      line += GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+    }
+    lines.push(line);
+  }
+  return lines.join('\n');
+}
+
 function startGame() {
   state.order = shuffle(state.activeData).slice(0, Math.min(ROOM_COUNT, state.activeData.length));
   state.roomIndex = 0;
@@ -424,9 +445,18 @@ function startGame() {
   turnCountEl.textContent = state.turnCount;
   coinsTotalEl.textContent = state.coinsTotal;
   roomTotalEl.textContent = state.order.length;
-  showScreen(roomScreen);
-  startTimer();
+
+  // Room setup happens immediately (invisibly, behind the glitch screen) so
+  // there's no added real loading time — only a deliberate dramatic pause
+  // before the player actually sees the room. The elapsed-time clock starts
+  // once that pause ends, not before, so it isn't charged against the player.
   loadRoom();
+  glitchCode.textContent = randomGlitchCode();
+  showScreen(introGlitch);
+  setTimeout(() => {
+    showScreen(roomScreen);
+    startTimer();
+  }, INTRO_GLITCH_DURATION_MS);
 }
 
 function loadRoom() {
