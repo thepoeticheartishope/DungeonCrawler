@@ -281,7 +281,7 @@ const typewriterTimers = new WeakMap();
 // length, clamped so short strings type slowly enough to notice and long
 // ones don't drag.
 function typeText(el, text, targetDurationMs = 450) {
-  const speedMs = Math.min(90, Math.max(12, targetDurationMs / Math.max(text.length, 1)));
+  const speedMs = Math.min(140, Math.max(12, targetDurationMs / Math.max(text.length, 1)));
   const existing = typewriterTimers.get(el);
   if (existing) clearInterval(existing);
   el.textContent = '';
@@ -352,7 +352,17 @@ function syncBattleScreen() {
     const target = state.selectedTarget;
     battleGlyphEl.textContent = target.el ? target.el.textContent : bossActor.textContent;
     renderCombatStatus();
-    if (!battleScreen.classList.contains('show')) showScreen(battleScreen);
+    if (!battleScreen.classList.contains('show')) {
+      showScreen(battleScreen);
+      // The question was very likely already set (and its typewriter
+      // animation already finished) well before this moment — loadRoom()
+      // sets one immediately at room load, off-screen, and syncQuestionForTarget()
+      // only rerolls it when the target's pool actually changes, which
+      // isn't the case the first time you approach something drawing from
+      // the same pool (e.g. the boss). Re-type it fresh every time the
+      // screen actually becomes visible, so the effect is never skipped.
+      typeText(enemyName, state.currentQuestion.term);
+    }
   } else if (battleScreen.classList.contains('show')) {
     showScreen(roomScreen);
   }
