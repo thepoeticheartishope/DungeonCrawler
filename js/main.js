@@ -2,7 +2,7 @@ import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, BOSS_ICONS, GRID_SIZES, CHAMBER_TARGETS,
-  DIFFICULTY_COIN_REWARD, ENCOUNTER_GLYPHS, PLAYER_ICON
+  DIFFICULTY_COIN_REWARD, ENCOUNTER_GLYPHS, DIRECTION_ARROWS
 } from './config.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
@@ -371,7 +371,6 @@ function startGame() {
   state.coinsTotal = 0;
   state.revealOnWrong = revealToggle.checked;
   state.mcMode = mcToggle.checked;
-  playerActor.textContent = PLAYER_ICON;
   answerForm.style.display = state.mcMode ? 'none' : 'flex';
   mcOptionsEl.classList.toggle('show', state.mcMode);
   renderHearts();
@@ -400,6 +399,8 @@ function loadRoom() {
 
   state.playerRow = state.PLAYER_START.row;
   state.playerCol = state.PLAYER_START.col;
+  state.facing = 'N';
+  playerActor.textContent = DIRECTION_ARROWS[state.facing];
   updateCamera();
   positionActor(playerActor, state.playerRow, state.playerCol, true);
 
@@ -519,6 +520,18 @@ function applyTurnOutcome(actionMessage, extraHtml) {
 
 function movePlayer(dRow, dCol, dirName) {
   if (state.turnLocked) return;
+
+  // Facing updates (and the fog cone with it) even on a blocked move — the
+  // player can "turn to look" a direction without spending a turn, since
+  // the collision checks below return before any turn-advancing code runs.
+  const facing = dRow === -1 ? 'N' : dRow === 1 ? 'S' : dCol === 1 ? 'E' : 'W';
+  if (state.facing !== facing) {
+    state.facing = facing;
+    playerActor.textContent = DIRECTION_ARROWS[facing];
+  }
+  computeVisibility();
+  renderFog();
+
   const newRow = state.playerRow + dRow;
   const newCol = state.playerCol + dCol;
 

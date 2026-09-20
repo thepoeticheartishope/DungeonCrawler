@@ -74,7 +74,10 @@ export const MINION_ICONS = ['a', 'b', 'r', 'w'];
 // a category's name, so the same category always renders the same symbol.
 export const ENCOUNTER_GLYPHS = ['?', '!', '$', '%', '&', '*', '+', '~', '^', '='];
 
-export const PLAYER_ICON = '@';
+// Player glyph is directional now — an arrow matching which way they're
+// facing, updated on every move attempt (even a blocked one, so "turning
+// to look" costs nothing) rather than a fixed '@'.
+export const DIRECTION_ARROWS = { N: '^', S: 'v', E: '>', W: '<' };
 
 // Coins awarded for correctly answering a vocab encounter, by the
 // question's own difficulty tier. Falls back to "medium" if a question is

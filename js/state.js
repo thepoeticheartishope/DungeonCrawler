@@ -32,6 +32,7 @@ export const state = {
 
   playerRow: undefined,
   playerCol: undefined,
+  facing: 'N', // 'N'|'S'|'E'|'W' — which way the player is looking; gates the fog-of-war cone
   camRow: 0, // world-space row/col of the viewport's top-left corner
   camCol: 0,
   wallSet: new Set(),
