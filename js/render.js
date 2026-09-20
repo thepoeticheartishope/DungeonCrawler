@@ -15,11 +15,12 @@ export function initRender(elements) {
 }
 
 export function showScreen(el) {
-  [els.startScreen, els.roomScreen, els.battleScreen, els.winScreen, els.loseScreen].forEach(s => s.classList.remove('show'));
+  [els.startScreen, els.introGlitch, els.roomScreen, els.battleScreen, els.winScreen, els.loseScreen].forEach(s => s.classList.remove('show'));
   el.classList.add('show');
-  // Hearts/coins/turn/room/timer are meaningless before a run starts, so
-  // the header only shows them once the player has left the start screen.
-  els.statsEl.classList.toggle('show', el !== els.startScreen);
+  // Hearts/coins/turn/room/timer are meaningless before a run starts (and
+  // during the intro glitch, which plays before the timer even starts), so
+  // the header only shows them once the player has actually reached a room.
+  els.statsEl.classList.toggle('show', el !== els.startScreen && el !== els.introGlitch);
 }
 
 // The rendered grid is always VIEWPORT_SIZE x VIEWPORT_SIZE, regardless of

@@ -122,6 +122,64 @@
   .screen { display: none; text-align: center; }
   .screen.show { display: block; }
 
+  /* ---- Intro glitch screen: a one-time "you are needed" boot moment
+     before Room 1, breaking out of <main>'s centered column to cover the
+     whole viewport. Kept achromatic (no red/cyan channel-split) and with
+     small, slow-ish jitter rather than a full-screen strobe, so it reads
+     as "glitchy" without being a photosensitivity risk. ---- */
+  #introGlitch { position: fixed; inset: 0; z-index: 10000; background: #000; overflow: hidden; }
+  #introGlitch.show { display: block; }
+
+  .glitch-code {
+    position: absolute;
+    inset: -50% 0 -50% 0;
+    margin: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: rgba(216,216,216,0.3);
+    white-space: pre;
+    animation: codeScroll 1.4s linear infinite;
+  }
+  @keyframes codeScroll {
+    from { transform: translateY(0); }
+    to { transform: translateY(33%); }
+  }
+
+  .glitch-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 90%;
+    max-width: 420px;
+    transform: translate(-50%, -50%);
+    font-family: 'Press Start 2P', 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #F0F0F0;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(240,240,240,0.5);
+  }
+  .glitch-text::before,
+  .glitch-text::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    color: #D8D8D8;
+  }
+  .glitch-text::before { animation: glitchShift1 0.4s steps(2, end) infinite; }
+  .glitch-text::after { animation: glitchShift2 0.35s steps(2, end) infinite; }
+  @keyframes glitchShift1 {
+    0%, 100% { transform: translate(2px, 0); clip-path: inset(0 0 65% 0); opacity: 0.6; }
+    50% { transform: translate(-2px, 1px); clip-path: inset(45% 0 15% 0); opacity: 0.4; }
+  }
+  @keyframes glitchShift2 {
+    0%, 100% { transform: translate(-2px, 0); clip-path: inset(65% 0 0 0); opacity: 0.6; }
+    50% { transform: translate(2px, -1px); clip-path: inset(10% 0 55% 0); opacity: 0.4; }
+  }
+
   .option-toggle {
     display: flex;
     align-items: center;
@@ -668,6 +726,12 @@
 </style>
 </head>
 <body>
+<!-- One-time "mission call" boot moment before Room 1. Full-viewport
+     (position: fixed), independent of <main>'s centered column. -->
+<div class="screen" id="introGlitch">
+  <pre class="glitch-code" id="glitchCode"></pre>
+  <div class="glitch-text" data-text="YOU ARE NEEDED. ASCEND.">YOU ARE NEEDED. ASCEND.</div>
+</div>
 <main>
   <header>
     <h1>Noesis Protocol</h1>
