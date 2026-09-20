@@ -746,8 +746,9 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
     }
   }
 
+  const attackingBoss = state.selectedTarget === state.boss;
   let hitMsg;
-  if (state.selectedTarget !== state.boss) {
+  if (!attackingBoss) {
     const target = state.selectedTarget;
     target.hp--;
     if (target.hp <= 0) {
@@ -774,7 +775,12 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
   renderTargeting();
   flashBattleResult(true);
 
-  if (state.boss.hp <= 0) {
+  // Only the boss branch above can make the boss's hp reach 0 — checking
+  // this after a minion hit too, once the boss is already dead (null) from
+  // an earlier kill this room, threw on state.boss.hp and permanently
+  // stuck state.turnLocked at true (a real softlock: a minion surviving
+  // past the boss's death, then landing a hit on it, crashed here).
+  if (attackingBoss && state.boss.hp <= 0) {
     bossActor.classList.add('gone');
     state.boss = null; // clears the doorway it was blocking
 
