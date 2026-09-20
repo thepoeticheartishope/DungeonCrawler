@@ -625,6 +625,8 @@
   .feedback .warn-msg { color: var(--block); font-weight: 600; display: block; }
   .feedback .move-msg { color: var(--muted); display: block; }
   .feedback .tip { color: var(--torch); font-size: 12px; display: block; margin-top: 3px; }
+  .feedback .source-tip { color: var(--muted); font-style: italic; }
+  .feedback .source-tip::before { content: '— '; }
 
   .next-wrap { margin-top: 16px; display: none; }
   .next-wrap.show { display: block; }
@@ -698,7 +700,9 @@
           may add an <code>"options"</code> array with 2–4 answer choices
           (the correct answer is added in if you leave it out); entries
           without <code>"options"</code> get 3 distractors picked at random
-          from the rest of the list.
+          from the rest of the list. An optional <code>"source"</code> string
+          (a reference or short reasoning) shows up alongside the correct
+          answer when "Reveal the correct answer" is on and you miss one.
         </p>
         <input type="file" id="fileInput" accept=".txt,.csv,.json">
         <textarea id="dataInput" rows="6" placeholder="CPU | Central Processing Unit&#10;RAM | Random Access Memory"></textarea>

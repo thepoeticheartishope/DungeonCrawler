@@ -1,12 +1,13 @@
 [
-  { "term": "CPU", "meaning": "Central Processing Unit", "category": "Hardware", "difficulty": "easy" },
-  { "term": "RAM", "meaning": "Random Access Memory", "category": "Hardware", "difficulty": "easy" },
-  { "term": "SSD", "meaning": "Solid State Drive", "category": "Hardware", "difficulty": "medium" },
+  { "term": "CPU", "meaning": "Central Processing Unit", "category": "Hardware", "difficulty": "easy", "source": "The processor that executes instructions — often called the 'brain' of the computer." },
+  { "term": "RAM", "meaning": "Random Access Memory", "category": "Hardware", "difficulty": "easy", "source": "Volatile working memory the CPU reads/writes directly; its contents are lost when power is off." },
+  { "term": "SSD", "meaning": "Solid State Drive", "category": "Hardware", "difficulty": "medium", "source": "Storage built from flash memory chips instead of spinning platters, so it's faster with no moving parts." },
   {
     "term": "RAID",
     "meaning": "Redundant Array of Independent Disks",
     "category": "Hardware",
     "difficulty": "medium",
+    "source": "Combines multiple physical disks into one logical unit for redundancy, performance, or both.",
     "options": [
       "Redundant Array of Independent Disks",
       "Random Access Interface Device",
@@ -14,12 +15,13 @@
       "Remote Authentication Dial-In Device"
     ]
   },
-  { "term": "DNS", "meaning": "Domain Name System", "category": "Networking", "difficulty": "medium" },
+  { "term": "DNS", "meaning": "Domain Name System", "category": "Networking", "difficulty": "medium", "source": "Translates human-readable domain names (like example.com) into IP addresses." },
   {
     "term": "HTTP",
     "meaning": "Hypertext Transfer Protocol",
     "category": "Networking",
     "difficulty": "easy",
+    "source": "The protocol web browsers use to request and receive pages from a server.",
     "options": [
       "Hypertext Transfer Protocol",
       "High Throughput Transmission Protocol",
@@ -32,6 +34,7 @@
     "meaning": "Virtual Private Network",
     "category": "Networking",
     "difficulty": "hard",
+    "source": "Creates an encrypted tunnel over a public network so traffic behaves as if it's on a private one.",
     "options": [
       "Virtual Private Network",
       "Verified Public Node",
@@ -44,6 +47,7 @@
     "meaning": "Dynamic Host Configuration Protocol",
     "category": "Networking",
     "difficulty": "medium",
+    "source": "Automatically assigns IP addresses and network settings to devices as they join a network.",
     "options": [
       "Dynamic Host Configuration Protocol",
       "Direct Hardware Control Panel",

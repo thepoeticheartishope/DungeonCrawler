@@ -40,6 +40,7 @@ export function parseListInput(text) {
       .map(item => {
         const category = String((item && item.category) || '').trim();
         const rawDifficulty = String((item && item.difficulty) || '').trim().toLowerCase();
+        const source = String((item && item.source) || '').trim();
         return {
           term: String((item && item.term) || '').trim(),
           meaning: String((item && item.meaning) || '').trim(),
@@ -47,7 +48,8 @@ export function parseListInput(text) {
             ? item.options.map(o => String(o).trim()).filter(Boolean)
             : undefined,
           category: category || undefined,
-          difficulty: VALID_DIFFICULTIES.includes(rawDifficulty) ? rawDifficulty : 'medium'
+          difficulty: VALID_DIFFICULTIES.includes(rawDifficulty) ? rawDifficulty : 'medium',
+          source: source || undefined
         };
       })
       .filter(item => item.term && item.meaning);
