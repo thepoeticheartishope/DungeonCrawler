@@ -281,12 +281,6 @@
   }
   .dev-panel.show { display: flex; }
 
-  .combat-status {
-    text-align: center;
-    font-size: 12px;
-    color: var(--muted);
-    margin-bottom: 10px;
-  }
   .combat-status .pip-full { color: var(--block); }
   .combat-status .pip-empty { color: var(--line); }
 
@@ -431,19 +425,69 @@
   .dpad-e { grid-column: 3; grid-row: 2; }
   .dpad-s { grid-column: 2; grid-row: 3; }
 
-  /* ---- Battle screen ---- */
-  .battle-opponent {
-    margin-bottom: 16px;
+  /* ---- Battle screen: styled as a terminal window ---- */
+  .terminal {
+    border: 1px solid var(--line);
+    background: var(--stone-dark);
+    text-align: left;
   }
+
+  .terminal-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--stone);
+  }
+  .terminal-dots { display: flex; gap: 5px; }
+  .terminal-dots i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--line);
+    display: block;
+  }
+  .terminal-title {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+
+  .terminal-body {
+    padding: 16px;
+  }
+
+  .term-status {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--line);
+  }
+
+  .term-status-lines { display: flex; flex-direction: column; gap: 4px; }
+
+  .term-line {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .term-line::before { content: '> '; color: var(--torch); }
+  .term-line:empty { display: none; }
+
+  .term-label { margin-bottom: 2px; }
 
   .battle-glyph {
     font-family: 'Press Start 2P', 'IBM Plex Mono', monospace;
-    font-size: 40px;
+    font-size: 32px;
     font-weight: 400;
     line-height: 1;
     color: var(--torch-bright);
     text-shadow: 0 0 14px rgba(240,240,240,0.5);
-    margin-bottom: 8px;
+    flex-shrink: 0;
   }
 
   /* Clear correct/wrong signal on the battle screen — the room's own
@@ -471,27 +515,12 @@
     100% { transform: scale(1); color: inherit; }
   }
 
-  /* ---- Combat panel ---- */
-  .panel {
-    border: 1px solid var(--line);
-    background: linear-gradient(180deg, var(--stone) 0%, var(--stone-dark) 100%);
-    border-radius: 8px;
-    padding: 18px 18px 20px;
-    text-align: center;
-  }
-
   .enemy-name {
     font-family: 'Press Start 2P', 'IBM Plex Mono', monospace;
     font-size: 13px;
     line-height: 1.5;
     font-weight: 400;
     color: var(--torch-bright);
-    margin-bottom: 4px;
-  }
-
-  .target-label {
-    font-size: 11px;
-    color: var(--torch);
     margin-bottom: 10px;
   }
 
@@ -500,8 +529,6 @@
     color: var(--muted);
     margin-bottom: 16px;
   }
-
-  form { display: flex; gap: 8px; }
 
   input[type="text"] {
     flex: 1;
@@ -515,21 +542,52 @@
   }
   input[type="text"]:focus { outline: none; border-color: var(--torch); }
 
-  .mc-options { display: none; flex-direction: column; gap: 8px; text-align: left; }
+  /* The typed-answer prompt reads as a live terminal input line — a bare
+     caret rather than a boxed form field. */
+  .term-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .term-prompt {
+    color: var(--torch-bright);
+    font-weight: 700;
+  }
+  .term-input-row input[type="text"] {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    border-bottom: 1px solid var(--line);
+    caret-color: var(--torch-bright);
+    padding: 6px 2px;
+  }
+  .term-input-row input[type="text"]:focus { border-bottom-color: var(--torch); }
+  .term-input-row button {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--torch);
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  .term-input-row button:hover:not(:disabled) { background: var(--stone); border-color: var(--torch); color: var(--torch-bright); }
+
+  /* Multiple-choice options read as a terminal menu — flat rows, no card
+     borders, a highlight on the active/hovered line instead. */
+  .mc-options { display: none; flex-direction: column; text-align: left; margin-top: 4px; }
   .mc-options.show { display: flex; }
   .mc-option {
     width: 100%;
-    background: var(--stone-dark);
-    border: 1px solid var(--line);
+    background: transparent;
+    border: none;
+    border-left: 2px solid transparent;
     color: var(--text);
-    border-radius: 4px;
-    padding: 10px 12px;
+    padding: 7px 8px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 13px;
     text-align: left;
     cursor: pointer;
   }
-  .mc-option:hover:not(:disabled) { border-color: var(--torch); background: var(--stone); }
+  .mc-option:hover:not(:disabled) { border-left-color: var(--torch); background: var(--stone); color: var(--torch-bright); }
   .mc-option:disabled { opacity: .55; cursor: default; }
   .mc-option .letter { color: var(--torch-bright); font-weight: 700; margin-right: 8px; }
 
@@ -673,23 +731,35 @@
        engageable (boss, minion, chest, rune, or vocab encounter). The room
        behind it is frozen — nothing moves until this is resolved. -->
   <section class="screen" id="battleScreen">
-    <div class="battle-opponent">
-      <div class="battle-glyph" id="battleGlyph">D</div>
-      <div class="target-label" id="targetLabel">Target: Boss</div>
-      <div class="combat-status" id="combatStatus">HP: ♦♦♦</div>
-    </div>
+    <div class="terminal">
+      <div class="terminal-titlebar">
+        <span class="terminal-dots"><i></i><i></i><i></i></span>
+        <span class="terminal-title">ENCOUNTER.SYS</span>
+      </div>
+      <div class="terminal-body">
+        <div class="term-status">
+          <div class="battle-glyph" id="battleGlyph">D</div>
+          <div class="term-status-lines">
+            <div class="term-line" id="targetLabel">Target: Boss</div>
+            <div class="term-line combat-status" id="combatStatus">HP: ♦♦♦</div>
+          </div>
+        </div>
 
-    <div class="panel">
-      <div class="enemy-name" id="enemyName">CPU</div>
-      <div class="enemy-prompt">Answer to defeat or resolve what you're facing. If more than one thing was in your way, you'll face each in turn.</div>
-      <form id="answerForm" autocomplete="off">
-        <input type="text" id="answerInput" placeholder="Your answer" autofocus>
-        <button type="button" id="attackBtn">Attack</button>
-      </form>
-      <div class="mc-options" id="mcOptions"></div>
-      <div class="feedback" id="feedback"></div>
-      <div class="next-wrap" id="nextWrap">
-        <button class="ghost" id="nextBtn">Next room →</button>
+        <div class="term-line term-label">QUERY:</div>
+        <div class="enemy-name" id="enemyName">CPU</div>
+        <div class="enemy-prompt">Answer to defeat or resolve what you're facing. If more than one thing was in your way, you'll face each in turn.</div>
+
+        <form id="answerForm" class="term-input-row" autocomplete="off">
+          <span class="term-prompt">&gt;</span>
+          <input type="text" id="answerInput" placeholder="type your answer" autofocus>
+          <button type="button" id="attackBtn">Attack</button>
+        </form>
+        <div class="mc-options" id="mcOptions"></div>
+
+        <div class="feedback" id="feedback"></div>
+        <div class="next-wrap" id="nextWrap">
+          <button class="ghost" id="nextBtn">Next room →</button>
+        </div>
       </div>
     </div>
   </section>
