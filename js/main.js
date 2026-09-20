@@ -2,7 +2,7 @@ import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, BOSS_ICONS, GRID_SIZES, CHAMBER_TARGETS,
-  DIFFICULTY_COIN_REWARD, ENCOUNTER_GLYPHS, DIRECTION_ARROWS
+  DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS
 } from './config.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
@@ -413,13 +413,13 @@ function loadRoom() {
   bossActor.classList.remove('gone');
   positionActor(bossActor, state.boss.row, state.boss.col, true);
 
-  // Coin, chest, and rune only ever land in a room, never a hallway — a
-  // hallway is one tile wide, so an object sitting in one would block
-  // the only way through. If a room is ever too packed to fit one (rare),
-  // fall back to any open floor tile so nothing silently fails to spawn.
+  // Coin and the room's one special item only ever land in an actual room
+  // tile, never a hallway — a hallway is one tile wide, so an object
+  // sitting in one would force answering it (with a wrong-answer trap, for
+  // a chest/rune/encounter) just to get past. No fallback to non-room
+  // tiles: if a room is too packed to fit one, it simply doesn't spawn.
   const roomTiles = layout.roomTiles;
-  const pickRoomTile = (avoidList) =>
-    pickCoinTile(state.wallSet, avoidList, roomTiles) || pickCoinTile(state.wallSet, avoidList);
+  const pickRoomTile = (avoidList) => pickCoinTile(state.wallSet, avoidList, roomTiles);
 
   const coinTile = pickRoomTile([state.PLAYER_START, { row: state.boss.row, col: state.boss.col }]);
   state.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
@@ -429,50 +429,52 @@ function loadRoom() {
   const takenTiles = [state.PLAYER_START, { row: state.boss.row, col: state.boss.col }];
   if (state.coin) takenTiles.push(state.coin);
 
-  const chestTile = pickRoomTile(takenTiles);
-  state.chest = chestTile ? { row: chestTile.row, col: chestTile.col, el: chestActor, kind: 'chest' } : null;
-  chestActor.classList.toggle('gone', !state.chest);
-  if (state.chest) { positionActor(chestActor, state.chest.row, state.chest.col, true); takenTiles.push(state.chest); }
+  // Exactly one special interactive extra per room — a chest, a rune, or a
+  // single category encounter, picked at random from whichever are
+  // eligible. Never more than one at once, so the room's one bonus/gamble
+  // stays meaningful instead of being buried among several.
+  state.chest = null;
+  chestActor.classList.add('gone');
+  state.rune = null;
+  runeActor.classList.add('gone');
 
-  const runeTile = pickRoomTile(takenTiles);
-  state.rune = runeTile ? { row: runeTile.row, col: runeTile.col, el: runeActor, kind: 'rune' } : null;
-  runeActor.classList.toggle('gone', !state.rune);
-  if (state.rune) { positionActor(runeActor, state.rune.row, state.rune.col, true); takenTiles.push(state.rune); }
-
-  // Vocab encounters: one per category present in the active list (entries
-  // with no category never spawn one), capped at 3 per room so a large
-  // custom list still shows variety across rooms/replays rather than
-  // flooding a single one.
   const byCategory = new Map();
   state.activeData.forEach(item => {
     if (!item.category) return;
     if (!byCategory.has(item.category)) byCategory.set(item.category, []);
     byCategory.get(item.category).push(item);
   });
-  const categories = shuffle(Array.from(byCategory.keys())).slice(0, 3);
-  // glyphForCategory is a hash, so two categories can land on the same
-  // glyph by coincidence — harmless normally, but confusing if both show up
-  // in the same room. Reassign a collision (within this room only) to the
-  // next unused glyph in the palette, so the handful on screen at once are
-  // always visually distinct.
-  const usedGlyphs = new Set();
-  categories.forEach(category => {
-    const tile = pickRoomTile(takenTiles);
-    if (!tile) return; // room too packed — skip this encounter rather than overlap something
-    let glyph = glyphForCategory(category);
-    if (usedGlyphs.has(glyph)) {
-      glyph = ENCOUNTER_GLYPHS.find(g => !usedGlyphs.has(g)) || glyph;
+
+  const specialTile = pickRoomTile(takenTiles);
+  if (specialTile) {
+    const candidates = [
+      { type: 'chest' },
+      { type: 'rune' },
+      ...Array.from(byCategory.keys()).map(category => ({ type: 'encounter', category })),
+    ];
+    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+    if (chosen.type === 'chest') {
+      state.chest = { row: specialTile.row, col: specialTile.col, el: chestActor, kind: 'chest' };
+      chestActor.classList.remove('gone');
+      positionActor(chestActor, specialTile.row, specialTile.col, true);
+    } else if (chosen.type === 'rune') {
+      state.rune = { row: specialTile.row, col: specialTile.col, el: runeActor, kind: 'rune' };
+      runeActor.classList.remove('gone');
+      positionActor(runeActor, specialTile.row, specialTile.col, true);
+    } else {
+      const glyph = glyphForCategory(chosen.category);
+      const el = document.createElement('div');
+      el.className = 'actor encounter';
+      el.textContent = glyph;
+      grid.appendChild(el);
+      const encounter = {
+        row: specialTile.row, col: specialTile.col, el, kind: 'encounter',
+        category: chosen.category, pool: byCategory.get(chosen.category),
+      };
+      positionActor(el, specialTile.row, specialTile.col, true);
+      state.encounters.push(encounter);
     }
-    usedGlyphs.add(glyph);
-    const el = document.createElement('div');
-    el.className = 'actor encounter';
-    el.textContent = glyph;
-    grid.appendChild(el);
-    const encounter = { row: tile.row, col: tile.col, el, kind: 'encounter', category, pool: byCategory.get(category) };
-    positionActor(el, encounter.row, encounter.col, true);
-    state.encounters.push(encounter);
-    takenTiles.push(encounter);
-  });
+  }
 
   state.visibleSet = new Set();
   state.exploredSet = new Set();
@@ -851,7 +853,7 @@ devSkipBtn.addEventListener('click', () => {
 // boss placement, and entities are generating correctly under the fog.
 devFogBtn.addEventListener('click', () => {
   state.fogEnabled = !state.fogEnabled;
-  devFogBtn.textContent = state.fogEnabled ? '👁 Fog: ON (dev)' : '👁 Fog: OFF (dev)';
+  devFogBtn.textContent = state.fogEnabled ? 'Fog: ON (dev)' : 'Fog: OFF (dev)';
   renderFog();
 });
 

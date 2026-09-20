@@ -72,7 +72,9 @@ export const MINION_ICONS = ['a', 'b', 'r', 'w'];
 // used by bosses/minions, since these represent a learning choice, not a
 // monster. glyphForCategory() in quiz.js picks one deterministically from
 // a category's name, so the same category always renders the same symbol.
-export const ENCOUNTER_GLYPHS = ['?', '!', '$', '%', '&', '*', '+', '~', '^', '='];
+// '$' and '?' are reserved for the coin/rune actors, so they're excluded
+// here to avoid an encounter glyph ever looking identical to one of those.
+export const ENCOUNTER_GLYPHS = ['!', '%', '&', '*', '+', '~', '^', '='];
 
 // Player glyph is directional now — an arrow matching which way they're
 // facing, updated on every move attempt (even a blocked one, so "turning
