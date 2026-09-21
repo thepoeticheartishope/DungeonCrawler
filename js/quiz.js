@@ -42,6 +42,7 @@ export function parseListInput(text) {
         const rawDifficulty = String((item && item.difficulty) || '').trim().toLowerCase();
         const source = String((item && item.source) || '').trim();
         const image = String((item && item.image) || '').trim();
+        const answerType = String((item && item.answerType) || '').trim();
         return {
           term: String((item && item.term) || '').trim(),
           meaning: String((item && item.meaning) || '').trim(),
@@ -51,7 +52,8 @@ export function parseListInput(text) {
           category: category || undefined,
           difficulty: VALID_DIFFICULTIES.includes(rawDifficulty) ? rawDifficulty : 'medium',
           source: source || undefined,
-          image: image || undefined
+          image: image || undefined,
+          answerType: answerType || undefined
         };
       })
       .filter(item => item.term && item.meaning);
@@ -133,7 +135,10 @@ export function normalizeSpaces(s) {
 // Builds 2-4 answer choices for a question. Uses the item's own "options"
 // list if the loaded JSON provided one (adding the correct meaning in if
 // it's missing); otherwise picks up to 3 random distractor meanings from
-// the rest of the active list.
+// the rest of the active list, preferring ones that share the item's
+// answerType (a name for a name, a date for a date, ...) so the correct
+// choice can't be spotted just by its shape. Falls back to the full pool
+// when too few same-type candidates exist, or the item has no answerType.
 export function buildChoices(item) {
   let opts;
   if (Array.isArray(item.options) && item.options.length >= 2) {
@@ -141,8 +146,12 @@ export function buildChoices(item) {
     const hasCorrect = opts.some(o => normalizeSpaces(o).toLowerCase() === normalizeSpaces(item.meaning).toLowerCase());
     if (!hasCorrect) opts.push(item.meaning);
   } else {
-    const pool = state.activeData.filter(d => d !== item &&
+    const basePool = state.activeData.filter(d => d !== item &&
       normalizeSpaces(d.meaning).toLowerCase() !== normalizeSpaces(item.meaning).toLowerCase());
+    const typedPool = item.answerType
+      ? basePool.filter(d => d.answerType === item.answerType)
+      : [];
+    const pool = typedPool.length >= 3 ? typedPool : basePool;
     const distractors = shuffle(pool).slice(0, 3).map(d => d.meaning);
     opts = [item.meaning, ...distractors];
   }
