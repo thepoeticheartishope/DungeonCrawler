@@ -132,6 +132,22 @@ export function normalizeSpaces(s) {
   return s.trim().replace(/\s+/g, ' ');
 }
 
+// Shuffles `pool` and returns its distinct meanings (case/space-insensitive,
+// first occurrence wins), so two different questions that happen to share
+// an answer (e.g. two "who wrote this?" entries both answered "John") never
+// both land in the same choice list looking like duplicate options.
+function distinctMeanings(pool) {
+  const seen = new Set();
+  const out = [];
+  for (const d of shuffle(pool)) {
+    const key = normalizeSpaces(d.meaning).toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(d.meaning);
+  }
+  return out;
+}
+
 // Builds 2-4 answer choices for a question. Uses the item's own "options"
 // list if the loaded JSON provided one (adding the correct meaning in if
 // it's missing); otherwise picks up to 3 random distractor meanings from
@@ -151,8 +167,8 @@ export function buildChoices(item) {
     const typedPool = item.answerType
       ? basePool.filter(d => d.answerType === item.answerType)
       : [];
-    const pool = typedPool.length >= 3 ? typedPool : basePool;
-    const distractors = shuffle(pool).slice(0, 3).map(d => d.meaning);
+    const typedDistinct = distinctMeanings(typedPool);
+    const distractors = typedDistinct.length >= 3 ? typedDistinct.slice(0, 3) : distinctMeanings(basePool).slice(0, 3);
     opts = [item.meaning, ...distractors];
   }
   return shuffle(opts).slice(0, 4);
