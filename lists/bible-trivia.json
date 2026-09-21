@@ -1,34 +1,1075 @@
 [
-  { "term": "Who built the ark?", "meaning": "Noah", "category": "Old Testament", "difficulty": "easy", "source": "Genesis 6:14-22" },
-  { "term": "Who led the Israelites out of Egypt?", "meaning": "Moses", "category": "Old Testament", "difficulty": "easy", "source": "Exodus 12:31-42" },
-  { "term": "Who was swallowed by a great fish?", "meaning": "Jonah", "category": "Old Testament", "difficulty": "easy", "source": "Jonah 1:17" },
-  { "term": "Who was the first man God created?", "meaning": "Adam", "category": "Old Testament", "difficulty": "easy", "source": "Genesis 2:7" },
-  { "term": "Who was the first woman God created?", "meaning": "Eve", "category": "Old Testament", "difficulty": "easy", "source": "Genesis 2:22" },
-  { "term": "Who defeated the giant Goliath with a sling and stone?", "meaning": "David", "category": "Old Testament", "difficulty": "easy", "source": "1 Samuel 17:48-51" },
-  { "term": "Who killed his brother Abel?", "meaning": "Cain", "category": "Old Testament", "difficulty": "easy", "source": "Genesis 4:8" },
-  { "term": "Who was Jesus' mother?", "meaning": "Mary", "category": "New Testament", "difficulty": "easy", "source": "Luke 1:26-31" },
-  { "term": "How many disciples did Jesus choose?", "meaning": "Twelve", "category": "New Testament", "difficulty": "easy", "source": "Luke 6:12-16" },
-  { "term": "In what town was Jesus born?", "meaning": "Bethlehem", "category": "New Testament", "difficulty": "easy", "source": "Luke 2:4-7" },
-
-  { "term": "Whose hair was the source of his great strength?", "meaning": "Samson", "category": "Old Testament", "difficulty": "medium", "source": "Judges 16:17" },
-  { "term": "Who was thrown into a lions' den for praying?", "meaning": "Daniel", "category": "Old Testament", "difficulty": "medium", "source": "Daniel 6:16" },
-  { "term": "Who was sold into slavery in Egypt by his own brothers?", "meaning": "Joseph", "category": "Old Testament", "difficulty": "medium", "source": "Genesis 37:28" },
-  { "term": "Who was known as the wisest king of Israel?", "meaning": "Solomon", "category": "Old Testament", "difficulty": "medium", "source": "1 Kings 4:29-34" },
-  { "term": "Who was the father of Isaac?", "meaning": "Abraham", "category": "Old Testament", "difficulty": "medium", "source": "Genesis 21:2-3" },
-  { "term": "What sea did Moses part to let the Israelites cross?", "meaning": "The Red Sea", "category": "Old Testament", "difficulty": "medium", "source": "Exodus 14:21-22" },
-  { "term": "Who became queen of Persia and saved her people from destruction?", "meaning": "Esther", "category": "Old Testament", "difficulty": "medium", "source": "Esther 7:3-4" },
-  { "term": "Who led the Israelites into the Promised Land after Moses died?", "meaning": "Joshua", "category": "Old Testament", "difficulty": "medium", "source": "Joshua 1:1-2" },
-  { "term": "Who baptized Jesus in the Jordan River?", "meaning": "John the Baptist", "category": "New Testament", "difficulty": "medium", "source": "Matthew 3:13-17" },
-  { "term": "Who denied knowing Jesus three times?", "meaning": "Peter", "category": "New Testament", "difficulty": "medium", "source": "Luke 22:54-62" },
-
-  { "term": "Who was turned into a pillar of salt for looking back at Sodom?", "meaning": "Lot's wife", "category": "Old Testament", "difficulty": "hard", "source": "Genesis 19:26" },
-  { "term": "Who wrestled with an angel and was renamed Israel?", "meaning": "Jacob", "category": "Old Testament", "difficulty": "hard", "source": "Genesis 32:24-28" },
-  { "term": "Who interpreted Pharaoh's dream of seven fat cows and seven lean cows?", "meaning": "Joseph", "category": "Old Testament", "difficulty": "hard", "source": "Genesis 41:25-32" },
-  { "term": "Who was fed by ravens while hiding by the brook Cherith?", "meaning": "Elijah", "category": "Old Testament", "difficulty": "hard", "source": "1 Kings 17:2-6" },
-  { "term": "How many days and nights did it rain during the flood?", "meaning": "Forty", "category": "Old Testament", "difficulty": "hard", "source": "Genesis 7:12" },
-  { "term": "Who betrayed Jesus for thirty pieces of silver?", "meaning": "Judas Iscariot", "category": "New Testament", "difficulty": "hard", "source": "Matthew 26:14-15" },
-  { "term": "In what town did Jesus turn water into wine at a wedding?", "meaning": "Cana", "category": "New Testament", "difficulty": "hard", "source": "John 2:1-11" },
-  { "term": "Who was the first Christian martyr, stoned to death?", "meaning": "Stephen", "category": "New Testament", "difficulty": "hard", "source": "Acts 7:58-60" },
-  { "term": "On the road to which city was Paul converted to Christianity?", "meaning": "Damascus", "category": "New Testament", "difficulty": "hard", "source": "Acts 9:3-9" },
-  { "term": "Who wrote most of the letters (epistles) in the New Testament?", "meaning": "Paul", "category": "New Testament", "difficulty": "hard", "source": "Traditionally credited with 13 of the New Testament's 27 books, from Romans to Philemon." }
+  {
+    "term": "Who built the ark?",
+    "meaning": "Noah",
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "source": "Genesis 6:14-22"
+  },
+  {
+    "term": "Who led the Israelites out of Egypt?",
+    "meaning": "Moses",
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "source": "Exodus 12:31-42"
+  },
+  {
+    "term": "Who was swallowed by a great fish?",
+    "meaning": "Jonah",
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "source": "Jonah 1:17"
+  },
+  {
+    "term": "Who was the first man God created?",
+    "meaning": "Adam",
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "source": "Genesis 2:7"
+  },
+  {
+    "term": "Who was the first woman God created?",
+    "meaning": "Eve",
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "source": "Genesis 2:22"
+  },
+  {
+    "term": "Who defeated the giant Goliath with a sling and stone?",
+    "meaning": "David",
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "source": "1 Samuel 17:48-51"
+  },
+  {
+    "term": "Who killed his brother Abel?",
+    "meaning": "Cain",
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "source": "Genesis 4:8"
+  },
+  {
+    "term": "Who was Jesus' mother?",
+    "meaning": "Mary",
+    "category": "New Testament",
+    "difficulty": "easy",
+    "source": "Luke 1:26-31"
+  },
+  {
+    "term": "How many disciples did Jesus choose?",
+    "meaning": "Twelve",
+    "category": "New Testament",
+    "difficulty": "easy",
+    "source": "Luke 6:12-16"
+  },
+  {
+    "term": "In what town was Jesus born?",
+    "meaning": "Bethlehem",
+    "category": "New Testament",
+    "difficulty": "easy",
+    "source": "Luke 2:4-7"
+  },
+  {
+    "term": "Whose hair was the source of his great strength?",
+    "meaning": "Samson",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Judges 16:17"
+  },
+  {
+    "term": "Who was thrown into a lions' den for praying?",
+    "meaning": "Daniel",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Daniel 6:16"
+  },
+  {
+    "term": "Who was sold into slavery in Egypt by his own brothers?",
+    "meaning": "Joseph",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Genesis 37:28"
+  },
+  {
+    "term": "Who was known as the wisest king of Israel?",
+    "meaning": "Solomon",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "1 Kings 4:29-34"
+  },
+  {
+    "term": "Who was the father of Isaac?",
+    "meaning": "Abraham",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Genesis 21:2-3"
+  },
+  {
+    "term": "What sea did Moses part to let the Israelites cross?",
+    "meaning": "The Red Sea",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Exodus 14:21-22"
+  },
+  {
+    "term": "Who became queen of Persia and saved her people from destruction?",
+    "meaning": "Esther",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Esther 7:3-4"
+  },
+  {
+    "term": "Who led the Israelites into the Promised Land after Moses died?",
+    "meaning": "Joshua",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Joshua 1:1-2"
+  },
+  {
+    "term": "Who baptized Jesus in the Jordan River?",
+    "meaning": "John the Baptist",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "Matthew 3:13-17"
+  },
+  {
+    "term": "Who denied knowing Jesus three times?",
+    "meaning": "Peter",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "Luke 22:54-62"
+  },
+  {
+    "term": "Who was turned into a pillar of salt for looking back at Sodom?",
+    "meaning": "Lot's wife",
+    "category": "Old Testament",
+    "difficulty": "hard",
+    "source": "Genesis 19:26"
+  },
+  {
+    "term": "Who wrestled with an angel and was renamed Israel?",
+    "meaning": "Jacob",
+    "category": "Old Testament",
+    "difficulty": "hard",
+    "source": "Genesis 32:24-28"
+  },
+  {
+    "term": "Who interpreted Pharaoh's dream of seven fat cows and seven lean cows?",
+    "meaning": "Joseph",
+    "category": "Old Testament",
+    "difficulty": "hard",
+    "source": "Genesis 41:25-32"
+  },
+  {
+    "term": "Who was fed by ravens while hiding by the brook Cherith?",
+    "meaning": "Elijah",
+    "category": "Old Testament",
+    "difficulty": "hard",
+    "source": "1 Kings 17:2-6"
+  },
+  {
+    "term": "How many days and nights did it rain during the flood?",
+    "meaning": "Forty",
+    "category": "Old Testament",
+    "difficulty": "hard",
+    "source": "Genesis 7:12"
+  },
+  {
+    "term": "Who betrayed Jesus for thirty pieces of silver?",
+    "meaning": "Judas Iscariot",
+    "category": "New Testament",
+    "difficulty": "hard",
+    "source": "Matthew 26:14-15"
+  },
+  {
+    "term": "In what town did Jesus turn water into wine at a wedding?",
+    "meaning": "Cana",
+    "category": "New Testament",
+    "difficulty": "hard",
+    "source": "John 2:1-11"
+  },
+  {
+    "term": "Who was the first Christian martyr, stoned to death?",
+    "meaning": "Stephen",
+    "category": "New Testament",
+    "difficulty": "hard",
+    "source": "Acts 7:58-60"
+  },
+  {
+    "term": "On the road to which city was Paul converted to Christianity?",
+    "meaning": "Damascus",
+    "category": "New Testament",
+    "difficulty": "hard",
+    "source": "Acts 9:3-9"
+  },
+  {
+    "term": "Who wrote most of the letters (epistles) in the New Testament?",
+    "meaning": "Paul",
+    "category": "New Testament",
+    "difficulty": "hard",
+    "source": "Traditionally credited with 13 of the New Testament's 27 books, from Romans to Philemon."
+  },
+  {
+    "term": "What name did Samuel give to the site where he placed a memorial stone to commemorate their victory over the Philistines?",
+    "meaning": "Ebenezer",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "1 Sam 7:10-12"
+  },
+  {
+    "term": "What was the first Bible printed in England with moveable type?",
+    "meaning": "The Gutenberg Bible",
+    "category": "History & Geography",
+    "difficulty": "easy"
+  },
+  {
+    "term": "On what mountain do the Lamb and the 144,000 in Revelation 14 stand?",
+    "meaning": "Mt. Zion (Sion)",
+    "category": "Prophecy",
+    "difficulty": "hard",
+    "source": "Rev 14:1"
+  },
+  {
+    "term": "What was the name of the young girl who looked after King David when he was old?",
+    "meaning": "Abishag",
+    "category": "Names & People",
+    "difficulty": "hard",
+    "source": "1 Kings 1"
+  },
+  {
+    "term": "What book in the Bible comes after Nehemiah?",
+    "meaning": "Esther",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "medium"
+  },
+  {
+    "term": "Who said the following: \"I have need to be baptized of thee, and comest thou to me.\"?",
+    "meaning": "John the Baptist",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "Matt 3:14"
+  },
+  {
+    "term": "Recite Ephesians 2:8.",
+    "meaning": "\"For by grace are ye saved through faith; and that not of yourselves: it is the gift of God.\"",
+    "category": "Wisdom & Words",
+    "difficulty": "hard",
+    "source": "Eph 2:8"
+  },
+  {
+    "term": "What did the Israelites throw on their heads as a sign of sorrow?",
+    "meaning": "Ashes",
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "source": "2 Sam 13:19"
+  },
+  {
+    "term": "According to 2 Chronicles, what is the significance of Mt. Moriah?",
+    "meaning": "Site of Solomon's Temple",
+    "category": "History & Geography",
+    "difficulty": "medium",
+    "source": "2 Chron. 3:1"
+  },
+  {
+    "term": "Who will be the first two thrown into the Lake of Fire as recorded by John in Revelation?",
+    "meaning": "The beast and the false prophet",
+    "category": "Prophecy",
+    "difficulty": "medium",
+    "source": "Rev 19:20"
+  },
+  {
+    "term": "What name did Jesus give to James and John, which means \"Sons of Thunder\"?",
+    "meaning": "Boanerges",
+    "category": "Names & People",
+    "difficulty": "hard",
+    "source": "Mark 3:17"
+  },
+  {
+    "term": "Which book in the Bible immediately precedes Hebrews?",
+    "meaning": "Philemon",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "medium"
+  },
+  {
+    "term": "What act of Paul and Silas while jailed in Philippi caused their jailkeepers to turn to Christianity?",
+    "meaning": "Paul and Silas stayed in the jail even after the earthquake had opened their cell doors.",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "Acts 16:28-30"
+  },
+  {
+    "term": "Recite Psalm 23:5.",
+    "meaning": "\"Thou preparest a table before me in the presence of mine enemies: thou anointest my head with oil; my cup runneth over.\"",
+    "category": "Wisdom & Words",
+    "difficulty": "hard",
+    "source": "Ps 23:5"
+  },
+  {
+    "term": "What was David's wife's punishment for ridiculing his dance of praise to the Lord?",
+    "meaning": "Barrenness.",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "2 Sam 6:16-23"
+  },
+  {
+    "term": "In what year did the United Nations officially recognize Israel as a nation?",
+    "meaning": "1948",
+    "category": "History & Geography",
+    "difficulty": "easy"
+  },
+  {
+    "term": "Which prophet, by God's power, eliminated poison from a pot of stew?",
+    "meaning": "Elisha",
+    "category": "Prophecy",
+    "difficulty": "medium",
+    "source": "2 Kings 4:38-44"
+  },
+  {
+    "term": "Who was the father of Moab?",
+    "meaning": "Lot",
+    "category": "Names & People",
+    "difficulty": "medium",
+    "source": "Gen 19:33-37"
+  },
+  {
+    "term": "Spell Thaddaeus (the disciple).",
+    "meaning": "Thaddaeus",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "easy"
+  },
+  {
+    "term": "What miraculous healing was received by Malchus?",
+    "meaning": "His ear was healed after it was cut off.",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "John 18:10; Luke 23:50-51"
+  },
+  {
+    "term": "Which two books say that all powers and authorities are ordained by God?",
+    "meaning": "Colossians (1:16) and Romans",
+    "category": "Wisdom & Words",
+    "difficulty": "hard",
+    "source": "13:1"
+  },
+  {
+    "term": "In which book of the Bible do we read three times of men pretending to rulers that their wives were their sisters?",
+    "meaning": "Genesis",
+    "category": "Old Testament",
+    "difficulty": "hard",
+    "source": "Gen 12, 20 & 26"
+  },
+  {
+    "term": "According to Genesis 22 and 2 Chronicles 3, what two reasons is Mt. Moriah significant?",
+    "meaning": "Site of Abraham's offering of Isaac and of Solomon's temple",
+    "category": "History & Geography",
+    "difficulty": "hard",
+    "source": "Gen 22:1-2; 2 Chron 3:1"
+  },
+  {
+    "term": "Who asked the following: \"Who is worthy to open the book and to loose the seals thereof\"?",
+    "meaning": "An angel",
+    "category": "Prophecy",
+    "difficulty": "medium",
+    "source": "Rev 5:2"
+  },
+  {
+    "term": "Who was the first person whose death was recorded in the Bible?",
+    "meaning": "Abel",
+    "category": "Names & People",
+    "difficulty": "easy",
+    "source": "Gen 4:8"
+  },
+  {
+    "term": "How many books are there in the \"Pentateuch\"?",
+    "meaning": "5",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "easy",
+    "source": "Gen, Ex, Lev, Num & Deut"
+  },
+  {
+    "term": "Whose hospitality in Thessalonica got him into hot water?",
+    "meaning": "Jason",
+    "category": "New Testament",
+    "difficulty": "hard",
+    "source": "Acts 17"
+  },
+  {
+    "term": "Which book contains a chapter which begins: \"My God, My God, why hast thou forsaken me?\"?",
+    "meaning": "Psalms",
+    "category": "Wisdom & Words",
+    "difficulty": "easy",
+    "source": "Ps 22:1"
+  },
+  {
+    "term": "Whose house did God vow to punish for the massacre at Jezreel?",
+    "meaning": "The house of Jehu",
+    "category": "Old Testament",
+    "difficulty": "hard",
+    "source": "Hosea 1:4"
+  },
+  {
+    "term": "With what race did Jews not associate?",
+    "meaning": "Samaritans",
+    "category": "History & Geography",
+    "difficulty": "easy",
+    "source": "John 4:9"
+  },
+  {
+    "term": "How many days did Daniel say would pass between the time the daily sacrifice is abolished and the abomination of desolation?",
+    "meaning": "1290 days",
+    "category": "Prophecy",
+    "difficulty": "hard",
+    "source": "Dan 12:11"
+  },
+  {
+    "term": "Who shot an arrow as a signal to warn David?",
+    "meaning": "Jonathan",
+    "category": "Names & People",
+    "difficulty": "medium",
+    "source": "1 Sam 20:12-36"
+  },
+  {
+    "term": "Which of the ten plagues brought upon Egypt by Moses was the plague of hail?",
+    "meaning": "7th",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "medium",
+    "source": "Ex 9:23"
+  },
+  {
+    "term": "What flowed from Jesus' side when he was pierced at his crucifixion?",
+    "meaning": "Blood and water",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "John 19:34"
+  },
+  {
+    "term": "What does the Bible say is the beginning of wisdom (or knowledge)?",
+    "meaning": "Fear of the Lord",
+    "category": "Wisdom & Words",
+    "difficulty": "easy",
+    "source": "Prov 1:7"
+  },
+  {
+    "term": "In whose sack did Joseph hide a silver cup?",
+    "meaning": "Benjamin's",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Gen 44:2"
+  },
+  {
+    "term": "According to church tradition which of the original twelve disciples was martyred in Ethiopia?",
+    "meaning": "Matthew",
+    "category": "History & Geography",
+    "difficulty": "hard"
+  },
+  {
+    "term": "Fill in the blanks about the prophesied destruction of Mystery Babylon: \"The voice of ______ and of the ______ shall be heard no more at all in thee.\"",
+    "meaning": "Bridegroom; bride",
+    "category": "Prophecy",
+    "difficulty": "hard",
+    "source": "Rev 18:23"
+  },
+  {
+    "term": "Who is the only male cousin of John the Baptist identified by name in the Bible?",
+    "meaning": "Jesus",
+    "category": "Names & People",
+    "difficulty": "medium",
+    "source": "Luke 1:36"
+  },
+  {
+    "term": "How long was Joseph imprisoned between the time he interpreted the dreams of the chief cupbearer and the time he interpreted the Pharoah's dream?",
+    "meaning": "Two years",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "hard",
+    "source": "Gen 40:18-23; 41:1-32"
+  },
+  {
+    "term": "Who said, \"Come see a man which told me all things that ever I did\"?",
+    "meaning": "The woman Jesus met at the well",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "John 4:29"
+  },
+  {
+    "term": "Jesus said it was unforgivable to speak against or blaspheme what?",
+    "meaning": "The Holy Spirit (or Ghost)",
+    "category": "Wisdom & Words",
+    "difficulty": "easy",
+    "source": "John 12:31-32"
+  },
+  {
+    "term": "Three times in the Bible, God is described as physically writing something. Upon what did He write the second time?",
+    "meaning": "Stone (tablets)",
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "source": "Ex 31:18"
+  },
+  {
+    "term": "During the NT times what was the Greek word for charitable love?",
+    "meaning": "Agape",
+    "category": "History & Geography",
+    "difficulty": "easy"
+  },
+  {
+    "term": "Name the false prophet who contradicted Jeremiah and predicted that the Jews would break out from under Babylonian rule within two years?",
+    "meaning": "Hananiah",
+    "category": "Prophecy",
+    "difficulty": "hard",
+    "source": "Jer 28"
+  },
+  {
+    "term": "Name the ruler of the synagogue whose daughter Jesus raised from the dead?",
+    "meaning": "Jairus",
+    "category": "Names & People",
+    "difficulty": "medium",
+    "source": "Mark 5:22-24,35-43"
+  },
+  {
+    "term": "In how many stories of the Bible was Jesus ever said to have written something?",
+    "meaning": "1",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "medium",
+    "source": "John 8:1-11"
+  },
+  {
+    "term": "How did the friends of a crippled man get him past the pressing crowds to be healed by Jesus?",
+    "meaning": "They lowered him through the roof.",
+    "category": "New Testament",
+    "difficulty": "easy",
+    "source": "Mark 2:4"
+  },
+  {
+    "term": "Which book tells us not to forget to entertain strangers, since some have thus entertained angels?",
+    "meaning": "Hebrews",
+    "category": "Wisdom & Words",
+    "difficulty": "medium",
+    "source": "13:1"
+  },
+  {
+    "term": "How did Korah, Dathan and Abiram die?",
+    "meaning": "They were swallowed by the earth",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Num 16:28-35"
+  },
+  {
+    "term": "What son of Kish became king of Israel?",
+    "meaning": "Saul",
+    "category": "History & Geography",
+    "difficulty": "medium",
+    "source": "1 Sam 9:1-3"
+  },
+  {
+    "term": "Which prophet foretold, \"a voice of him that crieth in the wilderness, 'Prepare ye the way of the Lord'\"?",
+    "meaning": "Isaiah",
+    "category": "Prophecy",
+    "difficulty": "easy",
+    "source": "40:3"
+  },
+  {
+    "term": "How many generations were there from Obed to David?",
+    "meaning": "2",
+    "category": "Names & People",
+    "difficulty": "hard",
+    "source": "Matt 1:5-6"
+  },
+  {
+    "term": "How often is the Year of Jubilee celebrated in Jewish tradition?",
+    "meaning": "Every 50 years",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "medium",
+    "source": "Lev 25"
+  },
+  {
+    "term": "Who said, \"Daughters of Jerusalem, weep not for me\"?",
+    "meaning": "Jesus",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "Luke 23:28"
+  },
+  {
+    "term": "According to Solomon in Ecclesiastes, what increases with knowledge?",
+    "meaning": "Sorrow",
+    "category": "Wisdom & Words",
+    "difficulty": "medium",
+    "source": "Eccl 1:18"
+  },
+  {
+    "term": "Who did an angel say would be a donkey of a man when born, whose hand would be against everyone?",
+    "meaning": "Ishmael",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Gen 16:11-12"
+  },
+  {
+    "term": "Esther was queen over what land?",
+    "meaning": "Persia",
+    "category": "History & Geography",
+    "difficulty": "easy",
+    "source": "Est 1:1; 2:16-17"
+  },
+  {
+    "term": "Fill in the blank in Jesus' sentence with one word: \"For if you believed ________, you would believe me; for he wrote of me.\"",
+    "meaning": "Moses",
+    "category": "Prophecy",
+    "difficulty": "hard",
+    "source": "John 5:46"
+  },
+  {
+    "term": "Who was the wife of Nabal, and later of David?",
+    "meaning": "Abigail",
+    "category": "Names & People",
+    "difficulty": "medium",
+    "source": "1 Sam 25"
+  },
+  {
+    "term": "In the hierarchy of the Roman Catholic Church, which office is immediately above that of archbishop?",
+    "meaning": "Cardinal",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "easy"
+  },
+  {
+    "term": "Which book contains the passage sometimes called the High Priestly Prayer?",
+    "meaning": "John",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "17"
+  },
+  {
+    "term": "Fill in the blank of Proverbs 13:12 with two words: \"________ ________ maketh the heart sick; but when the desire cometh, it is a tree of life.\"",
+    "meaning": "Hope deferred",
+    "category": "Wisdom & Words",
+    "difficulty": "medium",
+    "source": "Prov 13:12"
+  },
+  {
+    "term": "What did Samson bet thirty men that they could not do?",
+    "meaning": "Solve his riddle",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Judges 14:12-14"
+  },
+  {
+    "term": "In what town did Peter have his vision of a sheet lowered from heaven?",
+    "meaning": "Joppa",
+    "category": "History & Geography",
+    "difficulty": "medium",
+    "source": "Acts 10"
+  },
+  {
+    "term": "Which prophet walked throughout Nineveh in three days?",
+    "meaning": "Jonah",
+    "category": "Prophecy",
+    "difficulty": "easy",
+    "source": "Jonah 3:3"
+  },
+  {
+    "term": "What Old Testament major figure does the book of Hebrews describe as godless?",
+    "meaning": "Esau",
+    "category": "Names & People",
+    "difficulty": "medium",
+    "source": "Hebrews 12:16"
+  },
+  {
+    "term": "How old was Anna the prophetess at the time of Jesus' circumcision?",
+    "meaning": "84",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "hard",
+    "source": "Luke 2:37"
+  },
+  {
+    "term": "Which book records the parable of the Good Samaritan?",
+    "meaning": "Luke",
+    "category": "New Testament",
+    "difficulty": "easy",
+    "source": "Luke 10:25-35"
+  },
+  {
+    "term": "Quote the instruction which immediately precedes this one: \". . . but be ye transformed by the renewing of your mind.\"",
+    "meaning": "\"(And) be not conformed to this world.\"",
+    "category": "Wisdom & Words",
+    "difficulty": "easy",
+    "source": "Romans 12:2"
+  },
+  {
+    "term": "What was the third act of King Saul which displeased God?",
+    "meaning": "Not obeying God's instruction to kill all the livestock of a tribe Saul conquered.",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "1 Sam 18:15"
+  },
+  {
+    "term": "What is the exact name of the organization which places Bibles in most hotels in North America?",
+    "meaning": "The Gideon Bible Society",
+    "category": "History & Geography",
+    "difficulty": "easy"
+  },
+  {
+    "term": "What prophet did the wise men quote to Herod?",
+    "meaning": "Micah",
+    "category": "Prophecy",
+    "difficulty": "medium",
+    "source": "Micah 5:2 and Matt 2:6"
+  },
+  {
+    "term": "Name the paternal grandfather of King David?",
+    "meaning": "Obed",
+    "category": "Names & People",
+    "difficulty": "medium",
+    "source": "Matt 1:5-6"
+  },
+  {
+    "term": "Spell Bartimaeus.",
+    "meaning": "Bartimaeus",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "easy"
+  },
+  {
+    "term": "To what was Jesus referring when he said, \"It is proper for us to do this to fulfill all righteousness.\"?",
+    "meaning": "Baptism",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "Matt 3:15"
+  },
+  {
+    "term": "Finish the following scriptural sentence from Paul in two words: \"Unto the pure, all things . . .\"",
+    "meaning": "\"are pure.\"",
+    "category": "Wisdom & Words",
+    "difficulty": "hard",
+    "source": "Titus 1:15"
+  },
+  {
+    "term": "Who warned King David's wife that Adonijah was preparing to be the next king?",
+    "meaning": "Nathan",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "1 Kings 1:11"
+  },
+  {
+    "term": "Which of the following is closest to Jerusalem -- Bethlehem, Jericho, Nazareth or Jacob's Well?",
+    "meaning": "Bethlehem",
+    "category": "History & Geography",
+    "difficulty": "medium"
+  },
+  {
+    "term": "Which prophet was the most frequent advisor of King David?",
+    "meaning": "Nathan",
+    "category": "Prophecy",
+    "difficulty": "easy"
+  },
+  {
+    "term": "Who was the oldest son of Jacob?",
+    "meaning": "Reuben",
+    "category": "Names & People",
+    "difficulty": "easy",
+    "source": "Gen 29:31-32"
+  },
+  {
+    "term": "What is the thirty-ninth book of the Bible?",
+    "meaning": "Malachi",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "medium"
+  },
+  {
+    "term": "Which is the only gospel in the Bible to record the raising of Lazarus from the dead?",
+    "meaning": "John",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "John 11:1-46"
+  },
+  {
+    "term": "Who wrote the following verse: \"As for man, his days are as grass: as a flower of the field, so he flourisheth\"?",
+    "meaning": "David",
+    "category": "Wisdom & Words",
+    "difficulty": "hard",
+    "source": "Ps 103:13"
+  },
+  {
+    "term": "What covered the Israelite camp in the evening before the first gift of manna?",
+    "meaning": "Quail",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "Ex 16:13"
+  },
+  {
+    "term": "The Dead Sea Scrolls were found a few miles south of what city?",
+    "meaning": "Jericho",
+    "category": "History & Geography",
+    "difficulty": "medium"
+  },
+  {
+    "term": "Who wrote the book of Revelation?",
+    "meaning": "John",
+    "category": "Prophecy",
+    "difficulty": "easy",
+    "source": "Rev 1:1"
+  },
+  {
+    "term": "Who was accused of theft because of a silver cup in his saddle-bag?",
+    "meaning": "Benjamin",
+    "category": "Names & People",
+    "difficulty": "medium",
+    "source": "Gen 44:12"
+  },
+  {
+    "term": "In which book does the Lord refer to himself as \"Alpha and Omega\"?",
+    "meaning": "Revelation",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "easy",
+    "source": "Rev 1:8; 22:13"
+  },
+  {
+    "term": "Who said, \"Saul, Saul why persecutest thou me\"?",
+    "meaning": "Jesus",
+    "category": "New Testament",
+    "difficulty": "easy",
+    "source": "Acts 9:4"
+  },
+  {
+    "term": "What does God promise to those who obey the Commandment, \"Honour thy father and mother\"?",
+    "meaning": "Long life",
+    "category": "Wisdom & Words",
+    "difficulty": "easy",
+    "source": "Ex 20:12"
+  },
+  {
+    "term": "How was David punished for his adultery with Bathsheba and murder of Uriah?",
+    "meaning": "Their first child died.",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "2 Sam 12:14"
+  },
+  {
+    "term": "Where did Paul meet Jesus?",
+    "meaning": "On the road to Damascus",
+    "category": "History & Geography",
+    "difficulty": "easy",
+    "source": "Acts 9:1-20"
+  },
+  {
+    "term": "In what OT prophetic book is the following quotation found: \"I will pour out my spirit upon all flesh; and your sons and your daughters shall prophesy.\"?",
+    "meaning": "Joel",
+    "category": "Prophecy",
+    "difficulty": "medium",
+    "source": "Joel 2:28"
+  },
+  {
+    "term": "What actor played the role of Moses in the 1956 film \"The Ten Commandments\"?",
+    "meaning": "Charlton Heston",
+    "category": "Names & People",
+    "difficulty": "easy"
+  },
+  {
+    "term": "What was the sixth plague brought upon Egypt by Moses?",
+    "meaning": "Boils",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "medium",
+    "source": "Ex 9:10"
+  },
+  {
+    "term": "For whom did Mary Magdalene mistake the risen Jesus?",
+    "meaning": "The gardener",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "John 21:15"
+  },
+  {
+    "term": "What is the true topic of the proverb: \"Drink waters out of thine own cistern, and running waters out of thine own well.\"?",
+    "meaning": "Sex (Marital faithfulness)",
+    "category": "Wisdom & Words",
+    "difficulty": "hard",
+    "source": "Prov 5:15"
+  },
+  {
+    "term": "What did Rebekah and Tamar have in common in respect to childbirth?",
+    "meaning": "Both had twins.",
+    "category": "Old Testament",
+    "difficulty": "hard",
+    "source": "Gen 25:24-26; 38:27-30"
+  },
+  {
+    "term": "In what book are the Jewish commemorative days of Purim instituted?",
+    "meaning": "Esther",
+    "category": "History & Geography",
+    "difficulty": "medium",
+    "source": "Esther 9:25-32"
+  },
+  {
+    "term": "Who are inflicted with sores from the first vial (bowl) in Revelation?",
+    "meaning": "Those who took the mark of the beast or worshipped his image.",
+    "category": "Prophecy",
+    "difficulty": "medium",
+    "source": "Rev 16:2"
+  },
+  {
+    "term": "Who wanted to marry the young girl who looked after King David when he was old?",
+    "meaning": "Adonijah",
+    "category": "Names & People",
+    "difficulty": "hard",
+    "source": "1 Kings 2:17"
+  },
+  {
+    "term": "Which book in the Bible follows the book of Esther?",
+    "meaning": "Job",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "medium"
+  },
+  {
+    "term": "Who said the following: \"Get thee hence, Satan: for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve.\"?",
+    "meaning": "Jesus",
+    "category": "New Testament",
+    "difficulty": "easy",
+    "source": "Matt 4:10"
+  },
+  {
+    "term": "Recite Revelation 3:20.",
+    "meaning": "\"Behold, I stand at the door, and knock: if any man hear my voice, and open the door, I will come in to him, and will sup with him, and he with me.\"",
+    "category": "Wisdom & Words",
+    "difficulty": "hard",
+    "source": "Rev 3:20"
+  },
+  {
+    "term": "What was the second lie Samson told Delilah regarding a means to subdue him?",
+    "meaning": "Tie him with new ropes",
+    "category": "Old Testament",
+    "difficulty": "hard",
+    "source": "Judges 16:11"
+  },
+  {
+    "term": "Whose daughter do Israelite women commemorate for four days each year?",
+    "meaning": "Jephthah",
+    "category": "History & Geography",
+    "difficulty": "hard",
+    "source": "Judges 11:40"
+  },
+  {
+    "term": "Who prophesied that Sisera would be handed over to a woman?",
+    "meaning": "Deborah",
+    "category": "Prophecy",
+    "difficulty": "medium",
+    "source": "Judges 4"
+  },
+  {
+    "term": "Name Gideon's father.",
+    "meaning": "Joash",
+    "category": "Names & People",
+    "difficulty": "medium",
+    "source": "Judges 6:29"
+  },
+  {
+    "term": "How many times was Samson married?",
+    "meaning": "Once",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "medium",
+    "source": "Judges 15"
+  },
+  {
+    "term": "What was the second thing that Satan tried to tempt Jesus to do in the wilderness?",
+    "meaning": "To throw himself off the top of the temple.",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "Matt 4:5-6"
+  },
+  {
+    "term": "Which book says that the natural man doesn't receive the things of the Spirit for they are foolishness to him?",
+    "meaning": "1 Corinthians",
+    "category": "Wisdom & Words",
+    "difficulty": "hard",
+    "source": "2:14"
+  },
+  {
+    "term": "What did Eli not do, thereby earning God's disfavor?",
+    "meaning": "He did not discipline his wicked sons.",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "1 Sam 3:13"
+  },
+  {
+    "term": "What now stands on the former site of Solomon's temple (as of 1983)?",
+    "meaning": "A muslim mosque",
+    "category": "History & Geography",
+    "difficulty": "medium"
+  },
+  {
+    "term": "In what chapter of Matthew does Jesus prophesy the destruction of the temple in Jerusalem?",
+    "meaning": "24",
+    "category": "Prophecy",
+    "difficulty": "hard",
+    "source": "Matt 24:1-2"
+  },
+  {
+    "term": "What did Saul's (of Tarsus) name later become?",
+    "meaning": "Paul",
+    "category": "Names & People",
+    "difficulty": "easy",
+    "source": "Acts 13:9"
+  },
+  {
+    "term": "What is the last letter of the Greek alphabet?",
+    "meaning": "Omega",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "easy"
+  },
+  {
+    "term": "What caused Elizabeth's baby to leap in her womb?",
+    "meaning": "Hearing Mary's salutation (or greeting)",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "Luke 1:41"
+  },
+  {
+    "term": "In the following riddle what does the word \"eater\" represent: \"Out of the eater came forth meat and out of the strong came forth sweetness.\"?",
+    "meaning": "A Lion",
+    "category": "Wisdom & Words",
+    "difficulty": "hard",
+    "source": "Judges 14:18"
+  },
+  {
+    "term": "What two things did God give to Solomon that he didn't ask for?",
+    "meaning": "Riches and honor",
+    "category": "Old Testament",
+    "difficulty": "medium",
+    "source": "1 Kings 3:10-13"
+  },
+  {
+    "term": "Where was Moses buried?",
+    "meaning": "Mt. Nebo",
+    "category": "History & Geography",
+    "difficulty": "medium",
+    "source": "Deut 34"
+  },
+  {
+    "term": "How many kinds of fruit did John see on the Tree of Life as recorded in Revelation?",
+    "meaning": "12",
+    "category": "Prophecy",
+    "difficulty": "medium",
+    "source": "Rev 22:2"
+  },
+  {
+    "term": "Who was the wife of Lapidoth?",
+    "meaning": "Deborah",
+    "category": "Names & People",
+    "difficulty": "hard",
+    "source": "Judges 4:4"
+  },
+  {
+    "term": "How many stones did David use to fell Goliath?",
+    "meaning": "1",
+    "category": "Lists, Numbers & Spelling",
+    "difficulty": "easy",
+    "source": "1 Sam 17:48-50"
+  },
+  {
+    "term": "What was the first reaction of Paul's jailer who woke up and saw the jail doors open?",
+    "meaning": "Started to kill himself.",
+    "category": "New Testament",
+    "difficulty": "medium",
+    "source": "Acts 16:27"
+  },
+  {
+    "term": "Which two books in the Bible written by Solomon are noted for wisdom?",
+    "meaning": "Proverbs and Ecclesiastes",
+    "category": "Wisdom & Words",
+    "difficulty": "easy"
+  }
 ]
