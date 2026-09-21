@@ -3,14 +3,18 @@
 
 // ---- Sample data. Replaced at runtime if the player loads their own list. ----
 // Each entry needs a "term" and its "meaning".
-// "category" and "difficulty" are optional. When present, category groups
-// entries into a world-placed vocab encounter (see main.js loadRoom), and
-// difficulty ("easy"/"medium"/"hard") scales that encounter's coin reward.
+// "category", "difficulty" and "answerType" are optional. When present,
+// category groups entries into a world-placed vocab encounter (see
+// main.js loadRoom), difficulty ("easy"/"medium"/"hard") scales that
+// encounter's coin reward, and answerType groups entries for multiple-
+// choice distractor selection (see quiz.js buildChoices) so wrong answers
+// share the same rough "shape" as the correct one (a name isn't offered
+// as a wrong answer next to a date, etc).
 export const TYPING_SAMPLE_DATA = [
-  { term: "CPU", meaning: "Central Processing Unit", category: "Hardware", difficulty: "easy" },
-  { term: "RAM", meaning: "Random Access Memory", category: "Hardware", difficulty: "easy" },
-  { term: "SSD", meaning: "Solid State Drive", category: "Hardware", difficulty: "medium" },
-  { term: "DNS", meaning: "Domain Name System", category: "Networking", difficulty: "medium" }
+  { term: "CPU", meaning: "Central Processing Unit", category: "Hardware", difficulty: "easy", answerType: "term" },
+  { term: "RAM", meaning: "Random Access Memory", category: "Hardware", difficulty: "easy", answerType: "term" },
+  { term: "SSD", meaning: "Solid State Drive", category: "Hardware", difficulty: "medium", answerType: "term" },
+  { term: "DNS", meaning: "Domain Name System", category: "Networking", difficulty: "medium", answerType: "term" }
 ];
 
 export const MC_SAMPLE_DATA = [
