@@ -9,6 +9,7 @@
 import { state, key } from './state.js';
 import { MINION_ICONS, MINION_HP, SPAWN_INTERVAL, MAX_MINIONS } from './config.js';
 import { positionActor, renderCombatStatus, renderFog, renderTargeting } from './render.js';
+import { t } from './text.js';
 
 let combatEls = {};
 
@@ -169,7 +170,7 @@ export function advanceMonsters() {
     state.turnsSinceSpawn = 0;
     if (state.boss && state.minions.length < MAX_MINIONS) {
       spawnMinion();
-      spawnNote = ' The boss summons a minion!';
+      spawnNote = t('room.spawn');
     }
   }
 
@@ -185,7 +186,7 @@ export function advanceMonsters() {
       if (isPlayerTile) {
         // Engage from where it stands, never occupying the player's tile.
         if (!state.selectedTarget) state.selectedTarget = m;
-        engageNote = ' Something lunges out of the dark!';
+        engageNote = t('room.engage');
       } else {
         m.row = next.row;
         m.col = next.col;

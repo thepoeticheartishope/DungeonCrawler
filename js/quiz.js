@@ -3,6 +3,7 @@
 
 import { state } from './state.js';
 import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS } from './config.js';
+import { t } from './text.js';
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
 
@@ -233,7 +234,5 @@ export function buildChoices(item) {
 export function buildHint(q) {
   const meaning = q.meaning.trim();
   const words = meaning.split(/\s+/);
-  const firstWord = words[0];
-  const wordLabel = words.length === 1 ? 'word' : 'words';
-  return 'starts with "' + firstWord + '" · ' + words.length + ' ' + wordLabel + ', ' + meaning.length + ' characters';
+  return t('hint.shape', { first: words[0], words: words.length, chars: meaning.length });
 }
