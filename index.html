@@ -868,14 +868,20 @@
     font-size: 20px;
     text-align: left;
   }
-  /* ---- Encounter log (battle screen) ---- */
+  /* ---- Encounter transcript (battle screen) ----
+     No panel or title of its own: it reads as the terminal's scrollback
+     above the current prompt. Capped at 8 lines so a long boss fight never
+     pushes the choices down; older lines scroll away (still scrollable,
+     without a scrollbar's app chrome). */
   .encounter-log {
-    min-height: calc(1.25em * 4);
-    max-height: calc(1.25em * 10);
+    max-height: calc(1.25em * 8);
     overflow-y: auto;
-    margin: 6px 0 14px;
+    scrollbar-width: none;
+    margin: 0 0 14px;
     overflow-wrap: anywhere;
   }
+  .encounter-log::-webkit-scrollbar { display: none; }
+  .encounter-log:empty { display: none; }
   /* Hanging indent: a wrapped line lines up under the text, not the '> '. */
   .log-line { padding-left: 1.2em; text-indent: -1.2em; animation: logLineIn 0.18s steps(3, end); }
   .log-line::before { content: '> '; color: var(--muted); }
@@ -893,6 +899,10 @@
     text-indent: 0;
   }
   .log-alert::before { content: '! '; color: inherit; }
+  /* Aged out of the newest few lines (see main.js ageLog): every kind drops
+     to dim intensity, a miss's inverse bar included. */
+  .log-line.log-old { color: var(--muted); }
+  .log-alert.log-old { background: var(--muted); box-shadow: none; }
   @keyframes logLineIn { from { opacity: 0; } to { opacity: 1; } }
   .end-panel { margin-top: 4px; }
 
@@ -1060,8 +1070,9 @@
           </div>
         </div>
 
-        <!-- Running record of this encounter; all battle feedback goes here. -->
-        <div class="rule"><span>LOG</span></div>
+        <!-- The encounter's transcript: one terminal stream, oldest lines
+             dimmest, with the current prompt (choice or question) printed
+             as the newest output underneath. All battle feedback goes here. -->
         <div class="encounter-log" id="encounterLog" role="log" aria-live="polite"></div>
 
         <!-- Fights open on a choice: which kind of query to face. -->

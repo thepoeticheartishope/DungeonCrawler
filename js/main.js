@@ -402,7 +402,7 @@ function decodeText(el, text, durationMs = 520) {
 }
 
 // ---- Encounter log ----
-// The battle screen's running record of the current encounter: what it is,
+// The battle screen's transcript of the current encounter: what it is,
 // its rules, each query vector chosen, each input and its outcome. It is
 // the battle screen's only feedback channel — cleared when a new encounter
 // starts, kept across every round of a boss fight. Line kinds map onto the
@@ -416,7 +416,22 @@ function logLine(text, kind) {
   line.textContent = text;
   encounterLogEl.appendChild(line);
   while (encounterLogEl.children.length > LOG_MAX_LINES) encounterLogEl.firstChild.remove();
+  ageLog();
   encounterLogEl.scrollTop = encounterLogEl.scrollHeight;
+}
+
+// Transcript aging: the newest few lines keep their own intensity; older
+// ones drop to dim and fade a step per line, so history recedes behind the
+// current prompt instead of competing with it.
+const LOG_FRESH_LINES = 3;
+
+function ageLog() {
+  const lines = encounterLogEl.children;
+  for (let i = 0; i < lines.length; i++) {
+    const age = lines.length - 1 - i;
+    lines[i].classList.toggle('log-old', age >= LOG_FRESH_LINES);
+    lines[i].style.opacity = String(Math.max(0.3, 1 - age * 0.09));
+  }
 }
 
 function clearLog() {
