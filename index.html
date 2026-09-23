@@ -874,7 +874,9 @@
      pushes the choices down; older lines scroll away (still scrollable,
      without a scrollbar's app chrome). */
   .encounter-log {
-    max-height: calc(1.25em * 8);
+    font-size: 16px;   /* a step below the 20px prompt, so history reads as secondary */
+    line-height: 1.2;
+    max-height: calc(1.2em * 8);
     overflow-y: auto;
     scrollbar-width: none;
     margin: 0 0 14px;

@@ -430,7 +430,8 @@ function ageLog() {
   for (let i = 0; i < lines.length; i++) {
     const age = lines.length - 1 - i;
     lines[i].classList.toggle('log-old', age >= LOG_FRESH_LINES);
-    lines[i].style.opacity = String(Math.max(0.3, 1 - age * 0.09));
+    // Floor kept high enough that the oldest (small, dim) line stays readable.
+    lines[i].style.opacity = String(Math.max(0.45, 1 - age * 0.07));
   }
 }
 
