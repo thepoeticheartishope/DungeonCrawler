@@ -11,3 +11,7 @@ Works in any browser, and can be installed as an app (PWA) from that page on des
 ## Load your own term list
 
 From the start screen, use "Load your own term list" to upload a `.txt`, `.csv`, or `.json` file, or paste terms directly (`term | definition` per line).
+
+## Credits
+
+Terminal font: [VT323](https://github.com/phoikoi/VT323) by Peter Hull, under the SIL Open Font License 1.1 (see `fonts/OFL.txt`).
