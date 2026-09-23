@@ -76,7 +76,9 @@ const answerInput = document.getElementById('answerInput');
 const attackBtn = document.getElementById('attackBtn');
 const mcToggle = document.getElementById('mcToggle');
 const mcOptionsEl = document.getElementById('mcOptions');
-const feedback = document.getElementById('feedback');
+const encounterLogEl = document.getElementById('encounterLog');
+const endPanel = document.getElementById('endPanel');
+const continueBtn = document.getElementById('continueBtn');
 const roomFeedback = document.getElementById('roomFeedback');
 
 const winStats = document.getElementById('winStats');
@@ -399,12 +401,72 @@ function decodeText(el, text, durationMs = 520) {
   decodeTimers.set(el, timer);
 }
 
-// Shows whichever half of the battle screen matches state.battlePhase: the
-// category choices, or the question and its answer input.
+// ---- Encounter log ----
+// The battle screen's transcript of the current encounter: what it is,
+// its rules, each query vector chosen, each input and its outcome. It is
+// the battle screen's only feedback channel — cleared when a new encounter
+// starts, kept across every round of a boss fight. Line kinds map onto the
+// phosphor's intensities: 'sys' (dim), normal, 'bright', and 'alert'
+// (inverse video, reserved for a miss or the end of the run).
+const LOG_MAX_LINES = 40;
+
+function logLine(text, kind) {
+  const line = document.createElement('div');
+  line.className = 'log-line' + (kind ? ' log-' + kind : '');
+  line.textContent = text;
+  encounterLogEl.appendChild(line);
+  while (encounterLogEl.children.length > LOG_MAX_LINES) encounterLogEl.firstChild.remove();
+  ageLog();
+  encounterLogEl.scrollTop = encounterLogEl.scrollHeight;
+}
+
+// Transcript aging: the newest few lines keep their own intensity; older
+// ones drop to dim and fade a step per line, so history recedes behind the
+// current prompt instead of competing with it.
+const LOG_FRESH_LINES = 3;
+
+function ageLog() {
+  const lines = encounterLogEl.children;
+  for (let i = 0; i < lines.length; i++) {
+    const age = lines.length - 1 - i;
+    lines[i].classList.toggle('log-old', age >= LOG_FRESH_LINES);
+    // Floor kept high enough that the oldest (small, dim) line stays readable.
+    lines[i].style.opacity = String(Math.max(0.45, 1 - age * 0.07));
+  }
+}
+
+function clearLog() {
+  encounterLogEl.innerHTML = '';
+}
+
+// Opening lines for a new encounter: what it is and what's at stake.
+function logEncounterStart(target) {
+  clearLog();
+  if (target.kind === 'boss') {
+    logLine('ENCOUNTER: BOSS', 'bright');
+    logLine('CLEAR ' + BOSS_HP + ' QUERIES TO BREAK THROUGH. EACH MISS COSTS 1 HP.', 'sys');
+  } else if (target.kind === 'minion') {
+    logLine('ENCOUNTER: MINION', 'bright');
+    logLine('ONE QUERY SETTLES IT. A MISS COSTS 1 HP.', 'sys');
+  } else if (target.kind === 'chest') {
+    logLine('ENCOUNTER: LOCKED CHEST', 'bright');
+    logLine('ANSWER TO OPEN IT. A MISS SPRINGS A TRAP.', 'sys');
+  } else if (target.kind === 'rune') {
+    logLine('ENCOUNTER: RUNE', 'bright');
+    logLine('ANSWER TO READ ITS HINT. A MISS SPRINGS A TRAP.', 'sys');
+  } else {
+    logLine('ENCOUNTER: ' + categoryLabel(target.category).toUpperCase() + ' CHALLENGE', 'bright');
+    logLine('ANSWER FOR GOLD. A MISS SPRINGS A TRAP.', 'sys');
+  }
+}
+
+// Shows whichever part of the battle screen matches state.battlePhase: the
+// category choices, the question and its answer input, or (once the
+// encounter is settled) the prompt to continue.
 function showBattlePhase() {
-  const choosing = state.battlePhase === 'choosing';
-  choicePanel.hidden = !choosing;
-  queryPanel.hidden = choosing;
+  choicePanel.hidden = state.battlePhase !== 'choosing';
+  queryPanel.hidden = state.battlePhase !== 'answering';
+  endPanel.hidden = state.battlePhase !== 'ended';
 }
 
 function renderCategoryChoices() {
@@ -439,8 +501,14 @@ function startBattleTurn() {
     renderCategoryChoices();
   } else {
     state.battlePhase = 'answering';
-    syncQuestionForTarget();
-    if (state.currentQuestion === state.runeHint) state.runeHint = null;
+    // No choice to route the rune's hint through, so ask it directly if
+    // this target's pool holds it.
+    if (state.runeHint && poolFor(target).includes(state.runeHint)) {
+      setQuestion(state.runeHint);
+      state.runeHint = null;
+    } else {
+      syncQuestionForTarget();
+    }
     // The question was very likely set well before this moment, off-screen
     // (loadRoom() sets one at room load), so re-type it fresh every time a
     // turn starts rather than letting the effect be skipped.
@@ -461,6 +529,7 @@ function chooseCategory(i) {
   } else {
     q = pickQuestion(state.currentQuestion, choice.pool);
   }
+  logLine('VECTOR ' + (i + 1) + ': ' + choice.label.toUpperCase(), 'sys');
   state.battlePhase = 'answering';
   setQuestion(q);
   showBattlePhase();
@@ -479,10 +548,11 @@ function syncBattleScreen() {
       void battleScreen.offsetWidth;
       battleScreen.classList.add('glitch-in');
     }
-    // A new turn starts on entering, and whenever the fight chains straight
-    // into a different adjacent target without leaving the screen.
+    // A new encounter starts on entering, and whenever the player moves
+    // on from a settled one straight into another adjacent target.
     if (entering || state.battleTarget !== target) {
       state.battleTarget = target;
+      logEncounterStart(target);
       startBattleTurn();
     }
   } else {
@@ -491,11 +561,24 @@ function syncBattleScreen() {
   }
 }
 
-// After an answer resolves with the battle screen still up: starts the
-// next turn against whatever's targeted now (back to the category choice,
-// for a fight), or drops back to the room if nothing is.
-function continueBattle() {
+// The encounter is settled: its target is gone (or opened/spent), and the
+// battle screen holds on the log until the player continues, so the
+// outcome is read rather than flashing past as the screen switches back.
+function endEncounter() {
+  state.selectedTarget = null;
+  state.battlePhase = 'ended';
+  showBattlePhase();
+  continueBtn.focus();
+}
+
+// Leaves a settled encounter: straight into the next one if something
+// else is adjacent, otherwise back to the room.
+function leaveEncounter() {
+  if (state.battlePhase !== 'ended') return;
+  state.battlePhase = 'answering';
   state.battleTarget = null;
+  refreshTargetValidity();
+  nextQuestion();
   syncBattleScreen();
 }
 
@@ -691,7 +774,7 @@ function loadRoom() {
 
   setQuestion(pickQuestion(null));
   renderCombatStatus();
-  feedback.innerHTML = '';
+  clearLog();
   roomFeedback.innerHTML = '';
   answerInput.value = '';
   setControlsEnabled(true);
@@ -714,6 +797,7 @@ function setControlsEnabled(enabled) {
   Object.values(dpadButtons).forEach(b => b.disabled = !enabled);
   mcOptionsEl.querySelectorAll('button').forEach(b => b.disabled = !enabled);
   choiceListEl.querySelectorAll('button').forEach(b => b.disabled = !enabled);
+  continueBtn.disabled = !enabled;
 }
 
 function applyTurnOutcome(actionMessage, extraHtml) {
@@ -810,175 +894,35 @@ function skipTurn() {
 
 // Shared outcome handler for both typed answers and multiple-choice taps.
 // Assumes the caller already confirmed adjacency, set turnLocked = true,
-// and counted the attempt.
-function applyAnswerResult(isCorrect, hadExtraSpace) {
-  const kind = state.selectedTarget ? state.selectedTarget.kind : null;
-  if (kind === 'chest' || kind === 'rune' || kind === 'encounter') {
-    resolveObjectAttempt(state.selectedTarget, isCorrect, hadExtraSpace);
-    return;
-  }
+// and counted the attempt. `given` is the player's answer, echoed to the log.
+//
+// One answer settles a minion, chest, rune or category challenge, right or
+// wrong: it's cleared and the encounter ends. Only a boss fight goes on
+// past an answer, until its HP runs out. A miss always costs 1 HP.
+function applyAnswerResult(isCorrect, hadExtraSpace, given) {
+  const target = state.selectedTarget;
+  const q = state.currentQuestion;
 
-  if (!isCorrect) {
-    const missed = state.currentQuestion;
-    nextQuestion();
-    if (!state.mcMode) answerInput.focus();
-
-    state.hearts--;
-    renderHearts();
-    flashBattleResult(false);
-    let html = '<span class="warn-msg">Wrong! The spell fizzles and you take a hit.</span>';
-    if (state.revealOnWrong) {
-      html += '<span class="tip">' + missed.term + ' = ' + missed.meaning + '</span>';
-      if (missed.source) html += '<span class="tip source-tip">' + escapeHtml(missed.source) + '</span>';
-    }
-
-    if (state.hearts <= 0) {
-      feedback.innerHTML = html + '<span class="warn-msg">You are out of hearts.</span>';
-      setControlsEnabled(false);
-      clearInterval(state.timerHandle);
-      setTimeout(endLose, 900);
-      state.turnLocked = false;
-      return;
-    }
-
-    feedback.innerHTML = html;
-    continueBattle();
-    state.turnLocked = false;
-    return;
-  }
-
-  if (hadExtraSpace) state.extraSpaceCount++;
-
-  // Safety net: if the selected target vanished or is no longer adjacent,
-  // let refreshTargetValidity() pick a genuinely adjacent replacement (or
-  // null) rather than attacking an arbitrary minion elsewhere on the map.
-  if (state.selectedTarget !== state.boss && !state.minions.includes(state.selectedTarget)) {
-    refreshTargetValidity();
-    if (!state.selectedTarget) {
-      syncBattleScreen();
-      state.turnLocked = false;
-      return;
-    }
-  }
-
-  const attackingBoss = state.selectedTarget === state.boss;
-  let hitMsg;
-  if (!attackingBoss) {
-    const target = state.selectedTarget;
-    target.hp--;
-    if (target.hp <= 0) {
-      target.el.remove();
-      state.minions = state.minions.filter(m => m !== target);
-      hitMsg = 'Hit! Your target falls.';
-      // Only chain into another target if one is still adjacent — grabbing
-      // any remaining minion on the map (regardless of distance) left the
-      // battle screen stuck showing something the player could never reach,
-      // since there's no way to move while it's up.
-      state.selectedTarget = null;
-      refreshTargetValidity();
-    } else {
-      hitMsg = 'Hit! Your target staggers (' + target.hp + ' HP left).';
-    }
-  } else {
-    state.boss.hp--;
-    hitMsg = state.boss.hp > 0
-      ? 'Hit! The boss reels (' + state.boss.hp + ' HP left).'
-      : 'Hit! The boss falls.';
-  }
-
-  renderCombatStatus();
-  renderTargeting();
-  flashBattleResult(true);
-
-  // Only the boss branch above can make the boss's hp reach 0 — checking
-  // this after a minion hit too, once the boss is already dead (null) from
-  // an earlier kill this room, threw on state.boss.hp and permanently
-  // stuck state.turnLocked at true (a real softlock: a minion surviving
-  // past the boss's death, then landing a hit on it, crashed here).
-  if (attackingBoss && state.boss.hp <= 0) {
-    bossActor.classList.add('gone');
-    state.boss = null; // clears the doorway it was blocking
-
-    let html = '<span class="hit-msg">' + hitMsg + ' The way to the stairs is open.</span>';
-    if (hadExtraSpace) html += '<span class="tip">Tip: watch for extra spaces in your answer next time.</span>';
-    feedback.innerHTML = html;
-
-    state.selectedTarget = null;
-    refreshTargetValidity();
-    syncQuestionForTarget();
-    syncBattleScreen(); // nothing's targeted now — drops back to the room screen
-    state.turnLocked = false;
-    return;
-  }
-
-  // Boss still standing: the fight continues, but other minions don't get a
-  // turn — they're frozen while a battle is in progress, so the only way to
-  // take damage here is missing the question in front of you.
-  nextQuestion();
-  syncQuestionForTarget();
-  continueBattle();
-
-  let html = '<span class="hit-msg">' + hitMsg + '</span>';
-  if (hadExtraSpace) html += '<span class="tip">Tip: watch for extra spaces in your answer next time.</span>';
-  feedback.innerHTML = html;
-  state.turnLocked = false;
-}
-
-// Handles a correct or failed attempt on a chest or rune. Success gives
-// its reward — coins for a chest, a hint for a rune. Failure springs the
-// trap: 1 heart lost, same as a minion's strike. Either way, the object
-// is spent and cannot be tried again.
-function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
-  if (hadExtraSpace) state.extraSpaceCount++;
-  const missed = state.currentQuestion;
-  nextQuestion();
-  if (!state.mcMode) answerInput.focus();
-
-  target.el.classList.add('gone');
-  if (target.kind === 'chest') state.chest = null;
-  else if (target.kind === 'rune') state.rune = null;
-  else if (target.kind === 'encounter') state.encounters = state.encounters.filter(e => e !== target);
-  state.selectedTarget = null;
-
-  let outcomeHtml;
+  logLine('INPUT: ' + given);
   if (isCorrect) {
-    flashBattleResult(true);
-    if (target.kind === 'chest') {
-      state.coinsTotal += 2;
-      coinsTotalEl.textContent = state.coinsTotal;
-      outcomeHtml = '<span class="hit-msg">The chest opens — you find 2 coins!</span>';
-    } else if (target.kind === 'encounter') {
-      const reward = DIFFICULTY_COIN_REWARD[missed.difficulty] || DIFFICULTY_COIN_REWARD.medium;
-      state.coinsTotal += reward;
-      coinsTotalEl.textContent = state.coinsTotal;
-      outcomeHtml = '<span class="hit-msg">Correct! You earn ' + reward + ' coin' + (reward === 1 ? '' : 's') +
-        ' for mastering ' + escapeHtml(target.category) + '.</span>';
-    } else {
-      // The hinted question stays in reserve until it's asked: the next
-      // fight always offers its category (marked ◊), so the hint can't be
-      // spent on a question the player never chooses.
-      state.runeHint = state.currentQuestion;
-      const where = state.runeHint.category ? 'a ' + escapeHtml(categoryLabel(state.runeHint.category)) + ' query — ' : '';
-      outcomeHtml = '<span class="hit-msg">The rune glows: ' + where + buildHint(state.runeHint) + '</span>';
+    logLine('ACCEPTED.', 'bright');
+    if (hadExtraSpace) {
+      state.extraSpaceCount++;
+      logLine('NOTE: EXTRA SPACES IN INPUT.', 'sys');
     }
   } else {
     state.hearts--;
     renderHearts();
-    flashBattleResult(false);
-    const noun = target.kind === 'chest' ? 'chest' : target.kind === 'encounter' ? escapeHtml(target.category) + ' challenge' : 'rune';
-    outcomeHtml = '<span class="warn-msg">Wrong! The ' + noun + ' was trapped and strikes you!</span>';
+    logLine('REJECTED. -1 HP', 'alert');
     if (state.revealOnWrong) {
-      outcomeHtml += '<span class="tip">' + missed.term + ' = ' + missed.meaning + '</span>';
-      if (missed.source) outcomeHtml += '<span class="tip source-tip">' + escapeHtml(missed.source) + '</span>';
+      logLine('EXPECTED: ' + q.meaning, 'sys');
+      if (q.source) logLine('SOURCE: ' + q.source, 'sys');
     }
   }
-
-  refreshTargetValidity();
-  syncQuestionForTarget();
-  continueBattle();
+  flashBattleResult(isCorrect);
 
   if (state.hearts <= 0) {
-    feedback.innerHTML = outcomeHtml + '<span class="warn-msg">You are out of hearts.</span>';
+    logLine('SIGNAL LOST.', 'alert');
     setControlsEnabled(false);
     clearInterval(state.timerHandle);
     setTimeout(endLose, 900);
@@ -986,14 +930,80 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
     return;
   }
 
-  feedback.innerHTML = outcomeHtml;
+  if (target.kind === 'boss') resolveBossAnswer(isCorrect);
+  else resolveOneShot(target, isCorrect, q);
   state.turnLocked = false;
 }
 
+// Boss fights are the one encounter that outlasts an answer: a correct one
+// takes 1 HP off the boss, a miss doesn't, and either way it's back to the
+// category choice until the boss is cleared. Other minions stay frozen
+// while this goes on, so missing a query is the only way to take damage.
+function resolveBossAnswer(isCorrect) {
+  if (isCorrect) {
+    state.boss.hp--;
+    renderCombatStatus();
+    if (state.boss.hp <= 0) {
+      bossActor.classList.add('gone');
+      state.boss = null; // clears the doorway it was blocking
+      logLine('BOSS CLEARED. THE WAY TO THE STAIRS IS OPEN.', 'bright');
+      endEncounter();
+      return;
+    }
+    logLine('BOSS INTEGRITY ' + state.boss.hp + '/' + BOSS_HP + '.');
+  } else {
+    logLine('THE BOSS HOLDS.');
+  }
+  nextQuestion();
+  startBattleTurn();
+}
+
+// Everything but the boss is settled by a single answer. Success pays out
+// (coins for a chest or category challenge, a hint for a rune); a miss has
+// already cost its heart. Either way the target is cleared or spent.
+function resolveOneShot(target, isCorrect, q) {
+  if (target.kind === 'minion') {
+    target.el.remove();
+    state.minions = state.minions.filter(m => m !== target);
+    logLine(isCorrect ? 'MINION CLEARED.' : 'THE MINION DISPERSES.', isCorrect ? 'bright' : undefined);
+    endEncounter();
+    return;
+  }
+
+  target.el.classList.add('gone');
+  if (target.kind === 'chest') state.chest = null;
+  else if (target.kind === 'rune') state.rune = null;
+  else if (target.kind === 'encounter') state.encounters = state.encounters.filter(e => e !== target);
+
+  const noun = target.kind === 'chest' ? 'CHEST'
+    : target.kind === 'rune' ? 'RUNE'
+    : categoryLabel(target.category).toUpperCase() + ' CHALLENGE';
+  if (!isCorrect) {
+    logLine('THE ' + noun + ' WAS TRAPPED.');
+  } else if (target.kind === 'chest') {
+    state.coinsTotal += 2;
+    coinsTotalEl.textContent = state.coinsTotal;
+    logLine('CHEST OPENED. +2 GOLD.', 'bright');
+  } else if (target.kind === 'encounter') {
+    const reward = DIFFICULTY_COIN_REWARD[q.difficulty] || DIFFICULTY_COIN_REWARD.medium;
+    state.coinsTotal += reward;
+    coinsTotalEl.textContent = state.coinsTotal;
+    logLine(noun + ' MASTERED. +' + reward + ' GOLD.', 'bright');
+  } else {
+    // The hinted question stays in reserve until it's asked: the next
+    // fight always offers its category (marked ◊), so the hint can't be
+    // spent on a question the player never chooses.
+    state.runeHint = pickQuestion(q);
+    const where = state.runeHint.category ? 'A ' + categoryLabel(state.runeHint.category).toUpperCase() + ' QUERY, ' : '';
+    logLine('RUNE DECODED: ' + where + buildHint(state.runeHint), 'bright');
+  }
+  endEncounter();
+}
+
 function attemptAnswer() {
-  if (state.turnLocked || state.battlePhase === 'choosing') return;
+  if (state.turnLocked || state.battlePhase !== 'answering') return;
   if (!state.selectedTarget || !isAdjacentToPlayer(state.selectedTarget)) {
-    feedback.innerHTML = '<span class="block-msg">You need to be next to something to act on. Move closer or tap one nearby.</span>';
+    logLine('NOTHING IN RANGE. MOVE NEXT TO SOMETHING FIRST.', 'sys');
     return;
   }
   const raw = answerInput.value;
@@ -1004,22 +1014,23 @@ function attemptAnswer() {
   const hadExtraSpace = raw !== raw.trim() || /\s{2,}/.test(raw);
   const cleanInput = normalizeSpaces(raw).toLowerCase();
   const cleanAnswer = normalizeSpaces(state.currentQuestion.meaning).toLowerCase();
-  applyAnswerResult(cleanInput === cleanAnswer, hadExtraSpace);
+  applyAnswerResult(cleanInput === cleanAnswer, hadExtraSpace, normalizeSpaces(raw));
 }
 
 function attemptAnswerMC(choice) {
-  if (state.turnLocked || state.battlePhase === 'choosing') return;
+  if (state.turnLocked || state.battlePhase !== 'answering') return;
   if (!state.selectedTarget || !isAdjacentToPlayer(state.selectedTarget)) {
-    feedback.innerHTML = '<span class="block-msg">You need to be next to something to act on. Move closer or tap one nearby.</span>';
+    logLine('NOTHING IN RANGE. MOVE NEXT TO SOMETHING FIRST.', 'sys');
     return;
   }
   state.turnLocked = true;
   state.attempts++;
   const isCorrect = normalizeSpaces(choice).toLowerCase() === normalizeSpaces(state.currentQuestion.meaning).toLowerCase();
-  applyAnswerResult(isCorrect, false);
+  applyAnswerResult(isCorrect, false, choice);
 }
 
 attackBtn.addEventListener('click', attemptAnswer);
+continueBtn.addEventListener('click', leaveEncounter);
 
 answerInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
@@ -1055,9 +1066,17 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Number keys pick a category while the battle screen is offering a choice.
+// Number keys pick a category while the battle screen is offering a choice;
+// Enter or Space moves on from a settled encounter even if the continue
+// button lost focus.
 document.addEventListener('keydown', (e) => {
-  if (!battleScreen.classList.contains('show') || state.battlePhase !== 'choosing') return;
+  if (!battleScreen.classList.contains('show')) return;
+  if (state.battlePhase === 'ended' && (e.key === 'Enter' || e.key === ' ') && document.activeElement !== continueBtn) {
+    e.preventDefault();
+    if (!continueBtn.disabled) leaveEncounter();
+    return;
+  }
+  if (state.battlePhase !== 'choosing') return;
   const idx = ['1', '2', '3'].indexOf(e.key);
   const btn = idx === -1 ? null : choiceListEl.children[idx];
   if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
