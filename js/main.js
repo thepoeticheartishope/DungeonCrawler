@@ -1,7 +1,7 @@
 import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
 import {
-  MAX_HEARTS, ROOM_COUNT, BOSS_HP, BOSS_ICONS, GRID_SIZES, CHAMBER_TARGETS,
+  MAX_HEARTS, ROOM_COUNT, BOSS_HP, GRID_SIZES, CHAMBER_TARGETS,
   DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS, BATTLE_CHOICE_COUNT
 } from './config.js';
 import {
@@ -656,8 +656,23 @@ function startGame() {
   }, INTRO_GLITCH_DURATION_MS);
 }
 
+// Map glyphs for the one-per-room actors, from their term.*.symbol lines in
+// text.js (so a room's AREAS overrides can change them too). Minions get
+// theirs as they spawn (combat.js).
+function applyActorSymbols() {
+  bossActor.textContent = t('term.boss.symbol');
+  chestActor.textContent = t('term.chest.symbol');
+  runeActor.textContent = t('term.rune.symbol');
+  coinActor.textContent = t('term.gold.symbol');
+  stairsActor.textContent = t('term.exit.symbol');
+}
+
 function loadRoom() {
   roomNumEl.textContent = state.roomIndex + 1;
+  // Per-room wording overrides (text.js AREAS) apply from here on.
+  setTextArea(state.roomIndex + 1);
+  applyStaticText();
+  applyActorSymbols();
 
   state.GRID_SIZE = GRID_SIZES[Math.min(state.roomIndex, GRID_SIZES.length - 1)];
   state.CHAMBER_TARGET = CHAMBER_TARGETS[Math.min(state.roomIndex, CHAMBER_TARGETS.length - 1)];
@@ -684,7 +699,6 @@ function loadRoom() {
   renderWalls();
 
   state.boss = { row: layout.spawn.row, col: layout.spawn.col, hp: BOSS_HP, kind: 'boss' };
-  bossActor.textContent = BOSS_ICONS[state.roomIndex % BOSS_ICONS.length];
   bossActor.classList.remove('gone');
   positionActor(bossActor, state.boss.row, state.boss.col, true);
 
@@ -769,9 +783,6 @@ function loadRoom() {
   setQuestion(pickQuestion(null));
   renderCombatStatus();
   clearLog();
-  // Per-room wording overrides (text.js AREAS) apply from here on.
-  setTextArea(state.roomIndex + 1);
-  applyStaticText();
   roomFeedback.innerHTML = '';
   answerInput.value = '';
   setControlsEnabled(true);

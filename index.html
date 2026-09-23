@@ -1040,11 +1040,11 @@
   </header>
 
   <div class="stats" id="statsBar">
-    <div class="stat"><span class="stat-label">HP</span><span class="hearts" id="hearts">3/3</span></div>
-    <div class="stat"><span class="stat-label">GOLD</span><strong id="coinsTotal">0</strong></div>
-    <div class="stat"><span class="stat-label">TURN</span><strong id="turnCount">0</strong></div>
-    <div class="stat"><span class="stat-label">ROOM</span><strong id="roomNum">0</strong>/<strong id="roomTotal">0</strong></div>
-    <div class="stat stat-wide"><span class="stat-label">TIME</span><strong id="timer">0:00</strong></div>
+    <div class="stat"><span class="stat-label" data-t="stat.hp"></span><span class="hearts" id="hearts">3/3</span></div>
+    <div class="stat"><span class="stat-label" data-t="stat.gold"></span><strong id="coinsTotal">0</strong></div>
+    <div class="stat"><span class="stat-label" data-t="stat.turn"></span><strong id="turnCount">0</strong></div>
+    <div class="stat"><span class="stat-label" data-t="stat.room"></span><strong id="roomNum">0</strong>/<strong id="roomTotal">0</strong></div>
+    <div class="stat stat-wide"><span class="stat-label" data-t="stat.time"></span><strong id="timer">0:00</strong></div>
     <button type="button" class="dev-skip stat-wide" id="devToggleBtn" title="Testing tools">DEV</button>
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
@@ -1156,12 +1156,13 @@
   <section class="screen" id="roomScreen">
     <div class="grid-wrap">
       <div class="grid" id="grid">
-        <div class="actor coin" id="coinActor">$</div>
-        <div class="actor chest" id="chestActor">[]</div>
-        <div class="actor rune" id="runeActor">?</div>
-        <div class="actor stairs" id="stairsActor">&gt;&gt;</div>
+        <!-- Glyphs come from text.js term.*.symbol, set as each room loads. -->
+        <div class="actor coin" id="coinActor"></div>
+        <div class="actor chest" id="chestActor"></div>
+        <div class="actor rune" id="runeActor"></div>
+        <div class="actor stairs" id="stairsActor"></div>
         <div class="actor" id="playerActor">@</div>
-        <div class="actor boss" id="bossActor">D</div>
+        <div class="actor boss" id="bossActor"></div>
       </div>
     </div>
 
