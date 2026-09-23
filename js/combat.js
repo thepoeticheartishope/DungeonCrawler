@@ -7,7 +7,7 @@
 // advanceMonsters run.
 
 import { state, key } from './state.js';
-import { MINION_ICONS, MINION_HP, SPAWN_INTERVAL, MAX_MINIONS } from './config.js';
+import { MINION_HP, SPAWN_INTERVAL, MAX_MINIONS } from './config.js';
 import { positionActor, renderCombatStatus, renderFog, renderTargeting } from './render.js';
 import { t } from './text.js';
 
@@ -144,7 +144,7 @@ export function spawnMinion() {
 
   const el = document.createElement('div');
   el.className = 'actor minion';
-  el.textContent = MINION_ICONS[state.minions.length % MINION_ICONS.length];
+  el.textContent = t('term.minion.symbol');
   // Offsets this minion's warp animation out of sync with any others already
   // on screen — several identical creatures warping in perfect lockstep
   // reads as mechanical, not unsettling. Same idea for the glitch-bar
