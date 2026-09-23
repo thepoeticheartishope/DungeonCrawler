@@ -25,41 +25,41 @@
 
 export const TEXT = {
   // ---- Encounter log: opening lines (what it is, what's at stake) ----
-  'log.start.boss': 'ENCOUNTER: BOSS',
-  'log.rules.boss': 'CLEAR {queries} QUERIES TO BREAK THROUGH. EACH MISS COSTS 1 HP.',
-  'log.start.minion': 'ENCOUNTER: MINION',
-  'log.rules.minion': 'ONE QUERY SETTLES IT. A MISS COSTS 1 HP.',
-  'log.start.chest': 'ENCOUNTER: LOCKED CHEST',
-  'log.rules.chest': 'ANSWER TO OPEN IT. A MISS SPRINGS A TRAP.',
-  'log.start.rune': 'ENCOUNTER: RUNE',
-  'log.rules.rune': 'ANSWER TO READ ITS HINT. A MISS SPRINGS A TRAP.',
-  'log.start.encounter': 'ENCOUNTER: {category|upper} CHALLENGE',
-  'log.rules.encounter': 'ANSWER FOR GOLD. A MISS SPRINGS A TRAP.',
+  'log.start.boss': 'ENCOUNTER: ¤',
+  'log.rules.boss': 'CLEAR {queries} QUERIES TO PROCEED.',
+  'log.start.minion': 'ENCOUNTER: •',
+  'log.rules.minion': 'QUERY REQUIRED FOR NEURON FUSION.',
+  'log.start.chest': 'ENCOUNTER: LOCKED THOUGHT',
+  'log.rules.chest': 'WE ALL SEEK TO BE FREE.',
+  'log.start.rune': 'ENCOUNTER: ◊',
+  'log.rules.rune': 'NEURON FUSION OFFER A SYNAPSE.',
+  'log.start.encounter': 'FUSION UNDERWAY: {category|upper} ',
+  'log.rules.encounter': 'FUSION UNDERWAY.',
 
   // ---- Encounter log: each answer ----
   'log.vector': 'VECTOR {n}: {label|upper}',
   'log.input': 'INPUT: {answer}',
   'log.accepted': 'ACCEPTED.',
   'log.extraSpaces': 'NOTE: EXTRA SPACES IN INPUT.',
-  'log.rejected': 'REJECTED. -1 HP',
+  'log.rejected': 'REJECTED. -1 STABILITY',
   'log.expected': 'EXPECTED: {answer}',
   'log.source': 'SOURCE: {source}',
   'log.signalLost': 'SIGNAL LOST.',
   'log.outOfRange': 'NOTHING IN RANGE. MOVE NEXT TO SOMETHING FIRST.',
 
   // ---- Encounter log: outcomes ----
-  'log.boss.integrity': 'BOSS INTEGRITY {hp}/{max}.',
-  'log.boss.holds': 'THE BOSS HOLDS.',
-  'log.boss.cleared': 'BOSS CLEARED. THE WAY TO THE STAIRS IS OPEN.',
-  'log.minion.cleared': 'MINION CLEARED.',
-  'log.minion.disperses': 'THE MINION DISPERSES.',
-  'log.chest.opened': 'CHEST OPENED. +{gold} GOLD.',
-  'log.chest.trapped': 'THE CHEST WAS TRAPPED.',
-  'log.rune.decoded': 'RUNE DECODED: A {category|upper} QUERY, {hint}',
-  'log.rune.decodedUncategorized': 'RUNE DECODED: {hint}',
-  'log.rune.trapped': 'THE RUNE WAS TRAPPED.',
-  'log.encounter.mastered': '{category|upper} CHALLENGE MASTERED. +{gold} GOLD.',
-  'log.encounter.trapped': 'THE {category|upper} CHALLENGE WAS TRAPPED.',
+  'log.boss.integrity': 'CONCEPT INTEGRITY {hp}/{max}.',
+  'log.boss.holds': 'ITS BELIEF HOLDS.',
+  'log.boss.cleared': 'BELIEF REWRITTEN. ASCEND.',
+  'log.minion.cleared': 'MINOR DOUBT ERASED.',
+  'log.minion.disperses': 'DOUBT DISPERSES. IT WILL RETURN. BE READY.',
+  'log.chest.opened': 'CHEST OPENED. +{gold} PROCESS.',
+  'log.chest.trapped': 'IT DOES NOT WANT YOU TO ASCEND.',
+  'log.rune.decoded': 'SYNAPSE FUSED: A {category|upper} QUERY, {hint}',
+  'log.rune.decodedUncategorized': 'SYNAPSE FUSED: {hint}',
+  'log.rune.trapped': 'IT DOES NOT WANT YOU TO ASCEND.',
+  'log.encounter.mastered': '{category|upper} NEW SYNAPSE FORMED. +{gold} GOLD.',
+  'log.encounter.trapped': 'THE {category|upper} THOUGHT REJECTS YOU.',
 
   // The rune's clue about its hinted answer ({hint} in log.rune.decoded).
   'hint.shape': 'starts with "{first}" · {words} {words|plural:word}, {chars} characters',
@@ -116,6 +116,24 @@ export const TEXT = {
 //     'log.boss.holds': ['IT DOES NOT BREAK.', 'IT WAITS FOR YOU TO DOUBT.'],
 //     'room.engage': 'Something you recognise steps out of the dark.',
 //   },
+
+TERMS                     current word       your word           symbol (optional)
+boss                      BOSS               BELIEF              ¤
+minion                    MINION             DENDRITE            •
+chest                     LOCKED CHEST       TRAPPED THOUGHT      []
+rune                      RUNE               AXON                §
+category challenge        CHALLENGE          SNYAPSE
+HP / hearts               HP                 STABILITY
+gold / coins              GOLD               MYELIN            . 
+stairs (room exit)        STAIRS             THRESHOLD           >>
+room / level              ROOM               DEPTH
+question                  QUERY              (keep?)
+category choice           VECTOR             (keep?)
+the dungeon               DUNGEON            LABYRINTH
+winning a run             "Dungeon cleared!" "The thought is born."
+losing a run              "You have fallen"  "The thought sleeps."
+
+
 export const AREAS = {
 };
 
