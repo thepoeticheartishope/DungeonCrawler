@@ -21,6 +21,7 @@ import {
   fetchManifest, fetchBundledSet, listSavedSets, saveSet, loadSavedSet, deleteSet
 } from './sets.js';
 import { t, setTextArea, applyStaticText } from './text.js';
+import { initDataView } from './dataview.js';
 
 const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
@@ -100,6 +101,7 @@ initRender({
 });
 
 initCombat({ grid, playerActor, turnCountEl });
+initDataView({ startScreen });
 
 applyStaticText();
 
