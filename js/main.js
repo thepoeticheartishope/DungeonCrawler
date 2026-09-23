@@ -20,6 +20,7 @@ import {
 import {
   fetchManifest, fetchBundledSet, listSavedSets, saveSet, loadSavedSet, deleteSet
 } from './sets.js';
+import { t, setTextArea, applyStaticText } from './text.js';
 
 const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
@@ -99,6 +100,8 @@ initRender({
 });
 
 initCombat({ grid, playerActor, turnCountEl });
+
+applyStaticText();
 
 // ---- Remember the reveal/multiple-choice option toggles across sessions ----
 // localStorage access is wrapped in try/catch — private browsing or disabled
@@ -440,24 +443,13 @@ function clearLog() {
 }
 
 // Opening lines for a new encounter: what it is and what's at stake.
+// Wording is per target kind (boss / minion / chest / rune / encounter)
+// under log.start.* and log.rules.* in text.js.
 function logEncounterStart(target) {
   clearLog();
-  if (target.kind === 'boss') {
-    logLine('ENCOUNTER: BOSS', 'bright');
-    logLine('CLEAR ' + BOSS_HP + ' QUERIES TO BREAK THROUGH. EACH MISS COSTS 1 HP.', 'sys');
-  } else if (target.kind === 'minion') {
-    logLine('ENCOUNTER: MINION', 'bright');
-    logLine('ONE QUERY SETTLES IT. A MISS COSTS 1 HP.', 'sys');
-  } else if (target.kind === 'chest') {
-    logLine('ENCOUNTER: LOCKED CHEST', 'bright');
-    logLine('ANSWER TO OPEN IT. A MISS SPRINGS A TRAP.', 'sys');
-  } else if (target.kind === 'rune') {
-    logLine('ENCOUNTER: RUNE', 'bright');
-    logLine('ANSWER TO READ ITS HINT. A MISS SPRINGS A TRAP.', 'sys');
-  } else {
-    logLine('ENCOUNTER: ' + categoryLabel(target.category).toUpperCase() + ' CHALLENGE', 'bright');
-    logLine('ANSWER FOR GOLD. A MISS SPRINGS A TRAP.', 'sys');
-  }
+  const vars = { queries: BOSS_HP, category: target.category ? categoryLabel(target.category) : '' };
+  logLine(t('log.start.' + target.kind, vars), 'bright');
+  logLine(t('log.rules.' + target.kind, vars), 'sys');
 }
 
 // Shows whichever part of the battle screen matches state.battlePhase: the
@@ -477,7 +469,7 @@ function renderCategoryChoices() {
     btn.className = 'choice-option';
     const hinted = state.runeHint && choice.pool.includes(state.runeHint);
     btn.innerHTML = '<span class="letter">[' + (i + 1) + ']</span><span class="choice-label"></span>' +
-      (hinted ? '<span class="choice-hint" title="The rune\'s hint is in here">◊</span>' : '');
+      (hinted ? '<span class="choice-hint" title="' + escapeHtml(t('battle.runeHintMark')) + '">◊</span>' : '');
     decodeText(btn.querySelector('.choice-label'), choice.label);
     btn.addEventListener('click', () => chooseCategory(i));
     choiceListEl.appendChild(btn);
@@ -529,7 +521,7 @@ function chooseCategory(i) {
   } else {
     q = pickQuestion(state.currentQuestion, choice.pool);
   }
-  logLine('VECTOR ' + (i + 1) + ': ' + choice.label.toUpperCase(), 'sys');
+  logLine(t('log.vector', { n: i + 1, label: choice.label }), 'sys');
   state.battlePhase = 'answering';
   setQuestion(q);
   showBattlePhase();
@@ -775,6 +767,9 @@ function loadRoom() {
   setQuestion(pickQuestion(null));
   renderCombatStatus();
   clearLog();
+  // Per-room wording overrides (text.js AREAS) apply from here on.
+  setTextArea(state.roomIndex + 1);
+  applyStaticText();
   roomFeedback.innerHTML = '';
   answerInput.value = '';
   setControlsEnabled(true);
@@ -800,14 +795,18 @@ function setControlsEnabled(enabled) {
   continueBtn.disabled = !enabled;
 }
 
-function applyTurnOutcome(actionMessage, extraHtml) {
+// One line on the room screen under the map. Escaped, since some wording
+// carries values from custom lists (category names).
+function showRoomNote(cls, text) {
+  roomFeedback.innerHTML = '<span class="' + cls + '">' + escapeHtml(text) + '</span>';
+}
+
+function applyTurnOutcome(actionMessage) {
   const notes = advanceMonsters();
   syncQuestionForTarget();
   syncBattleScreen();
-  extraHtml = extraHtml || '';
-
-  const cls = notes.engageNote ? 'warn-msg' : 'move-msg';
-  roomFeedback.innerHTML = '<span class="' + cls + '">' + actionMessage + notes.engageNote + notes.spawnNote + '</span>' + extraHtml;
+  const text = [actionMessage, notes.engageNote, notes.spawnNote].filter(Boolean).join(' ');
+  showRoomNote(notes.engageNote ? 'warn-msg' : 'move-msg', text);
 }
 
 function movePlayer(dRow, dCol, dirName) {
@@ -828,32 +827,32 @@ function movePlayer(dRow, dCol, dirName) {
   const newCol = state.playerCol + dCol;
 
   if (newRow < 0 || newRow >= state.GRID_SIZE || newCol < 0 || newCol >= state.GRID_SIZE) {
-    roomFeedback.innerHTML = '<span class="block-msg">The dungeon wall blocks that path.</span>';
+    showRoomNote('block-msg', t('room.blocked.wall'));
     return;
   }
   if (state.wallSet.has(key(newRow, newCol))) {
-    roomFeedback.innerHTML = '<span class="block-msg">The dungeon wall blocks that path.</span>';
+    showRoomNote('block-msg', t('room.blocked.wall'));
     return;
   }
   if (state.boss && state.boss.row === newRow && state.boss.col === newCol) {
-    roomFeedback.innerHTML = '<span class="block-msg">The boss blocks that path.</span>';
+    showRoomNote('block-msg', t('room.blocked.boss'));
     return;
   }
   if (state.minions.some(m => m.row === newRow && m.col === newCol)) {
-    roomFeedback.innerHTML = '<span class="block-msg">A minion blocks that path.</span>';
+    showRoomNote('block-msg', t('room.blocked.minion'));
     return;
   }
   if (state.chest && state.chest.row === newRow && state.chest.col === newCol) {
-    roomFeedback.innerHTML = '<span class="block-msg">A locked chest blocks that path. Tap it from beside it.</span>';
+    showRoomNote('block-msg', t('room.blocked.chest'));
     return;
   }
   if (state.rune && state.rune.row === newRow && state.rune.col === newCol) {
-    roomFeedback.innerHTML = '<span class="block-msg">A glowing rune blocks that path. Tap it from beside it.</span>';
+    showRoomNote('block-msg', t('room.blocked.rune'));
     return;
   }
   const blockingEncounter = state.encounters.find(e => e.row === newRow && e.col === newCol);
   if (blockingEncounter) {
-    roomFeedback.innerHTML = '<span class="block-msg">A ' + blockingEncounter.category + ' challenge blocks that path. Tap it from beside it.</span>';
+    showRoomNote('block-msg', t('room.blocked.encounter', { category: categoryLabel(blockingEncounter.category) }));
     return;
   }
 
@@ -872,13 +871,13 @@ function movePlayer(dRow, dCol, dirName) {
     return;
   }
 
-  let actionMessage = 'You move ' + dirName + '.';
+  let actionMessage = t('room.move', { direction: t('room.dir.' + dirName) });
   if (state.coin && state.coin.row === state.playerRow && state.coin.col === state.playerCol) {
     state.coin = null;
     coinActor.classList.add('gone');
     state.coinsTotal++;
     coinsTotalEl.textContent = state.coinsTotal;
-    actionMessage += ' You grab a coin!';
+    actionMessage += ' ' + t('room.coin');
   }
 
   applyTurnOutcome(actionMessage);
@@ -888,7 +887,7 @@ function movePlayer(dRow, dCol, dirName) {
 function skipTurn() {
   if (state.turnLocked) return;
   state.turnLocked = true;
-  applyTurnOutcome('You hold your ground.');
+  applyTurnOutcome(t('room.wait'));
   state.turnLocked = false;
 }
 
@@ -903,26 +902,26 @@ function applyAnswerResult(isCorrect, hadExtraSpace, given) {
   const target = state.selectedTarget;
   const q = state.currentQuestion;
 
-  logLine('INPUT: ' + given);
+  logLine(t('log.input', { answer: given }));
   if (isCorrect) {
-    logLine('ACCEPTED.', 'bright');
+    logLine(t('log.accepted'), 'bright');
     if (hadExtraSpace) {
       state.extraSpaceCount++;
-      logLine('NOTE: EXTRA SPACES IN INPUT.', 'sys');
+      logLine(t('log.extraSpaces'), 'sys');
     }
   } else {
     state.hearts--;
     renderHearts();
-    logLine('REJECTED. -1 HP', 'alert');
+    logLine(t('log.rejected'), 'alert');
     if (state.revealOnWrong) {
-      logLine('EXPECTED: ' + q.meaning, 'sys');
-      if (q.source) logLine('SOURCE: ' + q.source, 'sys');
+      logLine(t('log.expected', { answer: q.meaning }), 'sys');
+      if (q.source) logLine(t('log.source', { source: q.source }), 'sys');
     }
   }
   flashBattleResult(isCorrect);
 
   if (state.hearts <= 0) {
-    logLine('SIGNAL LOST.', 'alert');
+    logLine(t('log.signalLost'), 'alert');
     setControlsEnabled(false);
     clearInterval(state.timerHandle);
     setTimeout(endLose, 900);
@@ -946,13 +945,13 @@ function resolveBossAnswer(isCorrect) {
     if (state.boss.hp <= 0) {
       bossActor.classList.add('gone');
       state.boss = null; // clears the doorway it was blocking
-      logLine('BOSS CLEARED. THE WAY TO THE STAIRS IS OPEN.', 'bright');
+      logLine(t('log.boss.cleared'), 'bright');
       endEncounter();
       return;
     }
-    logLine('BOSS INTEGRITY ' + state.boss.hp + '/' + BOSS_HP + '.');
+    logLine(t('log.boss.integrity', { hp: state.boss.hp, max: BOSS_HP }));
   } else {
-    logLine('THE BOSS HOLDS.');
+    logLine(t('log.boss.holds'));
   }
   nextQuestion();
   startBattleTurn();
@@ -965,7 +964,7 @@ function resolveOneShot(target, isCorrect, q) {
   if (target.kind === 'minion') {
     target.el.remove();
     state.minions = state.minions.filter(m => m !== target);
-    logLine(isCorrect ? 'MINION CLEARED.' : 'THE MINION DISPERSES.', isCorrect ? 'bright' : undefined);
+    logLine(t(isCorrect ? 'log.minion.cleared' : 'log.minion.disperses'), isCorrect ? 'bright' : undefined);
     endEncounter();
     return;
   }
@@ -975,27 +974,27 @@ function resolveOneShot(target, isCorrect, q) {
   else if (target.kind === 'rune') state.rune = null;
   else if (target.kind === 'encounter') state.encounters = state.encounters.filter(e => e !== target);
 
-  const noun = target.kind === 'chest' ? 'CHEST'
-    : target.kind === 'rune' ? 'RUNE'
-    : categoryLabel(target.category).toUpperCase() + ' CHALLENGE';
+  const category = target.category ? categoryLabel(target.category) : '';
   if (!isCorrect) {
-    logLine('THE ' + noun + ' WAS TRAPPED.');
+    logLine(t('log.' + target.kind + '.trapped', { category }));
   } else if (target.kind === 'chest') {
     state.coinsTotal += 2;
     coinsTotalEl.textContent = state.coinsTotal;
-    logLine('CHEST OPENED. +2 GOLD.', 'bright');
+    logLine(t('log.chest.opened', { gold: 2 }), 'bright');
   } else if (target.kind === 'encounter') {
     const reward = DIFFICULTY_COIN_REWARD[q.difficulty] || DIFFICULTY_COIN_REWARD.medium;
     state.coinsTotal += reward;
     coinsTotalEl.textContent = state.coinsTotal;
-    logLine(noun + ' MASTERED. +' + reward + ' GOLD.', 'bright');
+    logLine(t('log.encounter.mastered', { category, gold: reward }), 'bright');
   } else {
     // The hinted question stays in reserve until it's asked: the next
     // fight always offers its category (marked ◊), so the hint can't be
     // spent on a question the player never chooses.
     state.runeHint = pickQuestion(q);
-    const where = state.runeHint.category ? 'A ' + categoryLabel(state.runeHint.category).toUpperCase() + ' QUERY, ' : '';
-    logLine('RUNE DECODED: ' + where + buildHint(state.runeHint), 'bright');
+    const hint = buildHint(state.runeHint);
+    logLine(state.runeHint.category
+      ? t('log.rune.decoded', { category: categoryLabel(state.runeHint.category), hint })
+      : t('log.rune.decodedUncategorized', { hint }), 'bright');
   }
   endEncounter();
 }
@@ -1003,7 +1002,7 @@ function resolveOneShot(target, isCorrect, q) {
 function attemptAnswer() {
   if (state.turnLocked || state.battlePhase !== 'answering') return;
   if (!state.selectedTarget || !isAdjacentToPlayer(state.selectedTarget)) {
-    logLine('NOTHING IN RANGE. MOVE NEXT TO SOMETHING FIRST.', 'sys');
+    logLine(t('log.outOfRange'), 'sys');
     return;
   }
   const raw = answerInput.value;
@@ -1020,7 +1019,7 @@ function attemptAnswer() {
 function attemptAnswerMC(choice) {
   if (state.turnLocked || state.battlePhase !== 'answering') return;
   if (!state.selectedTarget || !isAdjacentToPlayer(state.selectedTarget)) {
-    logLine('NOTHING IN RANGE. MOVE NEXT TO SOMETHING FIRST.', 'sys');
+    logLine(t('log.outOfRange'), 'sys');
     return;
   }
   state.turnLocked = true;
@@ -1103,18 +1102,22 @@ devFogBtn.addEventListener('click', () => {
 
 function endWin() {
   clearInterval(state.timerHandle);
-  let msg = 'Cleared ' + state.order.length + ' bosses in ' + formatTime(state.seconds) +
-    ' and ' + state.turnCount + ' turns, in ' + state.attempts + ' attempts, with ' + state.hearts + ' heart' + (state.hearts === 1 ? '' : 's') + ' left. Coins collected: ' + state.coinsTotal + '.';
+  let msg = t('end.win.stats', {
+    bosses: state.order.length, time: formatTime(state.seconds), turns: state.turnCount,
+    attempts: state.attempts, hearts: state.hearts, coins: state.coinsTotal,
+  });
   if (state.extraSpaceCount > 0) {
-    msg += ' Watch spacing on ' + state.extraSpaceCount + ' answer' + (state.extraSpaceCount > 1 ? 's' : '') + ' next run.';
+    msg += ' ' + t('end.win.spacing', { count: state.extraSpaceCount });
   }
   winStats.textContent = msg;
   showScreen(winScreen);
 }
 
 function endLose() {
-  loseStats.textContent = 'You reached room ' + (state.roomIndex + 1) + ' of ' + state.order.length +
-    ' in ' + formatTime(state.seconds) + ' and ' + state.turnCount + ' turns. Coins collected: ' + state.coinsTotal + '.';
+  loseStats.textContent = t('end.lose.stats', {
+    room: state.roomIndex + 1, rooms: state.order.length, time: formatTime(state.seconds),
+    turns: state.turnCount, coins: state.coinsTotal,
+  });
   showScreen(loseScreen);
 }
 

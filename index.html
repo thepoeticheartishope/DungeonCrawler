@@ -943,7 +943,7 @@
      (position: fixed), independent of <main>'s centered column. -->
 <div class="screen" id="introGlitch">
   <pre class="glitch-code" id="glitchCode"></pre>
-  <div class="glitch-text" data-text="YOU ARE NEEDED. ASCEND.">YOU ARE NEEDED. ASCEND.</div>
+  <div class="glitch-text" data-t="intro.call" data-text=""></div>
 </div>
 <main>
   <header>
@@ -1030,7 +1030,7 @@
       </div>
     </div>
 
-    <button id="startBtn">Enter the dungeon</button>
+    <button id="startBtn" data-t="start.enter"></button>
   </section>
 
   <!-- Room screen -->
@@ -1062,7 +1062,7 @@
        behind it is frozen — nothing moves until this is resolved. -->
   <section class="screen" id="battleScreen">
     <div class="terminal">
-      <div class="rule"><span>ENCOUNTER.SYS</span></div>
+      <div class="rule"><span data-t="battle.title"></span></div>
       <div class="terminal-body">
         <div class="term-status">
           <div class="battle-glyph" id="battleGlyph">D</div>
@@ -1079,25 +1079,25 @@
 
         <!-- Fights open on a choice: which kind of query to face. -->
         <div class="choice-panel" id="choicePanel" hidden>
-          <div class="battle-glitch" data-text="SELECT QUERY VECTOR">SELECT QUERY VECTOR</div>
+          <div class="battle-glitch" data-t="battle.selectVector" data-text=""></div>
           <div class="choice-list" id="choiceList"></div>
         </div>
 
         <div id="queryPanel">
           <img class="query-image" id="queryImage" alt="" hidden>
-          <div class="term-line term-label">QUERY:</div>
+          <div class="term-line term-label" data-t="battle.query"></div>
           <div class="enemy-name" id="enemyName">CPU</div>
 
           <form id="answerForm" class="term-input-row" autocomplete="off">
             <span class="term-prompt">guest@noesis<span class="term-path">:~$</span></span>
-            <input type="text" id="answerInput" placeholder="type your answer" autofocus>
+            <input type="text" id="answerInput" data-t-placeholder="battle.answerPlaceholder" autofocus>
             <button type="button" id="attackBtn">Attack</button>
           </form>
           <div class="mc-options" id="mcOptions"></div>
         </div>
 
         <div class="end-panel" id="endPanel" hidden>
-          <button type="button" id="continueBtn">CONTINUE</button>
+          <button type="button" id="continueBtn" data-t="battle.continue"></button>
         </div>
       </div>
     </div>
@@ -1105,16 +1105,16 @@
 
   <!-- Win screen -->
   <section class="screen win" id="winScreen">
-    <div class="big">Dungeon cleared!</div>
+    <div class="big" data-t="end.win.title"></div>
     <p id="winStats"></p>
-    <button id="restartBtn">Play again</button>
+    <button id="restartBtn" data-t="end.win.again"></button>
   </section>
 
   <!-- Lose screen -->
   <section class="screen lose" id="loseScreen">
-    <div class="big">You have fallen</div>
+    <div class="big" data-t="end.lose.title"></div>
     <p id="loseStats"></p>
-    <button id="retryBtn">Try again</button>
+    <button id="retryBtn" data-t="end.lose.retry"></button>
   </section>
 </main>
 

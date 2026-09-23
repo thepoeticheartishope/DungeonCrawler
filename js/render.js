@@ -7,6 +7,8 @@
 
 import { state, key } from './state.js';
 import { MAX_HEARTS, BOSS_HP, VISION_RADIUS, VIEWPORT_SIZE } from './config.js';
+import { categoryLabel } from './quiz.js';
+import { t } from './text.js';
 
 let els = {};
 
@@ -211,18 +213,14 @@ export function renderTargeting() {
   els.runeActor.classList.toggle('targeted', state.selectedTarget === state.rune);
   state.encounters.forEach(e => e.el.classList.toggle('targeted', state.selectedTarget === e));
 
-  const kindLabels = { boss: 'Boss', minion: 'Minion', chest: 'Chest', rune: 'Rune' };
-  let label = 'Target: none — move next to something';
-  if (state.selectedTarget) {
-    label = state.selectedTarget.kind === 'encounter'
-      ? 'Target: ' + state.selectedTarget.category
-      : 'Target: ' + (kindLabels[state.selectedTarget.kind] || 'Minion');
-  }
-  els.targetLabelEl.textContent = label;
+  const target = state.selectedTarget;
+  els.targetLabelEl.textContent = target
+    ? t('target.' + target.kind, { category: target.category ? categoryLabel(target.category) : '' })
+    : t('target.none');
 
   const isObject = state.selectedTarget &&
     (state.selectedTarget.kind === 'chest' || state.selectedTarget.kind === 'rune' || state.selectedTarget.kind === 'encounter');
-  els.attackBtn.textContent = isObject ? 'Attempt' : 'Attack';
+  els.attackBtn.textContent = t(isObject ? 'battle.attempt' : 'battle.attack');
 }
 
 export function formatTime(s) {
