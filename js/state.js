@@ -2,7 +2,7 @@
 // needs. Other modules import `state` and read/write its properties
 // directly (e.g. `state.hearts--`) rather than each holding their own copy.
 
-import { GRID_SIZES, CHAMBER_TARGETS, MAX_HEARTS, TYPING_SAMPLE_DATA } from './config.js';
+import { GRID_SIZES, CHAMBER_TARGETS, MAX_HEARTS, MC_SAMPLE_DATA } from './config.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
 // stored in a Set or looked up by position.
@@ -27,7 +27,7 @@ export const state = {
   turnCount: 0,
   coinsTotal: 0,
   revealOnWrong: false,
-  mcMode: false,
+  mcMode: true, // always on for now; see startGame in main.js
   currentChoices: [],
 
   playerRow: undefined,
@@ -59,5 +59,5 @@ export const state = {
   encounters: [],        // [{ row, col, el, kind: 'encounter', category, pool }], per-room, up to 3
 
   usingSample: true, // false once the person loads their own list
-  activeData: TYPING_SAMPLE_DATA, // whichever list is currently in play
+  activeData: MC_SAMPLE_DATA, // whichever list is currently in play
 };
