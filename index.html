@@ -1058,10 +1058,6 @@
       <input type="checkbox" id="revealToggle">
       Reveal the correct answer after a wrong attempt
     </label>
-    <label class="option-toggle">
-      <input type="checkbox" id="mcToggle">
-      Multiple choice mode (4 options, no typing)
-    </label>
 
     <div class="loader">
       <button type="button" class="ghost small" id="toggleLoader">Load your own question set</button>
@@ -1082,7 +1078,7 @@
         <p class="loader-hint">
           Paste one item per line as <code>Prompt | Answer</code>, or paste a JSON
           array of <code>{"term","meaning"}</code> objects. You can also load a
-          text file instead of pasting. For multiple choice mode, a JSON entry
+          text file instead of pasting. A JSON entry
           may add an <code>"options"</code> array with 2–4 answer choices
           (the correct answer is added in if you leave it out); entries
           without <code>"options"</code> get 3 distractors picked at random
@@ -1108,7 +1104,7 @@
           <input type="text" id="saveSetName" placeholder="Name this set to save it">
           <button type="button" class="ghost" id="saveSetBtn">Save set</button>
         </div>
-        <div class="loader-status" id="loaderStatus">Using the built-in typing sample list (4 items).</div>
+        <div class="loader-status" id="loaderStatus">Using the built-in multiple choice sample list (4 items).</div>
 
         <hr class="loader-divider">
 

@@ -76,7 +76,6 @@ const targetLabelEl = document.getElementById('targetLabel');
 const answerForm = document.getElementById('answerForm');
 const answerInput = document.getElementById('answerInput');
 const attackBtn = document.getElementById('attackBtn');
-const mcToggle = document.getElementById('mcToggle');
 const mcOptionsEl = document.getElementById('mcOptions');
 const encounterLogEl = document.getElementById('encounterLog');
 const endPanel = document.getElementById('endPanel');
@@ -124,7 +123,6 @@ function saveOptions() {
   try {
     localStorage.setItem(OPTION_STORAGE_KEY, JSON.stringify({
       revealOnWrong: revealToggle.checked,
-      mcMode: mcToggle.checked,
     }));
   } catch (e) {
     // Storage unavailable — the checkboxes still work for this session.
@@ -133,10 +131,8 @@ function saveOptions() {
 
 const savedOptions = loadSavedOptions();
 if (typeof savedOptions.revealOnWrong === 'boolean') revealToggle.checked = savedOptions.revealOnWrong;
-if (typeof savedOptions.mcMode === 'boolean') mcToggle.checked = savedOptions.mcMode;
 
 revealToggle.addEventListener('change', saveOptions);
-mcToggle.addEventListener('change', saveOptions);
 
 toggleLoaderBtn.addEventListener('click', () => {
   loaderPanel.classList.toggle('show');
@@ -167,14 +163,13 @@ loadListBtn.addEventListener('click', () => {
 });
 
 function showSampleStatus() {
-  const label = mcToggle.checked ? 'multiple choice' : 'typing';
-  loaderStatus.innerHTML = '<span class="loader-ok">Using the built-in ' + label + ' sample list (' +
-    defaultSample(mcToggle.checked).length + ' items).</span>';
+  loaderStatus.innerHTML = '<span class="loader-ok">Using the built-in multiple choice sample list (' +
+    defaultSample(true).length + ' items).</span>';
 }
 
 resetListBtn.addEventListener('click', () => {
   state.usingSample = true;
-  state.activeData = defaultSample(mcToggle.checked);
+  state.activeData = defaultSample(true);
   dataInput.value = '';
   fileInput.value = '';
   showSampleStatus();
@@ -260,14 +255,6 @@ saveSetBtn.addEventListener('click', () => {
 });
 
 renderSavedSets();
-
-// If no custom list has been loaded, switching modes swaps in the sample
-// list built for that mode (typing vs. multiple choice).
-mcToggle.addEventListener('change', () => {
-  if (!state.usingSample) return;
-  state.activeData = defaultSample(mcToggle.checked);
-  showSampleStatus();
-});
 
 function renderChoices() {
   const letters = ['A', 'B', 'C', 'D'];
@@ -635,7 +622,10 @@ function startGame() {
   state.turnCount = 0;
   state.coinsTotal = 0;
   state.revealOnWrong = revealToggle.checked;
-  state.mcMode = mcToggle.checked;
+  // Every run is multiple choice. The typing path (answerForm,
+  // attemptAnswer, TYPING_SAMPLE_DATA) is parked, not deleted: it becomes a
+  // per-question "type it in" modifier once question modifiers are designed.
+  state.mcMode = true;
   answerForm.style.display = state.mcMode ? 'none' : 'flex';
   mcOptionsEl.classList.toggle('show', state.mcMode);
   renderHearts();
