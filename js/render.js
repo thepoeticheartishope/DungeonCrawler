@@ -180,7 +180,8 @@ export function positionActor(el, row, col, instant = false) {
 }
 
 export function renderHearts() {
-  els.heartsEl.textContent = '♥'.repeat(state.hearts) + '♡'.repeat(MAX_HEARTS - state.hearts);
+  // ASCII rather than hearts: the terminal face has no symbol glyphs.
+  els.heartsEl.textContent = Math.max(state.hearts, 0) + '/' + MAX_HEARTS;
 }
 
 // HP pips for whichever target is currently engaged on the battle screen.
@@ -198,8 +199,8 @@ export function renderCombatStatus() {
   }
   const full = Math.max(target.hp, 0);
   const empty = Math.max(BOSS_HP - full, 0);
-  const pips = '<span class="pip-full">' + '♦'.repeat(full) + '</span>' +
-    '<span class="pip-empty">' + '♦'.repeat(empty) + '</span>';
+  const pips = '<span class="pip-full">' + '#'.repeat(full) + '</span>' +
+    '<span class="pip-empty">' + '-'.repeat(empty) + '</span>';
   els.combatStatusEl.innerHTML = 'HP: ' + pips;
 }
 

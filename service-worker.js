@@ -3,7 +3,7 @@
 // game loads instantly and still works with no connection. Bump
 // CACHE_NAME whenever the cached files change, so old caches get cleared.
 
-const CACHE_NAME = 'term-dungeon-v40';
+const CACHE_NAME = 'term-dungeon-v41';
 const APP_SHELL = [
   './',
   './index.html',
@@ -21,6 +21,7 @@ const APP_SHELL = [
   './lists/bible-trivia.json',
   './lists/bible-quiz-bowl.json',
   './lists/images/cpu-chip.svg',
+  './fonts/VT323-Regular.ttf',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-512-maskable.png'
