@@ -54,7 +54,8 @@ export function parseListInput(text) {
           difficulty: VALID_DIFFICULTIES.includes(rawDifficulty) ? rawDifficulty : 'medium',
           source: source || undefined,
           image: image || undefined,
-          answerType: answerType || undefined
+          answerType: answerType || undefined,
+          draft: (item && item.draft === true) || undefined
         };
       })
       .filter(item => item.term && item.meaning);
@@ -207,9 +208,11 @@ function distinctMeanings(pool) {
 // list if the loaded JSON provided one (adding the correct meaning in if
 // it's missing); otherwise picks up to 3 random distractor meanings from
 // the rest of the active list, preferring ones that share the item's
-// answerType (a name for a name, a date for a date, ...) so the correct
-// choice can't be spotted just by its shape. Falls back to the full pool
-// when too few same-type candidates exist, or the item has no answerType.
+// answerType (a name for a name, a number for a number, ...) so the correct
+// choice can't be spotted just by its shape. Candidates are drawn in tiers,
+// topping up from the next tier only when the previous runs out: same
+// answerType and same draft status (a one-word answer isn't offered next
+// to multi-word draft answers), then same answerType, then anything.
 export function buildChoices(item) {
   let opts;
   if (Array.isArray(item.options) && item.options.length >= 2) {
@@ -222,8 +225,22 @@ export function buildChoices(item) {
     const typedPool = item.answerType
       ? basePool.filter(d => d.answerType === item.answerType)
       : [];
-    const typedDistinct = distinctMeanings(typedPool);
-    const distractors = typedDistinct.length >= 3 ? typedDistinct.slice(0, 3) : distinctMeanings(basePool).slice(0, 3);
+    const tiers = [
+      typedPool.filter(d => !d.draft === !item.draft),
+      typedPool,
+      basePool
+    ];
+    const distractors = [];
+    const seen = new Set();
+    for (const tier of tiers) {
+      for (const m of distinctMeanings(tier)) {
+        if (distractors.length >= 3) break;
+        const key = normalizeSpaces(m).toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        distractors.push(m);
+      }
+    }
     opts = [item.meaning, ...distractors];
   }
   return shuffle(opts).slice(0, 4);
