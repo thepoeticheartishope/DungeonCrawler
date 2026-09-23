@@ -809,7 +809,7 @@
   /* ---- Battle category choice: the glitched "what kind of query?" menu
      a fight opens on. Same achromatic, small-jitter glitch as the intro
      screen (no colour split, no strobe), just inline instead of centred. ---- */
-  .choice-panel[hidden], #queryPanel[hidden] { display: none; }
+  .choice-panel[hidden], #queryPanel[hidden], .end-panel[hidden] { display: none; }
   .battle-glitch {
     position: relative;
     color: var(--torch-bright);
@@ -858,6 +858,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .battle-glitch::before, .battle-glitch::after { animation: none; opacity: 0; }
+    .log-line { animation: none; }
     #battleScreen.glitch-in .terminal { animation: none; }
   }
 
@@ -867,10 +868,35 @@
     font-size: 20px;
     text-align: left;
   }
-  .feedback .hit-msg { color: var(--hit); display: block; }
-  .feedback .hit-msg::before { content: '+ '; }
-  /* A miss is the one line shown in inverse video — the loudest thing a
-     phosphor screen can do without a second colour. */
+  /* ---- Encounter log (battle screen) ---- */
+  .encounter-log {
+    min-height: calc(1.25em * 4);
+    max-height: calc(1.25em * 10);
+    overflow-y: auto;
+    margin: 6px 0 14px;
+    overflow-wrap: anywhere;
+  }
+  /* Hanging indent: a wrapped line lines up under the text, not the '> '. */
+  .log-line { padding-left: 1.2em; text-indent: -1.2em; animation: logLineIn 0.18s steps(3, end); }
+  .log-line::before { content: '> '; color: var(--muted); }
+  .log-sys { color: var(--muted); }
+  .log-bright { color: var(--torch-bright); }
+  /* A miss (or the end of the run) is the one line in inverse video — the
+     loudest thing a phosphor screen can do without a second colour. */
+  .log-alert {
+    display: table;
+    color: var(--ink);
+    background: var(--text);
+    text-shadow: none;
+    box-shadow: var(--inverse-glow);
+    padding: 0 6px;
+    text-indent: 0;
+  }
+  .log-alert::before { content: '! '; color: inherit; }
+  @keyframes logLineIn { from { opacity: 0; } to { opacity: 1; } }
+  .end-panel { margin-top: 4px; }
+
+  /* Room screen's one-line move/engage notes. */
   .feedback .warn-msg {
     display: table;
     color: var(--ink);
@@ -882,9 +908,6 @@
   .feedback .warn-msg::before { content: '! '; }
   .feedback .block-msg { color: var(--block); }
   .feedback .move-msg { color: var(--muted); display: block; }
-  .feedback .tip { color: var(--torch); font-size: 18px; display: block; margin-top: 3px; }
-  .feedback .source-tip { color: var(--muted); font-style: italic; }
-  .feedback .source-tip::before { content: '-- '; }
 
   /* ---- Win / lose screens ---- */
   .win p, .lose p { color: var(--muted); font-size: 20px; margin-bottom: 22px; }
@@ -1037,6 +1060,10 @@
           </div>
         </div>
 
+        <!-- Running record of this encounter; all battle feedback goes here. -->
+        <div class="rule"><span>LOG</span></div>
+        <div class="encounter-log" id="encounterLog" role="log" aria-live="polite"></div>
+
         <!-- Fights open on a choice: which kind of query to face. -->
         <div class="choice-panel" id="choicePanel" hidden>
           <div class="battle-glitch" data-text="SELECT QUERY VECTOR">SELECT QUERY VECTOR</div>
@@ -1056,7 +1083,9 @@
           <div class="mc-options" id="mcOptions"></div>
         </div>
 
-        <div class="feedback" id="feedback"></div>
+        <div class="end-panel" id="endPanel" hidden>
+          <button type="button" id="continueBtn">CONTINUE</button>
+        </div>
       </div>
     </div>
   </section>

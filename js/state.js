@@ -49,7 +49,7 @@ export const state = {
   currentQuestion: null, // { term, meaning } — reshuffles after every attempt
   selectedTarget: null,  // boss, or one of the minions
   battleTarget: null,    // whichever target the battle screen last set up a turn for
-  battlePhase: 'answering', // 'choosing' (pick a category) | 'answering' (question showing)
+  battlePhase: 'answering', // 'choosing' (pick a category) | 'answering' (question showing) | 'ended' (settled, awaiting continue)
   categoryChoices: [],   // [{ label, pool }] offered while battlePhase is 'choosing'
   runeHint: null,        // question a rune just hinted at — always offered as a choice until asked
   coin: null,            // { row, col } or null once collected
