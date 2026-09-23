@@ -8,7 +8,7 @@
 
 import { state, key } from './state.js';
 import { MINION_ICONS, MINION_HP, SPAWN_INTERVAL, MAX_MINIONS } from './config.js';
-import { positionActor, renderCombatStatus, renderFog, renderTargeting, renderHearts } from './render.js';
+import { positionActor, renderCombatStatus, renderFog, renderTargeting } from './render.js';
 
 let combatEls = {};
 
@@ -173,25 +173,19 @@ export function advanceMonsters() {
     }
   }
 
-  let hitNote = '';
+  // Walking around is safe: a minion that reaches the player never deals
+  // damage here. It engages instead — it becomes the target, which puts the
+  // battle screen up, and hearts are only ever lost by missing a question.
+  let engageNote = '';
   for (const m of state.minions) {
     const next = bfsNextStep({ row: m.row, col: m.col }, { row: state.playerRow, col: state.playerCol }, blockedTilesFor(m));
     if (next) {
       const isPlayerTile = next.row === state.playerRow && next.col === state.playerCol;
 
       if (isPlayerTile) {
-        // Attack: the minion strikes from where it stands, but never
-        // occupies the player's tile.
-        state.hearts--;
-        renderHearts();
-        combatEls.grid.classList.remove('shake');
-        void combatEls.grid.offsetWidth;
-        combatEls.grid.classList.add('shake');
-        combatEls.playerActor.classList.remove('hit-flash');
-        void combatEls.playerActor.offsetWidth;
-        combatEls.playerActor.classList.add('hit-flash');
-        hitNote = ' A minion reaches you and strikes!';
-        if (state.hearts <= 0) break;
+        // Engage from where it stands, never occupying the player's tile.
+        if (!state.selectedTarget) state.selectedTarget = m;
+        engageNote = ' Something lunges out of the dark!';
       } else {
         m.row = next.row;
         m.col = next.col;
@@ -205,5 +199,5 @@ export function advanceMonsters() {
   renderCombatStatus();
   renderFog();
   refreshTargetValidity();
-  return { spawnNote, hitNote };
+  return { spawnNote, engageNote };
 }

@@ -2,7 +2,7 @@
 // selection, and multiple-choice option building. No DOM access here.
 
 import { state } from './state.js';
-import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS } from './config.js';
+import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS } from './config.js';
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
 
@@ -97,6 +97,60 @@ export function pickQuestion(exclude, pool) {
 // (boss, minion, chest, rune, or no target at all).
 export function poolFor(target) {
   return target && target.kind === 'encounter' ? target.pool : state.activeData;
+}
+
+function groupBy(pool, keyFn) {
+  const groups = new Map();
+  pool.forEach(item => {
+    const k = keyFn(item);
+    if (!k) return;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(item);
+  });
+  return groups;
+}
+
+export function categoryLabel(category) {
+  return CATEGORY_LABELS[category] || category;
+}
+
+// The battle screen's category choices for one turn: up to `count` groups
+// of `pool`, each { label, category, pool }. Groups by category when the
+// pool has at least `count` of them; otherwise (most bundled sets only have
+// two) by category + difficulty, taking one group per category first so
+// the choices stay as varied as possible. If `mustInclude` is in the pool,
+// its group is always one of the choices (a rune's hint stays usable).
+// Returns fewer than 2 choices when the pool can't offer a real choice
+// (e.g. a pasted list with no categories) — the caller skips the choice
+// step then.
+export function buildCategoryChoices(pool, count, mustInclude) {
+  let groups = groupBy(pool, d => d.category);
+  let label = k => categoryLabel(k);
+  if (groups.size < count) {
+    const pairs = groupBy(pool, d => d.category && d.category + '\u0000' + (d.difficulty || 'medium'));
+    if (pairs.size > groups.size) {
+      groups = pairs;
+      label = k => {
+        const [category, difficulty] = k.split('\u0000');
+        return categoryLabel(category) + ' · ' + difficulty;
+      };
+    }
+  }
+
+  const all = shuffle(Array.from(groups.entries()))
+    .map(([k, items]) => ({ label: label(k), category: items[0].category, pool: items }));
+  const picked = [];
+  const required = mustInclude && all.find(g => g.pool.includes(mustInclude));
+  if (required) picked.push(required);
+  for (const g of all) {
+    if (picked.length >= count) break;
+    if (!picked.includes(g) && !picked.some(p => p.category === g.category)) picked.push(g);
+  }
+  for (const g of all) {
+    if (picked.length >= count) break;
+    if (!picked.includes(g)) picked.push(g);
+  }
+  return shuffle(picked);
 }
 
 // Deterministic glyph for a category name, so the same category always

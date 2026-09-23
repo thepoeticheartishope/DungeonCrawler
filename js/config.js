@@ -90,6 +90,23 @@ export const DIRECTION_ARROWS = { N: '^', S: 'v', E: '>', W: '<' };
 // missing or has an invalid difficulty.
 export const DIFFICULTY_COIN_REWARD = { easy: 1, medium: 2, hard: 3 };
 
+// How many query categories a boss/minion fight offers to choose from each
+// turn (see quiz.js buildCategoryChoices).
+export const BATTLE_CHOICE_COUNT = 3;
+
+// Display names for terse category codes, shown on the battle screen's
+// category-choice buttons. Anything not listed here is shown as-is.
+// Codes are the Bible Quiz Bowl flashcards' own section letters.
+export const CATEGORY_LABELS = {
+  OT: 'Old Testament',
+  NT: 'New Testament',
+  P: 'Prophets',
+  HG: 'History & Geography',
+  N: 'Names',
+  LNS: 'Letters, Numbers & Symbols',
+  W: 'Wisdom'
+};
+
 // Grid size and chamber count both grow as the run progresses.
 // Index 0 = Room 1, index 1 = Room 2, index 2 = Room 3.
 export const GRID_SIZES = [19, 23, 27];
