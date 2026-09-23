@@ -21,7 +21,7 @@
     "category": "Old Testament",
     "difficulty": "easy",
     "source": "Jonah 1:17",
-    "answerType": "book"
+    "answerType": "name"
   },
   {
     "term": "Who was the first man God created?",
@@ -65,7 +65,7 @@
   },
   {
     "term": "How many disciples did Jesus choose?",
-    "meaning": "Twelve",
+    "meaning": "12",
     "category": "New Testament",
     "difficulty": "easy",
     "source": "Luke 6:12-16",
@@ -77,7 +77,7 @@
     "category": "New Testament",
     "difficulty": "easy",
     "source": "Luke 2:4-7",
-    "answerType": "place"
+    "answerType": "location"
   },
   {
     "term": "Whose hair was the source of his great strength?",
@@ -93,7 +93,7 @@
     "category": "Old Testament",
     "difficulty": "medium",
     "source": "Daniel 6:16",
-    "answerType": "book"
+    "answerType": "name"
   },
   {
     "term": "Who was sold into slavery in Egypt by his own brothers?",
@@ -125,7 +125,8 @@
     "category": "Old Testament",
     "difficulty": "medium",
     "source": "Exodus 14:21-22",
-    "answerType": "place"
+    "answerType": "location",
+    "draft": true
   },
   {
     "term": "Who became queen of Persia and saved her people from destruction?",
@@ -133,7 +134,7 @@
     "category": "Old Testament",
     "difficulty": "medium",
     "source": "Esther 7:3-4",
-    "answerType": "book"
+    "answerType": "name"
   },
   {
     "term": "Who led the Israelites into the Promised Land after Moses died?",
@@ -141,7 +142,7 @@
     "category": "Old Testament",
     "difficulty": "medium",
     "source": "Joshua 1:1-2",
-    "answerType": "book"
+    "answerType": "name"
   },
   {
     "term": "Who baptized Jesus in the Jordan River?",
@@ -149,7 +150,8 @@
     "category": "New Testament",
     "difficulty": "medium",
     "source": "Matthew 3:13-17",
-    "answerType": "name"
+    "answerType": "name",
+    "draft": true
   },
   {
     "term": "Who denied knowing Jesus three times?",
@@ -165,7 +167,8 @@
     "category": "Old Testament",
     "difficulty": "hard",
     "source": "Genesis 19:26",
-    "answerType": "name"
+    "answerType": "name",
+    "draft": true
   },
   {
     "term": "Who wrestled with an angel and was renamed Israel?",
@@ -193,7 +196,7 @@
   },
   {
     "term": "How many days and nights did it rain during the flood?",
-    "meaning": "Forty",
+    "meaning": "40",
     "category": "Old Testament",
     "difficulty": "hard",
     "source": "Genesis 7:12",
@@ -205,7 +208,8 @@
     "category": "New Testament",
     "difficulty": "hard",
     "source": "Matthew 26:14-15",
-    "answerType": "name"
+    "answerType": "name",
+    "draft": true
   },
   {
     "term": "In what town did Jesus turn water into wine at a wedding?",
@@ -213,7 +217,7 @@
     "category": "New Testament",
     "difficulty": "hard",
     "source": "John 2:1-11",
-    "answerType": "place"
+    "answerType": "location"
   },
   {
     "term": "Who was the first Christian martyr, stoned to death?",
@@ -229,7 +233,7 @@
     "category": "New Testament",
     "difficulty": "hard",
     "source": "Acts 9:3-9",
-    "answerType": "place"
+    "answerType": "location"
   },
   {
     "term": "Who wrote most of the letters (epistles) in the New Testament?",
