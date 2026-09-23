@@ -361,6 +361,95 @@
   }
   .saved-sets-empty { font-size: 18px; color: var(--muted); font-style: italic; }
 
+  /* ---- Question data viewer ---- */
+  /* A listing wants more width than the 480px play column on desktop;
+     phones still get the full-width column. */
+  body.data-open main { max-width: 960px; }
+  .data-open { margin-bottom: 20px; }
+  .data-controls { margin-top: 4px; }
+  .data-controls button { flex: 0 0 auto; }
+  .data-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 4px;
+    margin: 8px 0;
+  }
+  .data-filters button {
+    min-height: 0;
+    padding: 0 4px;
+    font-size: 18px;
+    color: var(--muted);
+  }
+  .data-filters button[aria-pressed="true"] {
+    background: var(--text);
+    color: var(--ink);
+    text-shadow: none;
+    box-shadow: var(--inverse-glow);
+  }
+  .data-search { margin-bottom: 12px; }
+  .data-list { border-top: 1px solid var(--line); }
+  .data-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 20px;
+  }
+  .data-row[hidden] { display: none; }
+  .data-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 10px;
+    font-size: 18px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .data-num { color: var(--muted); }
+  /* The answer type is the thing being reviewed, so it's the one inverse
+     block on the line. */
+  .data-type {
+    color: var(--ink);
+    background: var(--text);
+    text-shadow: none;
+    padding: 0 6px;
+  }
+  .data-type.untyped { background: transparent; color: var(--muted); text-shadow: inherit; outline: 1px dashed var(--line); }
+  .data-draft { color: var(--torch-bright); }
+  .data-draft::before { content: '* '; }
+  .data-q { color: var(--text); margin: 4px 0 2px; }
+  .data-a { color: var(--torch-bright); text-shadow: var(--glow-strong); }
+  .data-a::before { content: '=> '; color: var(--muted); text-shadow: var(--glow); }
+  .data-opts, .data-src { font-size: 18px; color: var(--muted); }
+  .data-comment {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 18px;
+    color: var(--muted);
+  }
+  .data-comment::before { content: '#'; color: var(--torch); }
+  .data-comment textarea {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    color: var(--torch-bright);
+    font-family: var(--font);
+    font-size: 18px;
+    line-height: 1.25;
+    padding: 0 2px;
+    resize: none;
+    overflow: hidden;
+    text-shadow: inherit;
+  }
+  .data-comment textarea::placeholder { color: var(--muted); opacity: 0.6; }
+  .data-comment textarea:focus { outline: none; border-bottom-color: var(--torch); }
+  .data-row.has-comment .data-comment::before { color: var(--torch-bright); }
+  .data-empty { padding: 10px 0; font-size: 18px; color: var(--muted); }
+  .data-export { margin-top: 14px; }
+
   /* Terminal buttons are just bracketed text — [ ENTER ] — that flips to
      inverse video when hovered or focused, not filled rounded pills. */
   button {
@@ -1031,7 +1120,36 @@
       </div>
     </div>
 
+    <button type="button" class="ghost small data-open" id="dataOpenBtn" data-t="data.open"></button>
+
     <button id="startBtn" data-t="start.enter"></button>
+  </section>
+
+  <!-- Question data viewer: every entry of a set as a terminal listing,
+       with its answer type and a per-question comment box. Reached from
+       the start screen only (see js/dataview.js). -->
+  <section class="screen" id="dataScreen">
+    <div class="terminal">
+      <div class="rule"><span data-t="data.title"></span></div>
+      <div class="terminal-body">
+        <div class="loader-actions data-controls">
+          <select id="dataSetSelect" aria-label="Set to view"></select>
+          <button type="button" class="ghost" id="dataCloseBtn" data-t="data.close"></button>
+        </div>
+        <div class="term-line" id="dataSummary"></div>
+        <div class="data-filters" id="dataFilters" role="group" aria-label="Filter by answer type"></div>
+        <div class="term-input-row data-search">
+          <span class="term-prompt">grep<span class="term-path">:</span></span>
+          <input type="text" id="dataSearch" data-t-placeholder="data.searchPlaceholder" aria-label="Search questions">
+        </div>
+        <div class="data-list" id="dataList"></div>
+        <div class="loader-actions data-export">
+          <button type="button" class="ghost" id="dataCopyBtn" data-t="data.copy"></button>
+          <button type="button" class="ghost" id="dataSaveBtn" data-t="data.save"></button>
+        </div>
+        <div class="loader-status" id="dataStatus"></div>
+      </div>
+    </div>
   </section>
 
   <!-- Room screen -->
