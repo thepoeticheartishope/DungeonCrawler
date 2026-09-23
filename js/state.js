@@ -48,6 +48,10 @@ export const state = {
   turnsSinceSpawn: 0,
   currentQuestion: null, // { term, meaning } — reshuffles after every attempt
   selectedTarget: null,  // boss, or one of the minions
+  battleTarget: null,    // whichever target the battle screen last set up a turn for
+  battlePhase: 'answering', // 'choosing' (pick a category) | 'answering' (question showing)
+  categoryChoices: [],   // [{ label, pool }] offered while battlePhase is 'choosing'
+  runeHint: null,        // question a rune just hinted at — always offered as a choice until asked
   coin: null,            // { row, col } or null once collected
   stairs: null,          // { row, col } — sits inside the boss chamber, past the boss
   chest: null,           // { row, col, el, kind: 'chest' } or null once opened/trapped

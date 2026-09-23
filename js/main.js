@@ -2,12 +2,12 @@ import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, BOSS_ICONS, GRID_SIZES, CHAMBER_TARGETS,
-  DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS
+  DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS, BATTLE_CHOICE_COUNT
 } from './config.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
   buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory,
-  resolveImageSrc
+  resolveImageSrc, buildCategoryChoices, categoryLabel
 } from './quiz.js';
 import {
   initRender, showScreen, buildGridTiles, renderWalls, computeVisibility,
@@ -65,6 +65,9 @@ const chestActor = document.getElementById('chestActor');
 const runeActor = document.getElementById('runeActor');
 const stairsActor = document.getElementById('stairsActor');
 
+const choicePanel = document.getElementById('choicePanel');
+const choiceListEl = document.getElementById('choiceList');
+const queryPanel = document.getElementById('queryPanel');
 const enemyName = document.getElementById('enemyName');
 const queryImage = document.getElementById('queryImage');
 const targetLabelEl = document.getElementById('targetLabel');
@@ -358,25 +361,142 @@ function flashBattleResult(isCorrect) {
   }
 }
 
+// Scrambles `text` into glitch characters, then resolves it left to right —
+// the category-choice labels "decode" into place rather than just appearing.
+// Spaces stay put so the label's shape is readable from the first frame.
+const decodeTimers = new WeakMap();
+const DECODE_CHARS = '01{}[]<>/\\;:=+*#$%&^~ABCDEF';
+const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function decodeText(el, text, durationMs = 520) {
+  const existing = decodeTimers.get(el);
+  if (existing) clearInterval(existing);
+  if (reduceMotion) { el.textContent = text; return; }
+  const frameMs = 35;
+  const frames = Math.max(1, Math.round(durationMs / frameMs));
+  let frame = 0;
+  const render = () => {
+    const settled = Math.floor((frame / frames) * text.length);
+    let out = '';
+    for (let i = 0; i < text.length; i++) {
+      out += i < settled || text[i] === ' '
+        ? text[i]
+        : DECODE_CHARS[Math.floor(Math.random() * DECODE_CHARS.length)];
+    }
+    el.textContent = out;
+  };
+  render();
+  const timer = setInterval(() => {
+    frame++;
+    if (frame >= frames) {
+      clearInterval(timer);
+      decodeTimers.delete(el);
+      el.textContent = text;
+      return;
+    }
+    render();
+  }, frameMs);
+  decodeTimers.set(el, timer);
+}
+
+// Shows whichever half of the battle screen matches state.battlePhase: the
+// category choices, or the question and its answer input.
+function showBattlePhase() {
+  const choosing = state.battlePhase === 'choosing';
+  choicePanel.hidden = !choosing;
+  queryPanel.hidden = choosing;
+}
+
+function renderCategoryChoices() {
+  choiceListEl.innerHTML = '';
+  state.categoryChoices.forEach((choice, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'choice-option';
+    const hinted = state.runeHint && choice.pool.includes(state.runeHint);
+    btn.innerHTML = '<span class="letter">[' + (i + 1) + ']</span><span class="choice-label"></span>' +
+      (hinted ? '<span class="choice-hint" title="The rune\'s hint is in here">◊</span>' : '');
+    decodeText(btn.querySelector('.choice-label'), choice.label);
+    btn.addEventListener('click', () => chooseCategory(i));
+    choiceListEl.appendChild(btn);
+  });
+}
+
+// Sets up one turn of whatever's on the battle screen. A boss or minion
+// fight opens with a choice of query categories (the player picks what
+// kind of question they face); chests, runes and category encounters are
+// puzzles, not fights, and go straight to their question — as does any
+// fight whose pool can't offer at least two distinct choices.
+function startBattleTurn() {
+  const target = state.selectedTarget;
+  const isFight = target.kind === 'boss' || target.kind === 'minion';
+  state.categoryChoices = isFight
+    ? buildCategoryChoices(poolFor(target), BATTLE_CHOICE_COUNT, state.runeHint)
+    : [];
+
+  if (state.categoryChoices.length >= 2) {
+    state.battlePhase = 'choosing';
+    renderCategoryChoices();
+  } else {
+    state.battlePhase = 'answering';
+    syncQuestionForTarget();
+    if (state.currentQuestion === state.runeHint) state.runeHint = null;
+    // The question was very likely set well before this moment, off-screen
+    // (loadRoom() sets one at room load), so re-type it fresh every time a
+    // turn starts rather than letting the effect be skipped.
+    typeText(enemyName, state.currentQuestion.term);
+    if (!state.mcMode) answerInput.focus();
+  }
+  showBattlePhase();
+}
+
+function chooseCategory(i) {
+  if (state.turnLocked || state.battlePhase !== 'choosing') return;
+  const choice = state.categoryChoices[i];
+  if (!choice) return;
+  let q;
+  if (state.runeHint && choice.pool.includes(state.runeHint)) {
+    q = state.runeHint;
+    state.runeHint = null;
+  } else {
+    q = pickQuestion(state.currentQuestion, choice.pool);
+  }
+  state.battlePhase = 'answering';
+  setQuestion(q);
+  showBattlePhase();
+  if (!state.mcMode) answerInput.focus();
+}
+
 function syncBattleScreen() {
   if (state.selectedTarget) {
     const target = state.selectedTarget;
     battleGlyphEl.textContent = target.el ? target.el.textContent : bossActor.textContent;
     renderCombatStatus();
-    if (!battleScreen.classList.contains('show')) {
+    const entering = !battleScreen.classList.contains('show');
+    if (entering) {
       showScreen(battleScreen);
-      // The question was very likely already set (and its typewriter
-      // animation already finished) well before this moment — loadRoom()
-      // sets one immediately at room load, off-screen, and syncQuestionForTarget()
-      // only rerolls it when the target's pool actually changes, which
-      // isn't the case the first time you approach something drawing from
-      // the same pool (e.g. the boss). Re-type it fresh every time the
-      // screen actually becomes visible, so the effect is never skipped.
-      typeText(enemyName, state.currentQuestion.term);
+      battleScreen.classList.remove('glitch-in');
+      void battleScreen.offsetWidth;
+      battleScreen.classList.add('glitch-in');
     }
-  } else if (battleScreen.classList.contains('show')) {
-    showScreen(roomScreen);
+    // A new turn starts on entering, and whenever the fight chains straight
+    // into a different adjacent target without leaving the screen.
+    if (entering || state.battleTarget !== target) {
+      state.battleTarget = target;
+      startBattleTurn();
+    }
+  } else {
+    state.battleTarget = null;
+    if (battleScreen.classList.contains('show')) showScreen(roomScreen);
   }
+}
+
+// After an answer resolves with the battle screen still up: starts the
+// next turn against whatever's targeted now (back to the category choice,
+// for a fight), or drops back to the room if nothing is.
+function continueBattle() {
+  state.battleTarget = null;
+  syncBattleScreen();
 }
 
 // Re-places every actor at its current world position relative to the
@@ -473,6 +593,7 @@ function loadRoom() {
 
   state.encounters.forEach(e => e.el.remove());
   state.encounters = [];
+  state.runeHint = null;
 
   state.playerRow = state.PLAYER_START.row;
   state.playerCol = state.PLAYER_START.col;
@@ -592,6 +713,7 @@ function setControlsEnabled(enabled) {
   attackBtn.disabled = !enabled;
   Object.values(dpadButtons).forEach(b => b.disabled = !enabled);
   mcOptionsEl.querySelectorAll('button').forEach(b => b.disabled = !enabled);
+  choiceListEl.querySelectorAll('button').forEach(b => b.disabled = !enabled);
 }
 
 function applyTurnOutcome(actionMessage, extraHtml) {
@@ -600,16 +722,8 @@ function applyTurnOutcome(actionMessage, extraHtml) {
   syncBattleScreen();
   extraHtml = extraHtml || '';
 
-  if (state.hearts <= 0) {
-    roomFeedback.innerHTML = '<span class="warn-msg">' + actionMessage + notes.hitNote + ' You are out of hearts.</span>' + extraHtml;
-    setControlsEnabled(false);
-    clearInterval(state.timerHandle);
-    setTimeout(endLose, 900);
-    return;
-  }
-
-  const cls = notes.hitNote ? 'warn-msg' : 'move-msg';
-  roomFeedback.innerHTML = '<span class="' + cls + '">' + actionMessage + notes.hitNote + notes.spawnNote + '</span>' + extraHtml;
+  const cls = notes.engageNote ? 'warn-msg' : 'move-msg';
+  roomFeedback.innerHTML = '<span class="' + cls + '">' + actionMessage + notes.engageNote + notes.spawnNote + '</span>' + extraHtml;
 }
 
 function movePlayer(dRow, dCol, dirName) {
@@ -728,6 +842,7 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
     }
 
     feedback.innerHTML = html;
+    continueBattle();
     state.turnLocked = false;
     return;
   }
@@ -800,9 +915,8 @@ function applyAnswerResult(isCorrect, hadExtraSpace) {
   // turn — they're frozen while a battle is in progress, so the only way to
   // take damage here is missing the question in front of you.
   nextQuestion();
-  if (!state.mcMode) answerInput.focus();
   syncQuestionForTarget();
-  syncBattleScreen();
+  continueBattle();
 
   let html = '<span class="hit-msg">' + hitMsg + '</span>';
   if (hadExtraSpace) html += '<span class="tip">Tip: watch for extra spaces in your answer next time.</span>';
@@ -840,7 +954,12 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
       outcomeHtml = '<span class="hit-msg">Correct! You earn ' + reward + ' coin' + (reward === 1 ? '' : 's') +
         ' for mastering ' + escapeHtml(target.category) + '.</span>';
     } else {
-      outcomeHtml = '<span class="hit-msg">The rune glows: ' + buildHint(state.currentQuestion) + '</span>';
+      // The hinted question stays in reserve until it's asked: the next
+      // fight always offers its category (marked ◊), so the hint can't be
+      // spent on a question the player never chooses.
+      state.runeHint = state.currentQuestion;
+      const where = state.runeHint.category ? 'a ' + escapeHtml(categoryLabel(state.runeHint.category)) + ' query — ' : '';
+      outcomeHtml = '<span class="hit-msg">The rune glows: ' + where + buildHint(state.runeHint) + '</span>';
     }
   } else {
     state.hearts--;
@@ -856,7 +975,7 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
 
   refreshTargetValidity();
   syncQuestionForTarget();
-  syncBattleScreen();
+  continueBattle();
 
   if (state.hearts <= 0) {
     feedback.innerHTML = outcomeHtml + '<span class="warn-msg">You are out of hearts.</span>';
@@ -872,7 +991,7 @@ function resolveObjectAttempt(target, isCorrect, hadExtraSpace) {
 }
 
 function attemptAnswer() {
-  if (state.turnLocked) return;
+  if (state.turnLocked || state.battlePhase === 'choosing') return;
   if (!state.selectedTarget || !isAdjacentToPlayer(state.selectedTarget)) {
     feedback.innerHTML = '<span class="block-msg">You need to be next to something to act on. Move closer or tap one nearby.</span>';
     return;
@@ -889,7 +1008,7 @@ function attemptAnswer() {
 }
 
 function attemptAnswerMC(choice) {
-  if (state.turnLocked) return;
+  if (state.turnLocked || state.battlePhase === 'choosing') return;
   if (!state.selectedTarget || !isAdjacentToPlayer(state.selectedTarget)) {
     feedback.innerHTML = '<span class="block-msg">You need to be next to something to act on. Move closer or tap one nearby.</span>';
     return;
@@ -934,6 +1053,14 @@ document.addEventListener('keydown', (e) => {
     const btn = mcOptionsEl.children[idx];
     if (btn && !btn.disabled) btn.click();
   }
+});
+
+// Number keys pick a category while the battle screen is offering a choice.
+document.addEventListener('keydown', (e) => {
+  if (!battleScreen.classList.contains('show') || state.battlePhase !== 'choosing') return;
+  const idx = ['1', '2', '3'].indexOf(e.key);
+  const btn = idx === -1 ? null : choiceListEl.children[idx];
+  if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
 });
 
 devToggleBtn.addEventListener('click', () => {

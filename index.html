@@ -745,6 +745,74 @@
   .mc-option:disabled { opacity: .55; cursor: default; }
   .mc-option .letter { color: var(--torch-bright); font-weight: 700; margin-right: 8px; }
 
+  /* ---- Battle category choice: the glitched "what kind of query?" menu
+     a fight opens on. Same achromatic, small-jitter glitch as the intro
+     screen (no colour split, no strobe), just inline instead of centred. ---- */
+  .choice-panel[hidden], #queryPanel[hidden] { display: none; }
+  .battle-glitch {
+    position: relative;
+    font-family: 'Press Start 2P', 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--torch-bright);
+    text-shadow: 0 0 10px rgba(240,240,240,0.5);
+    margin: 4px 0 12px;
+  }
+  .battle-glitch::before,
+  .battle-glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    color: var(--text);
+  }
+  .battle-glitch::before { animation: glitchShift1 0.4s steps(2, end) infinite; }
+  .battle-glitch::after { animation: glitchShift2 0.35s steps(2, end) infinite; }
+
+  .choice-list { display: flex; flex-direction: column; text-align: left; }
+  .choice-option {
+    display: flex;
+    align-items: baseline;
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-left: 2px solid transparent;
+    border-radius: 0;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    text-align: left;
+    padding: 9px 10px;
+  }
+  .choice-option:hover:not(:disabled), .choice-option:focus-visible:not(:disabled) {
+    background: var(--torch-bright);
+    color: var(--stone-dark);
+    border-left-color: var(--torch-bright);
+    outline: none;
+  }
+  .choice-option:disabled { opacity: .55; cursor: default; }
+  .choice-option .letter { color: var(--torch-bright); font-weight: 700; margin-right: 10px; }
+  .choice-option:hover:not(:disabled) .letter,
+  .choice-option:focus-visible:not(:disabled) .letter { color: var(--stone-dark); }
+  .choice-option .choice-label { flex: 1; }
+  .choice-option .choice-hint { color: var(--hit); margin-left: 8px; }
+
+  /* Brief glitch-in as a fight starts, standing in for the room's
+     shake/hit-flash, which now never fire from just walking around. */
+  #battleScreen.glitch-in .terminal { animation: battleGlitchIn 0.32s steps(4, end); }
+  @keyframes battleGlitchIn {
+    0% { clip-path: inset(40% 0 45% 0); transform: translateX(-4px); opacity: .6; }
+    25% { clip-path: inset(10% 0 70% 0); transform: translateX(4px); }
+    50% { clip-path: inset(60% 0 5% 0); transform: translateX(-2px); opacity: .85; }
+    100% { clip-path: inset(0 0 0 0); transform: none; opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .battle-glitch::before, .battle-glitch::after { animation: none; opacity: 0; }
+    #battleScreen.glitch-in .terminal { animation: none; }
+  }
+
   .feedback {
     min-height: 40px;
     margin-top: 14px;
@@ -914,16 +982,24 @@
           </div>
         </div>
 
-        <img class="query-image" id="queryImage" alt="" hidden>
-        <div class="term-line term-label">QUERY:</div>
-        <div class="enemy-name" id="enemyName">CPU</div>
+        <!-- Fights open on a choice: which kind of query to face. -->
+        <div class="choice-panel" id="choicePanel" hidden>
+          <div class="battle-glitch" data-text="SELECT QUERY VECTOR">SELECT QUERY VECTOR</div>
+          <div class="choice-list" id="choiceList"></div>
+        </div>
 
-        <form id="answerForm" class="term-input-row" autocomplete="off">
-          <span class="term-prompt">guest@noesis<span class="term-path">:~$</span></span>
-          <input type="text" id="answerInput" placeholder="type your answer" autofocus>
-          <button type="button" id="attackBtn">Attack</button>
-        </form>
-        <div class="mc-options" id="mcOptions"></div>
+        <div id="queryPanel">
+          <img class="query-image" id="queryImage" alt="" hidden>
+          <div class="term-line term-label">QUERY:</div>
+          <div class="enemy-name" id="enemyName">CPU</div>
+
+          <form id="answerForm" class="term-input-row" autocomplete="off">
+            <span class="term-prompt">guest@noesis<span class="term-path">:~$</span></span>
+            <input type="text" id="answerInput" placeholder="type your answer" autofocus>
+            <button type="button" id="attackBtn">Attack</button>
+          </form>
+          <div class="mc-options" id="mcOptions"></div>
+        </div>
 
         <div class="feedback" id="feedback"></div>
       </div>
