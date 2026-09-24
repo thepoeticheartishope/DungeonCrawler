@@ -168,13 +168,13 @@ export const LIGHT_TURNS_PER_STEP = 3;
 export const DARK_MISS_COST = 2;
 export const DARK_GOLD_MULTIPLIER = 2;
 
-// Question modifiers: each query category offered at the start of a boss
-// or minion fight may carry one, shown as a small tag beside it, so the
-// player can see it and choose around it. For now a modifier is only a
-// mild penalty — no reward for taking it on. Chance per category: the
-// floor's base, plus a bonus in boss fights and in the darkness.
+// Question modifiers: each query category offered at the start of a minion
+// fight may carry one, shown as a small tag beside it, so the player can
+// see it and choose around it — chance per category is the floor's base,
+// plus a bonus in the darkness. Boss questions always carry one (spread
+// across the categories so choosing still matters). For now a modifier is
+// only a mild penalty — no reward for taking it on.
 export const MODIFIER_CHANCE = [0.10, 0.20, 0.30]; // index = room
-export const MODIFIER_BOSS_BONUS = 0.15;
 export const MODIFIER_DARK_BONUS = 0.20;
 // Blind Pick: answers show for BLIND_BASE_MS plus BLIND_MS_PER_WORD for
 // every word across all of them (capped), then their text disappears.

@@ -6,17 +6,22 @@
 //   flip     some answers are upside down or mirrored
 
 import { state } from './state.js';
-import { MODIFIER_CHANCE, MODIFIER_BOSS_BONUS, MODIFIER_DARK_BONUS, FLIP_MAX_ANSWERS } from './config.js';
+import { MODIFIER_CHANCE, MODIFIER_DARK_BONUS, FLIP_MAX_ANSWERS } from './config.js';
 import { shuffle } from './quiz.js';
 
 export const MODIFIERS = ['blind', 'gambler', 'flip'];
 
-// The chance a single category offered against `target` carries a modifier.
+// The chance a single category offered against `target` carries a
+// modifier. Bosses always do.
 export function modifierChance(target) {
+  if (target && target.kind === 'boss') return 1;
   let chance = MODIFIER_CHANCE[Math.min(state.roomIndex, MODIFIER_CHANCE.length - 1)];
-  if (target && target.kind === 'boss') chance += MODIFIER_BOSS_BONUS;
   if (state.darkness) chance += MODIFIER_DARK_BONUS;
   return Math.min(1, chance);
+}
+
+function eligibleModifiers() {
+  return MODIFIERS.filter(m => m !== 'gambler' || maxWager() >= 1);
 }
 
 // The most gold a Gambler wager can be right now: the floor number, but
@@ -28,8 +33,19 @@ export function maxWager() {
 // Rolls one category's modifier: null (none) or one of MODIFIERS.
 export function rollModifier(target) {
   if (Math.random() >= modifierChance(target)) return null;
-  const eligible = MODIFIERS.filter(m => m !== 'gambler' || maxWager() >= 1);
+  const eligible = eligibleModifiers();
   return eligible[Math.floor(Math.random() * eligible.length)];
+}
+
+// Modifiers for a fight's `count` categories. Against a boss every one
+// carries a modifier, spread so the categories differ where possible
+// (three categories get B, $ and F in some order; without gold for a
+// wager, B and F), so which category to pick is still a real choice.
+// Minions roll each category on its own.
+export function rollCategoryModifiers(target, count) {
+  if (!target || target.kind !== 'boss') return Array.from({ length: count }, () => rollModifier(target));
+  const eligible = shuffle(eligibleModifiers());
+  return Array.from({ length: count }, (_, i) => eligible[i % eligible.length]);
 }
 
 // For Flip: which answer slots to flip (1..FLIP_MAX_ANSWERS of them, never
