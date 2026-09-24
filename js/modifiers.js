@@ -4,12 +4,13 @@
 //   blind    answers vanish after a few seconds
 //   gambler  a wager of gold must be placed before answering
 //   flip     some answers are upside down or mirrored
+//   timer    a few seconds to answer, or it counts as a miss
 
 import { state } from './state.js';
 import { MODIFIER_CHANCE, MODIFIER_DARK_BONUS, FLIP_MAX_ANSWERS } from './config.js';
 import { shuffle } from './quiz.js';
 
-export const MODIFIERS = ['blind', 'gambler', 'flip'];
+export const MODIFIERS = ['blind', 'gambler', 'flip', 'timer'];
 
 // The chance a single category offered against `target` carries a
 // modifier. Bosses always do.
@@ -39,8 +40,8 @@ export function rollModifier(target) {
 
 // Modifiers for a fight's `count` categories. Against a boss every one
 // carries a modifier, spread so the categories differ where possible
-// (three categories get B, $ and F in some order; without gold for a
-// wager, B and F), so which category to pick is still a real choice.
+// (three categories get three different ones; Gambler only with gold for
+// a wager), so which category to pick is still a real choice.
 // Minions roll each category on its own.
 export function rollCategoryModifiers(target, count) {
   if (!target || target.kind !== 'boss') return Array.from({ length: count }, () => rollModifier(target));

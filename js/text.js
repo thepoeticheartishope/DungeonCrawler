@@ -126,6 +126,12 @@ export const TEXT = {
   'mod.flip': 'Flip',
   'mod.flip.tag': 'F',
   'mod.flip.tip': 'some answers are turned upside down or mirrored.', // draft
+  'mod.timer': 'Timer',
+  'mod.timer.tag': 'T',
+  'mod.timer.tip': 'answer within {secs} seconds, or it counts as a miss.', // draft
+  'battle.timer': 'TIME: {s}',
+  'battle.noAnswer': '(no answer)',
+  'log.timeout': 'TIME EXPIRED.',
   'log.modifier': 'MODIFIER: {name|upper}.',
   'log.wager': 'WAGER: {n} {@term.gold}.',
   'log.wager.won': 'WAGER WON. +{n} {@term.gold}.',
