@@ -992,6 +992,34 @@
   .mc-option:disabled { opacity: .55; cursor: default; }
   .mc-option .letter { color: var(--torch-bright); font-weight: 700; margin-right: 8px; }
 
+  /* ---- Question modifiers ---- */
+  /* The tag beside a category choice: one small inverse-video character. */
+  .mod-tag {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 0 4px;
+    font-size: 16px;
+    line-height: 1.2;
+    color: var(--ink);
+    background: var(--text);
+    text-shadow: none;
+    box-shadow: var(--inverse-glow);
+  }
+  .choice-option:hover .mod-tag,
+  .choice-option:focus-visible .mod-tag { color: var(--text); background: var(--ink); }
+  /* Blind Pick: once time's up the answer text is gone; letters remain. */
+  .mc-options.mod-blind .opt-text { display: none; }
+  .mc-options.mod-blind .mc-option::after { content: '????'; color: var(--muted); }
+  /* Flip: selected answers turned upside down or mirrored. */
+  .opt-text.flip-upside, .opt-text.flip-mirror { display: inline-block; }
+  .opt-text.flip-upside { transform: rotate(180deg); }
+  .opt-text.flip-mirror { transform: scaleX(-1); }
+  /* Gambler: the wager row that unlocks the answers. */
+  .wager-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin: 4px 0; }
+  .wager-row[hidden] { display: none; }
+  .wager-buttons { display: flex; gap: 4px; }
+  .wager-option { min-height: 36px; padding: 2px 6px; font-size: 20px; }
+
   /* ---- Battle category choice: the glitched "what kind of query?" menu
      a fight opens on. Same achromatic, small-jitter glitch as the intro
      screen (no colour split, no strobe), just inline instead of centred. ---- */
@@ -1318,6 +1346,11 @@
             <input type="text" id="answerInput" data-t-placeholder="battle.answerPlaceholder" autofocus>
             <button type="button" id="attackBtn">Attack</button>
           </form>
+          <!-- Gambler modifier: a wager must be placed before the answers unlock. -->
+          <div class="wager-row" id="wagerRow" hidden>
+            <span class="term-line" data-t="battle.wager"></span>
+            <span class="wager-buttons" id="wagerButtons"></span>
+          </div>
           <div class="mc-options" id="mcOptions"></div>
         </div>
 

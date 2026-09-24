@@ -168,6 +168,26 @@ export const LIGHT_TURNS_PER_STEP = 3;
 export const DARK_MISS_COST = 2;
 export const DARK_GOLD_MULTIPLIER = 2;
 
+// Question modifiers: each query category offered at the start of a boss
+// or minion fight may carry one, shown as a small tag beside it, so the
+// player can see it and choose around it. For now a modifier is only a
+// mild penalty — no reward for taking it on. Chance per category: the
+// floor's base, plus a bonus in boss fights and in the darkness.
+export const MODIFIER_CHANCE = [0.10, 0.20, 0.30]; // index = room
+export const MODIFIER_BOSS_BONUS = 0.15;
+export const MODIFIER_DARK_BONUS = 0.20;
+// Blind Pick: answers show for BLIND_BASE_MS plus BLIND_MS_PER_WORD for
+// every word across all of them (capped), then their text disappears.
+export const BLIND_BASE_MS = 1500;
+export const BLIND_MS_PER_WORD = 200;
+export const BLIND_MAX_MS = 6000;
+// Gambler: a wager of 1 up to the floor number (never more than the gold
+// held) must be placed before answering; right wins it, wrong loses it.
+// Only offered once the player holds some gold.
+// Flip: 1 to FLIP_MAX_ANSWERS of the answers are turned upside down or
+// mirrored (one or the other per question).
+export const FLIP_MAX_ANSWERS = 3;
+
 // The camera always renders a fixed VIEWPORT_SIZE x VIEWPORT_SIZE window of
 // the room, panning to follow the player. Must stay smaller than every
 // value in GRID_SIZES, or there'd be nothing to pan.
