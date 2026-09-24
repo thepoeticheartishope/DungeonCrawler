@@ -1529,6 +1529,12 @@
     "meaning": "Bethlehem",
     "category": "HG",
     "difficulty": "hard",
+    "options": [
+      "Bethlehem",
+      "Jericho",
+      "Nazareth",
+      "Jacob's Well"
+    ],
     "answerType": "location"
   },
   {
@@ -1978,5 +1984,658 @@
     "difficulty": "easy",
     "source": "John 16:33",
     "answerType": "theology"
+  },
+  {
+    "term": "What was Zilpah's relationship to Leah?",
+    "meaning": "Maidservant",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "Gen 35:26",
+    "answerType": "name"
+  },
+  {
+    "term": "In what country did the Miracle of Fatima occur in 1917?",
+    "meaning": "Portugal",
+    "category": "HG",
+    "difficulty": "medium",
+    "answerType": "location"
+  },
+  {
+    "term": "Against which people did the book of Obadiah prophesy?",
+    "meaning": "Edomites",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Obadiah 1:1",
+    "answerType": "name"
+  },
+  {
+    "term": "Who buried Isaac?",
+    "meaning": "Jacob and Esau",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "Gen 35:29",
+    "answerType": "name",
+    "draft": true
+  },
+  {
+    "term": "How many children did Jacob and Bilhah have?",
+    "meaning": "2",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "Gen 35:25",
+    "answerType": "number"
+  },
+  {
+    "term": "Who said, \"Can any of you prove me guilty of sin\"?",
+    "meaning": "Jesus",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "John 8:46",
+    "answerType": "name"
+  },
+  {
+    "term": "Which book says that God is no respecter of persons and does not play favourites according to one's earthly status?",
+    "meaning": "Romans",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Rom 2:11",
+    "answerType": "book"
+  },
+  {
+    "term": "Who sacrificed to God 22,000 oxen and 120,000 sheep?",
+    "meaning": "Solomon",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "1 Kings 8:63",
+    "answerType": "name"
+  },
+  {
+    "term": "What 16th century Protestant reformer was excommunicated partly because of a paper which he tacked up on his parish door?",
+    "meaning": "Martin Luther",
+    "category": "HG",
+    "difficulty": "easy",
+    "answerType": "name",
+    "draft": true
+  },
+  {
+    "term": "Which book prophesies the trial of Jesus with the following statement: \"He was oppressed and afflicted, yet he opened not his mouth: he is brought as a lamb to the slaughter.\"?",
+    "meaning": "Isaiah",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Isaiah 53:7",
+    "answerType": "book"
+  },
+  {
+    "term": "Give the last name of each of the two disciples named Judas.",
+    "meaning": "Iscariot and Thaddaeus",
+    "category": "N",
+    "difficulty": "hard",
+    "answerType": "name",
+    "draft": true
+  },
+  {
+    "term": "Spell \"Cephas\", the name of the disciple.",
+    "meaning": "Cephas",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "name"
+  },
+  {
+    "term": "Jesus told his disciples not to tell anyone about their vision of the Transfiguration until what had happened?",
+    "meaning": "He had risen from the dead.",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "Matt 17:9",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "Jesus said that it is better for a man to have a millstone hung around his neck and be drowned than to cause what?",
+    "meaning": "A child to stumble",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Matt 18:6",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "What OT figure was an offspring of a sexual relationship of a nephew with his aunt?",
+    "meaning": "Moses",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "Ex 6:20",
+    "answerType": "name"
+  },
+  {
+    "term": "According to church tradition, in what country was James the Younger martyred?",
+    "meaning": "Egypt",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "location"
+  },
+  {
+    "term": "What nationality was the man who supervised the rescue of Jeremiah from a mud-hole?",
+    "meaning": "Ethiopian",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Jer 38:7-12",
+    "answerType": "adjective"
+  },
+  {
+    "term": "Which book of the Bible immediately follows Zephaniah?",
+    "meaning": "Haggai",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "book"
+  },
+  {
+    "term": "The lost sheep that returns to the fold in Jesus' parable causes more joy in heaven than what?",
+    "meaning": "The 99 which never strayed",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "Luke 15:7",
+    "answerType": "creature",
+    "draft": true
+  },
+  {
+    "term": "Which book tells us to search our hearts and be silent when we are in our beds?",
+    "meaning": "Psalms",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Ps 4:4",
+    "answerType": "book"
+  },
+  {
+    "term": "Who is the \"him\" in this verse: \"But my mercy shall not depart away from him, as I took it from Saul, whom I put away before thee.\"?",
+    "meaning": "Solomon",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "2 Sam 7:15",
+    "answerType": "name"
+  },
+  {
+    "term": "Who wrote the melody for the carol \"Joy to the World\"?",
+    "meaning": "Handel",
+    "category": "HG",
+    "difficulty": "medium",
+    "answerType": "name"
+  },
+  {
+    "term": "When besieged by Titus of Rome, what did the Jews eat, fulfilling prophecy of Deuteronomy 28:52-53?",
+    "meaning": "Their own children",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Deut 28:52-53",
+    "answerType": "name",
+    "draft": true
+  },
+  {
+    "term": "What did Sarai and Keturah have in common?",
+    "meaning": "They were wives of Abraham.",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "Gen 11:29; 25:1-10",
+    "answerType": "name",
+    "draft": true
+  },
+  {
+    "term": "Which book closes with the line: \"Be thou like to a roe or to a young hart upon the mountains of spices\"?",
+    "meaning": "Song of Solomon",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "Song 8:14",
+    "answerType": "book"
+  },
+  {
+    "term": "Which verse says: \"O my Father, if it be possible, let this cup pass from me.\"?",
+    "meaning": "Matthew 26:39",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "Matt 26:39",
+    "answerType": "verse"
+  },
+  {
+    "term": "Which verse says: \"Can the Ethiopian change his skin, or the leopard his spots?\"",
+    "meaning": "Jeremiah 13:23",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Jer 13:23",
+    "answerType": "verse"
+  },
+  {
+    "term": "Who saved Moses' life by throwing down upon the ground the foreskin of her son?",
+    "meaning": "Zipporah",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "Ex 4:25",
+    "answerType": "name"
+  },
+  {
+    "term": "Which apostle in church tradition is represented by the apostolic symbol of a ship?",
+    "meaning": "Jude",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "name"
+  },
+  {
+    "term": "To where does the prophet Malachi say that the Lord will suddenly come?",
+    "meaning": "Temple",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Mal 3:1",
+    "answerType": "location"
+  },
+  {
+    "term": "Whose 30 sons rode 30 donkeys?",
+    "meaning": "Jair",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "Judges 10:3-4",
+    "answerType": "name"
+  },
+  {
+    "term": "In what chapter of Matthew is the Lord's Prayer found?",
+    "meaning": "6",
+    "category": "LNS",
+    "difficulty": "medium",
+    "source": "Matt 6:9-13",
+    "answerType": "number"
+  },
+  {
+    "term": "Who asked, \"Is it lawful to offer tribute unto Caesar or not?\"",
+    "meaning": "Pharisees",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "Matt 22:17",
+    "answerType": "name"
+  },
+  {
+    "term": "According to Jesus, how do the pagans think they can improve their chances of their prayers being heard by God?",
+    "meaning": "By much speaking.",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Matt 6:7",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "What part of the body of King Asa became diseased in his old age?",
+    "meaning": "Feet",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "1 Kings 15:23",
+    "answerType": "object"
+  },
+  {
+    "term": "Which of the following is closest to Jerusalem: Bethlehem, Bethany, Emmaus or Jericho?",
+    "meaning": "Bethany",
+    "category": "HG",
+    "difficulty": "medium",
+    "options": [
+      "Bethlehem",
+      "Bethany",
+      "Emmaus",
+      "Jericho"
+    ],
+    "answerType": "location"
+  },
+  {
+    "term": "Which two consecutive chapters of Ezekiel prophesy a war of the last days in which Israel defeats Magog or Russia?",
+    "meaning": "38 and 39",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Ezek 38-39",
+    "answerType": "number",
+    "draft": true
+  },
+  {
+    "term": "Name the sister-in-law of Ruth.",
+    "meaning": "Orpah",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Ruth 1:4-14",
+    "answerType": "name"
+  },
+  {
+    "term": "Spell \"Nathanael\", disciple of Jesus.",
+    "meaning": "Nathanael",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "name"
+  },
+  {
+    "term": "Who was struck with blindness for three days?",
+    "meaning": "Paul",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Acts 9:9",
+    "answerType": "name"
+  },
+  {
+    "term": "In Proverbs 25:25, to what does Solomon compare \"cold waters to a thirsty soul\"?",
+    "meaning": "Good news from a far country",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Prov 25:25",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "How did Achan die?",
+    "meaning": "He was stoned to death.",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "Josh 7:25",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "Who watched the prophet Elijah ascend to heaven?",
+    "meaning": "Elisha",
+    "category": "P",
+    "difficulty": "easy",
+    "source": "2 Kings 2:11",
+    "answerType": "name"
+  },
+  {
+    "term": "What was the name of the mother of John Mark?",
+    "meaning": "Mary",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "Acts 12:12",
+    "answerType": "name"
+  },
+  {
+    "term": "Which verse says: \"Thou shalt not make unto thee any graven image.\"?",
+    "meaning": "Exodus 20:4",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "Ex 20:4",
+    "answerType": "verse"
+  },
+  {
+    "term": "What does Hebrews 11 remind us that Enoch did not see?",
+    "meaning": "Death",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "Heb 11:5",
+    "answerType": "theology"
+  },
+  {
+    "term": "Supply the missing word in the following quotation: \"There is therefore now no ______ to them which are in Christ Jesus.\"",
+    "meaning": "Condemnation",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Rom 8:1",
+    "answerType": "theology"
+  },
+  {
+    "term": "When Samson's wife was given by her Philistine father to another man, what did he do for revenge on the Philistines?",
+    "meaning": "Burnt their crops",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "Judges 15:1-5",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "What four-word term is found in the first verse of most of the OT prophetical books?",
+    "meaning": "The word of the Lord",
+    "category": "P",
+    "difficulty": "hard",
+    "answerType": "theology",
+    "draft": true
+  },
+  {
+    "term": "What did Abigail, Michal and Ahinoam have in common?",
+    "meaning": "All were married to David.",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "1 Sam 25:42-44",
+    "answerType": "name",
+    "draft": true
+  },
+  {
+    "term": "Who ate a book which tasted as sweet as honey yet made his belly bitter?",
+    "meaning": "John",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "Rev 10:9-10",
+    "answerType": "name"
+  },
+  {
+    "term": "Fill in the following blank with one word: \"For the Lord is good; his mercy is everlasting; and his ______ endureth to all generations.\"",
+    "meaning": "Truth",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Ps 100:5",
+    "answerType": "theology"
+  },
+  {
+    "term": "What did King Ahasuerus have read to him to help him get to sleep?",
+    "meaning": "Accounts of his reign",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "Est 6:1",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "What king wanted to kill baby Jesus?",
+    "meaning": "Herod",
+    "category": "HG",
+    "difficulty": "easy",
+    "source": "Matt 2:16",
+    "answerType": "name"
+  },
+  {
+    "term": "While Ahab rode to Jezreel, who ran ahead on foot?",
+    "meaning": "Elijah",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "1 Kings 18:46",
+    "answerType": "name"
+  },
+  {
+    "term": "Who was Jacob's favorite son?",
+    "meaning": "Joseph",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Gen 37:3",
+    "answerType": "name"
+  },
+  {
+    "term": "How many days did the Israelites mourn the death of Moses?",
+    "meaning": "30",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "Deut 34:8",
+    "answerType": "number"
+  },
+  {
+    "term": "On what two occasions did God say, \"This is my beloved Son, in whom I am well pleased.\"?",
+    "meaning": "Jesus' baptism and transfiguration",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "Matt 3:17; 17:5",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "What reason did Jesus give for not throwing your pearls before swine or giving what is holy to dogs?",
+    "meaning": "Lest they trample them under their feet",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Matt 7:6",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "Who had a dream of an image which was broken into many pieces?",
+    "meaning": "Nebuchadnezzar",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "Dan 2:31-35",
+    "answerType": "name"
+  },
+  {
+    "term": "What bishop was commissioned by Constantine to investigate the authorship of all known supposedly apostolic writings and thereby compile our present New Testament?",
+    "meaning": "Eusebius",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "name"
+  },
+  {
+    "term": "On what two parts of the body will the mark of the beast be applied to people in order for them to buy and sell under his rule?",
+    "meaning": "On the right hand or forehead",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Rev 13:16-18",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "What relative was King Joram (Jehoram) of King Ahab?",
+    "meaning": "Son-in-law",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "2 Kings 8:17-18",
+    "answerType": "name"
+  },
+  {
+    "term": "Which book in the Bible immediately precedes Nehemiah?",
+    "meaning": "Ezra",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "book"
+  },
+  {
+    "term": "Who did not believe an angel that his wife would have a baby?",
+    "meaning": "Zacharias",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "Luke 1:11-20",
+    "answerType": "name"
+  },
+  {
+    "term": "Which chapter in Psalms makes reference to the Son of God, indicating his existence before his physical nativity in Bethlehem?",
+    "meaning": "2",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Ps 2",
+    "answerType": "number"
+  },
+  {
+    "term": "How did God show His forgiveness of David for sending Uriah into battle to be killed?",
+    "meaning": "Gave him and Bathsheba a second son after the first had died as a punishment",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "2 Sam 12:24",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "Which country's queens had the dynastic name \"Candace\"?",
+    "meaning": "Ethiopia",
+    "category": "HG",
+    "difficulty": "hard",
+    "source": "Acts 8:27-39",
+    "answerType": "location"
+  },
+  {
+    "term": "How many months, according to Revelation, will the holy city be trampled by the Gentiles prior to Jesus' return in the last days?",
+    "meaning": "42",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Rev 11:2",
+    "answerType": "number"
+  },
+  {
+    "term": "Who was the first son of Cain?",
+    "meaning": "Enoch",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Gen 4:17",
+    "answerType": "name"
+  },
+  {
+    "term": "How many years did Eli lead Israel?",
+    "meaning": "40",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "1 Sam 4:18",
+    "answerType": "number"
+  },
+  {
+    "term": "What did Jesus order just after he had raised Jairus' daughter and she began to walk?",
+    "meaning": "That she be given something to eat",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "Mark 5:43",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "Which verse says: \"Be ye followers of me, even as I also am of Christ.\"?",
+    "meaning": "1 Corinthians 11:1",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "1 Cor 11:1",
+    "answerType": "verse"
+  },
+  {
+    "term": "Which book tells about Haman's plotting against the Jews?",
+    "meaning": "Esther",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Est 3-4",
+    "answerType": "book"
+  },
+  {
+    "term": "What well-known Christmas carol's melody was written by Felix Mendelssohn?",
+    "meaning": "Hark, the Herald Angels Sing",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "Which book prophesies that in the Messiah's kingdom, \"the wolf shall dwell with the lamb\"?",
+    "meaning": "Isaiah",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Isaiah 11:6",
+    "answerType": "book"
+  },
+  {
+    "term": "Name the most famous great-grandson of Abraham.",
+    "meaning": "Joseph",
+    "category": "N",
+    "difficulty": "medium",
+    "answerType": "name"
+  },
+  {
+    "term": "Which book opens with the line: \"How doth the city sit solitary that was full of people\"?",
+    "meaning": "Lamentations",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "Lam 1:1",
+    "answerType": "book"
+  },
+  {
+    "term": "In what book does God refer to David as \"a man after mine own heart\"?",
+    "meaning": "Acts",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "Acts 13:22",
+    "answerType": "book"
+  },
+  {
+    "term": "What book's final verse suggests that God makes some allowances for ignorance when people \"cannot discern between their right hand and their left hand\"?",
+    "meaning": "Jonah",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Jonah 4:11",
+    "answerType": "book"
   }
 ]
