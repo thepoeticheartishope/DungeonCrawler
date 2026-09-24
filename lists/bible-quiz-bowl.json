@@ -1916,5 +1916,61 @@
     "difficulty": "hard",
     "answerType": "book",
     "draft": true
+  },
+  {
+    "term": "What kind of bread does the Old Testament dictate must be eaten at Passover?",
+    "meaning": "Unleavened",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Exodus 12:8-20",
+    "answerType": "adjective"
+  },
+  {
+    "term": "What was Cedron (Kidron), which Jesus crossed with his disciples before his arrest?",
+    "meaning": "Brook",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "John 18:1",
+    "answerType": "location"
+  },
+  {
+    "term": "Which verse says: \"Your old men shall dream dreams, your young men shall see visions.\"?",
+    "meaning": "Joel 2:28",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Joel 2:28",
+    "answerType": "verse"
+  },
+  {
+    "term": "Name the wife of Felix.",
+    "meaning": "Drusilla",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "Acts 24:24",
+    "answerType": "name"
+  },
+  {
+    "term": "What do the initials N.A.S. stand for in Christian circles?",
+    "meaning": "New American Standard",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "Where did Jesus find doves, oxen and sheep being sold together?",
+    "meaning": "Temple",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "John 2:14",
+    "answerType": "location"
+  },
+  {
+    "term": "Complete the following statement: \"But be of good cheer; I have overcome the...\"",
+    "meaning": "World",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "John 16:33",
+    "answerType": "theology"
   }
 ]
