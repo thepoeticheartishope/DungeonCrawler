@@ -83,6 +83,13 @@ export const MC_SAMPLE_DATA = [
 // with a verse address or a number. A top level only needs subtypes once it
 // has 4+ answers (1 right + 3 wrong); until then it's its own subtype.
 // answerTypes missing here (e.g. from a pasted list) just skip that tier.
+// Answers are things the player selects, so none may be an explicit
+// sexual term — a question can point at a difficult subject, but the
+// option itself stays clean. Bundled answers are kept free of these; as a
+// safety net (e.g. a pasted list), buildChoices never offers an answer
+// matching this as a wrong option.
+export const EXPLICIT_ANSWER_TERMS = /\b(sex|sexual|rape[sd]?|incest\w*|adulter\w*|fornicat\w*|harlot\w*|whore\w*|prostitut\w*)\b/i;
+
 export const ANSWER_TYPE_GROUPS = {
   name: 'noun',
   location: 'noun',
