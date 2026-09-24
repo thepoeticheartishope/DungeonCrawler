@@ -3,7 +3,7 @@ import { generateDungeonLayout } from './dungeon.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, GRID_SIZES, CHAMBER_TARGETS,
   DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS, BATTLE_CHOICE_COUNT,
-  MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE
+  MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE, DARK_MISS_COST, DARK_GOLD_MULTIPLIER
 } from './config.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
@@ -817,6 +817,7 @@ function loadRoom() {
   [state.chest, state.rune, ...state.encounters].forEach(item => { if (item) minionTaken.push(item); });
   placeMinions(roomTiles, minionTaken);
 
+  state.darkness = false;
   initBossLight();
   state.visibleSet = new Set();
   state.exploredSet = new Set();
@@ -950,7 +951,7 @@ function movePlayer(dRow, dCol, dirName) {
   if (state.coin && state.coin.row === state.playerRow && state.coin.col === state.playerCol) {
     state.coin = null;
     coinActor.classList.add('gone');
-    state.coinsTotal++;
+    state.coinsTotal += goldReward(1);
     coinsTotalEl.textContent = state.coinsTotal;
     actionMessage += ' ' + t('room.coin');
   }
@@ -985,9 +986,10 @@ function applyAnswerResult(isCorrect, hadExtraSpace, given) {
       logLine(t('log.extraSpaces'), 'sys');
     }
   } else {
-    state.hearts--;
+    const cost = state.darkness ? DARK_MISS_COST : 1;
+    state.hearts -= cost;
     renderHearts();
-    logLine(t('log.rejected'), 'alert');
+    logLine(t('log.rejected', { cost }), 'alert');
     if (state.revealOnWrong) {
       logLine(t('log.expected', { answer: q.meaning }), 'sys');
       if (q.source) logLine(t('log.source', { source: q.source }), 'sys');
@@ -1020,11 +1022,17 @@ function resolveBossAnswer(isCorrect) {
     if (state.boss.hp <= 0) {
       bossActor.classList.add('gone');
       state.boss = null; // clears the doorway it was blocking
-      extinguishLight(); // its light dies with it
+      // Its light dies with it, and the floor goes dark: explored tiles
+      // are forgotten, the minions left start hunting, misses cost more
+      // and gold pays more (DARK_* in config.js).
+      extinguishLight();
+      state.darkness = true;
+      state.exploredSet = new Set();
       computeVisibility();
       renderFog();
       renderLightEye();
       logLine(t('log.boss.cleared'), 'bright');
+      logLine(t('log.darkness'), 'alert');
       endEncounter();
       return;
     }
@@ -1034,6 +1042,11 @@ function resolveBossAnswer(isCorrect) {
   }
   nextQuestion();
   startBattleTurn();
+}
+
+// Gold pays DARK_GOLD_MULTIPLIER times as much in the darkness after the boss.
+function goldReward(base) {
+  return state.darkness ? base * DARK_GOLD_MULTIPLIER : base;
 }
 
 // Everything but the boss is settled by a single answer. Success pays out
@@ -1057,11 +1070,12 @@ function resolveOneShot(target, isCorrect, q) {
   if (!isCorrect) {
     logLine(t('log.' + target.kind + '.trapped', { category }));
   } else if (target.kind === 'chest') {
-    state.coinsTotal += 2;
+    const gold = goldReward(2);
+    state.coinsTotal += gold;
     coinsTotalEl.textContent = state.coinsTotal;
-    logLine(t('log.chest.opened', { gold: 2 }), 'bright');
+    logLine(t('log.chest.opened', { gold }), 'bright');
   } else if (target.kind === 'encounter') {
-    const reward = DIFFICULTY_COIN_REWARD[q.difficulty] || DIFFICULTY_COIN_REWARD.medium;
+    const reward = goldReward(DIFFICULTY_COIN_REWARD[q.difficulty] || DIFFICULTY_COIN_REWARD.medium);
     state.coinsTotal += reward;
     coinsTotalEl.textContent = state.coinsTotal;
     logLine(t('log.encounter.mastered', { category, gold: reward }), 'bright');

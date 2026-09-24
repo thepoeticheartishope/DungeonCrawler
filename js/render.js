@@ -121,7 +121,9 @@ export function computeVisibility() {
       queue.push({ row: nr, col: nc, dist });
     }
   }
-  state.visibleSet.forEach(k => state.exploredSet.add(k));
+  // In the darkness after the boss, nothing is remembered: only what the
+  // player's light touches right now can be seen.
+  if (!state.darkness) state.visibleSet.forEach(k => state.exploredSet.add(k));
 }
 
 // Applies fog classes to every tile, and hides or shows the boss,

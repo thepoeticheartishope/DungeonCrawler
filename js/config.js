@@ -156,6 +156,16 @@ export const PLAYER_CONE_RANGE = 3;
 export const LIGHT_LOSS_COVERAGE = 0.65;
 export const LIGHT_TURN_FACTOR = 2.5;
 
+// Darkness: once the boss falls, its light dies and the floor goes dark
+// outside the player's own light (explored tiles are forgotten). No new
+// minions ever arrive, but the ones left hunt the player from anywhere,
+// a miss costs DARK_MISS_COST hearts instead of 1, and gold is multiplied
+// by DARK_GOLD_MULTIPLIER — the stairs are right there, so staying is a
+// choice. Question modifiers (still to be designed) are meant to ramp up
+// here too.
+export const DARK_MISS_COST = 2;
+export const DARK_GOLD_MULTIPLIER = 2;
+
 // The camera always renders a fixed VIEWPORT_SIZE x VIEWPORT_SIZE window of
 // the room, panning to follow the player. Must stay smaller than every
 // value in GRID_SIZES, or there'd be nothing to pan.
