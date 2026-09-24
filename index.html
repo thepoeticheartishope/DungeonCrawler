@@ -1014,6 +1014,9 @@
   .opt-text.flip-upside, .opt-text.flip-mirror { display: inline-block; }
   .opt-text.flip-upside { transform: rotate(180deg); }
   .opt-text.flip-mirror { transform: scaleX(-1); }
+  /* Timer: the countdown line; bright for the last few seconds. */
+  .mod-timer[hidden] { display: none; }
+  .mod-timer.urgent { color: var(--torch-bright); text-shadow: var(--glow-strong); }
   /* Gambler: the wager row that unlocks the answers. */
   .wager-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin: 4px 0; }
   .wager-row[hidden] { display: none; }
@@ -1347,6 +1350,8 @@
             <button type="button" id="attackBtn">Attack</button>
           </form>
           <!-- Gambler modifier: a wager must be placed before the answers unlock. -->
+          <!-- Timer modifier: the countdown to answer. -->
+          <div class="term-line mod-timer" id="modTimer" hidden></div>
           <div class="wager-row" id="wagerRow" hidden>
             <span class="term-line" data-t="battle.wager"></span>
             <span class="wager-buttons" id="wagerButtons"></span>

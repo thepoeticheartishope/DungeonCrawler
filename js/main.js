@@ -4,7 +4,7 @@ import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, GRID_SIZES, CHAMBER_TARGETS,
   DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS, BATTLE_CHOICE_COUNT,
   MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE, DARK_MISS_COST, DARK_GOLD_MULTIPLIER,
-  BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS
+  BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS
 } from './config.js';
 import { rollModifier, rollCategoryModifiers, rollFlip, maxWager } from './modifiers.js';
 import {
@@ -85,6 +85,7 @@ const attackBtn = document.getElementById('attackBtn');
 const mcOptionsEl = document.getElementById('mcOptions');
 const wagerRow = document.getElementById('wagerRow');
 const wagerButtons = document.getElementById('wagerButtons');
+const modTimerEl = document.getElementById('modTimer');
 const encounterLogEl = document.getElementById('encounterLog');
 const endPanel = document.getElementById('endPanel');
 const continueBtn = document.getElementById('continueBtn');
@@ -318,10 +319,15 @@ function typeText(el, text, targetDurationMs = 450) {
 // A category offered in a fight may carry one; it applies to the question
 // asked once that category is picked, and is cleared by the next question.
 let blindTimer = null;
+let countdownTimer = null;
 
 function clearModifier() {
   clearTimeout(blindTimer);
   blindTimer = null;
+  clearInterval(countdownTimer);
+  countdownTimer = null;
+  modTimerEl.hidden = true;
+  modTimerEl.classList.remove('urgent');
   state.wager = 0;
   mcOptionsEl.classList.remove('mod-blind');
   wagerRow.hidden = true;
@@ -352,7 +358,35 @@ function applyModifier(modifier) {
       wagerButtons.appendChild(btn);
     }
     wagerRow.hidden = false;
+  } else if (modifier === 'timer') {
+    startCountdown();
   }
+}
+
+// Timer modifier: TIMER_SECONDS to answer. Running out counts as a miss,
+// through the same path as a wrong answer.
+function startCountdown() {
+  let left = TIMER_SECONDS;
+  const q = state.currentQuestion;
+  const show = () => {
+    modTimerEl.textContent = t('battle.timer', { s: left });
+    modTimerEl.classList.toggle('urgent', left <= 3);
+  };
+  show();
+  modTimerEl.hidden = false;
+  countdownTimer = setInterval(() => {
+    left--;
+    show();
+    if (left > 0) return;
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+    // Only if that same question is still waiting on an answer.
+    if (state.currentQuestion !== q || state.battlePhase !== 'answering' || state.turnLocked || !state.selectedTarget) return;
+    state.turnLocked = true;
+    state.attempts++;
+    logLine(t('log.timeout'), 'alert');
+    applyAnswerResult(false, false, t('battle.noAnswer'));
+  }, 1000);
 }
 
 function placeWager(n) {
@@ -537,7 +571,7 @@ function renderCategoryChoices() {
     btn.innerHTML = '<span class="letter">[' + (i + 1) + ']</span><span class="choice-label"></span>' +
       (hinted ? '<span class="choice-hint" title="' + escapeHtml(t('battle.runeHintMark')) + '">◊</span>' : '') +
       (choice.modifier
-        ? '<span class="mod-tag" title="' + escapeHtml(t('mod.' + choice.modifier) + ': ' + t('mod.' + choice.modifier + '.tip', { max: maxWager() })) + '">' +
+        ? '<span class="mod-tag" title="' + escapeHtml(t('mod.' + choice.modifier) + ': ' + t('mod.' + choice.modifier + '.tip', { max: maxWager(), secs: TIMER_SECONDS })) + '">' +
           escapeHtml(t('mod.' + choice.modifier + '.tag')) + '</span>'
         : '');
     decodeText(btn.querySelector('.choice-label'), choice.label);

@@ -187,6 +187,9 @@ export const BLIND_MAX_MS = 6000;
 // Flip: 1 to FLIP_MAX_ANSWERS of the answers are turned upside down or
 // mirrored (one or the other per question).
 export const FLIP_MAX_ANSWERS = 3;
+// Timer: TIMER_SECONDS to answer, counting down beside the question;
+// running out counts as a miss.
+export const TIMER_SECONDS = 10;
 
 // The camera always renders a fixed VIEWPORT_SIZE x VIEWPORT_SIZE window of
 // the room, panning to follow the player. Must stay smaller than every
