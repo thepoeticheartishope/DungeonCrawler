@@ -178,9 +178,9 @@ export const MODIFIER_CHANCE = [0.10, 0.20, 0.30]; // index = room
 export const MODIFIER_DARK_BONUS = 0.20;
 // Blind Pick: answers show for BLIND_BASE_MS plus BLIND_MS_PER_WORD for
 // every word across all of them (capped), then their text disappears.
-export const BLIND_BASE_MS = 1500;
-export const BLIND_MS_PER_WORD = 200;
-export const BLIND_MAX_MS = 6000;
+export const BLIND_BASE_MS = 2000;
+export const BLIND_MS_PER_WORD = 250;
+export const BLIND_MAX_MS = 7000;
 // Gambler: a wager of 1 up to the floor number (never more than the gold
 // held) must be placed before answering; right wins it, wrong loses it.
 // Only offered once the player holds some gold.
