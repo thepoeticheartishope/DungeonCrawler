@@ -1,10 +1,11 @@
 // The boss's light: it starts on the boss and spreads outward through the
-// floor one turn at a time. Reaching LIGHT_LOSS_COVERAGE of the walkable
-// tiles loses the run; defeating the boss puts it out. No DOM access here —
-// render.js draws it, main.js decides what happens when it's full.
+// floor one step every few turns. Reaching the floor's LIGHT_LOSS_COVERAGE
+// of the walkable tiles loses the run; defeating the boss puts it out. No
+// DOM access here — render.js draws it, main.js decides what happens when
+// it's full.
 
 import { state, key } from './state.js';
-import { LIGHT_LOSS_COVERAGE, LIGHT_TURN_FACTOR } from './config.js';
+import { LIGHT_LOSS_COVERAGE, LIGHT_TURNS_PER_STEP } from './config.js';
 
 // Walkable steps from (row, col) to every reachable floor tile, walls only.
 function stepsFrom(row, col) {
@@ -26,25 +27,27 @@ function stepsFrom(row, col) {
 }
 
 // Called once per room, after the layout, boss and player start are set.
-// Works out the radius at which the light covers LIGHT_LOSS_COVERAGE of the
-// floor, and how many turns the player gets before it does.
+// Works out the radius at which the light covers this floor's
+// LIGHT_LOSS_COVERAGE, and so how many turns the player gets before the
+// steadily spreading light gets there.
 export function initBossLight() {
   state.bossDist = stepsFrom(state.boss.row, state.boss.col);
   state.floorCount = state.bossDist.size;
+  const coverage = LIGHT_LOSS_COVERAGE[Math.min(state.roomIndex, LIGHT_LOSS_COVERAGE.length - 1)];
   const sorted = [...state.bossDist.values()].sort((a, b) => a - b);
-  const needed = Math.max(1, Math.ceil(state.floorCount * LIGHT_LOSS_COVERAGE));
-  state.lightFullRadius = sorted[needed - 1];
-  const walk = state.bossDist.get(key(state.PLAYER_START.row, state.PLAYER_START.col)) || state.lightFullRadius;
-  state.lightTurnBudget = Math.max(1, Math.round(LIGHT_TURN_FACTOR * walk));
+  const needed = Math.max(1, Math.ceil(state.floorCount * coverage));
+  state.lightFullRadius = Math.max(1, sorted[needed - 1]);
+  state.lightTurnBudget = state.lightFullRadius * LIGHT_TURNS_PER_STEP;
   state.lightTurns = 0;
   updateBossLit();
 }
 
-// Radius grows evenly with turns, reaching lightFullRadius exactly when the
-// budget runs out. It never drops below 1, so the boss and the tiles right
-// around it always glow.
+// The light moves one walkable step further every LIGHT_TURNS_PER_STEP
+// turns, reaching lightFullRadius exactly when the budget runs out. It
+// never drops below 1, so the boss and the tiles right around it always
+// glow.
 function currentRadius() {
-  return Math.max(1, Math.floor(state.lightFullRadius * state.lightTurns / state.lightTurnBudget));
+  return Math.max(1, Math.floor(state.lightTurns / LIGHT_TURNS_PER_STEP));
 }
 
 function updateBossLit() {
@@ -72,7 +75,7 @@ export function lightCoverage() {
 }
 
 // How close the light is to consuming the floor: 0 at the start of a room,
-// 1 when it's reached LIGHT_LOSS_COVERAGE. Drives the eye in the status bar.
+// 1 when it's reached this floor's LIGHT_LOSS_COVERAGE. Drives the eye.
 export function lightProgress() {
   if (!state.boss) return 0;
   return Math.min(1, state.lightTurns / state.lightTurnBudget);

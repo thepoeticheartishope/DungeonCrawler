@@ -875,7 +875,7 @@ function applyTurnOutcome(actionMessage) {
   showRoomNote(notes.engageNote ? 'warn-msg' : 'move-msg', text);
 }
 
-// The boss light has reached LIGHT_LOSS_COVERAGE of the floor: the run
+// The boss light has reached this floor's LIGHT_LOSS_COVERAGE: the run
 // ends where the player stands, after a beat to see it.
 function loseToLight() {
   state.runEnded = true;
