@@ -60,6 +60,7 @@ export const TEXT = {
   'stat.turn': 'CYCLE', // draft
   'stat.room': '{@term.room}',
   'stat.time': 'TIME',
+  'stat.light': 'The {@term.boss} light: {pct}% of the way to consuming everything', // draft (the eye's tooltip)
 
   // ---- Encounter log: opening lines (what it is, a hint of what's at stake) ----
   'log.start.boss': 'ENCOUNTER: {@term.boss.symbol}',
@@ -126,7 +127,7 @@ export const TEXT = {
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft
   'room.engage': 'Something fires in the dark.', // draft
-  'room.spawn': 'The {@term.boss} branches. A new {@term.minion} grows.', // draft
+  'room.light.consumed': 'The light reaches everything.', // draft
   'room.blocked.wall': 'The membrane holds.', // draft
   'room.blocked.boss': 'The {@term.boss} will not move.', // draft
   'room.blocked.minion': 'A {@term.minion} is in the way.', // draft
@@ -170,11 +171,12 @@ export const TEXT = {
   'data.exportAnswer': 'ANSWER: {answer}',
   'data.exportComment': 'COMMENT: {comment}',
 
-  'end.win.title': 'The thought is born.',
+  'end.win.title': 'Your thought is born.',
   'end.win.stats': '{@term.boss} rewritten: {bosses}. Time: {time}. Cycles: {turns}. Transmissions: {attempts}. {@term.hp} remaining: {hearts}. {@term.gold} gathered: {coins}.', // draft
   'end.win.spacing': 'Watch spacing on {count} {count|plural:answer} next run.',
   'end.win.again': 'Think again', // draft
   'end.lose.title': 'The thought sleeps.',
+  'end.lose.light.title': 'A thought was born. It consumes.',
   'end.lose.stats': 'Reached {@term.room} {room} of {rooms} in {time} and {turns} cycles. {@term.gold} gathered: {coins}.', // draft
   'end.lose.retry': 'Wake', // draft
 };

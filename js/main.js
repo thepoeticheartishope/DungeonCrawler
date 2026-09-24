@@ -2,7 +2,8 @@ import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, GRID_SIZES, CHAMBER_TARGETS,
-  DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS, BATTLE_CHOICE_COUNT
+  DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS, BATTLE_CHOICE_COUNT,
+  MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE
 } from './config.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
@@ -12,11 +13,13 @@ import {
 import {
   initRender, showScreen, buildGridTiles, renderWalls, computeVisibility,
   renderFog, positionActor, renderHearts, renderCombatStatus, renderTargeting,
-  formatTime, startTimer, updateCamera
+  formatTime, startTimer, updateCamera, renderLightEye
 } from './render.js';
 import {
-  initCombat, isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
+  initCombat, isAdjacentToPlayer, refreshTargetValidity, advanceMonsters,
+  spawnMinion
 } from './combat.js';
+import { initBossLight, extinguishLight, lightConsumed } from './light.js';
 import {
   fetchManifest, fetchBundledSet, listSavedSets, saveSet, loadSavedSet, deleteSet
 } from './sets.js';
@@ -84,6 +87,14 @@ const roomFeedback = document.getElementById('roomFeedback');
 
 const winStats = document.getElementById('winStats');
 const loseStats = document.getElementById('loseStats');
+const loseTitle = document.getElementById('loseTitle');
+const lightEyeEl = document.getElementById('lightEye');
+const lightHintEls = {
+  n: document.getElementById('lightHintN'),
+  s: document.getElementById('lightHintS'),
+  e: document.getElementById('lightHintE'),
+  w: document.getElementById('lightHintW'),
+};
 
 const dpadButtons = {
   N: document.getElementById('btnN'),
@@ -96,7 +107,8 @@ const dpadButtons = {
 initRender({
   startScreen, introGlitch, roomScreen, battleScreen, winScreen, loseScreen,
   grid, playerActor, bossActor, coinActor, chestActor, runeActor, stairsActor,
-  heartsEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl
+  heartsEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
+  lightEyeEl, lightHintEls
 });
 
 initCombat({ grid, playerActor, turnCountEl });
@@ -594,6 +606,46 @@ function pickCoinTile(walls, avoidList, allowedTiles) {
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
+// Walkable steps from the player's start to every tile they can reach
+// without passing the boss — i.e. everything outside the boss chamber.
+function stepsFromStart() {
+  const blocked = new Set(state.wallSet);
+  blocked.add(key(state.boss.row, state.boss.col));
+  const dist = new Map([[key(state.PLAYER_START.row, state.PLAYER_START.col), 0]]);
+  const queue = [state.PLAYER_START];
+  while (queue.length) {
+    const cur = queue.shift();
+    const d = dist.get(key(cur.row, cur.col));
+    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nr = cur.row + dr, nc = cur.col + dc;
+      if (nr < 0 || nr >= state.GRID_SIZE || nc < 0 || nc >= state.GRID_SIZE) continue;
+      const k = key(nr, nc);
+      if (dist.has(k) || blocked.has(k)) continue;
+      dist.set(k, d + 1);
+      queue.push({ row: nr, col: nc });
+    }
+  }
+  return dist;
+}
+
+// The room's fixed set of minions (MINIONS_PER_ROOM), placed on room tiles
+// outside the boss chamber and at least MINION_MIN_START_DISTANCE steps
+// from the player's start, so a room never opens with one in the player's
+// face. Falls back to any free reachable room tile if a small room can't
+// fit them that far away.
+function placeMinions(roomTiles, takenTiles) {
+  const count = MINIONS_PER_ROOM[Math.min(state.roomIndex, MINIONS_PER_ROOM.length - 1)];
+  const dist = stepsFromStart();
+  const isTaken = (k) => takenTiles.some(p => key(p.row, p.col) === k);
+  const free = [...dist.keys()].filter(k => roomTiles.has(k) && !isTaken(k));
+  const far = shuffle(free.filter(k => dist.get(k) >= MINION_MIN_START_DISTANCE));
+  const near = shuffle(free.filter(k => dist.get(k) < MINION_MIN_START_DISTANCE && dist.get(k) >= 3));
+  [...far, ...near].slice(0, count).forEach(k => {
+    const [row, col] = k.split(',').map(Number);
+    spawnMinion({ row, col });
+  });
+}
+
 const INTRO_GLITCH_DURATION_MS = 2000;
 const GLITCH_CHARS = '01{}[]<>/\\;:=+*#$%&^~ABCDEF0123456789';
 
@@ -616,6 +668,7 @@ function randomGlitchCode() {
 function startGame() {
   state.order = shuffle(state.activeData).slice(0, Math.min(ROOM_COUNT, state.activeData.length));
   state.roomIndex = 0;
+  state.runEnded = false;
   state.attempts = 0;
   state.extraSpaceCount = 0;
   state.hearts = MAX_HEARTS;
@@ -671,7 +724,6 @@ function loadRoom() {
 
   state.minions.forEach(m => m.el.remove());
   state.minions = [];
-  state.turnsSinceSpawn = 0;
 
   state.encounters.forEach(e => e.el.remove());
   state.encounters = [];
@@ -761,10 +813,16 @@ function loadRoom() {
     }
   }
 
+  const minionTaken = takenTiles.slice();
+  [state.chest, state.rune, ...state.encounters].forEach(item => { if (item) minionTaken.push(item); });
+  placeMinions(roomTiles, minionTaken);
+
+  initBossLight();
   state.visibleSet = new Set();
   state.exploredSet = new Set();
   computeVisibility();
   renderFog();
+  renderLightEye();
 
   state.selectedTarget = null;
   renderTargeting();
@@ -806,14 +864,28 @@ function showRoomNote(cls, text) {
 
 function applyTurnOutcome(actionMessage) {
   const notes = advanceMonsters();
+  if (lightConsumed()) {
+    loseToLight();
+    return;
+  }
   syncQuestionForTarget();
   syncBattleScreen();
-  const text = [actionMessage, notes.engageNote, notes.spawnNote].filter(Boolean).join(' ');
+  const text = [actionMessage, notes.engageNote].filter(Boolean).join(' ');
   showRoomNote(notes.engageNote ? 'warn-msg' : 'move-msg', text);
 }
 
+// The boss light has reached LIGHT_LOSS_COVERAGE of the floor: the run
+// ends where the player stands, after a beat to see it.
+function loseToLight() {
+  state.runEnded = true;
+  showRoomNote('warn-msg', t('room.light.consumed'));
+  setControlsEnabled(false);
+  clearInterval(state.timerHandle);
+  setTimeout(() => endLose('light'), 1400);
+}
+
 function movePlayer(dRow, dCol, dirName) {
-  if (state.turnLocked) return;
+  if (state.turnLocked || state.runEnded) return;
 
   // Facing updates (and the fog cone with it) even on a blocked move — the
   // player can "turn to look" a direction without spending a turn, since
@@ -888,7 +960,7 @@ function movePlayer(dRow, dCol, dirName) {
 }
 
 function skipTurn() {
-  if (state.turnLocked) return;
+  if (state.turnLocked || state.runEnded) return;
   state.turnLocked = true;
   applyTurnOutcome(t('room.wait'));
   state.turnLocked = false;
@@ -948,6 +1020,10 @@ function resolveBossAnswer(isCorrect) {
     if (state.boss.hp <= 0) {
       bossActor.classList.add('gone');
       state.boss = null; // clears the doorway it was blocking
+      extinguishLight(); // its light dies with it
+      computeVisibility();
+      renderFog();
+      renderLightEye();
       logLine(t('log.boss.cleared'), 'bright');
       endEncounter();
       return;
@@ -1116,7 +1192,10 @@ function endWin() {
   showScreen(winScreen);
 }
 
-function endLose() {
+// `reason` is 'light' when the boss light consumed the floor; anything else
+// (running out of hearts) keeps the usual title.
+function endLose(reason) {
+  loseTitle.textContent = t(reason === 'light' ? 'end.lose.light.title' : 'end.lose.title');
   loseStats.textContent = t('end.lose.stats', {
     room: state.roomIndex + 1, rooms: state.order.length, time: formatTime(state.seconds),
     turns: state.turnCount, coins: state.coinsTotal,

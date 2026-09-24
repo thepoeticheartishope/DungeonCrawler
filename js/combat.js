@@ -7,8 +7,9 @@
 // advanceMonsters run.
 
 import { state, key } from './state.js';
-import { MINION_HP, SPAWN_INTERVAL, MAX_MINIONS } from './config.js';
-import { positionActor, renderCombatStatus, renderFog, renderTargeting } from './render.js';
+import { MINION_HP, MINION_CHASE_RANGE } from './config.js';
+import { positionActor, renderCombatStatus, computeVisibility, renderFog, renderTargeting, renderLightEye } from './render.js';
+import { advanceLight } from './light.js';
 import { t } from './text.js';
 
 let combatEls = {};
@@ -68,40 +69,16 @@ export function neighbors(r, c) {
     .filter(([nr, nc]) => nr >= 0 && nr < state.GRID_SIZE && nc >= 0 && nc < state.GRID_SIZE);
 }
 
-// Finds the nearest free, walkable tile to (row, col) — used to place a
-// freshly summoned minion beside the boss instead of on top of it.
-export function findFreeTileNear(row, col) {
-  const startKey = key(row, col);
-  const visited = new Set([startKey]);
-  const queue = [{ row, col }];
-  while (queue.length) {
-    const cur = queue.shift();
-    for (const [nr, nc] of neighbors(cur.row, cur.col)) {
-      const k = key(nr, nc);
-      if (visited.has(k)) continue;
-      visited.add(k);
-      if (state.wallSet.has(k)) continue;
-      if (!tileOccupied(nr, nc)) return { row: nr, col: nc };
-      queue.push({ row: nr, col: nc });
-    }
-  }
-  return null;
-}
-
-// Walls plus every other minion's current tile, from one minion's point of
-// view — so it paths around other minions instead of computing the same
-// blocked step every turn.
-// Items (chest, rune, encounters) and the boss don't block a minion's path
-// — a monster paths straight through them rather than detouring around or
-// getting stuck when one sits in a one-wide corridor. That matters
-// especially for the boss: it stands on its chamber's one doorway tile to
-// block the *player* out, but a minion that spawns or wanders behind it
-// (inside that sealed stairs room) would otherwise have no way back out
-// until the boss died, trapping it there permanently. Items and the boss
-// are only obstacles to the player, who must stand beside one to interact
-// or defeat it.
+// Walls, the boss, and every other minion's current tile, from one minion's
+// point of view — so it paths around them instead of computing the same
+// blocked step every turn. Minions are placed outside the boss chamber
+// (loadRoom) and the boss holds its one doorway, so they never end up
+// inside it. Items (chest, rune, encounters) don't block a chase — a
+// monster paths straight through rather than getting stuck when one sits
+// in a one-wide corridor; items are only obstacles to the player.
 export function blockedTilesFor(minion) {
   const blocked = new Set(state.wallSet);
+  if (state.boss) blocked.add(key(state.boss.row, state.boss.col));
   for (const other of state.minions) {
     if (other === minion) continue;
     blocked.add(key(other.row, other.col));
@@ -132,16 +109,8 @@ export function bfsPath(start, target, walls) {
   return null;
 }
 
-export function bfsNextStep(start, target, walls) {
-  const path = bfsPath(start, target, walls);
-  if (!path || path.length < 2) return null;
-  return path[1];
-}
-
-export function spawnMinion() {
-  const spot = findFreeTileNear(state.boss.row, state.boss.col);
-  if (!spot) return; // no open tile nearby this turn — skip the spawn
-
+// Places a minion on `spot` (a free floor tile) — loadRoom picks the tiles.
+export function spawnMinion(spot) {
   const el = document.createElement('div');
   el.className = 'actor minion';
   el.textContent = t('term.minion.symbol');
@@ -158,28 +127,34 @@ export function spawnMinion() {
   state.minions.push(m);
 }
 
-// Advances the fight by one turn: minions move, the spawn timer ticks,
-// and the turn counter increases. Called after any player action.
+// A random free neighbouring floor tile for a wandering minion, or null if
+// it's boxed in this turn. Unlike a chase, wandering never steps onto an
+// item, so an idle minion doesn't sit on top of a chest or rune.
+function wanderStep(m) {
+  const options = neighbors(m.row, m.col)
+    .filter(([r, c]) => !state.wallSet.has(key(r, c)) && !tileOccupied(r, c, m));
+  if (options.length === 0) return null;
+  const [row, col] = options[Math.floor(Math.random() * options.length)];
+  return { row, col };
+}
+
+// Advances the room by one turn: the boss light spreads, minions move, and
+// the turn counter increases. Called after any player action.
 export function advanceMonsters() {
   state.turnCount++;
   combatEls.turnCountEl.textContent = state.turnCount;
-
-  state.turnsSinceSpawn++;
-  let spawnNote = '';
-  if (state.turnsSinceSpawn >= SPAWN_INTERVAL) {
-    state.turnsSinceSpawn = 0;
-    if (state.boss && state.minions.length < MAX_MINIONS) {
-      spawnMinion();
-      spawnNote = t('room.spawn');
-    }
-  }
+  advanceLight();
 
   // Walking around is safe: a minion that reaches the player never deals
   // damage here. It engages instead — it becomes the target, which puts the
   // battle screen up, and hearts are only ever lost by missing a question.
+  // Minions roam freely and only give chase once the player is within
+  // MINION_CHASE_RANGE walkable steps.
   let engageNote = '';
   for (const m of state.minions) {
-    const next = bfsNextStep({ row: m.row, col: m.col }, { row: state.playerRow, col: state.playerCol }, blockedTilesFor(m));
+    const path = bfsPath({ row: m.row, col: m.col }, { row: state.playerRow, col: state.playerCol }, blockedTilesFor(m));
+    const chasing = path && path.length - 1 <= MINION_CHASE_RANGE;
+    const next = chasing ? path[1] : wanderStep(m);
     if (next) {
       const isPlayerTile = next.row === state.playerRow && next.col === state.playerCol;
 
@@ -198,7 +173,9 @@ export function advanceMonsters() {
   }
 
   renderCombatStatus();
+  computeVisibility();
   renderFog();
+  renderLightEye();
   refreshTargetValidity();
-  return { spawnNote, engageNote };
+  return { engageNote };
 }

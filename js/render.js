@@ -6,7 +6,8 @@
 // of each one threading them through as parameters.
 
 import { state, key } from './state.js';
-import { MAX_HEARTS, BOSS_HP, VISION_RADIUS, VIEWPORT_SIZE } from './config.js';
+import { MAX_HEARTS, BOSS_HP, PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, VIEWPORT_SIZE } from './config.js';
+import { lightProgress } from './light.js';
 import { categoryLabel } from './quiz.js';
 import { t } from './text.js';
 
@@ -91,20 +92,22 @@ function inFacingCone(row, col) {
   return forward >= 0 && Math.abs(lateral) <= forward;
 }
 
-// Sweeps outward from the player through open floor, stopping at walls
-// and at VISION_RADIUS steps, then keeps only the tiles inside the facing
-// cone. Walls still fully block vision (so a lit cone never bleeds through
-// a wall into an adjacent corridor), but nothing behind or beside the
-// player lights up now — turning to face a direction is what reveals it.
+// The player's own light: every open tile within PLAYER_LIGHT_RADIUS steps,
+// plus open tiles up to PLAYER_CONE_RANGE steps inside the facing cone.
+// Walls fully block it (a lit cone never bleeds through a wall into an
+// adjacent corridor). Everything the boss's light reaches is visible too
+// (state.bossLitSet, from light.js) — the thing that ends the run is also
+// what shows the player the way.
 export function computeVisibility() {
-  state.visibleSet = new Set();
+  state.visibleSet = new Set(state.bossLitSet);
   const startKey = key(state.playerRow, state.playerCol);
   state.visibleSet.add(startKey);
+  const reach = Math.max(PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE);
   const queue = [{ row: state.playerRow, col: state.playerCol, dist: 0 }];
   const seen = new Set([startKey]);
   while (queue.length) {
     const cur = queue.shift();
-    if (cur.dist >= VISION_RADIUS) continue;
+    if (cur.dist >= reach) continue;
     for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const nr = cur.row + dr, nc = cur.col + dc;
       if (nr < 0 || nr >= state.GRID_SIZE || nc < 0 || nc >= state.GRID_SIZE) continue;
@@ -113,8 +116,9 @@ export function computeVisibility() {
       seen.add(nk);
       // Still traverse through out-of-cone tiles (a corridor can bend into
       // view further on), but only mark in-cone ones as actually visible.
-      if (inFacingCone(nr, nc)) state.visibleSet.add(nk);
-      queue.push({ row: nr, col: nc, dist: cur.dist + 1 });
+      const dist = cur.dist + 1;
+      if (dist <= PLAYER_LIGHT_RADIUS || inFacingCone(nr, nc)) state.visibleSet.add(nk);
+      queue.push({ row: nr, col: nc, dist });
     }
   }
   state.visibleSet.forEach(k => state.exploredSet.add(k));
@@ -130,8 +134,9 @@ export function renderFog() {
       const worldCol = state.camCol + vc;
       const el = state.tileEls[vr * VIEWPORT_SIZE + vc];
       el.classList.remove('fog-hidden', 'fog-dim');
-      if (!state.fogEnabled) continue;
       const k = key(worldRow, worldCol);
+      el.classList.toggle('boss-lit', state.bossLitSet.has(k));
+      if (!state.fogEnabled) continue;
       if (state.visibleSet.has(k)) continue;
       el.classList.add(state.exploredSet.has(k) ? 'fog-dim' : 'fog-hidden');
     }
@@ -146,6 +151,42 @@ export function renderFog() {
   els.chestActor.classList.toggle('fog-hidden', !!state.chest && !isLit(state.chest.row, state.chest.col));
   els.runeActor.classList.toggle('fog-hidden', !!state.rune && !isLit(state.rune.row, state.rune.col));
   state.encounters.forEach(e => e.el.classList.toggle('fog-hidden', !isLit(e.row, e.col)));
+  renderLightHint();
+}
+
+// While the boss is off screen, the edge of the view facing it glows —
+// brighter as its light spreads — so the player always has a sense of
+// where it is. A diagonal boss lights two edges.
+function renderLightHint() {
+  const edges = els.lightHintEls;
+  if (!edges) return;
+  const boss = state.boss;
+  const offScreen = !!boss && (boss.row < state.camRow || boss.row >= state.camRow + VIEWPORT_SIZE ||
+    boss.col < state.camCol || boss.col >= state.camCol + VIEWPORT_SIZE);
+  const strength = offScreen ? (0.25 + 0.6 * lightProgress()).toFixed(2) : '0';
+  const dr = boss ? boss.row - state.playerRow : 0;
+  const dc = boss ? boss.col - state.playerCol : 0;
+  const on = {
+    n: dr < 0 && Math.abs(dr) * 2 >= Math.abs(dc),
+    s: dr > 0 && Math.abs(dr) * 2 >= Math.abs(dc),
+    w: dc < 0 && Math.abs(dc) * 2 >= Math.abs(dr),
+    e: dc > 0 && Math.abs(dc) * 2 >= Math.abs(dr),
+  };
+  Object.entries(edges).forEach(([side, el]) => { el.style.opacity = on[side] ? strength : '0'; });
+}
+
+// The eye in the status bar: shut when a room begins, opening as the boss
+// light spreads, fully open (and twitching) as it's about to consume the
+// floor. Drawn in CSS — the terminal font has no symbol glyphs.
+export function renderLightEye() {
+  const eye = els.lightEyeEl;
+  if (!eye) return;
+  const p = lightProgress();
+  eye.style.setProperty('--open', p.toFixed(3));
+  eye.classList.toggle('eye-near', p >= 0.8);
+  const label = t('stat.light', { pct: Math.round(p * 100) });
+  eye.title = label;
+  eye.setAttribute('aria-label', label);
 }
 
 // row/col are world coordinates; this converts them to a position within
