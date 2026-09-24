@@ -48,7 +48,7 @@ export const state = {
   // Boss light (see light.js). Reset as each room loads.
   bossDist: new Map(),   // walkable steps from the boss, per floor tile key
   floorCount: 0,         // walkable tiles in the room
-  lightFullRadius: 0,    // light radius at which LIGHT_LOSS_COVERAGE is reached
+  lightFullRadius: 0,    // light radius at which this floor's LIGHT_LOSS_COVERAGE is reached
   lightTurnBudget: 1,    // turns until that radius
   lightTurns: 0,         // turns spent in this room
   runEnded: false,       // the light consumed the floor; no more moves this run

@@ -148,13 +148,15 @@ export const MINION_MIN_START_DISTANCE = 6; // walkable steps from the player's 
 export const PLAYER_LIGHT_RADIUS = 1;
 export const PLAYER_CONE_RANGE = 3;
 
-// The boss gives off light that spreads through the floor, one turn at a
-// time. It reaches LIGHT_LOSS_COVERAGE of the walkable tiles after
-// LIGHT_TURN_FACTOR x (walkable distance from the player's start to the
-// boss) turns, and the run is lost when it does. Battles don't use turns,
-// so answering never costs light — only walking and waiting do.
-export const LIGHT_LOSS_COVERAGE = 0.65;
-export const LIGHT_TURN_FACTOR = 2.5;
+// The boss gives off light that spreads through the floor at a steady
+// speed: one more walkable step every LIGHT_TURNS_PER_STEP turns. The run
+// is lost when it covers that floor's LIGHT_LOSS_COVERAGE of the walkable
+// tiles, so the percentage is the difficulty dial — a higher one means
+// more turns. It drops each floor. Battles don't use turns, so answering
+// never costs light — only walking and waiting do. Index = room, like
+// GRID_SIZES.
+export const LIGHT_LOSS_COVERAGE = [0.9, 0.8, 0.7];
+export const LIGHT_TURNS_PER_STEP = 3;
 
 // Darkness: once the boss falls, its light dies and the floor goes dark
 // outside the player's own light (explored tiles are forgotten). No new
