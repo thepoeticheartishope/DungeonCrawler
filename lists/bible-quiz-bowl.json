@@ -398,7 +398,7 @@
     "meaning": "Genesis",
     "category": "OT",
     "difficulty": "hard",
-    "source": "Gen 12, 20 & 26",
+    "source": "Gen 12; 20; 26",
     "answerType": "book"
   },
   {
@@ -596,7 +596,7 @@
     "meaning": "Noah",
     "category": "N",
     "difficulty": "hard",
-    "source": "Gen 5:25-28",
+    "source": "Gen 5:25-29",
     "answerType": "name"
   },
   {
@@ -989,7 +989,7 @@
     "meaning": "Abraham and Sarah",
     "category": "N",
     "difficulty": "hard",
-    "source": "Gen 17:17, 18:13",
+    "source": "Gen 17:17; 18:12",
     "answerType": "name",
     "draft": true
   },
@@ -1096,7 +1096,7 @@
     "meaning": "Satan",
     "category": "N",
     "difficulty": "hard",
-    "source": "Job 2:12",
+    "source": "Job 1:12",
     "answerType": "name"
   },
   {
@@ -1288,7 +1288,7 @@
     "meaning": "Hebrews",
     "category": "W",
     "difficulty": "hard",
-    "source": "13:1",
+    "source": "Heb 13:2",
     "answerType": "book"
   },
   {
@@ -1313,7 +1313,7 @@
     "meaning": "Isaiah",
     "category": "P",
     "difficulty": "hard",
-    "source": "40:3",
+    "source": "Isaiah 40:3",
     "answerType": "name"
   },
   {
@@ -1365,7 +1365,7 @@
     "answerType": "location"
   },
   {
-    "term": "Fill in the blank in Jesus' sentence with one word: \"For if you believed ________, you would believe me; for he wrote of me.\"",
+    "term": "Fill in the blank in Jesus' sentence with one word: \"For had ye believed ______, ye would have believed me: for he wrote of me.\"",
     "meaning": "Moses",
     "category": "P",
     "difficulty": "hard",
@@ -1392,7 +1392,7 @@
     "meaning": "John",
     "category": "NT",
     "difficulty": "hard",
-    "source": "17",
+    "source": "John 17",
     "answerType": "book"
   },
   {
@@ -1482,7 +1482,7 @@
     "meaning": "Micah",
     "category": "P",
     "difficulty": "hard",
-    "source": "Micah 5:2 and Matt 2:6",
+    "source": "Micah 5:2; Matt 2:6",
     "answerType": "name"
   },
   {
@@ -1501,7 +1501,7 @@
     "answerType": "name"
   },
   {
-    "term": "To what was Jesus referring when he said, \"It is proper for us to do this to fulfill all righteousness.\"?",
+    "term": "To what was Jesus referring when he said, \"Suffer it to be so now: for thus it becometh us to fulfil all righteousness.\"?",
     "meaning": "Baptism",
     "category": "NT",
     "difficulty": "hard",
@@ -1572,7 +1572,7 @@
     "meaning": "David",
     "category": "W",
     "difficulty": "hard",
-    "source": "Ps 103:13",
+    "source": "Ps 103:15",
     "answerType": "name"
   },
   {
@@ -1802,7 +1802,7 @@
     "meaning": "1 Corinthians",
     "category": "W",
     "difficulty": "hard",
-    "source": "2:14",
+    "source": "1 Cor 2:14",
     "answerType": "book"
   },
   {
@@ -1859,7 +1859,7 @@
     "meaning": "A Lion",
     "category": "W",
     "difficulty": "hard",
-    "source": "Judges 14:18",
+    "source": "Judges 14:14, 18",
     "answerType": "creature",
     "draft": true
   },
@@ -2025,7 +2025,7 @@
     "answerType": "number"
   },
   {
-    "term": "Who said, \"Can any of you prove me guilty of sin\"?",
+    "term": "Who said, \"Which of you convinceth me of sin?\"",
     "meaning": "Jesus",
     "category": "NT",
     "difficulty": "medium",
@@ -2245,7 +2245,7 @@
     "meaning": "Pharisees",
     "category": "NT",
     "difficulty": "medium",
-    "source": "Matt 22:17",
+    "source": "Matt 22:15-17",
     "answerType": "name"
   },
   {
@@ -2333,7 +2333,7 @@
     "meaning": "Elisha",
     "category": "P",
     "difficulty": "easy",
-    "source": "2 Kings 2:11",
+    "source": "2 Kings 2:11-12",
     "answerType": "name"
   },
   {
@@ -3316,8 +3316,8 @@
     "answerType": "number"
   },
   {
-    "term": "What was the \"Stone Pavement\"?",
-    "meaning": "The judges' seat at Jesus' trial",
+    "term": "What was \"the Pavement\" (in the Hebrew, Gabbatha) in John 19:13?",
+    "meaning": "Where Pilate sat in judgment at Jesus' trial",
     "category": "NT",
     "difficulty": "hard",
     "source": "John 19:13",
