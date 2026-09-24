@@ -149,7 +149,11 @@ export function renderFog() {
   if (state.boss) els.bossActor.classList.toggle('fog-hidden', !isLit(state.boss.row, state.boss.col));
   state.minions.forEach(m => m.el.classList.toggle('fog-hidden', !isLit(m.row, m.col)));
   els.coinActor.classList.toggle('fog-hidden', !!state.coin && !isLit(state.coin.row, state.coin.col));
-  if (state.stairs) els.stairsActor.classList.toggle('fog-hidden', !isLit(state.stairs.row, state.stairs.col));
+  // The stairs are never lost in the fog: they're the way out, and they
+  // stay visible whenever they're on screen — including in the darkness
+  // after the boss, when nothing else is remembered — so leaving or
+  // staying for double gold is always a clear choice.
+  if (state.stairs) els.stairsActor.classList.remove('fog-hidden');
   els.chestActor.classList.toggle('fog-hidden', !!state.chest && !isLit(state.chest.row, state.chest.col));
   els.runeActor.classList.toggle('fog-hidden', !!state.rune && !isLit(state.rune.row, state.rune.col));
   state.encounters.forEach(e => e.el.classList.toggle('fog-hidden', !isLit(e.row, e.col)));
