@@ -721,9 +721,13 @@
     95% { opacity: 0; }
   }
 
+  /* Items share the actors' layer (2), above the floor tiles and the boss
+     fog (tiles are position: relative, so anything lower is painted
+     under them). Moving actors still draw over items by DOM order: the
+     player comes after them in index.html and minions are appended later. */
   .actor.coin {
     font-size: 20px;
-    z-index: 0;
+    z-index: 2;
     animation: coinBob 1.4s ease-in-out infinite;
   }
   @keyframes coinBob {
@@ -733,7 +737,7 @@
 
   .actor.chest, .actor.rune, .actor.encounter {
     font-size: 24px;
-    z-index: 0;
+    z-index: 2;
   }
   .actor.rune {
     animation: runeGlow 1.8s ease-in-out infinite;
@@ -747,7 +751,7 @@
     font-size: 22px;
     font-weight: 700;
     color: var(--torch-bright);
-    z-index: 0;
+    z-index: 2;
     animation: stairsGlow 1.8s ease-in-out infinite;
   }
   @keyframes stairsGlow {
