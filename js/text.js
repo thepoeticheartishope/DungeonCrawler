@@ -90,7 +90,7 @@ export const TEXT = {
   'log.boss.holds': 'ITS {@term.boss} HOLDS.',
   'log.boss.cleared': '{@term.boss} REWRITTEN. ASCEND.',
   'log.minion.cleared': '{@term.minion} PRUNED.', // draft (was: MINOR DOUBT ERASED. — the minion is a DENDRITE now)
-  'log.minion.disperses': 'THE {@term.minion} RETRACTS. IT WILL GROW BACK. BE READY.', // draft (was: DOUBT DISPERSES. IT WILL RETURN. BE READY.)
+  'log.minion.disperses': 'THE {@term.minion} RETRACTS INTO THE DARK.', // draft (minions no longer grow back; was: IT WILL GROW BACK. BE READY.)
   'log.chest.opened': 'THOUGHT RELEASED. +{gold} {@term.gold}.', // draft (was: CHEST OPENED. +{gold} PROCESS.)
   'log.chest.trapped': 'IT DOES NOT WANT YOU TO ASCEND.',
   'log.rune.decoded': 'SIGNAL CARRIED: A {category|upper} {@term.query}, {hint}', // draft (was: SYNAPSE FUSED — the rune is the AXON now)
