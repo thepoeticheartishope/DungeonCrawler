@@ -77,6 +77,26 @@ export const MC_SAMPLE_DATA = [
 // category always renders the same symbol. They must stay distinct from the
 // term.*.symbol glyphs in text.js and from the player's arrows (^ v < >) --
 // '^' used to be here and read as the player facing north.
+// Each answerType (the subtype tagged in the JSON) belongs to one top-level
+// answer "shape". buildChoices falls back to the same shape when a subtype
+// has too few wrong answers, so a creature is padded with other nouns, not
+// with a verse address or a number. A top level only needs subtypes once it
+// has 4+ answers (1 right + 3 wrong); until then it's its own subtype.
+// answerTypes missing here (e.g. from a pasted list) just skip that tier.
+export const ANSWER_TYPE_GROUPS = {
+  name: 'noun',
+  location: 'noun',
+  book: 'noun',
+  creature: 'noun',
+  object: 'noun',
+  theology: 'noun',
+  term: 'noun',
+  adjective: 'adjective',
+  verb: 'verb',
+  number: 'number',
+  verse: 'reference'
+};
+
 export const ENCOUNTER_GLYPHS = ['!', '%', '&', '*', '+', '~', '≈', '='];
 
 // Player glyph is directional now — an arrow matching which way they're

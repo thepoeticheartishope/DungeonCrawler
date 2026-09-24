@@ -1083,10 +1083,12 @@
           (the correct answer is added in if you leave it out); entries
           without <code>"options"</code> get 3 distractors picked at random
           from the rest of the list — preferring entries with a matching
-          <code>"answerType"</code> string (e.g. "name", "location", "book",
-          "verse", "creature", "object", "theology", "number", "term"), so a
-          wrong answer can't be spotted just by looking like a different
-          kind of thing. Entries marked <code>"draft": true</code> (answers
+          <code>"answerType"</code> string, so a wrong answer can't be
+          spotted just by looking like a different kind of thing. Types
+          group into shapes: nouns ("name", "location", "book", "creature",
+          "object", "theology", "term"), "adjective", "verb", "number" and
+          "verse" (an address like "Micah 1:1"); when a type runs short,
+          wrong answers come from the same shape. Entries marked <code>"draft": true</code> (answers
           still waiting on a one-word rewrite) are matched with other
           drafts first. An optional <code>"source"</code> string
           (a reference or short reasoning) shows up alongside the correct

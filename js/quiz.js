@@ -2,7 +2,7 @@
 // selection, and multiple-choice option building. No DOM access here.
 
 import { state } from './state.js';
-import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS } from './config.js';
+import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS, ANSWER_TYPE_GROUPS } from './config.js';
 import { t } from './text.js';
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
@@ -212,7 +212,9 @@ function distinctMeanings(pool) {
 // choice can't be spotted just by its shape. Candidates are drawn in tiers,
 // topping up from the next tier only when the previous runs out: same
 // answerType and same draft status (a one-word answer isn't offered next
-// to multi-word draft answers), then same answerType, then anything.
+// to multi-word draft answers), then same answerType, then the same
+// top-level shape (ANSWER_TYPE_GROUPS in config.js: another noun for a
+// noun), again draft-matched first, then anything.
 export function buildChoices(item) {
   let opts;
   if (Array.isArray(item.options) && item.options.length >= 2) {
@@ -225,9 +227,16 @@ export function buildChoices(item) {
     const typedPool = item.answerType
       ? basePool.filter(d => d.answerType === item.answerType)
       : [];
+    const group = ANSWER_TYPE_GROUPS[item.answerType];
+    const groupPool = group
+      ? basePool.filter(d => ANSWER_TYPE_GROUPS[d.answerType] === group)
+      : [];
+    const sameDraft = d => !d.draft === !item.draft;
     const tiers = [
-      typedPool.filter(d => !d.draft === !item.draft),
+      typedPool.filter(sameDraft),
       typedPool,
+      groupPool.filter(sameDraft),
+      groupPool,
       basePool
     ];
     const distractors = [];
