@@ -79,7 +79,7 @@ export const TEXT = {
   'log.input': 'INPUT: {answer}',
   'log.accepted': 'ACCEPTED.',
   'log.extraSpaces': 'NOTE: EXTRA SPACES IN INPUT.',
-  'log.rejected': 'REJECTED. -1 {@term.hp}',
+  'log.rejected': 'REJECTED. -{cost} {@term.hp}',
   'log.expected': 'EXPECTED: {answer}',
   'log.source': 'SOURCE: {source}',
   'log.signalLost': 'SIGNAL LOST.',
@@ -89,6 +89,7 @@ export const TEXT = {
   'log.boss.integrity': 'CONCEPT INTEGRITY {hp}/{max}.',
   'log.boss.holds': 'ITS {@term.boss} HOLDS.',
   'log.boss.cleared': '{@term.boss} REWRITTEN. ASCEND.',
+  'log.darkness': 'ITS LIGHT DIES WITH IT. WHAT REMAINS HUNTS YOU. MISSES COST MORE; {@term.gold} PAYS DOUBLE.', // draft
   'log.minion.cleared': '{@term.minion} PRUNED.', // draft (was: MINOR DOUBT ERASED. — the minion is a DENDRITE now)
   'log.minion.disperses': 'THE {@term.minion} RETRACTS INTO THE DARK.', // draft (minions no longer grow back; was: IT WILL GROW BACK. BE READY.)
   'log.chest.opened': 'THOUGHT RELEASED. +{gold} {@term.gold}.', // draft (was: CHEST OPENED. +{gold} PROCESS.)

@@ -153,7 +153,8 @@ export function advanceMonsters() {
   let engageNote = '';
   for (const m of state.minions) {
     const path = bfsPath({ row: m.row, col: m.col }, { row: state.playerRow, col: state.playerCol }, blockedTilesFor(m));
-    const chasing = path && path.length - 1 <= MINION_CHASE_RANGE;
+    // In the darkness after the boss falls, every minion hunts, from anywhere.
+    const chasing = path && (state.darkness || path.length - 1 <= MINION_CHASE_RANGE);
     const next = chasing ? path[1] : wanderStep(m);
     if (next) {
       const isPlayerTile = next.row === state.playerRow && next.col === state.playerCol;

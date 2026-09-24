@@ -52,6 +52,7 @@ export const state = {
   lightTurnBudget: 1,    // turns until that radius
   lightTurns: 0,         // turns spent in this room
   runEnded: false,       // the light consumed the floor; no more moves this run
+  darkness: false,       // the boss has fallen on this floor (see DARK_* in config.js)
   bossLitSet: new Set(), // tiles the boss light currently reaches
   currentQuestion: null, // { term, meaning } — reshuffles after every attempt
   selectedTarget: null,  // boss, or one of the minions
