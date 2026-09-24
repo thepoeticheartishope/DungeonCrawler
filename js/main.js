@@ -6,7 +6,7 @@ import {
   MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE, DARK_MISS_COST, DARK_GOLD_MULTIPLIER,
   BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS
 } from './config.js';
-import { rollModifier, rollFlip, maxWager } from './modifiers.js';
+import { rollModifier, rollCategoryModifiers, rollFlip, maxWager } from './modifiers.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
   buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory,
@@ -557,7 +557,8 @@ function startBattleTurn() {
   state.categoryChoices = isFight
     ? buildCategoryChoices(poolFor(target), BATTLE_CHOICE_COUNT, state.runeHint)
     : [];
-  state.categoryChoices.forEach(choice => { choice.modifier = rollModifier(target); });
+  const modifiers = rollCategoryModifiers(target, state.categoryChoices.length);
+  state.categoryChoices.forEach((choice, i) => { choice.modifier = modifiers[i]; });
 
   if (state.categoryChoices.length >= 2) {
     state.battlePhase = 'choosing';
@@ -576,6 +577,12 @@ function startBattleTurn() {
     // (loadRoom() sets one at room load), so re-type it fresh every time a
     // turn starts rather than letting the effect be skipped.
     typeText(enemyName, state.currentQuestion.term);
+    // A boss question always carries a modifier, even with no category
+    // choice to show it on.
+    if (target.kind === 'boss') {
+      clearModifier();
+      applyModifier(rollModifier(target));
+    }
     if (!state.mcMode) answerInput.focus();
   }
   showBattlePhase();
