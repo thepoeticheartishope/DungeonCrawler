@@ -51,10 +51,12 @@
     --torch-bright: #F4FBFC;    /* bright intensity */
     --hit: var(--torch-bright);
     --block: var(--torch-bright);
-    /* The one deliberate colour: the boss's light is light red, so its
+    /* The one deliberate colour: the boss's light is a soft blue, so its
        spread is instantly distinguishable from the player's own white
-       phosphor light (Timothy's call; everything else stays monochrome). */
-    --boss-light-rgb: 255, 110, 110;
+       phosphor light. Blue on purpose: it reads as calm and safe, and it's
+       the thing that ends the run (Timothy's call; everything else stays
+       monochrome). */
+    --boss-light-rgb: 120, 170, 255;
   }
 
   * { box-sizing: border-box; }
@@ -542,11 +544,11 @@
     box-shadow: none !important;
     filter: none !important;
   }
-  /* Floor the boss light reaches: washed light red with a red glow from
+  /* Floor the boss light reaches: a faint blue wash and glow from
      within, so its spread reads clearly apart from the player's light. */
   .tile.boss-lit:not(.wall):not(.fog-hidden) {
-    background-image: linear-gradient(rgba(var(--boss-light-rgb), 0.16), rgba(var(--boss-light-rgb), 0.16));
-    box-shadow: inset 0 0 10px rgba(var(--boss-light-rgb), 0.35);
+    background-image: linear-gradient(rgba(var(--boss-light-rgb), 0.08), rgba(var(--boss-light-rgb), 0.08));
+    box-shadow: inset 0 0 10px rgba(var(--boss-light-rgb), 0.18);
   }
 
   /* Edge glows toward an off-screen boss. Opacity is set per edge by
@@ -559,10 +561,10 @@
   }
   .light-hint-n, .light-hint-s { left: 0; right: 0; height: 18%; }
   .light-hint-e, .light-hint-w { top: 0; bottom: 0; width: 18%; }
-  .light-hint-n { top: 0; background: linear-gradient(to bottom, rgba(var(--boss-light-rgb), 0.45), transparent); }
-  .light-hint-s { bottom: 0; background: linear-gradient(to top, rgba(var(--boss-light-rgb), 0.45), transparent); }
-  .light-hint-w { left: 0; background: linear-gradient(to right, rgba(var(--boss-light-rgb), 0.45), transparent); }
-  .light-hint-e { right: 0; background: linear-gradient(to left, rgba(var(--boss-light-rgb), 0.45), transparent); }
+  .light-hint-n { top: 0; background: linear-gradient(to bottom, rgba(var(--boss-light-rgb), 0.28), transparent); }
+  .light-hint-s { bottom: 0; background: linear-gradient(to top, rgba(var(--boss-light-rgb), 0.28), transparent); }
+  .light-hint-w { left: 0; background: linear-gradient(to right, rgba(var(--boss-light-rgb), 0.28), transparent); }
+  .light-hint-e { right: 0; background: linear-gradient(to left, rgba(var(--boss-light-rgb), 0.28), transparent); }
 
   /* The eye in the status bar (ink on the inverse bar). --open runs 0..1
      with the boss light's progress: a shut lid at 0, an almond opening
