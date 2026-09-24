@@ -51,6 +51,13 @@
     --torch-bright: #F4FBFC;    /* bright intensity */
     --hit: var(--torch-bright);
     --block: var(--torch-bright);
+    /* The one deliberate colour: the boss's light is a soft blue, so its
+       spread is instantly distinguishable from the player's own white
+       phosphor light. Blue on purpose: it reads as calm and safe, and it's
+       the thing that ends the run (Timothy's call; everything else stays
+       monochrome). */
+    --boss-light-rgb: 120, 170, 255;
+    --boss-fog-rgb: 195, 218, 255; /* paler, for the fog over lit floor */
   }
 
   * { box-sizing: border-box; }
@@ -538,6 +545,95 @@
     box-shadow: none !important;
     filter: none !important;
   }
+  /* Floor the boss light reaches reads as a pale blue fog, not tinted
+     tiles: each lit tile carries a soft round haze that spills past its
+     edges (inset: -60%), so neighbouring tiles blend into one continuous
+     mist with no hard borders. It sits above the floor (z-index 1) and
+     below every actor (z-index 2), and drifts slowly in brightness, with
+     three staggered phases so the mist doesn't pulse in lockstep. */
+  .tile { position: relative; }
+  .tile.boss-lit:not(.wall):not(.fog-hidden)::after {
+    content: '';
+    position: absolute;
+    inset: -60%;
+    z-index: 1;
+    pointer-events: none;
+    background: radial-gradient(closest-side,
+      rgba(var(--boss-fog-rgb), 0.13),
+      rgba(var(--boss-fog-rgb), 0.09) 45%,
+      rgba(var(--boss-fog-rgb), 0.03) 80%,
+      transparent);
+    animation: bossFog 7s ease-in-out infinite alternate;
+  }
+  .tile.boss-lit:nth-child(3n)::after { animation-delay: -2.3s; }
+  .tile.boss-lit:nth-child(3n+1)::after { animation-delay: -4.7s; }
+  @keyframes bossFog {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+  }
+
+  /* Edge glows toward an off-screen boss. Opacity is set per edge by
+     render.js renderLightHint; they never catch clicks. */
+  .light-hint {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .light-hint-n, .light-hint-s { left: 0; right: 0; height: 18%; }
+  .light-hint-e, .light-hint-w { top: 0; bottom: 0; width: 18%; }
+  .light-hint-n { top: 0; background: linear-gradient(to bottom, rgba(var(--boss-light-rgb), 0.28), transparent); }
+  .light-hint-s { bottom: 0; background: linear-gradient(to top, rgba(var(--boss-light-rgb), 0.28), transparent); }
+  .light-hint-w { left: 0; background: linear-gradient(to right, rgba(var(--boss-light-rgb), 0.28), transparent); }
+  .light-hint-e { right: 0; background: linear-gradient(to left, rgba(var(--boss-light-rgb), 0.28), transparent); }
+
+  /* The eye in the status bar (ink on the inverse bar). --open runs 0..1
+     with the boss light's progress: a shut lid at 0, an almond opening
+     around a dark iris as it grows. It twitches once nearly open. */
+  .eye {
+    --open: 0;
+    position: relative;
+    display: inline-block;
+    align-self: center;
+    width: 26px;
+    height: 14px;
+  }
+  .eye::before {
+    /* the lid line, always there */
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 2px;
+    margin-top: -1px;
+    background: var(--ink);
+    border-radius: 2px;
+  }
+  .eye::after {
+    /* the opening: an ellipse that grows taller as --open rises */
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    transform: scaleY(var(--open));
+    transition: transform 0.35s ease;
+  }
+  .eye-iris {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 8px; height: 8px;
+    margin: -4px 0 0 -4px;
+    border-radius: 50%;
+    background: var(--ink);
+    transform: scale(var(--open));
+    transition: transform 0.35s ease;
+  }
+  .eye.eye-near { animation: eyeTwitch 2.4s steps(1, end) infinite; }
+  @keyframes eyeTwitch {
+    0%, 86%, 100% { transform: none; }
+    88% { transform: translateX(-1px); }
+    92% { transform: translateX(1px); }
+  }
 
   .actor.fog-hidden { opacity: 0 !important; }
   .actor.off-screen { opacity: 0 !important; }
@@ -949,6 +1045,8 @@
     .battle-glitch::before, .battle-glitch::after { animation: none; opacity: 0; }
     .log-line { animation: none; }
     #battleScreen.glitch-in .terminal { animation: none; }
+    .eye.eye-near { animation: none; }
+    .tile.boss-lit::after { animation: none; }
   }
 
   .feedback {
@@ -1045,6 +1143,8 @@
     <div class="stat"><span class="stat-label" data-t="stat.turn"></span><strong id="turnCount">0</strong></div>
     <div class="stat"><span class="stat-label" data-t="stat.room"></span><strong id="roomNum">0</strong>/<strong id="roomTotal">0</strong></div>
     <div class="stat stat-wide"><span class="stat-label" data-t="stat.time"></span><strong id="timer">0:00</strong></div>
+    <!-- The boss light's progress, as an eye that opens (render.js renderLightEye). -->
+    <div class="stat"><span class="eye" id="lightEye" role="img"><span class="eye-iris"></span></span></div>
     <button type="button" class="dev-skip stat-wide" id="devToggleBtn" title="Testing tools">DEV</button>
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
@@ -1162,6 +1262,11 @@
         <div class="actor" id="playerActor">@</div>
         <div class="actor boss" id="bossActor"></div>
       </div>
+      <!-- Edge glows pointing at an off-screen boss (render.js renderLightHint). -->
+      <div class="light-hint light-hint-n" id="lightHintN" aria-hidden="true"></div>
+      <div class="light-hint light-hint-s" id="lightHintS" aria-hidden="true"></div>
+      <div class="light-hint light-hint-e" id="lightHintE" aria-hidden="true"></div>
+      <div class="light-hint light-hint-w" id="lightHintW" aria-hidden="true"></div>
     </div>
 
     <div class="dpad">
@@ -1230,7 +1335,7 @@
 
   <!-- Lose screen -->
   <section class="screen lose" id="loseScreen">
-    <div class="big" data-t="end.lose.title"></div>
+    <div class="big" id="loseTitle" data-t="end.lose.title"></div>
     <p id="loseStats"></p>
     <button id="retryBtn" data-t="end.lose.retry"></button>
   </section>

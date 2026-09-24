@@ -136,10 +136,25 @@ export const ROOM_COUNT = 3;
 
 export const BOSS_HP = 3;       // hits needed to defeat the boss
 export const MINION_HP = 1;     // hits needed to defeat one minion
-export const SPAWN_INTERVAL = 7; // turns between the boss summoning a minion
-export const MAX_MINIONS = 3;    // hard cap so minions can't snowball
+// Minions are placed when a room loads (no summoning) and roam freely:
+// they wander at random and only chase once the player is within
+// MINION_CHASE_RANGE walkable steps. Index = room, like GRID_SIZES.
+export const MINIONS_PER_ROOM = [2, 3, 4];
+export const MINION_CHASE_RANGE = 4;
+export const MINION_MIN_START_DISTANCE = 6; // walkable steps from the player's start
 
-export const VISION_RADIUS = 5; // how many open-floor steps the player can see
+// The player's own light: every tile within PLAYER_LIGHT_RADIUS steps, plus
+// tiles up to PLAYER_CONE_RANGE steps inside the cone they're facing.
+export const PLAYER_LIGHT_RADIUS = 1;
+export const PLAYER_CONE_RANGE = 3;
+
+// The boss gives off light that spreads through the floor, one turn at a
+// time. It reaches LIGHT_LOSS_COVERAGE of the walkable tiles after
+// LIGHT_TURN_FACTOR x (walkable distance from the player's start to the
+// boss) turns, and the run is lost when it does. Battles don't use turns,
+// so answering never costs light — only walking and waiting do.
+export const LIGHT_LOSS_COVERAGE = 0.65;
+export const LIGHT_TURN_FACTOR = 2.5;
 
 // The camera always renders a fixed VIEWPORT_SIZE x VIEWPORT_SIZE window of
 // the room, panning to follow the player. Must stay smaller than every

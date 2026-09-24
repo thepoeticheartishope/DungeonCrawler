@@ -45,7 +45,14 @@ export const state = {
 
   boss: null,         // { row, col, hp }
   minions: [],        // [{ row, col, hp, el }]
-  turnsSinceSpawn: 0,
+  // Boss light (see light.js). Reset as each room loads.
+  bossDist: new Map(),   // walkable steps from the boss, per floor tile key
+  floorCount: 0,         // walkable tiles in the room
+  lightFullRadius: 0,    // light radius at which LIGHT_LOSS_COVERAGE is reached
+  lightTurnBudget: 1,    // turns until that radius
+  lightTurns: 0,         // turns spent in this room
+  runEnded: false,       // the light consumed the floor; no more moves this run
+  bossLitSet: new Set(), // tiles the boss light currently reaches
   currentQuestion: null, // { term, meaning } — reshuffles after every attempt
   selectedTarget: null,  // boss, or one of the minions
   battleTarget: null,    // whichever target the battle screen last set up a turn for
