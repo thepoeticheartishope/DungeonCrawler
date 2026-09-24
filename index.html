@@ -57,6 +57,7 @@
        the thing that ends the run (Timothy's call; everything else stays
        monochrome). */
     --boss-light-rgb: 120, 170, 255;
+    --boss-fog-rgb: 195, 218, 255; /* paler, for the fog over lit floor */
   }
 
   * { box-sizing: border-box; }
@@ -544,11 +545,31 @@
     box-shadow: none !important;
     filter: none !important;
   }
-  /* Floor the boss light reaches: a faint blue wash and glow from
-     within, so its spread reads clearly apart from the player's light. */
-  .tile.boss-lit:not(.wall):not(.fog-hidden) {
-    background-image: linear-gradient(rgba(var(--boss-light-rgb), 0.08), rgba(var(--boss-light-rgb), 0.08));
-    box-shadow: inset 0 0 10px rgba(var(--boss-light-rgb), 0.18);
+  /* Floor the boss light reaches reads as a pale blue fog, not tinted
+     tiles: each lit tile carries a soft round haze that spills past its
+     edges (inset: -60%), so neighbouring tiles blend into one continuous
+     mist with no hard borders. It sits above the floor (z-index 1) and
+     below every actor (z-index 2), and drifts slowly in brightness, with
+     three staggered phases so the mist doesn't pulse in lockstep. */
+  .tile { position: relative; }
+  .tile.boss-lit:not(.wall):not(.fog-hidden)::after {
+    content: '';
+    position: absolute;
+    inset: -60%;
+    z-index: 1;
+    pointer-events: none;
+    background: radial-gradient(closest-side,
+      rgba(var(--boss-fog-rgb), 0.13),
+      rgba(var(--boss-fog-rgb), 0.09) 45%,
+      rgba(var(--boss-fog-rgb), 0.03) 80%,
+      transparent);
+    animation: bossFog 7s ease-in-out infinite alternate;
+  }
+  .tile.boss-lit:nth-child(3n)::after { animation-delay: -2.3s; }
+  .tile.boss-lit:nth-child(3n+1)::after { animation-delay: -4.7s; }
+  @keyframes bossFog {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
   }
 
   /* Edge glows toward an off-screen boss. Opacity is set per edge by
@@ -1025,6 +1046,7 @@
     .log-line { animation: none; }
     #battleScreen.glitch-in .terminal { animation: none; }
     .eye.eye-near { animation: none; }
+    .tile.boss-lit::after { animation: none; }
   }
 
   .feedback {
