@@ -112,6 +112,24 @@ export const TEXT = {
   'battle.attempt': 'Transmit', // draft
   'battle.continue': 'CONTINUE',
   'battle.runeHintMark': 'The {@term.rune}’s signal is in here', // draft
+  'battle.wager': 'WAGER:',
+
+  // ---- Question modifiers: name, the tag beside a category, its tooltip ----
+  // Tags must be in the VT323 font and stay distinct from the category
+  // encounter glyphs (! % & * + ~ = ≈) and the map symbols.
+  'mod.blind': 'Blind Pick',
+  'mod.blind.tag': 'B',
+  'mod.blind.tip': 'the answers vanish after a few seconds.', // draft
+  'mod.gambler': 'Gambler',
+  'mod.gambler.tag': '$',
+  'mod.gambler.tip': 'wager up to {max} {@term.gold} before answering. Right wins it, wrong loses it.', // draft
+  'mod.flip': 'Flip',
+  'mod.flip.tag': 'F',
+  'mod.flip.tip': 'some answers are turned upside down or mirrored.', // draft
+  'log.modifier': 'MODIFIER: {name|upper}.',
+  'log.wager': 'WAGER: {n} {@term.gold}.',
+  'log.wager.won': 'WAGER WON. +{n} {@term.gold}.',
+  'log.wager.lost': 'WAGER LOST. -{n} {@term.gold}.',
   'target.none': 'Target: nothing within reach', // draft
   'target.boss': 'Target: {@term.boss}',
   'target.minion': 'Target: {@term.minion}',

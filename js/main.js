@@ -3,8 +3,10 @@ import { generateDungeonLayout } from './dungeon.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, GRID_SIZES, CHAMBER_TARGETS,
   DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS, BATTLE_CHOICE_COUNT,
-  MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE, DARK_MISS_COST, DARK_GOLD_MULTIPLIER
+  MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE, DARK_MISS_COST, DARK_GOLD_MULTIPLIER,
+  BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS
 } from './config.js';
+import { rollModifier, rollFlip, maxWager } from './modifiers.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
   buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory,
@@ -81,6 +83,8 @@ const answerForm = document.getElementById('answerForm');
 const answerInput = document.getElementById('answerInput');
 const attackBtn = document.getElementById('attackBtn');
 const mcOptionsEl = document.getElementById('mcOptions');
+const wagerRow = document.getElementById('wagerRow');
+const wagerButtons = document.getElementById('wagerButtons');
 const encounterLogEl = document.getElementById('encounterLog');
 const endPanel = document.getElementById('endPanel');
 const continueBtn = document.getElementById('continueBtn');
@@ -276,7 +280,7 @@ function renderChoices() {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'mc-option';
-    btn.innerHTML = '<span class="letter">' + letters[i] + '</span>' + escapeHtml(opt);
+    btn.innerHTML = '<span class="letter">' + letters[i] + '</span><span class="opt-text">' + escapeHtml(opt) + '</span>';
     btn.addEventListener('click', () => attemptAnswerMC(opt));
     mcOptionsEl.appendChild(btn);
   });
@@ -310,7 +314,67 @@ function typeText(el, text, targetDurationMs = 450) {
   typewriterTimers.set(el, timer);
 }
 
+// ---- Question modifiers (see modifiers.js) ----
+// A category offered in a fight may carry one; it applies to the question
+// asked once that category is picked, and is cleared by the next question.
+let blindTimer = null;
+
+function clearModifier() {
+  clearTimeout(blindTimer);
+  blindTimer = null;
+  state.wager = 0;
+  mcOptionsEl.classList.remove('mod-blind');
+  wagerRow.hidden = true;
+  wagerButtons.innerHTML = '';
+}
+
+function applyModifier(modifier) {
+  logLine(t('log.modifier', { name: t('mod.' + modifier) }), 'sys');
+  const buttons = [...mcOptionsEl.querySelectorAll('.mc-option')];
+  if (modifier === 'blind') {
+    // Longer answers stay readable for longer.
+    const words = state.currentChoices.reduce((n, opt) => n + opt.trim().split(/\s+/).length, 0);
+    const ms = Math.min(BLIND_MAX_MS, BLIND_BASE_MS + BLIND_MS_PER_WORD * words);
+    blindTimer = setTimeout(() => mcOptionsEl.classList.add('mod-blind'), ms);
+  } else if (modifier === 'flip') {
+    const { slots, mode } = rollFlip(buttons.length);
+    buttons.forEach((b, i) => { if (slots.has(i)) b.querySelector('.opt-text').classList.add('flip-' + mode); });
+  } else if (modifier === 'gambler') {
+    // Answers stay locked until a wager of 1..maxWager() is placed.
+    buttons.forEach(b => { b.disabled = true; });
+    wagerButtons.innerHTML = '';
+    for (let n = 1; n <= maxWager(); n++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'wager-option';
+      btn.textContent = String(n);
+      btn.addEventListener('click', () => placeWager(n));
+      wagerButtons.appendChild(btn);
+    }
+    wagerRow.hidden = false;
+  }
+}
+
+function placeWager(n) {
+  if (state.wager || wagerRow.hidden) return;
+  state.wager = n;
+  wagerRow.hidden = true;
+  logLine(t('log.wager', { n }), 'sys');
+  mcOptionsEl.querySelectorAll('.mc-option').forEach(b => { b.disabled = false; });
+}
+
+// Settles a Gambler wager once the answer is in: right wins it, wrong loses it.
+function settleWager(isCorrect) {
+  const n = state.wager;
+  if (!n) return;
+  state.coinsTotal = Math.max(0, state.coinsTotal + (isCorrect ? n : -n));
+  coinsTotalEl.textContent = state.coinsTotal;
+  logLine(t(isCorrect ? 'log.wager.won' : 'log.wager.lost', { n }), isCorrect ? 'bright' : 'alert');
+  state.wager = 0;
+}
+
 function setQuestion(q) {
+  clearModifier();
   state.currentQuestion = q;
   typeText(enemyName, q.term);
   answerInput.value = '';
@@ -471,7 +535,11 @@ function renderCategoryChoices() {
     btn.className = 'choice-option';
     const hinted = state.runeHint && choice.pool.includes(state.runeHint);
     btn.innerHTML = '<span class="letter">[' + (i + 1) + ']</span><span class="choice-label"></span>' +
-      (hinted ? '<span class="choice-hint" title="' + escapeHtml(t('battle.runeHintMark')) + '">◊</span>' : '');
+      (hinted ? '<span class="choice-hint" title="' + escapeHtml(t('battle.runeHintMark')) + '">◊</span>' : '') +
+      (choice.modifier
+        ? '<span class="mod-tag" title="' + escapeHtml(t('mod.' + choice.modifier) + ': ' + t('mod.' + choice.modifier + '.tip', { max: maxWager() })) + '">' +
+          escapeHtml(t('mod.' + choice.modifier + '.tag')) + '</span>'
+        : '');
     decodeText(btn.querySelector('.choice-label'), choice.label);
     btn.addEventListener('click', () => chooseCategory(i));
     choiceListEl.appendChild(btn);
@@ -489,6 +557,7 @@ function startBattleTurn() {
   state.categoryChoices = isFight
     ? buildCategoryChoices(poolFor(target), BATTLE_CHOICE_COUNT, state.runeHint)
     : [];
+  state.categoryChoices.forEach(choice => { choice.modifier = rollModifier(target); });
 
   if (state.categoryChoices.length >= 2) {
     state.battlePhase = 'choosing';
@@ -526,6 +595,7 @@ function chooseCategory(i) {
   logLine(t('log.vector', { n: i + 1, label: choice.label }), 'sys');
   state.battlePhase = 'answering';
   setQuestion(q);
+  if (choice.modifier) applyModifier(choice.modifier);
   showBattlePhase();
   if (!state.mcMode) answerInput.focus();
 }
@@ -996,6 +1066,7 @@ function applyAnswerResult(isCorrect, hadExtraSpace, given) {
       if (q.source) logLine(t('log.source', { source: q.source }), 'sys');
     }
   }
+  settleWager(isCorrect);
   flashBattleResult(isCorrect);
 
   if (state.hearts <= 0) {
@@ -1196,6 +1267,7 @@ let autoWinTimer = null;
 function autoWinStep() {
   if (!battleScreen.classList.contains('show') || state.turnLocked || state.runEnded) return;
   if (state.battlePhase === 'choosing') chooseCategory(0);
+  else if (!wagerRow.hidden) placeWager(1);
   else if (state.battlePhase === 'answering' && state.selectedTarget) attemptAnswerMC(state.currentQuestion.meaning);
   else if (state.battlePhase === 'ended') leaveEncounter();
 }
