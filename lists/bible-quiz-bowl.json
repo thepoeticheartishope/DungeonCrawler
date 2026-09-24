@@ -1926,11 +1926,17 @@
     "answerType": "adjective"
   },
   {
-    "term": "What was Cedron (Kidron), which Jesus crossed with his disciples before his arrest?",
+    "term": "What was Cedron (Kidron)?",
     "meaning": "Brook",
     "category": "NT",
     "difficulty": "hard",
     "source": "John 18:1",
+    "options": [
+      "Brook",
+      "Mountain",
+      "City",
+      "Well"
+    ],
     "answerType": "location"
   },
   {
