@@ -4435,5 +4435,190 @@
     "source": "1 Cor 11:14",
     "answerType": "object",
     "draft": true
+  },
+  {
+    "term": "In the hierarchy of the Roman Catholic Church, which office is immediately below that of the Pope?",
+    "meaning": "Cardinal",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "theology"
+  },
+  {
+    "term": "How many generations were there between Abraham and Joseph, the ruler of Egypt?",
+    "meaning": "3",
+    "category": "N",
+    "difficulty": "hard",
+    "answerType": "number"
+  },
+  {
+    "term": "Which book in the OT prophesies the soldiers gambling for Jesus' clothes during His crucifixion?",
+    "meaning": "Psalms",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Ps 22:18",
+    "answerType": "book"
+  },
+  {
+    "term": "What is a millennialist?",
+    "meaning": "A person who believes in the literal physical future reign of Christ on earth for 1000 years",
+    "category": "P",
+    "difficulty": "hard",
+    "answerType": "theology",
+    "draft": true
+  },
+  {
+    "term": "How many times did Jacob bow to Esau when they met after many years?",
+    "meaning": "7",
+    "category": "LNS",
+    "difficulty": "medium",
+    "source": "Gen 33:3",
+    "answerType": "number"
+  },
+  {
+    "term": "What was the surname of the apostle Peter?",
+    "meaning": "Barjona",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "Matt 16:17",
+    "answerType": "name"
+  },
+  {
+    "term": "Which book in the Bible immediately precedes Ephesians?",
+    "meaning": "Galatians",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "book"
+  },
+  {
+    "term": "On what occasion was God given a sacrifice of 22,000 oxen and 120,000 sheep?",
+    "meaning": "The dedication of the completed temple",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "1 Kings 8:63",
+    "answerType": "object",
+    "draft": true
+  },
+  {
+    "term": "Whom did the Lord say would eat their sons and daughters which He had given them, a prophecy fulfilled over 1000 years later?",
+    "meaning": "Israelites",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Deut 28:53",
+    "answerType": "name"
+  },
+  {
+    "term": "Which verse says: \"The fear of the Lord is the beginning of knowledge: but fools despise wisdom and instruction.\"?",
+    "meaning": "Proverbs 1:7",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Prov 1:7",
+    "answerType": "verse"
+  },
+  {
+    "term": "According to church tradition, which of the original twelve disciples was martyred in Egypt?",
+    "meaning": "James the Younger",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "name",
+    "draft": true
+  },
+  {
+    "term": "What is represented by the 1290 days in Daniel 12?",
+    "meaning": "The days between the abolishing of the daily sacrifice and the abomination of desolation",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Dan 12:11",
+    "answerType": "theology",
+    "draft": true
+  },
+  {
+    "term": "Who interpreted Nebuchadnezzar's dream of a huge statue representing four kingdoms?",
+    "meaning": "Daniel",
+    "category": "P",
+    "difficulty": "easy",
+    "source": "Dan 2",
+    "answerType": "name"
+  },
+  {
+    "term": "Name the two books in the Bible that begin with the letter \"D\".",
+    "meaning": "Daniel and Deuteronomy",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "book",
+    "draft": true
+  },
+  {
+    "term": "What three books of the Bible are most often attributed to Solomon?",
+    "meaning": "Proverbs, Ecclesiastes and Song of Solomon",
+    "category": "HG",
+    "difficulty": "medium",
+    "source": "Prov 1:1; Eccl 1:1; Song 1:1",
+    "answerType": "book",
+    "draft": true
+  },
+  {
+    "term": "What two books in the Bible say \"The fear of the Lord is the beginning of knowledge (wisdom)\"?",
+    "meaning": "Psalms and Proverbs",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Ps 111:10; Prov 1:7",
+    "answerType": "book",
+    "draft": true
+  },
+  {
+    "term": "Name the great-grandmother of David.",
+    "meaning": "Ruth",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Matt 1:5-6",
+    "answerType": "name"
+  },
+  {
+    "term": "In which book does Paul discuss speaking in tongues?",
+    "meaning": "1 Corinthians",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "1 Cor 14:4-6",
+    "answerType": "book"
+  },
+  {
+    "term": "Name the five books of the Pentateuch.",
+    "meaning": "Genesis, Exodus, Leviticus, Numbers and Deuteronomy",
+    "category": "HG",
+    "difficulty": "easy",
+    "answerType": "book",
+    "draft": true
+  },
+  {
+    "term": "Who was the husband of Deborah?",
+    "meaning": "Lapidoth",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "Judges 4:4",
+    "answerType": "name"
+  },
+  {
+    "term": "Who will trample the holy city for 42 months in Revelation?",
+    "meaning": "Gentiles",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Rev 11:2",
+    "answerType": "name"
+  },
+  {
+    "term": "Which book of the Bible contains the statement: \"As for me and my house, we will serve the Lord\"?",
+    "meaning": "Joshua",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Josh 24:15",
+    "answerType": "book"
+  },
+  {
+    "term": "How many generations were there from Boaz to Jesse?",
+    "meaning": "2",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Matt 1:5-6",
+    "answerType": "number"
   }
 ]
