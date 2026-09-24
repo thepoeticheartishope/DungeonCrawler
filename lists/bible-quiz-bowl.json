@@ -1684,12 +1684,11 @@
   },
   {
     "term": "What is the true topic of the proverb: \"Drink waters out of thine own cistern, and running waters out of thine own well.\"?",
-    "meaning": "Sex (Marital faithfulness)",
+    "meaning": "Faithfulness",
     "category": "W",
     "difficulty": "hard",
     "source": "Prov 5:15",
-    "answerType": "object",
-    "draft": true
+    "answerType": "theology"
   },
   {
     "term": "What did Rebekah and Tamar have in common in respect to childbirth?",
