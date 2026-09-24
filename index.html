@@ -504,7 +504,8 @@
   .dev-panel {
     display: none;
     flex-basis: 100%;
-    gap: 6px;
+    flex-wrap: wrap;
+    gap: 0 6px;
   }
   .dev-panel.show { display: flex; }
 
@@ -1149,6 +1150,7 @@
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
+      <button class="dev-skip" id="devAutoWinBtn" type="button" aria-pressed="false" title="Testing only: every encounter plays itself out with correct answers">Auto-win: OFF (dev)</button>
     </div>
   </div>
 
