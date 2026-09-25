@@ -166,5 +166,41 @@
   "What action on the part of the disciples prompted Jesus to say: \"For the Son of man is Lord even of the sabbath day.\"?": {
     "fact": true,
     "note": "KJV \"corn\" / ASV, WEB \"grain\": same thing (Matt 12:1)"
+  },
+  "What kind of ointment or perfume did Mary use to anoint Jesus?": {
+    "fact": true,
+    "note": "KJV \"spikenard\" / ASV, WEB \"nard\": same ointment"
+  },
+  "Proverbs 3:11 tells us not to despise what from the Lord?": {
+    "fact": false,
+    "note": "KJV, ASV \"chastening\" / WEB \"discipline\" (Prov 3:11)"
+  },
+  "How will the beast and the false prophet be destroyed along with those who worship the beast?": {
+    "fact": true,
+    "note": "WEB \"thrown\" alive into the lake of fire: same event"
+  },
+  "How many books of the Bible record what is now known as the Lord's prayer?": {
+    "fact": true,
+    "note": "Matthew and Luke in every translation"
+  },
+  "What sin was Jesus forgiving when he said, \"Go, and sin no more.\"?": {
+    "fact": true,
+    "note": "Same account; John 7:53-8:11 is bracketed in some translations but present in KJV, ASV, WEB"
+  },
+  "Where were the disciples when they said: \"Lord, save us: we perish.\"?": {
+    "fact": true,
+    "note": "KJV \"ship\" / ASV, WEB \"boat\": answer names both"
+  },
+  "What does Proverbs 21:9 say that living on the corner of a housetop is better than?": {
+    "fact": false,
+    "note": "KJV \"brawling woman\" / ASV \"contentious woman\", WEB \"contentious wife\" (Prov 21:9)"
+  },
+  "What curse did Elisha cause to befall the 42 youths who mocked his bald head?": {
+    "fact": true,
+    "note": "ASV \"she-bears\": same event"
+  },
+  "What single statement did Jesus make to the thief on the cross next to him?": {
+    "fact": true,
+    "note": "ASV \"To-day\", WEB \"today\": same promise"
   }
 }

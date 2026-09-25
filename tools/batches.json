@@ -80,7 +80,7 @@
       "back": "4701bfb80a65d65f0193c6f064201fa0"
     },
     "set": "lists/bible-quiz-bowl.json",
-    "added": 84,
+    "added": 82,
     "pr": 19
   },
   {
@@ -154,5 +154,17 @@
     "set": "lists/bible-quiz-bowl.json",
     "added": 79,
     "pr": 49
+  },
+  {
+    "date": "2026-09-25",
+    "front": "9-23-26/SurelyTheLord (2).jpg",
+    "back": "9-23-26/SurelyTheLord (1).jpg",
+    "md5": {
+      "front": "f6f67aa9b28cc29cbbf40df83ff8a1a7",
+      "back": "b940d874a889f63c68a92d01be8c3f2b"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 82,
+    "pr": 53
   }
 ]
