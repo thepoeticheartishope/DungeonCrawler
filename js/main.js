@@ -9,7 +9,7 @@ import {
 import { rollModifier, rollCategoryModifiers, rollFlip, maxWager } from './modifiers.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
-  buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory,
+  buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory, fightChoosable, fightChoiceLabel,
   resolveImageSrc, buildCategoryChoices, categoryLabel
 } from './quiz.js';
 import {
@@ -589,7 +589,7 @@ function startBattleTurn() {
   const target = state.selectedTarget;
   const isFight = target.kind === 'boss' || target.kind === 'minion';
   state.categoryChoices = isFight
-    ? buildCategoryChoices(poolFor(target), BATTLE_CHOICE_COUNT, state.runeHint)
+    ? buildCategoryChoices(poolFor(target), BATTLE_CHOICE_COUNT, state.runeHint, state.lastChoiceType)
     : [];
   const modifiers = rollCategoryModifiers(target, state.categoryChoices.length);
   state.categoryChoices.forEach((choice, i) => { choice.modifier = modifiers[i]; });
@@ -634,6 +634,7 @@ function chooseCategory(i) {
     q = pickQuestion(state.currentQuestion, choice.pool);
   }
   logLine(t('log.vector', { n: i + 1, label: choice.label }), 'sys');
+  state.lastChoiceType = choice.choiceType || null;
   state.battlePhase = 'answering';
   setQuestion(q);
   if (choice.modifier) applyModifier(choice.modifier);
@@ -840,6 +841,7 @@ function loadRoom() {
   state.encounters.forEach(e => e.el.remove());
   state.encounters = [];
   state.runeHint = null;
+  state.lastChoiceType = null;
 
   state.playerRow = state.PLAYER_START.row;
   state.playerCol = state.PLAYER_START.col;
@@ -1196,10 +1198,11 @@ function resolveOneShot(target, isCorrect, q) {
     // The hinted question stays in reserve until it's asked: the next
     // fight always offers its category (marked ◊), so the hint can't be
     // spent on a question the player never chooses.
-    state.runeHint = pickQuestion(q);
+    state.runeHint = pickQuestion(q, fightChoosable(state.activeData, BATTLE_CHOICE_COUNT));
     const hint = buildHint(state.runeHint);
-    logLine(state.runeHint.category
-      ? t('log.rune.decoded', { category: categoryLabel(state.runeHint.category), hint })
+    const choiceLabel = fightChoiceLabel(state.runeHint, state.activeData, BATTLE_CHOICE_COUNT);
+    logLine(choiceLabel
+      ? t('log.rune.decoded', { category: choiceLabel, hint })
       : t('log.rune.decodedUncategorized', { hint }), 'bright');
   }
   endEncounter();
