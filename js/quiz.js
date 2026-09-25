@@ -2,7 +2,7 @@
 // selection, and multiple-choice option building. No DOM access here.
 
 import { state } from './state.js';
-import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS } from './config.js';
+import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE } from './config.js';
 import { t } from './text.js';
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
@@ -116,31 +116,66 @@ export function categoryLabel(category) {
   return CATEGORY_LABELS[category] || category;
 }
 
-// The battle screen's category choices for one turn: up to `count` groups
-// of `pool`, each { label, category, pool }. Groups by category when the
-// pool has at least `count` of them; otherwise (most bundled sets only have
-// two) by category + difficulty, taking one group per category first so
-// the choices stay as varied as possible. If `mustInclude` is in the pool,
-// its group is always one of the choices (a rune's hint stays usable).
-// Returns fewer than 2 choices when the pool can't offer a real choice
-// (e.g. a pasted list with no categories) — the caller skips the choice
-// step then.
-export function buildCategoryChoices(pool, count, mustInclude) {
-  let groups = groupBy(pool, d => d.category);
-  let label = k => categoryLabel(k);
-  if (groups.size < count) {
-    const pairs = groupBy(pool, d => d.category && d.category + '\u0000' + (d.difficulty || 'medium'));
-    if (pairs.size > groups.size) {
-      groups = pairs;
-      label = k => {
-        const [category, difficulty] = k.split('\u0000');
-        return categoryLabel(category) + ' · ' + difficulty;
-      };
+// A pool's category groups, each split further by answer type wherever a
+// type has at least TYPE_CHOICE_MIN questions in that category ("OT ·
+// Names"); the category's remaining questions stay together under its
+// plain label ("OT"), so no question is lost. A category isn't split at
+// all when one type already makes up TYPE_SPLIT_DOMINANCE of it (the
+// "Names" cards are almost all names — "Names · Names" says nothing), and
+// if the leftover group would be smaller than TYPE_CHOICE_MIN, the
+// smallest type groups are folded back into it, so no choice is so thin it
+// keeps repeating. Types without a type.* line in text.js, or whose label
+// matches the category's, aren't split out.
+function categoryTypeGroups(pool) {
+  const out = [];
+  groupBy(pool, d => d.category).forEach((items, category) => {
+    const catLabel = categoryLabel(category);
+    const byType = groupBy(items, d => d.answerType);
+    const largest = Math.max(0, ...[...byType.values()].map(g => g.length));
+    const splittable = largest < items.length * TYPE_SPLIT_DOMINANCE;
+    let rest = items.filter(d => !d.answerType);
+    const typedGroups = [];
+    byType.forEach((typed, type) => {
+      const typeLabel = t('type.' + type);
+      if (splittable && typed.length >= TYPE_CHOICE_MIN && typeLabel !== 'type.' + type && typeLabel !== catLabel) {
+        typedGroups.push({ label: catLabel + ' · ' + typeLabel, category, pool: typed });
+      } else {
+        rest.push(...typed);
+      }
+    });
+    typedGroups.sort((a, b) => a.pool.length - b.pool.length);
+    while (rest.length && rest.length < TYPE_CHOICE_MIN && typedGroups.length) {
+      rest = rest.concat(typedGroups.shift().pool);
     }
+    out.push(...typedGroups);
+    if (rest.length) out.push({ label: catLabel, category, pool: rest });
+  });
+  return out;
+}
+
+// The battle screen's category choices for one turn: up to `count` groups
+// of `pool`, each { label, category, pool }. When the pool has at least
+// `count` categories, each category is split by answer type where there
+// are enough questions (categoryTypeGroups); otherwise (small sets with
+// only a couple of categories) it's grouped by category + difficulty.
+// One group per category is taken first so the choices stay as varied as
+// possible. If `mustInclude` is in the pool, its group is always one of
+// the choices (a rune's hint stays usable). Returns fewer than 2 choices
+// when the pool can't offer a real choice (e.g. a pasted list with no
+// categories) — the caller skips the choice step then.
+export function buildCategoryChoices(pool, count, mustInclude) {
+  let groups;
+  if (groupBy(pool, d => d.category).size >= count) {
+    groups = categoryTypeGroups(pool);
+  } else {
+    const pairs = groupBy(pool, d => d.category && d.category + '\u0000' + (d.difficulty || 'medium'));
+    groups = Array.from(pairs.entries()).map(([k, items]) => {
+      const [category, difficulty] = k.split('\u0000');
+      return { label: categoryLabel(category) + ' · ' + difficulty, category, pool: items };
+    });
   }
 
-  const all = shuffle(Array.from(groups.entries()))
-    .map(([k, items]) => ({ label: label(k), category: items[0].category, pool: items }));
+  const all = shuffle(groups);
   const picked = [];
   const required = mustInclude && all.find(g => g.pool.includes(mustInclude));
   if (required) picked.push(required);
