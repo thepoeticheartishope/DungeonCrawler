@@ -140,7 +140,7 @@
       "back": "fed14eafc9aaa863d988c6ab88293ca1"
     },
     "set": "lists/bible-quiz-bowl.json",
-    "added": 83,
+    "added": 81,
     "pr": 45
   },
   {
@@ -176,7 +176,19 @@
       "back": "b98dfc44be88afb465e87e1c039da67d"
     },
     "set": "lists/bible-quiz-bowl.json",
-    "added": 83,
+    "added": 81,
     "pr": 54
+  },
+  {
+    "date": "2026-09-25",
+    "front": "9-23-26/FirstRecorded (2).jpg",
+    "back": "9-23-26/FirstRecorded (1).jpg",
+    "md5": {
+      "front": "1d8a16e19df8a9889f6689fa1987d519",
+      "back": "f6eedfcada71e38f2d627be8ca418c4c"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 81,
+    "pr": null
   }
 ]
