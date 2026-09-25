@@ -1,5 +1,5 @@
-"""Offline rules every bundled question set must pass. Runs on every PR
-(.github/workflows/validate.yml) and exits non-zero on any problem.
+"""Offline rules every bundled question set must pass. Run it before every PR
+that touches a question set; it exits non-zero on any problem.
 
     python3 tools/validate.py
 """
