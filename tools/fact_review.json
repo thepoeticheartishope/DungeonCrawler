@@ -222,5 +222,41 @@
   "Complete the following verse: \"Behold, I stand at the door, and knock: ...\"": {
     "fact": false,
     "note": "KJV \"if any man hear... sup with him\" / WEB \"if anyone hears... dine with him\" (Rev 3:20)"
+  },
+  "Recite the sixth Commandment.": {
+    "fact": false,
+    "note": "KJV \"Thou shalt not kill\" / WEB \"You shall not murder\" (Ex 20:13)"
+  },
+  "Who lost to Matthias when lots were cast to replace the apostle Judas Iscariot?": {
+    "fact": true,
+    "note": "ASV, WEB \"Barsabbas\": spelling"
+  },
+  "Complete the following: \"Delight thyself also in the Lord; and he shall...\"": {
+    "fact": true,
+    "note": "ASV, WEB \"thy\"/\"your heart\": same promise"
+  },
+  "Quote the last line of the verse which begins: \"In my Father's house are many mansions...\"": {
+    "fact": true,
+    "note": "WEB \"I am going to prepare a place for you\": same words in sense"
+  },
+  "What is the significance of the words: \"Mene, Mene, Tekel, Upharsin\"?": {
+    "fact": true,
+    "note": "ASV, WEB \"inscribed\": same writing on the wall"
+  },
+  "In Psalm 121, what will the author lift up his eyes unto?": {
+    "fact": false,
+    "note": "KJV, WEB \"hills\" / ASV \"mountains\" (Ps 121:1)"
+  },
+  "What did John say that God would do to anyone who adds to the things prophesied in Revelation?": {
+    "fact": true,
+    "note": "WEB \"add to him the plagues\": same"
+  },
+  "What species of animal killed 42 children who ridiculed the bald head of the prophet Elisha?": {
+    "fact": true,
+    "note": "ASV \"she-bears\": same animal"
+  },
+  "Complete the following verse from Proverbs: \"A man that hath friends must shew himself friendly: and there is a friend that...\"": {
+    "fact": true,
+    "note": "WEB \"sticks closer than a brother\": archaic verb form"
   }
 }
