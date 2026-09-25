@@ -10,6 +10,10 @@
 // choice distractor selection (see quiz.js buildChoices) so wrong answers
 // share the same rough "shape" as the correct one (a name isn't offered
 // as a wrong answer next to a date, etc).
+// Bible sets also carry "fact": true when the answer holds in every Bible
+// translation, or false (with a "factNote" saying why) when it depends on
+// one translation's wording. The game doesn't use it yet; DATA.SYS shows
+// it, and tools/fact_check.py sets it (see tools/README.md).
 export const TYPING_SAMPLE_DATA = [
   { term: "CPU", meaning: "Central Processing Unit", category: "Hardware", difficulty: "easy", answerType: "term" },
   { term: "RAM", meaning: "Random Access Memory", category: "Hardware", difficulty: "easy", answerType: "term" },

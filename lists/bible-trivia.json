@@ -5,7 +5,8 @@
     "category": "Old Testament",
     "difficulty": "easy",
     "source": "Genesis 6:14-22",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who led the Israelites out of Egypt?",
@@ -13,7 +14,8 @@
     "category": "Old Testament",
     "difficulty": "easy",
     "source": "Exodus 12:31-42",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was swallowed by a great fish?",
@@ -21,7 +23,8 @@
     "category": "Old Testament",
     "difficulty": "easy",
     "source": "Jonah 1:17",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was the first man God created?",
@@ -29,7 +32,8 @@
     "category": "Old Testament",
     "difficulty": "easy",
     "source": "Genesis 2:7",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was the first woman God created?",
@@ -37,7 +41,8 @@
     "category": "Old Testament",
     "difficulty": "easy",
     "source": "Genesis 2:22",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who defeated the giant Goliath with a sling and stone?",
@@ -45,7 +50,8 @@
     "category": "Old Testament",
     "difficulty": "easy",
     "source": "1 Samuel 17:48-51",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who killed his brother Abel?",
@@ -53,7 +59,8 @@
     "category": "Old Testament",
     "difficulty": "easy",
     "source": "Genesis 4:8",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was Jesus' mother?",
@@ -61,7 +68,8 @@
     "category": "New Testament",
     "difficulty": "easy",
     "source": "Luke 1:26-31",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many disciples did Jesus choose?",
@@ -69,7 +77,8 @@
     "category": "New Testament",
     "difficulty": "easy",
     "source": "Luke 6:12-16",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "In what town was Jesus born?",
@@ -77,7 +86,8 @@
     "category": "New Testament",
     "difficulty": "easy",
     "source": "Luke 2:4-7",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Whose hair was the source of his great strength?",
@@ -85,7 +95,8 @@
     "category": "Old Testament",
     "difficulty": "medium",
     "source": "Judges 16:17",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was thrown into a lions' den for praying?",
@@ -93,7 +104,8 @@
     "category": "Old Testament",
     "difficulty": "medium",
     "source": "Daniel 6:16",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was sold into slavery in Egypt by his own brothers?",
@@ -101,7 +113,8 @@
     "category": "Old Testament",
     "difficulty": "medium",
     "source": "Genesis 37:28",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was known as the wisest king of Israel?",
@@ -109,7 +122,8 @@
     "category": "Old Testament",
     "difficulty": "medium",
     "source": "1 Kings 4:29-34",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was the father of Isaac?",
@@ -117,7 +131,8 @@
     "category": "Old Testament",
     "difficulty": "medium",
     "source": "Genesis 21:2-3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What sea did Moses part to let the Israelites cross?",
@@ -126,7 +141,8 @@
     "difficulty": "medium",
     "source": "Exodus 14:21-22",
     "answerType": "location",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who became queen of Persia and saved her people from destruction?",
@@ -134,7 +150,8 @@
     "category": "Old Testament",
     "difficulty": "medium",
     "source": "Esther 7:3-4",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who led the Israelites into the Promised Land after Moses died?",
@@ -142,7 +159,8 @@
     "category": "Old Testament",
     "difficulty": "medium",
     "source": "Joshua 1:1-2",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who baptized Jesus in the Jordan River?",
@@ -151,7 +169,8 @@
     "difficulty": "medium",
     "source": "Matthew 3:13-17",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who denied knowing Jesus three times?",
@@ -159,7 +178,8 @@
     "category": "New Testament",
     "difficulty": "medium",
     "source": "Luke 22:54-62",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was turned into a pillar of salt for looking back at Sodom?",
@@ -168,7 +188,8 @@
     "difficulty": "hard",
     "source": "Genesis 19:26",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who wrestled with an angel and was renamed Israel?",
@@ -176,7 +197,8 @@
     "category": "Old Testament",
     "difficulty": "hard",
     "source": "Genesis 32:24-28",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who interpreted Pharaoh's dream of seven fat cows and seven lean cows?",
@@ -184,7 +206,8 @@
     "category": "Old Testament",
     "difficulty": "hard",
     "source": "Genesis 41:25-32",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was fed by ravens while hiding by the brook Cherith?",
@@ -192,7 +215,8 @@
     "category": "Old Testament",
     "difficulty": "hard",
     "source": "1 Kings 17:2-6",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many days and nights did it rain during the flood?",
@@ -200,7 +224,8 @@
     "category": "Old Testament",
     "difficulty": "hard",
     "source": "Genesis 7:12",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who betrayed Jesus for thirty pieces of silver?",
@@ -209,7 +234,8 @@
     "difficulty": "hard",
     "source": "Matthew 26:14-15",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In what town did Jesus turn water into wine at a wedding?",
@@ -217,7 +243,8 @@
     "category": "New Testament",
     "difficulty": "hard",
     "source": "John 2:1-11",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Who was the first Christian martyr, stoned to death?",
@@ -225,7 +252,8 @@
     "category": "New Testament",
     "difficulty": "hard",
     "source": "Acts 7:58-60",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "On the road to which city was Paul converted to Christianity?",
@@ -233,7 +261,8 @@
     "category": "New Testament",
     "difficulty": "hard",
     "source": "Acts 9:3-9",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Who wrote most of the letters (epistles) in the New Testament?",
@@ -241,6 +270,7 @@
     "category": "New Testament",
     "difficulty": "hard",
     "source": "Traditionally credited with 13 of the New Testament's 27 books, from Romans to Philemon.",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   }
 ]
