@@ -142,5 +142,29 @@
   "Which country's queens had the dynastic name \"Candace\"?": {
     "fact": true,
     "note": "cites Acts 8:27-39 (8:37 is disputed), but Candace, queen of the Ethiopians, is in 8:27 in every translation"
+  },
+  "Complete the following verse: \"Man shall not live by bread alone, but...\"": {
+    "fact": false,
+    "note": "KJV \"proceedeth out of\" / WEB \"proceeds out of\" (Matt 4:4)"
+  },
+  "Complete the following verse: \"For what is a man profited, if he shall gain the whole world, and...\"": {
+    "fact": false,
+    "note": "KJV \"lose his own soul\" / ASV \"forfeit his life\", WEB \"forfeits his life\" (Matt 16:26)"
+  },
+  "According to Proverbs 15:1, what turneth away wrath?": {
+    "fact": false,
+    "note": "KJV, ASV \"soft answer\" / WEB \"gentle answer\" (Prov 15:1)"
+  },
+  "How did Jesus identify the disciple who would betray him?": {
+    "fact": true,
+    "note": "KJV \"sop\" / WEB \"piece of bread\": same thing (John 13:26)"
+  },
+  "What were Barabbas' three crimes?": {
+    "fact": true,
+    "note": "KJV \"sedition\" / ASV, WEB \"insurrection\": same crime (Luke 23:19)"
+  },
+  "What action on the part of the disciples prompted Jesus to say: \"For the Son of man is Lord even of the sabbath day.\"?": {
+    "fact": true,
+    "note": "KJV \"corn\" / ASV, WEB \"grain\": same thing (Matt 12:1)"
   }
 }

@@ -5963,5 +5963,735 @@
     "source": "1 Cor 12:12",
     "answerType": "book",
     "fact": true
+  },
+  {
+    "term": "What solution did Solomon propose to the two women who claimed the same baby?",
+    "meaning": "Divide the baby in two with a sword",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "1 Kings 3:24-25",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What archaeological find, kept in the British Museum, depicts the exploits of Jehu?",
+    "meaning": "The Black Obelisk",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What prophet put an end to Baal-worship with God's help?",
+    "meaning": "Elijah",
+    "category": "P",
+    "difficulty": "easy",
+    "source": "1 Kings 18",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Who were the only brothers of Cain named in the Bible?",
+    "meaning": "Abel and Seth",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Gen 4:2-25",
+    "answerType": "name",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible immediately precedes Galatians?",
+    "meaning": "2 Corinthians",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "What kind of a tree was Nathanael under when Jesus saw him?",
+    "meaning": "Fig",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "John 1:48",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "Complete the following verse: \"Man shall not live by bread alone, but...\"",
+    "meaning": "By every word that proceedeth out of the mouth of God",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Matt 4:4",
+    "answerType": "theology",
+    "draft": true,
+    "fact": false,
+    "factNote": "KJV \"proceedeth out of\" / WEB \"proceeds out of\" (Matt 4:4)"
+  },
+  {
+    "term": "What project was begun in Genesis 11?",
+    "meaning": "The Tower of Babel",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Gen 11:4",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who was the father-in-law of Caiaphas?",
+    "meaning": "Annas",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "John 18:13",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "How many consecutive books in the NT begin with \"T\"?",
+    "meaning": "5",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "What three first names are common to more than one of the twelve disciples?",
+    "meaning": "Simon, Judas and James",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "Luke 6:14-16",
+    "answerType": "name",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "According to Proverbs 15:27, whom does a greedy man trouble?",
+    "meaning": "His own house",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Prov 15:27",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What musical instrument did David play?",
+    "meaning": "Harp",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "1 Sam 16:23",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "What does \"Golgotha\" mean in English?",
+    "meaning": "The place of a skull",
+    "category": "HG",
+    "difficulty": "medium",
+    "source": "Matt 27:33",
+    "answerType": "location",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who walked naked and barefoot for three years as a prophetic sign that the same would happen to Egyptians taken prisoner by Assyria?",
+    "meaning": "Isaiah",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Isa 20:2-4",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What was Daniel's Babylonian name?",
+    "meaning": "Belteshazzar",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Dan 1:7",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible has the longest word in it?",
+    "meaning": "Isaiah",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "Isa 8:3",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "To what race did the woman who met Jesus at the well belong?",
+    "meaning": "Samaritans",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "John 4:9",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible tells us: \"Kiss the Son, lest he be angry, and ye perish from the way, when his wrath is kindled but a little. Blessed are all they that put their trust in him.\"?",
+    "meaning": "Psalms",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Ps 2:12",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "What object did Samuel place at the site he called Ebenezer?",
+    "meaning": "Stone",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "1 Sam 7:12",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "In what city were the disciples on the Day of Pentecost?",
+    "meaning": "Jerusalem",
+    "category": "HG",
+    "difficulty": "easy",
+    "source": "Acts 2:5",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "Which plague is contained in the first vial (bowl) in Revelation?",
+    "meaning": "Sores",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Rev 16:2",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "Who wanted to marry Abishag?",
+    "meaning": "Adonijah",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "1 Kings 2:17",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible follows Esther?",
+    "meaning": "Job",
+    "category": "LNS",
+    "difficulty": "easy",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "To whom did Jesus say the following: \"Suffer it to be so now: for thus it becometh us to fulfil all righteousness.\"?",
+    "meaning": "John the Baptist",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Matt 3:15",
+    "answerType": "name",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "For what request did Solomon have Adonijah killed?",
+    "meaning": "For asking to marry Abishag",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "1 Kings 2:17-25",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who was most of Ecclesiastes written either by or about?",
+    "meaning": "Solomon",
+    "category": "HG",
+    "difficulty": "easy",
+    "source": "Eccl 1:1",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "To what OT prophet did Jesus refer in Matthew 24?",
+    "meaning": "Daniel",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Matt 24:15",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Whom did Esther set over the house of Haman?",
+    "meaning": "Mordecai",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Est 8:2",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "How many daughters did Lot have?",
+    "meaning": "2",
+    "category": "LNS",
+    "difficulty": "easy",
+    "source": "Gen 19:15",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "How did Jesus identify the disciple who would betray him?",
+    "meaning": "He gave him a sop after he had dipped it",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "John 13:26",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "According to Proverbs 15:1, what turneth away wrath?",
+    "meaning": "A soft answer",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Prov 15:1",
+    "answerType": "theology",
+    "draft": true,
+    "fact": false,
+    "factNote": "KJV, ASV \"soft answer\" / WEB \"gentle answer\" (Prov 15:1)"
+  },
+  {
+    "term": "From whom was David fleeing when he wrote the third Psalm?",
+    "meaning": "Absalom",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "Ps 3:1",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which kingdom denied Moses and the Israelites the right to pass through its territory?",
+    "meaning": "Edom",
+    "category": "HG",
+    "difficulty": "medium",
+    "source": "Num 20:14-21",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible contains the following verse of prophecy about Jesus: \"He is despised and rejected of men; a man of sorrows\"?",
+    "meaning": "Isaiah",
+    "category": "P",
+    "difficulty": "easy",
+    "source": "Isa 53:3",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Name the son of Abraham and Hagar.",
+    "meaning": "Ishmael",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Gen 16:15",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "On which day of Creation did God make light and divide it from the darkness?",
+    "meaning": "1",
+    "category": "LNS",
+    "difficulty": "easy",
+    "source": "Gen 1:3-5",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "What relative of Peter did Jesus heal from a fever?",
+    "meaning": "Mother-in-law",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Matt 8:14-15",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Complete the following verse: \"For what is a man profited, if he shall gain the whole world, and...\"",
+    "meaning": "Lose his own soul",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Matt 16:26",
+    "answerType": "theology",
+    "draft": true,
+    "fact": false,
+    "factNote": "KJV \"lose his own soul\" / ASV \"forfeit his life\", WEB \"forfeits his life\" (Matt 16:26)"
+  },
+  {
+    "term": "Who was bribed with 1,100 pieces of silver from each of many lords?",
+    "meaning": "Delilah",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "Judg 16:5",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What is the distinction of the Wycliffe Bible?",
+    "meaning": "It was the first complete English translation of the Bible",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "About whom was Moses speaking when he said: \"The LORD thy God will raise up unto thee a Prophet from the midst of thee, of thy brethren, like unto me; unto him ye shall hearken.\"?",
+    "meaning": "Jesus",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Deut 18:15",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What relative was Jehoshabeath to Jehoram?",
+    "meaning": "Daughter",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "2 Chron 22:11",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible immediately precedes 1 Samuel?",
+    "meaning": "Ruth",
+    "category": "LNS",
+    "difficulty": "easy",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "How was Jesus disappointed by his disciples during his last visit to the Garden of Gethsemane?",
+    "meaning": "They were sleeping",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Luke 22:45-46",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "In Proverbs 7, whom did the young man void of understanding follow \"as an ox goeth to the slaughter\"?",
+    "meaning": "The strange woman",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Prov 7:5-22",
+    "answerType": "name",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Why did Abigail offer gifts to David?",
+    "meaning": "To atone for her husband's rudeness to him",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "1 Sam 25:14-35",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "According to Isaiah 11:6, in the Messiah's kingdom the calf, the young lion and the fatling shall be together. Who shall lead them?",
+    "meaning": "A little child",
+    "category": "P",
+    "difficulty": "easy",
+    "source": "Isa 11:6",
+    "answerType": "name",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Name the most famous great-grandson of Boaz.",
+    "meaning": "David",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Ruth 4:21-22",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What king in the Bible fathered twenty-eight sons and sixty daughters?",
+    "meaning": "Rehoboam",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "2 Chron 11:21",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which book was written when its author was \"in the Spirit on the Lord's day\"?",
+    "meaning": "Revelation",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Rev 1:10",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Which book says: \"Make a joyful noise unto the LORD\"?",
+    "meaning": "Psalms",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Ps 100:1",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "What metal did Rehoboam use to replace the gold shields of Solomon taken by Egypt?",
+    "meaning": "Bronze",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "1 Kings 14:26-27",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "Which king of Israel set fire to the palace while inside it?",
+    "meaning": "Zimri",
+    "category": "HG",
+    "difficulty": "hard",
+    "source": "1 Kings 16:18",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Who was the queen of Israel for most of Elijah's years of prophecy?",
+    "meaning": "Jezebel",
+    "category": "P",
+    "difficulty": "easy",
+    "source": "1 Kings 16:31",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Who buried Abraham?",
+    "meaning": "Isaac and Ishmael",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Gen 25:9",
+    "answerType": "name",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "How many children did Jacob and Zilpah have together?",
+    "meaning": "2",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "Gen 35:26",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Who said that Jesus Christ sent him to preach the gospel, not to baptize?",
+    "meaning": "Paul",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "1 Cor 1:17",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which book says that it is a Christian's duty not to withhold sexual favours from one's spouse?",
+    "meaning": "1 Corinthians",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "1 Cor 7:3-5",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Whom did God choose to be the heir to the promises which God had made to Abraham, going against the usual order of succession?",
+    "meaning": "Jacob",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "Gen 28:13-14",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which king broke into pieces the bronze snake erected by Moses?",
+    "meaning": "Hezekiah",
+    "category": "HG",
+    "difficulty": "hard",
+    "source": "2 Kings 18:4",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which prophet was predominant during the reign of Hezekiah?",
+    "meaning": "Isaiah",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Isa 1:1",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Who was imposed upon a man as a bride by her father's deceit?",
+    "meaning": "Leah",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Gen 29:23-25",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "How many children did Jacob and Rachel have together?",
+    "meaning": "2",
+    "category": "LNS",
+    "difficulty": "easy",
+    "source": "Gen 35:24",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "What were Barabbas' three crimes?",
+    "meaning": "Robbery, murder and sedition",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "Luke 23:19",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What does Paul say should be the situation for a Christian whose unbelieving spouse leaves?",
+    "meaning": "He or she is not under bondage",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "1 Cor 7:15",
+    "answerType": "theology",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What king was killed because he consulted a medium rather than the Lord?",
+    "meaning": "Saul",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "1 Chron 10:13-14",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which book, considered apocryphal by Protestants, is quoted by Jude?",
+    "meaning": "Enoch",
+    "category": "HG",
+    "difficulty": "hard",
+    "source": "Jude 1:14",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Which book closes with the promise from God: \"I will send you Elijah the prophet before the coming of the great and dreadful day of the LORD\"?",
+    "meaning": "Malachi",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Mal 4:5",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Who was the father of Simeon and Reuben?",
+    "meaning": "Jacob",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Gen 35:23",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What barren woman in the NT was blessed with a child late in life?",
+    "meaning": "Elizabeth",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Luke 1:7-24",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which book contains the assurance that God will not allow a Christian to be tempted beyond what he can endure, without also providing a way out for him?",
+    "meaning": "1 Corinthians",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "1 Cor 10:13",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Who sold his birthright to Jacob?",
+    "meaning": "Esau",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Gen 25:33",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Who supervised the second en-masse circumcision of the Israelites?",
+    "meaning": "Joshua",
+    "category": "HG",
+    "difficulty": "hard",
+    "source": "Josh 5:2-3",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which king ignored prophecy and resisted the invasion of Nebuchadnezzar?",
+    "meaning": "Zedekiah",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Jer 34:1-7",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What was the name of Rebekah's brother?",
+    "meaning": "Laban",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Gen 24:29",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "How old was Sarah when God promised her a child by the same time the next year?",
+    "meaning": "90",
+    "category": "LNS",
+    "difficulty": "medium",
+    "source": "Gen 17:17",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "What action on the part of the disciples prompted Jesus to say: \"For the Son of man is Lord even of the sabbath day.\"?",
+    "meaning": "Plucking and eating corn on the sabbath",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "Matt 12:1-8",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "In the beatitudes, who are called the \"children of God\"?",
+    "meaning": "Peacemakers",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Matt 5:9",
+    "answerType": "name",
+    "fact": true
   }
 ]
