@@ -114,6 +114,18 @@ export const TEXT = {
   'battle.runeHintMark': 'The {@term.rune}’s signal is in here', // draft
   'battle.wager': 'WAGER:',
 
+  // ---- Answer types, as shown in a fight's query choices ("OT · Names") ----
+  'type.name': 'Names',
+  'type.location': 'Places',
+  'type.book': 'Books',
+  'type.verse': 'Verses',
+  'type.number': 'Numbers',
+  'type.object': 'Things',
+  'type.theology': 'Theology',
+  'type.creature': 'Creatures',
+  'type.adjective': 'Descriptions',
+  'type.verb': 'Actions',
+
   // ---- Question modifiers: name, the tag beside a category, its tooltip ----
   // Tags must be in the VT323 font and stay distinct from the category
   // encounter glyphs (! % & * + ~ = ≈) and the map symbols.
