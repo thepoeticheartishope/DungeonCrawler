@@ -154,6 +154,8 @@ function renderRows() {
       '<span class="data-num">' + String(i + 1).padStart(pad, '0') + '</span>',
       '<span class="data-type' + (type ? '' : ' untyped') + '">' + escapeHtml((type || t('data.untyped')).toUpperCase()) + '</span>',
       entry.draft ? '<span class="data-draft">' + escapeHtml(t('data.draft')) + '</span>' : '',
+      entry.fact === false
+        ? '<span class="data-notfact" title="' + escapeHtml(entry.factNote || '') + '">' + escapeHtml(t('data.notFact')) + '</span>' : '',
       entry.category ? '<span>' + escapeHtml(entry.category) + '</span>' : '',
       entry.difficulty ? '<span>' + escapeHtml(entry.difficulty) + '</span>' : ''
     ].join('');
@@ -217,6 +219,12 @@ function renderFilters() {
   types.forEach(type => buttons.push(['type:' + type, t('data.filterType', { type: type || t('data.untyped'), count: counts.get(type) })]));
   const drafts = entries.filter(e => e.draft).length;
   if (drafts) buttons.push(['draft', t('data.filterDraft', { count: drafts })]);
+  // Fact filters only appear for sets that carry the label (the Bible sets).
+  const labelled = entries.filter(e => typeof e.fact === 'boolean');
+  if (labelled.length) {
+    buttons.push(['fact', t('data.filterFact', { count: labelled.filter(e => e.fact).length })]);
+    buttons.push(['notfact', t('data.filterNotFact', { count: labelled.filter(e => !e.fact).length })]);
+  }
   buttons.push(['commented', t('data.filterCommented', { count: commentedCount() })]);
   els.filters.innerHTML = buttons.map(([key, label]) =>
     '<button type="button" data-filter="' + escapeHtml(key) + '" aria-pressed="' + (key === filter) + '">' + escapeHtml(label) + '</button>'
@@ -234,6 +242,8 @@ function syncFilters() {
 
 function matchesFilter(entry) {
   if (filter === 'draft') return Boolean(entry.draft);
+  if (filter === 'fact') return entry.fact === true;
+  if (filter === 'notfact') return entry.fact === false;
   if (filter === 'commented') return Boolean(commentFor(entry).trim());
   if (filter.startsWith('type:')) return typeOf(entry) === filter.slice(5);
   return true;
@@ -270,6 +280,7 @@ function buildExport() {
     count++;
     const tags = [typeOf(entry) || t('data.untyped')];
     if (entry.draft) tags.push('draft');
+    if (entry.fact === false) tags.push('not fact');
     lines.push('#' + (i + 1) + ' [' + tags.join(', ') + '] ' + entry.term);
     lines.push('  ' + t('data.exportAnswer', { answer: entry.meaning }));
     comment.split('\n').forEach((line, n) => {

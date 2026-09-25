@@ -55,7 +55,9 @@ export function parseListInput(text) {
           source: source || undefined,
           image: image || undefined,
           answerType: answerType || undefined,
-          draft: (item && item.draft === true) || undefined
+          draft: (item && item.draft === true) || undefined,
+          fact: typeof (item && item.fact) === 'boolean' ? item.fact : undefined,
+          factNote: (item && typeof item.factNote === 'string' && item.factNote.trim()) || undefined
         };
       })
       .filter(item => item.term && item.meaning);

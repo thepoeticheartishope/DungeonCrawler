@@ -5,14 +5,16 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Deut 24:5",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which Emperor of Rome commissioned the introduction of the Roman calendar?",
     "meaning": "Justinian",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What is another name for the second death recorded in Revelation?",
@@ -21,7 +23,8 @@
     "difficulty": "hard",
     "source": "Rev 20:14",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What does the name \"Boanerges\" mean, which Jesus gave to James and John?",
@@ -30,14 +33,16 @@
     "difficulty": "hard",
     "source": "Mark 3:17",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately precedes Philemon?",
     "meaning": "Titus",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "To whom did Jesus say the following: \"It is written, 'My house shall be called a house of prayer'; but you are making it a robber's den\"?",
@@ -46,7 +51,8 @@
     "difficulty": "hard",
     "source": "Matt 21:12-13",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"Surely goodness and mercy shall follow me all the days of my life: and I will dwell in the house of the Lord for ever.\"?",
@@ -54,7 +60,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Ps 23:6",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What did God condemn the serpent to eat the rest of his days?",
@@ -62,7 +69,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Gen 3:14",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "What term was used to refer to the disciples for the first time in Antioch?",
@@ -70,7 +78,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Acts 11:26",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Paul in 2 Thessalonians 2:3 refers to the man Christians sometimes call the anti-Christ as the \"man of sin\" and what other term?",
@@ -79,7 +88,9 @@
     "difficulty": "hard",
     "source": "2 Thess 2:3",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": false,
+    "factNote": "KJV, ASV \"son of perdition\" / WEB \"son of destruction\" (2 Thess 2:3)"
   },
   {
     "term": "Who in the NT was a grandson of Eli?",
@@ -87,7 +98,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Luke 3:23 — Luke's genealogy gives Mary's bloodline but, per custom, under her husband Joseph's name.",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What two Latin words do A.D. stand for when we talk of dates?",
@@ -95,7 +107,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What event caused Jesus to desire solitude in a boat?",
@@ -104,7 +117,8 @@
     "difficulty": "hard",
     "source": "Matt 14:13",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"Choose you this day whom ye will serve.\"?",
@@ -112,7 +126,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Josh 24:15",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "How did the Israelites decide the division of the land of Canaan among their tribes?",
@@ -121,7 +136,8 @@
     "difficulty": "hard",
     "source": "Num 26:53-56",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What Israelite leader's army was reduced from 32,000 to 300 soldiers?",
@@ -129,7 +145,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Judges 7:1-8",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which prophet earned a living as a herdsman and a fruit gatherer?",
@@ -137,7 +154,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Amos 7:14",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who gave the first kiss in the Bible?",
@@ -145,7 +163,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Gen 27:27",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "For how many years of David's reign was his government based in Hebron?",
@@ -153,7 +172,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "2 Sam 2:11",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who helped Saul teach in Antioch?",
@@ -161,7 +181,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Acts 13:1",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who in the Bible originally said, \"Whosoever shall call on the name of the Lord shall be delivered\"?",
@@ -169,7 +190,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Joel 2:32",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What was the name of the ruined city which Solomon received as a dowry?",
@@ -177,7 +199,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "1 Kings 9:16-17",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "To what city did the Roman Emperor Constantine move the capital after becoming a Christian?",
@@ -190,7 +213,8 @@
       "Rome",
       "Antioch"
     ],
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Which book refers to the bottomless pit?",
@@ -198,7 +222,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 9",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who was the violent daughter of Ahab and Jezebel?",
@@ -206,14 +231,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "2 Kings 8:18-26; 2 Chron 22:2-3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately precedes Zechariah?",
     "meaning": "Haggai",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who wrote about a man being caught up to the third Heaven?",
@@ -221,7 +248,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "2 Cor 12:2",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which verse says: \"God hath chosen the foolish things of the world to confound the wise.\"?",
@@ -229,7 +257,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "1 Cor 1:27",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What name did Samuel give to the site where he placed a memorial stone to commemorate their victory over the Philistines?",
@@ -237,7 +266,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "1 Sam 7:10-12",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "What was the first Bible printed in England with moveable type?",
@@ -245,7 +275,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "On what mountain do the Lamb and the 144,000 in Revelation 14 stand?",
@@ -254,7 +285,8 @@
     "difficulty": "hard",
     "source": "Rev 14:1",
     "answerType": "location",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What was the name of the young girl who looked after King David when he was old?",
@@ -262,14 +294,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "1 Kings 1",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What book in the Bible comes after Nehemiah?",
     "meaning": "Esther",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who said the following: \"I have need to be baptized of thee, and comest thou to me.\"?",
@@ -278,7 +312,8 @@
     "difficulty": "hard",
     "source": "Matt 3:14",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"For by grace are ye saved through faith; and that not of yourselves: it is the gift of God.\"?",
@@ -286,7 +321,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Eph 2:8",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What did the Israelites throw on their heads as a sign of sorrow?",
@@ -294,7 +330,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "2 Sam 13:19",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "According to 2 Chronicles, what is the significance of Mt. Moriah?",
@@ -303,7 +340,8 @@
     "difficulty": "hard",
     "source": "2 Chron. 3:1",
     "answerType": "location",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who will be the first two thrown into the Lake of Fire as recorded by John in Revelation?",
@@ -312,14 +350,16 @@
     "difficulty": "hard",
     "source": "Rev 19:20",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately precedes Hebrews?",
     "meaning": "Philemon",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What act of Paul and Silas while jailed in Philippi caused their jailkeepers to turn to Christianity?",
@@ -328,7 +368,8 @@
     "difficulty": "hard",
     "source": "Acts 16:28-30",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"Thou preparest a table before me in the presence of mine enemies: thou anointest my head with oil; my cup runneth over.\"?",
@@ -336,7 +377,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Ps 23:5",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What was David's wife's punishment for ridiculing his dance of praise to the Lord?",
@@ -344,14 +386,16 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "2 Sam 6:16-23",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "In what year did the United Nations officially recognize Israel as a nation?",
     "meaning": "1948",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which prophet, by God's power, eliminated poison from a pot of stew?",
@@ -359,7 +403,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "2 Kings 4:38-44",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was the father of Moab?",
@@ -367,14 +412,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Gen 19:33-37",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Spell Thaddaeus (the disciple).",
     "meaning": "Thaddaeus",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What miraculous healing was received by Malchus?",
@@ -382,7 +429,8 @@
     "category": "NT",
     "difficulty": "hard",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which two books say that all powers and authorities are ordained by God?",
@@ -391,7 +439,8 @@
     "difficulty": "hard",
     "source": "Col 1:16; Rom 13:1",
     "answerType": "book",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In which book of the Bible do we read three times of men pretending to rulers that their wives were their sisters?",
@@ -399,7 +448,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Gen 12; 20; 26",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "According to Genesis 22 and 2 Chronicles 3, what two reasons is Mt. Moriah significant?",
@@ -407,7 +457,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "location",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who asked the following: \"Who is worthy to open the book and to loose the seals thereof\"?",
@@ -416,7 +467,8 @@
     "difficulty": "hard",
     "source": "Rev 5:2",
     "answerType": "creature",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who was the first person whose death was recorded in the Bible?",
@@ -424,14 +476,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Gen 4:8",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many books are there in the \"Pentateuch\"?",
     "meaning": "5",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Whose hospitality in Thessalonica got him into hot water?",
@@ -439,7 +493,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Acts 17",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book contains a chapter which begins: \"My God, My God, why hast thou forsaken me?\"?",
@@ -447,7 +502,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Ps 22:1",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Whose house did God vow to punish for the massacre at Jezreel?",
@@ -456,7 +512,8 @@
     "difficulty": "hard",
     "source": "Hosea 1:4",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "With what race did Jews not associate?",
@@ -464,7 +521,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "John 4:9",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many days did Daniel say would pass between the time the daily sacrifice is abolished and the abomination of desolation?",
@@ -472,7 +530,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Dan 12:11",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who shot an arrow as a signal to warn David?",
@@ -480,7 +539,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "1 Sam 20:12-36",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Counting in order, what number was the plague of hail among the ten plagues brought upon Egypt by Moses?",
@@ -488,7 +548,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Ex 9:23",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What flowed from Jesus' side when he was pierced at his crucifixion?",
@@ -497,7 +558,8 @@
     "difficulty": "hard",
     "source": "John 19:34",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What does the Bible say is the beginning of wisdom (or knowledge)?",
@@ -506,7 +568,8 @@
     "difficulty": "hard",
     "source": "Prov 1:7",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In whose sack did Joseph hide a silver cup?",
@@ -514,14 +577,16 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Gen 44:2",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "According to church tradition which of the original twelve disciples was martyred in Ethiopia?",
     "meaning": "Matthew",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which verse says: \"The voice of the bridegroom and of the bride shall be heard no more at all in thee.\"?",
@@ -529,7 +594,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 18:23",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Who is the only male cousin of John the Baptist identified by name in the Bible?",
@@ -537,7 +603,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Luke 1:36",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many years was Joseph imprisoned between the time he interpreted the dreams of the chief cupbearer and the time he interpreted the Pharoah's dream?",
@@ -545,7 +612,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Gen 40:18-23; 41:1-32",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who said, \"Come see a man which told me all things that ever I did\"?",
@@ -554,7 +622,8 @@
     "difficulty": "hard",
     "source": "John 4:29",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Jesus said it was unforgivable to speak against or blaspheme what?",
@@ -563,7 +632,8 @@
     "difficulty": "hard",
     "source": "John 12:31-32",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "To what incident does this quotation refer: \"Then the Lord shut him in.\"?",
@@ -572,7 +642,8 @@
     "difficulty": "hard",
     "source": "Gen 7:16",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What miracle occurred at the rock of Horeb?",
@@ -581,7 +652,8 @@
     "difficulty": "hard",
     "source": "Ex 17:6",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"And a little child shall lead them.\"?",
@@ -589,7 +661,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Isaiah 11:6",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Who was the best known grandson of Methuselah?",
@@ -597,7 +670,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Gen 5:25-29",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many Israelite men were led by Moses out of Egypt?",
@@ -605,7 +679,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Ex 12:37",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Jesus said that the money changers had turned the temple from a house of prayer into what?",
@@ -614,7 +689,8 @@
     "difficulty": "hard",
     "source": "John 2:16",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"Cast thy bread upon the waters: for thou shalt find it after many days.\"?",
@@ -622,7 +698,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Eccl 11:1",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What was the first thing that Adam and Eve realized when they ate the forbidden fruit?",
@@ -631,7 +708,8 @@
     "difficulty": "hard",
     "source": "Gen 3:7",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who was the human founder of the 12 tribes of Israel?",
@@ -639,7 +717,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Gen 35:20-26",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which prophet predicted: \"For unto us a child is born, unto us a son is given\"?",
@@ -647,7 +726,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Is 9:6",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who built a gallows for Mordecai but was hanged on it himself?",
@@ -655,7 +735,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Est 7:10",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How old was Job when he died?",
@@ -663,7 +744,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Job 42:16",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who asked Jesus to heal his 12 year old dying daughter?",
@@ -671,7 +753,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Mark 5:22-23",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "When Jesus preached against \"worrying\", what 2 creations of God did Jesus ask us to consider?",
@@ -680,7 +763,8 @@
     "difficulty": "hard",
     "source": "Matt 7:26-28",
     "answerType": "creature",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What possession of Joseph inspired jealousy of his brothers?",
@@ -689,7 +773,8 @@
     "difficulty": "hard",
     "source": "Gen 37:3-4",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who uncovered a plot against king Ahasuerus of Persia and warned the queen?",
@@ -697,7 +782,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Est 2:22-23",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What OT prophet saw a vision of a flying roll?",
@@ -705,7 +791,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Zech 5:1-2",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What language is the word \"Golgotha\" as recorded in the gospel of John?",
@@ -713,14 +800,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "John 19:17",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "How many pairs of disciples had the same first name?",
     "meaning": "3",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What was the first act of healing by Peter after Jesus was resurrected?",
@@ -729,7 +818,8 @@
     "difficulty": "hard",
     "source": "Acts 3:1-8",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which epistle of Paul tells us that Jesus \"in the form of God, thought it not robbery to be equal with God.\"?",
@@ -737,7 +827,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Phil 2:6",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "How did the Philistines find out the secret of Samson's strength?",
@@ -746,7 +837,8 @@
     "difficulty": "hard",
     "source": "Judges 16:4-20",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How does the book of Numbers get its name?",
@@ -754,7 +846,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What fraction of the earth's creatures and ships are destroyed in Revelation 8?",
@@ -762,7 +855,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 8:9",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who was the second wife of King Ahasuerus?",
@@ -770,14 +864,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Est 2:17",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many epistles of Peter are included in the NT?",
     "meaning": "2",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Whom did Silas replace as Paul's traveling partner?",
@@ -785,7 +881,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Acts 15:36-40",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which verse says: \"I am the way, the truth, and the life: no man cometh unto the Father, but by me.\"?",
@@ -793,7 +890,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "John 14:6",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Who experienced the first in-law trouble recorded in the Bible?",
@@ -802,7 +900,8 @@
     "difficulty": "hard",
     "source": "Gen 26:34-35",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What member of Ahasuerus' harem is identified by name in the Bible?",
@@ -810,7 +909,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Est 2:7",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Counting in order, after the opening of which of Revelation's seven seals did the kings of the earth hide in caves?",
@@ -818,7 +918,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 6:12-15",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What relative was Annas of Caiaphas?",
@@ -826,14 +927,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "John 18:13",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many books in the Bible start with the letter \"D\"?",
     "meaning": "2",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which philosopher's followers were intrigued by Paul's preaching in Athens?",
@@ -841,7 +944,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Acts 17:18",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who wrote that Jesus was: \"the image of the invisible God, the firstborn of every creature.\"?",
@@ -849,7 +953,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Col 1:15",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How did King Saul fend off the evil spirit that would sometimes come upon him?",
@@ -858,7 +963,8 @@
     "difficulty": "hard",
     "source": "1 Sam 16:17-23",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What is the distinction of the town of Fara?",
@@ -866,7 +972,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Where are the four angels bound until released in Revelation 9?",
@@ -875,21 +982,24 @@
     "difficulty": "hard",
     "source": "Rev 9:14",
     "answerType": "location",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How many generations were there from Sarah to Judah?",
     "meaning": "3",
     "category": "N",
     "difficulty": "hard",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately follows Jonah?",
     "meaning": "Micah",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "To which tribe of Israel did Paul belong?",
@@ -897,7 +1007,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Phil 3:5",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "According to 1 Corinthians 6:10 what is a Christian's body?",
@@ -906,7 +1017,8 @@
     "difficulty": "hard",
     "source": "1 Cor 6:19",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What was Jacob holding as he came out of his mother's womb?",
@@ -915,7 +1027,8 @@
     "difficulty": "hard",
     "source": "Gen 25:26",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What was the second body of water through which God allowed the Israelites passage?",
@@ -924,7 +1037,8 @@
     "difficulty": "hard",
     "source": "Josh 3",
     "answerType": "location",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How many years did Jeremiah say that the period of Judah's captivity in Babylon would last?",
@@ -932,7 +1046,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "2 Chron 36:21",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Name the wife of Isaac.",
@@ -940,7 +1055,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Gen 24:67",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How old was Noah when he died?",
@@ -948,7 +1064,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Gen 9:29",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "To whom did Jesus say, \"Daughter, be of good comfort; thy faith hath made thee whole.\"?",
@@ -957,7 +1074,8 @@
     "difficulty": "hard",
     "source": "Matt 9:20-22",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book says that: \"All we like sheep have gone astray.\"?",
@@ -965,7 +1083,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Is 53:6",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "To whom did God say, \"Dust shalt thou eat all the days of thy life.\"?",
@@ -974,7 +1093,8 @@
     "difficulty": "hard",
     "source": "Gen 3:14",
     "answerType": "creature",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In what book of the Bible is the word \"Christian\" first used (if we read it cover to cover)?",
@@ -982,7 +1102,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Acts 11:26",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What couple beloved of God both laughed at the words of God?",
@@ -991,7 +1112,8 @@
     "difficulty": "hard",
     "source": "Gen 17:17; 18:12",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What is the English translation of the two Latin words represented by A.D. in dates?",
@@ -999,7 +1121,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"If ye love me, keep my commandments.\"?",
@@ -1007,7 +1130,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "John 14:15",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What is the second species of bird mentioned in the Bible?",
@@ -1015,14 +1139,16 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Gen 8:8",
-    "answerType": "creature"
+    "answerType": "creature",
+    "fact": true
   },
   {
     "term": "What is the name for the summit of Mt. Pisgah?",
     "meaning": "Nebo",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "What does the Bible say happened on the Island of Patmos?",
@@ -1031,7 +1157,8 @@
     "difficulty": "hard",
     "source": "Rev 1:9",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who was the father of Enoch?",
@@ -1039,7 +1166,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Gen 4:17",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What is eschatology?",
@@ -1047,7 +1175,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which disciple(s) had the surname 'Barjona'?",
@@ -1056,7 +1185,8 @@
     "difficulty": "hard",
     "source": "Matt 10:2; 16:17",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What does Proverbs 24 say you shouldn't do when your enemy falls?",
@@ -1065,7 +1195,8 @@
     "difficulty": "hard",
     "source": "Prov 24:17",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who said, \"Am I my brother's keeper?\"",
@@ -1073,7 +1204,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Gen 4:9",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was the second wife of King Xerxes (or Ahasuerus)?",
@@ -1081,7 +1213,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Est 2:17",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which prophet said, \"The earth shall reel to and fro like a drunkard\"?",
@@ -1089,7 +1222,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Isaiah 24:20",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "To whom did God say, \"Only upon himself put not forth thine hand\"?",
@@ -1097,7 +1231,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Job 1:12",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many years had the woman been crippled whom Jesus healed in the Gospel of Luke?",
@@ -1105,7 +1240,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Luke 13:11",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which verse says: \"What manner of man is this, that even the winds and the sea obey him!\"?",
@@ -1113,7 +1249,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Matt 8:27",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What does Jesus say about the hairs on your head?",
@@ -1122,7 +1259,8 @@
     "difficulty": "hard",
     "source": "Luke 12:7",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who said: \"The Philistines be upon thee\"?",
@@ -1130,7 +1268,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Judges 16:9",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What was the capitol of the Assyrian Empire?",
@@ -1138,7 +1277,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "2 Kings 19:36",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Which verse says: \"The testimony of Jesus is the spirit of prophecy.\"?",
@@ -1146,7 +1286,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 19:10",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Who are the only two brothers of Japheth named in the Bible?",
@@ -1155,14 +1296,16 @@
     "difficulty": "hard",
     "source": "Gen 10:1",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately preceded Micah?",
     "meaning": "Jonah",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "John writes that many people mistakenly thought Jesus had said that John would not die. According to John, what did Jesus say regarding this?",
@@ -1171,7 +1314,8 @@
     "difficulty": "hard",
     "source": "John 21:12-24",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"Be ye not unequally yoked together with unbelievers.\"?",
@@ -1179,21 +1323,24 @@
     "category": "W",
     "difficulty": "hard",
     "source": "2 Cor 6:14",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Which book in the OT takes the form of three farewell speeches?",
     "meaning": "Deuteronomy",
     "category": "OT",
     "difficulty": "hard",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Whose exploits are depicted on the Black Obelisk, an archeological find?",
     "meaning": "Jehu's",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which of Noah's sons was prophesied by Noah to produce the most dominant of the world's races?",
@@ -1201,7 +1348,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Gen 9:25-27",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Name the father of Joash.",
@@ -1209,14 +1357,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "2 Kings 11:1-3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately precedes Zephaniah?",
     "meaning": "Habakkuk",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Fill in the blank: \"And the Word was made ________, and dwelt among us.\"",
@@ -1224,7 +1374,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "John 1:14",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "How many Beatitudes are there in Matthew?",
@@ -1232,7 +1383,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Matt 5:1-12",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Three times in the Bible, God is described as physically writing something. Upon what did He write the second time?",
@@ -1241,14 +1393,16 @@
     "difficulty": "hard",
     "source": "Ex 31:18",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "During the NT times what was the Greek word for charitable love?",
     "meaning": "Agape",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "Name the false prophet who contradicted Jeremiah and predicted that the Jews would break out from under Babylonian rule within two years?",
@@ -1256,7 +1410,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Jer 28",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Name the ruler of the synagogue whose daughter Jesus raised from the dead?",
@@ -1264,7 +1419,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Mark 5:22-24,35-43",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "In how many stories of the Bible was Jesus ever said to have written something?",
@@ -1272,7 +1428,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "John 8:1-11",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "How did the friends of a crippled man get him past the pressing crowds to be healed by Jesus?",
@@ -1281,7 +1438,8 @@
     "difficulty": "hard",
     "source": "Mark 2:4",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book tells us not to forget to entertain strangers, since some have thus entertained angels?",
@@ -1289,7 +1447,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Heb 13:2",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "How did Korah, Dathan and Abiram die?",
@@ -1298,7 +1457,8 @@
     "difficulty": "hard",
     "source": "Num 16:28-35",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What son of Kish became king of Israel?",
@@ -1306,7 +1466,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "1 Sam 9:1-3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which prophet foretold, \"a voice of him that crieth in the wilderness, 'Prepare ye the way of the Lord'\"?",
@@ -1314,7 +1475,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Isaiah 40:3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many generations were there from Obed to David?",
@@ -1322,7 +1484,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Matt 1:5-6",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Every how many years is the Year of Jubilee celebrated in Jewish tradition?",
@@ -1330,7 +1493,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Lev 25",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who said, \"Daughters of Jerusalem, weep not for me\"?",
@@ -1338,7 +1502,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Luke 23:28",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "According to Solomon in Ecclesiastes, what increases with knowledge?",
@@ -1346,7 +1511,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Eccl 1:18",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Who did an angel say would be a donkey of a man when born, whose hand would be against everyone?",
@@ -1354,7 +1520,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Gen 16:11-12",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Esther was queen over what land?",
@@ -1362,7 +1529,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Est 1:1; 2:16-17",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Fill in the blank in Jesus' sentence with one word: \"For had ye believed ______, ye would have believed me: for he wrote of me.\"",
@@ -1370,7 +1538,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "John 5:46",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was the wife of Nabal, and later of David?",
@@ -1378,14 +1547,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "1 Sam 25",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "In the hierarchy of the Roman Catholic Church, which office is immediately above that of archbishop?",
     "meaning": "Cardinal",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "Which book contains the passage sometimes called the High Priestly Prayer?",
@@ -1393,7 +1564,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "John 17",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Which verse says: \"Hope deferred maketh the heart sick: but when the desire cometh, it is a tree of life.\"?",
@@ -1401,7 +1573,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Prov 13:12",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What did Samson bet thirty men that they could not do?",
@@ -1410,7 +1583,8 @@
     "difficulty": "hard",
     "source": "Judges 14:12-14",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In what town did Peter have his vision of a sheet lowered from heaven?",
@@ -1418,7 +1592,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Acts 10",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Which prophet walked throughout Nineveh in three days?",
@@ -1426,7 +1601,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Jonah 3:3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What Old Testament major figure does the book of Hebrews describe as godless?",
@@ -1434,7 +1610,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Hebrews 12:16",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How old was Anna the prophetess at the time of Jesus' circumcision?",
@@ -1442,7 +1619,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Luke 2:37",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which book records the parable of the Good Samaritan?",
@@ -1450,7 +1628,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Luke 10:25-35",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Which verse says: \"And be not conformed to this world: but be ye transformed by the renewing of your mind.\"?",
@@ -1458,7 +1637,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Romans 12:2",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What was the third act of King Saul which displeased God?",
@@ -1467,7 +1647,8 @@
     "difficulty": "hard",
     "source": "1 Sam 18:15",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What is the exact name of the organization which places Bibles in most hotels in North America?",
@@ -1475,7 +1656,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What prophet did the wise men quote to Herod?",
@@ -1483,7 +1665,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Micah 5:2; Matt 2:6",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Name the paternal grandfather of King David?",
@@ -1491,14 +1674,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Matt 1:5-6",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Spell Bartimaeus.",
     "meaning": "Bartimaeus",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "To what was Jesus referring when he said, \"Suffer it to be so now: for thus it becometh us to fulfil all righteousness.\"?",
@@ -1506,7 +1691,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Matt 3:15",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "Which verse says: \"Unto the pure all things are pure.\"?",
@@ -1514,7 +1700,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Titus 1:15",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Who warned King David's wife that Adonijah was preparing to be the next king?",
@@ -1522,7 +1709,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "1 Kings 1:11",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which of the following is closest to Jerusalem -- Bethlehem, Jericho, Nazareth or Jacob's Well?",
@@ -1535,14 +1723,16 @@
       "Nazareth",
       "Jacob's Well"
     ],
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Which prophet was the most frequent advisor of King David?",
     "meaning": "Nathan",
     "category": "P",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was the oldest son of Jacob?",
@@ -1550,14 +1740,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Gen 29:31-32",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What is the thirty-ninth book of the Bible?",
     "meaning": "Malachi",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Which is the only gospel in the Bible to record the raising of Lazarus from the dead?",
@@ -1565,7 +1757,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "John 11:1-46",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who wrote the following verse: \"As for man, his days are as grass: as a flower of the field, so he flourisheth\"?",
@@ -1573,7 +1766,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Ps 103:15",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What covered the Israelite camp in the evening before the first gift of manna?",
@@ -1581,14 +1775,16 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Ex 16:13",
-    "answerType": "creature"
+    "answerType": "creature",
+    "fact": true
   },
   {
     "term": "The Dead Sea Scrolls were found a few miles south of what city?",
     "meaning": "Jericho",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Who wrote the book of Revelation?",
@@ -1596,7 +1792,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 1:1",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was accused of theft because of a silver cup in his saddle-bag?",
@@ -1604,7 +1801,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Gen 44:12",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "In which book does the Lord refer to himself as \"Alpha and Omega\"?",
@@ -1612,7 +1810,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Rev 1:8; 22:13",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who said, \"Saul, Saul why persecutest thou me\"?",
@@ -1620,7 +1819,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Acts 9:4",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What does God promise to those who obey the Commandment, \"Honour thy father and mother\"?",
@@ -1629,7 +1829,8 @@
     "difficulty": "hard",
     "source": "Ex 20:12",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How was David punished for his adultery with Bathsheba and murder of Uriah?",
@@ -1638,7 +1839,8 @@
     "difficulty": "hard",
     "source": "2 Sam 12:14",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Where did Paul meet Jesus?",
@@ -1647,7 +1849,8 @@
     "difficulty": "hard",
     "source": "Acts 9:1-20",
     "answerType": "location",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In what OT prophetic book is the following quotation found: \"I will pour out my spirit upon all flesh; and your sons and your daughters shall prophesy.\"?",
@@ -1655,7 +1858,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Joel 2:28",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What actor played the role of Moses in the 1956 film \"The Ten Commandments\"?",
@@ -1663,7 +1867,8 @@
     "category": "N",
     "difficulty": "hard",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What was the sixth plague brought upon Egypt by Moses?",
@@ -1671,7 +1876,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Ex 9:10",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "For whom did Mary Magdalene mistake the risen Jesus?",
@@ -1680,7 +1886,8 @@
     "difficulty": "hard",
     "source": "John 21:15",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What is the true topic of the proverb: \"Drink waters out of thine own cistern, and running waters out of thine own well.\"?",
@@ -1688,7 +1895,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Prov 5:15",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "What did Rebekah and Tamar have in common in respect to childbirth?",
@@ -1697,7 +1905,8 @@
     "difficulty": "hard",
     "source": "Gen 25:24-26; 38:27-30",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In what book are the Jewish commemorative days of Purim instituted?",
@@ -1705,7 +1914,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Esther 9:25-32",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who are inflicted with sores from the first vial (bowl) in Revelation?",
@@ -1714,7 +1924,8 @@
     "difficulty": "hard",
     "source": "Rev 16:2",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who wanted to marry the young girl who looked after King David when he was old?",
@@ -1722,14 +1933,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "1 Kings 2:17",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book in the Bible follows the book of Esther?",
     "meaning": "Job",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who said the following: \"Get thee hence, Satan: for it is written, Thou shalt worship the Lord thy God, and him only shalt thou serve.\"?",
@@ -1737,7 +1950,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Matt 4:10",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which verse says: \"Behold, I stand at the door, and knock: if any man hear my voice, and open the door, I will come in to him, and will sup with him, and he with me.\"?",
@@ -1745,7 +1959,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Rev 3:20",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What was the second lie Samson told Delilah regarding a means to subdue him?",
@@ -1754,7 +1969,8 @@
     "difficulty": "hard",
     "source": "Judges 16:11",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Whose daughter do Israelite women commemorate for four days each year?",
@@ -1762,7 +1978,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Judges 11:40",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who prophesied that Sisera would be handed over to a woman?",
@@ -1770,7 +1987,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Judges 4",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Name Gideon's father.",
@@ -1778,7 +1996,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Judges 6:29",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many times was Samson married?",
@@ -1786,7 +2005,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Judges 15",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What was the second thing that Satan tried to tempt Jesus to do in the wilderness?",
@@ -1795,7 +2015,8 @@
     "difficulty": "hard",
     "source": "Matt 4:5-6",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book says that the natural man doesn't receive the things of the Spirit for they are foolishness to him?",
@@ -1803,7 +2024,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "1 Cor 2:14",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What did Eli not do, thereby earning God's disfavor?",
@@ -1812,7 +2034,8 @@
     "difficulty": "hard",
     "source": "1 Sam 3:13",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What now stands on the former site of Solomon's temple (as of 1983)?",
@@ -1820,7 +2043,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In what chapter of Matthew does Jesus prophesy the destruction of the temple in Jerusalem?",
@@ -1828,7 +2052,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Matt 24:1-2",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What did Saul's (of Tarsus) name later become?",
@@ -1836,14 +2061,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Acts 13:9",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What is the last letter of the Greek alphabet?",
     "meaning": "Omega",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "What caused Elizabeth's baby to leap in her womb?",
@@ -1852,7 +2079,8 @@
     "difficulty": "hard",
     "source": "Luke 1:41",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In the following riddle what does the word \"eater\" represent: \"Out of the eater came forth meat and out of the strong came forth sweetness.\"?",
@@ -1861,7 +2089,8 @@
     "difficulty": "hard",
     "source": "Judges 14:14, 18",
     "answerType": "creature",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What two things did God give to Solomon that he didn't ask for?",
@@ -1870,7 +2099,8 @@
     "difficulty": "hard",
     "source": "1 Kings 3:10-13",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Where was Moses buried?",
@@ -1879,7 +2109,8 @@
     "difficulty": "hard",
     "source": "Deut 34",
     "answerType": "location",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How many kinds of fruit did John see on the Tree of Life as recorded in Revelation?",
@@ -1887,7 +2118,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 22:2",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who was the wife of Lapidoth?",
@@ -1895,7 +2127,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Judges 4:4",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many stones did David use to fell Goliath?",
@@ -1903,7 +2136,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "1 Sam 17:48-50",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What was the first reaction of Paul's jailer who woke up and saw the jail doors open?",
@@ -1912,7 +2146,8 @@
     "difficulty": "hard",
     "source": "Acts 16:27",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which two books in the Bible written by Solomon are noted for wisdom?",
@@ -1920,7 +2155,8 @@
     "category": "W",
     "difficulty": "hard",
     "answerType": "book",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What kind of bread does the Old Testament dictate must be eaten at Passover?",
@@ -1928,7 +2164,8 @@
     "category": "OT",
     "difficulty": "easy",
     "source": "Exodus 12:8-20",
-    "answerType": "adjective"
+    "answerType": "adjective",
+    "fact": true
   },
   {
     "term": "What was Cedron (Kidron)?",
@@ -1942,7 +2179,8 @@
       "City",
       "Well"
     ],
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Which verse says: \"Your old men shall dream dreams, your young men shall see visions.\"?",
@@ -1950,7 +2188,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Joel 2:28",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Name the wife of Felix.",
@@ -1958,7 +2197,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Acts 24:24",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What do the initials N.A.S. stand for in Christian circles?",
@@ -1966,7 +2206,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Where did Jesus find doves, oxen and sheep being sold together?",
@@ -1974,7 +2215,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "John 2:14",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Complete the following statement: \"But be of good cheer; I have overcome the...\"",
@@ -1982,7 +2224,8 @@
     "category": "W",
     "difficulty": "easy",
     "source": "John 16:33",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "What was Zilpah's relationship to Leah?",
@@ -1990,14 +2233,16 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "Gen 35:26",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "In what country did the Miracle of Fatima occur in 1917?",
     "meaning": "Portugal",
     "category": "HG",
     "difficulty": "medium",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Against which people did the book of Obadiah prophesy?",
@@ -2005,7 +2250,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Obadiah 1:1",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who buried Isaac?",
@@ -2014,7 +2260,8 @@
     "difficulty": "hard",
     "source": "Gen 35:29",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How many children did Jacob and Bilhah have?",
@@ -2022,7 +2269,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Gen 35:25",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who said, \"Which of you convinceth me of sin?\"",
@@ -2030,7 +2278,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "John 8:46",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book says that God is no respecter of persons and does not play favourites according to one's earthly status?",
@@ -2038,7 +2287,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Rom 2:11",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who sacrificed to God 22,000 oxen and 120,000 sheep?",
@@ -2046,7 +2296,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "1 Kings 8:63",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What 16th century Protestant reformer was excommunicated partly because of a paper which he tacked up on his parish door?",
@@ -2054,7 +2305,8 @@
     "category": "HG",
     "difficulty": "easy",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book prophesies the trial of Jesus with the following statement: \"He was oppressed and afflicted, yet he opened not his mouth: he is brought as a lamb to the slaughter.\"?",
@@ -2062,7 +2314,8 @@
     "category": "P",
     "difficulty": "medium",
     "source": "Isaiah 53:7",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Give the last name of each of the two disciples named Judas.",
@@ -2070,14 +2323,16 @@
     "category": "N",
     "difficulty": "hard",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Spell \"Cephas\", the name of the disciple.",
     "meaning": "Cephas",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Jesus told his disciples not to tell anyone about their vision of the Transfiguration until what had happened?",
@@ -2086,7 +2341,8 @@
     "difficulty": "hard",
     "source": "Matt 17:9",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Jesus said that it is better for a man to have a millstone hung around his neck and be drowned than to cause what?",
@@ -2095,7 +2351,8 @@
     "difficulty": "medium",
     "source": "Matt 18:6",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What OT figure was an offspring of a sexual relationship of a nephew with his aunt?",
@@ -2103,14 +2360,16 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Ex 6:20",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "According to church tradition, in what country was James the Younger martyred?",
     "meaning": "Egypt",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "What nationality was the man who supervised the rescue of Jeremiah from a mud-hole?",
@@ -2118,14 +2377,16 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Jer 38:7-12",
-    "answerType": "adjective"
+    "answerType": "adjective",
+    "fact": true
   },
   {
     "term": "Which book of the Bible immediately follows Zephaniah?",
     "meaning": "Haggai",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "The lost sheep that returns to the fold in Jesus' parable causes more joy in heaven than what?",
@@ -2134,7 +2395,8 @@
     "difficulty": "medium",
     "source": "Luke 15:7",
     "answerType": "creature",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book tells us to search our hearts and be silent when we are in our beds?",
@@ -2142,7 +2404,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Ps 4:4",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who is the \"him\" in this verse: \"But my mercy shall not depart away from him, as I took it from Saul, whom I put away before thee.\"?",
@@ -2150,14 +2413,16 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "2 Sam 7:15",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who wrote the melody for the carol \"Joy to the World\"?",
     "meaning": "Handel",
     "category": "HG",
     "difficulty": "medium",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "When besieged by Titus of Rome, what did the Jews eat, fulfilling prophecy of Deuteronomy 28:52-53?",
@@ -2166,7 +2431,8 @@
     "difficulty": "hard",
     "source": "Deut 28:52-53",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What did Sarai and Keturah have in common?",
@@ -2175,7 +2441,8 @@
     "difficulty": "hard",
     "source": "Gen 11:29; 25:1-10",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book closes with the line: \"Be thou like to a roe or to a young hart upon the mountains of spices\"?",
@@ -2183,7 +2450,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Song 8:14",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Which verse says: \"O my Father, if it be possible, let this cup pass from me.\"?",
@@ -2191,7 +2459,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Matt 26:39",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Which verse says: \"Can the Ethiopian change his skin, or the leopard his spots?\"",
@@ -2199,7 +2468,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Jer 13:23",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Who saved Moses' life by throwing down upon the ground the foreskin of her son?",
@@ -2207,14 +2477,16 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Ex 4:25",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which apostle in church tradition is represented by the apostolic symbol of a ship?",
     "meaning": "Jude",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "To where does the prophet Malachi say that the Lord will suddenly come?",
@@ -2222,7 +2494,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Mal 3:1",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Whose 30 sons rode 30 donkeys?",
@@ -2230,7 +2503,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Judges 10:3-4",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "In what chapter of Matthew is the Lord's Prayer found?",
@@ -2238,7 +2512,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Matt 6:9-13",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who asked, \"Is it lawful to offer tribute unto Caesar or not?\"",
@@ -2246,7 +2521,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Matt 22:15-17",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "According to Jesus, how do the pagans think they can improve their chances of their prayers being heard by God?",
@@ -2255,7 +2531,8 @@
     "difficulty": "hard",
     "source": "Matt 6:7",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What part of the body of King Asa became diseased in his old age?",
@@ -2263,7 +2540,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "1 Kings 15:23",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Which of the following is closest to Jerusalem: Bethlehem, Bethany, Emmaus or Jericho?",
@@ -2276,7 +2554,8 @@
       "Emmaus",
       "Jericho"
     ],
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Which two consecutive chapters of Ezekiel prophesy a war of the last days in which Israel defeats Magog or Russia?",
@@ -2285,7 +2564,8 @@
     "difficulty": "hard",
     "source": "Ezek 38-39",
     "answerType": "number",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Name the sister-in-law of Ruth.",
@@ -2293,14 +2573,16 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Ruth 1:4-14",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Spell \"Nathanael\", disciple of Jesus.",
     "meaning": "Nathanael",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was struck with blindness for three days?",
@@ -2308,7 +2590,8 @@
     "category": "NT",
     "difficulty": "easy",
     "source": "Acts 9:9",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "In Proverbs 25:25, to what does Solomon compare \"cold waters to a thirsty soul\"?",
@@ -2317,7 +2600,8 @@
     "difficulty": "hard",
     "source": "Prov 25:25",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How did Achan die?",
@@ -2326,7 +2610,8 @@
     "difficulty": "medium",
     "source": "Josh 7:25",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who watched the prophet Elijah ascend to heaven?",
@@ -2334,7 +2619,8 @@
     "category": "P",
     "difficulty": "easy",
     "source": "2 Kings 2:11-12",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What was the name of the mother of John Mark?",
@@ -2342,7 +2628,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Acts 12:12",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which verse says: \"Thou shalt not make unto thee any graven image.\"?",
@@ -2350,7 +2637,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Ex 20:4",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What does Hebrews 11 remind us that Enoch did not see?",
@@ -2358,7 +2646,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Heb 11:5",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "Supply the missing word in the following quotation: \"There is therefore now no ______ to them which are in Christ Jesus.\"",
@@ -2366,7 +2655,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Rom 8:1",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "When Samson's wife was given by her Philistine father to another man, what did he do for revenge on the Philistines?",
@@ -2375,7 +2665,8 @@
     "difficulty": "hard",
     "source": "Judges 15:1-5",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What four-word term is found in the first verse of most of the OT prophetical books?",
@@ -2383,7 +2674,8 @@
     "category": "P",
     "difficulty": "hard",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What did Abigail, Michal and Ahinoam have in common?",
@@ -2392,7 +2684,8 @@
     "difficulty": "hard",
     "source": "1 Sam 25:42-44",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who ate a book which tasted as sweet as honey yet made his belly bitter?",
@@ -2400,7 +2693,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Rev 10:9-10",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Fill in the following blank with one word: \"For the Lord is good; his mercy is everlasting; and his ______ endureth to all generations.\"",
@@ -2408,7 +2702,9 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Ps 100:5",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": false,
+    "factNote": "KJV \"truth\" / ASV, WEB \"faithfulness\" (Ps 100:5)"
   },
   {
     "term": "What did King Ahasuerus have read to him to help him get to sleep?",
@@ -2417,7 +2713,8 @@
     "difficulty": "hard",
     "source": "Est 6:1",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What king wanted to kill baby Jesus?",
@@ -2425,7 +2722,8 @@
     "category": "HG",
     "difficulty": "easy",
     "source": "Matt 2:16",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "While Ahab rode to Jezreel, who ran ahead on foot?",
@@ -2433,7 +2731,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "1 Kings 18:46",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was Jacob's favorite son?",
@@ -2441,7 +2740,8 @@
     "category": "N",
     "difficulty": "easy",
     "source": "Gen 37:3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many days did the Israelites mourn the death of Moses?",
@@ -2449,7 +2749,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Deut 34:8",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "On what two occasions did God say, \"This is my beloved Son, in whom I am well pleased.\"?",
@@ -2458,7 +2759,8 @@
     "difficulty": "hard",
     "source": "Matt 3:17; 17:5",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What reason did Jesus give for not throwing your pearls before swine or giving what is holy to dogs?",
@@ -2467,7 +2769,8 @@
     "difficulty": "hard",
     "source": "Matt 7:6",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who had a dream of an image which was broken into many pieces?",
@@ -2475,14 +2778,16 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "Dan 2:31-35",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What bishop was commissioned by Constantine to investigate the authorship of all known supposedly apostolic writings and thereby compile our present New Testament?",
     "meaning": "Eusebius",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "On what two parts of the body will the mark of the beast be applied to people in order for them to buy and sell under his rule?",
@@ -2491,7 +2796,8 @@
     "difficulty": "medium",
     "source": "Rev 13:16-18",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What relative was King Joram (Jehoram) of King Ahab?",
@@ -2499,14 +2805,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "2 Kings 8:17-18",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately precedes Nehemiah?",
     "meaning": "Ezra",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who did not believe an angel that his wife would have a baby?",
@@ -2514,7 +2822,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Luke 1:11-20",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which chapter in Psalms makes reference to the Son of God, indicating his existence before his physical nativity in Bethlehem?",
@@ -2522,7 +2831,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Ps 2",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "How did God show His forgiveness of David for sending Uriah into battle to be killed?",
@@ -2531,7 +2841,8 @@
     "difficulty": "hard",
     "source": "2 Sam 12:24",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which country's queens had the dynastic name \"Candace\"?",
@@ -2539,7 +2850,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Acts 8:27-39",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "How many months, according to Revelation, will the holy city be trampled by the Gentiles prior to Jesus' return in the last days?",
@@ -2547,7 +2859,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 11:2",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who was the first son of Cain?",
@@ -2555,7 +2868,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Gen 4:17",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many years did Eli lead Israel?",
@@ -2563,7 +2877,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "1 Sam 4:18",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What did Jesus order just after he had raised Jairus' daughter and she began to walk?",
@@ -2572,7 +2887,8 @@
     "difficulty": "hard",
     "source": "Mark 5:43",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"Be ye followers of me, even as I also am of Christ.\"?",
@@ -2580,7 +2896,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "1 Cor 11:1",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Which book tells about Haman's plotting against the Jews?",
@@ -2588,7 +2905,8 @@
     "category": "OT",
     "difficulty": "easy",
     "source": "Est 3-4",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What well-known Christmas carol's melody was written by Felix Mendelssohn?",
@@ -2596,7 +2914,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book prophesies that in the Messiah's kingdom, \"the wolf shall dwell with the lamb\"?",
@@ -2604,14 +2923,16 @@
     "category": "P",
     "difficulty": "medium",
     "source": "Isaiah 11:6",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Name the most famous great-grandson of Abraham.",
     "meaning": "Joseph",
     "category": "N",
     "difficulty": "medium",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book opens with the line: \"How doth the city sit solitary that was full of people\"?",
@@ -2619,7 +2940,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Lam 1:1",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "In what book does God refer to David as \"a man after mine own heart\"?",
@@ -2627,7 +2949,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Acts 13:22",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What book's final verse suggests that God makes some allowances for ignorance when people \"cannot discern between their right hand and their left hand\"?",
@@ -2635,7 +2958,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Jonah 4:11",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What did Lot's daughters do to ensure that their father would have sexual relations with them?",
@@ -2644,7 +2968,8 @@
     "difficulty": "medium",
     "source": "Gen 19:32",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "To what town did Jesus go after hearing of the death of John the Baptist?",
@@ -2652,7 +2977,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Luke 9:10",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "What prophet did Jesus quote to explain the disciples' desertion of him?",
@@ -2660,7 +2986,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Matt 26:31; Zech 13:7",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "During the birth of which one of her sons did Rachel die?",
@@ -2668,7 +2995,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Gen 35:17-19",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many children does the Bible record Jacob as having?",
@@ -2676,7 +3004,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Gen 35:22-26; 30:21",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What finally happened to the talent of the third servant in Jesus' parable?",
@@ -2685,7 +3014,8 @@
     "difficulty": "medium",
     "source": "Matt 25:28",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who said that all who draw the sword would die by the sword?",
@@ -2693,7 +3023,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Matt 26:52",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What person in the Bible is most noted for patience?",
@@ -2701,7 +3032,8 @@
     "category": "OT",
     "difficulty": "easy",
     "source": "James 5:11",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What was the nationality and occupation of Josephus?",
@@ -2709,7 +3041,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which former prophet of Judah did Nebuchadnezzar offer any honour he desired despite his prophecies of doom for Babylon?",
@@ -2717,7 +3050,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Jer 39:12",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Name the mother of Aaron.",
@@ -2725,7 +3059,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Ex 6:20",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How old was Ishmael when he was circumcised?",
@@ -2733,7 +3068,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Gen 17:25",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What kind of fig tree did Zacchaeus climb?",
@@ -2741,7 +3077,8 @@
     "category": "NT",
     "difficulty": "easy",
     "source": "Luke 19:4",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Which verse says: \"Prove all things; hold fast that which is good.\"?",
@@ -2749,7 +3086,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "1 Thess 5:21",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Name two of God's chosen men whose staffs changed to serpents.",
@@ -2758,14 +3096,16 @@
     "difficulty": "medium",
     "source": "Ex 4:3; 7:10",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What French philosopher who died in 1778 said that within 100 years of his time Christianity would be swept from existence and pass into history, only to have his house used by the Geneva Bible Society after his death to print Bibles?",
     "meaning": "Voltaire",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What event does 2 Peter warn that scoffers will doubt in the last days?",
@@ -2774,7 +3114,8 @@
     "difficulty": "medium",
     "source": "2 Pet 3:1-10",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What brother and sister both had leprosy at some point in their lives, though not simultaneously?",
@@ -2783,14 +3124,16 @@
     "difficulty": "hard",
     "source": "Num 12:1-16; Ex 4:6-7",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Spell Barabbas (the released criminal).",
     "meaning": "Barabbas",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who considered breaking his engagement to a woman who became pregnant before their marriage?",
@@ -2798,7 +3141,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Matt 1:18-19",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book warns Christians to test the spirits to see if they are from God?",
@@ -2806,7 +3150,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "1 John 4:1",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who handed over seven young men to the Gibeonites to atone for their grandfather's breaking of a promise of peace?",
@@ -2814,7 +3159,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "2 Sam 21:1-9",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who wrote the carol \"Away in a Manger\"?",
@@ -2822,7 +3168,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which prophetic book includes these lines in its final verse: \"He will make my feet like hind's feet and he will make me to walk upon mine high places\"?",
@@ -2830,7 +3177,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Hab 3:19",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Name the most famous great-grandson of Ruth.",
@@ -2838,7 +3186,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Ruth 4:13-22",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book's final verse says: \"Let every thing that hath breath praise the Lord\"?",
@@ -2846,7 +3195,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Ps 150:6",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Which verse says: \"Father, if thou be willing, remove this cup from me: nevertheless not my will, but thine, be done.\"?",
@@ -2854,7 +3204,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Luke 22:42",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Which book promises that \"God shall bring every work into judgement, with every secret thing, whether it be good, or whether it be evil\"?",
@@ -2862,7 +3213,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Eccl 12:14",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "In what situation were Israelites forbidden to touch Mt. Sinai on penalty of death?",
@@ -2871,7 +3223,8 @@
     "difficulty": "medium",
     "source": "Ex 19:12",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "According to Jewish law, what birds could be sacrificed at the consecration of the first-born child?",
@@ -2879,7 +3232,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Luke 2:24",
-    "answerType": "creature"
+    "answerType": "creature",
+    "fact": true
   },
   {
     "term": "What OT prophet foretold in detail 200 years of history of the Greek Empire?",
@@ -2887,7 +3241,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Dan 11",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What was the name of the first son of Hosea and Gomer?",
@@ -2895,7 +3250,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Hosea 1:4",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Counting in order, what number was the plague of frogs among the ten plagues brought upon Egypt by Moses?",
@@ -2903,7 +3259,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Ex 8:6",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which book of the Bible says that the length of a man's days is 70 years, or 80 if he has the strength?",
@@ -2911,7 +3268,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Ps 90:10",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What plague afflicted non-Israelite cities which held the Ark of the Covenant?",
@@ -2919,7 +3277,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "1 Sam 5:6",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "What is the name of the garden where Jesus prayed?",
@@ -2927,7 +3286,8 @@
     "category": "HG",
     "difficulty": "easy",
     "source": "Matt 26:36",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Who had a dream of grain-sheaves bowing down to another grain sheaf?",
@@ -2935,7 +3295,8 @@
     "category": "P",
     "difficulty": "easy",
     "source": "Gen 37:5-7",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What is the other name for Belteshazzar?",
@@ -2943,14 +3304,16 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Dan 1:7",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "In what year was the first archaeological evidence of the Hittites found, silencing Bible critics who had considered them fictitious?",
     "meaning": "1906",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What was the prodigal son tempted to eat after spending his premature inheritance?",
@@ -2958,7 +3321,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Luke 15:16",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Whose original idea was the building of the temple of Jerusalem?",
@@ -2966,7 +3330,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "2 Sam 7:1-11",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What creatures represent the spirits of demons coming from the mouths of the beast, false prophet and the dragon in Revelation?",
@@ -2974,21 +3339,24 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 16:13",
-    "answerType": "creature"
+    "answerType": "creature",
+    "fact": true
   },
   {
     "term": "Name the paternal grandfather of Joseph, the ruler of Egypt.",
     "meaning": "Isaac",
     "category": "N",
     "difficulty": "medium",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately follows Galatians?",
     "meaning": "Ephesians",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What did Paul recommend should be done in the case of the Corinthian church member who co-habited with his father's wife?",
@@ -2997,7 +3365,8 @@
     "difficulty": "hard",
     "source": "1 Cor 5",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"And now abideth faith, hope, charity, these three; but the greatest of these is charity.\"?",
@@ -3005,7 +3374,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "1 Cor 13:13",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What was the second thing that Saul did as king which displeased God?",
@@ -3014,7 +3384,8 @@
     "difficulty": "hard",
     "source": "1 Sam 14:24",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which tribe of Israel remained loyal to Rehoboam when the kingdom was divided after Solomon's death?",
@@ -3022,7 +3393,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "1 Kings 12:20",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which prophet had a vision of four creatures, each with the head of a man, a lion, an ox and an eagle?",
@@ -3030,14 +3402,16 @@
     "category": "P",
     "difficulty": "medium",
     "source": "Ezek 1:4-28",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Spell Caiaphas (the high priest who questioned Jesus).",
     "meaning": "Caiaphas",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What event prompted an angel to tell Joseph and Mary to return from Egypt?",
@@ -3046,7 +3420,8 @@
     "difficulty": "medium",
     "source": "Matt 2:19-20",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book says that the preaching of the cross is foolishness to them that perish, but to us it is the power of God?",
@@ -3054,7 +3429,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "1 Cor 1:18",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What possession of Naboth did Ahab covet?",
@@ -3062,7 +3438,8 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "1 Kings 21",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "What city did Hiel rebuild?",
@@ -3070,14 +3447,16 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "1 Kings 16:34",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Which prophet was predominant during the reign of Jehoshaphat?",
     "meaning": "Elijah",
     "category": "P",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who had a wife forced upon him by the deceit of his own uncle?",
@@ -3085,7 +3464,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Gen 29",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How old was Joseph when he was sold into Egypt?",
@@ -3093,7 +3473,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Gen 37:2",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What situation brought Jesus back to Judea even though the people there had once tried to stone him?",
@@ -3102,7 +3483,8 @@
     "difficulty": "medium",
     "source": "John 11",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Finish the line from 1 Corinthians: \"It is better to marry than to...\"",
@@ -3110,7 +3492,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "1 Cor 7:9",
-    "answerType": "verb"
+    "answerType": "verb",
+    "fact": true
   },
   {
     "term": "What did the first recorded woman thief in the Bible (other than Eve) steal?",
@@ -3118,7 +3501,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Gen 31:19",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "What discovery caused excitement in the archeological world in 1947?",
@@ -3126,7 +3510,8 @@
     "category": "HG",
     "difficulty": "medium",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which OT book prophesies that two thirds in the whole land will be struck down and perish?",
@@ -3134,7 +3519,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Zech 13:8",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who came to see Jesus privately at night?",
@@ -3142,7 +3528,8 @@
     "category": "N",
     "difficulty": "easy",
     "source": "John 3:1-2",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Whom did Paul send to look after trouble in the church of Corinth?",
@@ -3150,7 +3537,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "2 Cor 7:13-14",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Where does Psalms 119 say is the best place to keep God's word?",
@@ -3158,7 +3546,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Ps 119:11",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "What list is found in the last chapter of Ezra?",
@@ -3167,7 +3556,8 @@
     "difficulty": "hard",
     "source": "Ezra 10",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Where did John the Baptist live until the days of his public ministry?",
@@ -3175,7 +3565,8 @@
     "category": "HG",
     "difficulty": "medium",
     "source": "Luke 1:80",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "In Joseph's dream, eleven what bowed down to him?",
@@ -3183,7 +3574,8 @@
     "category": "P",
     "difficulty": "medium",
     "source": "Gen 37:9",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Of whom was Eliab the oldest brother?",
@@ -3191,7 +3583,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "1 Sam 17:13",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Counting in order, what number was the plague of blood among the ten plagues brought upon Egypt by Moses?",
@@ -3199,7 +3592,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Ex 7:20",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who said, \"Bring forth the best robe, and put it on him; and put a ring on his hand, and shoes on his feet: And bring hither the fatted calf, and kill it.\"?",
@@ -3208,7 +3602,8 @@
     "difficulty": "medium",
     "source": "Luke 15:22-23",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book contains the following verse: \"The fool hath said in his heart, There is no God.\"?",
@@ -3216,7 +3611,8 @@
     "category": "W",
     "difficulty": "easy",
     "source": "Ps 14:1",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who declared himself king without his father the king's knowledge?",
@@ -3224,7 +3620,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "1 Kings 1:5-6",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was the last judge of Israel?",
@@ -3232,7 +3629,8 @@
     "category": "HG",
     "difficulty": "medium",
     "source": "1 Sam 8:1-7",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Jesus compares the last days before his second coming to the days of two OT men. Name them.",
@@ -3241,7 +3639,8 @@
     "difficulty": "medium",
     "source": "Luke 17:26-28",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Name the father of Magog and Gomer.",
@@ -3249,7 +3648,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Gen 10:2",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What fraction of his possessions did Zacchaeus give to the poor after dining with Jesus?",
@@ -3257,7 +3657,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Luke 19:8",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What did the rich fool tear down in the parable of Jesus?",
@@ -3265,7 +3666,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Luke 12:18",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "What does Paul, in 1 Corinthians 15, say can not inherit the kingdom of God?",
@@ -3274,7 +3676,8 @@
     "difficulty": "hard",
     "source": "1 Cor 15:50",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What group of split-hoofed animals were permissible as food under the OT law?",
@@ -3282,14 +3685,16 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Deut 14:6",
-    "answerType": "creature"
+    "answerType": "creature",
+    "fact": true
   },
   {
     "term": "Which book describes the rebuilding of the temple after the release of the Jews from Babylon?",
     "meaning": "Ezra",
     "category": "HG",
     "difficulty": "medium",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Which prophet prophesied accurately that the city of Tyre would someday become a bare rock for spreading fishing nets?",
@@ -3297,7 +3702,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Ezek 26:14",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was Saul's oldest son?",
@@ -3305,7 +3711,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "1 Sam 14:49",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many women named Mary stood near the cross when Jesus was crucified?",
@@ -3313,7 +3720,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "John 19:25",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What was \"the Pavement\" (in the Hebrew, Gabbatha) in John 19:13?",
@@ -3322,7 +3730,8 @@
     "difficulty": "hard",
     "source": "John 19:13",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book in the NT says \"The love of money is the root of all evil\"?",
@@ -3330,7 +3739,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "1 Tim 6:10",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "In appreciation of a king's provision of wood for building the temple, Solomon gave him 20 of something. Twenty what?",
@@ -3338,7 +3748,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "1 Kings 9:11",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Of what city was Hiram the king?",
@@ -3346,7 +3757,8 @@
     "category": "HG",
     "difficulty": "medium",
     "source": "1 Kings 9:11",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Which chapter of Psalms prophesies the crucifixion of Jesus in amazing detail?",
@@ -3354,7 +3766,8 @@
     "category": "P",
     "difficulty": "medium",
     "source": "Ps 22",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What 3 original disciples of Jesus had the same first names as 3 of Jesus' brothers?",
@@ -3363,7 +3776,8 @@
     "difficulty": "hard",
     "source": "Mark 6:3; Matt 10:1-5",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who was lowered over a city's walls in a large basket?",
@@ -3371,7 +3785,8 @@
     "category": "NT",
     "difficulty": "easy",
     "source": "Acts 9:25",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which verse says: \"This is the day which the Lord hath made; we will rejoice and be glad in it.\"?",
@@ -3379,7 +3794,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Ps 118:24",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Who searched for his father's lost donkeys?",
@@ -3387,7 +3803,8 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "1 Sam 9:3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "According to church tradition, what is the apostolic symbol of the apostle Andrew?",
@@ -3395,7 +3812,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which prophet was a son of Pethuel?",
@@ -3403,7 +3821,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Joel 1:1",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "To whom did God say, \"Two nations are in thy womb\"?",
@@ -3411,14 +3830,16 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Gen 25:23",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book of the Bible immediately precedes the book of Jude?",
     "meaning": "3 John",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Which gospel is the only one of the four to record a boyhood incident in the life of Jesus?",
@@ -3426,7 +3847,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Luke 2:41-52",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Which verse says: \"The testimony of the Lord is sure, making wise the simple.\"?",
@@ -3434,7 +3856,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Ps 19:7",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "What child, a future king of Judah, was hidden for 6 years?",
@@ -3442,14 +3865,16 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "2 Kings 11:1-3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which Assyrian king burned Babylon?",
     "meaning": "Sennacherib",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which prophet criticized the Jews for delays in rebuilding the temple of Jerusalem?",
@@ -3457,7 +3882,8 @@
     "category": "P",
     "difficulty": "medium",
     "source": "Haggai 1",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many sons of Adam and Eve are named in the Bible?",
@@ -3465,7 +3891,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Gen 4; 5:3",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "How many kings did the Southern Kingdom (Judah) have during its history?",
@@ -3473,7 +3900,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "1 & 2 Kings",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What was Jesus asked by Pilate, just before He responded: \"Thou sayest it\"?",
@@ -3482,7 +3910,8 @@
     "difficulty": "medium",
     "source": "Luke 23:3",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Fill in the blank with one word: \"O give thanks unto the Lord; for he is good: for his ______ endureth for ever.\"",
@@ -3490,7 +3919,9 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Ps 118:29",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": false,
+    "factNote": "KJV \"mercy\" / ASV, WEB \"lovingkindness\" (Ps 118:29)"
   },
   {
     "term": "Name two men who were miraculously born of two different previously barren women.",
@@ -3499,7 +3930,8 @@
     "difficulty": "medium",
     "source": "1 Sam 1; Gen 21:1-2",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who succeeded Eli as high priest of Israel?",
@@ -3507,7 +3939,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "1 Sam 1-3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "In what two books of the Bible is the word \"seal\" used to describe God's protection of a remnant of Jews?",
@@ -3516,14 +3949,16 @@
     "difficulty": "hard",
     "source": "Ezek 9:4; Rev 7:4",
     "answerType": "book",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Spell Sennacherib (king of Assyria).",
     "meaning": "Sennacherib",
     "category": "N",
     "difficulty": "medium",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many talents were given to the third servant in Jesus' parable?",
@@ -3531,7 +3966,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Matt 25:15",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which verse says: \"Woman, behold thy son!\"?",
@@ -3539,7 +3975,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "John 19:26",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Which book states that nothing can separate us from the love of God in Christ Jesus?",
@@ -3547,7 +3984,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Rom 8:38-39",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "To whom did God say: \"I am that I am\"?",
@@ -3555,14 +3993,16 @@
     "category": "OT",
     "difficulty": "easy",
     "source": "Ex 3:14",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which Roman Emperor actively encouraged all his subjects to become Christians?",
     "meaning": "Constantine",
     "category": "HG",
     "difficulty": "medium",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "To what practice did Elijah put an end?",
@@ -3570,7 +4010,8 @@
     "category": "P",
     "difficulty": "medium",
     "source": "1 Kings 18",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "Who are the only brothers of Abel named in the Bible?",
@@ -3579,7 +4020,8 @@
     "difficulty": "medium",
     "source": "Gen 4",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who said the following: \"Lord, remember me when thou comest into thy kingdom\"?",
@@ -3588,7 +4030,8 @@
     "difficulty": "medium",
     "source": "Luke 23:42",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Under what did Rahab hide the Israelite spies?",
@@ -3596,7 +4039,8 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "Josh 2:6",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Which 3 books in the OT give an account of the kings of the Northern and Southern Kingdoms of Israel after Solomon's death?",
@@ -3604,7 +4048,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "book",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who had his thumbs and big toes cut off?",
@@ -3612,7 +4057,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Judges 1:6",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many times in total did the Israelites march around Jericho during the seven-day \"siege\" of Jericho?",
@@ -3620,7 +4066,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Josh 6",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "For what activity was Dorcas admired?",
@@ -3628,7 +4075,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Acts 9:39",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Who said, \"I go forward, but he is not there; and backward, but I cannot perceive him\"?",
@@ -3636,7 +4084,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Job 23:8",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What did David win for himself by slaying 200 Philistines?",
@@ -3644,7 +4093,8 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "1 Sam 18:27",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Name 3 Israelite patriarchs who were buried with their wives in the cave of Machpelah.",
@@ -3653,7 +4103,8 @@
     "difficulty": "hard",
     "source": "Gen 23:19; 49:29-31",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In which book was the prophecy of Herod's massacre of the Bethlehem babies recorded for the first time?",
@@ -3661,7 +4112,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Jer 31:15; Matt 2:17-18",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "How many generations were there from Jesse to David?",
@@ -3669,7 +4121,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Matt 1:5-6",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Name the 4 books in the Bible that begin with the letter \"M\".",
@@ -3677,7 +4130,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "answerType": "book",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Name the couple in Corinth, acquainted with Paul, who were tent-makers.",
@@ -3686,7 +4140,8 @@
     "difficulty": "medium",
     "source": "Acts 18:1-4",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"To every thing there is a season, and a time to every purpose under the heaven.\"?",
@@ -3694,7 +4149,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Eccl 3:1",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Which of his half-brothers did Absalom have killed for what he did to their sister Tamar?",
@@ -3702,14 +4158,16 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "2 Sam 13:22-29",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What influential Christian died in the siege of Hippo?",
     "meaning": "Augustine",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Whose souls cry out, revealed when the fifth seal of Revelation opens?",
@@ -3717,7 +4175,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 6:9",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What lame man ate regularly at King David's table?",
@@ -3725,7 +4184,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "2 Sam 9:13",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What is the last word of the King James Version of the Bible?",
@@ -3733,7 +4193,9 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Rev 22:21",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": false,
+    "factNote": "the question names the King James Version"
   },
   {
     "term": "Who told whom to take a little wine for his stomach's sake?",
@@ -3742,7 +4204,8 @@
     "difficulty": "medium",
     "source": "1 Tim 5:23",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Fill in the blank of 2 Corinthians 12:9 with one word of the Lord: \"My strength is made perfect in ______.\"",
@@ -3750,7 +4213,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "2 Cor 12:9",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "Name the three Jews thrown into a fiery furnace by a Babylonian king.",
@@ -3759,7 +4223,8 @@
     "difficulty": "easy",
     "source": "Dan 3:20",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "The rivers Euphrates and Tigris were two boundaries of what site?",
@@ -3767,7 +4232,8 @@
     "category": "HG",
     "difficulty": "medium",
     "source": "Gen 2:14",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "How many years does a millennialist believe Christ will physically reign on the earth?",
@@ -3775,7 +4241,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Rev 20:4",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which man's sister poured perfume on Jesus and wiped his feet with her hair?",
@@ -3783,7 +4250,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "John 12:2-3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What does the Bible promise those who \"delight in the Lord\"?",
@@ -3792,7 +4260,8 @@
     "difficulty": "medium",
     "source": "Ps 37:4",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who was the only identified female distant cousin of Jesus who speaks in the NT?",
@@ -3800,7 +4269,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Luke 1:36",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many books in the NT consist of only one chapter?",
@@ -3808,7 +4278,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Philemon, 2 John, 3 John, Jude",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Whose action prompted Judas Iscariot to complain of waste?",
@@ -3816,7 +4287,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "John 12:3-8",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "In which book of the Bible is found the following statement: \"When I became a man, I put away childish things\"?",
@@ -3824,7 +4296,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "1 Cor 13:11",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who bowed down seven times to his brother after a long separation?",
@@ -3832,7 +4305,8 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "Gen 33:3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which of the following cities is the farthest south: Corinth, Thessalonica, Philippi or Rome?",
@@ -3845,7 +4319,8 @@
       "Philippi",
       "Rome"
     ],
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Which two consecutive chapters of Zechariah prophesy the attempted siege of Jerusalem in the last days?",
@@ -3854,7 +4329,8 @@
     "difficulty": "hard",
     "source": "Zech 13-14",
     "answerType": "number",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Name the four brothers of Jesus.",
@@ -3863,7 +4339,8 @@
     "difficulty": "hard",
     "source": "Mark 6:3",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who had a vision of a man who would come and heal his blindness?",
@@ -3871,7 +4348,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Acts 9:8-12",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "In which chapter of the Bible does Paul compare the relative value of prophecy and speaking in tongues?",
@@ -3879,7 +4357,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "1 Cor 14",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Which Israelite judge counselled from under a palm tree?",
@@ -3887,7 +4366,8 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "Judges 4:5",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "After the Six-Day War between Israel and Egypt in 1967, the casualty list of Egypt numbered 30,000. What was the total casualty list of the Israelis: 12,000; 6,000; 2,000 or 1,000?",
@@ -3900,7 +4380,8 @@
       "2,000",
       "1,000"
     ],
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which book in the Bible prophesies that in the last days God will \"make Jerusalem a cup of trembling unto all the people round about\"?",
@@ -3908,7 +4389,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Zech 12:2",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who invited his close friends and relatives to meet Peter?",
@@ -3916,14 +4398,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Acts 10:24",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately precedes Deuteronomy?",
     "meaning": "Numbers",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Why did Joseph and Mary travel from Nazareth to Bethlehem?",
@@ -3932,7 +4416,8 @@
     "difficulty": "medium",
     "source": "Luke 2:1-5",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"Wherefore by their fruits ye shall know them.\"?",
@@ -3940,7 +4425,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Matt 7:20",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Who enticed Samson into telling the secret of his strength?",
@@ -3948,7 +4434,8 @@
     "category": "OT",
     "difficulty": "easy",
     "source": "Judges 16:18",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What nationality was the father of Timothy?",
@@ -3956,7 +4443,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Acts 16:1",
-    "answerType": "adjective"
+    "answerType": "adjective",
+    "fact": true
   },
   {
     "term": "How many stones did David take to fight Goliath?",
@@ -3964,7 +4452,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "1 Sam 17:40",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who prevented his jailer from killing himself?",
@@ -3972,7 +4461,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Acts 16:28",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who said the following: \"But let your communication be, Yea, yea; Nay, nay: for whatsoever is more than these cometh of evil.\"?",
@@ -3980,7 +4470,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Matt 5:37",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Where did Abraham grow up?",
@@ -3988,7 +4479,8 @@
     "category": "HG",
     "difficulty": "medium",
     "source": "Gen 11:27-32",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "How many horns does the beast have in Revelation 13?",
@@ -3996,7 +4488,8 @@
     "category": "P",
     "difficulty": "medium",
     "source": "Rev 13:1",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What woman made a coat for her son every year?",
@@ -4004,7 +4497,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "1 Sam 2:19",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many children did Abraham's second wife give him?",
@@ -4012,7 +4506,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Gen 25:1-2",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What did the eunuch ask Philip after Philip had preached to him about Jesus?",
@@ -4021,7 +4516,8 @@
     "difficulty": "medium",
     "source": "Acts 8:36",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What advice did the father-in-law of Moses give to him in the desert?",
@@ -4030,7 +4526,8 @@
     "difficulty": "medium",
     "source": "Ex 18:17-24",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who killed Joram and took the throne of Israel?",
@@ -4038,7 +4535,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "2 Kings 9:24",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What two things did Elisha do with the enemy Aramean army after striking them blind?",
@@ -4047,7 +4545,8 @@
     "difficulty": "hard",
     "source": "2 Kings 6:20-23",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who asked his servant to kill him, while dying from a cracked skull?",
@@ -4055,7 +4554,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Judges 9:54",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many generations are there between the deportation of the Jews to Babylon and the time of Christ: 7, 14, 10 or 24?",
@@ -4069,7 +4569,8 @@
       "10",
       "24"
     ],
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "When was John the Baptist filled with the Holy Spirit?",
@@ -4078,7 +4579,8 @@
     "difficulty": "medium",
     "source": "Luke 1:15",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book says that a double-minded man is unstable in all his ways?",
@@ -4086,7 +4588,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "James 1:8",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Whom did Joseph ask his brothers to bring to Egypt to prove they weren't spies?",
@@ -4094,7 +4597,8 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "Gen 42:14-15",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "To whom were the following words spoken: \"Write the things which thou hast seen, and the things which are, and the things which shall be hereafter\"?",
@@ -4102,7 +4606,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 1:19",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Name the wife of Zebedee.",
@@ -4110,7 +4615,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Mark 15:40; Matt 27:56",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How old was Jacob when he first met the Pharaoh?",
@@ -4118,7 +4624,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Gen 47:9",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What did Paul urge Euodias and Syntyche to do in the letter to the Philippians?",
@@ -4127,7 +4634,8 @@
     "difficulty": "hard",
     "source": "Phil 4:2",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who was offered anything he wanted by God?",
@@ -4135,7 +4643,8 @@
     "category": "OT",
     "difficulty": "easy",
     "source": "1 Kings 3:5",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Between 1840 and 1980 the world's population increased 100%. During that time, what was the percentage increase in the population of Israel: 750%, 1,000%, 1,500% or 2,000%?",
@@ -4148,7 +4657,8 @@
       "1,500%",
       "2,000%"
     ],
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which book in the Bible prophesies that God in the last days will defend Jerusalem \"as birds flying\"?",
@@ -4156,7 +4666,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Isaiah 31:5",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What relative was Jehoshabeath to Joash?",
@@ -4164,14 +4675,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "2 Chron 22:10-11",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately precedes Joshua?",
     "meaning": "Deuteronomy",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who had a vision of a man imploring him to come to Macedonia?",
@@ -4179,7 +4692,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Acts 16:9",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which verse says: \"A soft answer turneth away wrath.\"?",
@@ -4187,7 +4701,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Prov 15:1",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Under the OT law, what did rabbits and camels have in common as food?",
@@ -4195,7 +4710,8 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "Lev 11:4-6",
-    "answerType": "adjective"
+    "answerType": "adjective",
+    "fact": true
   },
   {
     "term": "What incident prompted tears from Jesus in the verse \"Jesus wept\"?",
@@ -4204,7 +4720,8 @@
     "difficulty": "easy",
     "source": "John 11:35",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book in the NT says: \"Faith, if it hath not works, is dead\"?",
@@ -4212,7 +4729,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "James 2:17",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What part of the lover's face is compared to a piece of a pomegranate in the Song of Solomon?",
@@ -4220,7 +4738,8 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "Song 6:7",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "During the feud between the houses of Saul and David, who tried to switch sides?",
@@ -4228,7 +4747,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "2 Sam 3",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Counting in order, what number was the plague of darkness among the ten plagues brought upon Egypt by Moses?",
@@ -4236,7 +4756,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Ex 10:22",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "In what three languages was the sign above Jesus on the cross written?",
@@ -4245,7 +4766,8 @@
     "difficulty": "medium",
     "source": "John 19:20",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Whose sin with Bathsheba prompted the writing of Psalm 51, a prayer for mercy?",
@@ -4253,7 +4775,8 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "Ps 51; 2 Sam 11-12",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which king of Judah was in power when Assyria conquered the northern kingdom, but delayed invasion of Judah by paying tribute to Assyria?",
@@ -4261,7 +4784,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "2 Kings 18:9-16",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Counting in order, which of the seven vials (bowls) prepares the way for the kings of the East in Revelation?",
@@ -4269,7 +4793,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 16:12",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "How many people did Jesus personally raise from the dead?",
@@ -4277,7 +4802,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Matt 9:23-25; Luke 7:11-15; John 11:43-44",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What relative of the Herod who killed the Bethlehem babies was the man who beheaded John the Baptist?",
@@ -4285,7 +4811,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Matt 14:1-10",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "For which miracle did Moses neglect to give God the credit?",
@@ -4294,14 +4821,16 @@
     "difficulty": "hard",
     "source": "Num 20:11-12",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "According to church tradition, which apostle was crucified with his head downwards at his own request?",
     "meaning": "Peter",
     "category": "HG",
     "difficulty": "medium",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book prophesied that the Branch would remove the sin of the land in a single day?",
@@ -4309,14 +4838,16 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Zech 3:8-9",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Which book follows the Song of Solomon?",
     "meaning": "Isaiah",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who said, \"I have suffered many things this day in a dream because of him\"?",
@@ -4325,7 +4856,8 @@
     "difficulty": "hard",
     "source": "Matt 27:19",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In which book does Paul warn that forbidding marriage and forbidding the eating of meats are false doctrines?",
@@ -4333,7 +4865,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "1 Tim 4:1-3",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Whose false accusation sent Joseph to prison?",
@@ -4342,7 +4875,8 @@
     "difficulty": "medium",
     "source": "Gen 39:14-20",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How is the judgement seat of God described in Revelation 20?",
@@ -4351,7 +4885,8 @@
     "difficulty": "medium",
     "source": "Rev 20:11",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What is the alternate name used for Silas in 1 Thessalonians 1:1?",
@@ -4359,7 +4894,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "1 Thess 1:1",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many of the nineteen kings of the Northern Kingdom of Israel met death by violence?",
@@ -4367,7 +4903,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "1 & 2 Kings",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "To whom did Jesus say, \"Wist ye not that I must be about my Father's business?\"",
@@ -4376,7 +4913,8 @@
     "difficulty": "medium",
     "source": "Luke 2:49",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In the list in Proverbs 6 of the seven things that the Lord hates, which number on the list is \"a false witness that speaketh lies\"?",
@@ -4384,7 +4922,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Prov 6:16-19",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What did the Israelites put on their doors to protect them from having their first-born sons killed?",
@@ -4392,7 +4931,8 @@
     "category": "OT",
     "difficulty": "easy",
     "source": "Ex 12:7, 13",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Who, by God's power, performed the second act of reviving a dead person in the OT?",
@@ -4400,7 +4940,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "2 Kings 4:35",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who was Benjamin's next oldest brother?",
@@ -4408,7 +4949,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Gen 30:22-24; 35:18",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many pieces of silver did Judas receive for betraying Jesus?",
@@ -4416,7 +4958,8 @@
     "category": "LNS",
     "difficulty": "easy",
     "source": "Matt 26:14-15",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who took the body of Jesus to be entombed?",
@@ -4425,7 +4968,8 @@
     "difficulty": "medium",
     "source": "Matt 27:57-58",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Complete the following saying of Paul: \"Doth not even nature itself teach you, that, if a man have ______, it is a shame unto him?\"",
@@ -4434,21 +4978,24 @@
     "difficulty": "hard",
     "source": "1 Cor 11:14",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In the hierarchy of the Roman Catholic Church, which office is immediately below that of the Pope?",
     "meaning": "Cardinal",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "How many generations were there between Abraham and Joseph, the ruler of Egypt?",
     "meaning": "3",
     "category": "N",
     "difficulty": "hard",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Which book in the OT prophesies the soldiers gambling for Jesus' clothes during His crucifixion?",
@@ -4456,7 +5003,8 @@
     "category": "P",
     "difficulty": "medium",
     "source": "Ps 22:18",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What is a millennialist?",
@@ -4464,7 +5012,8 @@
     "category": "P",
     "difficulty": "hard",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How many times did Jacob bow to Esau when they met after many years?",
@@ -4472,7 +5021,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Gen 33:3",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What was the surname of the apostle Peter?",
@@ -4480,14 +5030,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Matt 16:17",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately precedes Ephesians?",
     "meaning": "Galatians",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "On what occasion was God given a sacrifice of 22,000 oxen and 120,000 sheep?",
@@ -4496,7 +5048,8 @@
     "difficulty": "hard",
     "source": "1 Kings 8:63",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Whom did the Lord say would eat their sons and daughters which He had given them, a prophecy fulfilled over 1000 years later?",
@@ -4504,7 +5057,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Deut 28:53",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which verse says: \"The fear of the Lord is the beginning of knowledge: but fools despise wisdom and instruction.\"?",
@@ -4512,7 +5066,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Prov 1:7",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "According to church tradition, which of the original twelve disciples was martyred in Egypt?",
@@ -4520,7 +5075,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What is represented by the 1290 days in Daniel 12?",
@@ -4529,7 +5085,8 @@
     "difficulty": "hard",
     "source": "Dan 12:11",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who interpreted Nebuchadnezzar's dream of a huge statue representing four kingdoms?",
@@ -4537,7 +5094,8 @@
     "category": "P",
     "difficulty": "easy",
     "source": "Dan 2",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Name the two books in the Bible that begin with the letter \"D\".",
@@ -4545,7 +5103,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "answerType": "book",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What three books of the Bible are most often attributed to Solomon?",
@@ -4554,7 +5113,8 @@
     "difficulty": "medium",
     "source": "Prov 1:1; Eccl 1:1; Song 1:1",
     "answerType": "book",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What two books in the Bible say \"The fear of the Lord is the beginning of knowledge (wisdom)\"?",
@@ -4563,7 +5123,8 @@
     "difficulty": "hard",
     "source": "Ps 111:10; Prov 1:7",
     "answerType": "book",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Name the great-grandmother of David.",
@@ -4571,7 +5132,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Matt 1:5-6",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "In which book does Paul discuss speaking in tongues?",
@@ -4579,7 +5141,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "1 Cor 14:4-6",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Name the five books of the Pentateuch.",
@@ -4587,7 +5150,8 @@
     "category": "HG",
     "difficulty": "easy",
     "answerType": "book",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who was the husband of Deborah?",
@@ -4595,7 +5159,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Judges 4:4",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who will trample the holy city for 42 months in Revelation?",
@@ -4603,7 +5168,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 11:2",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book of the Bible contains the statement: \"As for me and my house, we will serve the Lord\"?",
@@ -4611,7 +5177,8 @@
     "category": "W",
     "difficulty": "easy",
     "source": "Josh 24:15",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "How many generations were there from Boaz to Jesse?",
@@ -4619,7 +5186,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Matt 1:5-6",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What righteous king of Judah removed his mother from her official position as queen mother because she worshipped idols?",
@@ -4627,21 +5195,24 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "1 Kings 15:13",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What was the former name of the city of Constantinople, changed when a Christian Roman emperor moved his headquarters there?",
     "meaning": "Byzantium",
     "category": "HG",
     "difficulty": "medium",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "What term, commonly used by theologians for the \"beast\" or \"man of sin\" prophesied to rule the final world empire, is never used in scripture to refer to an individual?",
     "meaning": "Antichrist",
     "category": "P",
     "difficulty": "medium",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": true
   },
   {
     "term": "What other name for the apostle Simon Peter is used by Paul in some of his letters?",
@@ -4649,7 +5220,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Gal 2:9; John 1:42",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many of the original disciples of Jesus had the same first name as brothers of Jesus?",
@@ -4657,7 +5229,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Mark 6:3; Matt 10:1-5",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What trade did Paul and Aquila have in common?",
@@ -4665,7 +5238,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Acts 18:1-3",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Which book of the Bible says that God visits the iniquity of those who hate him upon the children unto the fourth generation?",
@@ -4673,7 +5247,8 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Ex 20:5",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "In which book of the Bible do we read the story of Jacob's dream of a ladder to Heaven?",
@@ -4681,7 +5256,8 @@
     "category": "OT",
     "difficulty": "easy",
     "source": "Gen 28:12",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What did the term \"the law and the prophets\" refer to during the time of Jesus?",
@@ -4690,7 +5266,8 @@
     "difficulty": "medium",
     "source": "Matt 7:12",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What three numbers appear most frequently in the book of Revelation?",
@@ -4698,7 +5275,8 @@
     "category": "P",
     "difficulty": "hard",
     "answerType": "number",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How many consecutive days did Goliath challenge the Israelites before David accepted?",
@@ -4706,7 +5284,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "1 Sam 17:16",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Who said, \"Arise, and take the young child and his mother, and flee into Egypt\"?",
@@ -4715,7 +5294,8 @@
     "difficulty": "medium",
     "source": "Matt 2:13",
     "answerType": "creature",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"Teaching them to observe all things whatsoever I have commanded you: and, lo, I am with you alway, even unto the end of the world.\"?",
@@ -4723,7 +5303,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Matt 28:20",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Whom, according to Genesis 6:2, did the sons of God marry?",
@@ -4732,7 +5313,8 @@
     "difficulty": "hard",
     "source": "Gen 6:2",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who immediately preceded Saul as leader of Israel?",
@@ -4740,7 +5322,8 @@
     "category": "HG",
     "difficulty": "medium",
     "source": "1 Sam 8-9",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "To what town was the ship headed from which Jonah was thrown?",
@@ -4748,7 +5331,8 @@
     "category": "P",
     "difficulty": "medium",
     "source": "Jonah 1:3",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Who tried to persuade Balaam to put a curse upon the Israelites?",
@@ -4756,7 +5340,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Num 22-24",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Name the three books in the Bible that begin with the letter \"R\".",
@@ -4764,7 +5349,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "answerType": "book",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who said, \"Thou shalt never wash my feet\"?",
@@ -4772,7 +5358,8 @@
     "category": "NT",
     "difficulty": "easy",
     "source": "John 13:8",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book contains the line, \"Remember now thy Creator in the days of thy youth\"?",
@@ -4780,7 +5367,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Eccl 12:1",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What had Jacob been doing all night just before God changed his name to Israel?",
@@ -4788,7 +5376,8 @@
     "category": "OT",
     "difficulty": "easy",
     "source": "Gen 32:24-28",
-    "answerType": "verb"
+    "answerType": "verb",
+    "fact": true
   },
   {
     "term": "In what land was the city of Enoch?",
@@ -4796,7 +5385,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Gen 4:16-17",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Which prophetical book says that the word of the Lord is \"like a hammer that breaketh the rock in pieces\"?",
@@ -4804,7 +5394,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Jer 23:29",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who was famous for having hairy arms?",
@@ -4812,7 +5403,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Gen 27:11-23",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "How many people altogether survived in Noah's ark?",
@@ -4820,7 +5412,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "1 Pet 3:20",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What did Mary use to wipe the feet of Jesus after anointing them with perfume?",
@@ -4828,7 +5421,8 @@
     "category": "NT",
     "difficulty": "easy",
     "source": "John 12:3",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Which version of the Lord's prayer contains the line \"For thine is the kingdom, and the power, and the glory\": Matthew's or Luke's?",
@@ -4840,14 +5434,17 @@
       "Matthew's",
       "Luke's"
     ],
-    "answerType": "book"
+    "answerType": "book",
+    "fact": false,
+    "factNote": "the doxology is missing from Matt 6:13 in translations that follow older manuscripts (e.g. ASV; ESV footnotes it)"
   },
   {
     "term": "What word for a Jewish coin can also be a Jewish unit of weight equal to approximately .533 ounces?",
     "meaning": "Shekel",
     "category": "OT",
     "difficulty": "medium",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": true
   },
   {
     "term": "Who was ruler of Rome when Jesus was born?",
@@ -4855,7 +5452,8 @@
     "category": "HG",
     "difficulty": "medium",
     "source": "Luke 2:1",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "When Samuel first heard God calling him, whose voice did he think it was?",
@@ -4863,7 +5461,8 @@
     "category": "P",
     "difficulty": "medium",
     "source": "1 Sam 3:4-8",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Who said, \"It was expedient that one man should die for the people\"?",
@@ -4871,7 +5470,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "John 18:14",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which eight letters of the alphabet are not used to begin the names of any Bible books?",
@@ -4879,7 +5479,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In whom is there no truth?",
@@ -4887,7 +5488,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "John 8:44",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Why did men love darkness rather than light?",
@@ -4896,7 +5498,8 @@
     "difficulty": "medium",
     "source": "John 3:19",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who were Baalim and Ashtaroth?",
@@ -4905,7 +5508,8 @@
     "difficulty": "hard",
     "source": "Judges 10:6",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What city was marched around by an army thirteen times in a week?",
@@ -4913,7 +5517,8 @@
     "category": "HG",
     "difficulty": "medium",
     "source": "Josh 6:2-4",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Zechariah took two what, and named them Beauty and Bands?",
@@ -4921,7 +5526,9 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Zech 11:7",
-    "answerType": "object"
+    "answerType": "object",
+    "fact": false,
+    "factNote": "KJV, ASV \"staves\", \"Beauty\" and \"Bands\" / WEB \"staffs\", \"Favor\" and \"Union\" (Zech 11:7)"
   },
   {
     "term": "What man and woman spitefully criticized their brother for marrying an Ethiopian woman?",
@@ -4930,7 +5537,8 @@
     "difficulty": "hard",
     "source": "Num 12:1",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book begins with the verse: \"Then Moab rebelled against Israel after the death of Ahab\"?",
@@ -4938,7 +5546,8 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "2 Kings 1:1",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "What three people did the disciples name when Jesus asked, \"Whom do men say that I the Son of man am?\"",
@@ -4947,7 +5556,8 @@
     "difficulty": "hard",
     "source": "Matt 16:13-14",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What did Jesus tell us not to do, \"lest they trample them under their feet\"?",
@@ -4956,7 +5566,8 @@
     "difficulty": "medium",
     "source": "Matt 7:6",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What act of God did the Israelites commemorate with 12 stones at Gilgal?",
@@ -4965,7 +5576,8 @@
     "difficulty": "hard",
     "source": "Josh 4:6-7, 20-23",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What is meant by the term \"apocryphal books\"?",
@@ -4973,7 +5585,8 @@
     "category": "HG",
     "difficulty": "hard",
     "answerType": "theology",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What three parts of the body will consume away in all those who fight against Jerusalem in the last days?",
@@ -4982,7 +5595,8 @@
     "difficulty": "hard",
     "source": "Zech 14:12",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Name the second Christian martyr.",
@@ -4990,14 +5604,16 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Acts 12:2",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book of the Bible follows the book of Deuteronomy?",
     "meaning": "Joshua",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "Who said, \"My name is Legion: for we are many\"?",
@@ -5006,7 +5622,8 @@
     "difficulty": "medium",
     "source": "Mark 5:9",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which verse says: \"Every man according as he purposeth in his heart, so let him give; not grudgingly, or of necessity: for God loveth a cheerful giver.\"?",
@@ -5014,7 +5631,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "2 Cor 9:7",
-    "answerType": "verse"
+    "answerType": "verse",
+    "fact": true
   },
   {
     "term": "Who ordered the death of Uriah?",
@@ -5022,7 +5640,8 @@
     "category": "OT",
     "difficulty": "easy",
     "source": "2 Sam 11",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What two men, after whom two consecutive Bible books are named, supervised the reconstruction of Jerusalem after the release of the Jews from Babylon?",
@@ -5030,7 +5649,8 @@
     "category": "HG",
     "difficulty": "medium",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which prophetic book of the King James Version spawned the tradition that Satan was a fallen angel named Lucifer?",
@@ -5038,7 +5658,9 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Isaiah 14:12",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": false,
+    "factNote": "the question depends on the King James wording \"Lucifer\" (WEB: \"morning star\")"
   },
   {
     "term": "What are the only three names of angels given in the Bible?",
@@ -5046,14 +5668,16 @@
     "category": "N",
     "difficulty": "hard",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How many angels' names are stated in the Bible?",
     "meaning": "3",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Fill in the blank from Jesus' parable of the talents: \"Well done, thou good and ______ servant.\"",
@@ -5061,7 +5685,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Matt 25:21, 23",
-    "answerType": "adjective"
+    "answerType": "adjective",
+    "fact": true
   },
   {
     "term": "What does Jesus say we should do next if a brother goes on sinning after being rebuked privately?",
@@ -5070,7 +5695,8 @@
     "difficulty": "hard",
     "source": "Matt 18:15-17",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "How did Absalom steal the hearts of the Israelites?",
@@ -5079,14 +5705,16 @@
     "difficulty": "hard",
     "source": "2 Sam 15:1-6",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "What group rebelled against Syria and maintained an independent Jewish community in Judea?",
     "meaning": "Maccabees",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "With what is the woman of Revelation 17 (Mystery Babylon) drunk?",
@@ -5095,7 +5723,8 @@
     "difficulty": "hard",
     "source": "Rev 17:6",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Name the husband of the woman who falsely accused Joseph, son of Jacob.",
@@ -5103,14 +5732,16 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Gen 39:1-20",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which book in the Bible immediately follows 2 Timothy?",
     "meaning": "Titus",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   },
   {
     "term": "In Ephesus Paul won many converts to Christianity from the worshippers of what goddess?",
@@ -5118,7 +5749,8 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Acts 19:27, 35",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Fill in the blank from Psalms: \"Even from everlasting to everlasting, thou art ______.\"",
@@ -5126,7 +5758,8 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Ps 90:2",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What four people were brought outside the city of Sodom before its destruction?",
@@ -5135,7 +5768,8 @@
     "difficulty": "medium",
     "source": "Gen 19:15-16",
     "answerType": "name",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In what plains did Moses die?",
@@ -5143,7 +5777,8 @@
     "category": "HG",
     "difficulty": "medium",
     "source": "Deut 34:1-5",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Which king was named by Isaiah long in advance as the man who would order the temple of Jerusalem to be rebuilt?",
@@ -5151,7 +5786,8 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Isaiah 44:28",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Whose daughters made him drunk in a cave after Sodom's destruction?",
@@ -5159,7 +5795,8 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Gen 19:30-33",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "On which of the 6 days of Creation did God create the sun, moon and stars?",
@@ -5167,7 +5804,8 @@
     "category": "LNS",
     "difficulty": "easy",
     "source": "Gen 1:14-19",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "How many years had the woman been bleeding who was healed by touching the hem of Jesus' garment?",
@@ -5175,7 +5813,8 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Matt 9:20-22",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "Why was Jesus made a little lower than the angels, according to Hebrews 2?",
@@ -5184,7 +5823,8 @@
     "difficulty": "hard",
     "source": "Heb 2:9",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "In the book of Exodus, why didn't the midwives kill the Israelites' baby boys as the king commanded?",
@@ -5193,7 +5833,8 @@
     "difficulty": "medium",
     "source": "Ex 1:17",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Where did the Lord reveal himself to Samuel?",
@@ -5201,7 +5842,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "1 Sam 3:21",
-    "answerType": "location"
+    "answerType": "location",
+    "fact": true
   },
   {
     "term": "Who was the army commander healed of leprosy by Elisha?",
@@ -5209,7 +5851,8 @@
     "category": "P",
     "difficulty": "medium",
     "source": "2 Kings 5:1-19",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "What name did God give Jacob?",
@@ -5217,7 +5860,8 @@
     "category": "N",
     "difficulty": "easy",
     "source": "Gen 35:9-10",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "With how many loaves did Jesus feed the four thousand?",
@@ -5225,7 +5869,8 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Matt 15:34",
-    "answerType": "number"
+    "answerType": "number",
+    "fact": true
   },
   {
     "term": "What was Judas' blood money later used to buy, as prophesied in Zechariah?",
@@ -5234,7 +5879,8 @@
     "difficulty": "hard",
     "source": "Matt 27:7-10",
     "answerType": "location",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Fill in the blank from Hebrews: \"Looking unto Jesus the author and ______ of our faith.\"",
@@ -5242,7 +5888,9 @@
     "category": "W",
     "difficulty": "medium",
     "source": "Heb 12:2",
-    "answerType": "theology"
+    "answerType": "theology",
+    "fact": false,
+    "factNote": "KJV \"finisher\" / ASV, WEB \"perfecter\" (Heb 12:2)"
   },
   {
     "term": "What did Moses make the children of Israel do with the golden calf Aaron had made?",
@@ -5251,7 +5899,8 @@
     "difficulty": "hard",
     "source": "Ex 32:20",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who led the rebellion against Abimelech?",
@@ -5259,7 +5908,8 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Judges 9:26-31",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Why was Jeremiah falsely imprisoned?",
@@ -5268,7 +5918,8 @@
     "difficulty": "hard",
     "source": "Jer 37:13-15",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Who was the first child of Ruth?",
@@ -5276,7 +5927,8 @@
     "category": "N",
     "difficulty": "medium",
     "source": "Ruth 4:13-17",
-    "answerType": "name"
+    "answerType": "name",
+    "fact": true
   },
   {
     "term": "Which year is closest to the year of Jesus' birth: 4 B.C., 1 B.C., 1 A.D. or 4 A.D.?",
@@ -5290,7 +5942,8 @@
       "4 A.D."
     ],
     "answerType": "number",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Why was Zacharias struck dumb for a time?",
@@ -5299,7 +5952,8 @@
     "difficulty": "medium",
     "source": "Luke 1:18-20",
     "answerType": "object",
-    "draft": true
+    "draft": true,
+    "fact": true
   },
   {
     "term": "Which book in the NT compares the members of the church to parts of the human body?",
@@ -5307,6 +5961,7 @@
     "category": "W",
     "difficulty": "medium",
     "source": "1 Cor 12:12",
-    "answerType": "book"
+    "answerType": "book",
+    "fact": true
   }
 ]
