@@ -1,0 +1,158 @@
+[
+  {
+    "date": "2026-09-20",
+    "front": "20260920_132009.jpg",
+    "back": "20260920_132012.jpg",
+    "md5": {
+      "front": "7c946f6cea47c90adeb93d98b3cc7547",
+      "back": "bba43d856d348d47855ead05e4382086"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 7,
+    "pr": 13
+  },
+  {
+    "date": "2026-09-20",
+    "front": "9024.jpg",
+    "back": "9025.jpg",
+    "md5": {
+      "front": "2a4b6262a54dfad2dadce57cf0bb2db9",
+      "back": "a4a275af5b5878814ada6b401c014def"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 7,
+    "pr": 13
+  },
+  {
+    "date": "2026-09-20",
+    "front": "9026.jpg",
+    "back": "9027.jpg",
+    "md5": {
+      "front": "4e120c966ac815b1fa7c4e36220c2ded",
+      "back": "e124215768d9596c4ffe6fdaf4beddd8"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 7,
+    "pr": 13
+  },
+  {
+    "date": "2026-09-20",
+    "front": "9028.jpg",
+    "back": "9029.jpg",
+    "md5": {
+      "front": "2a419b561bee334f6b5c1f711f593534",
+      "back": "df25aef98c64513a20adf1a753b67cb6"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 7,
+    "pr": 13
+  },
+  {
+    "date": "2026-09-20",
+    "front": "TestBatch/20260920_194349.jpg",
+    "back": "TestBatch/20260920_194413.jpg",
+    "md5": {
+      "front": "0ee6ad4bdf44ce9a5d1825ab8570d106",
+      "back": "a62a0d8d86fe5458966d62ff8a81e612"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 41,
+    "pr": 16
+  },
+  {
+    "date": "2026-09-20",
+    "front": "TestBatch/Sample.jpg",
+    "back": "TestBatch/Sample_Answers.jpg",
+    "md5": {
+      "front": "02f0ea1803664d17987d7ea869c337ca",
+      "back": "e5088d51ae77a9da95dce3d227a483dd"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 82,
+    "pr": 16
+  },
+  {
+    "date": "2026-09-21",
+    "front": "TestBatch/Batch/20260921_081654.jpg",
+    "back": "TestBatch/Batch/20260921_081730.jpg",
+    "md5": {
+      "front": "3e79f871f3073dc9ced767a698fa3702",
+      "back": "4701bfb80a65d65f0193c6f064201fa0"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 84,
+    "pr": 19
+  },
+  {
+    "date": "2026-09-23",
+    "front": "829PM (1).jpg",
+    "back": "829PM (2).jpg",
+    "md5": {
+      "front": "d4f856c5af7c83cc9aed97c1ac4bf1a5",
+      "back": "f3a7ab65534a8706db363c5bc3941410"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 80,
+    "pr": 33
+  },
+  {
+    "date": "2026-09-23",
+    "front": "9-23-26/Lots-Daughters-Front.jpg",
+    "back": "9-23-26/Lots-Daughters-Back.jpg",
+    "md5": {
+      "front": "432e98a695a86cf6e59f214ba5704e0d",
+      "back": "2036362d1e0d24d421d6e48269baeea9"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 79,
+    "pr": 33
+  },
+  {
+    "date": "2026-09-24",
+    "front": "9-23-26/20260923_222708.jpg",
+    "back": "9-23-26/20260923_222808.jpg",
+    "md5": {
+      "front": "2bfa33248106c26db5ad68bf9cc78ba1",
+      "back": "e8981e0288156d2ddce839b11baba760"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 74,
+    "pr": 44
+  },
+  {
+    "date": "2026-09-24",
+    "front": "9-23-26/WhichJudge (2).jpg",
+    "back": "9-23-26/WhichJudge (1).jpg",
+    "md5": {
+      "front": "e063f527560eb2b7f5821fd516dc1814",
+      "back": "25f32114c0641bc7dd6715f6a6f8f574"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 66,
+    "pr": 45
+  },
+  {
+    "date": "2026-09-24",
+    "front": "9-23-26/RighteousKing (1).jpg",
+    "back": "9-23-26/RighteousKing (2).jpg",
+    "md5": {
+      "front": "dbf75e29aa4d9a9cfb68087d30d2144d",
+      "back": "fed14eafc9aaa863d988c6ab88293ca1"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 83,
+    "pr": 45
+  },
+  {
+    "date": "2026-09-24",
+    "front": "9-23-26/Mordecci (2).jpg",
+    "back": "9-23-26/Mordecci (1).jpg",
+    "md5": {
+      "front": "db95282c4b5a4d872012ec1a19249ada",
+      "back": "c33f7351f5902235200a93bdb2c5edbe"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 79,
+    "pr": 49
+  }
+]

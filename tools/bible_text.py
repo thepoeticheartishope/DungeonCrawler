@@ -2,13 +2,22 @@
 the KJV text (downloaded once), and ASV / WEB verses from bible-api.com
 (cached). Nothing here is used by the game itself.
 
-Downloads and caches live in tools/.cache/ (git-ignored).
+Downloads and caches live outside the repo, in ~/.cache/dungeoncrawler-tools/
+(or $DUNGEONCRAWLER_TOOLS_CACHE), so every checkout and worktree shares them.
 """
-import json, os, re, time, urllib.parse, urllib.request
+import json, os, re, shutil, time, urllib.parse, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CACHE_DIR = os.path.join(HERE, '.cache')
+CACHE_DIR = os.environ.get('DUNGEONCRAWLER_TOOLS_CACHE') or os.path.join(
+    os.environ.get('XDG_CACHE_HOME') or os.path.expanduser('~/.cache'), 'dungeoncrawler-tools')
 os.makedirs(CACHE_DIR, exist_ok=True)
+
+# Move files from the old per-checkout cache (tools/.cache/) the first time.
+_old_cache = os.path.join(HERE, '.cache')
+if os.path.isdir(_old_cache):
+    for name in os.listdir(_old_cache):
+        if not os.path.exists(os.path.join(CACHE_DIR, name)):
+            shutil.copy2(os.path.join(_old_cache, name), CACHE_DIR)
 
 # Public-domain KJV as JSON. Book names in this file are Portuguese; the verse
 # text is the English KJV, so books are mapped by canonical order below.
@@ -79,7 +88,7 @@ def parse_refs(src):
 
 _kjv = None
 def kjv():
-    """{book: [[verse text, ...] per chapter]} — downloaded to tools/.cache on first use."""
+    """{book: [[verse text, ...] per chapter]} — downloaded to CACHE_DIR on first use."""
     global _kjv
     if _kjv is None:
         path = os.path.join(CACHE_DIR, 'kjv.json')
