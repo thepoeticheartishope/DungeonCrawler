@@ -6178,14 +6178,6 @@
     "fact": true
   },
   {
-    "term": "Which book in the Bible follows Esther?",
-    "meaning": "Job",
-    "category": "LNS",
-    "difficulty": "easy",
-    "answerType": "book",
-    "fact": true
-  },
-  {
     "term": "To whom did Jesus say the following: \"Suffer it to be so now: for thus it becometh us to fulfil all righteousness.\"?",
     "meaning": "John the Baptist",
     "category": "NT",
@@ -6409,15 +6401,6 @@
     "source": "Isa 11:6",
     "answerType": "name",
     "draft": true,
-    "fact": true
-  },
-  {
-    "term": "Name the most famous great-grandson of Boaz.",
-    "meaning": "David",
-    "category": "N",
-    "difficulty": "easy",
-    "source": "Ruth 4:21-22",
-    "answerType": "name",
     "fact": true
   },
   {
