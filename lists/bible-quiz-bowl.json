@@ -6676,5 +6676,759 @@
     "source": "Matt 5:9",
     "answerType": "name",
     "fact": true
+  },
+  {
+    "term": "Who said, \"Surely the Lord is in this place; and I knew it not.\"?",
+    "meaning": "Jacob",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "Gen 28:16",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What do the following chapters both contain: Exodus 20 and Deuteronomy 5?",
+    "meaning": "Ten Commandments",
+    "category": "HG",
+    "difficulty": "easy",
+    "source": "Ex 20:1-17; Deut 5:6-21",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who quoted the following prophecy from Joel later in the Bible: \"And it shall come to pass afterward, that I will pour out my spirit upon all flesh.\"?",
+    "meaning": "Peter",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Acts 2:14-17",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Who were the participants in an impromptu foot race?",
+    "meaning": "Peter and John",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "John 20:3-4",
+    "answerType": "name",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What three consecutive letters of the alphabet do not begin the names of any books of the Bible?",
+    "meaning": "UVW",
+    "category": "LNS",
+    "difficulty": "hard",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "What kind of ointment or perfume did Mary use to anoint Jesus?",
+    "meaning": "Spikenard",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "Mark 14:3; John 12:3",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "Quote Jesus' response to the disciple who asked, \"How can we know the way?\"",
+    "meaning": "I am the way, the truth, and the life",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "John 14:5-6",
+    "answerType": "theology",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who feigned insanity in Gath?",
+    "meaning": "David",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "1 Sam 21:10-13",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What was Solomon's Colonnade (Solomon's porch) used for in early NT days?",
+    "meaning": "A meeting place for the apostles",
+    "category": "HG",
+    "difficulty": "hard",
+    "source": "Acts 3:11; 5:12",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who prophesied that dogs would lick up the blood of a king and queen?",
+    "meaning": "Elijah",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "1 Kings 21:19-23",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What was the third plague brought upon Egypt by Moses?",
+    "meaning": "Lice",
+    "category": "LNS",
+    "difficulty": "easy",
+    "source": "Ex 8:16-18",
+    "answerType": "creature",
+    "fact": true
+  },
+  {
+    "term": "Where exactly did Jesus say he was going when he said, \"I go to prepare a place for you.\"?",
+    "meaning": "His Father's house",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "John 14:2",
+    "answerType": "location",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Proverbs 3:11 tells us not to despise what from the Lord?",
+    "meaning": "Chastening",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Prov 3:11",
+    "answerType": "theology",
+    "fact": false,
+    "factNote": "KJV, ASV \"chastening\" / WEB \"discipline\" (Prov 3:11)"
+  },
+  {
+    "term": "What practice did Jezebel outlaw in Israel?",
+    "meaning": "Jehovah worship",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "1 Kings 18:4-13",
+    "answerType": "theology",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Where is the \"Moabite Stone\" now?",
+    "meaning": "Louvre",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "How will the beast and the false prophet be destroyed along with those who worship the beast?",
+    "meaning": "Cast into the lake of fire",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Rev 19:20",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "How many generations were there from Shem to Abraham?",
+    "meaning": "10",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "Gen 11:10-26",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible immediately follows 3 John?",
+    "meaning": "Jude",
+    "category": "LNS",
+    "difficulty": "easy",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "What was taken from Paul's person for sick people to touch and be miraculously healed?",
+    "meaning": "Handkerchiefs",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "Acts 19:11-12",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "Complete this sentence from Romans: \"Be not overcome of evil, but...\"",
+    "meaning": "Overcome evil with good",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Romans 12:21",
+    "answerType": "theology",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who sinned by sending Uriah into the front line of battle hoping he would be killed?",
+    "meaning": "David",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "2 Sam 11:14-17",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What is another name for the Christian tradition of the Eucharist?",
+    "meaning": "Communion",
+    "category": "HG",
+    "difficulty": "easy",
+    "answerType": "theology",
+    "fact": true
+  },
+  {
+    "term": "To whose house did Jesus invite himself unasked, surprising the host?",
+    "meaning": "Zacchaeus",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Luke 19:1-10",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "How many books of the Bible record what is now known as the Lord's prayer?",
+    "meaning": "2",
+    "category": "LNS",
+    "difficulty": "medium",
+    "source": "Matt 6:9-13; Luke 11:2-4",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Where was Zacchaeus when Jesus called his name?",
+    "meaning": "Up a tree",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Luke 19:4-5",
+    "answerType": "location",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What sin was Jesus forgiving when he said, \"Go, and sin no more.\"?",
+    "meaning": "Unfaithfulness",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "John 8:1-11",
+    "answerType": "theology",
+    "fact": true
+  },
+  {
+    "term": "Why did God lead the Israelites out of Egypt through the wilderness to the Red Sea rather than through the land of the Philistines, which was closer to the Promised Land?",
+    "meaning": "So they wouldn't be discouraged by war",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "Ex 13:17-18",
+    "answerType": "theology",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "To what people did Goliath belong?",
+    "meaning": "Philistines",
+    "category": "HG",
+    "difficulty": "easy",
+    "source": "1 Sam 17:4",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What will be the effect of the fourth vial (bowl) in Revelation?",
+    "meaning": "The sun's fire will scorch people",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Rev 16:8",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "How many generations were there from Ruth to Solomon?",
+    "meaning": "4",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "Ruth 4:13-22; 2 Sam 12:24",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible immediately follows Amos?",
+    "meaning": "Obadiah",
+    "category": "LNS",
+    "difficulty": "easy",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Where were the disciples when they said: \"Lord, save us: we perish.\"?",
+    "meaning": "In a boat or ship",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Matt 8:23-25",
+    "answerType": "location",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible contains the following: \"Thy word is a lamp unto my feet, and a light unto my path.\"?",
+    "meaning": "Psalms",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Ps 119:105",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "What was the first act of King Saul which offended God?",
+    "meaning": "Offering sacrifices",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "1 Sam 13:9-14",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What was the occupation of Tacitus?",
+    "meaning": "Historian",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "Which OT prophet prophesies an outpouring of the Holy Spirit in the last days?",
+    "meaning": "Joel",
+    "category": "P",
+    "difficulty": "easy",
+    "source": "Joel 2:28-32",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Who was spoken to by a donkey?",
+    "meaning": "Balaam",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Num 22:22-35",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Spell Ananias.",
+    "meaning": "Ananias",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which disciple is traditionally known as the Beloved?",
+    "meaning": "John",
+    "category": "NT",
+    "difficulty": "easy",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Paul instructs Christians to owe no man anything except what?",
+    "meaning": "Love",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Rom 13:8",
+    "answerType": "theology",
+    "fact": true
+  },
+  {
+    "term": "Who wrote on the wall for King Belshazzar?",
+    "meaning": "God",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "Dan 5:24",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which division of the Greek Empire was ruled by the Ptolemy family?",
+    "meaning": "Egypt",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "How many angels sing praise to the Lamb in Revelation 5 (minimum)?",
+    "meaning": "100,000,000",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Rev 5:11",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Name the mother of Seth.",
+    "meaning": "Eve",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Gen 4:25",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "In what year A.D. did Constantinople fall to Mohammedans: 601, 853, 1066, 1237 or 1453?",
+    "meaning": "1453",
+    "category": "LNS",
+    "difficulty": "hard",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "To whom did Philip say the following: \"We have found him, of whom Moses in the law, and the prophets, did write, Jesus of Nazareth.\"?",
+    "meaning": "Nathanael",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "John 1:45",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What does Paul say is the last enemy that shall be destroyed?",
+    "meaning": "Death",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "1 Cor 15:26",
+    "answerType": "theology",
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible tells of the sun standing still for a whole day?",
+    "meaning": "Joshua",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Josh 10:13",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "On the road to which city did Jesus meet two men after his resurrection?",
+    "meaning": "Emmaus",
+    "category": "HG",
+    "difficulty": "easy",
+    "source": "Luke 24:13-15",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "In Daniel 11 what nation was represented by the kings of the south?",
+    "meaning": "Egypt",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Dan 11:8",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "Name the two brother combinations among the disciples.",
+    "meaning": "Simon Peter and Andrew; James and John",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Matt 4:18-21",
+    "answerType": "name",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Which of the ten plagues brought upon Egypt by Moses was the plague of the lice?",
+    "meaning": "3",
+    "category": "LNS",
+    "difficulty": "medium",
+    "source": "Ex 8:16-18",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "What was Jesus' answer when his disciples asked why a man had been born blind?",
+    "meaning": "So that God's work could be shown in his life",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "John 9:1-3",
+    "answerType": "theology",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Which book contains the line \"So teach us to number our days\"?",
+    "meaning": "Psalms",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Ps 90:12",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Who destroyed the temple of Dagon?",
+    "meaning": "Samson",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Judges 16:29-30",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What are the oldest known manuscripts of the Bible in any language?",
+    "meaning": "Dead Sea Scrolls",
+    "category": "HG",
+    "difficulty": "medium",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What does Jesus compare to the days of Noah and the destruction of Sodom?",
+    "meaning": "His second coming",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Matt 24:37-39; Luke 17:26-30",
+    "answerType": "theology",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who are the only two brothers of Shem named in the Bible?",
+    "meaning": "Ham and Japheth",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Gen 10:1",
+    "answerType": "name",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible immediately precedes Nahum?",
+    "meaning": "Micah",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Who said to whom: \"Woman, what have I to do with thee?\"",
+    "meaning": "Jesus to his mother, Mary",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "John 2:1-4",
+    "answerType": "name",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What does Proverbs 21:9 say that living on the corner of a housetop is better than?",
+    "meaning": "Living with a brawling woman",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Prov 21:9",
+    "answerType": "object",
+    "draft": true,
+    "fact": false,
+    "factNote": "KJV \"brawling woman\" / ASV \"contentious woman\", WEB \"contentious wife\" (Prov 21:9)"
+  },
+  {
+    "term": "How did God guide the Israelites by day through the desert from Egypt?",
+    "meaning": "A pillar of a cloud",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Ex 13:21",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Which king of Israel was most evil of all?",
+    "meaning": "Ahab",
+    "category": "HG",
+    "difficulty": "medium",
+    "source": "1 Kings 16:30",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What curse did Elisha cause to befall the 42 youths who mocked his bald head?",
+    "meaning": "Bears mauled them",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "2 Kings 2:23-24",
+    "answerType": "creature",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who was Moses' father-in-law?",
+    "meaning": "Reuel or Jethro",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Ex 2:18-21; 3:1",
+    "answerType": "name",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "How many years was Anna the prophetess married?",
+    "meaning": "7",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "Luke 2:36",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "What was the name of the blind man Jesus healed in Jericho?",
+    "meaning": "Bartimaeus",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "Mark 10:46-52",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which book contains the following verse about evangelism: \"So then neither is he that planteth any thing, neither he that watereth; but God that giveth the increase.\"?",
+    "meaning": "1 Corinthians",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "1 Cor 3:7",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "In which OT book do we read the story about the dreams of Joseph?",
+    "meaning": "Genesis",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Gen 37:5-10",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "In which book of the Bible do we read of Solomon becoming king?",
+    "meaning": "1 Kings",
+    "category": "HG",
+    "difficulty": "medium",
+    "source": "1 Kings 1:38-48",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "What prophet was most contemporary with Haggai?",
+    "meaning": "Zechariah",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Ezra 5:1",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Who was the first woman recorded in the Bible as using cosmetics?",
+    "meaning": "Jezebel",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "2 Kings 9:30",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "How do you spell \"Melchizedek\", the king of Salem?",
+    "meaning": "Melchizedek",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "Gen 14:18",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Who said the following quotation: \"For to me to live is Christ, and to die is gain.\"?",
+    "meaning": "Paul",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Phil 1:21",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What did Jesus offer the woman at Jacob's well?",
+    "meaning": "Living water",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "John 4:10",
+    "answerType": "theology",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What did David and Sibbecai have in common?",
+    "meaning": "Both killed a Philistine giant",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "2 Sam 21:18; 1 Sam 17:49-50",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "In what city did Zacchaeus live?",
+    "meaning": "Jericho",
+    "category": "HG",
+    "difficulty": "medium",
+    "source": "Luke 19:1-2",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "Which book spends all of its chapters prophesying against Nineveh?",
+    "meaning": "Nahum",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Nahum 1:1",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "What is the feminine name of Solomon?",
+    "meaning": "Salome",
+    "category": "N",
+    "difficulty": "hard",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "How old was Abraham when Isaac was born?",
+    "meaning": "100",
+    "category": "LNS",
+    "difficulty": "easy",
+    "source": "Gen 21:5",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "What single statement did Jesus make to the thief on the cross next to him?",
+    "meaning": "That he would be with Him that day in paradise",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "Luke 23:43",
+    "answerType": "theology",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Finish the following sentence from scripture: \"And if ye be Christ's, then are ye Abraham's seed, and...\"",
+    "meaning": "Heirs according to the promise",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Gal 3:29",
+    "answerType": "theology",
+    "draft": true,
+    "fact": true
   }
 ]
