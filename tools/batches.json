@@ -166,5 +166,17 @@
     "set": "lists/bible-quiz-bowl.json",
     "added": 82,
     "pr": 53
+  },
+  {
+    "date": "2026-09-25",
+    "front": "9-23-26/IncidentPrompted (1).jpg",
+    "back": "9-23-26/IncidentPrompted (2).jpg",
+    "md5": {
+      "front": "6ebe0ea710659fec30d93b853e990321",
+      "back": "b98dfc44be88afb465e87e1c039da67d"
+    },
+    "set": "lists/bible-quiz-bowl.json",
+    "added": 83,
+    "pr": null
   }
 ]

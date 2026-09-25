@@ -202,5 +202,25 @@
   "What single statement did Jesus make to the thief on the cross next to him?": {
     "fact": true,
     "note": "ASV \"To-day\", WEB \"today\": same promise"
+  },
+  "According to Proverbs, where no wood is, the fire goeth out; so where there is no what, the strife ceaseth?": {
+    "fact": false,
+    "note": "KJV \"talebearer\" / ASV, WEB \"whisperer\" (Prov 26:20)"
+  },
+  "What does the number \"666\" represent in Revelation?": {
+    "fact": true,
+    "note": "cites Rev 13:18 (666/616 variant), but the number of the beast is in every translation"
+  },
+  "Complete the following verse: \"Thy word have I hid in mine heart, ...\"": {
+    "fact": false,
+    "note": "KJV \"that I might not sin against thee\" / WEB \"against you\" (Ps 119:11)"
+  },
+  "What animal represented Greece in Daniel's vision involving a ram?": {
+    "fact": true,
+    "note": "KJV \"rough goat\" / ASV \"rough he-goat\": same animal (Dan 8:21)"
+  },
+  "Complete the following verse: \"Behold, I stand at the door, and knock: ...\"": {
+    "fact": false,
+    "note": "KJV \"if any man hear... sup with him\" / WEB \"if anyone hears... dine with him\" (Rev 3:20)"
   }
 }
