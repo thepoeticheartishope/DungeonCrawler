@@ -140,7 +140,7 @@
       "back": "fed14eafc9aaa863d988c6ab88293ca1"
     },
     "set": "lists/bible-quiz-bowl.json",
-    "added": 81,
+    "added": 83,
     "pr": 45
   },
   {
@@ -176,7 +176,7 @@
       "back": "b98dfc44be88afb465e87e1c039da67d"
     },
     "set": "lists/bible-quiz-bowl.json",
-    "added": 81,
+    "added": 83,
     "pr": 54
   },
   {
@@ -189,6 +189,6 @@
     },
     "set": "lists/bible-quiz-bowl.json",
     "added": 81,
-    "pr": null
+    "pr": 55
   }
 ]
