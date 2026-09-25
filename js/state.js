@@ -60,6 +60,7 @@ export const state = {
   battleTarget: null,    // whichever target the battle screen last set up a turn for
   battlePhase: 'answering', // 'choosing' (pick a category) | 'answering' (question showing) | 'ended' (settled, awaiting continue)
   categoryChoices: [],   // [{ label, pool }] offered while battlePhase is 'choosing'
+  lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
   runeHint: null,        // question a rune just hinted at — always offered as a choice until asked
   coin: null,            // { row, col } or null once collected
   stairs: null,          // { row, col } — sits inside the boss chamber, past the boss

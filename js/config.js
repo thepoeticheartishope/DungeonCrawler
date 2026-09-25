@@ -124,7 +124,31 @@ export const DIFFICULTY_COIN_REWARD = { easy: 1, medium: 2, hard: 3 };
 // turn (see quiz.js buildCategoryChoices).
 export const BATTLE_CHOICE_COUNT = 3;
 
-// A fight's query choices split a category by answer type ("OT · Names")
+// A fight's query choices are answer types first ("Names", "Numbers",
+// "Books" ...): each answerType maps to the choice it's offered under.
+// Creatures share "Things" with objects (too few to stand alone); types
+// missing here (adjective, verb, CompTIA's term) are never a choice of
+// their own — they're still asked by chests, runes and encounters, and
+// still used as wrong answers. A type is only offered with at least
+// TYPE_CHOICE_MIN questions; a set with fewer than BATTLE_CHOICE_COUNT
+// such types falls back to category choices (below).
+export const CHOICE_TYPES = {
+  name: 'name',
+  location: 'location',
+  book: 'book',
+  verse: 'verse',
+  number: 'number',
+  theology: 'theology',
+  object: 'object',
+  creature: 'object'
+};
+// Choice types that aren't offered on the turn right after the player
+// picked them (when enough other choices remain), so the biggest, most
+// familiar pool can't be the safe pick every turn.
+export const NO_REPEAT_CHOICE_TYPES = ['name'];
+
+// Fallback for sets without enough answer types (CompTIA, small lists):
+// a fight's query choices split a category by answer type ("OT · Names")
 // only where that type has at least this many questions in the category;
 // the rest stay under the plain category ("OT"), so a choice is never so
 // thin it keeps repeating the same question.

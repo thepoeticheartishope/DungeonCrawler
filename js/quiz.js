@@ -2,7 +2,7 @@
 // selection, and multiple-choice option building. No DOM access here.
 
 import { state } from './state.js';
-import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE } from './config.js';
+import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE, CHOICE_TYPES, NO_REPEAT_CHOICE_TYPES } from './config.js';
 import { t } from './text.js';
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
@@ -155,31 +155,71 @@ function categoryTypeGroups(pool) {
   return out;
 }
 
+// A pool's answer-type groups ("Names", "Things" ...; CHOICE_TYPES), each
+// { label, category, choiceType, pool } — category holds the choice type
+// too, so the "one group per category" spread below applies unchanged.
+// Only types with at least TYPE_CHOICE_MIN questions and a type.* line in
+// text.js are kept; questions of other types aren't in any group.
+function answerTypeGroups(pool) {
+  const out = [];
+  groupBy(pool, d => CHOICE_TYPES[d.answerType]).forEach((items, choiceType) => {
+    const label = t('type.' + choiceType);
+    if (items.length >= TYPE_CHOICE_MIN && label !== 'type.' + choiceType) {
+      out.push({ label, category: choiceType, choiceType, pool: items });
+    }
+  });
+  return out;
+}
+
+// Every group a fight over `pool` can offer: answer types when the pool has
+// at least `count` of them, otherwise categories — each split by answer
+// type where there are enough questions (categoryTypeGroups) when the pool
+// has at least `count` categories, else category + difficulty (small sets
+// with only a couple of categories).
+function fightGroups(pool, count) {
+  const byType = answerTypeGroups(pool);
+  if (byType.length >= count) return byType;
+  if (groupBy(pool, d => d.category).size >= count) return categoryTypeGroups(pool);
+  const pairs = groupBy(pool, d => d.category && d.category + '\u0000' + (d.difficulty || 'medium'));
+  return Array.from(pairs.entries()).map(([k, items]) => {
+    const [category, difficulty] = k.split('\u0000');
+    return { label: categoryLabel(category) + ' · ' + difficulty, category, pool: items };
+  });
+}
+
+// The questions of `pool` a fight can actually offer as a choice (a rune
+// hints at one of these, so its hint can't land on a question no choice
+// holds). Falls back to the whole pool when no group forms at all.
+export function fightChoosable(pool, count) {
+  const groups = fightGroups(pool, count);
+  return groups.length ? groups.flatMap(g => g.pool) : pool;
+}
+
+// The label of the fight choice that holds `item` ("Names"), or null.
+export function fightChoiceLabel(item, pool, count) {
+  const g = fightGroups(pool, count).find(g => g.pool.includes(item));
+  return g ? g.label : null;
+}
+
 // The battle screen's category choices for one turn: up to `count` groups
-// of `pool`, each { label, category, pool }. When the pool has at least
-// `count` categories, each category is split by answer type where there
-// are enough questions (categoryTypeGroups); otherwise (small sets with
-// only a couple of categories) it's grouped by category + difficulty.
-// One group per category is taken first so the choices stay as varied as
-// possible. If `mustInclude` is in the pool, its group is always one of
-// the choices (a rune's hint stays usable). Returns fewer than 2 choices
-// when the pool can't offer a real choice (e.g. a pasted list with no
-// categories) — the caller skips the choice step then.
-export function buildCategoryChoices(pool, count, mustInclude) {
-  let groups;
-  if (groupBy(pool, d => d.category).size >= count) {
-    groups = categoryTypeGroups(pool);
-  } else {
-    const pairs = groupBy(pool, d => d.category && d.category + '\u0000' + (d.difficulty || 'medium'));
-    groups = Array.from(pairs.entries()).map(([k, items]) => {
-      const [category, difficulty] = k.split('\u0000');
-      return { label: categoryLabel(category) + ' · ' + difficulty, category, pool: items };
-    });
+// of `pool` (fightGroups), each { label, category, pool }. One group per
+// category is taken first so the choices stay as varied as possible. If
+// `mustInclude` is in the pool, its group is always one of the choices (a
+// rune's hint stays usable). A NO_REPEAT_CHOICE_TYPES type the player
+// picked last turn (`lastChoiceType`) sits this turn out, unless it holds
+// the hint or dropping it would leave fewer than `count` choices. Returns
+// fewer than 2 choices when the pool can't offer a real choice (e.g. a
+// pasted list with no categories) — the caller skips the choice step then.
+export function buildCategoryChoices(pool, count, mustInclude, lastChoiceType) {
+  let groups = fightGroups(pool, count);
+  const required = mustInclude && groups.find(g => g.pool.includes(mustInclude));
+  if (lastChoiceType && NO_REPEAT_CHOICE_TYPES.includes(lastChoiceType)) {
+    const rested = groups.filter(g => g.choiceType !== lastChoiceType || g === required);
+    if (rested.length >= count) groups = rested;
   }
 
   const all = shuffle(groups);
   const picked = [];
-  const required = mustInclude && all.find(g => g.pool.includes(mustInclude));
   if (required) picked.push(required);
   for (const g of all) {
     if (picked.length >= count) break;
