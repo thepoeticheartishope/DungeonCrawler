@@ -120,6 +120,15 @@ export const DIFFICULTY_COIN_REWARD = { easy: 1, medium: 2, hard: 3 };
 // turn (see quiz.js buildCategoryChoices).
 export const BATTLE_CHOICE_COUNT = 3;
 
+// A fight's query choices split a category by answer type ("OT · Names")
+// only where that type has at least this many questions in the category;
+// the rest stay under the plain category ("OT"), so a choice is never so
+// thin it keeps repeating the same question.
+export const TYPE_CHOICE_MIN = 5;
+// …and a category isn't split at all when one answer type already makes up
+// this share of it (it's already about one kind of answer).
+export const TYPE_SPLIT_DOMINANCE = 0.8;
+
 // Display names for terse category codes, shown on the battle screen's
 // category-choice buttons. Anything not listed here is shown as-is.
 // Codes are the Bible Quiz Bowl flashcards' own section letters.
