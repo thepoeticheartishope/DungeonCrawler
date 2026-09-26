@@ -244,6 +244,22 @@ export const LIGHT_TURNS_PER_STEP = 4;
 export const DARK_MISS_COST = 2;
 export const DARK_GOLD_MULTIPLIER = 2;
 
+// The hunter: HUNTER_SPAWN_DELAY turns after the boss falls, something
+// that can't be killed wakes on the tile farthest from the player and
+// hunts them from anywhere, one step per turn — the player's own pace, so
+// someone who keeps moving stays ahead, and every box opened or dead end
+// lets it gain. Each of its query choices carries two modifiers at once
+// (one pair per choice, from HUNTER_MODIFIER_PAIRS). Either way the answer
+// throws it back to the far side of the floor; it then waits
+// HUNTER_REST_TURNS after a right answer, HUNTER_REST_AFTER_MISS after a
+// miss (which also costs the usual DARK_MISS_COST).
+export const HUNTER_SPAWN_DELAY = 4;
+export const HUNTER_REST_TURNS = 8;
+export const HUNTER_REST_AFTER_MISS = 3;
+// Gambler is left out: a wager on top of a two-heart miss is too harsh,
+// and Blind would hide the answers while the wager is being placed.
+export const HUNTER_MODIFIER_PAIRS = [['blind', 'flip'], ['blind', 'timer'], ['flip', 'timer']];
+
 // Question modifiers: each query category offered at the start of a minion
 // fight may carry one, shown as a small tag beside it, so the player can
 // see it and choose around it — chance per category is the floor's base,

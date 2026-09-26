@@ -20,7 +20,7 @@ import {
 } from './render.js';
 import {
   initCombat, isAdjacentToPlayer, refreshTargetValidity, advanceMonsters,
-  spawnMinion
+  spawnMinion, repelHunter
 } from './combat.js';
 import { initBossLight, extinguishLight, lightConsumed } from './light.js';
 import {
@@ -571,10 +571,9 @@ function renderCategoryChoices() {
     const hinted = state.runeHint && choice.pool.includes(state.runeHint);
     btn.innerHTML = '<span class="letter">[' + (i + 1) + ']</span><span class="choice-label"></span>' +
       (hinted ? '<span class="choice-hint" title="' + escapeHtml(t('battle.runeHintMark')) + '">◊</span>' : '') +
-      (choice.modifier
-        ? '<span class="mod-tag" title="' + escapeHtml(t('mod.' + choice.modifier) + ': ' + t('mod.' + choice.modifier + '.tip', { max: maxWager(), secs: TIMER_SECONDS })) + '">' +
-          escapeHtml(t('mod.' + choice.modifier + '.tag')) + '</span>'
-        : '');
+      choice.modifiers.map(mod =>
+        '<span class="mod-tag" title="' + escapeHtml(t('mod.' + mod) + ': ' + t('mod.' + mod + '.tip', { max: maxWager(), secs: TIMER_SECONDS })) + '">' +
+          escapeHtml(t('mod.' + mod + '.tag')) + '</span>').join('');
     decodeText(btn.querySelector('.choice-label'), choice.label);
     btn.addEventListener('click', () => chooseCategory(i));
     choiceListEl.appendChild(btn);
@@ -588,12 +587,13 @@ function renderCategoryChoices() {
 // fight whose pool can't offer at least two distinct choices.
 function startBattleTurn() {
   const target = state.selectedTarget;
-  const isFight = target.kind === 'boss' || target.kind === 'minion';
+  const isFight = target.kind === 'boss' || target.kind === 'minion' || target.kind === 'hunter';
   state.categoryChoices = isFight
     ? buildCategoryChoices(poolFor(target), BATTLE_CHOICE_COUNT, state.runeHint, state.lastChoiceType)
     : [];
   const modifiers = rollCategoryModifiers(target, state.categoryChoices.length);
-  state.categoryChoices.forEach((choice, i) => { choice.modifier = modifiers[i]; });
+  // Each choice's modifiers as a list: none, one, or the hunter's pair.
+  state.categoryChoices.forEach((choice, i) => { choice.modifiers = [].concat(modifiers[i] || []); });
 
   if (state.categoryChoices.length >= 2) {
     state.battlePhase = 'choosing';
@@ -638,7 +638,7 @@ function chooseCategory(i) {
   state.lastChoiceType = choice.choiceType || null;
   state.battlePhase = 'answering';
   setQuestion(q);
-  if (choice.modifier) applyModifier(choice.modifier);
+  choice.modifiers.forEach(applyModifier);
   showBattlePhase();
   if (!state.mcMode) answerInput.focus();
 }
@@ -840,6 +840,8 @@ function loadRoom() {
 
   state.minions.forEach(m => m.el.remove());
   state.minions = [];
+  state.hunter = null;
+  state.darkTurns = 0;
 
   state.encounters.forEach(e => e.el.remove());
   state.encounters = [];
@@ -1020,8 +1022,8 @@ function applyTurnOutcome(actionMessage) {
   }
   syncQuestionForTarget();
   syncBattleScreen();
-  const text = [actionMessage, notes.engageNote].filter(Boolean).join(' ');
-  showRoomNote(notes.engageNote ? 'warn-msg' : 'move-msg', text);
+  const text = [actionMessage, notes.hunterNote, notes.engageNote].filter(Boolean).join(' ');
+  showRoomNote(notes.engageNote || notes.hunterNote ? 'warn-msg' : 'move-msg', text);
 }
 
 // The boss light has reached this floor's LIGHT_LOSS_COVERAGE: the run
@@ -1065,6 +1067,10 @@ function movePlayer(dRow, dCol, dirName) {
   }
   if (state.boss && state.boss.row === newRow && state.boss.col === newCol) {
     showRoomNote('block-msg', t('room.blocked.boss'));
+    return;
+  }
+  if (state.hunter && state.hunter.row === newRow && state.hunter.col === newCol) {
+    showRoomNote('block-msg', t('room.blocked.hunter'));
     return;
   }
   if (state.minions.some(m => m.row === newRow && m.col === newCol)) {
@@ -1260,6 +1266,13 @@ function goldReward(base) {
 // (coins for a chest or category challenge, a hint for a rune); a miss has
 // already cost its heart. Either way the target is cleared or spent.
 function resolveOneShot(target, isCorrect, q) {
+  // The hunter can't be cleared, only thrown off the trail for a while.
+  if (target.kind === 'hunter') {
+    repelHunter(target, isCorrect);
+    logLine(t(isCorrect ? 'log.hunter.repelled' : 'log.hunter.retreats'), isCorrect ? 'bright' : undefined);
+    endEncounter();
+    return;
+  }
   if (target.kind === 'minion') {
     target.el.remove();
     state.minions = state.minions.filter(m => m !== target);

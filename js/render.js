@@ -88,6 +88,10 @@ export function setGlyph(el, glyph) {
 // Facing vectors for the cone test below.
 const FACING_VECTORS = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] };
 
+// How far away (in steps, as the crow flies) the hunter's edge glow starts
+// to brighten.
+const HUNTER_HINT_RANGE = 20;
+
 // True if the tile at (row, col) falls within a 90-degree cone opening in
 // `facing`'s direction from the player — a diamond that widens as it gets
 // further away, using only integer math (no trig needed on a square grid).
@@ -209,13 +213,20 @@ export function renderFog() {
 // While the boss is off screen, the edge of the view facing it glows —
 // brighter as its light spreads — so the player always has a sense of
 // where it is. A diagonal boss lights two edges.
+//
+// After the boss, the same edges point at the hunter instead (in white,
+// not the boss's blue), brighter the closer it gets.
 function renderLightHint() {
   const edges = els.lightHintEls;
   if (!edges) return;
-  const boss = state.boss;
+  const boss = state.boss || state.hunter;
   const offScreen = !!boss && (boss.row < state.camRow || boss.row >= state.camRow + VIEWPORT_SIZE ||
     boss.col < state.camCol || boss.col >= state.camCol + VIEWPORT_SIZE);
-  const strength = offScreen ? (0.25 + 0.6 * lightProgress()).toFixed(2) : '0';
+  const near = state.hunter && !state.boss
+    ? 1 - Math.min(1, (Math.abs(boss.row - state.playerRow) + Math.abs(boss.col - state.playerCol)) / HUNTER_HINT_RANGE)
+    : lightProgress();
+  const strength = offScreen ? (0.25 + 0.6 * near).toFixed(2) : '0';
+  Object.values(edges).forEach(el => el.classList.toggle('hunter-hint', !state.boss && !!state.hunter));
   const dr = boss ? boss.row - state.playerRow : 0;
   const dc = boss ? boss.col - state.playerCol : 0;
   const on = {

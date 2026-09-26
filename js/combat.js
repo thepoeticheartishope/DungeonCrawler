@@ -7,7 +7,7 @@
 // advanceMonsters run.
 
 import { state, key } from './state.js';
-import { MINION_HP, MINION_CHASE_RANGE } from './config.js';
+import { MINION_HP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS } from './config.js';
 import { positionActor, setGlyph, renderCombatStatus, computeVisibility, renderFog, renderTargeting, renderLightEye } from './render.js';
 import { advanceLight } from './light.js';
 import { t } from './text.js';
@@ -119,6 +119,55 @@ export function bfsPath(start, target, walls) {
   return null;
 }
 
+// The free floor tile the most walkable steps from the player, for the
+// hunter to wake on or be thrown back to.
+function farthestFromPlayer() {
+  const blocked = new Set(state.wallSet);
+  state.pillarSet.forEach(k => blocked.add(k));
+  state.props.forEach(p => blocked.add(key(p.row, p.col)));
+  const start = { row: state.playerRow, col: state.playerCol };
+  const dist = new Map([[key(start.row, start.col), 0]]);
+  const queue = [start];
+  let best = null;
+  while (queue.length) {
+    const cur = queue.shift();
+    const d = dist.get(key(cur.row, cur.col));
+    if (d > 0 && !tileOccupied(cur.row, cur.col) && (!best || d > best.d)) best = { ...cur, d };
+    for (const [nr, nc] of neighbors(cur.row, cur.col)) {
+      const k = key(nr, nc);
+      if (dist.has(k) || blocked.has(k)) continue;
+      dist.set(k, d + 1);
+      queue.push({ row: nr, col: nc });
+    }
+  }
+  return best;
+}
+
+function wakeHunter() {
+  const spot = farthestFromPlayer();
+  if (!spot) return false;
+  const m = spawnMinion(spot);
+  m.kind = 'hunter';
+  m.rest = 0;
+  m.el.classList.remove('minion');
+  m.el.classList.add('hunter');
+  setGlyph(m.el, t('term.hunter.symbol'));
+  state.hunter = m;
+  return true;
+}
+
+// After its question is answered, the hunter loses the trail: back to the
+// far side of the floor, where it waits a few turns before hunting again.
+export function repelHunter(m, answeredRight) {
+  const spot = farthestFromPlayer();
+  if (spot) {
+    m.row = spot.row;
+    m.col = spot.col;
+    positionActor(m.el, m.row, m.col, true);
+  }
+  m.rest = answeredRight ? HUNTER_REST_TURNS : HUNTER_REST_AFTER_MISS;
+}
+
 // Places a minion on `spot` (a free floor tile) — loadRoom picks the tiles.
 export function spawnMinion(spot) {
   const el = document.createElement('div');
@@ -135,6 +184,7 @@ export function spawnMinion(spot) {
   const m = { row: spot.row, col: spot.col, hp: MINION_HP, el, kind: 'minion' };
   positionActor(el, m.row, m.col, true); // freshly spawned — appears in place, doesn't slide in
   state.minions.push(m);
+  return m;
 }
 
 // A random free neighbouring floor tile for a wandering minion, or null if
@@ -161,7 +211,16 @@ export function advanceMonsters() {
   // Minions roam freely and only give chase once the player is within
   // MINION_CHASE_RANGE walkable steps.
   let engageNote = '';
+  let hunterNote = '';
+  if (state.darkness) {
+    state.darkTurns++;
+    if (!state.hunter && state.darkTurns >= HUNTER_SPAWN_DELAY && wakeHunter()) hunterNote = t('room.hunter.wakes');
+  }
   for (const m of state.minions) {
+    if (m.rest > 0) {
+      m.rest--;
+      continue;
+    }
     const path = bfsPath({ row: m.row, col: m.col }, { row: state.playerRow, col: state.playerCol }, blockedTilesFor(m));
     // In the darkness after the boss falls, every minion hunts, from anywhere.
     const chasing = path && (state.darkness || path.length - 1 <= MINION_CHASE_RANGE);
@@ -188,5 +247,5 @@ export function advanceMonsters() {
   renderFog();
   renderLightEye();
   refreshTargetValidity();
-  return { engageNote };
+  return { engageNote, hunterNote };
 }

@@ -39,6 +39,8 @@ export const TEXT = {
   'term.boss.symbol': '¤',
   'term.minion': 'DENDRITE',
   'term.minion.symbol': '•',
+  'term.hunter': 'OBSESSION', // draft
+  'term.hunter.symbol': 'Ø', // draft
   'term.chest': 'TRAPPED THOUGHT',
   'term.chest.symbol': '[]',
   'term.rune': 'AXON',
@@ -73,6 +75,10 @@ export const TEXT = {
   'log.rules.boss': 'CLEAR {queries} QUERIES TO PROCEED.',
   'log.start.minion': 'ENCOUNTER: {@term.minion.symbol}',
   'log.rules.minion': '{@term.query} REQUIRED FOR NEURON FUSION.',
+  'log.start.hunter': 'ENCOUNTER: {@term.hunter}', // draft
+  'log.rules.hunter': 'IT CANNOT BE PRUNED. ANSWER, AND IT LOSES YOUR TRAIL.', // draft
+  'log.hunter.repelled': 'THE {@term.hunter} LOSES YOUR TRAIL. FOR NOW.', // draft
+  'log.hunter.retreats': 'THE {@term.hunter} FEEDS, AND FALLS BACK TO CIRCLE AGAIN.', // draft
   'log.start.chest': 'ENCOUNTER: {@term.chest}',
   'log.rules.chest': 'WE ALL SEEK TO BE FREE.',
   'log.start.box': 'ENCOUNTER: SEALED {@term.box}', // draft
@@ -161,6 +167,7 @@ export const TEXT = {
   'target.none': 'Target: nothing within reach', // draft
   'target.boss': 'Target: {@term.boss}',
   'target.minion': 'Target: {@term.minion}',
+  'target.hunter': 'Target: {@term.hunter}',
   'target.chest': 'Target: {@term.chest}',
   'target.box': 'Target: {@term.box}',
   'target.rune': 'Target: {@term.rune}',
@@ -179,6 +186,8 @@ export const TEXT = {
   'room.blocked.wall': 'The membrane holds.', // draft
   'room.blocked.boss': 'The {@term.boss} will not move.', // draft
   'room.blocked.minion': 'A {@term.minion} is in the way.', // draft
+  'room.blocked.hunter': 'The {@term.hunter} is right there.', // draft
+  'room.hunter.wakes': ['Something else wakes. It knows where you are.', 'An {@term.hunter} stirs, far off, and turns toward you.'], // draft
   'room.blocked.chest': 'Something is sealed here. Reach for it from beside it.', // draft
   'room.blocked.rune': 'An {@term.rune} hums here. Reach for it from beside it.', // draft
   'room.blocked.encounter': 'A {category} {@term.encounter} is forming here. Reach for it from beside it.', // draft
