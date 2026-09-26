@@ -170,10 +170,42 @@ export const CATEGORY_LABELS = {
   W: 'Wisdom'
 };
 
-// Grid size and chamber count both grow as the run progresses.
-// Index 0 = Room 1, index 1 = Room 2, index 2 = Room 3.
-export const GRID_SIZES = [19, 23, 27];
-export const CHAMBER_TARGETS = [6, 8, 10];
+// Grid size and chamber count both grow as the run progresses: later
+// floors have more rooms, not bigger ones (each room is a drawing from
+// rooms.js). Index 0 = Room 1, index 1 = Room 2, index 2 = Room 3.
+export const GRID_SIZES = [33, 37, 41];
+export const CHAMBER_TARGETS = [4, 5, 6];
+
+// Room themes. Every room on a floor gets one, dealt out so a floor has a
+// mix (wording and lore are theme.* in text.js).
+//   pillarChance  chance the room tries for pillars — kept low (tight rooms
+//                 often can't fit a mirrored set, so fewer actually get them)
+//   props         extra papers/boxes beyond the drawing's '?' spots [min, max]
+//   boxShare      share of those that are boxes rather than papers
+export const ROOM_THEMES = {
+  crypt:   { pillarChance: 0.30, props: [1, 2], boxShare: 0.4 },
+  library: { pillarChance: 0.15, props: [2, 4], boxShare: 0.2 },
+  flooded: { pillarChance: 0.15, props: [0, 2], boxShare: 0.6 },
+  shrine:  { pillarChance: 0.40, props: [0, 1], boxShare: 0.3 },
+};
+// Pillars block walking and the player's light; the boss light spreads
+// past them. A room with pillars gets a mirrored set of one of these sizes.
+export const PILLARS_PER_ROOM = [2, 4];
+// Papers and boxes block walking but not light; bump one to examine it
+// (a turn passes). A paper is lore or nothing. A box is like the chest:
+// BOX_TRAP_CHANCE of them are trapped and ask a question first (right =
+// gold, wrong = the usual lost heart); the rest just open, with BOX_LOOT
+// (weights, not %). Boxes never restore hearts — like the chest, healing
+// is kept for something else.
+export const PAPER_LORE_CHANCE = 0.4;
+export const BOX_TRAP_CHANCE = 0.3;
+export const BOX_LOOT = { junk: 50, gold: 50 };
+export const BOX_GOLD = [1, 2]; // plus the floor index, before the darkness multiplier
+
+// Anything further than this many tiles away (in any direction, diagonals
+// included) shows as a '?' until the player gets closer — enemies, items
+// and furniture alike. The stairs are the exception.
+export const REVEAL_DISTANCE = 3;
 
 export const MAX_HEARTS = 3;
 export const ROOM_COUNT = 3;
@@ -200,7 +232,7 @@ export const PLAYER_CONE_RANGE = 3;
 // never costs light — only walking and waiting do. Index = room, like
 // GRID_SIZES.
 export const LIGHT_LOSS_COVERAGE = [0.9, 0.8, 0.7];
-export const LIGHT_TURNS_PER_STEP = 3;
+export const LIGHT_TURNS_PER_STEP = 4;
 
 // Darkness: once the boss falls, its light dies and the floor goes dark
 // outside the player's own light (explored tiles are forgotten). No new
@@ -211,6 +243,22 @@ export const LIGHT_TURNS_PER_STEP = 3;
 // here too.
 export const DARK_MISS_COST = 2;
 export const DARK_GOLD_MULTIPLIER = 2;
+
+// The hunter: HUNTER_SPAWN_DELAY turns after the boss falls, something
+// that can't be killed wakes on the tile farthest from the player and
+// hunts them from anywhere, one step per turn — the player's own pace, so
+// someone who keeps moving stays ahead, and every box opened or dead end
+// lets it gain. Each of its query choices carries two modifiers at once
+// (one pair per choice, from HUNTER_MODIFIER_PAIRS). Either way the answer
+// throws it back to the far side of the floor; it then waits
+// HUNTER_REST_TURNS after a right answer, HUNTER_REST_AFTER_MISS after a
+// miss (which also costs the usual DARK_MISS_COST).
+export const HUNTER_SPAWN_DELAY = 4;
+export const HUNTER_REST_TURNS = 8;
+export const HUNTER_REST_AFTER_MISS = 3;
+// Gambler is left out: a wager on top of a two-heart miss is too harsh,
+// and Blind would hide the answers while the wager is being placed.
+export const HUNTER_MODIFIER_PAIRS = [['blind', 'flip'], ['blind', 'timer'], ['flip', 'timer']];
 
 // Question modifiers: each query category offered at the start of a minion
 // fight may carry one, shown as a small tag beside it, so the player can

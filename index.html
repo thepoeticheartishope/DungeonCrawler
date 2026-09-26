@@ -548,6 +548,18 @@
     box-shadow: none !important;
     filter: none !important;
   }
+  /* A pillar: a solid block standing on the floor, drawn in CSS (the font
+     has no block glyphs). Smaller than the tile so it reads as a column,
+     not more wall. */
+  .tile.pillar::before {
+    content: '';
+    position: absolute;
+    inset: 16%;
+    background: var(--wall);
+    border: 1px solid var(--line);
+    box-shadow: inset 2px 2px 0 rgba(var(--glow-rgb), 0.08), 0 0 0 1px #000;
+  }
+  .tile.fog-hidden.pillar::before { display: none; }
   /* Floor the boss light reaches reads as a pale blue fog, not tinted
      tiles: each lit tile carries a soft round haze that spills past its
      edges (inset: -60%), so neighbouring tiles blend into one continuous
@@ -585,10 +597,13 @@
   }
   .light-hint-n, .light-hint-s { left: 0; right: 0; height: 18%; }
   .light-hint-e, .light-hint-w { top: 0; bottom: 0; width: 18%; }
-  .light-hint-n { top: 0; background: linear-gradient(to bottom, rgba(var(--boss-light-rgb), 0.28), transparent); }
-  .light-hint-s { bottom: 0; background: linear-gradient(to top, rgba(var(--boss-light-rgb), 0.28), transparent); }
-  .light-hint-w { left: 0; background: linear-gradient(to right, rgba(var(--boss-light-rgb), 0.28), transparent); }
-  .light-hint-e { right: 0; background: linear-gradient(to left, rgba(var(--boss-light-rgb), 0.28), transparent); }
+  /* After the boss they point at the hunter instead, in white phosphor. */
+  .light-hint { --hint-rgb: var(--boss-light-rgb); }
+  .light-hint.hunter-hint { --hint-rgb: var(--glow-rgb); }
+  .light-hint-n { top: 0; background: linear-gradient(to bottom, rgba(var(--hint-rgb), 0.28), transparent); }
+  .light-hint-s { bottom: 0; background: linear-gradient(to top, rgba(var(--hint-rgb), 0.28), transparent); }
+  .light-hint-w { left: 0; background: linear-gradient(to right, rgba(var(--hint-rgb), 0.28), transparent); }
+  .light-hint-e { right: 0; background: linear-gradient(to left, rgba(var(--hint-rgb), 0.28), transparent); }
 
   /* The eye in the status bar (ink on the inverse bar). --open runs 0..1
      with the boss light's progress: a shut lid at 0, an almond opening
@@ -695,6 +710,22 @@
     font-size: 22px;
     animation: monsterWarp 3.6s ease-in-out infinite;
   }
+  /* The hunter: bigger than a minion and never still — the same warp,
+     faster, with the hostile bloom behind it. */
+  .actor.hunter {
+    font-size: 28px;
+    color: var(--torch-bright);
+    animation: monsterWarp 1.6s ease-in-out infinite;
+  }
+  .actor.hunter::before {
+    content: '';
+    position: absolute;
+    inset: -35%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(var(--glow-rgb),0.32) 0%, rgba(var(--glow-rgb),0.08) 55%, transparent 75%);
+    z-index: -1;
+    pointer-events: none;
+  }
 
   /* An occasional black bar sweeps over the glyph and fades back out, like
      a brief signal dropout — a longer, rarer cycle than the constant warp,
@@ -741,6 +772,21 @@
     font-size: 24px;
     z-index: 2;
   }
+  /* Papers and boxes: plain furniture glyphs. Remembered ones (seen, not
+     lit right now) sit dim like the explored floor; searched ones stay
+     but fade, so the player can tell what's been gone through. */
+  .actor.prop {
+    font-size: 24px;
+    z-index: 2;
+    color: var(--torch);
+    transition: opacity 0.25s ease;
+  }
+  .actor.prop.remembered { opacity: 0.35; }
+  .actor.prop.searched { color: var(--muted); }
+  /* Too far away to make out: a plain '?', with no hostile glow, glitch
+     or pulse to give away what it is. */
+  .actor.unknown { animation: none; filter: none; color: var(--muted); }
+  .actor.unknown::before, .actor.unknown::after { display: none; }
   .actor.rune {
     animation: runeGlow 1.8s ease-in-out infinite;
   }

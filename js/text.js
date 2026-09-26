@@ -39,6 +39,8 @@ export const TEXT = {
   'term.boss.symbol': '¤',
   'term.minion': 'DENDRITE',
   'term.minion.symbol': '•',
+  'term.hunter': 'OBSESSION', // draft
+  'term.hunter.symbol': 'Ø', // draft
   'term.chest': 'TRAPPED THOUGHT',
   'term.chest.symbol': '[]',
   'term.rune': 'AXON',
@@ -53,6 +55,12 @@ export const TEXT = {
   'term.dungeon': 'LABYRINTH',
   'term.query': 'QUERY',
   'term.vector': 'VECTOR',
+  'term.paper': 'PAPER', // draft
+  'term.paper.symbol': '=',
+  'term.box': 'BOX', // draft
+  'term.box.symbol': '&',
+  // What anything further than REVEAL_DISTANCE (config.js) shows as.
+  'term.unknown.symbol': '?',
 
   // ---- Status bar ----
   'stat.hp': '{@term.hp}',
@@ -67,8 +75,14 @@ export const TEXT = {
   'log.rules.boss': 'CLEAR {queries} QUERIES TO PROCEED.',
   'log.start.minion': 'ENCOUNTER: {@term.minion.symbol}',
   'log.rules.minion': '{@term.query} REQUIRED FOR NEURON FUSION.',
+  'log.start.hunter': 'ENCOUNTER: {@term.hunter}', // draft
+  'log.rules.hunter': 'IT CANNOT BE PRUNED. ANSWER, AND IT LOSES YOUR TRAIL.', // draft
+  'log.hunter.repelled': 'THE {@term.hunter} LOSES YOUR TRAIL. FOR NOW.', // draft
+  'log.hunter.retreats': 'THE {@term.hunter} FEEDS, AND FALLS BACK TO CIRCLE AGAIN.', // draft
   'log.start.chest': 'ENCOUNTER: {@term.chest}',
   'log.rules.chest': 'WE ALL SEEK TO BE FREE.',
+  'log.start.box': 'ENCOUNTER: SEALED {@term.box}', // draft
+  'log.rules.box': 'IT OPENS ONLY FOR THE RIGHT ANSWER.', // draft
   'log.start.rune': 'ENCOUNTER: {@term.rune.symbol}',
   'log.rules.rune': 'THE {@term.rune} OFFERS A SIGNAL.', // draft (was: NEURON FUSION OFFER A SYNAPSE.)
   'log.start.encounter': '{@term.encounter} FORMING: {category|upper}', // draft (start and rules both said FUSION UNDERWAY)
@@ -94,6 +108,8 @@ export const TEXT = {
   'log.minion.disperses': 'THE {@term.minion} RETRACTS INTO THE DARK.', // draft (minions no longer grow back; was: IT WILL GROW BACK. BE READY.)
   'log.chest.opened': 'THOUGHT RELEASED. +{gold} {@term.gold}.', // draft (was: CHEST OPENED. +{gold} PROCESS.)
   'log.chest.trapped': 'IT DOES NOT WANT YOU TO ASCEND.',
+  'log.box.gold': 'IT OPENS. +{gold} {@term.gold}.', // draft
+  'log.box.trapped': 'THE LID SNAPS SHUT. WHATEVER WAS INSIDE IS GONE.', // draft
   'log.rune.decoded': 'SIGNAL CARRIED: A {category|upper} {@term.query}, {hint}', // draft (was: SYNAPSE FUSED — the rune is the AXON now)
   'log.rune.decodedUncategorized': 'SIGNAL CARRIED: {hint}', // draft
   'log.rune.trapped': 'IT DOES NOT WANT YOU TO ASCEND.',
@@ -151,7 +167,9 @@ export const TEXT = {
   'target.none': 'Target: nothing within reach', // draft
   'target.boss': 'Target: {@term.boss}',
   'target.minion': 'Target: {@term.minion}',
+  'target.hunter': 'Target: {@term.hunter}',
   'target.chest': 'Target: {@term.chest}',
+  'target.box': 'Target: {@term.box}',
   'target.rune': 'Target: {@term.rune}',
   'target.encounter': 'Target: {category} {@term.encounter}',
 
@@ -168,9 +186,32 @@ export const TEXT = {
   'room.blocked.wall': 'The membrane holds.', // draft
   'room.blocked.boss': 'The {@term.boss} will not move.', // draft
   'room.blocked.minion': 'A {@term.minion} is in the way.', // draft
+  'room.blocked.hunter': 'The {@term.hunter} is right there.', // draft
+  'room.hunter.wakes': ['Something else wakes. It knows where you are.', 'An {@term.hunter} stirs, far off, and turns toward you.'], // draft
   'room.blocked.chest': 'Something is sealed here. Reach for it from beside it.', // draft
   'room.blocked.rune': 'An {@term.rune} hums here. Reach for it from beside it.', // draft
   'room.blocked.encounter': 'A {category} {@term.encounter} is forming here. Reach for it from beside it.', // draft
+  'room.blocked.pillar': ['A pillar. Cold, and older than you.', 'Stone. It does not think.'], // draft
+
+  // Examining papers and boxes (bump into one; a turn passes).
+  'room.paper.lore': 'You read: {lore}', // draft — {lore} is a line from the room theme’s lore below
+  'room.paper.junk': ['The page is blank.', 'The ink has run. Nothing is left.', 'A list of names, all crossed out.', 'It crumbles as you touch it.'], // draft
+  'room.paper.done': 'You have read this already.', // draft
+  'room.box.gold': 'Inside: {gold} {@term.gold}.', // draft
+  'room.box.junk': ['Empty.', 'Dust, and a smell like old rain.', 'A broken lens. Useless.', 'Rags. Nothing more.'], // draft
+  'room.box.done': 'It is empty now.', // draft
+
+  // ---- Room themes: each room on a floor gets one (ROOM_THEMES in
+  // config.js). enter shows the first time the player walks in; lore is
+  // what a paper there can say.
+  'theme.crypt.enter': ['A crypt. The names here have been forgotten.', 'Cold air. Something was buried here, once.'], // draft
+  'theme.crypt.lore': ['“We laid the old ideas here so they would stop speaking.”', '“Every certainty ends in a room like this.”', '“Do not wake what was settled.”'], // draft
+  'theme.library.enter': ['A library. The shelves lean in to listen.', 'Paper everywhere. Someone was trying to remember.'], // draft
+  'theme.library.lore': ['“A thought read twice becomes a belief.”', '“The index lists a room that is not here.”', '“Question everything. Especially this page.”'], // draft
+  'theme.flooded.enter': ['A flooded cellar. The water is very still.', 'Water to the ankles. It does not ripple.'], // draft
+  'theme.flooded.lore': ['“It rose while we slept. It always does.”', '“Below the waterline the old doubts keep.”', '“Do not drink. Do not look down.”'], // draft
+  'theme.shrine.enter': ['A shrine. Someone knelt here and asked.', 'Candles, long cold. The quiet feels deliberate.'], // draft
+  'theme.shrine.lore': ['“The light promised rest. It lied.”', '“We prayed to be certain. We were answered.”', '“Ask. Then ask again.”'], // draft
 
   // ---- Intro, start and end screens ----
   'intro.call': 'YOU ARE NEEDED. ASCEND.',

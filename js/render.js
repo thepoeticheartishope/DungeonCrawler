@@ -6,7 +6,7 @@
 // of each one threading them through as parameters.
 
 import { state, key } from './state.js';
-import { MAX_HEARTS, BOSS_HP, PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, VIEWPORT_SIZE } from './config.js';
+import { MAX_HEARTS, BOSS_HP, PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, VIEWPORT_SIZE, REVEAL_DISTANCE } from './config.js';
 import { lightProgress } from './light.js';
 import { categoryLabel } from './quiz.js';
 import { t } from './text.js';
@@ -60,24 +60,37 @@ export function updateCamera() {
   state.camCol = clamp(state.playerCol - Math.floor(VIEWPORT_SIZE / 2), 0, state.GRID_SIZE - VIEWPORT_SIZE);
 }
 
-// Walls plus the checkerboard both key off world coordinates, so both are
-// re-applied here from the current camera offset rather than only once at
-// build time — the checkerboard would otherwise stay fixed to the screen
-// instead of panning with the world.
+// Walls, pillars and the checkerboard all key off world
+// coordinates, so they're re-applied here from the current camera offset
+// rather than only once at build time — they'd otherwise stay fixed to
+// the screen instead of panning with the world.
 export function renderWalls() {
   for (let vr = 0; vr < VIEWPORT_SIZE; vr++) {
     for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
       const worldRow = state.camRow + vr;
       const worldCol = state.camCol + vc;
       const tile = state.tileEls[vr * VIEWPORT_SIZE + vc];
+      const k = key(worldRow, worldCol);
       tile.classList.toggle('b', (worldRow + worldCol) % 2 !== 0);
-      tile.classList.toggle('wall', state.wallSet.has(key(worldRow, worldCol)));
+      tile.classList.toggle('wall', state.wallSet.has(k));
+      tile.classList.toggle('pillar', state.pillarSet.has(k));
     }
   }
 }
 
+// Sets an actor's real map glyph. renderFog shows it, or '?' while the
+// actor is too far away to make out.
+export function setGlyph(el, glyph) {
+  el.dataset.glyph = glyph;
+  el.textContent = glyph;
+}
+
 // Facing vectors for the cone test below.
 const FACING_VECTORS = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] };
+
+// How far away (in steps, as the crow flies) the hunter's edge glow starts
+// to brighten.
+const HUNTER_HINT_RANGE = 20;
 
 // True if the tile at (row, col) falls within a 90-degree cone opening in
 // `facing`'s direction from the player — a diamond that widens as it gets
@@ -95,7 +108,7 @@ function inFacingCone(row, col) {
 // The player's own light: every open tile within PLAYER_LIGHT_RADIUS steps,
 // plus open tiles up to PLAYER_CONE_RANGE steps inside the facing cone.
 // Walls fully block it (a lit cone never bleeds through a wall into an
-// adjacent corridor). Everything the boss's light reaches is visible too
+// adjacent corridor); pillars are lit themselves but cast a shadow behind. Everything the boss's light reaches is visible too
 // (state.bossLitSet, from light.js) — the thing that ends the run is also
 // what shows the player the way.
 export function computeVisibility() {
@@ -114,9 +127,13 @@ export function computeVisibility() {
       const nk = key(nr, nc);
       if (seen.has(nk) || state.wallSet.has(nk)) continue;
       seen.add(nk);
+      const dist = cur.dist + 1;
+      if (state.pillarSet.has(nk)) {
+        if (dist <= PLAYER_LIGHT_RADIUS || inFacingCone(nr, nc)) state.visibleSet.add(nk);
+        continue;
+      }
       // Still traverse through out-of-cone tiles (a corridor can bend into
       // view further on), but only mark in-cone ones as actually visible.
-      const dist = cur.dist + 1;
       if (dist <= PLAYER_LIGHT_RADIUS || inFacingCone(nr, nc)) state.visibleSet.add(nk);
       queue.push({ row: nr, col: nc, dist });
     }
@@ -145,31 +162,71 @@ export function renderFog() {
   }
 
   const isLit = (row, col) => !state.fogEnabled || state.visibleSet.has(key(row, col));
+  const isNear = (row, col) => !state.fogEnabled ||
+    Math.max(Math.abs(row - state.playerRow), Math.abs(col - state.playerCol)) <= REVEAL_DISTANCE;
+  // Too far to make out: a '?' instead of the real glyph (and none of the
+  // hostile glow, which would give an enemy away).
+  const showGlyph = (el, known) => {
+    el.classList.toggle('unknown', !known);
+    const glyph = known ? el.dataset.glyph : t('term.unknown.symbol');
+    if (glyph !== undefined && el.textContent !== glyph) el.textContent = glyph;
+  };
 
-  if (state.boss) els.bossActor.classList.toggle('fog-hidden', !isLit(state.boss.row, state.boss.col));
-  state.minions.forEach(m => m.el.classList.toggle('fog-hidden', !isLit(m.row, m.col)));
+  if (state.boss) {
+    els.bossActor.classList.toggle('fog-hidden', !isLit(state.boss.row, state.boss.col));
+    showGlyph(els.bossActor, isNear(state.boss.row, state.boss.col));
+  }
+  state.minions.forEach(m => {
+    m.el.classList.toggle('fog-hidden', !isLit(m.row, m.col));
+    showGlyph(m.el, isNear(m.row, m.col));
+  });
   els.coinActor.classList.toggle('fog-hidden', !!state.coin && !isLit(state.coin.row, state.coin.col));
+  if (state.coin) showGlyph(els.coinActor, isNear(state.coin.row, state.coin.col));
   // The stairs are never lost in the fog: they're the way out, and they
   // stay visible whenever they're on screen — including in the darkness
   // after the boss, when nothing else is remembered — so leaving or
   // staying for double gold is always a clear choice.
   if (state.stairs) els.stairsActor.classList.remove('fog-hidden');
   els.chestActor.classList.toggle('fog-hidden', !!state.chest && !isLit(state.chest.row, state.chest.col));
+  if (state.chest) showGlyph(els.chestActor, isNear(state.chest.row, state.chest.col));
   els.runeActor.classList.toggle('fog-hidden', !!state.rune && !isLit(state.rune.row, state.rune.col));
-  state.encounters.forEach(e => e.el.classList.toggle('fog-hidden', !isLit(e.row, e.col)));
+  if (state.rune) showGlyph(els.runeActor, isNear(state.rune.row, state.rune.col));
+  state.encounters.forEach(e => {
+    e.el.classList.toggle('fog-hidden', !isLit(e.row, e.col));
+    showGlyph(e.el, isNear(e.row, e.col));
+  });
+  // Papers and boxes don't move, so once seen they stay dimly remembered
+  // on explored floor (not in the darkness, where nothing is). They keep
+  // their '?' until the player has been close enough to make them out.
+  state.props.forEach(p => {
+    const k = key(p.row, p.col);
+    const lit = isLit(p.row, p.col);
+    if (lit && isNear(p.row, p.col)) p.identified = true;
+    const remembered = state.fogEnabled && !lit && !state.darkness && state.exploredSet.has(k);
+    p.el.classList.toggle('fog-hidden', !lit && !remembered);
+    p.el.classList.toggle('remembered', remembered);
+    showGlyph(p.el, !state.fogEnabled || p.identified);
+  });
   renderLightHint();
 }
 
 // While the boss is off screen, the edge of the view facing it glows —
 // brighter as its light spreads — so the player always has a sense of
 // where it is. A diagonal boss lights two edges.
+//
+// After the boss, the same edges point at the hunter instead (in white,
+// not the boss's blue), brighter the closer it gets.
 function renderLightHint() {
   const edges = els.lightHintEls;
   if (!edges) return;
-  const boss = state.boss;
+  const boss = state.boss || state.hunter;
   const offScreen = !!boss && (boss.row < state.camRow || boss.row >= state.camRow + VIEWPORT_SIZE ||
     boss.col < state.camCol || boss.col >= state.camCol + VIEWPORT_SIZE);
-  const strength = offScreen ? (0.25 + 0.6 * lightProgress()).toFixed(2) : '0';
+  const near = state.hunter && !state.boss
+    ? 1 - Math.min(1, (Math.abs(boss.row - state.playerRow) + Math.abs(boss.col - state.playerCol)) / HUNTER_HINT_RANGE)
+    : lightProgress();
+  const strength = offScreen ? (0.25 + 0.6 * near).toFixed(2) : '0';
+  Object.values(edges).forEach(el => el.classList.toggle('hunter-hint', !state.boss && !!state.hunter));
   const dr = boss ? boss.row - state.playerRow : 0;
   const dc = boss ? boss.col - state.playerCol : 0;
   const on = {
@@ -259,6 +316,7 @@ export function renderTargeting() {
   els.chestActor.classList.toggle('targeted', state.selectedTarget === state.chest);
   els.runeActor.classList.toggle('targeted', state.selectedTarget === state.rune);
   state.encounters.forEach(e => e.el.classList.toggle('targeted', state.selectedTarget === e));
+  state.props.forEach(p => p.el.classList.toggle('targeted', state.selectedTarget === p));
 
   const target = state.selectedTarget;
   els.targetLabelEl.textContent = target
@@ -266,7 +324,7 @@ export function renderTargeting() {
     : t('target.none');
 
   const isObject = state.selectedTarget &&
-    (state.selectedTarget.kind === 'chest' || state.selectedTarget.kind === 'rune' || state.selectedTarget.kind === 'encounter');
+    ['chest', 'rune', 'encounter', 'box'].includes(state.selectedTarget.kind);
   els.attackBtn.textContent = t(isObject ? 'battle.attempt' : 'battle.attack');
 }
 

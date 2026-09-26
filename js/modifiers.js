@@ -7,7 +7,7 @@
 //   timer    a few seconds to answer, or it counts as a miss
 
 import { state } from './state.js';
-import { MODIFIER_CHANCE, MODIFIER_DARK_BONUS, FLIP_MAX_ANSWERS } from './config.js';
+import { MODIFIER_CHANCE, MODIFIER_DARK_BONUS, FLIP_MAX_ANSWERS, HUNTER_MODIFIER_PAIRS } from './config.js';
 import { shuffle } from './quiz.js';
 
 export const MODIFIERS = ['blind', 'gambler', 'flip', 'timer'];
@@ -42,8 +42,14 @@ export function rollModifier(target) {
 // carries a modifier, spread so the categories differ where possible
 // (three categories get three different ones; Gambler only with gold for
 // a wager), so which category to pick is still a real choice.
-// Minions roll each category on its own.
+// Minions roll each category on its own. Each entry is one modifier, null,
+// or (for the hunter) a pair.
 export function rollCategoryModifiers(target, count) {
+  // The hunter's choices each carry a pair, a different pair per choice.
+  if (target && target.kind === 'hunter') {
+    const pairs = shuffle(HUNTER_MODIFIER_PAIRS);
+    return Array.from({ length: count }, (_, i) => pairs[i % pairs.length]);
+  }
   if (!target || target.kind !== 'boss') return Array.from({ length: count }, () => rollModifier(target));
   const eligible = shuffle(eligibleModifiers());
   return Array.from({ length: count }, (_, i) => eligible[i % eligible.length]);

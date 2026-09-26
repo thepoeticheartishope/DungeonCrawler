@@ -53,6 +53,8 @@ export const state = {
   lightTurns: 0,         // turns spent in this room
   runEnded: false,       // the light consumed the floor; no more moves this run
   darkness: false,       // the boss has fallen on this floor (see DARK_* in config.js)
+  darkTurns: 0,          // turns since the boss fell (the hunter wakes at HUNTER_SPAWN_DELAY)
+  hunter: null,          // the hunter, once awake — also in state.minions, with kind 'hunter'
   wager: 0,              // gold staked on the current question (Gambler modifier), 0 if none
   bossLitSet: new Set(), // tiles the boss light currently reaches
   currentQuestion: null, // { term, meaning } — reshuffles after every attempt
@@ -67,6 +69,12 @@ export const state = {
   chest: null,           // { row, col, el, kind: 'chest' } or null once opened/trapped
   rune: null,            // { row, col, el, kind: 'rune' } or null once read/trapped
   encounters: [],        // [{ row, col, el, kind: 'encounter', category, pool }], per-room, up to 3
+  // Furniture and themes (decor.js). Reset as each floor loads.
+  pillarSet: new Set(),     // pillar tiles: solid, and they block the player's light
+  props: [],                // papers and boxes: [{ row, col, kind, theme, loot, gold, trapped, el, identified, searched, sprung }]
+  chamberAt: new Map(),     // tile key -> which room on the floor it belongs to
+  chamberThemes: [],        // theme per room
+  visitedChambers: new Set(), // rooms the player has walked into (their theme line shows once)
 
   usingSample: true, // false once the person loads their own list
   activeData: MC_SAMPLE_DATA, // whichever list is currently in play

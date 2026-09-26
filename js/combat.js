@@ -7,8 +7,8 @@
 // advanceMonsters run.
 
 import { state, key } from './state.js';
-import { MINION_HP, MINION_CHASE_RANGE } from './config.js';
-import { positionActor, renderCombatStatus, computeVisibility, renderFog, renderTargeting, renderLightEye } from './render.js';
+import { MINION_HP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS } from './config.js';
+import { positionActor, setGlyph, renderCombatStatus, computeVisibility, renderFog, renderTargeting, renderLightEye } from './render.js';
 import { advanceLight } from './light.js';
 import { t } from './text.js';
 
@@ -33,6 +33,11 @@ export function findAdjacentEnemies() {
   for (const e of state.encounters) {
     if (isAdjacentToPlayer(e)) result.push(e);
   }
+  // A trapped box only becomes something to answer once it's been
+  // bumped (main.js examineProp); until then it looks like any other.
+  for (const p of state.props) {
+    if (p.sprung && isAdjacentToPlayer(p)) result.push(p);
+  }
   return result;
 }
 
@@ -50,8 +55,11 @@ export function refreshTargetValidity() {
   renderTargeting();
 }
 
-// True if any player, boss, or minion currently occupies this tile.
+// True if any player, boss, minion, item or piece of furniture currently
+// occupies this tile.
 export function tileOccupied(row, col, excludeMinion) {
+  if (state.pillarSet.has(key(row, col))) return true;
+  if (state.props.some(p => p.row === row && p.col === col)) return true;
   if (state.boss && state.boss.row === row && state.boss.col === col) return true;
   if (state.playerRow === row && state.playerCol === col) return true;
   if (state.chest && state.chest.row === row && state.chest.col === col) return true;
@@ -69,8 +77,8 @@ export function neighbors(r, c) {
     .filter(([nr, nc]) => nr >= 0 && nr < state.GRID_SIZE && nc >= 0 && nc < state.GRID_SIZE);
 }
 
-// Walls, the boss, and every other minion's current tile, from one minion's
-// point of view — so it paths around them instead of computing the same
+// Walls, pillars, papers and boxes, the boss, and every other minion's
+// current tile, from one minion's point of view — so it paths around them instead of computing the same
 // blocked step every turn. Minions are placed outside the boss chamber
 // (loadRoom) and the boss holds its one doorway, so they never end up
 // inside it. Items (chest, rune, encounters) don't block a chase — a
@@ -78,6 +86,8 @@ export function neighbors(r, c) {
 // in a one-wide corridor; items are only obstacles to the player.
 export function blockedTilesFor(minion) {
   const blocked = new Set(state.wallSet);
+  state.pillarSet.forEach(k => blocked.add(k));
+  state.props.forEach(p => blocked.add(key(p.row, p.col)));
   if (state.boss) blocked.add(key(state.boss.row, state.boss.col));
   for (const other of state.minions) {
     if (other === minion) continue;
@@ -109,11 +119,60 @@ export function bfsPath(start, target, walls) {
   return null;
 }
 
+// The free floor tile the most walkable steps from the player, for the
+// hunter to wake on or be thrown back to.
+function farthestFromPlayer() {
+  const blocked = new Set(state.wallSet);
+  state.pillarSet.forEach(k => blocked.add(k));
+  state.props.forEach(p => blocked.add(key(p.row, p.col)));
+  const start = { row: state.playerRow, col: state.playerCol };
+  const dist = new Map([[key(start.row, start.col), 0]]);
+  const queue = [start];
+  let best = null;
+  while (queue.length) {
+    const cur = queue.shift();
+    const d = dist.get(key(cur.row, cur.col));
+    if (d > 0 && !tileOccupied(cur.row, cur.col) && (!best || d > best.d)) best = { ...cur, d };
+    for (const [nr, nc] of neighbors(cur.row, cur.col)) {
+      const k = key(nr, nc);
+      if (dist.has(k) || blocked.has(k)) continue;
+      dist.set(k, d + 1);
+      queue.push({ row: nr, col: nc });
+    }
+  }
+  return best;
+}
+
+function wakeHunter() {
+  const spot = farthestFromPlayer();
+  if (!spot) return false;
+  const m = spawnMinion(spot);
+  m.kind = 'hunter';
+  m.rest = 0;
+  m.el.classList.remove('minion');
+  m.el.classList.add('hunter');
+  setGlyph(m.el, t('term.hunter.symbol'));
+  state.hunter = m;
+  return true;
+}
+
+// After its question is answered, the hunter loses the trail: back to the
+// far side of the floor, where it waits a few turns before hunting again.
+export function repelHunter(m, answeredRight) {
+  const spot = farthestFromPlayer();
+  if (spot) {
+    m.row = spot.row;
+    m.col = spot.col;
+    positionActor(m.el, m.row, m.col, true);
+  }
+  m.rest = answeredRight ? HUNTER_REST_TURNS : HUNTER_REST_AFTER_MISS;
+}
+
 // Places a minion on `spot` (a free floor tile) — loadRoom picks the tiles.
 export function spawnMinion(spot) {
   const el = document.createElement('div');
   el.className = 'actor minion';
-  el.textContent = t('term.minion.symbol');
+  setGlyph(el, t('term.minion.symbol'));
   // Offsets this minion's warp animation out of sync with any others already
   // on screen — several identical creatures warping in perfect lockstep
   // reads as mechanical, not unsettling. Same idea for the glitch-bar
@@ -125,6 +184,7 @@ export function spawnMinion(spot) {
   const m = { row: spot.row, col: spot.col, hp: MINION_HP, el, kind: 'minion' };
   positionActor(el, m.row, m.col, true); // freshly spawned — appears in place, doesn't slide in
   state.minions.push(m);
+  return m;
 }
 
 // A random free neighbouring floor tile for a wandering minion, or null if
@@ -151,7 +211,16 @@ export function advanceMonsters() {
   // Minions roam freely and only give chase once the player is within
   // MINION_CHASE_RANGE walkable steps.
   let engageNote = '';
+  let hunterNote = '';
+  if (state.darkness) {
+    state.darkTurns++;
+    if (!state.hunter && state.darkTurns >= HUNTER_SPAWN_DELAY && wakeHunter()) hunterNote = t('room.hunter.wakes');
+  }
   for (const m of state.minions) {
+    if (m.rest > 0) {
+      m.rest--;
+      continue;
+    }
     const path = bfsPath({ row: m.row, col: m.col }, { row: state.playerRow, col: state.playerCol }, blockedTilesFor(m));
     // In the darkness after the boss falls, every minion hunts, from anywhere.
     const chasing = path && (state.darkness || path.length - 1 <= MINION_CHASE_RANGE);
@@ -178,5 +247,5 @@ export function advanceMonsters() {
   renderFog();
   renderLightEye();
   refreshTargetValidity();
-  return { engageNote };
+  return { engageNote, hunterNote };
 }
