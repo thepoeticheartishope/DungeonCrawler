@@ -10,7 +10,7 @@
 
 import { key } from './state.js';
 import {
-  ROOM_THEMES, PILLARS_PER_ROOM, PAPER_LORE_CHANCE, BOX_TRAP_CHANCE, BOX_LOOT, BOX_TRAP_LOOT, BOX_GOLD,
+  ROOM_THEMES, PILLARS_PER_ROOM, PAPER_LORE_CHANCE, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD,
 } from './config.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -168,7 +168,7 @@ function placePillars(chamber, placer, pillars) {
 function rollProp(kind, theme, floorIndex) {
   if (kind === 'paper') return { kind, theme, loot: Math.random() < PAPER_LORE_CHANCE ? 'lore' : 'junk' };
   const trapped = Math.random() < BOX_TRAP_CHANCE;
-  const loot = weighted(trapped ? BOX_TRAP_LOOT : BOX_LOOT);
+  const loot = trapped ? 'gold' : weighted(BOX_LOOT);
   const gold = loot === 'gold' ? randInt(BOX_GOLD[0], BOX_GOLD[1]) + floorIndex : 0;
   return { kind, theme, loot, gold, trapped };
 }

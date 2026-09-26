@@ -194,13 +194,12 @@ export const PILLARS_PER_ROOM = [2, 4];
 // Papers and boxes block walking but not light; bump one to examine it
 // (a turn passes). A paper is lore or nothing. A box is like the chest:
 // BOX_TRAP_CHANCE of them are trapped and ask a question first (right =
-// BOX_TRAP_LOOT, wrong = the usual lost heart); the rest just open, with
-// BOX_LOOT. A heart comes as gold instead when hearts are full. Loot
-// tables are weights, not %.
+// gold, wrong = the usual lost heart); the rest just open, with BOX_LOOT
+// (weights, not %). Boxes never restore hearts — like the chest, healing
+// is kept for something else.
 export const PAPER_LORE_CHANCE = 0.4;
 export const BOX_TRAP_CHANCE = 0.3;
-export const BOX_LOOT = { junk: 50, gold: 35, heart: 15 };
-export const BOX_TRAP_LOOT = { gold: 70, heart: 30 };
+export const BOX_LOOT = { junk: 50, gold: 50 };
 export const BOX_GOLD = [1, 2]; // plus the floor index, before the darkness multiplier
 
 // Anything further than this many tiles away (in any direction, diagonals

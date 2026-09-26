@@ -1151,23 +1151,15 @@ function examineProp(prop) {
       : t('room.paper.junk');
   } else {
     const found = openBox(prop);
-    message = found.heart ? t('room.box.heart')
-      : found.gold ? t('room.box.gold', { gold: found.gold })
-      : t('room.box.junk');
+    message = found.gold ? t('room.box.gold', { gold: found.gold }) : t('room.box.junk');
   }
   applyTurnOutcome(message);
   state.turnLocked = false;
 }
 
-// Hands over a box's loot: a heart back, or gold (a heart the player has
-// no room for comes as gold instead). Junk gives nothing.
+// Hands over a box's loot: gold, or nothing for junk. Never hearts.
 function openBox(prop) {
   if (prop.loot === 'junk') return {};
-  if (prop.loot === 'heart' && state.hearts < MAX_HEARTS) {
-    state.hearts++;
-    renderHearts();
-    return { heart: true };
-  }
   const gold = goldReward(prop.gold || BOX_GOLD[0] + state.roomIndex);
   state.coinsTotal += gold;
   coinsTotalEl.textContent = state.coinsTotal;
@@ -1285,7 +1277,7 @@ function resolveOneShot(target, isCorrect, q) {
       logLine(t('log.box.trapped'));
     } else {
       const found = openBox(target);
-      logLine(found.heart ? t('log.box.heart') : t('log.box.gold', { gold: found.gold }), 'bright');
+      logLine(t('log.box.gold', { gold: found.gold }), 'bright');
     }
     endEncounter();
     return;

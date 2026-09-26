@@ -103,7 +103,6 @@ export const TEXT = {
   'log.chest.opened': 'THOUGHT RELEASED. +{gold} {@term.gold}.', // draft (was: CHEST OPENED. +{gold} PROCESS.)
   'log.chest.trapped': 'IT DOES NOT WANT YOU TO ASCEND.',
   'log.box.gold': 'IT OPENS. +{gold} {@term.gold}.', // draft
-  'log.box.heart': 'IT OPENS. +1 {@term.hp}.', // draft
   'log.box.trapped': 'THE LID SNAPS SHUT. WHATEVER WAS INSIDE IS GONE.', // draft
   'log.rune.decoded': 'SIGNAL CARRIED: A {category|upper} {@term.query}, {hint}', // draft (was: SYNAPSE FUSED — the rune is the AXON now)
   'log.rune.decodedUncategorized': 'SIGNAL CARRIED: {hint}', // draft
@@ -190,7 +189,6 @@ export const TEXT = {
   'room.paper.junk': ['The page is blank.', 'The ink has run. Nothing is left.', 'A list of names, all crossed out.', 'It crumbles as you touch it.'], // draft
   'room.paper.done': 'You have read this already.', // draft
   'room.box.gold': 'Inside: {gold} {@term.gold}.', // draft
-  'room.box.heart': 'Something inside steadies you. +1 {@term.hp}.', // draft
   'room.box.junk': ['Empty.', 'Dust, and a smell like old rain.', 'A broken lens. Useless.', 'Rags. Nothing more.'], // draft
   'room.box.done': 'It is empty now.', // draft
 
