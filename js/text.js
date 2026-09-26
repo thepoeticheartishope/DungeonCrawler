@@ -193,10 +193,9 @@ export const TEXT = {
   'room.blocked.encounter': 'A {category} {@term.encounter} is forming here. Reach for it from beside it.', // draft
   'room.blocked.pillar': ['A pillar. Cold, and older than you.', 'Stone. It does not think.'], // draft
 
-  // Examining papers and boxes (bump into one; a turn passes).
+  // Reading papers (step onto one) and examining boxes (bump into one; a turn passes).
   'room.paper.lore': 'You read: {lore}', // draft — {lore} is a line from the room theme’s lore below
   'room.paper.junk': ['The page is blank.', 'The ink has run. Nothing is left.', 'A list of names, all crossed out.', 'It crumbles as you touch it.'], // draft
-  'room.paper.done': 'You have read this already.', // draft
   'room.box.gold': 'Inside: {gold} {@term.gold}.', // draft
   'room.box.junk': ['Empty.', 'Dust, and a smell like old rain.', 'A broken lens. Useless.', 'Rags. Nothing more.'], // draft
   'room.box.done': 'It is empty now.', // draft

@@ -7,8 +7,9 @@ import { state, key } from './state.js';
 
 // null if (row, col) is open, otherwise { kind, thing }: kind is 'wall'
 // (also the grid's edge), 'pillar', 'boss', 'hunter', 'minion', 'chest',
-// 'rune', 'encounter' or 'prop' (a paper or box, which a bump examines);
-// thing is the minion/encounter/prop itself where there is one.
+// 'rune', 'encounter' or 'prop' (a box, which a bump examines — papers lie
+// flat and never block); thing is the minion/encounter/box itself where
+// there is one.
 export function whatBlocks(row, col) {
   if (row < 0 || row >= state.GRID_SIZE || col < 0 || col >= state.GRID_SIZE) return { kind: 'wall' };
   const k = key(row, col);
@@ -23,7 +24,7 @@ export function whatBlocks(row, col) {
   if (at(state.rune)) return { kind: 'rune' };
   const encounter = state.encounters.find(at);
   if (encounter) return { kind: 'encounter', thing: encounter };
-  const prop = state.props.find(at);
+  const prop = state.props.find(p => p.kind === 'box' && at(p));
   if (prop) return { kind: 'prop', thing: prop };
   return null;
 }

@@ -55,11 +55,11 @@ export function refreshTargetValidity() {
   renderTargeting();
 }
 
-// True if any player, boss, minion, item or piece of furniture currently
-// occupies this tile.
+// True if any player, boss, minion, item or solid piece of furniture
+// currently occupies this tile (papers lie flat, so they don't count).
 export function tileOccupied(row, col, excludeMinion) {
   if (state.pillarSet.has(key(row, col))) return true;
-  if (state.props.some(p => p.row === row && p.col === col)) return true;
+  if (state.props.some(p => p.kind === 'box' && p.row === row && p.col === col)) return true;
   if (state.boss && state.boss.row === row && state.boss.col === col) return true;
   if (state.playerRow === row && state.playerCol === col) return true;
   if (state.chest && state.chest.row === row && state.chest.col === col) return true;
@@ -77,7 +77,7 @@ export function neighbors(r, c) {
     .filter(([nr, nc]) => nr >= 0 && nr < state.GRID_SIZE && nc >= 0 && nc < state.GRID_SIZE);
 }
 
-// Walls, pillars, papers and boxes, the boss, and every other minion's
+// Walls, pillars, boxes, the boss, and every other minion's
 // current tile, from one minion's point of view — so it paths around them instead of computing the same
 // blocked step every turn. Minions are placed outside the boss chamber
 // (loadRoom) and the boss holds its one doorway, so they never end up
@@ -87,7 +87,7 @@ export function neighbors(r, c) {
 export function blockedTilesFor(minion) {
   const blocked = new Set(state.wallSet);
   state.pillarSet.forEach(k => blocked.add(k));
-  state.props.forEach(p => blocked.add(key(p.row, p.col)));
+  state.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
   if (state.boss) blocked.add(key(state.boss.row, state.boss.col));
   for (const other of state.minions) {
     if (other === minion) continue;
@@ -124,7 +124,7 @@ export function bfsPath(start, target, walls) {
 function farthestFromPlayer() {
   const blocked = new Set(state.wallSet);
   state.pillarSet.forEach(k => blocked.add(k));
-  state.props.forEach(p => blocked.add(key(p.row, p.col)));
+  state.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
   const start = { row: state.playerRow, col: state.playerCol };
   const dist = new Map([[key(start.row, start.col), 0]]);
   const queue = [start];

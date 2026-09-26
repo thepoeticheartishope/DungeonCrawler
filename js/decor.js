@@ -3,10 +3,11 @@
 // floor, on the layout from dungeon.js. No DOM access here — main.js
 // creates the map pieces and render.js draws them.
 //
-// Anything solid (pillars, papers, boxes, and later the chest/rune) is
-// only put down where it keeps every open tile reachable and leaves
-// something to stand beside it, so furniture can never wall off a door,
-// a corridor, or the stairs.
+// Anything solid (pillars, boxes, and later the chest/rune) is only put
+// down where it keeps every open tile reachable and leaves something to
+// stand beside it, so furniture can never wall off a door, a corridor, or
+// the stairs. Papers are placed on the same rules (so they stay out of
+// doorways and off each other), though in play anyone walks over them.
 
 import { key } from './state.js';
 import {
@@ -48,6 +49,11 @@ function weighted(table) {
 // be put down where the floor stays in one piece. `examinable` tiles are
 // the ones the player reaches for from beside (papers, boxes, chest…) —
 // each must keep at least one open neighbour.
+//
+// Nothing goes in a hallway: only on room floor, and never on a tile that
+// is one wide (solid on both sides, left and right or above and below),
+// like the gap into an alcove — there it would stand in the way even
+// though a longer route around exists.
 export function makePlacer(layout, gridSize) {
   const floor = new Set();
   for (let r = 0; r < gridSize; r++) {
@@ -70,6 +76,10 @@ export function makePlacer(layout, gridSize) {
   [layout.start, layout.spawn, layout.stairs].forEach(p => reserved.add(key(p.row, p.col)));
 
   const startKey = key(layout.start.row, layout.start.col);
+
+  const solid = (r, c) => !floor.has(key(r, c)) || blocked.has(key(r, c));
+  const oneWide = (p) => (solid(p.row - 1, p.col) && solid(p.row + 1, p.col)) ||
+    (solid(p.row, p.col - 1) && solid(p.row, p.col + 1));
 
   function stillConnected() {
     const seen = new Set([startKey]);
@@ -96,6 +106,7 @@ export function makePlacer(layout, gridSize) {
   function tryBlock(tiles, isExaminable) {
     const keys = tiles.map(p => key(p.row, p.col));
     if (keys.some(k => !floor.has(k) || blocked.has(k) || reserved.has(k))) return false;
+    if (tiles.some(p => !layout.roomTiles.has(key(p.row, p.col)) || oneWide(p))) return false;
     keys.forEach(k => {
       blocked.add(k);
       if (isExaminable) examinable.add(k);
