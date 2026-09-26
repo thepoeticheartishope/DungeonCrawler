@@ -1,6 +1,7 @@
 import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
 import { furnishFloor } from './decor.js';
+import { whatBlocks } from './passage.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, GRID_SIZES, CHAMBER_TARGETS,
   DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS, BATTLE_CHOICE_COUNT,
@@ -15,7 +16,7 @@ import {
 } from './quiz.js';
 import {
   initRender, showScreen, buildGridTiles, renderWalls, computeVisibility,
-  renderFog, positionActor, setGlyph, renderHearts, renderCombatStatus, renderTargeting,
+  renderFog, positionActor, setGlyph, bumpActor, renderHearts, renderCombatStatus, renderTargeting,
   formatTime, startTimer, updateCamera, renderLightEye
 } from './render.js';
 import {
@@ -115,7 +116,7 @@ initRender({
   startScreen, introGlitch, roomScreen, battleScreen, winScreen, loseScreen,
   grid, playerActor, bossActor, coinActor, chestActor, runeActor, stairsActor,
   heartsEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
-  lightEyeEl, lightHintEls
+  lightEyeEl, lightHintEls, dpadButtons
 });
 
 initCombat({ grid, playerActor, turnCountEl });
@@ -1053,46 +1054,18 @@ function movePlayer(dRow, dCol, dirName) {
   const newRow = state.playerRow + dRow;
   const newCol = state.playerCol + dCol;
 
-  if (newRow < 0 || newRow >= state.GRID_SIZE || newCol < 0 || newCol >= state.GRID_SIZE) {
-    showRoomNote('block-msg', t('room.blocked.wall'));
+  // Anything in the way stops the move (with a small bump toward it), or,
+  // for a paper or box, is examined instead.
+  const block = whatBlocks(newRow, newCol);
+  if (block && block.kind === 'prop') {
+    examineProp(block.thing);
     return;
   }
-  if (state.wallSet.has(key(newRow, newCol))) {
-    showRoomNote('block-msg', t('room.blocked.wall'));
-    return;
-  }
-  if (state.pillarSet.has(key(newRow, newCol))) {
-    showRoomNote('block-msg', t('room.blocked.pillar'));
-    return;
-  }
-  if (state.boss && state.boss.row === newRow && state.boss.col === newCol) {
-    showRoomNote('block-msg', t('room.blocked.boss'));
-    return;
-  }
-  if (state.hunter && state.hunter.row === newRow && state.hunter.col === newCol) {
-    showRoomNote('block-msg', t('room.blocked.hunter'));
-    return;
-  }
-  if (state.minions.some(m => m.row === newRow && m.col === newCol)) {
-    showRoomNote('block-msg', t('room.blocked.minion'));
-    return;
-  }
-  if (state.chest && state.chest.row === newRow && state.chest.col === newCol) {
-    showRoomNote('block-msg', t('room.blocked.chest'));
-    return;
-  }
-  if (state.rune && state.rune.row === newRow && state.rune.col === newCol) {
-    showRoomNote('block-msg', t('room.blocked.rune'));
-    return;
-  }
-  const blockingEncounter = state.encounters.find(e => e.row === newRow && e.col === newCol);
-  if (blockingEncounter) {
-    showRoomNote('block-msg', t('room.blocked.encounter', { category: categoryLabel(blockingEncounter.category) }));
-    return;
-  }
-  const prop = state.props.find(p => p.row === newRow && p.col === newCol);
-  if (prop) {
-    examineProp(prop);
+  if (block) {
+    bumpActor(playerActor, facing);
+    showRoomNote('block-msg', block.kind === 'encounter'
+      ? t('room.blocked.encounter', { category: categoryLabel(block.thing.category) })
+      : t('room.blocked.' + block.kind));
     return;
   }
 
@@ -1136,6 +1109,7 @@ function movePlayer(dRow, dCol, dirName) {
 // screen with a question guarding its loot (settled in resolveOneShot).
 function examineProp(prop) {
   if (prop.searched) {
+    bumpActor(playerActor, state.facing);
     showRoomNote('block-msg', t('room.' + prop.kind + '.done'));
     return;
   }
