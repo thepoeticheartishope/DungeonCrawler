@@ -116,6 +116,11 @@ export const TEXT = {
   'log.encounter.mastered': 'NEW {@term.encounter} FORMED: {category|upper}. +{gold} {@term.gold}.',
   'log.encounter.trapped': 'THE {category|upper} THOUGHT REJECTS YOU.',
 
+  // Haunts: a missed question coming back in a later fight (js/haunts.js).
+  'log.haunt.returns': ['A FAMILIAR DOUBT.', 'YOU HAVE HEARD THIS BEFORE.', 'IT REMEMBERS YOU GOT THIS WRONG.'], // draft
+  'log.haunt.silenced': ['YOU REMEMBER NOW. IT GOES QUIET.', 'THE DOUBT HAS NOTHING LEFT TO SAY.'], // draft
+  'log.haunt.lingers': 'IT WILL BE BACK.', // draft
+
   // The axon's clue about its hinted answer ({hint} in log.rune.decoded).
   'hint.shape': 'starts with "{first}" · {words} {words|plural:word}, {chars} characters',
 
@@ -253,6 +258,7 @@ export const TEXT = {
 
   'end.win.title': 'Your thought is born.',
   'end.win.stats': '{@term.boss} rewritten: {bosses}. Time: {time}. Cycles: {turns}. Transmissions: {attempts}. {@term.hp} remaining: {hearts}. {@term.gold} gathered: {coins}.', // draft
+  'end.haunts': 'Doubts silenced: {silenced} of {total}.', // draft
   'end.win.spacing': 'Watch spacing on {count} {count|plural:answer} next run.',
   'end.win.again': 'Think again', // draft
   'end.lose.title': 'The thought sleeps.',

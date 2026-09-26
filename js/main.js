@@ -9,6 +9,7 @@ import {
   BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS, BOX_GOLD
 } from './config.js';
 import { rollModifier, rollCategoryModifiers, rollFlip, maxWager } from './modifiers.js';
+import { resetHaunts, pickHaunt, recordHauntAnswer } from './haunts.js';
 import {
   defaultSample, shuffle, parseListInput, pickQuestion, escapeHtml,
   buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory, fightChoosable, fightChoiceLabel,
@@ -601,11 +602,16 @@ function startBattleTurn() {
     renderCategoryChoices();
   } else {
     state.battlePhase = 'answering';
+    // A fight may bring back a missed question (js/haunts.js).
+    const haunt = isFight && !state.runeHint ? pickHaunt(poolFor(target), state.currentQuestion) : null;
     // No choice to route the rune's hint through, so ask it directly if
     // this target's pool holds it.
     if (state.runeHint && poolFor(target).includes(state.runeHint)) {
       setQuestion(state.runeHint);
       state.runeHint = null;
+    } else if (haunt) {
+      logLine(t('log.haunt.returns'), 'alert');
+      setQuestion(haunt);
     } else {
       syncQuestionForTarget();
     }
@@ -629,13 +635,17 @@ function chooseCategory(i) {
   const choice = state.categoryChoices[i];
   if (!choice) return;
   let q;
+  let haunt = null;
   if (state.runeHint && choice.pool.includes(state.runeHint)) {
     q = state.runeHint;
     state.runeHint = null;
   } else {
-    q = pickQuestion(state.currentQuestion, choice.pool);
+    // A missed question from this category may come back instead.
+    haunt = pickHaunt(choice.pool, state.currentQuestion);
+    q = haunt || pickQuestion(state.currentQuestion, choice.pool);
   }
   logLine(t('log.vector', { n: i + 1, label: choice.label }), 'sys');
+  if (haunt) logLine(t('log.haunt.returns'), 'alert');
   state.lastChoiceType = choice.choiceType || null;
   state.battlePhase = 'answering';
   setQuestion(q);
@@ -792,6 +802,7 @@ function startGame() {
   state.hearts = MAX_HEARTS;
   state.turnCount = 0;
   state.coinsTotal = 0;
+  resetHaunts();
   state.revealOnWrong = revealToggle.checked;
   // Every run is multiple choice. The typing path (answerForm,
   // attemptAnswer, TYPING_SAMPLE_DATA) is parked, not deleted: it becomes a
@@ -1187,6 +1198,9 @@ function applyAnswerResult(isCorrect, hadExtraSpace, given) {
       if (q.source) logLine(t('log.source', { source: q.source }), 'sys');
     }
   }
+  const haunt = recordHauntAnswer(q, isCorrect);
+  if (haunt === 'silenced') logLine(t('log.haunt.silenced'), 'bright');
+  else if (haunt === 'lingers') logLine(t('log.haunt.lingers'));
   settleWager(isCorrect);
   flashBattleResult(isCorrect);
 
@@ -1441,8 +1455,15 @@ function endWin() {
   if (state.extraSpaceCount > 0) {
     msg += ' ' + t('end.win.spacing', { count: state.extraSpaceCount });
   }
-  winStats.textContent = msg;
+  winStats.textContent = msg + hauntStats();
   showScreen(winScreen);
+}
+
+// " Doubts silenced: X of Y." for the end screens, or nothing if the
+// player never missed.
+function hauntStats() {
+  if (!state.hauntsTotal) return '';
+  return ' ' + t('end.haunts', { silenced: state.hauntsSilenced, total: state.hauntsTotal });
 }
 
 // `reason` is 'light' when the boss light consumed the floor; anything else
@@ -1452,7 +1473,7 @@ function endLose(reason) {
   loseStats.textContent = t('end.lose.stats', {
     room: state.roomIndex + 1, rooms: state.order.length, time: formatTime(state.seconds),
     turns: state.turnCount, coins: state.coinsTotal,
-  });
+  }) + hauntStats();
   showScreen(loseScreen);
 }
 

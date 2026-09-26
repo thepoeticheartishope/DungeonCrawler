@@ -20,6 +20,9 @@ export const state = {
   order: [],
   roomIndex: 0,
   attempts: 0,
+  haunts: new Map(), // missed question -> attempt it was last missed on (js/haunts.js)
+  hauntsTotal: 0,
+  hauntsSilenced: 0,
   extraSpaceCount: 0,
   seconds: 0,
   timerHandle: null,

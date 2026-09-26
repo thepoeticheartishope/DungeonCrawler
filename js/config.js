@@ -245,6 +245,13 @@ export const LIGHT_TURNS_PER_STEP = 4;
 export const DARK_MISS_COST = 2;
 export const DARK_GOLD_MULTIPLIER = 2;
 
+// Haunts (js/haunts.js): a missed question comes back in a later fight
+// (boss, minion or hunter) in place of a random one, HAUNT_CHANCE of the
+// time, once at least HAUNT_MIN_GAP other questions have been answered
+// since the miss. Right silences it; wrong keeps it waiting.
+export const HAUNT_CHANCE = 0.35;
+export const HAUNT_MIN_GAP = 3;
+
 // The hunter: HUNTER_SPAWN_DELAY turns after the boss falls, something
 // that can't be killed wakes on the tile farthest from the player and
 // hunts them from anywhere, one step per turn — the player's own pace, so
