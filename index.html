@@ -548,17 +548,6 @@
     box-shadow: none !important;
     filter: none !important;
   }
-  /* Floor texture (a room theme's mark, e.g. ~ in a flooded cellar): one
-     faint glyph on the tile, well under anything standing on it. */
-  .tile {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    line-height: 1;
-    color: var(--muted);
-  }
-  .tile.fog-hidden { color: transparent; }
   /* A pillar: a solid block standing on the floor, drawn in CSS (the font
      has no block glyphs). Smaller than the tile so it reads as a column,
      not more wall. */

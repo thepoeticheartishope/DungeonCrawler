@@ -60,7 +60,7 @@ export function updateCamera() {
   state.camCol = clamp(state.playerCol - Math.floor(VIEWPORT_SIZE / 2), 0, state.GRID_SIZE - VIEWPORT_SIZE);
 }
 
-// Walls, pillars, floor texture and the checkerboard all key off world
+// Walls, pillars and the checkerboard all key off world
 // coordinates, so they're re-applied here from the current camera offset
 // rather than only once at build time — they'd otherwise stay fixed to
 // the screen instead of panning with the world.
@@ -74,8 +74,6 @@ export function renderWalls() {
       tile.classList.toggle('b', (worldRow + worldCol) % 2 !== 0);
       tile.classList.toggle('wall', state.wallSet.has(k));
       tile.classList.toggle('pillar', state.pillarSet.has(k));
-      const mark = state.floorMarks.get(k);
-      tile.textContent = mark ? t('theme.' + mark + '.mark') : '';
     }
   }
 }
@@ -307,6 +305,7 @@ export function renderTargeting() {
   els.chestActor.classList.toggle('targeted', state.selectedTarget === state.chest);
   els.runeActor.classList.toggle('targeted', state.selectedTarget === state.rune);
   state.encounters.forEach(e => e.el.classList.toggle('targeted', state.selectedTarget === e));
+  state.props.forEach(p => p.el.classList.toggle('targeted', state.selectedTarget === p));
 
   const target = state.selectedTarget;
   els.targetLabelEl.textContent = target
@@ -314,7 +313,7 @@ export function renderTargeting() {
     : t('target.none');
 
   const isObject = state.selectedTarget &&
-    (state.selectedTarget.kind === 'chest' || state.selectedTarget.kind === 'rune' || state.selectedTarget.kind === 'encounter');
+    ['chest', 'rune', 'encounter', 'box'].includes(state.selectedTarget.kind);
   els.attackBtn.textContent = t(isObject ? 'battle.attempt' : 'battle.attack');
 }
 

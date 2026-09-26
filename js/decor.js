@@ -1,5 +1,5 @@
 // Furnishing: gives each room on a floor a theme, then fills it with that
-// theme's pillars, papers and boxes and its floor texture. Runs once per
+// theme's pillars, papers and boxes. Runs once per
 // floor, on the layout from dungeon.js. No DOM access here — main.js
 // creates the map pieces and render.js draws them.
 //
@@ -10,7 +10,7 @@
 
 import { key } from './state.js';
 import {
-  ROOM_THEMES, PILLARS_PER_ROOM, PAPER_LORE_CHANCE, BOX_LOOT, BOX_GOLD,
+  ROOM_THEMES, PILLARS_PER_ROOM, PAPER_LORE_CHANCE, BOX_TRAP_CHANCE, BOX_LOOT, BOX_TRAP_LOOT, BOX_GOLD,
 } from './config.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -167,16 +167,16 @@ function placePillars(chamber, placer, pillars) {
 
 function rollProp(kind, theme, floorIndex) {
   if (kind === 'paper') return { kind, theme, loot: Math.random() < PAPER_LORE_CHANCE ? 'lore' : 'junk' };
-  const loot = weighted(BOX_LOOT);
+  const trapped = Math.random() < BOX_TRAP_CHANCE;
+  const loot = weighted(trapped ? BOX_TRAP_LOOT : BOX_LOOT);
   const gold = loot === 'gold' ? randInt(BOX_GOLD[0], BOX_GOLD[1]) + floorIndex : 0;
-  return { kind, theme, loot, gold };
+  return { kind, theme, loot, gold, trapped };
 }
 
-// Themes, furniture and floor texture for one floor.
+// Themes and furniture for one floor.
 //   themes: one ROOM_THEMES key per chamber (same order as layout.chambers)
 //   pillars: Set of tile keys
-//   props: [{ row, col, kind: 'paper'|'box', theme, loot, gold }]
-//   marks: Map tile key -> theme key, for floor texture
+//   props: [{ row, col, kind: 'paper'|'box', theme, loot, gold, trapped }]
 //   placer: for main.js to put the chest/rune down on the same rules
 export function furnishFloor(layout, gridSize, floorIndex) {
   const placer = makePlacer(layout, gridSize);
@@ -190,7 +190,6 @@ export function furnishFloor(layout, gridSize, floorIndex) {
 
   const pillars = new Set();
   const props = [];
-  const marks = new Map();
 
   layout.chambers.forEach((chamber, i) => {
     const theme = themes[i];
@@ -214,11 +213,7 @@ export function furnishFloor(layout, gridSize, floorIndex) {
       if (spot) props.push({ ...spot, ...rollProp(propKind(), theme, floorIndex) });
     }
 
-    chamber.floorCells.forEach(p => {
-      const k = key(p.row, p.col);
-      if (!placer.blocked.has(k) && Math.random() < cfg.floorMark) marks.set(k, theme);
-    });
   });
 
-  return { themes, pillars, props, marks, placer };
+  return { themes, pillars, props, placer };
 }

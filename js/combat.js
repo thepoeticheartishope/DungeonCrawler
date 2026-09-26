@@ -33,6 +33,11 @@ export function findAdjacentEnemies() {
   for (const e of state.encounters) {
     if (isAdjacentToPlayer(e)) result.push(e);
   }
+  // A trapped box only becomes something to answer once it's been
+  // bumped (main.js examineProp); until then it looks like any other.
+  for (const p of state.props) {
+    if (p.sprung && isAdjacentToPlayer(p)) result.push(p);
+  }
   return result;
 }
 

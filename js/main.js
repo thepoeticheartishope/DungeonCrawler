@@ -864,7 +864,6 @@ function loadRoom() {
   // items, so anything moving draws over them.
   const furnishing = furnishFloor(layout, state.GRID_SIZE, state.roomIndex);
   state.pillarSet = furnishing.pillars;
-  state.floorMarks = furnishing.marks;
   state.chamberAt = layout.chamberAt;
   state.chamberThemes = furnishing.themes;
   state.visitedChambers = new Set();
@@ -873,7 +872,7 @@ function loadRoom() {
     el.className = 'actor prop ' + p.kind;
     setGlyph(el, t('term.' + p.kind + '.symbol'));
     grid.insertBefore(el, playerActor);
-    state.props.push({ ...p, el, identified: false, searched: false });
+    state.props.push({ ...p, el, identified: false, searched: false, sprung: false });
     positionActor(el, p.row, p.col, true);
   });
   renderWalls();
@@ -1126,36 +1125,53 @@ function movePlayer(dRow, dCol, dirName) {
 }
 
 // Bumping a paper or box examines it. The first look takes a turn (the
-// light spreads, minions move); after that there's nothing left in it.
+// light spreads, minions move); after that there's nothing left in it. A
+// trapped box works like the chest instead: bumping it opens the battle
+// screen with a question guarding its loot (settled in resolveOneShot).
 function examineProp(prop) {
   if (prop.searched) {
     showRoomNote('block-msg', t('room.' + prop.kind + '.done'));
     return;
   }
+  prop.identified = true;
+  if (prop.kind === 'box' && prop.trapped) {
+    prop.sprung = true;
+    state.selectedTarget = prop;
+    renderTargeting();
+    syncBattleScreen();
+    return;
+  }
   state.turnLocked = true;
   prop.searched = true;
-  prop.identified = true;
   prop.el.classList.add('searched');
   let message;
   if (prop.kind === 'paper') {
     message = prop.loot === 'lore'
       ? t('room.paper.lore', { lore: t('theme.' + prop.theme + '.lore') })
       : t('room.paper.junk');
-  } else if (prop.loot === 'heart' && state.hearts < MAX_HEARTS) {
-    state.hearts++;
-    renderHearts();
-    message = t('room.box.heart');
-  } else if (prop.loot === 'junk') {
-    message = t('room.box.junk');
   } else {
-    // Gold — or a heart the player had no room for, paid as gold instead.
-    const gold = goldReward(prop.gold || BOX_GOLD[0] + state.roomIndex);
-    state.coinsTotal += gold;
-    coinsTotalEl.textContent = state.coinsTotal;
-    message = t('room.box.gold', { gold });
+    const found = openBox(prop);
+    message = found.heart ? t('room.box.heart')
+      : found.gold ? t('room.box.gold', { gold: found.gold })
+      : t('room.box.junk');
   }
   applyTurnOutcome(message);
   state.turnLocked = false;
+}
+
+// Hands over a box's loot: a heart back, or gold (a heart the player has
+// no room for comes as gold instead). Junk gives nothing.
+function openBox(prop) {
+  if (prop.loot === 'junk') return {};
+  if (prop.loot === 'heart' && state.hearts < MAX_HEARTS) {
+    state.hearts++;
+    renderHearts();
+    return { heart: true };
+  }
+  const gold = goldReward(prop.gold || BOX_GOLD[0] + state.roomIndex);
+  state.coinsTotal += gold;
+  coinsTotalEl.textContent = state.coinsTotal;
+  return { gold };
 }
 
 function skipTurn() {
@@ -1256,6 +1272,21 @@ function resolveOneShot(target, isCorrect, q) {
     target.el.remove();
     state.minions = state.minions.filter(m => m !== target);
     logLine(t(isCorrect ? 'log.minion.cleared' : 'log.minion.disperses'), isCorrect ? 'bright' : undefined);
+    endEncounter();
+    return;
+  }
+
+  // A trapped box stays on the map (it's furniture), just spent.
+  if (target.kind === 'box') {
+    target.sprung = false;
+    target.searched = true;
+    target.el.classList.add('searched');
+    if (!isCorrect) {
+      logLine(t('log.box.trapped'));
+    } else {
+      const found = openBox(target);
+      logLine(found.heart ? t('log.box.heart') : t('log.box.gold', { gold: found.gold }), 'bright');
+    }
     endEncounter();
     return;
   }

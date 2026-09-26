@@ -18,7 +18,7 @@ All game text (the encounter log, battle and map messages, screen labels, end sc
 
 ## Drawing rooms
 
-Every room is a text drawing in [`js/rooms.js`](js/rooms.js): `#` wall, `.` floor, `?` a spot that always gets a paper or box, `+` a doorway inside the room, and a `.` on the outer edge is a door out. Each drawing is also used turned and mirrored. Room themes (crypt, library, flooded cellar, shrine), pillar odds, box loot and the 3-tile `?` distance are in [`js/config.js`](js/config.js); their wording and lore are the `theme.*` lines in `js/text.js`. After editing, bump `CACHE_NAME` as above.
+Every room is a text drawing in [`js/rooms.js`](js/rooms.js): `#` wall, `.` floor, `?` a spot that always gets a paper or box, `+` a doorway inside the room, and a `.` on the outer edge is a door out. Each drawing is also used turned and mirrored. Room themes (crypt, library, flooded cellar, shrine), pillar odds, box traps and loot, and the 3-tile `?` distance are in [`js/config.js`](js/config.js); their wording and lore are the `theme.*` lines in `js/text.js`. After editing, bump `CACHE_NAME` as above.
 
 ## Credits
 

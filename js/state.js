@@ -69,8 +69,7 @@ export const state = {
   encounters: [],        // [{ row, col, el, kind: 'encounter', category, pool }], per-room, up to 3
   // Furniture and themes (decor.js). Reset as each floor loads.
   pillarSet: new Set(),     // pillar tiles: solid, and they block the player's light
-  props: [],                // papers and boxes: [{ row, col, kind, theme, loot, gold, el, identified, searched }]
-  floorMarks: new Map(),    // tile key -> theme, for floor texture
+  props: [],                // papers and boxes: [{ row, col, kind, theme, loot, gold, trapped, el, identified, searched, sprung }]
   chamberAt: new Map(),     // tile key -> which room on the floor it belongs to
   chamberThemes: [],        // theme per room
   visitedChambers: new Set(), // rooms the player has walked into (their theme line shows once)

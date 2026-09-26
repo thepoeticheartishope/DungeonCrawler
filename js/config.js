@@ -177,26 +177,30 @@ export const GRID_SIZES = [33, 37, 41];
 export const CHAMBER_TARGETS = [4, 5, 6];
 
 // Room themes. Every room on a floor gets one, dealt out so a floor has a
-// mix (wording, lore and floor texture are theme.* in text.js).
+// mix (wording and lore are theme.* in text.js).
 //   pillarChance  chance the room tries for pillars — kept low (tight rooms
 //                 often can't fit a mirrored set, so fewer actually get them)
 //   props         extra papers/boxes beyond the drawing's '?' spots [min, max]
 //   boxShare      share of those that are boxes rather than papers
-//   floorMark     share of its floor drawn with the theme's texture
 export const ROOM_THEMES = {
-  crypt:   { pillarChance: 0.30, props: [1, 2], boxShare: 0.4, floorMark: 0.08 },
-  library: { pillarChance: 0.15, props: [2, 4], boxShare: 0.2, floorMark: 0.05 },
-  flooded: { pillarChance: 0.15, props: [0, 2], boxShare: 0.6, floorMark: 0.35 },
-  shrine:  { pillarChance: 0.40, props: [0, 1], boxShare: 0.3, floorMark: 0.04 },
+  crypt:   { pillarChance: 0.30, props: [1, 2], boxShare: 0.4 },
+  library: { pillarChance: 0.15, props: [2, 4], boxShare: 0.2 },
+  flooded: { pillarChance: 0.15, props: [0, 2], boxShare: 0.6 },
+  shrine:  { pillarChance: 0.40, props: [0, 1], boxShare: 0.3 },
 };
 // Pillars block walking and the player's light; the boss light spreads
 // past them. A room with pillars gets a mirrored set of one of these sizes.
 export const PILLARS_PER_ROOM = [2, 4];
 // Papers and boxes block walking but not light; bump one to examine it
-// (a turn passes). A paper is lore or nothing; a box is nothing, gold, or
-// one heart back (gold instead when hearts are full). Weights, not %.
+// (a turn passes). A paper is lore or nothing. A box is like the chest:
+// BOX_TRAP_CHANCE of them are trapped and ask a question first (right =
+// BOX_TRAP_LOOT, wrong = the usual lost heart); the rest just open, with
+// BOX_LOOT. A heart comes as gold instead when hearts are full. Loot
+// tables are weights, not %.
 export const PAPER_LORE_CHANCE = 0.4;
+export const BOX_TRAP_CHANCE = 0.3;
 export const BOX_LOOT = { junk: 50, gold: 35, heart: 15 };
+export const BOX_TRAP_LOOT = { gold: 70, heart: 30 };
 export const BOX_GOLD = [1, 2]; // plus the floor index, before the darkness multiplier
 
 // Anything further than this many tiles away (in any direction, diagonals
@@ -229,7 +233,7 @@ export const PLAYER_CONE_RANGE = 3;
 // never costs light — only walking and waiting do. Index = room, like
 // GRID_SIZES.
 export const LIGHT_LOSS_COVERAGE = [0.9, 0.8, 0.7];
-export const LIGHT_TURNS_PER_STEP = 3;
+export const LIGHT_TURNS_PER_STEP = 4;
 
 // Darkness: once the boss falls, its light dies and the floor goes dark
 // outside the player's own light (explored tiles are forgotten). No new
