@@ -859,6 +859,16 @@
   .dpad-center { grid-column: 2; grid-row: 2; }
   .dpad-e { grid-column: 3; grid-row: 2; }
   .dpad-s { grid-column: 2; grid-row: 3; }
+  /* Which ways are open (render.js renderMoveHints): blocked dims, a
+     paper or box to examine shows in inverse video. */
+  .dpad button.move-blocked { opacity: 0.3; }
+  .dpad button.move-examine { background: var(--torch-bright); color: var(--ink); }
+
+  /* Walking into something: a short nudge toward it (render.js bumpActor). */
+  .actor.bump { animation: actorBump 0.18s ease-out; }
+  @keyframes actorBump {
+    50% { transform: translate(var(--bump-x, 0), var(--bump-y, 0)); }
+  }
 
   /* ---- Battle screen: styled as a terminal window ---- */
   .terminal { text-align: left; }
@@ -1131,6 +1141,7 @@
     #battleScreen.glitch-in .terminal { animation: none; }
     .eye.eye-near { animation: none; }
     .tile.boss-lit::after { animation: none; }
+    .actor.bump { animation: none; }
   }
 
   .feedback {

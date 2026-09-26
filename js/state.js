@@ -40,6 +40,7 @@ export const state = {
   turnLocked: false,
 
   visibleSet: new Set(),  // tiles lit right now, from the player's spot
+  sightSet: new Set(),    // just the player's own light (not the boss's) — what they can make out
   exploredSet: new Set(), // every tile ever seen this room (fog memory)
   fogEnabled: true,       // dev toggle can flip this off to verify layouts
 

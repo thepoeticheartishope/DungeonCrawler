@@ -8,6 +8,7 @@
 import { state, key } from './state.js';
 import { MAX_HEARTS, BOSS_HP, PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, VIEWPORT_SIZE, REVEAL_DISTANCE } from './config.js';
 import { lightProgress } from './light.js';
+import { whatBlocks } from './passage.js';
 import { categoryLabel } from './quiz.js';
 import { t } from './text.js';
 
@@ -115,6 +116,9 @@ export function computeVisibility() {
   state.visibleSet = new Set(state.bossLitSet);
   const startKey = key(state.playerRow, state.playerCol);
   state.visibleSet.add(startKey);
+  // The player's own light, apart from the boss's: only what the player
+  // sees themselves can be made out (see canMakeOut).
+  state.sightSet = new Set([startKey]);
   const reach = Math.max(PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE);
   const queue = [{ row: state.playerRow, col: state.playerCol, dist: 0 }];
   const seen = new Set([startKey]);
@@ -129,18 +133,50 @@ export function computeVisibility() {
       seen.add(nk);
       const dist = cur.dist + 1;
       if (state.pillarSet.has(nk)) {
-        if (dist <= PLAYER_LIGHT_RADIUS || inFacingCone(nr, nc)) state.visibleSet.add(nk);
+        if (dist <= PLAYER_LIGHT_RADIUS || inFacingCone(nr, nc)) {
+          state.visibleSet.add(nk);
+          state.sightSet.add(nk);
+        }
         continue;
       }
       // Still traverse through out-of-cone tiles (a corridor can bend into
       // view further on), but only mark in-cone ones as actually visible.
-      if (dist <= PLAYER_LIGHT_RADIUS || inFacingCone(nr, nc)) state.visibleSet.add(nk);
+      if (dist <= PLAYER_LIGHT_RADIUS || inFacingCone(nr, nc)) {
+        state.visibleSet.add(nk);
+        state.sightSet.add(nk);
+      }
       queue.push({ row: nr, col: nc, dist });
     }
   }
   // In the darkness after the boss, nothing is remembered: only what the
   // player's light touches right now can be seen.
   if (!state.darkness) state.visibleSet.forEach(k => state.exploredSet.add(k));
+}
+
+// True if a straight line from the player's tile to (row, col) passes no
+// wall or pillar — the light can creep a step around a corner, but seeing
+// what something is takes a clear view of it.
+function clearLineTo(row, col) {
+  const dr = row - state.playerRow;
+  const dc = col - state.playerCol;
+  const steps = Math.max(Math.abs(dr), Math.abs(dc)) * 4;
+  for (let i = 1; i < steps; i++) {
+    const r = Math.round(state.playerRow + (dr * i) / steps);
+    const c = Math.round(state.playerCol + (dc * i) / steps);
+    if (r === row && c === col) continue;
+    const k = key(r, c);
+    if (state.wallSet.has(k) || state.pillarSet.has(k)) return false;
+  }
+  return true;
+}
+
+// Whether the player can make out what's on (row, col), rather than a
+// '?': it has to be in their own light (not just the boss's), within
+// REVEAL_DISTANCE, with nothing solid in between.
+function canMakeOut(row, col) {
+  if (!state.fogEnabled) return true;
+  if (Math.max(Math.abs(row - state.playerRow), Math.abs(col - state.playerCol)) > REVEAL_DISTANCE) return false;
+  return state.sightSet.has(key(row, col)) && clearLineTo(row, col);
 }
 
 // Applies fog classes to every tile, and hides or shows the boss,
@@ -162,8 +198,7 @@ export function renderFog() {
   }
 
   const isLit = (row, col) => !state.fogEnabled || state.visibleSet.has(key(row, col));
-  const isNear = (row, col) => !state.fogEnabled ||
-    Math.max(Math.abs(row - state.playerRow), Math.abs(col - state.playerCol)) <= REVEAL_DISTANCE;
+  const isNear = canMakeOut;
   // Too far to make out: a '?' instead of the real glyph (and none of the
   // hostile glow, which would give an enemy away).
   const showGlyph = (el, known) => {
@@ -201,13 +236,41 @@ export function renderFog() {
   state.props.forEach(p => {
     const k = key(p.row, p.col);
     const lit = isLit(p.row, p.col);
-    if (lit && isNear(p.row, p.col)) p.identified = true;
+    if (isNear(p.row, p.col)) p.identified = true;
     const remembered = state.fogEnabled && !lit && !state.darkness && state.exploredSet.has(k);
     p.el.classList.toggle('fog-hidden', !lit && !remembered);
     p.el.classList.toggle('remembered', remembered);
     showGlyph(p.el, !state.fogEnabled || p.identified);
   });
   renderLightHint();
+  renderMoveHints();
+}
+
+// The d-pad shows which ways the player can go: a blocked direction dims
+// (pressing it still turns to look that way), and one with a paper or box
+// not yet gone through lights up, since that press examines it.
+function renderMoveHints() {
+  const buttons = els.dpadButtons;
+  if (!buttons) return;
+  for (const [dir, [dr, dc]] of Object.entries(FACING_VECTORS)) {
+    const btn = buttons[dir];
+    if (!btn) continue;
+    const block = whatBlocks(state.playerRow + dr, state.playerCol + dc);
+    const examine = !!block && block.kind === 'prop' && !block.thing.searched;
+    btn.classList.toggle('move-examine', examine);
+    btn.classList.toggle('move-blocked', !!block && !examine);
+  }
+}
+
+// A quick nudge toward `facing` and back — the feel of walking into
+// something, alongside the d-pad's blocked look.
+export function bumpActor(el, facing) {
+  const [dr, dc] = FACING_VECTORS[facing];
+  el.style.setProperty('--bump-x', (dc * 18) + '%');
+  el.style.setProperty('--bump-y', (dr * 18) + '%');
+  el.classList.remove('bump');
+  void el.offsetWidth; // restart the animation on a repeat bump
+  el.classList.add('bump');
 }
 
 // While the boss is off screen, the edge of the view facing it glows —
