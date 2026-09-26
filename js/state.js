@@ -67,6 +67,13 @@ export const state = {
   chest: null,           // { row, col, el, kind: 'chest' } or null once opened/trapped
   rune: null,            // { row, col, el, kind: 'rune' } or null once read/trapped
   encounters: [],        // [{ row, col, el, kind: 'encounter', category, pool }], per-room, up to 3
+  // Furniture and themes (decor.js). Reset as each floor loads.
+  pillarSet: new Set(),     // pillar tiles: solid, and they block the player's light
+  props: [],                // papers and boxes: [{ row, col, kind, theme, loot, gold, el, identified, searched }]
+  floorMarks: new Map(),    // tile key -> theme, for floor texture
+  chamberAt: new Map(),     // tile key -> which room on the floor it belongs to
+  chamberThemes: [],        // theme per room
+  visitedChambers: new Set(), // rooms the player has walked into (their theme line shows once)
 
   usingSample: true, // false once the person loads their own list
   activeData: MC_SAMPLE_DATA, // whichever list is currently in play

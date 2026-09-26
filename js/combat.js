@@ -8,7 +8,7 @@
 
 import { state, key } from './state.js';
 import { MINION_HP, MINION_CHASE_RANGE } from './config.js';
-import { positionActor, renderCombatStatus, computeVisibility, renderFog, renderTargeting, renderLightEye } from './render.js';
+import { positionActor, setGlyph, renderCombatStatus, computeVisibility, renderFog, renderTargeting, renderLightEye } from './render.js';
 import { advanceLight } from './light.js';
 import { t } from './text.js';
 
@@ -50,8 +50,11 @@ export function refreshTargetValidity() {
   renderTargeting();
 }
 
-// True if any player, boss, or minion currently occupies this tile.
+// True if any player, boss, minion, item or piece of furniture currently
+// occupies this tile.
 export function tileOccupied(row, col, excludeMinion) {
+  if (state.pillarSet.has(key(row, col))) return true;
+  if (state.props.some(p => p.row === row && p.col === col)) return true;
   if (state.boss && state.boss.row === row && state.boss.col === col) return true;
   if (state.playerRow === row && state.playerCol === col) return true;
   if (state.chest && state.chest.row === row && state.chest.col === col) return true;
@@ -69,8 +72,8 @@ export function neighbors(r, c) {
     .filter(([nr, nc]) => nr >= 0 && nr < state.GRID_SIZE && nc >= 0 && nc < state.GRID_SIZE);
 }
 
-// Walls, the boss, and every other minion's current tile, from one minion's
-// point of view — so it paths around them instead of computing the same
+// Walls, pillars, papers and boxes, the boss, and every other minion's
+// current tile, from one minion's point of view — so it paths around them instead of computing the same
 // blocked step every turn. Minions are placed outside the boss chamber
 // (loadRoom) and the boss holds its one doorway, so they never end up
 // inside it. Items (chest, rune, encounters) don't block a chase — a
@@ -78,6 +81,8 @@ export function neighbors(r, c) {
 // in a one-wide corridor; items are only obstacles to the player.
 export function blockedTilesFor(minion) {
   const blocked = new Set(state.wallSet);
+  state.pillarSet.forEach(k => blocked.add(k));
+  state.props.forEach(p => blocked.add(key(p.row, p.col)));
   if (state.boss) blocked.add(key(state.boss.row, state.boss.col));
   for (const other of state.minions) {
     if (other === minion) continue;
@@ -113,7 +118,7 @@ export function bfsPath(start, target, walls) {
 export function spawnMinion(spot) {
   const el = document.createElement('div');
   el.className = 'actor minion';
-  el.textContent = t('term.minion.symbol');
+  setGlyph(el, t('term.minion.symbol'));
   // Offsets this minion's warp animation out of sync with any others already
   // on screen — several identical creatures warping in perfect lockstep
   // reads as mechanical, not unsettling. Same idea for the glitch-bar

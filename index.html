@@ -548,6 +548,29 @@
     box-shadow: none !important;
     filter: none !important;
   }
+  /* Floor texture (a room theme's mark, e.g. ~ in a flooded cellar): one
+     faint glyph on the tile, well under anything standing on it. */
+  .tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--muted);
+  }
+  .tile.fog-hidden { color: transparent; }
+  /* A pillar: a solid block standing on the floor, drawn in CSS (the font
+     has no block glyphs). Smaller than the tile so it reads as a column,
+     not more wall. */
+  .tile.pillar::before {
+    content: '';
+    position: absolute;
+    inset: 16%;
+    background: var(--wall);
+    border: 1px solid var(--line);
+    box-shadow: inset 2px 2px 0 rgba(var(--glow-rgb), 0.08), 0 0 0 1px #000;
+  }
+  .tile.fog-hidden.pillar::before { display: none; }
   /* Floor the boss light reaches reads as a pale blue fog, not tinted
      tiles: each lit tile carries a soft round haze that spills past its
      edges (inset: -60%), so neighbouring tiles blend into one continuous
@@ -741,6 +764,21 @@
     font-size: 24px;
     z-index: 2;
   }
+  /* Papers and boxes: plain furniture glyphs. Remembered ones (seen, not
+     lit right now) sit dim like the explored floor; searched ones stay
+     but fade, so the player can tell what's been gone through. */
+  .actor.prop {
+    font-size: 24px;
+    z-index: 2;
+    color: var(--torch);
+    transition: opacity 0.25s ease;
+  }
+  .actor.prop.remembered { opacity: 0.35; }
+  .actor.prop.searched { color: var(--muted); }
+  /* Too far away to make out: a plain '?', with no hostile glow, glitch
+     or pulse to give away what it is. */
+  .actor.unknown { animation: none; filter: none; color: var(--muted); }
+  .actor.unknown::before, .actor.unknown::after { display: none; }
   .actor.rune {
     animation: runeGlow 1.8s ease-in-out infinite;
   }

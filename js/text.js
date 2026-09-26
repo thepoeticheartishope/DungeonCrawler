@@ -53,6 +53,12 @@ export const TEXT = {
   'term.dungeon': 'LABYRINTH',
   'term.query': 'QUERY',
   'term.vector': 'VECTOR',
+  'term.paper': 'PAPER', // draft
+  'term.paper.symbol': '=',
+  'term.box': 'BOX', // draft
+  'term.box.symbol': '&',
+  // What anything further than REVEAL_DISTANCE (config.js) shows as.
+  'term.unknown.symbol': '?',
 
   // ---- Status bar ----
   'stat.hp': '{@term.hp}',
@@ -171,6 +177,32 @@ export const TEXT = {
   'room.blocked.chest': 'Something is sealed here. Reach for it from beside it.', // draft
   'room.blocked.rune': 'An {@term.rune} hums here. Reach for it from beside it.', // draft
   'room.blocked.encounter': 'A {category} {@term.encounter} is forming here. Reach for it from beside it.', // draft
+  'room.blocked.pillar': ['A pillar. Cold, and older than you.', 'Stone. It does not think.'], // draft
+
+  // Examining papers and boxes (bump into one; a turn passes).
+  'room.paper.lore': 'You read: {lore}', // draft — {lore} is a line from the room theme’s lore below
+  'room.paper.junk': ['The page is blank.', 'The ink has run. Nothing is left.', 'A list of names, all crossed out.', 'It crumbles as you touch it.'], // draft
+  'room.paper.done': 'You have read this already.', // draft
+  'room.box.gold': 'Inside: {gold} {@term.gold}.', // draft
+  'room.box.heart': 'Something inside steadies you. +1 {@term.hp}.', // draft
+  'room.box.junk': ['Empty.', 'Dust, and a smell like old rain.', 'A broken lens. Useless.', 'Rags. Nothing more.'], // draft
+  'room.box.done': 'It is empty now.', // draft
+
+  // ---- Room themes: each room on a floor gets one (ROOM_THEMES in
+  // config.js). enter shows the first time the player walks in; lore is
+  // what a paper there can say; mark is the floor texture glyph.
+  'theme.crypt.enter': ['A crypt. The names here have been forgotten.', 'Cold air. Something was buried here, once.'], // draft
+  'theme.crypt.lore': ['“We laid the old ideas here so they would stop speaking.”', '“Every certainty ends in a room like this.”', '“Do not wake what was settled.”'], // draft
+  'theme.crypt.mark': '"',
+  'theme.library.enter': ['A library. The shelves lean in to listen.', 'Paper everywhere. Someone was trying to remember.'], // draft
+  'theme.library.lore': ['“A thought read twice becomes a belief.”', '“The index lists a room that is not here.”', '“Question everything. Especially this page.”'], // draft
+  'theme.library.mark': ':',
+  'theme.flooded.enter': ['A flooded cellar. The water is very still.', 'Water to the ankles. It does not ripple.'], // draft
+  'theme.flooded.lore': ['“It rose while we slept. It always does.”', '“Below the waterline the old doubts keep.”', '“Do not drink. Do not look down.”'], // draft
+  'theme.flooded.mark': '~',
+  'theme.shrine.enter': ['A shrine. Someone knelt here and asked.', 'Candles, long cold. The quiet feels deliberate.'], // draft
+  'theme.shrine.lore': ['“The light promised rest. It lied.”', '“We prayed to be certain. We were answered.”', '“Ask. Then ask again.”'], // draft
+  'theme.shrine.mark': '\'',
 
   // ---- Intro, start and end screens ----
   'intro.call': 'YOU ARE NEEDED. ASCEND.',

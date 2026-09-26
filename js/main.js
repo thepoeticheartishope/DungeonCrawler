@@ -1,10 +1,11 @@
 import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
+import { furnishFloor } from './decor.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, GRID_SIZES, CHAMBER_TARGETS,
   DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS, BATTLE_CHOICE_COUNT,
   MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE, DARK_MISS_COST, DARK_GOLD_MULTIPLIER,
-  BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS
+  BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS, BOX_GOLD
 } from './config.js';
 import { rollModifier, rollCategoryModifiers, rollFlip, maxWager } from './modifiers.js';
 import {
@@ -14,7 +15,7 @@ import {
 } from './quiz.js';
 import {
   initRender, showScreen, buildGridTiles, renderWalls, computeVisibility,
-  renderFog, positionActor, renderHearts, renderCombatStatus, renderTargeting,
+  renderFog, positionActor, setGlyph, renderHearts, renderCombatStatus, renderTargeting,
   formatTime, startTimer, updateCamera, renderLightEye
 } from './render.js';
 import {
@@ -645,7 +646,7 @@ function chooseCategory(i) {
 function syncBattleScreen() {
   if (state.selectedTarget) {
     const target = state.selectedTarget;
-    battleGlyphEl.textContent = target.el ? target.el.textContent : bossActor.textContent;
+    battleGlyphEl.textContent = (target.el || bossActor).dataset.glyph;
     renderCombatStatus();
     const entering = !battleScreen.classList.contains('show');
     if (entering) {
@@ -701,6 +702,7 @@ function repositionActors() {
   if (state.chest) positionActor(chestActor, state.chest.row, state.chest.col, true);
   if (state.rune) positionActor(runeActor, state.rune.row, state.rune.col, true);
   state.encounters.forEach(e => positionActor(e.el, e.row, e.col, true));
+  state.props.forEach(p => positionActor(p.el, p.row, p.col, true));
 }
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
@@ -723,6 +725,8 @@ function pickCoinTile(walls, avoidList, allowedTiles) {
 // without passing the boss — i.e. everything outside the boss chamber.
 function stepsFromStart() {
   const blocked = new Set(state.wallSet);
+  state.pillarSet.forEach(k => blocked.add(k));
+  state.props.forEach(p => blocked.add(key(p.row, p.col)));
   blocked.add(key(state.boss.row, state.boss.col));
   const dist = new Map([[key(state.PLAYER_START.row, state.PLAYER_START.col), 0]]);
   const queue = [state.PLAYER_START];
@@ -816,11 +820,11 @@ function startGame() {
 // text.js (so a room's AREAS overrides can change them too). Minions get
 // theirs as they spawn (combat.js).
 function applyActorSymbols() {
-  bossActor.textContent = t('term.boss.symbol');
-  chestActor.textContent = t('term.chest.symbol');
-  runeActor.textContent = t('term.rune.symbol');
-  coinActor.textContent = t('term.gold.symbol');
-  stairsActor.textContent = t('term.exit.symbol');
+  setGlyph(bossActor, t('term.boss.symbol'));
+  setGlyph(chestActor, t('term.chest.symbol'));
+  setGlyph(runeActor, t('term.rune.symbol'));
+  setGlyph(coinActor, t('term.gold.symbol'));
+  setGlyph(stairsActor, t('term.exit.symbol'));
 }
 
 function loadRoom() {
@@ -832,7 +836,6 @@ function loadRoom() {
 
   state.GRID_SIZE = GRID_SIZES[Math.min(state.roomIndex, GRID_SIZES.length - 1)];
   state.CHAMBER_TARGET = CHAMBER_TARGETS[Math.min(state.roomIndex, CHAMBER_TARGETS.length - 1)];
-  state.PLAYER_START = { row: state.GRID_SIZE - 1, col: Math.floor(state.GRID_SIZE / 2) };
   buildGridTiles();
 
   state.minions.forEach(m => m.el.remove());
@@ -840,8 +843,14 @@ function loadRoom() {
 
   state.encounters.forEach(e => e.el.remove());
   state.encounters = [];
+  state.props.forEach(p => p.el.remove());
+  state.props = [];
   state.runeHint = null;
   state.lastChoiceType = null;
+
+  const layout = generateDungeonLayout(state.GRID_SIZE, state.CHAMBER_TARGET);
+  state.wallSet = layout.walls;
+  state.PLAYER_START = { row: layout.start.row, col: layout.start.col };
 
   state.playerRow = state.PLAYER_START.row;
   state.playerCol = state.PLAYER_START.col;
@@ -850,8 +859,23 @@ function loadRoom() {
   updateCamera();
   positionActor(playerActor, state.playerRow, state.playerCol, true);
 
-  const layout = generateDungeonLayout(state.PLAYER_START, state.GRID_SIZE, state.CHAMBER_TARGET);
-  state.wallSet = layout.walls;
+  // Each room's theme, pillars, papers, boxes and floor texture (decor.js).
+  // Papers and boxes go in under the player in the DOM, like the other
+  // items, so anything moving draws over them.
+  const furnishing = furnishFloor(layout, state.GRID_SIZE, state.roomIndex);
+  state.pillarSet = furnishing.pillars;
+  state.floorMarks = furnishing.marks;
+  state.chamberAt = layout.chamberAt;
+  state.chamberThemes = furnishing.themes;
+  state.visitedChambers = new Set();
+  furnishing.props.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'actor prop ' + p.kind;
+    setGlyph(el, t('term.' + p.kind + '.symbol'));
+    grid.insertBefore(el, playerActor);
+    state.props.push({ ...p, el, identified: false, searched: false });
+    positionActor(el, p.row, p.col, true);
+  });
   renderWalls();
 
   state.boss = { row: layout.spawn.row, col: layout.spawn.col, hp: BOSS_HP, kind: 'boss' };
@@ -869,10 +893,13 @@ function loadRoom() {
   // sitting in one would force answering it (with a wrong-answer trap, for
   // a chest/rune/encounter) just to get past. No fallback to non-room
   // tiles: if a room is too packed to fit one, it simply doesn't spawn.
+  // The special item is solid, so it goes down on the same rules as the
+  // furniture (never in a doorway, never cutting the floor in two).
   const roomTiles = layout.roomTiles;
-  const pickRoomTile = (avoidList) => pickCoinTile(state.wallSet, avoidList, roomTiles);
+  const placer = furnishing.placer;
+  const freeRoomTiles = new Set([...roomTiles].filter(k => !placer.blocked.has(k)));
 
-  const coinTile = pickRoomTile([state.PLAYER_START, { row: state.boss.row, col: state.boss.col }, state.stairs]);
+  const coinTile = pickCoinTile(state.wallSet, [state.PLAYER_START, { row: state.boss.row, col: state.boss.col }, state.stairs], freeRoomTiles);
   state.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
   coinActor.classList.toggle('gone', !state.coin);
   if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col, true);
@@ -896,7 +923,10 @@ function loadRoom() {
     byCategory.get(item.category).push(item);
   });
 
-  const specialTile = pickRoomTile(takenTiles);
+  const specialCandidates = [...freeRoomTiles]
+    .map(k => { const [row, col] = k.split(',').map(Number); return { row, col }; })
+    .filter(p => !takenTiles.some(q => q.row === p.row && q.col === p.col));
+  const specialTile = placer.pick(specialCandidates);
   if (specialTile) {
     const candidates = [
       { type: 'chest' },
@@ -916,7 +946,7 @@ function loadRoom() {
       const glyph = glyphForCategory(chosen.category);
       const el = document.createElement('div');
       el.className = 'actor encounter';
-      el.textContent = glyph;
+      setGlyph(el, glyph);
       grid.appendChild(el);
       const encounter = {
         row: specialTile.row, col: specialTile.col, el, kind: 'encounter',
@@ -947,6 +977,12 @@ function loadRoom() {
   renderCombatStatus();
   clearLog();
   roomFeedback.innerHTML = '';
+  // The room the player wakes in announces itself like any other.
+  const startChamber = state.chamberAt.get(key(state.playerRow, state.playerCol));
+  if (startChamber !== undefined) {
+    state.visitedChambers.add(startChamber);
+    showRoomNote('move-msg', t('theme.' + state.chamberThemes[startChamber] + '.enter'));
+  }
   answerInput.value = '';
   setControlsEnabled(true);
   answerInput.focus();
@@ -1024,6 +1060,10 @@ function movePlayer(dRow, dCol, dirName) {
     showRoomNote('block-msg', t('room.blocked.wall'));
     return;
   }
+  if (state.pillarSet.has(key(newRow, newCol))) {
+    showRoomNote('block-msg', t('room.blocked.pillar'));
+    return;
+  }
   if (state.boss && state.boss.row === newRow && state.boss.col === newCol) {
     showRoomNote('block-msg', t('room.blocked.boss'));
     return;
@@ -1043,6 +1083,11 @@ function movePlayer(dRow, dCol, dirName) {
   const blockingEncounter = state.encounters.find(e => e.row === newRow && e.col === newCol);
   if (blockingEncounter) {
     showRoomNote('block-msg', t('room.blocked.encounter', { category: categoryLabel(blockingEncounter.category) }));
+    return;
+  }
+  const prop = state.props.find(p => p.row === newRow && p.col === newCol);
+  if (prop) {
+    examineProp(prop);
     return;
   }
 
@@ -1069,8 +1114,47 @@ function movePlayer(dRow, dCol, dirName) {
     coinsTotalEl.textContent = state.coinsTotal;
     actionMessage += ' ' + t('room.coin');
   }
+  // First step into a room: its theme line.
+  const chamber = state.chamberAt.get(key(state.playerRow, state.playerCol));
+  if (chamber !== undefined && !state.visitedChambers.has(chamber)) {
+    state.visitedChambers.add(chamber);
+    actionMessage += ' ' + t('theme.' + state.chamberThemes[chamber] + '.enter');
+  }
 
   applyTurnOutcome(actionMessage);
+  state.turnLocked = false;
+}
+
+// Bumping a paper or box examines it. The first look takes a turn (the
+// light spreads, minions move); after that there's nothing left in it.
+function examineProp(prop) {
+  if (prop.searched) {
+    showRoomNote('block-msg', t('room.' + prop.kind + '.done'));
+    return;
+  }
+  state.turnLocked = true;
+  prop.searched = true;
+  prop.identified = true;
+  prop.el.classList.add('searched');
+  let message;
+  if (prop.kind === 'paper') {
+    message = prop.loot === 'lore'
+      ? t('room.paper.lore', { lore: t('theme.' + prop.theme + '.lore') })
+      : t('room.paper.junk');
+  } else if (prop.loot === 'heart' && state.hearts < MAX_HEARTS) {
+    state.hearts++;
+    renderHearts();
+    message = t('room.box.heart');
+  } else if (prop.loot === 'junk') {
+    message = t('room.box.junk');
+  } else {
+    // Gold — or a heart the player had no room for, paid as gold instead.
+    const gold = goldReward(prop.gold || BOX_GOLD[0] + state.roomIndex);
+    state.coinsTotal += gold;
+    coinsTotalEl.textContent = state.coinsTotal;
+    message = t('room.box.gold', { gold });
+  }
+  applyTurnOutcome(message);
   state.turnLocked = false;
 }
 
