@@ -191,8 +191,9 @@ export const ROOM_THEMES = {
 // Pillars block walking and the player's light; the boss light spreads
 // past them. A room with pillars gets a mirrored set of one of these sizes.
 export const PILLARS_PER_ROOM = [2, 4];
-// Papers and boxes block walking but not light; bump one to examine it
-// (a turn passes). A paper is lore or nothing. A box is like the chest:
+// Papers lie flat: anyone can walk over them, and stepping onto one reads
+// it (lore or nothing). Boxes are solid (not to light); bump one to
+// examine it (a turn passes). A box is like the chest:
 // BOX_TRAP_CHANCE of them are trapped and ask a question first (right =
 // gold, wrong = the usual lost heart); the rest just open, with BOX_LOOT
 // (weights, not %). Boxes never restore hearts — like the chest, healing

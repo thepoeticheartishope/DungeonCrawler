@@ -241,6 +241,10 @@ export function renderFog() {
     p.el.classList.toggle('fog-hidden', !lit && !remembered);
     p.el.classList.toggle('remembered', remembered);
     showGlyph(p.el, !state.fogEnabled || p.identified);
+    // A paper under the player or a minion is hidden, so glyphs don't pile up.
+    const covered = p.kind === 'paper' && ((state.playerRow === p.row && state.playerCol === p.col) ||
+      state.minions.some(m => m.row === p.row && m.col === p.col));
+    p.el.classList.toggle('covered', covered);
   });
   renderLightHint();
   renderMoveHints();
@@ -248,15 +252,17 @@ export function renderFog() {
 
 // The d-pad shows which ways the player can go: a blocked direction dims
 // (pressing it still turns to look that way), and one with a paper or box
-// not yet gone through lights up, since that press examines it.
+// not yet gone through lights up, since that press reads or examines it.
 function renderMoveHints() {
   const buttons = els.dpadButtons;
   if (!buttons) return;
   for (const [dir, [dr, dc]] of Object.entries(FACING_VECTORS)) {
     const btn = buttons[dir];
     if (!btn) continue;
-    const block = whatBlocks(state.playerRow + dr, state.playerCol + dc);
-    const examine = !!block && block.kind === 'prop' && !block.thing.searched;
+    const row = state.playerRow + dr, col = state.playerCol + dc;
+    const block = whatBlocks(row, col);
+    const unreadPaper = !block && state.props.some(p => p.kind === 'paper' && !p.searched && p.row === row && p.col === col);
+    const examine = unreadPaper || (!!block && block.kind === 'prop' && !block.thing.searched);
     btn.classList.toggle('move-examine', examine);
     btn.classList.toggle('move-blocked', !!block && !examine);
   }

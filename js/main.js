@@ -727,7 +727,7 @@ function pickCoinTile(walls, avoidList, allowedTiles) {
 function stepsFromStart() {
   const blocked = new Set(state.wallSet);
   state.pillarSet.forEach(k => blocked.add(k));
-  state.props.forEach(p => blocked.add(key(p.row, p.col)));
+  state.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
   blocked.add(key(state.boss.row, state.boss.col));
   const dist = new Map([[key(state.PLAYER_START.row, state.PLAYER_START.col), 0]]);
   const queue = [state.PLAYER_START];
@@ -1055,7 +1055,7 @@ function movePlayer(dRow, dCol, dirName) {
   const newCol = state.playerCol + dCol;
 
   // Anything in the way stops the move (with a small bump toward it), or,
-  // for a paper or box, is examined instead.
+  // for a box, is examined instead.
   const block = whatBlocks(newRow, newCol);
   if (block && block.kind === 'prop') {
     examineProp(block.thing);
@@ -1092,6 +1092,10 @@ function movePlayer(dRow, dCol, dirName) {
     coinsTotalEl.textContent = state.coinsTotal;
     actionMessage += ' ' + t('room.coin');
   }
+  // Stepping onto a paper reads it, as part of the step.
+  const paper = state.props.find(p => p.kind === 'paper' && !p.searched &&
+    p.row === state.playerRow && p.col === state.playerCol);
+  if (paper) actionMessage += ' ' + readPaper(paper);
   // First step into a room: its theme line.
   const chamber = state.chamberAt.get(key(state.playerRow, state.playerCol));
   if (chamber !== undefined && !state.visitedChambers.has(chamber)) {
@@ -1103,8 +1107,18 @@ function movePlayer(dRow, dCol, dirName) {
   state.turnLocked = false;
 }
 
-// Bumping a paper or box examines it. The first look takes a turn (the
-// light spreads, minions move); after that there's nothing left in it. A
+// A paper is read by stepping onto it (movePlayer); returns what it says.
+function readPaper(paper) {
+  paper.searched = true;
+  paper.identified = true;
+  paper.el.classList.add('searched');
+  return paper.loot === 'lore'
+    ? t('room.paper.lore', { lore: t('theme.' + paper.theme + '.lore') })
+    : t('room.paper.junk');
+}
+
+// Bumping a box examines it. The first look takes a turn (the light
+// spreads, minions move); after that there's nothing left in it. A
 // trapped box works like the chest instead: bumping it opens the battle
 // screen with a question guarding its loot (settled in resolveOneShot).
 function examineProp(prop) {
@@ -1124,16 +1138,8 @@ function examineProp(prop) {
   state.turnLocked = true;
   prop.searched = true;
   prop.el.classList.add('searched');
-  let message;
-  if (prop.kind === 'paper') {
-    message = prop.loot === 'lore'
-      ? t('room.paper.lore', { lore: t('theme.' + prop.theme + '.lore') })
-      : t('room.paper.junk');
-  } else {
-    const found = openBox(prop);
-    message = found.gold ? t('room.box.gold', { gold: found.gold }) : t('room.box.junk');
-  }
-  applyTurnOutcome(message);
+  const found = openBox(prop);
+  applyTurnOutcome(found.gold ? t('room.box.gold', { gold: found.gold }) : t('room.box.junk'));
   state.turnLocked = false;
 }
 

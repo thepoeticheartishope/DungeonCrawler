@@ -3,10 +3,11 @@
 // floor, on the layout from dungeon.js. No DOM access here — main.js
 // creates the map pieces and render.js draws them.
 //
-// Anything solid (pillars, papers, boxes, and later the chest/rune) is
-// only put down where it keeps every open tile reachable and leaves
-// something to stand beside it, so furniture can never wall off a door,
-// a corridor, or the stairs.
+// Anything solid (pillars, boxes, and later the chest/rune) is only put
+// down where it keeps every open tile reachable and leaves something to
+// stand beside it, so furniture can never wall off a door, a corridor, or
+// the stairs. Papers are placed on the same rules (so they stay out of
+// doorways and off each other), though in play anyone walks over them.
 
 import { key } from './state.js';
 import {
