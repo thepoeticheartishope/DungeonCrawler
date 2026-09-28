@@ -42,7 +42,7 @@ input (keys, d-pad, buttons)  →  rules  →  state (plain data, saveable)
 
 Status: `[ ]` not started · `[~]` in progress · `[x]` merged (add the PR number).
 
-### [~] 0a. Smoke test (Playwright)
+### [x] 0a. Smoke test (Playwright) (#61)
 
 Two runs, both loading Bible Quiz Bowl with Auto-win on, in `tests/smoke.mjs`
 (`node tests/smoke.mjs`): a skip-room run (walk one step, then "Skip room (dev)"
