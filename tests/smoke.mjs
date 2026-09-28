@@ -1,20 +1,24 @@
-// Smoke test for the Noesis Protocol dungeon crawler.
+// Smoke tests for the Noesis Protocol dungeon crawler.
 //
 // Run: node tests/smoke.mjs
 //
-// Starts a static server for this repo, loads the game in a real browser via
-// Playwright (imported from ~/Repo/codecraft-classroom/node_modules — do NOT
-// add Playwright or node_modules to this repo), loads the built-in "Bible
-// Quiz Bowl" set, takes one manual step, turns on the dev panel's Auto-win,
-// then uses "Skip room (dev)" to clear the run. Passes if the win or lose
-// screen is reached with zero console errors or page errors.
+// Starts a static server for this repo, then drives the game in a real
+// browser via Playwright (imported from ~/Repo/codecraft-classroom/node_modules
+// — do NOT add Playwright or node_modules to this repo) through two runs,
+// both loading the built-in "Bible Quiz Bowl" set with Auto-win on:
 //
-// Playwright is resolved from the sibling repo's node_modules; this repo
-// stays dependency-free.
+//   1. Skip-room run: one manual step, then "Skip room (dev)" repeatedly to
+//      clear the floor, asserting the win or lose screen is reached.
+//   2. Battle run: walks with the arrow keys and "Skip turn" until a minion
+//      engages and the battle screen appears, then lets Auto-win settle the
+//      fight, asserting an ACCEPTED. line appeared in the encounter log and
+//      the game is back on the room screen afterward.
+//
+// Both runs must produce zero console errors or page errors. Exits non-zero
+// on any failure.
 
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
-import { once } from 'node:events';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
@@ -51,6 +55,220 @@ async function waitForServer(url, tries = 50) {
   throw new Error(`Static server never came up at ${url}`);
 }
 
+// ---- Shared page setup ----
+
+// Attaches console/pageerror collectors to a page. Returns the arrays,
+// which fill in as the page runs.
+function collectErrors(page) {
+  const consoleErrors = [];
+  const pageErrors = [];
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') consoleErrors.push(msg.text());
+  });
+  page.on('pageerror', (err) => {
+    pageErrors.push(err.message || String(err));
+  });
+  return { consoleErrors, pageErrors };
+}
+
+// Loads the page fresh and picks the built-in "Bible Quiz Bowl" set, ready
+// for #startBtn. The loader panel is hidden behind a toggle, but the
+// select/button still work when driven directly.
+async function loadPageAndSet(page, url) {
+  await page.goto(url, { waitUntil: 'load' });
+
+  await page.waitForFunction(() => {
+    const sel = document.getElementById('builtinSetSelect');
+    return sel && [...sel.options].some((o) => o.value === 'bible-quiz-bowl');
+  }, { timeout: 10000 });
+
+  await page.evaluate(() => {
+    const sel = document.getElementById('builtinSetSelect');
+    sel.value = 'bible-quiz-bowl';
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    document.getElementById('loadBuiltinBtn').click();
+  });
+
+  // fetchBundledSet is async; wait for it to actually finish.
+  await page.waitForFunction(() => {
+    const status = document.getElementById('loaderStatus');
+    return status && status.textContent.includes('Loaded "Bible Quiz Bowl"');
+  }, { timeout: 10000 });
+}
+
+async function startGameAndWaitForRoom(page) {
+  await page.click('#startBtn');
+  // Start shows an intro glitch screen for a couple seconds before the
+  // room screen appears.
+  await page.waitForSelector('#roomScreen.show', { timeout: 10000 });
+}
+
+async function turnOnAutoWin(page) {
+  await page.click('#devToggleBtn');
+  await page.waitForSelector('#devPanel.show', { timeout: 5000 });
+  await page.click('#devAutoWinBtn');
+}
+
+// ---- Run 1: skip-room ----
+
+async function runSkipRoom(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+
+  await loadPageAndSet(page, url);
+  await startGameAndWaitForRoom(page);
+
+  // Walk one step.
+  await page.click('#btnN');
+
+  await turnOnAutoWin(page);
+
+  // Clear the run with "Skip room (dev)", which jumps straight to the next
+  // room and triggers the win screen once every room is cleared.
+  for (let i = 0; i < 10; i++) {
+    const done = await page.evaluate(() => {
+      const win = document.getElementById('winScreen');
+      const lose = document.getElementById('loseScreen');
+      return win.classList.contains('show') || lose.classList.contains('show');
+    });
+    if (done) break;
+    await page.click('#devSkipBtn');
+    await page.waitForTimeout(200);
+  }
+
+  const result = await page.evaluate(() => {
+    const win = document.getElementById('winScreen');
+    const lose = document.getElementById('loseScreen');
+    return {
+      win: win.classList.contains('show'),
+      lose: lose.classList.contains('show'),
+    };
+  });
+
+  await context.close();
+
+  if (!result.win && !result.lose) {
+    return { ok: false, reason: 'neither win nor lose screen was reached', consoleErrors, pageErrors };
+  }
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: `reached ${result.win ? 'win' : 'lose'} screen`, consoleErrors, pageErrors };
+}
+
+// ---- Run 2: battle ----
+
+// Installs page-side observers (test-only, not game code) that record
+// whether the battle screen was ever entered and whether an "ACCEPTED."
+// line (js/text.js: 'log.accepted') was ever added to the encounter log.
+// These persist for the life of the page, across chained encounters.
+async function installBattleWatchers(page) {
+  await page.evaluate(() => {
+    window.__smokeEnteredBattle = false;
+    window.__smokeAccepted = false;
+    const battleScreen = document.getElementById('battleScreen');
+    new MutationObserver(() => {
+      if (battleScreen.classList.contains('show')) window.__smokeEnteredBattle = true;
+    }).observe(battleScreen, { attributes: true, attributeFilter: ['class'] });
+
+    const log = document.getElementById('encounterLog');
+    new MutationObserver((mutations) => {
+      for (const mut of mutations) {
+        for (const node of mut.addedNodes) {
+          if (node.textContent && node.textContent.trim() === 'ACCEPTED.') {
+            window.__smokeAccepted = true;
+          }
+        }
+      }
+    }).observe(log, { childList: true });
+  });
+}
+
+const BATTLE_MAX_STEPS = 450;
+const ARROW_KEYS = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'];
+
+// One attempt: load a fresh run, turn on Auto-win, and wander (arrow keys,
+// falling back to "Skip turn" when blocked) until a fight is seen through
+// to settlement, or the step budget runs out.
+async function attemptBattle(page, url) {
+  await loadPageAndSet(page, url);
+  await installBattleWatchers(page);
+  await startGameAndWaitForRoom(page);
+  await turnOnAutoWin(page);
+
+  let dir = 0;
+  for (let i = 0; i < BATTLE_MAX_STEPS; i++) {
+    const status = await page.evaluate(() => ({
+      inBattle: document.getElementById('battleScreen').classList.contains('show'),
+      inRoom: document.getElementById('roomScreen').classList.contains('show'),
+      entered: window.__smokeEnteredBattle === true,
+      accepted: window.__smokeAccepted === true,
+    }));
+
+    if (status.entered && status.accepted && status.inRoom) {
+      return true;
+    }
+
+    if (status.inBattle) {
+      // Auto-win is driving the fight; just wait it out.
+      await page.waitForTimeout(250);
+      continue;
+    }
+
+    // On the room screen: keep wandering. If the last step bumped into a
+    // wall/obstacle, rotate clockwise (a simple wall-follower) so the walk
+    // actually covers the maze instead of oscillating between two blocked
+    // directions or wasting steps on a coin flip.
+    const blocked = await page.evaluate(
+      () => document.getElementById('roomFeedback').innerHTML.includes('block-msg')
+    );
+    if (blocked) dir = (dir + 1) % ARROW_KEYS.length;
+    await page.keyboard.press(ARROW_KEYS[dir]);
+    // Every so often, also use Skip turn (dpad center button), which lets
+    // minions close in without the player having to path directly to one.
+    // The arrow press just above can itself trigger an engage (the battle
+    // screen replaces the room screen, hiding this button), so this click
+    // is best-effort: a short timeout and a swallowed failure, not a hang —
+    // the next loop iteration's status check picks up the battle screen.
+    if (i % 5 === 4) {
+      await page.click('#btnSkip', { timeout: 300 }).catch(() => {});
+    }
+    await page.waitForTimeout(20);
+  }
+
+  return false;
+}
+
+async function runBattle(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+
+  const MAX_RESTARTS = 2;
+  let settled = false;
+  for (let attempt = 0; attempt <= MAX_RESTARTS && !settled; attempt++) {
+    settled = await attemptBattle(page, url);
+  }
+
+  await context.close();
+
+  if (!settled) {
+    return {
+      ok: false,
+      reason: `no fight settled within ${BATTLE_MAX_STEPS} steps, after ${MAX_RESTARTS + 1} attempts`,
+      consoleErrors,
+      pageErrors,
+    };
+  }
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'a fight settled (ACCEPTED. in the log) and returned to the room screen', consoleErrors, pageErrors };
+}
+
+// ---- Main ----
+
 async function main() {
   const port = await findFreePort();
   const server = spawn(process.execPath, [
@@ -70,106 +288,26 @@ async function main() {
 
     const browser = await chromium.launch();
     try {
-      const context = await browser.newContext({ serviceWorkers: 'block' });
-      const page = await context.newPage();
-
-      const consoleErrors = [];
-      const pageErrors = [];
-      page.on('console', (msg) => {
-        if (msg.type() === 'error') consoleErrors.push(msg.text());
-      });
-      page.on('pageerror', (err) => {
-        pageErrors.push(err.message || String(err));
-      });
-
-      await page.goto(url, { waitUntil: 'load' });
-
-      // Load the built-in "Bible Quiz Bowl" set. The loader panel is hidden
-      // (behind a toggle), but the select/button still work when driven
-      // directly, so we don't need to click the toggle first.
-      await page.waitForFunction(() => {
-        const sel = document.getElementById('builtinSetSelect');
-        return sel && [...sel.options].some((o) => o.value === 'bible-quiz-bowl');
-      }, { timeout: 10000 });
-
-      await page.evaluate(() => {
-        const sel = document.getElementById('builtinSetSelect');
-        sel.value = 'bible-quiz-bowl';
-        sel.dispatchEvent(new Event('change', { bubbles: true }));
-        document.getElementById('loadBuiltinBtn').click();
-      });
-
-      // Wait for the set to actually finish loading (fetchBundledSet is
-      // async) before starting the run.
-      await page.waitForFunction(() => {
-        const status = document.getElementById('loaderStatus');
-        return status && status.textContent.includes('Loaded "Bible Quiz Bowl"');
-      }, { timeout: 10000 });
-
-      await page.click('#startBtn');
-
-      // Start shows an intro glitch screen for a couple seconds before the
-      // room screen appears.
-      await page.waitForSelector('#roomScreen.show', { timeout: 10000 });
-
-      // Walk one step.
-      await page.click('#btnN');
-
-      // Turn on Auto-win in the dev panel (hidden behind a toggle button).
-      await page.click('#devToggleBtn');
-      await page.waitForSelector('#devPanel.show', { timeout: 5000 });
-      await page.click('#devAutoWinBtn');
-
-      // Clear the run with "Skip room (dev)", which jumps straight to the
-      // next room and triggers the win screen once every room is cleared.
-      for (let i = 0; i < 10; i++) {
-        const done = await page.evaluate(() => {
-          const win = document.getElementById('winScreen');
-          const lose = document.getElementById('loseScreen');
-          return win.classList.contains('show') || lose.classList.contains('show');
-        });
-        if (done) break;
-        await page.click('#devSkipBtn');
-        await page.waitForTimeout(200);
-      }
-
-      const result = await page.evaluate(() => {
-        const win = document.getElementById('winScreen');
-        const lose = document.getElementById('loseScreen');
-        return {
-          win: win.classList.contains('show'),
-          lose: lose.classList.contains('show'),
-        };
-      });
-
-      // MC options should have appeared with usable text at some point
-      // during the run; a quick sanity check that .opt-text exists in the
-      // DOM (even if hidden now that the run has ended).
-      const hadOptions = await page.evaluate(
-        () => document.querySelectorAll('.opt-text').length >= 0
-      );
+      const skipRoomResult = await runSkipRoom(browser, url);
+      const battleResult = await runBattle(browser, url);
 
       await browser.close();
 
-      if (!result.win && !result.lose) {
-        console.error('FAIL: neither win nor lose screen was reached.');
-        process.exit(1);
+      let failed = false;
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult]]) {
+        if (result.ok) {
+          console.log(`PASS (${name}): ${result.detail}`);
+        } else {
+          failed = true;
+          console.error(`FAIL (${name}): ${result.reason}`);
+          if (result.consoleErrors.length) console.error(`  console errors: ${JSON.stringify(result.consoleErrors)}`);
+          if (result.pageErrors.length) console.error(`  page errors: ${JSON.stringify(result.pageErrors)}`);
+        }
       }
 
-      if (consoleErrors.length || pageErrors.length) {
-        console.error('FAIL: console/page errors were recorded during the run.');
-        console.error('Console errors:', consoleErrors);
-        console.error('Page errors:', pageErrors);
-        process.exit(1);
-      }
-
-      console.log(
-        `PASS: reached ${result.win ? 'win' : 'lose'} screen with no console errors.`
-      );
-      process.exit(0);
+      process.exit(failed ? 1 : 0);
     } finally {
-      // browser is closed above on the success path; make sure it's closed
-      // on any thrown error too.
+      if (browser.isConnected()) await browser.close();
     }
   } finally {
     cleanup();

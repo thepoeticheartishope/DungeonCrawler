@@ -44,11 +44,13 @@ Status: `[ ]` not started · `[~]` in progress · `[x]` merged (add the PR numbe
 
 ### [~] 0a. Smoke test (Playwright)
 
-One test: start the game with Bible Quiz Bowl, walk, turn on Auto-win, clear floor 1
-(or use Skip room), reach the win or lose screen, no console errors.
+Two runs, both loading Bible Quiz Bowl with Auto-win on, in `tests/smoke.mjs`
+(`node tests/smoke.mjs`): a skip-room run (walk one step, then "Skip room (dev)"
+until the win/lose screen) and a battle run (arrow-key wander + "Skip turn" until
+a minion engages, then let Auto-win settle the fight — pass is an `ACCEPTED.` log
+line and back on `#roomScreen`). No console errors or page errors in either.
 - Playwright is available from `~/Repo/codecraft-classroom/node_modules`; don't add
-  `node_modules` to this repo. Put the test in `tests/smoke.mjs` with a one-line run
-  command in its header comment.
+  `node_modules` to this repo. One-line run command in the file's header comment.
 - **Must** use `browser.newContext({ serviceWorkers: 'block' })`, or the service worker
   reloads the page mid-test.
 - Load a set via `evaluate`: set `#builtinSetSelect`, click `#loadBuiltinBtn` (the loader
