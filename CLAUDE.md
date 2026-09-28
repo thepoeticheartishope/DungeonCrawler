@@ -39,7 +39,8 @@ Drawing and page code:
 | `render.js` | Draws the grid, fog, actors, HUD. **Also** computes visibility and the camera (a rule, see plan step 3). |
 | `combat.js` | Minion/hunter movement and turn advance. **Also** moves DOM elements (see plan step 4). |
 | `dataview.js` | DATA.SYS question viewer and comment export. |
-| `main.js` | Everything else: element lookups, start screen + set loader, battle screen, floor setup (`loadRoom`), turn and answer rules, dev panel, end screens. 1,500 lines — being split up. |
+| `setloader.js` | Start screen options and the set loader (pasted, file, built-in, saved sets). |
+| `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom`), turn and answer rules, dev panel, end screens. 1,340 lines — being split up. |
 
 How a turn flows today: key/d-pad → `movePlayer()` (main.js) → `whatBlocks()` → move +
 redraw → `applyTurnOutcome()` → `advanceMonsters()` (combat.js) + `lightConsumed()` →
