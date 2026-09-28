@@ -74,7 +74,7 @@ New file `js/setloader.js`, `export function initSetLoader()`.
 - Add `js/setloader.js` to `APP_SHELL`, bump `CACHE_NAME`.
 - Done when: smoke test passes; loading built-in, pasted, file and saved sets still works.
 
-### [ ] 1b. Move the dev panel out of `main.js`
+### [x] 1b. Move the dev panel out of `main.js` (#63)
 
 New file `js/devpanel.js`, `export function initDevPanel(actions)`.
 - Move `main.js` ~1407–1447: dev toggle, Skip room, Auto-win (`AUTO_WIN_STEP_MS`,
