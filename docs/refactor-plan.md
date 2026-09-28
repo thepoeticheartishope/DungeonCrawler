@@ -99,11 +99,57 @@ Add unit tests for `sight.js`, `light.js`, `passage.js` here (first rule changes
   both). Unit tests in `tests/rules.test.mjs`, run with `node --test tests/*.test.mjs`
   (built-in runner, no dependencies). Later steps: add tests there as rules move.
 
-### [ ] 4. Take DOM elements out of state (biggest step)
+### 4. Take DOM elements out of state (biggest step, split in three)
 
 Views keep their own `Map` from thing → element. Remove `el` from minions, props, chest,
 rune, encounters; move `tileEls` and `timerHandle` out of `state`. `combat.js` stops
 calling `positionActor` / `setGlyph` and reports moves instead.
+
+Split into 4a–4c so each is one PR and a safe place to stop: after each one the game
+works and both test commands pass. Line numbers are as of `main` at `64bb2bf` (PR #65).
+Done check for the whole step: `grep -n "\.el\b\|tileEls\|timerHandle" js/state.js js/combat.js`
+finds nothing, and no rule module stores a page element.
+
+#### [ ] 4a. Grid tiles and the timer leave `state` (small)
+
+- `tileEls`: make it a module-level variable in `render.js` (`buildGridTiles`,
+  `renderWalls`, `renderFog` ~41–89 are its only users). Remove it from `state.js`.
+- `timerHandle`: `render.js` `startTimer()` (~309–312) keeps the handle itself; add
+  `stopTimer()` there and replace the three `clearInterval(state.timerHandle)` in
+  `main.js` (~881, ~1044, ~1242). Remove it from `state.js`.
+- Bump `CACHE_NAME`. Done when: smoke test passes; the run timer still counts and stops
+  on the win/lose screen.
+
+#### [ ] 4b. Things that stay put: chest, rune, encounters, props
+
+- Add an element registry to `render.js`: a `Map` thing → element, with
+  `addActorEl(thing, el)`, `actorEl(thing)`, `removeActorEl(thing)`, `clearActorEls()`.
+- `loadRoom` (`main.js` ~687–802): register elements instead of setting `el:` on
+  chest (~785), rune (~789), encounters (~796–802) and props (~721–724); clear the
+  registry where it now calls `.el.remove()` (~687–694).
+- Replace `x.el` with `actorEl(x)` in `render.js` `renderFog` (~129–146),
+  `renderTargeting` (~289–290), `main.js` `repositionActors` (~551–552), the searched /
+  gone / remove calls (~959, ~985, ~1105–1127) and the battle glyph (~496).
+- Leave minions alone (4c). Bump `CACHE_NAME`. Done when: smoke test passes; by hand with
+  Fog on, a box, a paper, the chest or rune and an encounter still show `?` far away,
+  their glyph up close, and disappear or grey out when used.
+
+#### [ ] 4c. Things that move: minions and the hunter (needs the stronger model)
+
+- Minions use the 4b registry: `combat.js` spawn (~176–186) registers the element;
+  `main.js` `repositionActors` (~546), `loadRoom` (~687), `renderFog` (~114–115) and
+  `renderTargeting` (~286) read it with `actorEl(m)`.
+- `combat.js` stops touching the page: `advanceMonsters()` (~239) returns what changed
+  (e.g. `{ moved: [m, ...], spawned: [m], turnedHunter: m }`) instead of calling
+  `positionActor` / `setGlyph` / `classList` (~153–186). The caller in `main.js` draws
+  from that list. Drop `positionActor` and `setGlyph` from `combat.js`'s imports.
+- This is the first "rules report, views draw" change; keep the returned shape simple,
+  step 6 turns it into the events list.
+- Add unit tests for `advanceMonsters` in `tests/rules.test.mjs` (chase within range,
+  hunter wakes after `HUNTER_SPAWN_DELAY`), now that it runs without a page.
+- Bump `CACHE_NAME`. Done when: both test commands pass; by hand, minions chase and
+  slide, the hunter wakes after the boss and its glyph changes, Auto-win fights still
+  settle. Tick 4 as a whole here.
 
 ### [ ] 5. Split `loadRoom()`
 
@@ -126,7 +172,7 @@ After 7: canvas map (only the map view changes) and a backend for saves (store `
 
 - Fresh session per step. Start by reading `CLAUDE.md` and this file, then only the
   files and line ranges the step names.
-- Mechanical moves (1a, 1b, 2, 5): a cheaper model is fine (`/model` → Sonnet or Haiku).
-  Steps 4 and 6 benefit from a stronger one.
+- Mechanical moves (1a, 1b, 2, 4a, 4b, 5): a cheaper model is fine (`/model` → Sonnet or Haiku).
+  Steps 4c and 6 benefit from a stronger one.
 - Move code with shell commands, not by rewriting it.
 - When a step merges, tick it here with the PR number in the same PR.
