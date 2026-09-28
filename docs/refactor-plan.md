@@ -90,11 +90,14 @@ New file `js/devpanel.js`, `export function initDevPanel(actions)`.
 Add `renderHud()` (render.js) for gold, hearts and turn count; replace every scattered
 `coinsTotalEl.textContent = ...` / `renderHearts()` / turn count write with it.
 
-### [ ] 3. Visibility and camera become rules
+### [x] 3. Visibility and camera become rules (#65)
 
 Move `computeVisibility()` and `updateCamera()` out of `render.js` into a rules module
 (e.g. `js/sight.js`). `render.js` then only reads `visibleSet` / `sightSet` / camera.
 Add unit tests for `sight.js`, `light.js`, `passage.js` here (first rule changes).
+- Done: `js/sight.js` also holds `canMakeOut` and `FACING_VECTORS` (render.js imports
+  both). Unit tests in `tests/rules.test.mjs`, run with `node --test tests/*.test.mjs`
+  (built-in runner, no dependencies). Later steps: add tests there as rules move.
 
 ### [ ] 4. Take DOM elements out of state (biggest step)
 

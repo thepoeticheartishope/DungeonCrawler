@@ -12,6 +12,8 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 - Tunables live in `js/config.js`. Game state lives in `js/state.js`.
 - "Still broken right after a fix" is usually a stale service worker: test in Incognito first.
 - Test with the DEV button (status bar): Fog off, Skip room, Auto-win.
+- Automated tests: `node --test tests/*.test.mjs` (rule unit tests, no dependencies) and
+  `node tests/smoke.mjs` (Playwright, see its header).
 
 ## Module map
 
@@ -26,6 +28,7 @@ Rules and data (no page/DOM access):
 | `dungeon.js` | Builds a floor layout from the templates: rooms, hallways, boss room, stairs. |
 | `decor.js` | Themes rooms and places pillars, papers, boxes (`makePlacer`). |
 | `passage.js` | `whatBlocks(row, col)`: the single answer to "can I step here?". |
+| `sight.js` | The player's light (`computeVisibility`: `visibleSet` / `sightSet` / `exploredSet`), `canMakeOut`, and the camera (`updateCamera`). |
 | `light.js` | Boss light spreading through the floor; the run is lost at the coverage threshold. |
 | `haunts.js` | Missed questions that come back later in the run. |
 | `modifiers.js` | Rolls Blind / Gambler / Flip / Timer for fight choices. |
@@ -36,7 +39,7 @@ Drawing and page code:
 
 | File | Job |
 |---|---|
-| `render.js` | Draws the grid, fog, actors, HUD (`renderHud()` is the only writer of hearts / gold / turns). **Also** computes visibility and the camera (a rule, see plan step 3). |
+| `render.js` | Draws the grid, fog, actors, HUD (`renderHud()` is the only writer of hearts / gold / turns). Reads visibility and the camera from `sight.js`. |
 | `combat.js` | Minion/hunter movement and turn advance. **Also** moves DOM elements (see plan step 4). |
 | `dataview.js` | DATA.SYS question viewer and comment export. |
 | `setloader.js` | Start screen options and the set loader (pasted, file, built-in, saved sets). |

@@ -16,10 +16,11 @@ import {
   resolveImageSrc, buildCategoryChoices, categoryLabel
 } from './quiz.js';
 import {
-  initRender, showScreen, buildGridTiles, renderWalls, computeVisibility,
+  initRender, showScreen, buildGridTiles, renderWalls,
   renderFog, positionActor, setGlyph, bumpActor, renderHud, renderCombatStatus, renderTargeting,
-  formatTime, startTimer, updateCamera, renderLightEye
+  formatTime, startTimer, renderLightEye
 } from './render.js';
+import { computeVisibility, updateCamera } from './sight.js';
 import {
   initCombat, isAdjacentToPlayer, refreshTargetValidity, advanceMonsters,
   spawnMinion, repelHunter
