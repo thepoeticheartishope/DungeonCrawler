@@ -8,8 +8,9 @@
 
 import { state, key } from './state.js';
 import { MINION_HP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS } from './config.js';
-import { positionActor, setGlyph, renderCombatStatus, computeVisibility, renderFog, renderTargeting, renderLightEye, renderHud } from './render.js';
+import { positionActor, setGlyph, renderCombatStatus, renderFog, renderTargeting, renderLightEye, renderHud } from './render.js';
 import { advanceLight } from './light.js';
+import { computeVisibility } from './sight.js';
 import { t } from './text.js';
 
 let combatEls = {};
