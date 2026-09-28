@@ -42,7 +42,7 @@ input (keys, d-pad, buttons)  →  rules  →  state (plain data, saveable)
 
 Status: `[ ]` not started · `[~]` in progress · `[x]` merged (add the PR number).
 
-### [ ] 0a. Smoke test (Playwright)
+### [~] 0a. Smoke test (Playwright)
 
 One test: start the game with Bible Quiz Bowl, walk, turn on Auto-win, clear floor 1
 (or use Skip room), reach the win or lose screen, no console errors.
