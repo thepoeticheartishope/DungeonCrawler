@@ -59,7 +59,7 @@ line and back on `#roomScreen`). No console errors or page errors in either.
 - If it fights back for more than a few tries, stop and ask Timothy to check by hand in
   Incognito instead.
 
-### [ ] 1a. Move the start screen and set loader out of `main.js`
+### [x] 1a. Move the start screen and set loader out of `main.js` (#62)
 
 New file `js/setloader.js`, `export function initSetLoader()`.
 - Move `main.js` ~132–278: options storage (`OPTION_STORAGE_KEY`, `loadSavedOptions`,
