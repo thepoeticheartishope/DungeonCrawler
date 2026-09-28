@@ -36,7 +36,7 @@ Drawing and page code:
 
 | File | Job |
 |---|---|
-| `render.js` | Draws the grid, fog, actors, HUD. **Also** computes visibility and the camera (a rule, see plan step 3). |
+| `render.js` | Draws the grid, fog, actors, HUD (`renderHud()` is the only writer of hearts / gold / turns). **Also** computes visibility and the camera (a rule, see plan step 3). |
 | `combat.js` | Minion/hunter movement and turn advance. **Also** moves DOM elements (see plan step 4). |
 | `dataview.js` | DATA.SYS question viewer and comment export. |
 | `setloader.js` | Start screen options and the set loader (pasted, file, built-in, saved sets). |

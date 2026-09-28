@@ -354,9 +354,12 @@ export function positionActor(el, row, col, instant = false) {
   el.style.height = cell + '%';
 }
 
-export function renderHearts() {
+// Status bar numbers: hearts, gold and turn count. Call after any change to them.
+export function renderHud() {
   // ASCII rather than hearts: the terminal face has no symbol glyphs.
   els.heartsEl.textContent = Math.max(state.hearts, 0) + '/' + MAX_HEARTS;
+  els.coinsTotalEl.textContent = state.coinsTotal;
+  els.turnCountEl.textContent = state.turnCount;
 }
 
 // HP pips for whichever target is currently engaged on the battle screen.
