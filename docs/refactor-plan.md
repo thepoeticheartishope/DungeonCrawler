@@ -85,7 +85,7 @@ New file `js/devpanel.js`, `export function initDevPanel(actions)`.
 - Add to `APP_SHELL`, bump `CACHE_NAME`. Done when: smoke test passes, all three dev
   buttons work.
 
-### [ ] 2. One HUD update
+### [x] 2. One HUD update (#64)
 
 Add `renderHud()` (render.js) for gold, hearts and turn count; replace every scattered
 `coinsTotalEl.textContent = ...` / `renderHearts()` / turn count write with it.

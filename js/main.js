@@ -17,7 +17,7 @@ import {
 } from './quiz.js';
 import {
   initRender, showScreen, buildGridTiles, renderWalls, computeVisibility,
-  renderFog, positionActor, setGlyph, bumpActor, renderHearts, renderCombatStatus, renderTargeting,
+  renderFog, positionActor, setGlyph, bumpActor, renderHud, renderCombatStatus, renderTargeting,
   formatTime, startTimer, updateCamera, renderLightEye
 } from './render.js';
 import {
@@ -97,11 +97,11 @@ const dpadButtons = {
 initRender({
   startScreen, introGlitch, roomScreen, battleScreen, winScreen, loseScreen,
   grid, playerActor, bossActor, coinActor, chestActor, runeActor, stairsActor,
-  heartsEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
+  heartsEl, coinsTotalEl, turnCountEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightEyeEl, lightHintEls, dpadButtons
 });
 
-initCombat({ grid, playerActor, turnCountEl });
+initCombat({ grid, playerActor });
 initDataView({ startScreen });
 
 applyStaticText();
@@ -240,7 +240,7 @@ function settleWager(isCorrect) {
   const n = state.wager;
   if (!n) return;
   state.coinsTotal = Math.max(0, state.coinsTotal + (isCorrect ? n : -n));
-  coinsTotalEl.textContent = state.coinsTotal;
+  renderHud();
   logLine(t(isCorrect ? 'log.wager.won' : 'log.wager.lost', { n }), isCorrect ? 'bright' : 'alert');
   state.wager = 0;
 }
@@ -645,9 +645,7 @@ function startGame() {
   state.mcMode = true;
   answerForm.style.display = state.mcMode ? 'none' : 'flex';
   mcOptionsEl.classList.toggle('show', state.mcMode);
-  renderHearts();
-  turnCountEl.textContent = state.turnCount;
-  coinsTotalEl.textContent = state.coinsTotal;
+  renderHud();
   roomTotalEl.textContent = state.order.length;
 
   // Room setup happens immediately (invisibly, behind the glitch screen) so
@@ -935,7 +933,7 @@ function movePlayer(dRow, dCol, dirName) {
     state.coin = null;
     coinActor.classList.add('gone');
     state.coinsTotal += goldReward(1);
-    coinsTotalEl.textContent = state.coinsTotal;
+    renderHud();
     actionMessage += ' ' + t('room.coin');
   }
   // Stepping onto a paper reads it, as part of the step.
@@ -994,7 +992,7 @@ function openBox(prop) {
   if (prop.loot === 'junk') return {};
   const gold = goldReward(prop.gold || BOX_GOLD[0] + state.roomIndex);
   state.coinsTotal += gold;
-  coinsTotalEl.textContent = state.coinsTotal;
+  renderHud();
   return { gold };
 }
 
@@ -1026,7 +1024,7 @@ function applyAnswerResult(isCorrect, hadExtraSpace, given) {
   } else {
     const cost = state.darkness ? DARK_MISS_COST : 1;
     state.hearts -= cost;
-    renderHearts();
+    renderHud();
     logLine(t('log.rejected', { cost }), 'alert');
     if (state.revealOnWrong) {
       logLine(t('log.expected', { answer: q.meaning }), 'sys');
@@ -1136,12 +1134,12 @@ function resolveOneShot(target, isCorrect, q) {
   } else if (target.kind === 'chest') {
     const gold = goldReward(2);
     state.coinsTotal += gold;
-    coinsTotalEl.textContent = state.coinsTotal;
+    renderHud();
     logLine(t('log.chest.opened', { gold }), 'bright');
   } else if (target.kind === 'encounter') {
     const reward = goldReward(DIFFICULTY_COIN_REWARD[q.difficulty] || DIFFICULTY_COIN_REWARD.medium);
     state.coinsTotal += reward;
-    coinsTotalEl.textContent = state.coinsTotal;
+    renderHud();
     logLine(t('log.encounter.mastered', { category, gold: reward }), 'bright');
   } else {
     // The hinted question stays in reserve until it's asked: the next

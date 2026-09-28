@@ -8,14 +8,14 @@
 
 import { state, key } from './state.js';
 import { MINION_HP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS } from './config.js';
-import { positionActor, setGlyph, renderCombatStatus, computeVisibility, renderFog, renderTargeting, renderLightEye } from './render.js';
+import { positionActor, setGlyph, renderCombatStatus, computeVisibility, renderFog, renderTargeting, renderLightEye, renderHud } from './render.js';
 import { advanceLight } from './light.js';
 import { t } from './text.js';
 
 let combatEls = {};
 
-export function initCombat({ grid, playerActor, turnCountEl }) {
-  combatEls = { grid, playerActor, turnCountEl };
+export function initCombat({ grid, playerActor }) {
+  combatEls = { grid, playerActor };
 }
 
 export function isAdjacentToPlayer(entity) {
@@ -202,7 +202,7 @@ function wanderStep(m) {
 // the turn counter increases. Called after any player action.
 export function advanceMonsters() {
   state.turnCount++;
-  combatEls.turnCountEl.textContent = state.turnCount;
+  renderHud();
   advanceLight();
 
   // Walking around is safe: a minion that reaches the player never deals
