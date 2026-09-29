@@ -164,7 +164,7 @@ finds nothing, and no rule module stores a page element.
   `repelHunter()` returns whether it moved the hunter; `refreshTargetValidity()` no
   longer calls `renderTargeting()` (callers do). Four `advanceMonsters` tests added.
 
-### [~] 5. Split `loadRoom()`
+### [x] 5. Split `loadRoom()` (#70)
 
 `buildFloor()` (data only: layout, furniture, boss, stairs, coin, special item, minions)
 and `drawFloor()` (creates and places elements).
