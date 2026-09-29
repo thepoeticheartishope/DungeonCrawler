@@ -32,7 +32,7 @@ Rules and data (no page/DOM access):
 | `light.js` | Boss light spreading through the floor; the run is lost at the coverage threshold. |
 | `haunts.js` | Missed questions that come back later in the run. |
 | `modifiers.js` | Rolls Blind / Gambler / Flip / Timer for fight choices. |
-| `combat.js` | Minion/hunter movement and turn advance. `advanceMonsters()` returns what moved or spawned; `main.js` draws it. |
+| `combat.js` | Minion/hunter movement and turn advance. `advanceMonsters()` returns an events list; `main.js` `drawEvents()` draws it. |
 | `quiz.js` | Picking questions, building multiple-choice options, fight choice labels. |
 | `sets.js` | Bundled sets (`lists/`) and saved custom sets (localStorage). |
 
@@ -47,7 +47,7 @@ Drawing and page code:
 | `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom` = `buildFloor` data + `drawFloor` page), turn and answer rules, end screens. 1,300 lines — being split up. |
 
 How a turn flows today: key/d-pad → `movePlayer()` (main.js) → `whatBlocks()` → move +
-redraw → `applyTurnOutcome()` → `advanceMonsters()` (combat.js) → `drawMonsterTurn()` + `lightConsumed()` →
+redraw → `applyTurnOutcome()` → `advanceMonsters()` (combat.js) → `drawEvents()` + `lightConsumed()` →
 battle screen if something is adjacent → answer → `applyAnswerResult()` →
 `resolveBossAnswer()` or `resolveOneShot()`.
 

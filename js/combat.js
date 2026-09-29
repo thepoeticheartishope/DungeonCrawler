@@ -6,7 +6,6 @@ import { state, key } from './state.js';
 import { MINION_HP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS } from './config.js';
 import { advanceLight } from './light.js';
 import { computeVisibility } from './sight.js';
-import { t } from './text.js';
 
 export function isAdjacentToPlayer(entity) {
   return Math.abs(entity.row - state.playerRow) + Math.abs(entity.col - state.playerCol) === 1;
@@ -178,8 +177,9 @@ function wanderStep(m) {
 
 // Advances the room by one turn: the boss light spreads, minions move, and
 // the turn counter increases. Called after any player action. Touches no
-// page element; returns what changed for main.js to draw: `moved` (minions
-// that stepped), `spawned` (the hunter, the turn it wakes) and the notes.
+// page element; returns the events of the turn, in the order they happened,
+// for main.js to draw: { type: 'hunterWoke', hunter }, { type: 'minionMoved',
+// minion } and { type: 'minionEngaged', minion }.
 export function advanceMonsters() {
   state.turnCount++;
   advanceLight();
@@ -189,17 +189,11 @@ export function advanceMonsters() {
   // battle screen up, and hearts are only ever lost by missing a question.
   // Minions roam freely and only give chase once the player is within
   // MINION_CHASE_RANGE walkable steps.
-  let engageNote = '';
-  let hunterNote = '';
-  const moved = [];
-  const spawned = [];
+  const events = [];
   if (state.darkness) {
     state.darkTurns++;
     const hunter = !state.hunter && state.darkTurns >= HUNTER_SPAWN_DELAY ? wakeHunter() : null;
-    if (hunter) {
-      spawned.push(hunter);
-      hunterNote = t('room.hunter.wakes');
-    }
+    if (hunter) events.push({ type: 'hunterWoke', hunter });
   }
   for (const m of state.minions) {
     if (m.rest > 0) {
@@ -216,11 +210,11 @@ export function advanceMonsters() {
       if (isPlayerTile) {
         // Engage from where it stands, never occupying the player's tile.
         if (!state.selectedTarget) state.selectedTarget = m;
-        engageNote = t('room.engage');
+        events.push({ type: 'minionEngaged', minion: m });
       } else {
         m.row = next.row;
         m.col = next.col;
-        moved.push(m);
+        events.push({ type: 'minionMoved', minion: m });
       }
     }
     // If next is null, this minion has no route around current
@@ -229,5 +223,5 @@ export function advanceMonsters() {
 
   computeVisibility();
   refreshTargetValidity();
-  return { moved, spawned, engageNote, hunterNote };
+  return events;
 }

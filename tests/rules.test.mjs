@@ -276,52 +276,66 @@ test('boxes block but papers lie flat', () => {
 
 // --- combat.js: advanceMonsters ---
 
+// The things of one type in an advanceMonsters() events list.
+const ofType = (events, type, field) => events.filter(e => e.type === type).map(e => e[field]);
+
 test('a minion within chase range steps toward the player and is reported as moved', () => {
   resetFloor(21);
   const m = spawnMinion({ row: state.playerRow - MINION_CHASE_RANGE, col: state.playerCol });
-  const result = advanceMonsters();
+  const events = advanceMonsters();
   assert.deepEqual({ row: m.row, col: m.col }, { row: state.playerRow - MINION_CHASE_RANGE + 1, col: state.playerCol });
-  assert.deepEqual(result.moved, [m]);
-  assert.deepEqual(result.spawned, []);
+  assert.deepEqual(events, [{ type: 'minionMoved', minion: m }]);
   assert.equal(state.turnCount, 1);
 });
 
 test('a minion next to the player engages from where it stands', () => {
   resetFloor(21);
   const m = spawnMinion({ row: state.playerRow - 1, col: state.playerCol });
-  const result = advanceMonsters();
+  const events = advanceMonsters();
   assert.deepEqual({ row: m.row, col: m.col }, { row: state.playerRow - 1, col: state.playerCol });
-  assert.deepEqual(result.moved, []);
+  assert.deepEqual(ofType(events, 'minionMoved', 'minion'), []);
   assert.equal(state.selectedTarget, m);
-  assert.ok(result.engageNote);
+});
+
+test('an engaging minion is reported as minionEngaged, in turn order', () => {
+  resetFloor(21);
+  const near = spawnMinion({ row: state.playerRow - 1, col: state.playerCol });
+  const far = spawnMinion({ row: state.playerRow + 2, col: state.playerCol });
+  const events = advanceMonsters();
+  assert.deepEqual(events, [
+    { type: 'minionEngaged', minion: near },
+    { type: 'minionMoved', minion: far },
+  ]);
 });
 
 test('a resting minion waits out its rest', () => {
   resetFloor(21);
   const m = spawnMinion({ row: state.playerRow - 2, col: state.playerCol });
   m.rest = 1;
-  assert.deepEqual(advanceMonsters().moved, []);
+  assert.deepEqual(advanceMonsters(), []);
   assert.equal(m.rest, 0);
-  assert.deepEqual(advanceMonsters().moved, [m]);
+  assert.deepEqual(ofType(advanceMonsters(), 'minionMoved', 'minion'), [m]);
 });
 
 test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the player', () => {
   resetFloor(21);
   state.darkness = true;
   for (let i = 1; i < HUNTER_SPAWN_DELAY; i++) {
-    assert.deepEqual(advanceMonsters().spawned, []);
+    assert.deepEqual(ofType(advanceMonsters(), 'hunterWoke', 'hunter'), []);
     assert.equal(state.hunter, null);
   }
-  const result = advanceMonsters();
-  assert.equal(result.spawned.length, 1);
-  const hunter = result.spawned[0];
+  const events = advanceMonsters();
+  const woke = ofType(events, 'hunterWoke', 'hunter');
+  assert.equal(woke.length, 1);
+  const hunter = woke[0];
+  // It wakes first, then takes its first step in the same turn.
+  assert.equal(events[0].type, 'hunterWoke');
   assert.equal(state.hunter, hunter);
   assert.equal(hunter.kind, 'hunter');
   assert.ok(state.minions.includes(hunter));
-  assert.ok(result.hunterNote);
   // Woke in a corner, so it's still far off after its first step.
   const steps = Math.abs(hunter.row - state.playerRow) + Math.abs(hunter.col - state.playerCol);
   assert.ok(steps >= 18, 'hunter is ' + steps + ' steps away');
   // Only ever one.
-  assert.deepEqual(advanceMonsters().spawned, []);
+  assert.deepEqual(ofType(advanceMonsters(), 'hunterWoke', 'hunter'), []);
 });

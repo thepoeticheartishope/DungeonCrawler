@@ -890,23 +890,37 @@ function showRoomNote(cls, text) {
 }
 
 function applyTurnOutcome(actionMessage) {
-  const notes = advanceMonsters();
-  drawMonsterTurn(notes);
+  const events = advanceMonsters();
+  drawEvents(events);
   if (lightConsumed()) {
     loseToLight();
     return;
   }
   syncQuestionForTarget();
   syncBattleScreen();
-  const text = [actionMessage, notes.hunterNote, notes.engageNote].filter(Boolean).join(' ');
-  showRoomNote(notes.engageNote || notes.hunterNote ? 'warn-msg' : 'move-msg', text);
+  const hunterWoke = events.some(e => e.type === 'hunterWoke');
+  const engaged = events.some(e => e.type === 'minionEngaged');
+  const text = [actionMessage, hunterWoke && t('room.hunter.wakes'), engaged && t('room.engage')]
+    .filter(Boolean).join(' ');
+  showRoomNote(hunterWoke || engaged ? 'warn-msg' : 'move-msg', text);
 }
 
-// Draws what a turn of advanceMonsters changed: the hunter appears in
-// place, minions that stepped slide to their new tile.
-function drawMonsterTurn({ moved, spawned }) {
-  spawned.forEach(addMinionEl);
-  moved.forEach(m => positionActor(actorEl(m), m.row, m.col));
+// Draws a list of rule events, in order, then redraws the HUD, fog, eye
+// and targeting once. The hunter appears in place; minions that stepped
+// slide to their new tile. The room note is picked by the caller.
+function drawEvents(events) {
+  for (const e of events) {
+    switch (e.type) {
+      case 'hunterWoke':
+        addMinionEl(e.hunter);
+        break;
+      case 'minionMoved':
+        positionActor(actorEl(e.minion), e.minion.row, e.minion.col);
+        break;
+      case 'minionEngaged':
+        break;
+    }
+  }
   renderHud();
   renderCombatStatus();
   renderFog();
