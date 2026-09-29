@@ -18,7 +18,8 @@ import {
 import {
   initRender, showScreen, buildGridTiles, renderWalls,
   renderFog, positionActor, setGlyph, bumpActor, renderHud, renderCombatStatus, renderTargeting,
-  formatTime, startTimer, stopTimer, renderLightEye
+  formatTime, startTimer, stopTimer, renderLightEye,
+  addActorEl, actorEl, removeActorEl, clearActorEls
 } from './render.js';
 import { computeVisibility, updateCamera } from './sight.js';
 import {
@@ -493,7 +494,7 @@ function chooseCategory(i) {
 function syncBattleScreen() {
   if (state.selectedTarget) {
     const target = state.selectedTarget;
-    battleGlyphEl.textContent = (target.el || bossActor).dataset.glyph;
+    battleGlyphEl.textContent = (actorEl(target) || target.el || bossActor).dataset.glyph;
     renderCombatStatus();
     const entering = !battleScreen.classList.contains('show');
     if (entering) {
@@ -548,8 +549,8 @@ function repositionActors() {
   if (state.stairs) positionActor(stairsActor, state.stairs.row, state.stairs.col, true);
   if (state.chest) positionActor(chestActor, state.chest.row, state.chest.col, true);
   if (state.rune) positionActor(runeActor, state.rune.row, state.rune.col, true);
-  state.encounters.forEach(e => positionActor(e.el, e.row, e.col, true));
-  state.props.forEach(p => positionActor(p.el, p.row, p.col, true));
+  state.encounters.forEach(e => positionActor(actorEl(e), e.row, e.col, true));
+  state.props.forEach(p => positionActor(actorEl(p), p.row, p.col, true));
 }
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
@@ -689,10 +690,11 @@ function loadRoom() {
   state.hunter = null;
   state.darkTurns = 0;
 
-  state.encounters.forEach(e => e.el.remove());
+  state.encounters.forEach(e => actorEl(e).remove());
   state.encounters = [];
-  state.props.forEach(p => p.el.remove());
+  state.props.forEach(p => actorEl(p).remove());
   state.props = [];
+  clearActorEls();
   state.runeHint = null;
   state.lastChoiceType = null;
 
@@ -720,7 +722,9 @@ function loadRoom() {
     el.className = 'actor prop ' + p.kind;
     setGlyph(el, t('term.' + p.kind + '.symbol'));
     grid.insertBefore(el, playerActor);
-    state.props.push({ ...p, el, identified: false, searched: false, sprung: false });
+    const prop = { ...p, identified: false, searched: false, sprung: false };
+    state.props.push(prop);
+    addActorEl(prop, el);
     positionActor(el, p.row, p.col, true);
   });
   renderWalls();
@@ -782,11 +786,13 @@ function loadRoom() {
     ];
     const chosen = candidates[Math.floor(Math.random() * candidates.length)];
     if (chosen.type === 'chest') {
-      state.chest = { row: specialTile.row, col: specialTile.col, el: chestActor, kind: 'chest' };
+      state.chest = { row: specialTile.row, col: specialTile.col, kind: 'chest' };
+      addActorEl(state.chest, chestActor);
       chestActor.classList.remove('gone');
       positionActor(chestActor, specialTile.row, specialTile.col, true);
     } else if (chosen.type === 'rune') {
-      state.rune = { row: specialTile.row, col: specialTile.col, el: runeActor, kind: 'rune' };
+      state.rune = { row: specialTile.row, col: specialTile.col, kind: 'rune' };
+      addActorEl(state.rune, runeActor);
       runeActor.classList.remove('gone');
       positionActor(runeActor, specialTile.row, specialTile.col, true);
     } else {
@@ -796,9 +802,10 @@ function loadRoom() {
       setGlyph(el, glyph);
       grid.appendChild(el);
       const encounter = {
-        row: specialTile.row, col: specialTile.col, el, kind: 'encounter',
+        row: specialTile.row, col: specialTile.col, kind: 'encounter',
         category: chosen.category, pool: byCategory.get(chosen.category),
       };
+      addActorEl(encounter, el);
       positionActor(el, specialTile.row, specialTile.col, true);
       state.encounters.push(encounter);
     }
@@ -956,7 +963,7 @@ function movePlayer(dRow, dCol, dirName) {
 function readPaper(paper) {
   paper.searched = true;
   paper.identified = true;
-  paper.el.classList.add('searched');
+  actorEl(paper).classList.add('searched');
   return paper.loot === 'lore'
     ? t('room.paper.lore', { lore: t('theme.' + paper.theme + '.lore') })
     : t('room.paper.junk');
@@ -982,7 +989,7 @@ function examineProp(prop) {
   }
   state.turnLocked = true;
   prop.searched = true;
-  prop.el.classList.add('searched');
+  actorEl(prop).classList.add('searched');
   const found = openBox(prop);
   applyTurnOutcome(found.gold ? t('room.box.gold', { gold: found.gold }) : t('room.box.junk'));
   state.turnLocked = false;
@@ -1113,7 +1120,7 @@ function resolveOneShot(target, isCorrect, q) {
   if (target.kind === 'box') {
     target.sprung = false;
     target.searched = true;
-    target.el.classList.add('searched');
+    actorEl(target).classList.add('searched');
     if (!isCorrect) {
       logLine(t('log.box.trapped'));
     } else {
@@ -1124,7 +1131,8 @@ function resolveOneShot(target, isCorrect, q) {
     return;
   }
 
-  target.el.classList.add('gone');
+  actorEl(target).classList.add('gone');
+  removeActorEl(target);
   if (target.kind === 'chest') state.chest = null;
   else if (target.kind === 'rune') state.rune = null;
   else if (target.kind === 'encounter') state.encounters = state.encounters.filter(e => e !== target);
