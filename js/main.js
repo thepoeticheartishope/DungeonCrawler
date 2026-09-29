@@ -18,7 +18,7 @@ import {
 import {
   initRender, showScreen, buildGridTiles, renderWalls,
   renderFog, positionActor, setGlyph, bumpActor, renderHud, renderCombatStatus, renderTargeting,
-  formatTime, startTimer, renderLightEye
+  formatTime, startTimer, stopTimer, renderLightEye
 } from './render.js';
 import { computeVisibility, updateCamera } from './sight.js';
 import {
@@ -878,7 +878,7 @@ function loseToLight() {
   state.runEnded = true;
   showRoomNote('warn-msg', t('room.light.consumed'));
   setControlsEnabled(false);
-  clearInterval(state.timerHandle);
+  stopTimer();
   setTimeout(() => endLose('light'), 1400);
 }
 
@@ -1041,7 +1041,7 @@ function applyAnswerResult(isCorrect, hadExtraSpace, given) {
   if (state.hearts <= 0) {
     logLine(t('log.signalLost'), 'alert');
     setControlsEnabled(false);
-    clearInterval(state.timerHandle);
+    stopTimer();
     setTimeout(endLose, 900);
     state.turnLocked = false;
     return;
@@ -1239,7 +1239,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 function endWin() {
-  clearInterval(state.timerHandle);
+  stopTimer();
   let msg = t('end.win.stats', {
     bosses: state.order.length, time: formatTime(state.seconds), turns: state.turnCount,
     attempts: state.attempts, hearts: state.hearts, coins: state.coinsTotal,

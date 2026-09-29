@@ -34,17 +34,20 @@ export function showScreen(el) {
 // fog, and the checkerboard are re-applied on every camera move instead
 // (see renderWalls/renderFog), since which world tile lands in which
 // viewport cell changes as the camera pans.
+// One element per viewport cell; view-only, so it lives here, not in state.
+let tileEls = [];
+
 export function buildGridTiles() {
   els.grid.querySelectorAll('.tile').forEach(t => t.remove());
   els.grid.style.gridTemplateColumns = 'repeat(' + VIEWPORT_SIZE + ', 1fr)';
   els.grid.style.gridTemplateRows = 'repeat(' + VIEWPORT_SIZE + ', 1fr)';
-  state.tileEls = new Array(VIEWPORT_SIZE * VIEWPORT_SIZE);
+  tileEls = new Array(VIEWPORT_SIZE * VIEWPORT_SIZE);
   for (let vr = 0; vr < VIEWPORT_SIZE; vr++) {
     for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
       const tile = document.createElement('div');
       tile.className = 'tile';
       els.grid.insertBefore(tile, els.playerActor);
-      state.tileEls[vr * VIEWPORT_SIZE + vc] = tile;
+      tileEls[vr * VIEWPORT_SIZE + vc] = tile;
     }
   }
 }
@@ -58,7 +61,7 @@ export function renderWalls() {
     for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
       const worldRow = state.camRow + vr;
       const worldCol = state.camCol + vc;
-      const tile = state.tileEls[vr * VIEWPORT_SIZE + vc];
+      const tile = tileEls[vr * VIEWPORT_SIZE + vc];
       const k = key(worldRow, worldCol);
       tile.classList.toggle('b', (worldRow + worldCol) % 2 !== 0);
       tile.classList.toggle('wall', state.wallSet.has(k));
@@ -86,7 +89,7 @@ export function renderFog() {
     for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
       const worldRow = state.camRow + vr;
       const worldCol = state.camCol + vc;
-      const el = state.tileEls[vr * VIEWPORT_SIZE + vc];
+      const el = tileEls[vr * VIEWPORT_SIZE + vc];
       el.classList.remove('fog-hidden', 'fog-dim');
       const k = key(worldRow, worldCol);
       el.classList.toggle('boss-lit', state.bossLitSet.has(k));
@@ -305,11 +308,18 @@ export function formatTime(s) {
   return m + ':' + String(r).padStart(2, '0');
 }
 
+let timerHandle = null;
+
+export function stopTimer() {
+  clearInterval(timerHandle);
+  timerHandle = null;
+}
+
 export function startTimer() {
-  clearInterval(state.timerHandle);
+  stopTimer();
   state.seconds = 0;
   els.timerEl.textContent = formatTime(0);
-  state.timerHandle = setInterval(() => {
+  timerHandle = setInterval(() => {
     state.seconds++;
     els.timerEl.textContent = formatTime(state.seconds);
   }, 1000);
