@@ -176,7 +176,7 @@ and `drawFloor()` (creates and places elements).
   `clearActorEls()` (render.js) now takes the old floor's minion, prop and encounter
   elements off the page itself (loadRoom used to do it by hand); chest and rune stay.
 
-### [ ] 6. Rules return events (split in three)
+### [x] 6. Rules return events (split in three) (#72, #73, #74)
 
 `movePlayer`, `applyAnswerResult`, `resolveBossAnswer`, `resolveOneShot`, `advanceMonsters`
 change state and return an events list; views read the list and draw/log from it.
@@ -253,7 +253,7 @@ Shared rules for all three:
   draws both in one pass. `movePlayer(dRow, dCol)` lost its direction-name argument.
   Three `stepPlayer` tests added.
 
-#### [ ] 6c. Answers (biggest; stronger model)
+#### [x] 6c. Answers (biggest; stronger model) (#74)
 
 - New `js/answers.js`, `export function settleAnswer(isCorrect, hadExtraSpace, given)` →
   events. It holds the rule halves of `main.js` `applyAnswerResult` (~1056–1095),
