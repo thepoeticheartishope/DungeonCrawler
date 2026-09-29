@@ -533,10 +533,16 @@ function leaveEncounter() {
 // camera. Needed whenever the camera itself moves — the boss, minions,
 // coin, chest, and rune haven't moved in world space, but the viewport
 // window that maps world coordinates onto the screen has.
+// A hunter that woke this turn is in state.minions before it has an element
+// (drawEvents makes it at its hunterWoke event, after the player's step is
+// drawn), so minions without one are skipped; addMinionEl places it.
 function repositionActors() {
   positionActor(playerActor, state.playerRow, state.playerCol, true);
   if (state.boss) positionActor(bossActor, state.boss.row, state.boss.col, true);
-  state.minions.forEach(m => positionActor(actorEl(m), m.row, m.col, true));
+  state.minions.forEach(m => {
+    const el = actorEl(m);
+    if (el) positionActor(el, m.row, m.col, true);
+  });
   if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col, true);
   if (state.stairs) positionActor(stairsActor, state.stairs.row, state.stairs.col, true);
   if (state.chest) positionActor(chestActor, state.chest.row, state.chest.col, true);
