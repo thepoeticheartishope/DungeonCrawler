@@ -37,6 +37,15 @@ export function showScreen(el) {
 // One element per viewport cell; view-only, so it lives here, not in state.
 let tileEls = [];
 
+// Elements for the map things that stay put (chest, rune, encounters,
+// papers and boxes), keyed by the state object. View-only, like tileEls,
+// so state stays plain data.
+const actorEls = new Map();
+export function addActorEl(thing, el) { actorEls.set(thing, el); }
+export function actorEl(thing) { return actorEls.get(thing); }
+export function removeActorEl(thing) { actorEls.delete(thing); }
+export function clearActorEls() { actorEls.clear(); }
+
 export function buildGridTiles() {
   els.grid.querySelectorAll('.tile').forEach(t => t.remove());
   els.grid.style.gridTemplateColumns = 'repeat(' + VIEWPORT_SIZE + ', 1fr)';
@@ -129,24 +138,26 @@ export function renderFog() {
   els.runeActor.classList.toggle('fog-hidden', !!state.rune && !isLit(state.rune.row, state.rune.col));
   if (state.rune) showGlyph(els.runeActor, isNear(state.rune.row, state.rune.col));
   state.encounters.forEach(e => {
-    e.el.classList.toggle('fog-hidden', !isLit(e.row, e.col));
-    showGlyph(e.el, isNear(e.row, e.col));
+    const el = actorEl(e);
+    el.classList.toggle('fog-hidden', !isLit(e.row, e.col));
+    showGlyph(el, isNear(e.row, e.col));
   });
   // Papers and boxes don't move, so once seen they stay dimly remembered
   // on explored floor (not in the darkness, where nothing is). They keep
   // their '?' until the player has been close enough to make them out.
   state.props.forEach(p => {
+    const el = actorEl(p);
     const k = key(p.row, p.col);
     const lit = isLit(p.row, p.col);
     if (isNear(p.row, p.col)) p.identified = true;
     const remembered = state.fogEnabled && !lit && !state.darkness && state.exploredSet.has(k);
-    p.el.classList.toggle('fog-hidden', !lit && !remembered);
-    p.el.classList.toggle('remembered', remembered);
-    showGlyph(p.el, !state.fogEnabled || p.identified);
+    el.classList.toggle('fog-hidden', !lit && !remembered);
+    el.classList.toggle('remembered', remembered);
+    showGlyph(el, !state.fogEnabled || p.identified);
     // A paper under the player or a minion is hidden, so glyphs don't pile up.
     const covered = p.kind === 'paper' && ((state.playerRow === p.row && state.playerCol === p.col) ||
       state.minions.some(m => m.row === p.row && m.col === p.col));
-    p.el.classList.toggle('covered', covered);
+    el.classList.toggle('covered', covered);
   });
   renderLightHint();
   renderMoveHints();
@@ -289,8 +300,8 @@ export function renderTargeting() {
   state.minions.forEach(m => m.el.classList.toggle('targeted', state.selectedTarget === m));
   els.chestActor.classList.toggle('targeted', state.selectedTarget === state.chest);
   els.runeActor.classList.toggle('targeted', state.selectedTarget === state.rune);
-  state.encounters.forEach(e => e.el.classList.toggle('targeted', state.selectedTarget === e));
-  state.props.forEach(p => p.el.classList.toggle('targeted', state.selectedTarget === p));
+  state.encounters.forEach(e => actorEl(e).classList.toggle('targeted', state.selectedTarget === e));
+  state.props.forEach(p => actorEl(p).classList.toggle('targeted', state.selectedTarget === p));
 
   const target = state.selectedTarget;
   els.targetLabelEl.textContent = target

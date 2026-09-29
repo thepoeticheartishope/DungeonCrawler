@@ -122,7 +122,7 @@ finds nothing, and no rule module stores a page element.
 - Done: `tileEls` and `timerHandle` are module-level in `render.js`; `stopTimer()`
   is exported from there and `main.js` imports it.
 
-#### [ ] 4b. Things that stay put: chest, rune, encounters, props
+#### [x] 4b. Things that stay put: chest, rune, encounters, props (#68)
 
 - Add an element registry to `render.js`: a `Map` thing → element, with
   `addActorEl(thing, el)`, `actorEl(thing)`, `removeActorEl(thing)`, `clearActorEls()`.
@@ -135,6 +135,10 @@ finds nothing, and no rule module stores a page element.
 - Leave minions alone (4c). Bump `CACHE_NAME`. Done when: smoke test passes; by hand with
   Fog on, a box, a paper, the chest or rune and an encounter still show `?` far away,
   their glyph up close, and disappear or grey out when used.
+- Done: the registry is `actorEls` in `render.js`. Chest and rune register their fixed
+  `chestActor` / `runeActor`; `clearActorEls()` only forgets entries (loadRoom still
+  removes encounter/prop elements first). `syncBattleScreen` reads
+  `actorEl(target) || target.el || bossActor` until 4c moves minions over.
 
 #### [ ] 4c. Things that move: minions and the hunter (needs the stronger model)
 
