@@ -279,6 +279,16 @@ Shared rules for all three:
   `ACCEPTED.`); by hand, the encounter log reads word for word as before for a boss fight,
   a minion, the chest, the rune, an encounter, a trapped box, a wager and a haunt. Tick 6
   as a whole here.
+- Done: the chest, rune, encounter and trapped box all emit `targetSpent` (the view adds
+  `searched` for a box, `gone` for the rest, and logs `log.<kind>.trapped` on a miss), then
+  `goldGained` or `runeDecoded` when right. `runeDecoded` carries `{ question }` instead of
+  `{ choiceLabel, hint }`: `buildHint()` calls `t()`, so the view builds both.
+  `bossDefeated` carries `{ boss }`. `settleWager` is private to answers.js.
+  `applyAnswerResult` flows from `signalLost` / `bossHit` / `bossHeld`. Five `settleAnswer`
+  tests added. Checked word for word with a seeded bot (`Math.random` seeded, pathfinding to
+  every target, 5 in 6 answers right, reveal-on-wrong on, light loss and chase range patched
+  the same on both) on a `git archive origin/main` copy and the branch: 6 seeds identical,
+  log and room notes included.
 
 ### [ ] 7. Group state + live inspector
 

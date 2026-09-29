@@ -33,7 +33,7 @@ export function findAdjacentEnemies() {
 // Drops the current target if it's no longer adjacent, then auto-picks an
 // adjacent enemy if one is available and nothing is targeted. A manual tap
 // on any other adjacent enemy always overrides this. The caller redraws
-// the targeting (renderTargeting).
+// the targeting.
 export function refreshTargetValidity() {
   if (state.selectedTarget && !isAdjacentToPlayer(state.selectedTarget)) {
     state.selectedTarget = null;

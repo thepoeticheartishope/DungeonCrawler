@@ -34,6 +34,7 @@ Rules and data (no page/DOM access):
 | `modifiers.js` | Rolls Blind / Gambler / Flip / Timer for fight choices. |
 | `combat.js` | Minion/hunter movement and turn advance. `advanceMonsters()` returns an events list; `main.js` `drawEvents()` draws it. |
 | `moves.js` | The player's step (`stepPlayer()`: turn, bump, walk, stairs, coin, paper, room entry, boxes) and `goldReward`. Returns an events list. |
+| `answers.js` | Settling an answer (`settleAnswer()`: hearts, haunts, the Gambler wager, boss HP and the darkness, clearing or spending the target, gold and the rune's hint). Returns an events list. |
 | `quiz.js` | Picking questions, building multiple-choice options, fight choice labels. |
 | `sets.js` | Bundled sets (`lists/`) and saved custom sets (localStorage). |
 
@@ -45,13 +46,14 @@ Drawing and page code:
 | `dataview.js` | DATA.SYS question viewer and comment export. |
 | `setloader.js` | Start screen options and the set loader (pasted, file, built-in, saved sets). |
 | `devpanel.js` | DEV panel: Skip room, Auto-win, Fog toggle. Gets the `main.js` actions it calls passed in. |
-| `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom` = `buildFloor` data + `drawFloor` page), turn and answer rules, end screens. 1,300 lines — being split up. |
+| `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom` = `buildFloor` data + `drawFloor` page), `drawEvents()` (draws every rule event), turn and answer flow, end screens. 1,250 lines — being split up. |
 
 How a turn flows today: key/d-pad → `movePlayer()` (main.js) → `stepPlayer()` (moves.js,
 uses `whatBlocks()`) → events → `applyTurnOutcome(events)` → `advanceMonsters()` (combat.js) →
 `drawEvents()` (draws both lists, returns the room note) + `lightConsumed()` →
-battle screen if something is adjacent → answer → `applyAnswerResult()` →
-`resolveBossAnswer()` or `resolveOneShot()`.
+battle screen if something is adjacent → answer → `applyAnswerResult()` (main.js) →
+`settleAnswer()` (answers.js) → events → `drawEvents()` (the encounter log) → next boss
+question, end of run, or `endEncounter()`.
 
 ## Refactor in progress
 
