@@ -176,10 +176,97 @@ and `drawFloor()` (creates and places elements).
   `clearActorEls()` (render.js) now takes the old floor's minion, prop and encounter
   elements off the page itself (loadRoom used to do it by hand); chest and rune stay.
 
-### [ ] 6. Rules return events
+### [ ] 6. Rules return events (split in three)
 
 `movePlayer`, `applyAnswerResult`, `resolveBossAnswer`, `resolveOneShot`, `advanceMonsters`
 change state and return an events list; views read the list and draw/log from it.
+
+Split into 6a–6c so each is one PR and a safe place to stop: after each one the game
+works and both test commands pass. Line numbers are as of `main` at `536eaa4` (PR #70).
+
+Shared rules for all three:
+- An event is a plain object: `{ type: 'goldGained', amount: 2 }`. Types are past-tense
+  camelCase and say *what happened*, never how it looks.
+- Rules push events in the order things happen; the view draws them in that order (the
+  encounter log and room note depend on it).
+- Rules never call `t()`. Wording is picked in the view from the event's type and data,
+  so an event carries values (`gold`, `cost`, `category`), not finished text.
+- One drawing entry point in `main.js`, `drawEvents(events)`, with one `case` per type.
+  It grows a little in each sub-step. Screen flow (`advanceRoom`, `endEncounter`,
+  `nextQuestion`, `startBattleTurn`, `setTimeout(endLose…)`) stays in the `main.js` caller,
+  decided from the events.
+- New rule modules import nothing from `render.js` or `main.js` and touch no element, so
+  `tests/rules.test.mjs` can load them.
+- Done check for the whole step: `grep -n "logLine\|render[A-Z]\|actorEl\|classList\|t('" `
+  on `js/combat.js`, `js/moves.js` and `js/answers.js` finds nothing.
+
+#### [ ] 6a. The monster turn: set the event shape (small; stronger model)
+
+- `combat.js` `advanceMonsters()` (~183–233) returns an events list instead of
+  `{ moved, spawned, engageNote, hunterNote }`: `{ type: 'hunterWoke', hunter }`,
+  `{ type: 'minionMoved', minion }`, `{ type: 'minionEngaged', minion }`. It stops calling
+  `t('room.hunter.wakes')` / `t('room.engage')`; drop `t` from combat.js's imports if
+  nothing else uses it.
+- `main.js` `drawMonsterTurn()` (~907–915) becomes the first cases of `drawEvents()`: the
+  hunter gets `addMinionEl`, moved minions slide, then the HUD / fog / eye / targeting
+  redraw once at the end (not once per event).
+- `applyTurnOutcome(actionMessage)` (~892–903) builds the room note from the events
+  (hunter woke → `room.hunter.wakes`, engaged → `room.engage`, `warn-msg` if either).
+  Callers still pass `actionMessage` as text for now; 6b replaces that.
+- Update the four `advanceMonsters` tests in `tests/rules.test.mjs` (~277–330) to read
+  events, and add one for `minionEngaged`.
+- Bump `CACHE_NAME`. Done when: both test commands pass; by hand, minions chase and slide,
+  an engage note shows, the hunter wakes after the boss with its note.
+
+#### [ ] 6b. Moving, waiting and boxes
+
+- New `js/moves.js`, `export function stepPlayer(dRow, dCol)` → events. It holds the rule
+  half of `main.js` `movePlayer()` (~927–995): facing change, `whatBlocks`, the step,
+  `updateCamera` / `computeVisibility`, stairs, coin, paper, first entry into a room.
+  Events: `turned`, `blocked { kind, thing }`, `stepped`, `stairsReached`,
+  `coinTaken { gold }`, `paperRead { paper, loot }`, `roomEntered { theme }`.
+- Also move there the rule halves of `readPaper` (~998–1005), `examineProp` (~1010–1031)
+  and `openBox` (~1034–1040): `propSearched { prop }`, `boxSprung { prop }`,
+  `boxOpened { prop, gold }` (gold 0 = junk). `goldReward` (~1131) moves too; 6c uses it.
+- `movePlayer` in `main.js` becomes wiring: the `turnLocked` / `runEnded` checks,
+  `stepPlayer()`, `drawEvents()`, then `advanceRoom()` on `stairsReached`, the battle
+  screen on `boxSprung`, else `applyTurnOutcome(events)`. `skipTurn` passes `[{ type: 'waited' }]`.
+  `applyTurnOutcome` now takes events, not a message; the room note text comes from
+  `drawEvents` (the `room.move` / `room.coin` / `room.paper.*` / `room.box.*` / theme
+  `enter` keys, in event order).
+- Drawing that moves into `drawEvents`: arrow glyph, `renderWalls` / `repositionActors` /
+  `renderFog`, `bumpActor` + block note, coin `gone`, prop `searched`, `renderHud`.
+- Add `js/moves.js` to `APP_SHELL`. Add unit tests for `stepPlayer`: blocked by a wall,
+  coin pays `goldReward(1)` (doubled in the darkness), first room entry fires once.
+- Bump `CACHE_NAME`. Done when: both test commands pass; by hand, walking, turning in place,
+  bumping a wall, coin, paper, a plain box, a trapped box and the stairs all behave as before.
+
+#### [ ] 6c. Answers (biggest; stronger model)
+
+- New `js/answers.js`, `export function settleAnswer(isCorrect, hadExtraSpace, given)` →
+  events. It holds the rule halves of `main.js` `applyAnswerResult` (~1056–1095),
+  `resolveBossAnswer` (~1101–1128), `resolveOneShot` (~1138–1201) and `settleWager`
+  (~241–248; it's the fourth place gold changes).
+- Events (one per current `logLine`, in the same order): `answerGiven { given }`,
+  `accepted`, `extraSpaces`, `rejected { cost, expected, source }` (the reveal-on-wrong
+  lines stay a view choice), `hauntSilenced`, `hauntLingers`, `wagerSettled { won, n }`,
+  `signalLost`, `bossHit { hp, max }`, `bossHeld`, `bossDefeated`, `darknessFell`,
+  `hunterRepelled { hunter, right }`, `minionCleared { minion, right }`,
+  `targetSpent { target, right, category }`, `goldGained { amount, from }` (chest /
+  encounter / box), `runeDecoded { choiceLabel, hint }`.
+- `main.js` keeps `applyAnswerResult` as wiring: `settleAnswer()`, `drawEvents()`,
+  `flashBattleResult`, then flow from the events: `signalLost` → end-of-run timers;
+  a boss hit/held → `nextQuestion()` + `startBattleTurn()`; otherwise `endEncounter()`.
+- Drawing that moves into `drawEvents`: every `logLine`, `renderHud`, `renderCombatStatus`,
+  boss `gone`, minion element removed + `removeActorEl`, `searched` / `gone` classes,
+  the repelled hunter's `positionActor`, the darkness redraw (fog, eye).
+- Add `js/answers.js` to `APP_SHELL`. Add unit tests for `settleAnswer`: a miss costs 1
+  (2 in the darkness) and ends at 0 hearts with `signalLost`; the last boss hit fires
+  `bossDefeated` then `darknessFell`; a chest pays 2; a lost wager can't go below 0 gold.
+- Bump `CACHE_NAME`. Done when: both test commands pass (the smoke battle run still logs
+  `ACCEPTED.`); by hand, the encounter log reads word for word as before for a boss fight,
+  a minion, the chest, the rune, an encounter, a trapped box, a wager and a haunt. Tick 6
+  as a whole here.
 
 ### [ ] 7. Group state + live inspector
 
@@ -193,6 +280,6 @@ After 7: canvas map (only the map view changes) and a backend for saves (store `
 - Fresh session per step. Start by reading `CLAUDE.md` and this file, then only the
   files and line ranges the step names.
 - Mechanical moves (1a, 1b, 2, 4a, 4b, 5): a cheaper model is fine (`/model` → Sonnet or Haiku).
-  Steps 4c and 6 benefit from a stronger one.
+  Steps 4c, 6a and 6c benefit from a stronger one (6b is fine either way).
 - Move code with shell commands, not by rewriting it.
 - When a step merges, tick it here with the PR number in the same PR.
