@@ -200,7 +200,7 @@ Shared rules for all three:
 - Done check for the whole step: `grep -n "logLine\|render[A-Z]\|actorEl\|classList\|t('" `
   on `js/combat.js`, `js/moves.js` and `js/answers.js` finds nothing.
 
-#### [ ] 6a. The monster turn: set the event shape (small; stronger model)
+#### [x] 6a. The monster turn: set the event shape (small; stronger model) (#72)
 
 - `combat.js` `advanceMonsters()` (~183–233) returns an events list instead of
   `{ moved, spawned, engageNote, hunterNote }`: `{ type: 'hunterWoke', hunter }`,
@@ -217,6 +217,12 @@ Shared rules for all three:
   events, and add one for `minionEngaged`.
 - Bump `CACHE_NAME`. Done when: both test commands pass; by hand, minions chase and slide,
   an engage note shows, the hunter wakes after the boss with its note.
+- Done: `advanceMonsters()` returns events in turn order: `{ type: 'hunterWoke', hunter }`
+  (pushed before that turn's moves, so the hunter's first step follows it),
+  `{ type: 'minionMoved', minion }` and `{ type: 'minionEngaged', minion }` (one per
+  engaging minion). `combat.js` no longer imports `text.js`. `main.js` `drawEvents()`
+  replaced `drawMonsterTurn()`; `applyTurnOutcome()` picks the note from the events
+  (unchanged text). Five `advanceMonsters` tests (one new for `minionEngaged` and order).
 
 #### [ ] 6b. Moving, waiting and boxes
 
