@@ -1,4 +1,5 @@
-// Unit tests for the rule modules (no DOM): sight.js, light.js, passage.js.
+// Unit tests for the rule modules (no DOM): sight.js, light.js, passage.js,
+// combat.js.
 //
 // Run: node --test tests/*.test.mjs
 //
@@ -12,13 +13,14 @@ import assert from 'node:assert/strict';
 import { state, key } from '../js/state.js';
 import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, VIEWPORT_SIZE,
-  LIGHT_TURNS_PER_STEP,
+  LIGHT_TURNS_PER_STEP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY,
 } from '../js/config.js';
 import { computeVisibility, canMakeOut, updateCamera } from '../js/sight.js';
 import {
   initBossLight, advanceLight, extinguishLight, lightCoverage, lightProgress, lightConsumed,
 } from '../js/light.js';
 import { whatBlocks } from '../js/passage.js';
+import { advanceMonsters, spawnMinion } from '../js/combat.js';
 
 // An open size x size floor, player in the middle facing north, fog on,
 // nothing else on it.
@@ -43,6 +45,9 @@ function resetFloor(size = 21) {
   state.rune = null;
   state.encounters = [];
   state.props = [];
+  state.selectedTarget = null;
+  state.turnCount = 0;
+  state.darkTurns = 0;
 }
 
 // A tile relative to the player.
@@ -267,4 +272,56 @@ test('boxes block but papers lie flat', () => {
   state.props = [box, { row: 9, col: 9, kind: 'paper' }];
   assert.deepEqual(whatBlocks(8, 8), { kind: 'prop', thing: box });
   assert.equal(whatBlocks(9, 9), null);
+});
+
+// --- combat.js: advanceMonsters ---
+
+test('a minion within chase range steps toward the player and is reported as moved', () => {
+  resetFloor(21);
+  const m = spawnMinion({ row: state.playerRow - MINION_CHASE_RANGE, col: state.playerCol });
+  const result = advanceMonsters();
+  assert.deepEqual({ row: m.row, col: m.col }, { row: state.playerRow - MINION_CHASE_RANGE + 1, col: state.playerCol });
+  assert.deepEqual(result.moved, [m]);
+  assert.deepEqual(result.spawned, []);
+  assert.equal(state.turnCount, 1);
+});
+
+test('a minion next to the player engages from where it stands', () => {
+  resetFloor(21);
+  const m = spawnMinion({ row: state.playerRow - 1, col: state.playerCol });
+  const result = advanceMonsters();
+  assert.deepEqual({ row: m.row, col: m.col }, { row: state.playerRow - 1, col: state.playerCol });
+  assert.deepEqual(result.moved, []);
+  assert.equal(state.selectedTarget, m);
+  assert.ok(result.engageNote);
+});
+
+test('a resting minion waits out its rest', () => {
+  resetFloor(21);
+  const m = spawnMinion({ row: state.playerRow - 2, col: state.playerCol });
+  m.rest = 1;
+  assert.deepEqual(advanceMonsters().moved, []);
+  assert.equal(m.rest, 0);
+  assert.deepEqual(advanceMonsters().moved, [m]);
+});
+
+test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the player', () => {
+  resetFloor(21);
+  state.darkness = true;
+  for (let i = 1; i < HUNTER_SPAWN_DELAY; i++) {
+    assert.deepEqual(advanceMonsters().spawned, []);
+    assert.equal(state.hunter, null);
+  }
+  const result = advanceMonsters();
+  assert.equal(result.spawned.length, 1);
+  const hunter = result.spawned[0];
+  assert.equal(state.hunter, hunter);
+  assert.equal(hunter.kind, 'hunter');
+  assert.ok(state.minions.includes(hunter));
+  assert.ok(result.hunterNote);
+  // Woke in a corner, so it's still far off after its first step.
+  const steps = Math.abs(hunter.row - state.playerRow) + Math.abs(hunter.col - state.playerCol);
+  assert.ok(steps >= 18, 'hunter is ' + steps + ' steps away');
+  // Only ever one.
+  assert.deepEqual(advanceMonsters().spawned, []);
 });

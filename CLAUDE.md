@@ -32,6 +32,7 @@ Rules and data (no page/DOM access):
 | `light.js` | Boss light spreading through the floor; the run is lost at the coverage threshold. |
 | `haunts.js` | Missed questions that come back later in the run. |
 | `modifiers.js` | Rolls Blind / Gambler / Flip / Timer for fight choices. |
+| `combat.js` | Minion/hunter movement and turn advance. `advanceMonsters()` returns what moved or spawned; `main.js` draws it. |
 | `quiz.js` | Picking questions, building multiple-choice options, fight choice labels. |
 | `sets.js` | Bundled sets (`lists/`) and saved custom sets (localStorage). |
 
@@ -40,14 +41,13 @@ Drawing and page code:
 | File | Job |
 |---|---|
 | `render.js` | Draws the grid, fog, actors, HUD (`renderHud()` is the only writer of hearts / gold / turns). Reads visibility and the camera from `sight.js`. |
-| `combat.js` | Minion/hunter movement and turn advance. **Also** moves DOM elements (see plan step 4). |
 | `dataview.js` | DATA.SYS question viewer and comment export. |
 | `setloader.js` | Start screen options and the set loader (pasted, file, built-in, saved sets). |
 | `devpanel.js` | DEV panel: Skip room, Auto-win, Fog toggle. Gets the `main.js` actions it calls passed in. |
 | `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom`), turn and answer rules, end screens. 1,300 lines — being split up. |
 
 How a turn flows today: key/d-pad → `movePlayer()` (main.js) → `whatBlocks()` → move +
-redraw → `applyTurnOutcome()` → `advanceMonsters()` (combat.js) + `lightConsumed()` →
+redraw → `applyTurnOutcome()` → `advanceMonsters()` (combat.js) → `drawMonsterTurn()` + `lightConsumed()` →
 battle screen if something is adjacent → answer → `applyAnswerResult()` →
 `resolveBossAnswer()` or `resolveOneShot()`.
 

@@ -46,7 +46,7 @@ export const state = {
   fogEnabled: true,       // dev toggle can flip this off to verify layouts
 
   boss: null,         // { row, col, hp }
-  minions: [],        // [{ row, col, hp, el }]
+  minions: [],        // [{ row, col, hp, kind }] — elements live in render.js
   // Boss light (see light.js). Reset as each room loads.
   bossDist: new Map(),   // walkable steps from the boss, per floor tile key
   floorCount: 0,         // walkable tiles in the room

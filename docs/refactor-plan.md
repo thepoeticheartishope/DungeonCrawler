@@ -99,7 +99,7 @@ Add unit tests for `sight.js`, `light.js`, `passage.js` here (first rule changes
   both). Unit tests in `tests/rules.test.mjs`, run with `node --test tests/*.test.mjs`
   (built-in runner, no dependencies). Later steps: add tests there as rules move.
 
-### 4. Take DOM elements out of state (biggest step, split in three)
+### [x] 4. Take DOM elements out of state (biggest step, split in three) (#67, #68, #69)
 
 Views keep their own `Map` from thing → element. Remove `el` from minions, props, chest,
 rune, encounters; move `tileEls` and `timerHandle` out of `state`. `combat.js` stops
@@ -140,7 +140,7 @@ finds nothing, and no rule module stores a page element.
   removes encounter/prop elements first). `syncBattleScreen` reads
   `actorEl(target) || target.el || bossActor` until 4c moves minions over.
 
-#### [ ] 4c. Things that move: minions and the hunter (needs the stronger model)
+#### [x] 4c. Things that move: minions and the hunter (needs the stronger model) (#69)
 
 - Minions use the 4b registry: `combat.js` spawn (~176–186) registers the element;
   `main.js` `repositionActors` (~546), `loadRoom` (~687), `renderFog` (~114–115) and
@@ -156,6 +156,13 @@ finds nothing, and no rule module stores a page element.
 - Bump `CACHE_NAME`. Done when: both test commands pass; by hand, minions chase and
   slide, the hunter wakes after the boss and its glyph changes, Auto-win fights still
   settle. Tick 4 as a whole here.
+- Done: `combat.js` imports nothing from `render.js` and makes no elements.
+  `advanceMonsters()` returns `{ moved, spawned, engageNote, hunterNote }` (the hunter
+  is in `spawned` with `kind: 'hunter'`, so no separate `turnedHunter`) and no longer
+  redraws the HUD, fog, eye or targeting; `main.js` `drawMonsterTurn()` does all of that.
+  `render.js` `addMinionEl(m)` makes, registers and places a minion or hunter element.
+  `repelHunter()` returns whether it moved the hunter; `refreshTargetValidity()` no
+  longer calls `renderTargeting()` (callers do). Four `advanceMonsters` tests added.
 
 ### [ ] 5. Split `loadRoom()`
 
