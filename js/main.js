@@ -18,12 +18,13 @@ import {
 import {
   initRender, showScreen, buildGridTiles, renderWalls,
   renderFog, positionActor, setGlyph, bumpActor, renderHud, renderCombatStatus, renderTargeting,
+  addMinionEl,
   formatTime, startTimer, stopTimer, renderLightEye,
   addActorEl, actorEl, removeActorEl, clearActorEls
 } from './render.js';
 import { computeVisibility, updateCamera } from './sight.js';
 import {
-  initCombat, isAdjacentToPlayer, refreshTargetValidity, advanceMonsters,
+  isAdjacentToPlayer, refreshTargetValidity, advanceMonsters,
   spawnMinion, repelHunter
 } from './combat.js';
 import { initBossLight, extinguishLight, lightConsumed } from './light.js';
@@ -103,7 +104,6 @@ initRender({
   lightEyeEl, lightHintEls, dpadButtons
 });
 
-initCombat({ grid, playerActor });
 initDataView({ startScreen });
 
 applyStaticText();
@@ -494,7 +494,7 @@ function chooseCategory(i) {
 function syncBattleScreen() {
   if (state.selectedTarget) {
     const target = state.selectedTarget;
-    battleGlyphEl.textContent = (actorEl(target) || target.el || bossActor).dataset.glyph;
+    battleGlyphEl.textContent = (actorEl(target) || bossActor).dataset.glyph;
     renderCombatStatus();
     const entering = !battleScreen.classList.contains('show');
     if (entering) {
@@ -533,6 +533,7 @@ function leaveEncounter() {
   state.battlePhase = 'answering';
   state.battleTarget = null;
   refreshTargetValidity();
+  renderTargeting();
   nextQuestion();
   syncBattleScreen();
 }
@@ -544,7 +545,7 @@ function leaveEncounter() {
 function repositionActors() {
   positionActor(playerActor, state.playerRow, state.playerCol, true);
   if (state.boss) positionActor(bossActor, state.boss.row, state.boss.col, true);
-  state.minions.forEach(m => positionActor(m.el, m.row, m.col, true));
+  state.minions.forEach(m => positionActor(actorEl(m), m.row, m.col, true));
   if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col, true);
   if (state.stairs) positionActor(stairsActor, state.stairs.row, state.stairs.col, true);
   if (state.chest) positionActor(chestActor, state.chest.row, state.chest.col, true);
@@ -607,7 +608,7 @@ function placeMinions(roomTiles, takenTiles) {
   const near = shuffle(free.filter(k => dist.get(k) < MINION_MIN_START_DISTANCE && dist.get(k) >= 3));
   [...far, ...near].slice(0, count).forEach(k => {
     const [row, col] = k.split(',').map(Number);
-    spawnMinion({ row, col });
+    addMinionEl(spawnMinion({ row, col }));
   });
 }
 
@@ -685,7 +686,7 @@ function loadRoom() {
   state.CHAMBER_TARGET = CHAMBER_TARGETS[Math.min(state.roomIndex, CHAMBER_TARGETS.length - 1)];
   buildGridTiles();
 
-  state.minions.forEach(m => m.el.remove());
+  state.minions.forEach(m => actorEl(m).remove());
   state.minions = [];
   state.hunter = null;
   state.darkTurns = 0;
@@ -869,6 +870,7 @@ function showRoomNote(cls, text) {
 
 function applyTurnOutcome(actionMessage) {
   const notes = advanceMonsters();
+  drawMonsterTurn(notes);
   if (lightConsumed()) {
     loseToLight();
     return;
@@ -877,6 +879,18 @@ function applyTurnOutcome(actionMessage) {
   syncBattleScreen();
   const text = [actionMessage, notes.hunterNote, notes.engageNote].filter(Boolean).join(' ');
   showRoomNote(notes.engageNote || notes.hunterNote ? 'warn-msg' : 'move-msg', text);
+}
+
+// Draws what a turn of advanceMonsters changed: the hunter appears in
+// place, minions that stepped slide to their new tile.
+function drawMonsterTurn({ moved, spawned }) {
+  spawned.forEach(addMinionEl);
+  moved.forEach(m => positionActor(actorEl(m), m.row, m.col));
+  renderHud();
+  renderCombatStatus();
+  renderFog();
+  renderLightEye();
+  renderTargeting();
 }
 
 // The boss light has reached this floor's LIGHT_LOSS_COVERAGE: the run
@@ -1103,13 +1117,14 @@ function goldReward(base) {
 function resolveOneShot(target, isCorrect, q) {
   // The hunter can't be cleared, only thrown off the trail for a while.
   if (target.kind === 'hunter') {
-    repelHunter(target, isCorrect);
+    if (repelHunter(target, isCorrect)) positionActor(actorEl(target), target.row, target.col, true);
     logLine(t(isCorrect ? 'log.hunter.repelled' : 'log.hunter.retreats'), isCorrect ? 'bright' : undefined);
     endEncounter();
     return;
   }
   if (target.kind === 'minion') {
-    target.el.remove();
+    actorEl(target).remove();
+    removeActorEl(target);
     state.minions = state.minions.filter(m => m !== target);
     logLine(t(isCorrect ? 'log.minion.cleared' : 'log.minion.disperses'), isCorrect ? 'bright' : undefined);
     endEncounter();

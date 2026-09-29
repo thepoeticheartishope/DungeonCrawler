@@ -86,6 +86,24 @@ export function setGlyph(el, glyph) {
   el.textContent = glyph;
 }
 
+// Draws a newly spawned minion or the hunter (combat.js spawnMinion):
+// makes its element, registers it and puts it in place without sliding.
+export function addMinionEl(m) {
+  const el = document.createElement('div');
+  el.className = 'actor ' + m.kind;
+  setGlyph(el, t('term.' + m.kind + '.symbol'));
+  // Offsets this minion's warp animation out of sync with any others already
+  // on screen — several identical creatures warping in perfect lockstep
+  // reads as mechanical, not unsettling. Same idea for the glitch-bar
+  // dropout, via a custom property its ::after reads (a pseudo-element
+  // isn't a real node, so its own animation-delay can't be set directly).
+  el.style.animationDelay = (Math.random() * -3.6).toFixed(2) + 's';
+  el.style.setProperty('--glitch-delay', (Math.random() * -6.5).toFixed(2) + 's');
+  els.grid.appendChild(el);
+  addActorEl(m, el);
+  positionActor(el, m.row, m.col, true);
+}
+
 // How far away (in steps, as the crow flies) the hunter's edge glow starts
 // to brighten.
 const HUNTER_HINT_RANGE = 20;
@@ -123,8 +141,9 @@ export function renderFog() {
     showGlyph(els.bossActor, isNear(state.boss.row, state.boss.col));
   }
   state.minions.forEach(m => {
-    m.el.classList.toggle('fog-hidden', !isLit(m.row, m.col));
-    showGlyph(m.el, isNear(m.row, m.col));
+    const el = actorEl(m);
+    el.classList.toggle('fog-hidden', !isLit(m.row, m.col));
+    showGlyph(el, isNear(m.row, m.col));
   });
   els.coinActor.classList.toggle('fog-hidden', !!state.coin && !isLit(state.coin.row, state.coin.col));
   if (state.coin) showGlyph(els.coinActor, isNear(state.coin.row, state.coin.col));
@@ -297,7 +316,7 @@ export function renderCombatStatus() {
 
 export function renderTargeting() {
   els.bossActor.classList.toggle('targeted', !!state.boss && state.selectedTarget === state.boss);
-  state.minions.forEach(m => m.el.classList.toggle('targeted', state.selectedTarget === m));
+  state.minions.forEach(m => actorEl(m).classList.toggle('targeted', state.selectedTarget === m));
   els.chestActor.classList.toggle('targeted', state.selectedTarget === state.chest);
   els.runeActor.classList.toggle('targeted', state.selectedTarget === state.rune);
   state.encounters.forEach(e => actorEl(e).classList.toggle('targeted', state.selectedTarget === e));

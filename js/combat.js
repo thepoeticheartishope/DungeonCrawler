@@ -1,23 +1,12 @@
 // Pathfinding and combat/turn mechanics: adjacency, minion movement and
-// spawning, and advancing a turn. Depends on render.js for the visual
-// side-effects of a turn (positioning, HUD, fog) but render.js never
-// depends back on this module, so there's no import cycle.
-//
-// Call initCombat(elements) once, from main.js, before spawnMinion or
-// advanceMonsters run.
+// spawning, and advancing a turn. Rules only — no page access. Functions
+// that change what's on the map return what changed, and main.js draws it.
 
 import { state, key } from './state.js';
 import { MINION_HP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS } from './config.js';
-import { positionActor, setGlyph, renderCombatStatus, renderFog, renderTargeting, renderLightEye, renderHud } from './render.js';
 import { advanceLight } from './light.js';
 import { computeVisibility } from './sight.js';
 import { t } from './text.js';
-
-let combatEls = {};
-
-export function initCombat({ grid, playerActor }) {
-  combatEls = { grid, playerActor };
-}
 
 export function isAdjacentToPlayer(entity) {
   return Math.abs(entity.row - state.playerRow) + Math.abs(entity.col - state.playerCol) === 1;
@@ -44,7 +33,8 @@ export function findAdjacentEnemies() {
 
 // Drops the current target if it's no longer adjacent, then auto-picks an
 // adjacent enemy if one is available and nothing is targeted. A manual tap
-// on any other adjacent enemy always overrides this.
+// on any other adjacent enemy always overrides this. The caller redraws
+// the targeting (renderTargeting).
 export function refreshTargetValidity() {
   if (state.selectedTarget && !isAdjacentToPlayer(state.selectedTarget)) {
     state.selectedTarget = null;
@@ -53,7 +43,6 @@ export function refreshTargetValidity() {
     const adjacent = findAdjacentEnemies();
     if (adjacent.length > 0) state.selectedTarget = adjacent[0];
   }
-  renderTargeting();
 }
 
 // True if any player, boss, minion, item or solid piece of furniture
@@ -144,46 +133,34 @@ function farthestFromPlayer() {
   return best;
 }
 
+// Returns the hunter, or null if there's nowhere for it to wake.
 function wakeHunter() {
   const spot = farthestFromPlayer();
-  if (!spot) return false;
+  if (!spot) return null;
   const m = spawnMinion(spot);
   m.kind = 'hunter';
   m.rest = 0;
-  m.el.classList.remove('minion');
-  m.el.classList.add('hunter');
-  setGlyph(m.el, t('term.hunter.symbol'));
   state.hunter = m;
-  return true;
+  return m;
 }
 
 // After its question is answered, the hunter loses the trail: back to the
 // far side of the floor, where it waits a few turns before hunting again.
+// Returns true if it was moved (the caller redraws it in place).
 export function repelHunter(m, answeredRight) {
   const spot = farthestFromPlayer();
   if (spot) {
     m.row = spot.row;
     m.col = spot.col;
-    positionActor(m.el, m.row, m.col, true);
   }
   m.rest = answeredRight ? HUNTER_REST_TURNS : HUNTER_REST_AFTER_MISS;
+  return !!spot;
 }
 
 // Places a minion on `spot` (a free floor tile) — loadRoom picks the tiles.
+// The caller draws it (render.js addMinionEl).
 export function spawnMinion(spot) {
-  const el = document.createElement('div');
-  el.className = 'actor minion';
-  setGlyph(el, t('term.minion.symbol'));
-  // Offsets this minion's warp animation out of sync with any others already
-  // on screen — several identical creatures warping in perfect lockstep
-  // reads as mechanical, not unsettling. Same idea for the glitch-bar
-  // dropout, via a custom property its ::after reads (a pseudo-element
-  // isn't a real node, so its own animation-delay can't be set directly).
-  el.style.animationDelay = (Math.random() * -3.6).toFixed(2) + 's';
-  el.style.setProperty('--glitch-delay', (Math.random() * -6.5).toFixed(2) + 's');
-  combatEls.grid.appendChild(el);
-  const m = { row: spot.row, col: spot.col, hp: MINION_HP, el, kind: 'minion' };
-  positionActor(el, m.row, m.col, true); // freshly spawned — appears in place, doesn't slide in
+  const m = { row: spot.row, col: spot.col, hp: MINION_HP, kind: 'minion' };
   state.minions.push(m);
   return m;
 }
@@ -200,10 +177,11 @@ function wanderStep(m) {
 }
 
 // Advances the room by one turn: the boss light spreads, minions move, and
-// the turn counter increases. Called after any player action.
+// the turn counter increases. Called after any player action. Touches no
+// page element; returns what changed for main.js to draw: `moved` (minions
+// that stepped), `spawned` (the hunter, the turn it wakes) and the notes.
 export function advanceMonsters() {
   state.turnCount++;
-  renderHud();
   advanceLight();
 
   // Walking around is safe: a minion that reaches the player never deals
@@ -213,9 +191,15 @@ export function advanceMonsters() {
   // MINION_CHASE_RANGE walkable steps.
   let engageNote = '';
   let hunterNote = '';
+  const moved = [];
+  const spawned = [];
   if (state.darkness) {
     state.darkTurns++;
-    if (!state.hunter && state.darkTurns >= HUNTER_SPAWN_DELAY && wakeHunter()) hunterNote = t('room.hunter.wakes');
+    const hunter = !state.hunter && state.darkTurns >= HUNTER_SPAWN_DELAY ? wakeHunter() : null;
+    if (hunter) {
+      spawned.push(hunter);
+      hunterNote = t('room.hunter.wakes');
+    }
   }
   for (const m of state.minions) {
     if (m.rest > 0) {
@@ -236,17 +220,14 @@ export function advanceMonsters() {
       } else {
         m.row = next.row;
         m.col = next.col;
-        positionActor(m.el, m.row, m.col);
+        moved.push(m);
       }
     }
     // If next is null, this minion has no route around current
     // obstacles this turn — it waits rather than overlapping anything.
   }
 
-  renderCombatStatus();
   computeVisibility();
-  renderFog();
-  renderLightEye();
   refreshTargetValidity();
-  return { engageNote, hunterNote };
+  return { moved, spawned, engageNote, hunterNote };
 }

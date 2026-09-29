@@ -156,6 +156,13 @@ finds nothing, and no rule module stores a page element.
 - Bump `CACHE_NAME`. Done when: both test commands pass; by hand, minions chase and
   slide, the hunter wakes after the boss and its glyph changes, Auto-win fights still
   settle. Tick 4 as a whole here.
+- Done: `combat.js` imports nothing from `render.js` and makes no elements.
+  `advanceMonsters()` returns `{ moved, spawned, engageNote, hunterNote }` (the hunter
+  is in `spawned` with `kind: 'hunter'`, so no separate `turnedHunter`) and no longer
+  redraws the HUD, fog, eye or targeting; `main.js` `drawMonsterTurn()` does all of that.
+  `render.js` `addMinionEl(m)` makes, registers and places a minion or hunter element.
+  `repelHunter()` returns whether it moved the hunter; `refreshTargetValidity()` no
+  longer calls `renderTargeting()` (callers do). Four `advanceMonsters` tests added.
 
 ### [ ] 5. Split `loadRoom()`
 
