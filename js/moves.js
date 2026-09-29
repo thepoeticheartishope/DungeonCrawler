@@ -83,7 +83,7 @@ function readPaper(paper) {
 // spreads, minions move); after that there's nothing left in it, and a
 // bump is just `blocked`. A trapped box works like the chest instead:
 // bumping it selects it for the battle screen, with a question guarding
-// its loot (settled in main.js resolveOneShot).
+// its loot (settled in answers.js settleAnswer).
 function examineProp(prop) {
   if (prop.searched) return [{ type: 'blocked', kind: 'prop', thing: prop }];
   prop.identified = true;

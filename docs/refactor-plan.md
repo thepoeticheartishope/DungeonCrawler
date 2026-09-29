@@ -176,7 +176,7 @@ and `drawFloor()` (creates and places elements).
   `clearActorEls()` (render.js) now takes the old floor's minion, prop and encounter
   elements off the page itself (loadRoom used to do it by hand); chest and rune stay.
 
-### [ ] 6. Rules return events (split in three)
+### [x] 6. Rules return events (split in three) (#72, #73, #74)
 
 `movePlayer`, `applyAnswerResult`, `resolveBossAnswer`, `resolveOneShot`, `advanceMonsters`
 change state and return an events list; views read the list and draw/log from it.
@@ -253,7 +253,7 @@ Shared rules for all three:
   draws both in one pass. `movePlayer(dRow, dCol)` lost its direction-name argument.
   Three `stepPlayer` tests added.
 
-#### [ ] 6c. Answers (biggest; stronger model)
+#### [x] 6c. Answers (biggest; stronger model) (#74)
 
 - New `js/answers.js`, `export function settleAnswer(isCorrect, hadExtraSpace, given)` →
   events. It holds the rule halves of `main.js` `applyAnswerResult` (~1056–1095),
@@ -279,6 +279,17 @@ Shared rules for all three:
   `ACCEPTED.`); by hand, the encounter log reads word for word as before for a boss fight,
   a minion, the chest, the rune, an encounter, a trapped box, a wager and a haunt. Tick 6
   as a whole here.
+- Done: the chest, rune, encounter and trapped box all emit `targetSpent` (the view adds
+  `searched` for a box, `gone` for the rest, and logs `log.<kind>.trapped` on a miss), then
+  `goldGained` or `runeDecoded` when right. `runeDecoded` carries `{ question }` instead of
+  `{ choiceLabel, hint }`: `buildHint()` calls `t()`, so the view builds both.
+  `bossDefeated` carries `{ boss }`. `settleWager` is private to answers.js.
+  `applyAnswerResult` flows from `signalLost` / `bossHit` / `bossHeld`. Five `settleAnswer`
+  tests added. Checked word for word with a seeded bot (`Math.random` seeded, pathfinding to
+  every target, 5 in 6 answers right, reveal-on-wrong on; light loss, chase range and hearts
+  patched the same on both) on a `git archive origin/main` copy and the branch: 25 seeds
+  identical, log and room notes included. Every answer log line came up except a missed
+  chest or rune (the same `log.<kind>.trapped` path as a missed encounter and box, which did).
 
 ### [ ] 7. Group state + live inspector
 

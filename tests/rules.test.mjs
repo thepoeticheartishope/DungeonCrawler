@@ -1,5 +1,5 @@
 // Unit tests for the rule modules (no DOM): sight.js, light.js, passage.js,
-// combat.js, moves.js.
+// combat.js, moves.js, answers.js.
 //
 // Run: node --test tests/*.test.mjs
 //
@@ -14,6 +14,7 @@ import { state, key } from '../js/state.js';
 import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, VIEWPORT_SIZE,
   LIGHT_TURNS_PER_STEP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, DARK_GOLD_MULTIPLIER,
+  MAX_HEARTS, DARK_MISS_COST, BOSS_HP,
 } from '../js/config.js';
 import { computeVisibility, canMakeOut, updateCamera } from '../js/sight.js';
 import {
@@ -22,6 +23,8 @@ import {
 import { whatBlocks } from '../js/passage.js';
 import { advanceMonsters, spawnMinion } from '../js/combat.js';
 import { stepPlayer, goldReward } from '../js/moves.js';
+import { settleAnswer } from '../js/answers.js';
+import { resetHaunts } from '../js/haunts.js';
 
 // An open size x size floor, player in the middle facing north, fog on,
 // nothing else on it.
@@ -383,4 +386,101 @@ test('the first step into a room fires roomEntered once', () => {
   assert.deepEqual(first.map(e => e.type), ['stepped', 'roomEntered']);
   assert.equal(first[1].theme, 'crypt');
   assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['stepped']);
+});
+
+// --- answers.js: settleAnswer ---
+
+// A floor with one target selected and one question showing.
+function resetAnswer(target) {
+  resetFloor();
+  resetHaunts();
+  state.hearts = MAX_HEARTS;
+  state.wager = 0;
+  state.attempts = 1;
+  state.extraSpaceCount = 0;
+  state.runeHint = null;
+  state.currentQuestion = { term: 'Who built the ark?', meaning: 'Noah', difficulty: 'easy' };
+  state.selectedTarget = target;
+}
+
+const types = (events) => events.map(e => e.type);
+
+test('a miss costs 1 heart, 2 in the darkness, and ends at 0 hearts with signalLost', () => {
+  for (const darkness of [false, true]) {
+    const chest = { row: 0, col: 0, kind: 'chest' };
+    resetAnswer(chest);
+    state.chest = chest;
+    state.darkness = darkness;
+    const events = settleAnswer(false, false, 'Moses');
+    const rejected = events.find(e => e.type === 'rejected');
+    assert.equal(rejected.cost, darkness ? DARK_MISS_COST : 1);
+    assert.equal(rejected.expected, 'Noah');
+    assert.equal(state.hearts, MAX_HEARTS - rejected.cost);
+    assert.deepEqual(types(events), ['answerGiven', 'rejected', 'targetSpent']);
+    assert.equal(events[0].given, 'Moses');
+  }
+  const chest = { row: 0, col: 0, kind: 'chest' };
+  resetAnswer(chest);
+  state.chest = chest;
+  state.hearts = 1;
+  assert.deepEqual(types(settleAnswer(false, false, 'Moses')), ['answerGiven', 'rejected', 'signalLost']);
+  assert.equal(state.chest, chest, 'the target is left as it was');
+});
+
+test('boss hits count down, and the last one fires bossDefeated then darknessFell', () => {
+  const boss = { row: 0, col: 0, kind: 'boss', hp: 2 };
+  resetAnswer(boss);
+  state.boss = boss;
+  assert.deepEqual(types(settleAnswer(false, false, 'Moses')), ['answerGiven', 'rejected', 'bossHeld']);
+  resetHaunts(); // so the next right answer isn't also a silenced haunt
+  const hit = settleAnswer(true, false, 'Noah');
+  assert.deepEqual(types(hit), ['answerGiven', 'accepted', 'bossHit']);
+  assert.equal(hit[2].hp, 1);
+  assert.equal(hit[2].max, BOSS_HP);
+  assert.deepEqual(types(settleAnswer(true, false, 'Noah')),
+    ['answerGiven', 'accepted', 'bossDefeated', 'darknessFell']);
+  assert.equal(state.boss, null);
+  assert.equal(state.darkness, true);
+});
+
+test('a chest pays 2 gold and is spent', () => {
+  const chest = { row: 0, col: 0, kind: 'chest' };
+  resetAnswer(chest);
+  state.chest = chest;
+  const events = settleAnswer(true, true, 'Noah');
+  assert.deepEqual(types(events), ['answerGiven', 'accepted', 'extraSpaces', 'targetSpent', 'goldGained']);
+  assert.deepEqual(events[4], { type: 'goldGained', amount: 2, from: 'chest' });
+  assert.equal(state.coinsTotal, 2);
+  assert.equal(state.chest, null);
+  assert.equal(state.extraSpaceCount, 1);
+});
+
+test('a lost wager cannot take gold below 0; a won one pays it', () => {
+  resetAnswer(null);
+  const minion = spawnMinion({ row: 0, col: 0 });
+  state.selectedTarget = minion;
+  state.coinsTotal = 1;
+  state.wager = 3;
+  const lost = settleAnswer(false, false, 'Moses');
+  assert.deepEqual(types(lost), ['answerGiven', 'rejected', 'wagerSettled', 'minionCleared']);
+  assert.deepEqual(lost[2], { type: 'wagerSettled', won: false, n: 3 });
+  assert.equal(state.coinsTotal, 0);
+  assert.equal(state.wager, 0);
+  assert.deepEqual(state.minions, []);
+
+  state.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  state.wager = 2;
+  settleAnswer(true, false, 'Noah');
+  assert.equal(state.coinsTotal, 2);
+});
+
+test('a missed question lingers when missed again and is silenced when answered right', () => {
+  resetAnswer(null);
+  state.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  assert.ok(!types(settleAnswer(false, false, 'Moses')).some(t => t.startsWith('haunt')));
+  state.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  assert.ok(types(settleAnswer(false, false, 'Moses')).includes('hauntLingers'));
+  state.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  assert.ok(types(settleAnswer(true, false, 'Noah')).includes('hauntSilenced'));
+  assert.equal(state.hauntsSilenced, 1);
 });

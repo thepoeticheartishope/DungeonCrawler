@@ -3,15 +3,15 @@ import { generateDungeonLayout } from './dungeon.js';
 import { furnishFloor } from './decor.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, GRID_SIZES, CHAMBER_TARGETS,
-  DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS, BATTLE_CHOICE_COUNT,
-  MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE, DARK_MISS_COST,
+  DIRECTION_ARROWS, BATTLE_CHOICE_COUNT,
+  MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE,
   BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS
 } from './config.js';
 import { rollModifier, rollCategoryModifiers, rollFlip, maxWager } from './modifiers.js';
-import { resetHaunts, pickHaunt, recordHauntAnswer } from './haunts.js';
+import { resetHaunts, pickHaunt } from './haunts.js';
 import {
   shuffle, pickQuestion, escapeHtml,
-  buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory, fightChoosable, fightChoiceLabel,
+  buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory, fightChoiceLabel,
   resolveImageSrc, buildCategoryChoices, categoryLabel
 } from './quiz.js';
 import {
@@ -24,10 +24,11 @@ import {
 import { computeVisibility, updateCamera } from './sight.js';
 import {
   isAdjacentToPlayer, refreshTargetValidity, advanceMonsters,
-  spawnMinion, repelHunter
+  spawnMinion
 } from './combat.js';
-import { initBossLight, extinguishLight, lightConsumed } from './light.js';
-import { stepPlayer, goldReward, openBox } from './moves.js';
+import { initBossLight, lightConsumed } from './light.js';
+import { stepPlayer } from './moves.js';
+import { settleAnswer } from './answers.js';
 import { initSetLoader } from './setloader.js';
 import { initDevPanel } from './devpanel.js';
 import { t, setTextArea, applyStaticText } from './text.js';
@@ -235,16 +236,6 @@ function placeWager(n) {
   wagerRow.hidden = true;
   logLine(t('log.wager', { n }), 'sys');
   mcOptionsEl.querySelectorAll('.mc-option').forEach(b => { b.disabled = false; });
-}
-
-// Settles a Gambler wager once the answer is in: right wins it, wrong loses it.
-function settleWager(isCorrect) {
-  const n = state.wager;
-  if (!n) return;
-  state.coinsTotal = Math.max(0, state.coinsTotal + (isCorrect ? n : -n));
-  renderHud();
-  logLine(t(isCorrect ? 'log.wager.won' : 'log.wager.lost', { n }), isCorrect ? 'bright' : 'alert');
-  state.wager = 0;
 }
 
 function setQuestion(q) {
@@ -966,6 +957,81 @@ function drawEvents(events) {
         engaged = true;
         cls = 'warn-msg';
         break;
+      // Answer events (answers.js): one encounter log line each.
+      case 'answerGiven':
+        logLine(t('log.input', { answer: e.given }));
+        break;
+      case 'accepted':
+        logLine(t('log.accepted'), 'bright');
+        break;
+      case 'extraSpaces':
+        logLine(t('log.extraSpaces'), 'sys');
+        break;
+      case 'rejected':
+        logLine(t('log.rejected', { cost: e.cost }), 'alert');
+        if (state.revealOnWrong) {
+          logLine(t('log.expected', { answer: e.expected }), 'sys');
+          if (e.source) logLine(t('log.source', { source: e.source }), 'sys');
+        }
+        break;
+      case 'hauntSilenced':
+        logLine(t('log.haunt.silenced'), 'bright');
+        break;
+      case 'hauntLingers':
+        logLine(t('log.haunt.lingers'));
+        break;
+      case 'wagerSettled':
+        logLine(t(e.won ? 'log.wager.won' : 'log.wager.lost', { n: e.n }), e.won ? 'bright' : 'alert');
+        break;
+      case 'signalLost':
+        logLine(t('log.signalLost'), 'alert');
+        break;
+      case 'bossHit':
+        logLine(t('log.boss.integrity', { hp: e.hp, max: e.max }));
+        break;
+      case 'bossHeld':
+        logLine(t('log.boss.holds'));
+        break;
+      case 'bossDefeated':
+        bossActor.classList.add('gone');
+        logLine(t('log.boss.cleared'), 'bright');
+        break;
+      case 'darknessFell':
+        logLine(t('log.darkness'), 'alert');
+        break;
+      case 'hunterRepelled':
+        positionActor(actorEl(e.hunter), e.hunter.row, e.hunter.col, true);
+        logLine(t(e.right ? 'log.hunter.repelled' : 'log.hunter.retreats'), e.right ? 'bright' : undefined);
+        break;
+      case 'minionCleared':
+        actorEl(e.minion).remove();
+        removeActorEl(e.minion);
+        logLine(t(e.right ? 'log.minion.cleared' : 'log.minion.disperses'), e.right ? 'bright' : undefined);
+        break;
+      case 'targetSpent':
+        if (e.target.kind === 'box') {
+          actorEl(e.target).classList.add('searched');
+        } else {
+          actorEl(e.target).classList.add('gone');
+          removeActorEl(e.target);
+        }
+        if (!e.right) {
+          logLine(t('log.' + e.target.kind + '.trapped', { category: e.category ? categoryLabel(e.category) : '' }));
+        }
+        break;
+      case 'goldGained':
+        logLine(e.from === 'encounter'
+          ? t('log.encounter.mastered', { category: e.category ? categoryLabel(e.category) : '', gold: e.amount })
+          : t(e.from === 'chest' ? 'log.chest.opened' : 'log.box.gold', { gold: e.amount }), 'bright');
+        break;
+      case 'runeDecoded': {
+        const hint = buildHint(e.question);
+        const choiceLabel = fightChoiceLabel(e.question, state.activeData, BATTLE_CHOICE_COUNT);
+        logLine(choiceLabel
+          ? t('log.rune.decoded', { category: choiceLabel, hint })
+          : t('log.rune.decodedUncategorized', { hint }), 'bright');
+        break;
+      }
     }
   }
   renderHud();
@@ -1020,149 +1086,25 @@ function skipTurn() {
 // Shared outcome handler for both typed answers and multiple-choice taps.
 // Assumes the caller already confirmed adjacency, set turnLocked = true,
 // and counted the attempt. `given` is the player's answer, echoed to the log.
-//
-// One answer settles a minion, chest, rune or category challenge, right or
-// wrong: it's cleared and the encounter ends. Only a boss fight goes on
-// past an answer, until its HP runs out. A miss always costs 1 HP.
+// settleAnswer (answers.js) changes state; this draws its events and picks
+// what comes next: the run ends at 0 hearts, a boss fight goes on to its
+// next question, anything else is settled.
 function applyAnswerResult(isCorrect, hadExtraSpace, given) {
-  const target = state.selectedTarget;
-  const q = state.currentQuestion;
-
-  logLine(t('log.input', { answer: given }));
-  if (isCorrect) {
-    logLine(t('log.accepted'), 'bright');
-    if (hadExtraSpace) {
-      state.extraSpaceCount++;
-      logLine(t('log.extraSpaces'), 'sys');
-    }
-  } else {
-    const cost = state.darkness ? DARK_MISS_COST : 1;
-    state.hearts -= cost;
-    renderHud();
-    logLine(t('log.rejected', { cost }), 'alert');
-    if (state.revealOnWrong) {
-      logLine(t('log.expected', { answer: q.meaning }), 'sys');
-      if (q.source) logLine(t('log.source', { source: q.source }), 'sys');
-    }
-  }
-  const haunt = recordHauntAnswer(q, isCorrect);
-  if (haunt === 'silenced') logLine(t('log.haunt.silenced'), 'bright');
-  else if (haunt === 'lingers') logLine(t('log.haunt.lingers'));
-  settleWager(isCorrect);
+  const events = settleAnswer(isCorrect, hadExtraSpace, given);
+  const has = (type) => events.some(e => e.type === type);
+  drawEvents(events);
   flashBattleResult(isCorrect);
-
-  if (state.hearts <= 0) {
-    logLine(t('log.signalLost'), 'alert');
+  if (has('signalLost')) {
     setControlsEnabled(false);
     stopTimer();
     setTimeout(endLose, 900);
-    state.turnLocked = false;
-    return;
+  } else if (has('bossHit') || has('bossHeld')) {
+    nextQuestion();
+    startBattleTurn();
+  } else {
+    endEncounter();
   }
-
-  if (target.kind === 'boss') resolveBossAnswer(isCorrect);
-  else resolveOneShot(target, isCorrect, q);
   state.turnLocked = false;
-}
-
-// Boss fights are the one encounter that outlasts an answer: a correct one
-// takes 1 HP off the boss, a miss doesn't, and either way it's back to the
-// category choice until the boss is cleared. Other minions stay frozen
-// while this goes on, so missing a query is the only way to take damage.
-function resolveBossAnswer(isCorrect) {
-  if (isCorrect) {
-    state.boss.hp--;
-    renderCombatStatus();
-    if (state.boss.hp <= 0) {
-      bossActor.classList.add('gone');
-      state.boss = null; // clears the doorway it was blocking
-      // Its light dies with it, and the floor goes dark: explored tiles
-      // are forgotten, the minions left start hunting, misses cost more
-      // and gold pays more (DARK_* in config.js).
-      extinguishLight();
-      state.darkness = true;
-      state.exploredSet = new Set();
-      computeVisibility();
-      renderFog();
-      renderLightEye();
-      logLine(t('log.boss.cleared'), 'bright');
-      logLine(t('log.darkness'), 'alert');
-      endEncounter();
-      return;
-    }
-    logLine(t('log.boss.integrity', { hp: state.boss.hp, max: BOSS_HP }));
-  } else {
-    logLine(t('log.boss.holds'));
-  }
-  nextQuestion();
-  startBattleTurn();
-}
-
-// Everything but the boss is settled by a single answer. Success pays out
-// (coins for a chest or category challenge, a hint for a rune); a miss has
-// already cost its heart. Either way the target is cleared or spent.
-function resolveOneShot(target, isCorrect, q) {
-  // The hunter can't be cleared, only thrown off the trail for a while.
-  if (target.kind === 'hunter') {
-    if (repelHunter(target, isCorrect)) positionActor(actorEl(target), target.row, target.col, true);
-    logLine(t(isCorrect ? 'log.hunter.repelled' : 'log.hunter.retreats'), isCorrect ? 'bright' : undefined);
-    endEncounter();
-    return;
-  }
-  if (target.kind === 'minion') {
-    actorEl(target).remove();
-    removeActorEl(target);
-    state.minions = state.minions.filter(m => m !== target);
-    logLine(t(isCorrect ? 'log.minion.cleared' : 'log.minion.disperses'), isCorrect ? 'bright' : undefined);
-    endEncounter();
-    return;
-  }
-
-  // A trapped box stays on the map (it's furniture), just spent.
-  if (target.kind === 'box') {
-    target.sprung = false;
-    target.searched = true;
-    actorEl(target).classList.add('searched');
-    if (!isCorrect) {
-      logLine(t('log.box.trapped'));
-    } else {
-      logLine(t('log.box.gold', { gold: openBox(target) }), 'bright');
-    }
-    endEncounter();
-    return;
-  }
-
-  actorEl(target).classList.add('gone');
-  removeActorEl(target);
-  if (target.kind === 'chest') state.chest = null;
-  else if (target.kind === 'rune') state.rune = null;
-  else if (target.kind === 'encounter') state.encounters = state.encounters.filter(e => e !== target);
-
-  const category = target.category ? categoryLabel(target.category) : '';
-  if (!isCorrect) {
-    logLine(t('log.' + target.kind + '.trapped', { category }));
-  } else if (target.kind === 'chest') {
-    const gold = goldReward(2);
-    state.coinsTotal += gold;
-    renderHud();
-    logLine(t('log.chest.opened', { gold }), 'bright');
-  } else if (target.kind === 'encounter') {
-    const reward = goldReward(DIFFICULTY_COIN_REWARD[q.difficulty] || DIFFICULTY_COIN_REWARD.medium);
-    state.coinsTotal += reward;
-    renderHud();
-    logLine(t('log.encounter.mastered', { category, gold: reward }), 'bright');
-  } else {
-    // The hinted question stays in reserve until it's asked: the next
-    // fight always offers its category (marked ◊), so the hint can't be
-    // spent on a question the player never chooses.
-    state.runeHint = pickQuestion(q, fightChoosable(state.activeData, BATTLE_CHOICE_COUNT));
-    const hint = buildHint(state.runeHint);
-    const choiceLabel = fightChoiceLabel(state.runeHint, state.activeData, BATTLE_CHOICE_COUNT);
-    logLine(choiceLabel
-      ? t('log.rune.decoded', { category: choiceLabel, hint })
-      : t('log.rune.decodedUncategorized', { hint }), 'bright');
-  }
-  endEncounter();
 }
 
 function attemptAnswer() {
