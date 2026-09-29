@@ -25,7 +25,6 @@ export const state = {
   hauntsSilenced: 0,
   extraSpaceCount: 0,
   seconds: 0,
-  timerHandle: null,
   hearts: MAX_HEARTS,
   turnCount: 0,
   coinsTotal: 0,
@@ -39,7 +38,6 @@ export const state = {
   camRow: 0, // world-space row/col of the viewport's top-left corner
   camCol: 0,
   wallSet: new Set(),
-  tileEls: [],
   turnLocked: false,
 
   visibleSet: new Set(),  // tiles lit right now, from the player's spot

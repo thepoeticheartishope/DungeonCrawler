@@ -110,7 +110,7 @@ works and both test commands pass. Line numbers are as of `main` at `64bb2bf` (P
 Done check for the whole step: `grep -n "\.el\b\|tileEls\|timerHandle" js/state.js js/combat.js`
 finds nothing, and no rule module stores a page element.
 
-#### [ ] 4a. Grid tiles and the timer leave `state` (small)
+#### [x] 4a. Grid tiles and the timer leave `state` (small) (#67)
 
 - `tileEls`: make it a module-level variable in `render.js` (`buildGridTiles`,
   `renderWalls`, `renderFog` ~41–89 are its only users). Remove it from `state.js`.
@@ -119,6 +119,8 @@ finds nothing, and no rule module stores a page element.
   `main.js` (~881, ~1044, ~1242). Remove it from `state.js`.
 - Bump `CACHE_NAME`. Done when: smoke test passes; the run timer still counts and stops
   on the win/lose screen.
+- Done: `tileEls` and `timerHandle` are module-level in `render.js`; `stopTimer()`
+  is exported from there and `main.js` imports it.
 
 #### [ ] 4b. Things that stay put: chest, rune, encounters, props
 
