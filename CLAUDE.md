@@ -33,6 +33,7 @@ Rules and data (no page/DOM access):
 | `haunts.js` | Missed questions that come back later in the run. |
 | `modifiers.js` | Rolls Blind / Gambler / Flip / Timer for fight choices. |
 | `combat.js` | Minion/hunter movement and turn advance. `advanceMonsters()` returns an events list; `main.js` `drawEvents()` draws it. |
+| `moves.js` | The player's step (`stepPlayer()`: turn, bump, walk, stairs, coin, paper, room entry, boxes) and `goldReward`. Returns an events list. |
 | `quiz.js` | Picking questions, building multiple-choice options, fight choice labels. |
 | `sets.js` | Bundled sets (`lists/`) and saved custom sets (localStorage). |
 
@@ -46,8 +47,9 @@ Drawing and page code:
 | `devpanel.js` | DEV panel: Skip room, Auto-win, Fog toggle. Gets the `main.js` actions it calls passed in. |
 | `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom` = `buildFloor` data + `drawFloor` page), turn and answer rules, end screens. 1,300 lines — being split up. |
 
-How a turn flows today: key/d-pad → `movePlayer()` (main.js) → `whatBlocks()` → move +
-redraw → `applyTurnOutcome()` → `advanceMonsters()` (combat.js) → `drawEvents()` + `lightConsumed()` →
+How a turn flows today: key/d-pad → `movePlayer()` (main.js) → `stepPlayer()` (moves.js,
+uses `whatBlocks()`) → events → `applyTurnOutcome(events)` → `advanceMonsters()` (combat.js) →
+`drawEvents()` (draws both lists, returns the room note) + `lightConsumed()` →
 battle screen if something is adjacent → answer → `applyAnswerResult()` →
 `resolveBossAnswer()` or `resolveOneShot()`.
 

@@ -1,12 +1,11 @@
 import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
 import { furnishFloor } from './decor.js';
-import { whatBlocks } from './passage.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, GRID_SIZES, CHAMBER_TARGETS,
   DIFFICULTY_COIN_REWARD, DIRECTION_ARROWS, BATTLE_CHOICE_COUNT,
-  MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE, DARK_MISS_COST, DARK_GOLD_MULTIPLIER,
-  BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS, BOX_GOLD
+  MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE, DARK_MISS_COST,
+  BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS
 } from './config.js';
 import { rollModifier, rollCategoryModifiers, rollFlip, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt, recordHauntAnswer } from './haunts.js';
@@ -28,6 +27,7 @@ import {
   spawnMinion, repelHunter
 } from './combat.js';
 import { initBossLight, extinguishLight, lightConsumed } from './light.js';
+import { stepPlayer, goldReward, openBox } from './moves.js';
 import { initSetLoader } from './setloader.js';
 import { initDevPanel } from './devpanel.js';
 import { t, setTextArea, applyStaticText } from './text.js';
@@ -889,35 +889,82 @@ function showRoomNote(cls, text) {
   roomFeedback.innerHTML = '<span class="' + cls + '">' + escapeHtml(text) + '</span>';
 }
 
-function applyTurnOutcome(actionMessage) {
-  const events = advanceMonsters();
-  drawEvents(events);
+// A spent turn: the player's events plus the monsters' turn, drawn once,
+// then the room note from all of them (or the run ends in the light).
+function applyTurnOutcome(events) {
+  const note = drawEvents(events.concat(advanceMonsters()));
   if (lightConsumed()) {
     loseToLight();
     return;
   }
   syncQuestionForTarget();
   syncBattleScreen();
-  const hunterWoke = events.some(e => e.type === 'hunterWoke');
-  const engaged = events.some(e => e.type === 'minionEngaged');
-  const text = [actionMessage, hunterWoke && t('room.hunter.wakes'), engaged && t('room.engage')]
-    .filter(Boolean).join(' ');
-  showRoomNote(hunterWoke || engaged ? 'warn-msg' : 'move-msg', text);
+  showRoomNote(note.cls, note.text);
 }
 
+const DIRECTION_NAMES = { N: 'north', S: 'south', E: 'east', W: 'west' };
+
 // Draws a list of rule events, in order, then redraws the HUD, fog, eye
-// and targeting once. The hunter appears in place; minions that stepped
-// slide to their new tile. The room note is picked by the caller.
+// and targeting once. Returns the room note the events add up to
+// ({ cls, text }, text in event order); the caller decides whether to show it.
 function drawEvents(events) {
+  const parts = [];
+  let cls = 'move-msg';
+  let engaged = false;
   for (const e of events) {
     switch (e.type) {
+      case 'turned':
+        playerActor.textContent = DIRECTION_ARROWS[e.facing];
+        break;
+      case 'blocked':
+        bumpActor(playerActor, state.facing);
+        cls = 'block-msg';
+        parts.push(e.kind === 'prop' ? t('room.' + e.thing.kind + '.done')
+          : e.kind === 'encounter' ? t('room.blocked.encounter', { category: categoryLabel(e.thing.category) })
+          : t('room.blocked.' + e.kind));
+        break;
+      case 'stepped':
+        renderWalls();
+        repositionActors();
+        parts.push(t('room.move', { direction: t('room.dir.' + DIRECTION_NAMES[e.facing]) }));
+        break;
+      case 'waited':
+        parts.push(t('room.wait'));
+        break;
+      case 'stairsReached':
+      case 'boxSprung':
+        break;
+      case 'coinTaken':
+        coinActor.classList.add('gone');
+        parts.push(t('room.coin'));
+        break;
+      case 'paperRead':
+        actorEl(e.paper).classList.add('searched');
+        parts.push(e.loot === 'lore'
+          ? t('room.paper.lore', { lore: t('theme.' + e.paper.theme + '.lore') })
+          : t('room.paper.junk'));
+        break;
+      case 'roomEntered':
+        parts.push(t('theme.' + e.theme + '.enter'));
+        break;
+      case 'propSearched':
+        actorEl(e.prop).classList.add('searched');
+        break;
+      case 'boxOpened':
+        parts.push(e.gold ? t('room.box.gold', { gold: e.gold }) : t('room.box.junk'));
+        break;
       case 'hunterWoke':
         addMinionEl(e.hunter);
+        parts.push(t('room.hunter.wakes'));
+        cls = 'warn-msg';
         break;
       case 'minionMoved':
         positionActor(actorEl(e.minion), e.minion.row, e.minion.col);
         break;
       case 'minionEngaged':
+        if (!engaged) parts.push(t('room.engage'));
+        engaged = true;
+        cls = 'warn-msg';
         break;
     }
   }
@@ -926,6 +973,7 @@ function drawEvents(events) {
   renderFog();
   renderLightEye();
   renderTargeting();
+  return { cls, text: parts.join(' ') };
 }
 
 // The boss light has reached this floor's LIGHT_LOSS_COVERAGE: the run
@@ -938,125 +986,34 @@ function loseToLight() {
   setTimeout(() => endLose('light'), 1400);
 }
 
-function movePlayer(dRow, dCol, dirName) {
+// One arrow press (stepPlayer in moves.js). A step or a first look in a
+// box spends a turn; stairs load the next floor; a trapped box opens the
+// battle screen; a bump or a turn toward a wall only draws.
+function movePlayer(dRow, dCol) {
   if (state.turnLocked || state.runEnded) return;
-
-  // Facing updates (and the fog cone with it) even on a blocked move — the
-  // player can "turn to look" a direction without spending a turn, since
-  // the collision checks below return before any turn-advancing code runs.
-  const facing = dRow === -1 ? 'N' : dRow === 1 ? 'S' : dCol === 1 ? 'E' : 'W';
-  if (state.facing !== facing) {
-    state.facing = facing;
-    playerActor.textContent = DIRECTION_ARROWS[facing];
-  }
-  computeVisibility();
-  renderFog();
-
-  const newRow = state.playerRow + dRow;
-  const newCol = state.playerCol + dCol;
-
-  // Anything in the way stops the move (with a small bump toward it), or,
-  // for a box, is examined instead.
-  const block = whatBlocks(newRow, newCol);
-  if (block && block.kind === 'prop') {
-    examineProp(block.thing);
-    return;
-  }
-  if (block) {
-    bumpActor(playerActor, facing);
-    showRoomNote('block-msg', block.kind === 'encounter'
-      ? t('room.blocked.encounter', { category: categoryLabel(block.thing.category) })
-      : t('room.blocked.' + block.kind));
-    return;
-  }
-
   state.turnLocked = true;
-  state.playerRow = newRow;
-  state.playerCol = newCol;
-  updateCamera();
-  renderWalls();
-  repositionActors();
-  computeVisibility();
-  renderFog();
-
-  if (state.stairs && state.playerRow === state.stairs.row && state.playerCol === state.stairs.col) {
+  const events = stepPlayer(dRow, dCol);
+  const has = (type) => events.some(e => e.type === type);
+  if (has('stairsReached')) {
+    drawEvents(events);
     state.turnLocked = false;
     advanceRoom();
     return;
   }
-
-  let actionMessage = t('room.move', { direction: t('room.dir.' + dirName) });
-  if (state.coin && state.coin.row === state.playerRow && state.coin.col === state.playerCol) {
-    state.coin = null;
-    coinActor.classList.add('gone');
-    state.coinsTotal += goldReward(1);
-    renderHud();
-    actionMessage += ' ' + t('room.coin');
+  if (has('stepped') || has('propSearched')) {
+    applyTurnOutcome(events);
+  } else {
+    const note = drawEvents(events);
+    if (note.text) showRoomNote(note.cls, note.text);
+    if (has('boxSprung')) syncBattleScreen();
   }
-  // Stepping onto a paper reads it, as part of the step.
-  const paper = state.props.find(p => p.kind === 'paper' && !p.searched &&
-    p.row === state.playerRow && p.col === state.playerCol);
-  if (paper) actionMessage += ' ' + readPaper(paper);
-  // First step into a room: its theme line.
-  const chamber = state.chamberAt.get(key(state.playerRow, state.playerCol));
-  if (chamber !== undefined && !state.visitedChambers.has(chamber)) {
-    state.visitedChambers.add(chamber);
-    actionMessage += ' ' + t('theme.' + state.chamberThemes[chamber] + '.enter');
-  }
-
-  applyTurnOutcome(actionMessage);
   state.turnLocked = false;
-}
-
-// A paper is read by stepping onto it (movePlayer); returns what it says.
-function readPaper(paper) {
-  paper.searched = true;
-  paper.identified = true;
-  actorEl(paper).classList.add('searched');
-  return paper.loot === 'lore'
-    ? t('room.paper.lore', { lore: t('theme.' + paper.theme + '.lore') })
-    : t('room.paper.junk');
-}
-
-// Bumping a box examines it. The first look takes a turn (the light
-// spreads, minions move); after that there's nothing left in it. A
-// trapped box works like the chest instead: bumping it opens the battle
-// screen with a question guarding its loot (settled in resolveOneShot).
-function examineProp(prop) {
-  if (prop.searched) {
-    bumpActor(playerActor, state.facing);
-    showRoomNote('block-msg', t('room.' + prop.kind + '.done'));
-    return;
-  }
-  prop.identified = true;
-  if (prop.kind === 'box' && prop.trapped) {
-    prop.sprung = true;
-    state.selectedTarget = prop;
-    renderTargeting();
-    syncBattleScreen();
-    return;
-  }
-  state.turnLocked = true;
-  prop.searched = true;
-  actorEl(prop).classList.add('searched');
-  const found = openBox(prop);
-  applyTurnOutcome(found.gold ? t('room.box.gold', { gold: found.gold }) : t('room.box.junk'));
-  state.turnLocked = false;
-}
-
-// Hands over a box's loot: gold, or nothing for junk. Never hearts.
-function openBox(prop) {
-  if (prop.loot === 'junk') return {};
-  const gold = goldReward(prop.gold || BOX_GOLD[0] + state.roomIndex);
-  state.coinsTotal += gold;
-  renderHud();
-  return { gold };
 }
 
 function skipTurn() {
   if (state.turnLocked || state.runEnded) return;
   state.turnLocked = true;
-  applyTurnOutcome(t('room.wait'));
+  applyTurnOutcome([{ type: 'waited' }]);
   state.turnLocked = false;
 }
 
@@ -1141,11 +1098,6 @@ function resolveBossAnswer(isCorrect) {
   startBattleTurn();
 }
 
-// Gold pays DARK_GOLD_MULTIPLIER times as much in the darkness after the boss.
-function goldReward(base) {
-  return state.darkness ? base * DARK_GOLD_MULTIPLIER : base;
-}
-
 // Everything but the boss is settled by a single answer. Success pays out
 // (coins for a chest or category challenge, a hint for a rune); a miss has
 // already cost its heart. Either way the target is cleared or spent.
@@ -1174,8 +1126,7 @@ function resolveOneShot(target, isCorrect, q) {
     if (!isCorrect) {
       logLine(t('log.box.trapped'));
     } else {
-      const found = openBox(target);
-      logLine(t('log.box.gold', { gold: found.gold }), 'bright');
+      logLine(t('log.box.gold', { gold: openBox(target) }), 'bright');
     }
     endEncounter();
     return;
@@ -1258,20 +1209,20 @@ answerForm.addEventListener('submit', (e) => {
   attemptAnswer();
 });
 
-dpadButtons.N.addEventListener('click', () => movePlayer(-1, 0, 'north'));
-dpadButtons.S.addEventListener('click', () => movePlayer(1, 0, 'south'));
-dpadButtons.E.addEventListener('click', () => movePlayer(0, 1, 'east'));
-dpadButtons.W.addEventListener('click', () => movePlayer(0, -1, 'west'));
+dpadButtons.N.addEventListener('click', () => movePlayer(-1, 0));
+dpadButtons.S.addEventListener('click', () => movePlayer(1, 0));
+dpadButtons.E.addEventListener('click', () => movePlayer(0, 1));
+dpadButtons.W.addEventListener('click', () => movePlayer(0, -1));
 dpadButtons.Skip.addEventListener('click', skipTurn);
 
 // Arrow-key support on desktop, ignored while typing in the answer box.
 document.addEventListener('keydown', (e) => {
   if (document.activeElement === answerInput) return;
   if (!roomScreen.classList.contains('show')) return;
-  if (e.key === 'ArrowUp') { e.preventDefault(); movePlayer(-1, 0, 'north'); }
-  else if (e.key === 'ArrowDown') { e.preventDefault(); movePlayer(1, 0, 'south'); }
-  else if (e.key === 'ArrowLeft') { e.preventDefault(); movePlayer(0, -1, 'west'); }
-  else if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(0, 1, 'east'); }
+  if (e.key === 'ArrowUp') { e.preventDefault(); movePlayer(-1, 0); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); movePlayer(1, 0); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); movePlayer(0, -1); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(0, 1); }
   else if (state.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {
     const idxMap = { 1: 0, a: 0, 2: 1, b: 1, 3: 2, c: 2, 4: 3, d: 3 };
     const idx = idxMap[e.key.toLowerCase()];
