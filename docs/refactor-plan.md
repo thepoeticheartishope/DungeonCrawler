@@ -224,7 +224,7 @@ Shared rules for all three:
   replaced `drawMonsterTurn()`; `applyTurnOutcome()` picks the note from the events
   (unchanged text). Five `advanceMonsters` tests (one new for `minionEngaged` and order).
 
-#### [ ] 6b. Moving, waiting and boxes
+#### [x] 6b. Moving, waiting and boxes (#73)
 
 - New `js/moves.js`, `export function stepPlayer(dRow, dCol)` → events. It holds the rule
   half of `main.js` `movePlayer()` (~927–995): facing change, `whatBlocks`, the step,
@@ -246,6 +246,12 @@ Shared rules for all three:
   coin pays `goldReward(1)` (doubled in the darkness), first room entry fires once.
 - Bump `CACHE_NAME`. Done when: both test commands pass; by hand, walking, turning in place,
   bumping a wall, coin, paper, a plain box, a trapped box and the stairs all behave as before.
+- Done: `stepPlayer()` also emits `stepped { facing }` (the view names the direction) and
+  bumping an emptied box is `blocked { kind: 'prop', thing }`. `openBox()` is exported and
+  returns the gold (0 for junk); `resolveOneShot` uses it. `drawEvents()` returns the room
+  note `{ cls, text }`; `applyTurnOutcome(events)` appends `advanceMonsters()`'s events and
+  draws both in one pass. `movePlayer(dRow, dCol)` lost its direction-name argument.
+  Three `stepPlayer` tests added.
 
 #### [ ] 6c. Answers (biggest; stronger model)
 
