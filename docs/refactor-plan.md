@@ -164,10 +164,17 @@ finds nothing, and no rule module stores a page element.
   `repelHunter()` returns whether it moved the hunter; `refreshTargetValidity()` no
   longer calls `renderTargeting()` (callers do). Four `advanceMonsters` tests added.
 
-### [ ] 5. Split `loadRoom()`
+### [x] 5. Split `loadRoom()` (#70)
 
 `buildFloor()` (data only: layout, furniture, boss, stairs, coin, special item, minions)
 and `drawFloor()` (creates and places elements).
+- Done: `loadRoom()` is now `clearActorEls()` → `buildFloor()` → `drawFloor()`.
+  `buildFloor()` also runs the rules that follow from the floor (`updateCamera`,
+  `initBossLight`, `computeVisibility`) and marks the start chamber visited;
+  `placeMinions()` only calls `spawnMinion()`. `drawFloor()` makes one element per
+  prop, encounter and minion from state and resets the room screen.
+  `clearActorEls()` (render.js) now takes the old floor's minion, prop and encounter
+  elements off the page itself (loadRoom used to do it by hand); chest and rune stay.
 
 ### [ ] 6. Rules return events
 

@@ -44,7 +44,7 @@ Drawing and page code:
 | `dataview.js` | DATA.SYS question viewer and comment export. |
 | `setloader.js` | Start screen options and the set loader (pasted, file, built-in, saved sets). |
 | `devpanel.js` | DEV panel: Skip room, Auto-win, Fog toggle. Gets the `main.js` actions it calls passed in. |
-| `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom`), turn and answer rules, end screens. 1,300 lines — being split up. |
+| `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom` = `buildFloor` data + `drawFloor` page), turn and answer rules, end screens. 1,300 lines — being split up. |
 
 How a turn flows today: key/d-pad → `movePlayer()` (main.js) → `whatBlocks()` → move +
 redraw → `applyTurnOutcome()` → `advanceMonsters()` (combat.js) → `drawMonsterTurn()` + `lightConsumed()` →

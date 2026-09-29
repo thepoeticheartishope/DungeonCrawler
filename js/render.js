@@ -44,7 +44,13 @@ const actorEls = new Map();
 export function addActorEl(thing, el) { actorEls.set(thing, el); }
 export function actorEl(thing) { return actorEls.get(thing); }
 export function removeActorEl(thing) { actorEls.delete(thing); }
-export function clearActorEls() { actorEls.clear(); }
+// Forgets every element and takes the ones made per floor (minions, the
+// hunter, encounters, papers, boxes) off the page. The chest and rune are
+// fixed elements that are only hidden, so they stay.
+export function clearActorEls() {
+  actorEls.forEach(el => { if (el !== els.chestActor && el !== els.runeActor) el.remove(); });
+  actorEls.clear();
+}
 
 export function buildGridTiles() {
   els.grid.querySelectorAll('.tile').forEach(t => t.remove());
