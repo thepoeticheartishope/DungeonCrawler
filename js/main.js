@@ -608,7 +608,7 @@ function placeMinions(roomTiles, takenTiles) {
   const near = shuffle(free.filter(k => dist.get(k) < MINION_MIN_START_DISTANCE && dist.get(k) >= 3));
   [...far, ...near].slice(0, count).forEach(k => {
     const [row, col] = k.split(',').map(Number);
-    addMinionEl(spawnMinion({ row, col }));
+    spawnMinion({ row, col });
   });
 }
 
@@ -675,27 +675,26 @@ function applyActorSymbols() {
   setGlyph(stairsActor, t('term.exit.symbol'));
 }
 
+// A new floor: forget the old floor's elements, make the new floor's data,
+// then put it on the page.
 function loadRoom() {
-  roomNumEl.textContent = state.roomIndex + 1;
-  // Per-room wording overrides (text.js AREAS) apply from here on.
-  setTextArea(state.roomIndex + 1);
-  applyStaticText();
-  applyActorSymbols();
+  clearActorEls();
+  buildFloor();
+  drawFloor();
+}
 
+// The floor as data only: layout, furniture, boss, stairs, coin, the one
+// special item and minions, plus the light, sight and camera that follow
+// from them. No page access.
+function buildFloor() {
   state.GRID_SIZE = GRID_SIZES[Math.min(state.roomIndex, GRID_SIZES.length - 1)];
   state.CHAMBER_TARGET = CHAMBER_TARGETS[Math.min(state.roomIndex, CHAMBER_TARGETS.length - 1)];
-  buildGridTiles();
 
-  state.minions.forEach(m => actorEl(m).remove());
   state.minions = [];
   state.hunter = null;
   state.darkTurns = 0;
-
-  state.encounters.forEach(e => actorEl(e).remove());
   state.encounters = [];
-  state.props.forEach(p => actorEl(p).remove());
   state.props = [];
-  clearActorEls();
   state.runeHint = null;
   state.lastChoiceType = null;
 
@@ -706,39 +705,23 @@ function loadRoom() {
   state.playerRow = state.PLAYER_START.row;
   state.playerCol = state.PLAYER_START.col;
   state.facing = 'N';
-  playerActor.textContent = DIRECTION_ARROWS[state.facing];
   updateCamera();
-  positionActor(playerActor, state.playerRow, state.playerCol, true);
 
-  // Each room's theme, pillars, papers, boxes and floor texture (decor.js).
-  // Papers and boxes go in under the player in the DOM, like the other
-  // items, so anything moving draws over them.
+  // Each room's theme, pillars, papers and boxes (decor.js).
   const furnishing = furnishFloor(layout, state.GRID_SIZE, state.roomIndex);
   state.pillarSet = furnishing.pillars;
   state.chamberAt = layout.chamberAt;
   state.chamberThemes = furnishing.themes;
   state.visitedChambers = new Set();
   furnishing.props.forEach(p => {
-    const el = document.createElement('div');
-    el.className = 'actor prop ' + p.kind;
-    setGlyph(el, t('term.' + p.kind + '.symbol'));
-    grid.insertBefore(el, playerActor);
-    const prop = { ...p, identified: false, searched: false, sprung: false };
-    state.props.push(prop);
-    addActorEl(prop, el);
-    positionActor(el, p.row, p.col, true);
+    state.props.push({ ...p, identified: false, searched: false, sprung: false });
   });
-  renderWalls();
 
   state.boss = { row: layout.spawn.row, col: layout.spawn.col, hp: BOSS_HP, kind: 'boss' };
-  bossActor.classList.remove('gone');
-  positionActor(bossActor, state.boss.row, state.boss.col, true);
 
   // The boss stands on the chamber's one doorway, so the stairs behind it
   // are unreachable until it's defeated and state.boss is nulled.
   state.stairs = { row: layout.stairs.row, col: layout.stairs.col };
-  stairsActor.classList.remove('gone');
-  positionActor(stairsActor, state.stairs.row, state.stairs.col, true);
 
   // Coin and the room's one special item only ever land in an actual room
   // tile, never a hallway — a hallway is one tile wide, so an object
@@ -753,8 +736,6 @@ function loadRoom() {
 
   const coinTile = pickCoinTile(state.wallSet, [state.PLAYER_START, { row: state.boss.row, col: state.boss.col }, state.stairs], freeRoomTiles);
   state.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
-  coinActor.classList.toggle('gone', !state.coin);
-  if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col, true);
 
   const takenTiles = [state.PLAYER_START, { row: state.boss.row, col: state.boss.col }, state.stairs];
   if (state.coin) takenTiles.push(state.coin);
@@ -764,9 +745,7 @@ function loadRoom() {
   // eligible. Never more than one at once, so the room's one bonus/gamble
   // stays meaningful instead of being buried among several.
   state.chest = null;
-  chestActor.classList.add('gone');
   state.rune = null;
-  runeActor.classList.add('gone');
 
   const byCategory = new Map();
   state.activeData.forEach(item => {
@@ -788,27 +767,13 @@ function loadRoom() {
     const chosen = candidates[Math.floor(Math.random() * candidates.length)];
     if (chosen.type === 'chest') {
       state.chest = { row: specialTile.row, col: specialTile.col, kind: 'chest' };
-      addActorEl(state.chest, chestActor);
-      chestActor.classList.remove('gone');
-      positionActor(chestActor, specialTile.row, specialTile.col, true);
     } else if (chosen.type === 'rune') {
       state.rune = { row: specialTile.row, col: specialTile.col, kind: 'rune' };
-      addActorEl(state.rune, runeActor);
-      runeActor.classList.remove('gone');
-      positionActor(runeActor, specialTile.row, specialTile.col, true);
     } else {
-      const glyph = glyphForCategory(chosen.category);
-      const el = document.createElement('div');
-      el.className = 'actor encounter';
-      setGlyph(el, glyph);
-      grid.appendChild(el);
-      const encounter = {
+      state.encounters.push({
         row: specialTile.row, col: specialTile.col, kind: 'encounter',
         category: chosen.category, pool: byCategory.get(chosen.category),
-      };
-      addActorEl(encounter, el);
-      positionActor(el, specialTile.row, specialTile.col, true);
-      state.encounters.push(encounter);
+      });
     }
   }
 
@@ -821,10 +786,67 @@ function loadRoom() {
   state.visibleSet = new Set();
   state.exploredSet = new Set();
   computeVisibility();
+  state.selectedTarget = null;
+
+  // The room the player wakes in counts as visited (drawFloor announces it).
+  const startChamber = state.chamberAt.get(key(state.playerRow, state.playerCol));
+  if (startChamber !== undefined) state.visitedChambers.add(startChamber);
+}
+
+// Puts the floor buildFloor() made on the page: tiles, one element per
+// thing, fog, HUD, and a fresh room screen.
+function drawFloor() {
+  roomNumEl.textContent = state.roomIndex + 1;
+  // Per-room wording overrides (text.js AREAS) apply from here on.
+  setTextArea(state.roomIndex + 1);
+  applyStaticText();
+  applyActorSymbols();
+
+  buildGridTiles();
+  playerActor.textContent = DIRECTION_ARROWS[state.facing];
+  positionActor(playerActor, state.playerRow, state.playerCol, true);
+
+  // Papers and boxes go in under the player in the DOM, like the other
+  // items, so anything moving draws over them.
+  state.props.forEach(prop => {
+    const el = document.createElement('div');
+    el.className = 'actor prop ' + prop.kind;
+    setGlyph(el, t('term.' + prop.kind + '.symbol'));
+    grid.insertBefore(el, playerActor);
+    addActorEl(prop, el);
+    positionActor(el, prop.row, prop.col, true);
+  });
+  renderWalls();
+
+  bossActor.classList.remove('gone');
+  positionActor(bossActor, state.boss.row, state.boss.col, true);
+  stairsActor.classList.remove('gone');
+  positionActor(stairsActor, state.stairs.row, state.stairs.col, true);
+  coinActor.classList.toggle('gone', !state.coin);
+  if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col, true);
+
+  chestActor.classList.toggle('gone', !state.chest);
+  if (state.chest) {
+    addActorEl(state.chest, chestActor);
+    positionActor(chestActor, state.chest.row, state.chest.col, true);
+  }
+  runeActor.classList.toggle('gone', !state.rune);
+  if (state.rune) {
+    addActorEl(state.rune, runeActor);
+    positionActor(runeActor, state.rune.row, state.rune.col, true);
+  }
+  state.encounters.forEach(encounter => {
+    const el = document.createElement('div');
+    el.className = 'actor encounter';
+    setGlyph(el, glyphForCategory(encounter.category));
+    grid.appendChild(el);
+    addActorEl(encounter, el);
+    positionActor(el, encounter.row, encounter.col, true);
+  });
+  state.minions.forEach(addMinionEl);
+
   renderFog();
   renderLightEye();
-
-  state.selectedTarget = null;
   renderTargeting();
   syncBattleScreen(); // nothing's adjacent at spawn — makes sure we're back on the room screen
 
@@ -835,7 +857,6 @@ function loadRoom() {
   // The room the player wakes in announces itself like any other.
   const startChamber = state.chamberAt.get(key(state.playerRow, state.playerCol));
   if (startChamber !== undefined) {
-    state.visitedChambers.add(startChamber);
     showRoomNote('move-msg', t('theme.' + state.chamberThemes[startChamber] + '.enter'));
   }
   answerInput.value = '';
