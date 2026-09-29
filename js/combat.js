@@ -8,23 +8,23 @@ import { advanceLight } from './light.js';
 import { computeVisibility } from './sight.js';
 
 export function isAdjacentToPlayer(entity) {
-  return Math.abs(entity.row - state.playerRow) + Math.abs(entity.col - state.playerCol) === 1;
+  return Math.abs(entity.row - state.floor.playerRow) + Math.abs(entity.col - state.floor.playerCol) === 1;
 }
 
 export function findAdjacentEnemies() {
   const result = [];
-  if (state.boss && isAdjacentToPlayer(state.boss)) result.push(state.boss);
-  for (const m of state.minions) {
+  if (state.floor.boss && isAdjacentToPlayer(state.floor.boss)) result.push(state.floor.boss);
+  for (const m of state.floor.minions) {
     if (isAdjacentToPlayer(m)) result.push(m);
   }
-  if (state.chest && isAdjacentToPlayer(state.chest)) result.push(state.chest);
-  if (state.rune && isAdjacentToPlayer(state.rune)) result.push(state.rune);
-  for (const e of state.encounters) {
+  if (state.floor.chest && isAdjacentToPlayer(state.floor.chest)) result.push(state.floor.chest);
+  if (state.floor.rune && isAdjacentToPlayer(state.floor.rune)) result.push(state.floor.rune);
+  for (const e of state.floor.encounters) {
     if (isAdjacentToPlayer(e)) result.push(e);
   }
   // A trapped box only becomes something to answer once it's been
   // bumped (main.js examineProp); until then it looks like any other.
-  for (const p of state.props) {
+  for (const p of state.floor.props) {
     if (p.sprung && isAdjacentToPlayer(p)) result.push(p);
   }
   return result;
@@ -35,26 +35,26 @@ export function findAdjacentEnemies() {
 // on any other adjacent enemy always overrides this. The caller redraws
 // the targeting.
 export function refreshTargetValidity() {
-  if (state.selectedTarget && !isAdjacentToPlayer(state.selectedTarget)) {
-    state.selectedTarget = null;
+  if (state.battle.selectedTarget && !isAdjacentToPlayer(state.battle.selectedTarget)) {
+    state.battle.selectedTarget = null;
   }
-  if (!state.selectedTarget) {
+  if (!state.battle.selectedTarget) {
     const adjacent = findAdjacentEnemies();
-    if (adjacent.length > 0) state.selectedTarget = adjacent[0];
+    if (adjacent.length > 0) state.battle.selectedTarget = adjacent[0];
   }
 }
 
 // True if any player, boss, minion, item or solid piece of furniture
 // currently occupies this tile (papers lie flat, so they don't count).
 export function tileOccupied(row, col, excludeMinion) {
-  if (state.pillarSet.has(key(row, col))) return true;
-  if (state.props.some(p => p.kind === 'box' && p.row === row && p.col === col)) return true;
-  if (state.boss && state.boss.row === row && state.boss.col === col) return true;
-  if (state.playerRow === row && state.playerCol === col) return true;
-  if (state.chest && state.chest.row === row && state.chest.col === col) return true;
-  if (state.rune && state.rune.row === row && state.rune.col === col) return true;
-  if (state.encounters.some(e => e.row === row && e.col === col)) return true;
-  for (const m of state.minions) {
+  if (state.floor.pillarSet.has(key(row, col))) return true;
+  if (state.floor.props.some(p => p.kind === 'box' && p.row === row && p.col === col)) return true;
+  if (state.floor.boss && state.floor.boss.row === row && state.floor.boss.col === col) return true;
+  if (state.floor.playerRow === row && state.floor.playerCol === col) return true;
+  if (state.floor.chest && state.floor.chest.row === row && state.floor.chest.col === col) return true;
+  if (state.floor.rune && state.floor.rune.row === row && state.floor.rune.col === col) return true;
+  if (state.floor.encounters.some(e => e.row === row && e.col === col)) return true;
+  for (const m of state.floor.minions) {
     if (m === excludeMinion) continue;
     if (m.row === row && m.col === col) return true;
   }
@@ -63,7 +63,7 @@ export function tileOccupied(row, col, excludeMinion) {
 
 export function neighbors(r, c) {
   return [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]
-    .filter(([nr, nc]) => nr >= 0 && nr < state.GRID_SIZE && nc >= 0 && nc < state.GRID_SIZE);
+    .filter(([nr, nc]) => nr >= 0 && nr < state.floor.GRID_SIZE && nc >= 0 && nc < state.floor.GRID_SIZE);
 }
 
 // Walls, pillars, boxes, the boss, and every other minion's
@@ -74,11 +74,11 @@ export function neighbors(r, c) {
 // monster paths straight through rather than getting stuck when one sits
 // in a one-wide corridor; items are only obstacles to the player.
 export function blockedTilesFor(minion) {
-  const blocked = new Set(state.wallSet);
-  state.pillarSet.forEach(k => blocked.add(k));
-  state.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
-  if (state.boss) blocked.add(key(state.boss.row, state.boss.col));
-  for (const other of state.minions) {
+  const blocked = new Set(state.floor.wallSet);
+  state.floor.pillarSet.forEach(k => blocked.add(k));
+  state.floor.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
+  if (state.floor.boss) blocked.add(key(state.floor.boss.row, state.floor.boss.col));
+  for (const other of state.floor.minions) {
     if (other === minion) continue;
     blocked.add(key(other.row, other.col));
   }
@@ -111,10 +111,10 @@ export function bfsPath(start, target, walls) {
 // The free floor tile the most walkable steps from the player, for the
 // hunter to wake on or be thrown back to.
 function farthestFromPlayer() {
-  const blocked = new Set(state.wallSet);
-  state.pillarSet.forEach(k => blocked.add(k));
-  state.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
-  const start = { row: state.playerRow, col: state.playerCol };
+  const blocked = new Set(state.floor.wallSet);
+  state.floor.pillarSet.forEach(k => blocked.add(k));
+  state.floor.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
+  const start = { row: state.floor.playerRow, col: state.floor.playerCol };
   const dist = new Map([[key(start.row, start.col), 0]]);
   const queue = [start];
   let best = null;
@@ -139,7 +139,7 @@ function wakeHunter() {
   const m = spawnMinion(spot);
   m.kind = 'hunter';
   m.rest = 0;
-  state.hunter = m;
+  state.floor.hunter = m;
   return m;
 }
 
@@ -160,7 +160,7 @@ export function repelHunter(m, answeredRight) {
 // The caller draws it (render.js addMinionEl).
 export function spawnMinion(spot) {
   const m = { row: spot.row, col: spot.col, hp: MINION_HP, kind: 'minion' };
-  state.minions.push(m);
+  state.floor.minions.push(m);
   return m;
 }
 
@@ -169,7 +169,7 @@ export function spawnMinion(spot) {
 // item, so an idle minion doesn't sit on top of a chest or rune.
 function wanderStep(m) {
   const options = neighbors(m.row, m.col)
-    .filter(([r, c]) => !state.wallSet.has(key(r, c)) && !tileOccupied(r, c, m));
+    .filter(([r, c]) => !state.floor.wallSet.has(key(r, c)) && !tileOccupied(r, c, m));
   if (options.length === 0) return null;
   const [row, col] = options[Math.floor(Math.random() * options.length)];
   return { row, col };
@@ -181,7 +181,7 @@ function wanderStep(m) {
 // for main.js to draw: { type: 'hunterWoke', hunter }, { type: 'minionMoved',
 // minion } and { type: 'minionEngaged', minion }.
 export function advanceMonsters() {
-  state.turnCount++;
+  state.run.turnCount++;
   advanceLight();
 
   // Walking around is safe: a minion that reaches the player never deals
@@ -190,26 +190,26 @@ export function advanceMonsters() {
   // Minions roam freely and only give chase once the player is within
   // MINION_CHASE_RANGE walkable steps.
   const events = [];
-  if (state.darkness) {
-    state.darkTurns++;
-    const hunter = !state.hunter && state.darkTurns >= HUNTER_SPAWN_DELAY ? wakeHunter() : null;
+  if (state.floor.darkness) {
+    state.floor.darkTurns++;
+    const hunter = !state.floor.hunter && state.floor.darkTurns >= HUNTER_SPAWN_DELAY ? wakeHunter() : null;
     if (hunter) events.push({ type: 'hunterWoke', hunter });
   }
-  for (const m of state.minions) {
+  for (const m of state.floor.minions) {
     if (m.rest > 0) {
       m.rest--;
       continue;
     }
-    const path = bfsPath({ row: m.row, col: m.col }, { row: state.playerRow, col: state.playerCol }, blockedTilesFor(m));
+    const path = bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blockedTilesFor(m));
     // In the darkness after the boss falls, every minion hunts, from anywhere.
-    const chasing = path && (state.darkness || path.length - 1 <= MINION_CHASE_RANGE);
+    const chasing = path && (state.floor.darkness || path.length - 1 <= MINION_CHASE_RANGE);
     const next = chasing ? path[1] : wanderStep(m);
     if (next) {
-      const isPlayerTile = next.row === state.playerRow && next.col === state.playerCol;
+      const isPlayerTile = next.row === state.floor.playerRow && next.col === state.floor.playerCol;
 
       if (isPlayerTile) {
         // Engage from where it stands, never occupying the player's tile.
-        if (!state.selectedTarget) state.selectedTarget = m;
+        if (!state.battle.selectedTarget) state.battle.selectedTarget = m;
         events.push({ type: 'minionEngaged', minion: m });
       } else {
         m.row = next.row;

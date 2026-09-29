@@ -11,20 +11,20 @@ import { state, key } from './state.js';
 // flat and never block); thing is the minion/encounter/box itself where
 // there is one.
 export function whatBlocks(row, col) {
-  if (row < 0 || row >= state.GRID_SIZE || col < 0 || col >= state.GRID_SIZE) return { kind: 'wall' };
+  if (row < 0 || row >= state.floor.GRID_SIZE || col < 0 || col >= state.floor.GRID_SIZE) return { kind: 'wall' };
   const k = key(row, col);
   const at = (p) => !!p && p.row === row && p.col === col;
-  if (state.wallSet.has(k)) return { kind: 'wall' };
-  if (state.pillarSet.has(k)) return { kind: 'pillar' };
-  if (at(state.boss)) return { kind: 'boss' };
-  if (at(state.hunter)) return { kind: 'hunter' };
-  const minion = state.minions.find(at);
+  if (state.floor.wallSet.has(k)) return { kind: 'wall' };
+  if (state.floor.pillarSet.has(k)) return { kind: 'pillar' };
+  if (at(state.floor.boss)) return { kind: 'boss' };
+  if (at(state.floor.hunter)) return { kind: 'hunter' };
+  const minion = state.floor.minions.find(at);
   if (minion) return { kind: 'minion', thing: minion };
-  if (at(state.chest)) return { kind: 'chest' };
-  if (at(state.rune)) return { kind: 'rune' };
-  const encounter = state.encounters.find(at);
+  if (at(state.floor.chest)) return { kind: 'chest' };
+  if (at(state.floor.rune)) return { kind: 'rune' };
+  const encounter = state.floor.encounters.find(at);
   if (encounter) return { kind: 'encounter', thing: encounter };
-  const prop = state.props.find(p => p.kind === 'box' && at(p));
+  const prop = state.floor.props.find(p => p.kind === 'box' && at(p));
   if (prop) return { kind: 'prop', thing: prop };
   return null;
 }

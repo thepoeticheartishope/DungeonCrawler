@@ -10,7 +10,7 @@ import { DARK_GOLD_MULTIPLIER, BOX_GOLD } from './config.js';
 
 // Gold pays DARK_GOLD_MULTIPLIER times as much in the darkness after the boss.
 export function goldReward(base) {
-  return state.darkness ? base * DARK_GOLD_MULTIPLIER : base;
+  return state.floor.darkness ? base * DARK_GOLD_MULTIPLIER : base;
 }
 
 // One arrow press. Facing updates (and the light cone with it) even on a
@@ -22,14 +22,14 @@ export function goldReward(base) {
 export function stepPlayer(dRow, dCol) {
   const events = [];
   const facing = dRow === -1 ? 'N' : dRow === 1 ? 'S' : dCol === 1 ? 'E' : 'W';
-  if (state.facing !== facing) {
-    state.facing = facing;
+  if (state.floor.facing !== facing) {
+    state.floor.facing = facing;
     events.push({ type: 'turned', facing });
   }
   computeVisibility();
 
-  const newRow = state.playerRow + dRow;
-  const newCol = state.playerCol + dCol;
+  const newRow = state.floor.playerRow + dRow;
+  const newCol = state.floor.playerCol + dCol;
 
   // Anything in the way stops the move, or, for a box, is examined instead.
   const block = whatBlocks(newRow, newCol);
@@ -42,32 +42,32 @@ export function stepPlayer(dRow, dCol) {
     return events;
   }
 
-  state.playerRow = newRow;
-  state.playerCol = newCol;
+  state.floor.playerRow = newRow;
+  state.floor.playerCol = newCol;
   updateCamera();
   computeVisibility();
   events.push({ type: 'stepped', facing });
 
-  if (state.stairs && state.playerRow === state.stairs.row && state.playerCol === state.stairs.col) {
+  if (state.floor.stairs && state.floor.playerRow === state.floor.stairs.row && state.floor.playerCol === state.floor.stairs.col) {
     events.push({ type: 'stairsReached' });
     return events;
   }
 
-  if (state.coin && state.coin.row === state.playerRow && state.coin.col === state.playerCol) {
-    state.coin = null;
+  if (state.floor.coin && state.floor.coin.row === state.floor.playerRow && state.floor.coin.col === state.floor.playerCol) {
+    state.floor.coin = null;
     const gold = goldReward(1);
-    state.coinsTotal += gold;
+    state.run.coinsTotal += gold;
     events.push({ type: 'coinTaken', gold });
   }
   // Stepping onto a paper reads it, as part of the step.
-  const paper = state.props.find(p => p.kind === 'paper' && !p.searched &&
-    p.row === state.playerRow && p.col === state.playerCol);
+  const paper = state.floor.props.find(p => p.kind === 'paper' && !p.searched &&
+    p.row === state.floor.playerRow && p.col === state.floor.playerCol);
   if (paper) events.push(readPaper(paper));
   // First step into a room: its theme line.
-  const chamber = state.chamberAt.get(key(state.playerRow, state.playerCol));
-  if (chamber !== undefined && !state.visitedChambers.has(chamber)) {
-    state.visitedChambers.add(chamber);
-    events.push({ type: 'roomEntered', theme: state.chamberThemes[chamber] });
+  const chamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
+  if (chamber !== undefined && !state.floor.visitedChambers.has(chamber)) {
+    state.floor.visitedChambers.add(chamber);
+    events.push({ type: 'roomEntered', theme: state.floor.chamberThemes[chamber] });
   }
   return events;
 }
@@ -89,7 +89,7 @@ function examineProp(prop) {
   prop.identified = true;
   if (prop.kind === 'box' && prop.trapped) {
     prop.sprung = true;
-    state.selectedTarget = prop;
+    state.battle.selectedTarget = prop;
     return [{ type: 'boxSprung', prop }];
   }
   prop.searched = true;
@@ -99,7 +99,7 @@ function examineProp(prop) {
 // Hands over a box's loot and returns the gold (0 for junk). Never hearts.
 export function openBox(prop) {
   if (prop.loot === 'junk') return 0;
-  const gold = goldReward(prop.gold || BOX_GOLD[0] + state.roomIndex);
-  state.coinsTotal += gold;
+  const gold = goldReward(prop.gold || BOX_GOLD[0] + state.run.roomIndex);
+  state.run.coinsTotal += gold;
   return gold;
 }

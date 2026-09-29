@@ -22,7 +22,7 @@ Rules and data (no page/DOM access):
 | File | Job |
 |---|---|
 | `config.js` | Tunable constants and sample data. Never changes at runtime. |
-| `state.js` | The one shared `state` object every module reads/writes, plus `key(r, c)`. |
+| `state.js` | The one shared `state` object, plus `key(r, c)`. Grouped by lifetime: `state.settings` (start screen / DEV panel), `state.run` (one run), `state.floor` (rebuilt each floor), `state.battle` (the current fight). |
 | `text.js` | All wording. `t()`, per-floor overrides, `data-t` labels. |
 | `rooms.js` | Hand-drawn room templates (`#` wall, `.` floor, `?` prop, `+` inner door). |
 | `dungeon.js` | Builds a floor layout from the templates: rooms, hallways, boss room, stairs. |

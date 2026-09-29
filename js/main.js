@@ -118,7 +118,7 @@ initDevPanel({
 function renderChoices() {
   const letters = ['A', 'B', 'C', 'D'];
   mcOptionsEl.innerHTML = '';
-  state.currentChoices.forEach((opt, i) => {
+  state.battle.currentChoices.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'mc-option';
@@ -169,7 +169,7 @@ function clearModifier() {
   countdownTimer = null;
   modTimerEl.hidden = true;
   modTimerEl.classList.remove('urgent');
-  state.wager = 0;
+  state.battle.wager = 0;
   mcOptionsEl.classList.remove('mod-blind');
   wagerRow.hidden = true;
   wagerButtons.innerHTML = '';
@@ -180,7 +180,7 @@ function applyModifier(modifier) {
   const buttons = [...mcOptionsEl.querySelectorAll('.mc-option')];
   if (modifier === 'blind') {
     // Longer answers stay readable for longer.
-    const words = state.currentChoices.reduce((n, opt) => n + opt.trim().split(/\s+/).length, 0);
+    const words = state.battle.currentChoices.reduce((n, opt) => n + opt.trim().split(/\s+/).length, 0);
     const ms = Math.min(BLIND_MAX_MS, BLIND_BASE_MS + BLIND_MS_PER_WORD * words);
     blindTimer = setTimeout(() => mcOptionsEl.classList.add('mod-blind'), ms);
   } else if (modifier === 'flip') {
@@ -208,7 +208,7 @@ function applyModifier(modifier) {
 // through the same path as a wrong answer.
 function startCountdown() {
   let left = TIMER_SECONDS;
-  const q = state.currentQuestion;
+  const q = state.battle.currentQuestion;
   const show = () => {
     modTimerEl.textContent = t('battle.timer', { s: left });
     modTimerEl.classList.toggle('urgent', left <= 3);
@@ -222,17 +222,17 @@ function startCountdown() {
     clearInterval(countdownTimer);
     countdownTimer = null;
     // Only if that same question is still waiting on an answer.
-    if (state.currentQuestion !== q || state.battlePhase !== 'answering' || state.turnLocked || !state.selectedTarget) return;
-    state.turnLocked = true;
-    state.attempts++;
+    if (state.battle.currentQuestion !== q || state.battle.battlePhase !== 'answering' || state.run.turnLocked || !state.battle.selectedTarget) return;
+    state.run.turnLocked = true;
+    state.run.attempts++;
     logLine(t('log.timeout'), 'alert');
     applyAnswerResult(false, false, t('battle.noAnswer'));
   }, 1000);
 }
 
 function placeWager(n) {
-  if (state.wager || wagerRow.hidden) return;
-  state.wager = n;
+  if (state.battle.wager || wagerRow.hidden) return;
+  state.battle.wager = n;
   wagerRow.hidden = true;
   logLine(t('log.wager', { n }), 'sys');
   mcOptionsEl.querySelectorAll('.mc-option').forEach(b => { b.disabled = false; });
@@ -240,7 +240,7 @@ function placeWager(n) {
 
 function setQuestion(q) {
   clearModifier();
-  state.currentQuestion = q;
+  state.battle.currentQuestion = q;
   typeText(enemyName, q.term);
   answerInput.value = '';
   const imageSrc = resolveImageSrc(q.image);
@@ -251,14 +251,14 @@ function setQuestion(q) {
     queryImage.hidden = true;
     queryImage.removeAttribute('src');
   }
-  if (state.mcMode) {
-    state.currentChoices = buildChoices(q);
+  if (state.settings.mcMode) {
+    state.battle.currentChoices = buildChoices(q);
     renderChoices();
   }
 }
 
 function nextQuestion() {
-  setQuestion(pickQuestion(state.currentQuestion, poolFor(state.selectedTarget)));
+  setQuestion(pickQuestion(state.battle.currentQuestion, poolFor(state.battle.selectedTarget)));
 }
 
 // If the current target changed (a fresh click, or an auto-pick after a
@@ -266,16 +266,16 @@ function nextQuestion() {
 // it's a leftover boss/global question but an encounter is now targeted, or
 // vice versa — reroll it from the right pool. A no-op the rest of the time.
 function syncQuestionForTarget() {
-  const pool = poolFor(state.selectedTarget);
-  if (!pool.includes(state.currentQuestion)) {
-    setQuestion(pickQuestion(state.currentQuestion, pool));
+  const pool = poolFor(state.battle.selectedTarget);
+  if (!pool.includes(state.battle.currentQuestion)) {
+    setQuestion(pickQuestion(state.battle.currentQuestion, pool));
   }
 }
 
 // Switches between the room/map view and the battle screen to match whether
-// something is currently targeted — battle screen while state.selectedTarget
+// something is currently targeted — battle screen while state.battle.selectedTarget
 // is set (an encounter is engaged), room screen once it's null (nothing left
-// adjacent). Call this anywhere state.selectedTarget might have just changed;
+// adjacent). Call this anywhere state.battle.selectedTarget might have just changed;
 // it's a no-op if the right screen is already showing. Also refreshes the
 // battle screen's opponent glyph/HP display for whichever target is current,
 // so resolving one adjacent thing and chaining straight into the next (e.g.
@@ -383,22 +383,22 @@ function logEncounterStart(target) {
   logLine(t('log.rules.' + target.kind, vars), 'sys');
 }
 
-// Shows whichever part of the battle screen matches state.battlePhase: the
+// Shows whichever part of the battle screen matches state.battle.battlePhase: the
 // category choices, the question and its answer input, or (once the
 // encounter is settled) the prompt to continue.
 function showBattlePhase() {
-  choicePanel.hidden = state.battlePhase !== 'choosing';
-  queryPanel.hidden = state.battlePhase !== 'answering';
-  endPanel.hidden = state.battlePhase !== 'ended';
+  choicePanel.hidden = state.battle.battlePhase !== 'choosing';
+  queryPanel.hidden = state.battle.battlePhase !== 'answering';
+  endPanel.hidden = state.battle.battlePhase !== 'ended';
 }
 
 function renderCategoryChoices() {
   choiceListEl.innerHTML = '';
-  state.categoryChoices.forEach((choice, i) => {
+  state.battle.categoryChoices.forEach((choice, i) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'choice-option';
-    const hinted = state.runeHint && choice.pool.includes(state.runeHint);
+    const hinted = state.floor.runeHint && choice.pool.includes(state.floor.runeHint);
     btn.innerHTML = '<span class="letter">[' + (i + 1) + ']</span><span class="choice-label"></span>' +
       (hinted ? '<span class="choice-hint" title="' + escapeHtml(t('battle.runeHintMark')) + '">◊</span>' : '') +
       choice.modifiers.map(mod =>
@@ -416,27 +416,27 @@ function renderCategoryChoices() {
 // puzzles, not fights, and go straight to their question — as does any
 // fight whose pool can't offer at least two distinct choices.
 function startBattleTurn() {
-  const target = state.selectedTarget;
+  const target = state.battle.selectedTarget;
   const isFight = target.kind === 'boss' || target.kind === 'minion' || target.kind === 'hunter';
-  state.categoryChoices = isFight
-    ? buildCategoryChoices(poolFor(target), BATTLE_CHOICE_COUNT, state.runeHint, state.lastChoiceType)
+  state.battle.categoryChoices = isFight
+    ? buildCategoryChoices(poolFor(target), BATTLE_CHOICE_COUNT, state.floor.runeHint, state.floor.lastChoiceType)
     : [];
-  const modifiers = rollCategoryModifiers(target, state.categoryChoices.length);
+  const modifiers = rollCategoryModifiers(target, state.battle.categoryChoices.length);
   // Each choice's modifiers as a list: none, one, or the hunter's pair.
-  state.categoryChoices.forEach((choice, i) => { choice.modifiers = [].concat(modifiers[i] || []); });
+  state.battle.categoryChoices.forEach((choice, i) => { choice.modifiers = [].concat(modifiers[i] || []); });
 
-  if (state.categoryChoices.length >= 2) {
-    state.battlePhase = 'choosing';
+  if (state.battle.categoryChoices.length >= 2) {
+    state.battle.battlePhase = 'choosing';
     renderCategoryChoices();
   } else {
-    state.battlePhase = 'answering';
+    state.battle.battlePhase = 'answering';
     // A fight may bring back a missed question (js/haunts.js).
-    const haunt = isFight && !state.runeHint ? pickHaunt(poolFor(target), state.currentQuestion) : null;
+    const haunt = isFight && !state.floor.runeHint ? pickHaunt(poolFor(target), state.battle.currentQuestion) : null;
     // No choice to route the rune's hint through, so ask it directly if
     // this target's pool holds it.
-    if (state.runeHint && poolFor(target).includes(state.runeHint)) {
-      setQuestion(state.runeHint);
-      state.runeHint = null;
+    if (state.floor.runeHint && poolFor(target).includes(state.floor.runeHint)) {
+      setQuestion(state.floor.runeHint);
+      state.floor.runeHint = null;
     } else if (haunt) {
       logLine(t('log.haunt.returns'), 'alert');
       setQuestion(haunt);
@@ -446,45 +446,45 @@ function startBattleTurn() {
     // The question was very likely set well before this moment, off-screen
     // (loadRoom() sets one at room load), so re-type it fresh every time a
     // turn starts rather than letting the effect be skipped.
-    typeText(enemyName, state.currentQuestion.term);
+    typeText(enemyName, state.battle.currentQuestion.term);
     // A boss question always carries a modifier, even with no category
     // choice to show it on.
     if (target.kind === 'boss') {
       clearModifier();
       applyModifier(rollModifier(target));
     }
-    if (!state.mcMode) answerInput.focus();
+    if (!state.settings.mcMode) answerInput.focus();
   }
   showBattlePhase();
 }
 
 function chooseCategory(i) {
-  if (state.turnLocked || state.battlePhase !== 'choosing') return;
-  const choice = state.categoryChoices[i];
+  if (state.run.turnLocked || state.battle.battlePhase !== 'choosing') return;
+  const choice = state.battle.categoryChoices[i];
   if (!choice) return;
   let q;
   let haunt = null;
-  if (state.runeHint && choice.pool.includes(state.runeHint)) {
-    q = state.runeHint;
-    state.runeHint = null;
+  if (state.floor.runeHint && choice.pool.includes(state.floor.runeHint)) {
+    q = state.floor.runeHint;
+    state.floor.runeHint = null;
   } else {
     // A missed question from this category may come back instead.
-    haunt = pickHaunt(choice.pool, state.currentQuestion);
-    q = haunt || pickQuestion(state.currentQuestion, choice.pool);
+    haunt = pickHaunt(choice.pool, state.battle.currentQuestion);
+    q = haunt || pickQuestion(state.battle.currentQuestion, choice.pool);
   }
   logLine(t('log.vector', { n: i + 1, label: choice.label }), 'sys');
   if (haunt) logLine(t('log.haunt.returns'), 'alert');
-  state.lastChoiceType = choice.choiceType || null;
-  state.battlePhase = 'answering';
+  state.floor.lastChoiceType = choice.choiceType || null;
+  state.battle.battlePhase = 'answering';
   setQuestion(q);
   choice.modifiers.forEach(applyModifier);
   showBattlePhase();
-  if (!state.mcMode) answerInput.focus();
+  if (!state.settings.mcMode) answerInput.focus();
 }
 
 function syncBattleScreen() {
-  if (state.selectedTarget) {
-    const target = state.selectedTarget;
+  if (state.battle.selectedTarget) {
+    const target = state.battle.selectedTarget;
     battleGlyphEl.textContent = (actorEl(target) || bossActor).dataset.glyph;
     renderCombatStatus();
     const entering = !battleScreen.classList.contains('show');
@@ -496,13 +496,13 @@ function syncBattleScreen() {
     }
     // A new encounter starts on entering, and whenever the player moves
     // on from a settled one straight into another adjacent target.
-    if (entering || state.battleTarget !== target) {
-      state.battleTarget = target;
+    if (entering || state.battle.battleTarget !== target) {
+      state.battle.battleTarget = target;
       logEncounterStart(target);
       startBattleTurn();
     }
   } else {
-    state.battleTarget = null;
+    state.battle.battleTarget = null;
     if (battleScreen.classList.contains('show')) showScreen(roomScreen);
   }
 }
@@ -511,8 +511,8 @@ function syncBattleScreen() {
 // battle screen holds on the log until the player continues, so the
 // outcome is read rather than flashing past as the screen switches back.
 function endEncounter() {
-  state.selectedTarget = null;
-  state.battlePhase = 'ended';
+  state.battle.selectedTarget = null;
+  state.battle.battlePhase = 'ended';
   showBattlePhase();
   continueBtn.focus();
 }
@@ -520,9 +520,9 @@ function endEncounter() {
 // Leaves a settled encounter: straight into the next one if something
 // else is adjacent, otherwise back to the room.
 function leaveEncounter() {
-  if (state.battlePhase !== 'ended') return;
-  state.battlePhase = 'answering';
-  state.battleTarget = null;
+  if (state.battle.battlePhase !== 'ended') return;
+  state.battle.battlePhase = 'answering';
+  state.battle.battleTarget = null;
   refreshTargetValidity();
   renderTargeting();
   nextQuestion();
@@ -533,29 +533,29 @@ function leaveEncounter() {
 // camera. Needed whenever the camera itself moves — the boss, minions,
 // coin, chest, and rune haven't moved in world space, but the viewport
 // window that maps world coordinates onto the screen has.
-// A hunter that woke this turn is in state.minions before it has an element
+// A hunter that woke this turn is in state.floor.minions before it has an element
 // (drawEvents makes it at its hunterWoke event, after the player's step is
 // drawn), so minions without one are skipped; addMinionEl places it.
 function repositionActors() {
-  positionActor(playerActor, state.playerRow, state.playerCol, true);
-  if (state.boss) positionActor(bossActor, state.boss.row, state.boss.col, true);
-  state.minions.forEach(m => {
+  positionActor(playerActor, state.floor.playerRow, state.floor.playerCol, true);
+  if (state.floor.boss) positionActor(bossActor, state.floor.boss.row, state.floor.boss.col, true);
+  state.floor.minions.forEach(m => {
     const el = actorEl(m);
     if (el) positionActor(el, m.row, m.col, true);
   });
-  if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col, true);
-  if (state.stairs) positionActor(stairsActor, state.stairs.row, state.stairs.col, true);
-  if (state.chest) positionActor(chestActor, state.chest.row, state.chest.col, true);
-  if (state.rune) positionActor(runeActor, state.rune.row, state.rune.col, true);
-  state.encounters.forEach(e => positionActor(actorEl(e), e.row, e.col, true));
-  state.props.forEach(p => positionActor(actorEl(p), p.row, p.col, true));
+  if (state.floor.coin) positionActor(coinActor, state.floor.coin.row, state.floor.coin.col, true);
+  if (state.floor.stairs) positionActor(stairsActor, state.floor.stairs.row, state.floor.stairs.col, true);
+  if (state.floor.chest) positionActor(chestActor, state.floor.chest.row, state.floor.chest.col, true);
+  if (state.floor.rune) positionActor(runeActor, state.floor.rune.row, state.floor.rune.col, true);
+  state.floor.encounters.forEach(e => positionActor(actorEl(e), e.row, e.col, true));
+  state.floor.props.forEach(p => positionActor(actorEl(p), p.row, p.col, true));
 }
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
 function pickCoinTile(walls, avoidList, allowedTiles) {
   const candidates = [];
-  for (let r = 0; r < state.GRID_SIZE; r++) {
-    for (let c = 0; c < state.GRID_SIZE; c++) {
+  for (let r = 0; r < state.floor.GRID_SIZE; r++) {
+    for (let c = 0; c < state.floor.GRID_SIZE; c++) {
       const k = key(r, c);
       if (walls.has(k)) continue;
       if (allowedTiles && !allowedTiles.has(k)) continue;
@@ -570,18 +570,18 @@ function pickCoinTile(walls, avoidList, allowedTiles) {
 // Walkable steps from the player's start to every tile they can reach
 // without passing the boss — i.e. everything outside the boss chamber.
 function stepsFromStart() {
-  const blocked = new Set(state.wallSet);
-  state.pillarSet.forEach(k => blocked.add(k));
-  state.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
-  blocked.add(key(state.boss.row, state.boss.col));
-  const dist = new Map([[key(state.PLAYER_START.row, state.PLAYER_START.col), 0]]);
-  const queue = [state.PLAYER_START];
+  const blocked = new Set(state.floor.wallSet);
+  state.floor.pillarSet.forEach(k => blocked.add(k));
+  state.floor.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
+  blocked.add(key(state.floor.boss.row, state.floor.boss.col));
+  const dist = new Map([[key(state.floor.PLAYER_START.row, state.floor.PLAYER_START.col), 0]]);
+  const queue = [state.floor.PLAYER_START];
   while (queue.length) {
     const cur = queue.shift();
     const d = dist.get(key(cur.row, cur.col));
     for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const nr = cur.row + dr, nc = cur.col + dc;
-      if (nr < 0 || nr >= state.GRID_SIZE || nc < 0 || nc >= state.GRID_SIZE) continue;
+      if (nr < 0 || nr >= state.floor.GRID_SIZE || nc < 0 || nc >= state.floor.GRID_SIZE) continue;
       const k = key(nr, nc);
       if (dist.has(k) || blocked.has(k)) continue;
       dist.set(k, d + 1);
@@ -597,7 +597,7 @@ function stepsFromStart() {
 // face. Falls back to any free reachable room tile if a small room can't
 // fit them that far away.
 function placeMinions(roomTiles, takenTiles) {
-  const count = MINIONS_PER_ROOM[Math.min(state.roomIndex, MINIONS_PER_ROOM.length - 1)];
+  const count = MINIONS_PER_ROOM[Math.min(state.run.roomIndex, MINIONS_PER_ROOM.length - 1)];
   const dist = stepsFromStart();
   const isTaken = (k) => takenTiles.some(p => key(p.row, p.col) === k);
   const free = [...dist.keys()].filter(k => roomTiles.has(k) && !isTaken(k));
@@ -629,24 +629,24 @@ function randomGlitchCode() {
 }
 
 function startGame() {
-  state.order = shuffle(state.activeData).slice(0, Math.min(ROOM_COUNT, state.activeData.length));
-  state.roomIndex = 0;
-  state.runEnded = false;
-  state.attempts = 0;
-  state.extraSpaceCount = 0;
-  state.hearts = MAX_HEARTS;
-  state.turnCount = 0;
-  state.coinsTotal = 0;
+  state.run.order = shuffle(state.settings.activeData).slice(0, Math.min(ROOM_COUNT, state.settings.activeData.length));
+  state.run.roomIndex = 0;
+  state.run.runEnded = false;
+  state.run.attempts = 0;
+  state.run.extraSpaceCount = 0;
+  state.run.hearts = MAX_HEARTS;
+  state.run.turnCount = 0;
+  state.run.coinsTotal = 0;
   resetHaunts();
-  state.revealOnWrong = revealToggle.checked;
+  state.settings.revealOnWrong = revealToggle.checked;
   // Every run is multiple choice. The typing path (answerForm,
   // attemptAnswer, TYPING_SAMPLE_DATA) is parked, not deleted: it becomes a
   // per-question "type it in" modifier once question modifiers are designed.
-  state.mcMode = true;
-  answerForm.style.display = state.mcMode ? 'none' : 'flex';
-  mcOptionsEl.classList.toggle('show', state.mcMode);
+  state.settings.mcMode = true;
+  answerForm.style.display = state.settings.mcMode ? 'none' : 'flex';
+  mcOptionsEl.classList.toggle('show', state.settings.mcMode);
   renderHud();
-  roomTotalEl.textContent = state.order.length;
+  roomTotalEl.textContent = state.run.order.length;
 
   // Room setup happens immediately (invisibly, behind the glitch screen) so
   // there's no added real loading time — only a deliberate dramatic pause
@@ -684,41 +684,41 @@ function loadRoom() {
 // special item and minions, plus the light, sight and camera that follow
 // from them. No page access.
 function buildFloor() {
-  state.GRID_SIZE = GRID_SIZES[Math.min(state.roomIndex, GRID_SIZES.length - 1)];
-  state.CHAMBER_TARGET = CHAMBER_TARGETS[Math.min(state.roomIndex, CHAMBER_TARGETS.length - 1)];
+  state.floor.GRID_SIZE = GRID_SIZES[Math.min(state.run.roomIndex, GRID_SIZES.length - 1)];
+  state.floor.CHAMBER_TARGET = CHAMBER_TARGETS[Math.min(state.run.roomIndex, CHAMBER_TARGETS.length - 1)];
 
-  state.minions = [];
-  state.hunter = null;
-  state.darkTurns = 0;
-  state.encounters = [];
-  state.props = [];
-  state.runeHint = null;
-  state.lastChoiceType = null;
+  state.floor.minions = [];
+  state.floor.hunter = null;
+  state.floor.darkTurns = 0;
+  state.floor.encounters = [];
+  state.floor.props = [];
+  state.floor.runeHint = null;
+  state.floor.lastChoiceType = null;
 
-  const layout = generateDungeonLayout(state.GRID_SIZE, state.CHAMBER_TARGET);
-  state.wallSet = layout.walls;
-  state.PLAYER_START = { row: layout.start.row, col: layout.start.col };
+  const layout = generateDungeonLayout(state.floor.GRID_SIZE, state.floor.CHAMBER_TARGET);
+  state.floor.wallSet = layout.walls;
+  state.floor.PLAYER_START = { row: layout.start.row, col: layout.start.col };
 
-  state.playerRow = state.PLAYER_START.row;
-  state.playerCol = state.PLAYER_START.col;
-  state.facing = 'N';
+  state.floor.playerRow = state.floor.PLAYER_START.row;
+  state.floor.playerCol = state.floor.PLAYER_START.col;
+  state.floor.facing = 'N';
   updateCamera();
 
   // Each room's theme, pillars, papers and boxes (decor.js).
-  const furnishing = furnishFloor(layout, state.GRID_SIZE, state.roomIndex);
-  state.pillarSet = furnishing.pillars;
-  state.chamberAt = layout.chamberAt;
-  state.chamberThemes = furnishing.themes;
-  state.visitedChambers = new Set();
+  const furnishing = furnishFloor(layout, state.floor.GRID_SIZE, state.run.roomIndex);
+  state.floor.pillarSet = furnishing.pillars;
+  state.floor.chamberAt = layout.chamberAt;
+  state.floor.chamberThemes = furnishing.themes;
+  state.floor.visitedChambers = new Set();
   furnishing.props.forEach(p => {
-    state.props.push({ ...p, identified: false, searched: false, sprung: false });
+    state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
   });
 
-  state.boss = { row: layout.spawn.row, col: layout.spawn.col, hp: BOSS_HP, kind: 'boss' };
+  state.floor.boss = { row: layout.spawn.row, col: layout.spawn.col, hp: BOSS_HP, kind: 'boss' };
 
   // The boss stands on the chamber's one doorway, so the stairs behind it
-  // are unreachable until it's defeated and state.boss is nulled.
-  state.stairs = { row: layout.stairs.row, col: layout.stairs.col };
+  // are unreachable until it's defeated and state.floor.boss is nulled.
+  state.floor.stairs = { row: layout.stairs.row, col: layout.stairs.col };
 
   // Coin and the room's one special item only ever land in an actual room
   // tile, never a hallway — a hallway is one tile wide, so an object
@@ -731,21 +731,21 @@ function buildFloor() {
   const placer = furnishing.placer;
   const freeRoomTiles = new Set([...roomTiles].filter(k => !placer.blocked.has(k)));
 
-  const coinTile = pickCoinTile(state.wallSet, [state.PLAYER_START, { row: state.boss.row, col: state.boss.col }, state.stairs], freeRoomTiles);
-  state.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
+  const coinTile = pickCoinTile(state.floor.wallSet, [state.floor.PLAYER_START, { row: state.floor.boss.row, col: state.floor.boss.col }, state.floor.stairs], freeRoomTiles);
+  state.floor.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
 
-  const takenTiles = [state.PLAYER_START, { row: state.boss.row, col: state.boss.col }, state.stairs];
-  if (state.coin) takenTiles.push(state.coin);
+  const takenTiles = [state.floor.PLAYER_START, { row: state.floor.boss.row, col: state.floor.boss.col }, state.floor.stairs];
+  if (state.floor.coin) takenTiles.push(state.floor.coin);
 
   // Exactly one special interactive extra per room — a chest, a rune, or a
   // single category encounter, picked at random from whichever are
   // eligible. Never more than one at once, so the room's one bonus/gamble
   // stays meaningful instead of being buried among several.
-  state.chest = null;
-  state.rune = null;
+  state.floor.chest = null;
+  state.floor.rune = null;
 
   const byCategory = new Map();
-  state.activeData.forEach(item => {
+  state.settings.activeData.forEach(item => {
     if (!item.category) return;
     if (!byCategory.has(item.category)) byCategory.set(item.category, []);
     byCategory.get(item.category).push(item);
@@ -763,11 +763,11 @@ function buildFloor() {
     ];
     const chosen = candidates[Math.floor(Math.random() * candidates.length)];
     if (chosen.type === 'chest') {
-      state.chest = { row: specialTile.row, col: specialTile.col, kind: 'chest' };
+      state.floor.chest = { row: specialTile.row, col: specialTile.col, kind: 'chest' };
     } else if (chosen.type === 'rune') {
-      state.rune = { row: specialTile.row, col: specialTile.col, kind: 'rune' };
+      state.floor.rune = { row: specialTile.row, col: specialTile.col, kind: 'rune' };
     } else {
-      state.encounters.push({
+      state.floor.encounters.push({
         row: specialTile.row, col: specialTile.col, kind: 'encounter',
         category: chosen.category, pool: byCategory.get(chosen.category),
       });
@@ -775,37 +775,37 @@ function buildFloor() {
   }
 
   const minionTaken = takenTiles.slice();
-  [state.chest, state.rune, ...state.encounters].forEach(item => { if (item) minionTaken.push(item); });
+  [state.floor.chest, state.floor.rune, ...state.floor.encounters].forEach(item => { if (item) minionTaken.push(item); });
   placeMinions(roomTiles, minionTaken);
 
-  state.darkness = false;
+  state.floor.darkness = false;
   initBossLight();
-  state.visibleSet = new Set();
-  state.exploredSet = new Set();
+  state.floor.visibleSet = new Set();
+  state.floor.exploredSet = new Set();
   computeVisibility();
-  state.selectedTarget = null;
+  state.battle.selectedTarget = null;
 
   // The room the player wakes in counts as visited (drawFloor announces it).
-  const startChamber = state.chamberAt.get(key(state.playerRow, state.playerCol));
-  if (startChamber !== undefined) state.visitedChambers.add(startChamber);
+  const startChamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
+  if (startChamber !== undefined) state.floor.visitedChambers.add(startChamber);
 }
 
 // Puts the floor buildFloor() made on the page: tiles, one element per
 // thing, fog, HUD, and a fresh room screen.
 function drawFloor() {
-  roomNumEl.textContent = state.roomIndex + 1;
+  roomNumEl.textContent = state.run.roomIndex + 1;
   // Per-room wording overrides (text.js AREAS) apply from here on.
-  setTextArea(state.roomIndex + 1);
+  setTextArea(state.run.roomIndex + 1);
   applyStaticText();
   applyActorSymbols();
 
   buildGridTiles();
-  playerActor.textContent = DIRECTION_ARROWS[state.facing];
-  positionActor(playerActor, state.playerRow, state.playerCol, true);
+  playerActor.textContent = DIRECTION_ARROWS[state.floor.facing];
+  positionActor(playerActor, state.floor.playerRow, state.floor.playerCol, true);
 
   // Papers and boxes go in under the player in the DOM, like the other
   // items, so anything moving draws over them.
-  state.props.forEach(prop => {
+  state.floor.props.forEach(prop => {
     const el = document.createElement('div');
     el.className = 'actor prop ' + prop.kind;
     setGlyph(el, t('term.' + prop.kind + '.symbol'));
@@ -816,23 +816,23 @@ function drawFloor() {
   renderWalls();
 
   bossActor.classList.remove('gone');
-  positionActor(bossActor, state.boss.row, state.boss.col, true);
+  positionActor(bossActor, state.floor.boss.row, state.floor.boss.col, true);
   stairsActor.classList.remove('gone');
-  positionActor(stairsActor, state.stairs.row, state.stairs.col, true);
-  coinActor.classList.toggle('gone', !state.coin);
-  if (state.coin) positionActor(coinActor, state.coin.row, state.coin.col, true);
+  positionActor(stairsActor, state.floor.stairs.row, state.floor.stairs.col, true);
+  coinActor.classList.toggle('gone', !state.floor.coin);
+  if (state.floor.coin) positionActor(coinActor, state.floor.coin.row, state.floor.coin.col, true);
 
-  chestActor.classList.toggle('gone', !state.chest);
-  if (state.chest) {
-    addActorEl(state.chest, chestActor);
-    positionActor(chestActor, state.chest.row, state.chest.col, true);
+  chestActor.classList.toggle('gone', !state.floor.chest);
+  if (state.floor.chest) {
+    addActorEl(state.floor.chest, chestActor);
+    positionActor(chestActor, state.floor.chest.row, state.floor.chest.col, true);
   }
-  runeActor.classList.toggle('gone', !state.rune);
-  if (state.rune) {
-    addActorEl(state.rune, runeActor);
-    positionActor(runeActor, state.rune.row, state.rune.col, true);
+  runeActor.classList.toggle('gone', !state.floor.rune);
+  if (state.floor.rune) {
+    addActorEl(state.floor.rune, runeActor);
+    positionActor(runeActor, state.floor.rune.row, state.floor.rune.col, true);
   }
-  state.encounters.forEach(encounter => {
+  state.floor.encounters.forEach(encounter => {
     const el = document.createElement('div');
     el.className = 'actor encounter';
     setGlyph(el, glyphForCategory(encounter.category));
@@ -840,7 +840,7 @@ function drawFloor() {
     addActorEl(encounter, el);
     positionActor(el, encounter.row, encounter.col, true);
   });
-  state.minions.forEach(addMinionEl);
+  state.floor.minions.forEach(addMinionEl);
 
   renderFog();
   renderLightEye();
@@ -852,9 +852,9 @@ function drawFloor() {
   clearLog();
   roomFeedback.innerHTML = '';
   // The room the player wakes in announces itself like any other.
-  const startChamber = state.chamberAt.get(key(state.playerRow, state.playerCol));
+  const startChamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
   if (startChamber !== undefined) {
-    showRoomNote('move-msg', t('theme.' + state.chamberThemes[startChamber] + '.enter'));
+    showRoomNote('move-msg', t('theme.' + state.floor.chamberThemes[startChamber] + '.enter'));
   }
   answerInput.value = '';
   setControlsEnabled(true);
@@ -863,8 +863,8 @@ function drawFloor() {
 
 // Shared by the stairs (reaching them mid-move) and the dev skip button.
 function advanceRoom() {
-  state.roomIndex++;
-  if (state.roomIndex >= state.order.length) {
+  state.run.roomIndex++;
+  if (state.run.roomIndex >= state.run.order.length) {
     endWin();
   } else {
     loadRoom();
@@ -914,7 +914,7 @@ function drawEvents(events) {
         playerActor.textContent = DIRECTION_ARROWS[e.facing];
         break;
       case 'blocked':
-        bumpActor(playerActor, state.facing);
+        bumpActor(playerActor, state.floor.facing);
         cls = 'block-msg';
         parts.push(e.kind === 'prop' ? t('room.' + e.thing.kind + '.done')
           : e.kind === 'encounter' ? t('room.blocked.encounter', { category: categoryLabel(e.thing.category) })
@@ -975,7 +975,7 @@ function drawEvents(events) {
         break;
       case 'rejected':
         logLine(t('log.rejected', { cost: e.cost }), 'alert');
-        if (state.revealOnWrong) {
+        if (state.settings.revealOnWrong) {
           logLine(t('log.expected', { answer: e.expected }), 'sys');
           if (e.source) logLine(t('log.source', { source: e.source }), 'sys');
         }
@@ -1032,7 +1032,7 @@ function drawEvents(events) {
         break;
       case 'runeDecoded': {
         const hint = buildHint(e.question);
-        const choiceLabel = fightChoiceLabel(e.question, state.activeData, BATTLE_CHOICE_COUNT);
+        const choiceLabel = fightChoiceLabel(e.question, state.settings.activeData, BATTLE_CHOICE_COUNT);
         logLine(choiceLabel
           ? t('log.rune.decoded', { category: choiceLabel, hint })
           : t('log.rune.decodedUncategorized', { hint }), 'bright');
@@ -1051,7 +1051,7 @@ function drawEvents(events) {
 // The boss light has reached this floor's LIGHT_LOSS_COVERAGE: the run
 // ends where the player stands, after a beat to see it.
 function loseToLight() {
-  state.runEnded = true;
+  state.run.runEnded = true;
   showRoomNote('warn-msg', t('room.light.consumed'));
   setControlsEnabled(false);
   stopTimer();
@@ -1062,13 +1062,13 @@ function loseToLight() {
 // box spends a turn; stairs load the next floor; a trapped box opens the
 // battle screen; a bump or a turn toward a wall only draws.
 function movePlayer(dRow, dCol) {
-  if (state.turnLocked || state.runEnded) return;
-  state.turnLocked = true;
+  if (state.run.turnLocked || state.run.runEnded) return;
+  state.run.turnLocked = true;
   const events = stepPlayer(dRow, dCol);
   const has = (type) => events.some(e => e.type === type);
   if (has('stairsReached')) {
     drawEvents(events);
-    state.turnLocked = false;
+    state.run.turnLocked = false;
     advanceRoom();
     return;
   }
@@ -1079,14 +1079,14 @@ function movePlayer(dRow, dCol) {
     if (note.text) showRoomNote(note.cls, note.text);
     if (has('boxSprung')) syncBattleScreen();
   }
-  state.turnLocked = false;
+  state.run.turnLocked = false;
 }
 
 function skipTurn() {
-  if (state.turnLocked || state.runEnded) return;
-  state.turnLocked = true;
+  if (state.run.turnLocked || state.run.runEnded) return;
+  state.run.turnLocked = true;
   applyTurnOutcome([{ type: 'waited' }]);
-  state.turnLocked = false;
+  state.run.turnLocked = false;
 }
 
 // Shared outcome handler for both typed answers and multiple-choice taps.
@@ -1110,35 +1110,35 @@ function applyAnswerResult(isCorrect, hadExtraSpace, given) {
   } else {
     endEncounter();
   }
-  state.turnLocked = false;
+  state.run.turnLocked = false;
 }
 
 function attemptAnswer() {
-  if (state.turnLocked || state.battlePhase !== 'answering') return;
-  if (!state.selectedTarget || !isAdjacentToPlayer(state.selectedTarget)) {
+  if (state.run.turnLocked || state.battle.battlePhase !== 'answering') return;
+  if (!state.battle.selectedTarget || !isAdjacentToPlayer(state.battle.selectedTarget)) {
     logLine(t('log.outOfRange'), 'sys');
     return;
   }
   const raw = answerInput.value;
   if (!raw.trim()) return;
 
-  state.turnLocked = true;
-  state.attempts++;
+  state.run.turnLocked = true;
+  state.run.attempts++;
   const hadExtraSpace = raw !== raw.trim() || /\s{2,}/.test(raw);
   const cleanInput = normalizeSpaces(raw).toLowerCase();
-  const cleanAnswer = normalizeSpaces(state.currentQuestion.meaning).toLowerCase();
+  const cleanAnswer = normalizeSpaces(state.battle.currentQuestion.meaning).toLowerCase();
   applyAnswerResult(cleanInput === cleanAnswer, hadExtraSpace, normalizeSpaces(raw));
 }
 
 function attemptAnswerMC(choice) {
-  if (state.turnLocked || state.battlePhase !== 'answering') return;
-  if (!state.selectedTarget || !isAdjacentToPlayer(state.selectedTarget)) {
+  if (state.run.turnLocked || state.battle.battlePhase !== 'answering') return;
+  if (!state.battle.selectedTarget || !isAdjacentToPlayer(state.battle.selectedTarget)) {
     logLine(t('log.outOfRange'), 'sys');
     return;
   }
-  state.turnLocked = true;
-  state.attempts++;
-  const isCorrect = normalizeSpaces(choice).toLowerCase() === normalizeSpaces(state.currentQuestion.meaning).toLowerCase();
+  state.run.turnLocked = true;
+  state.run.attempts++;
+  const isCorrect = normalizeSpaces(choice).toLowerCase() === normalizeSpaces(state.battle.currentQuestion.meaning).toLowerCase();
   applyAnswerResult(isCorrect, false, choice);
 }
 
@@ -1171,7 +1171,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'ArrowDown') { e.preventDefault(); movePlayer(1, 0); }
   else if (e.key === 'ArrowLeft') { e.preventDefault(); movePlayer(0, -1); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(0, 1); }
-  else if (state.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {
+  else if (state.settings.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {
     const idxMap = { 1: 0, a: 0, 2: 1, b: 1, 3: 2, c: 2, 4: 3, d: 3 };
     const idx = idxMap[e.key.toLowerCase()];
     const btn = mcOptionsEl.children[idx];
@@ -1184,12 +1184,12 @@ document.addEventListener('keydown', (e) => {
 // button lost focus.
 document.addEventListener('keydown', (e) => {
   if (!battleScreen.classList.contains('show')) return;
-  if (state.battlePhase === 'ended' && (e.key === 'Enter' || e.key === ' ') && document.activeElement !== continueBtn) {
+  if (state.battle.battlePhase === 'ended' && (e.key === 'Enter' || e.key === ' ') && document.activeElement !== continueBtn) {
     e.preventDefault();
     if (!continueBtn.disabled) leaveEncounter();
     return;
   }
-  if (state.battlePhase !== 'choosing') return;
+  if (state.battle.battlePhase !== 'choosing') return;
   const idx = ['1', '2', '3'].indexOf(e.key);
   const btn = idx === -1 ? null : choiceListEl.children[idx];
   if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
@@ -1198,11 +1198,11 @@ document.addEventListener('keydown', (e) => {
 function endWin() {
   stopTimer();
   let msg = t('end.win.stats', {
-    bosses: state.order.length, time: formatTime(state.seconds), turns: state.turnCount,
-    attempts: state.attempts, hearts: state.hearts, coins: state.coinsTotal,
+    bosses: state.run.order.length, time: formatTime(state.run.seconds), turns: state.run.turnCount,
+    attempts: state.run.attempts, hearts: state.run.hearts, coins: state.run.coinsTotal,
   });
-  if (state.extraSpaceCount > 0) {
-    msg += ' ' + t('end.win.spacing', { count: state.extraSpaceCount });
+  if (state.run.extraSpaceCount > 0) {
+    msg += ' ' + t('end.win.spacing', { count: state.run.extraSpaceCount });
   }
   winStats.textContent = msg + hauntStats();
   showScreen(winScreen);
@@ -1211,8 +1211,8 @@ function endWin() {
 // " Doubts silenced: X of Y." for the end screens, or nothing if the
 // player never missed.
 function hauntStats() {
-  if (!state.hauntsTotal) return '';
-  return ' ' + t('end.haunts', { silenced: state.hauntsSilenced, total: state.hauntsTotal });
+  if (!state.run.hauntsTotal) return '';
+  return ' ' + t('end.haunts', { silenced: state.run.hauntsSilenced, total: state.run.hauntsTotal });
 }
 
 // `reason` is 'light' when the boss light consumed the floor; anything else
@@ -1220,8 +1220,8 @@ function hauntStats() {
 function endLose(reason) {
   loseTitle.textContent = t(reason === 'light' ? 'end.lose.light.title' : 'end.lose.title');
   loseStats.textContent = t('end.lose.stats', {
-    room: state.roomIndex + 1, rooms: state.order.length, time: formatTime(state.seconds),
-    turns: state.turnCount, coins: state.coinsTotal,
+    room: state.run.roomIndex + 1, rooms: state.run.order.length, time: formatTime(state.run.seconds),
+    turns: state.run.turnCount, coins: state.run.coinsTotal,
   }) + hauntStats();
   showScreen(loseScreen);
 }

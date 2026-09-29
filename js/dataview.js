@@ -98,7 +98,7 @@ function close() {
 async function buildSetOptions() {
   const builtins = await fetchManifest();
   const saved = listSavedSets();
-  let html = '<option value="current">' + escapeHtml(t('data.currentList', { count: state.activeData.length })) + '</option>';
+  let html = '<option value="current">' + escapeHtml(t('data.currentList', { count: state.settings.activeData.length })) + '</option>';
   if (builtins.length) {
     html += '<optgroup label="' + escapeHtml(t('data.builtinGroup')) + '">' +
       builtins.map(s => '<option value="builtin:' + escapeHtml(s.file) + '">' + escapeHtml(s.name) + '</option>').join('') +
@@ -117,7 +117,7 @@ async function viewSet(value) {
   els.status.textContent = '';
   const label = els.select.selectedOptions[0] ? els.select.selectedOptions[0].textContent : '';
   if (value === 'current') {
-    entries = state.activeData;
+    entries = state.settings.activeData;
     viewedLabel = label;
     viewedFile = 'current-list';
   } else if (value.startsWith('builtin:')) {

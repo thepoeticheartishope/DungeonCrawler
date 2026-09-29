@@ -88,7 +88,7 @@ export function parseListInput(text) {
 // Picks a random term from `pool` (the full active list, by default),
 // avoiding an immediate repeat of whatever question is currently showing.
 export function pickQuestion(exclude, pool) {
-  pool = pool || state.activeData;
+  pool = pool || state.settings.activeData;
   let candidates = pool;
   if (exclude && pool.length > 1) {
     candidates = pool.filter(d => d.term !== exclude.term);
@@ -100,7 +100,7 @@ export function pickQuestion(exclude, pool) {
 // encounter's own category pool, or the full active list for anything else
 // (boss, minion, chest, rune, or no target at all).
 export function poolFor(target) {
-  return target && target.kind === 'encounter' ? target.pool : state.activeData;
+  return target && target.kind === 'encounter' ? target.pool : state.settings.activeData;
 }
 
 function groupBy(pool, keyFn) {
@@ -299,7 +299,7 @@ export function buildChoices(item) {
     const hasCorrect = opts.some(o => normalizeSpaces(o).toLowerCase() === normalizeSpaces(item.meaning).toLowerCase());
     if (!hasCorrect) opts.push(item.meaning);
   } else {
-    const basePool = state.activeData.filter(d => d !== item &&
+    const basePool = state.settings.activeData.filter(d => d !== item &&
       normalizeSpaces(d.meaning).toLowerCase() !== normalizeSpaces(item.meaning).toLowerCase() &&
       !EXPLICIT_ANSWER_TERMS.test(d.meaning));
     const typedPool = item.answerType

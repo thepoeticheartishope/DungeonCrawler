@@ -14,7 +14,7 @@ import { repelHunter } from './combat.js';
 import { goldReward, openBox } from './moves.js';
 import { pickQuestion, fightChoosable } from './quiz.js';
 
-// One answer to the current question against state.selectedTarget. The
+// One answer to the current question against state.battle.selectedTarget. The
 // caller has already checked adjacency and counted the attempt; `given`
 // is the player's answer, echoed back as answerGiven.
 //
@@ -23,19 +23,19 @@ import { pickQuestion, fightChoosable } from './quiz.js';
 // answer, until its HP runs out. A miss costs 1 heart (DARK_MISS_COST in
 // the darkness); at 0 hearts the events end with signalLost.
 export function settleAnswer(isCorrect, hadExtraSpace, given) {
-  const target = state.selectedTarget;
-  const q = state.currentQuestion;
+  const target = state.battle.selectedTarget;
+  const q = state.battle.currentQuestion;
   const events = [{ type: 'answerGiven', given }];
 
   if (isCorrect) {
     events.push({ type: 'accepted' });
     if (hadExtraSpace) {
-      state.extraSpaceCount++;
+      state.run.extraSpaceCount++;
       events.push({ type: 'extraSpaces' });
     }
   } else {
-    const cost = state.darkness ? DARK_MISS_COST : 1;
-    state.hearts -= cost;
+    const cost = state.floor.darkness ? DARK_MISS_COST : 1;
+    state.run.hearts -= cost;
     events.push({ type: 'rejected', cost, expected: q.meaning, source: q.source });
   }
   const haunt = recordHauntAnswer(q, isCorrect);
@@ -44,7 +44,7 @@ export function settleAnswer(isCorrect, hadExtraSpace, given) {
   const wager = settleWager(isCorrect);
   if (wager) events.push(wager);
 
-  if (state.hearts <= 0) {
+  if (state.run.hearts <= 0) {
     events.push({ type: 'signalLost' });
     return events;
   }
@@ -55,10 +55,10 @@ export function settleAnswer(isCorrect, hadExtraSpace, given) {
 // Settles a Gambler wager once the answer is in: right wins it, wrong
 // loses it (gold never goes below 0). The fourth place gold changes.
 function settleWager(isCorrect) {
-  const n = state.wager;
+  const n = state.battle.wager;
   if (!n) return null;
-  state.coinsTotal = Math.max(0, state.coinsTotal + (isCorrect ? n : -n));
-  state.wager = 0;
+  state.run.coinsTotal = Math.max(0, state.run.coinsTotal + (isCorrect ? n : -n));
+  state.battle.wager = 0;
   return { type: 'wagerSettled', won: isCorrect, n };
 }
 
@@ -68,16 +68,16 @@ function settleWager(isCorrect) {
 // cleared (bossDefeated, then darknessFell).
 function resolveBossAnswer(isCorrect) {
   if (!isCorrect) return [{ type: 'bossHeld' }];
-  state.boss.hp--;
-  if (state.boss.hp > 0) return [{ type: 'bossHit', hp: state.boss.hp, max: BOSS_HP }];
-  const boss = state.boss;
-  state.boss = null; // clears the doorway it was blocking
+  state.floor.boss.hp--;
+  if (state.floor.boss.hp > 0) return [{ type: 'bossHit', hp: state.floor.boss.hp, max: BOSS_HP }];
+  const boss = state.floor.boss;
+  state.floor.boss = null; // clears the doorway it was blocking
   // Its light dies with it, and the floor goes dark: explored tiles are
   // forgotten, the minions left start hunting, misses cost more and gold
   // pays more (DARK_* in config.js).
   extinguishLight();
-  state.darkness = true;
-  state.exploredSet = new Set();
+  state.floor.darkness = true;
+  state.floor.exploredSet = new Set();
   computeVisibility();
   return [{ type: 'bossDefeated', boss }, { type: 'darknessFell' }];
 }
@@ -93,7 +93,7 @@ function resolveOneShot(target, isCorrect, q) {
     return [{ type: 'hunterRepelled', hunter: target, right: isCorrect }];
   }
   if (target.kind === 'minion') {
-    state.minions = state.minions.filter(m => m !== target);
+    state.floor.minions = state.floor.minions.filter(m => m !== target);
     return [{ type: 'minionCleared', minion: target, right: isCorrect }];
   }
 
@@ -102,27 +102,27 @@ function resolveOneShot(target, isCorrect, q) {
     // A trapped box stays on the map (it's furniture), just spent.
     target.sprung = false;
     target.searched = true;
-  } else if (target.kind === 'chest') state.chest = null;
-  else if (target.kind === 'rune') state.rune = null;
-  else if (target.kind === 'encounter') state.encounters = state.encounters.filter(e => e !== target);
+  } else if (target.kind === 'chest') state.floor.chest = null;
+  else if (target.kind === 'rune') state.floor.rune = null;
+  else if (target.kind === 'encounter') state.floor.encounters = state.floor.encounters.filter(e => e !== target);
   if (!isCorrect) return events;
 
   if (target.kind === 'box') {
     events.push({ type: 'goldGained', amount: openBox(target), from: 'box' });
   } else if (target.kind === 'chest') {
     const gold = goldReward(2);
-    state.coinsTotal += gold;
+    state.run.coinsTotal += gold;
     events.push({ type: 'goldGained', amount: gold, from: 'chest' });
   } else if (target.kind === 'encounter') {
     const gold = goldReward(DIFFICULTY_COIN_REWARD[q.difficulty] || DIFFICULTY_COIN_REWARD.medium);
-    state.coinsTotal += gold;
+    state.run.coinsTotal += gold;
     events.push({ type: 'goldGained', amount: gold, from: 'encounter', category: target.category });
   } else {
     // The hinted question stays in reserve until it's asked: the next
     // fight always offers its category (marked ◊), so the hint can't be
     // spent on a question the player never chooses.
-    state.runeHint = pickQuestion(q, fightChoosable(state.activeData, BATTLE_CHOICE_COUNT));
-    events.push({ type: 'runeDecoded', question: state.runeHint });
+    state.floor.runeHint = pickQuestion(q, fightChoosable(state.settings.activeData, BATTLE_CHOICE_COUNT));
+    events.push({ type: 'runeDecoded', question: state.floor.runeHint });
   }
   return events;
 }

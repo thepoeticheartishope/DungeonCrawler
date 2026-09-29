@@ -16,8 +16,8 @@ export const MODIFIERS = ['blind', 'gambler', 'flip', 'timer'];
 // modifier. Bosses always do.
 export function modifierChance(target) {
   if (target && target.kind === 'boss') return 1;
-  let chance = MODIFIER_CHANCE[Math.min(state.roomIndex, MODIFIER_CHANCE.length - 1)];
-  if (state.darkness) chance += MODIFIER_DARK_BONUS;
+  let chance = MODIFIER_CHANCE[Math.min(state.run.roomIndex, MODIFIER_CHANCE.length - 1)];
+  if (state.floor.darkness) chance += MODIFIER_DARK_BONUS;
   return Math.min(1, chance);
 }
 
@@ -28,7 +28,7 @@ function eligibleModifiers() {
 // The most gold a Gambler wager can be right now: the floor number, but
 // never more than the player holds. 0 means Gambler can't be offered.
 export function maxWager() {
-  return Math.min(state.roomIndex + 1, state.coinsTotal);
+  return Math.min(state.run.roomIndex + 1, state.run.coinsTotal);
 }
 
 // Rolls one category's modifier: null (none) or one of MODIFIERS.
