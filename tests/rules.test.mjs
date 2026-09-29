@@ -1,5 +1,5 @@
 // Unit tests for the rule modules (no DOM): sight.js, light.js, passage.js,
-// combat.js.
+// combat.js, moves.js.
 //
 // Run: node --test tests/*.test.mjs
 //
@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { state, key } from '../js/state.js';
 import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, VIEWPORT_SIZE,
-  LIGHT_TURNS_PER_STEP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY,
+  LIGHT_TURNS_PER_STEP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, DARK_GOLD_MULTIPLIER,
 } from '../js/config.js';
 import { computeVisibility, canMakeOut, updateCamera } from '../js/sight.js';
 import {
@@ -21,6 +21,7 @@ import {
 } from '../js/light.js';
 import { whatBlocks } from '../js/passage.js';
 import { advanceMonsters, spawnMinion } from '../js/combat.js';
+import { stepPlayer, goldReward } from '../js/moves.js';
 
 // An open size x size floor, player in the middle facing north, fog on,
 // nothing else on it.
@@ -45,6 +46,12 @@ function resetFloor(size = 21) {
   state.rune = null;
   state.encounters = [];
   state.props = [];
+  state.coin = null;
+  state.stairs = null;
+  state.coinsTotal = 0;
+  state.chamberAt = new Map();
+  state.chamberThemes = [];
+  state.visitedChambers = new Set();
   state.selectedTarget = null;
   state.turnCount = 0;
   state.darkTurns = 0;
@@ -338,4 +345,42 @@ test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the 
   assert.ok(steps >= 18, 'hunter is ' + steps + ' steps away');
   // Only ever one.
   assert.deepEqual(ofType(advanceMonsters(), 'hunterWoke', 'hunter'), []);
+});
+
+// --- moves.js: stepPlayer ---
+
+test('a wall blocks the step; turning toward it still changes facing', () => {
+  resetFloor();
+  const [r, c] = [state.playerRow, state.playerCol];
+  state.wallSet.add(key(r, c + 1));
+  const events = stepPlayer(0, 1);
+  assert.deepEqual(events.map(e => e.type), ['turned', 'blocked']);
+  assert.equal(events[1].kind, 'wall');
+  assert.equal(state.facing, 'E');
+  assert.deepEqual([state.playerRow, state.playerCol], [r, c]);
+});
+
+test('the coin pays goldReward(1), doubled in the darkness', () => {
+  for (const darkness of [false, true]) {
+    resetFloor();
+    state.darkness = darkness;
+    state.coin = { row: state.playerRow - 1, col: state.playerCol };
+    const taken = stepPlayer(-1, 0).find(e => e.type === 'coinTaken');
+    assert.equal(taken.gold, goldReward(1));
+    assert.equal(taken.gold, darkness ? DARK_GOLD_MULTIPLIER : 1);
+    assert.equal(state.coinsTotal, taken.gold);
+    assert.equal(state.coin, null);
+  }
+});
+
+test('the first step into a room fires roomEntered once', () => {
+  resetFloor();
+  const [r, c] = [state.playerRow, state.playerCol];
+  state.chamberAt.set(key(r - 1, c), 0);
+  state.chamberAt.set(key(r - 2, c), 0);
+  state.chamberThemes = ['crypt'];
+  const first = stepPlayer(-1, 0);
+  assert.deepEqual(first.map(e => e.type), ['stepped', 'roomEntered']);
+  assert.equal(first[1].theme, 'crypt');
+  assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['stepped']);
 });
