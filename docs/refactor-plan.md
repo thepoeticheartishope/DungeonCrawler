@@ -286,9 +286,10 @@ Shared rules for all three:
   `bossDefeated` carries `{ boss }`. `settleWager` is private to answers.js.
   `applyAnswerResult` flows from `signalLost` / `bossHit` / `bossHeld`. Five `settleAnswer`
   tests added. Checked word for word with a seeded bot (`Math.random` seeded, pathfinding to
-  every target, 5 in 6 answers right, reveal-on-wrong on, light loss and chase range patched
-  the same on both) on a `git archive origin/main` copy and the branch: 6 seeds identical,
-  log and room notes included.
+  every target, 5 in 6 answers right, reveal-on-wrong on; light loss, chase range and hearts
+  patched the same on both) on a `git archive origin/main` copy and the branch: 25 seeds
+  identical, log and room notes included. Every answer log line came up except a missed
+  chest or rune (the same `log.<kind>.trapped` path as a missed encounter and box, which did).
 
 ### [ ] 7. Group state + live inspector
 
