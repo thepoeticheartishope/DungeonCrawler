@@ -533,13 +533,18 @@
     position: relative;
   }
 
-  /* The map (js/mapview.js): one square canvas; the edge glows lie on top. */
+  /* The map (js/mapview.js): one canvas, square top-down; the edge glows lie on top. */
   .map-canvas {
     display: block;
     width: 100%;
     aspect-ratio: 1;
     border: 1px solid var(--line);
   }
+  /* Isometric (render.js renderViewShape): the whole column wide and
+     shorter, since the diamond is half as tall as it is wide. The shape
+     must match ISO_MAP_SHAPE in config.js. */
+  .grid-wrap.iso { max-width: none; }
+  .grid-wrap.iso .map-canvas { aspect-ratio: 3 / 2; }
 
   /* Edge glows toward an off-screen boss. Opacity is set per edge by
      render.js renderLightHint, over the map; they never catch clicks. */
@@ -631,6 +636,9 @@
   .dpad-center { grid-column: 2; grid-row: 2; }
   .dpad-e { grid-column: 3; grid-row: 2; }
   .dpad-s { grid-column: 2; grid-row: 3; }
+  /* Isometric: the d-pad turns with the diamond, so ^ points up and to
+     the right, where a step north goes on screen. */
+  .dpad.iso { transform: rotate(45deg); }
   /* Which ways are open (render.js renderMoveHints): blocked dims, a
      paper or box to examine shows in inverse video. */
   .dpad button.move-blocked { opacity: 0.3; }
@@ -1111,7 +1119,7 @@
 
   <!-- Room screen -->
   <section class="screen" id="roomScreen">
-    <div class="grid-wrap">
+    <div class="grid-wrap" id="mapWrap">
       <!-- The map (js/mapview.js). Glyphs come from text.js term.*.symbol. -->
       <canvas class="map-canvas" id="mapCanvas" aria-hidden="true"></canvas>
       <!-- Edge glows pointing at an off-screen boss (render.js renderLightHint). -->
@@ -1121,7 +1129,7 @@
       <div class="light-hint light-hint-w" id="lightHintW" aria-hidden="true"></div>
     </div>
 
-    <div class="dpad">
+    <div class="dpad" id="dpad">
       <button class="dpad-n" id="btnN" type="button" aria-label="Move north">^</button>
       <button class="dpad-w" id="btnW" type="button" aria-label="Move west">&lt;</button>
       <button class="dpad-center" id="btnSkip" type="button" aria-label="Skip turn">.</button>

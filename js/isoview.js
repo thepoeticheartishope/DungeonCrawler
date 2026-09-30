@@ -14,7 +14,7 @@
 // points where this view shows things.
 
 import { state, key } from './state.js';
-import { ISO_TILES_ACROSS, ISO_WALL_HEIGHT, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE } from './config.js';
+import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE, ISO_WALL_HEIGHT, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE } from './config.js';
 import { FACING_VECTORS } from './sight.js';
 import { t } from './text.js';
 
@@ -70,7 +70,9 @@ let th = 0;         // its height (half the width: the diamond)
 let wallH = 0;      // a wall's height in pixels
 let originX = 0;    // where the player's tile sits on the canvas
 let originY = 0;
-let size = 0;       // the canvas's width and height
+let width = 0;      // the canvas's width and height, in pixels
+let height = 0;
+let across = ISO_TILES_ACROSS; // tile widths across the map this frame (fewer on a narrow map)
 let look = null;    // what mapview.js passed in
 let frontWalls = new Set(); // walls between the camera and something in sight, this frame
 
@@ -79,16 +81,19 @@ let frontWalls = new Set(); // walls between the camera and something in sight, 
 // shadows), the player's light pool, then everything standing up and the
 // boss mist back to front, so nearer things paint over farther ones. Walls
 // in front of anything in sight are cut away.
-// `shared` is { colours, things, fogOf, paintGlyph, mistSprite,
-// mistStrength, pulse, keepMoving } from mapview.js.
+// `canvasSize` is { width, height } in pixels and `pageWidth`, the map's
+// width on the page. `shared` is { colours, things, fogOf, paintGlyph,
+// mistSprite, mistStrength, pulse, keepMoving } from mapview.js.
 export function drawIsoScene(ctx, canvasSize, shared) {
   look = shared;
-  size = canvasSize;
-  tw = size / ISO_TILES_ACROSS;
+  width = canvasSize.width;
+  height = canvasSize.height;
+  across = isoTilesAcross(canvasSize.pageWidth);
+  tw = width / across;
   th = tw / 2;
   wallH = tw * ISO_WALL_HEIGHT;
-  originX = size / 2;
-  originY = size * CAMERA_Y;
+  originX = width / 2;
+  originY = height * CAMERA_Y;
   const tiles = tilesInView();
   findFrontWalls(tiles);
   tiles.forEach(({ row, col }) => {
@@ -122,7 +127,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
 // Every grid tile whose diamond (or a wall standing on it) falls on the
 // canvas, back to front.
 function tilesInView() {
-  const reach = ISO_TILES_ACROSS + 2;
+  const reach = across + 2;
   const tiles = [];
   for (let row = state.floor.playerRow - reach; row <= state.floor.playerRow + reach; row++) {
     for (let col = state.floor.playerCol - reach; col <= state.floor.playerCol + reach; col++) {
@@ -148,19 +153,26 @@ export function isoScreenOffset(dr, dc) {
 // render.js's edge glow both place things with it, so they agree.
 export function isoScreenShare(row, col) {
   const { x, y } = isoScreenOffset(row - state.floor.playerRow, col - state.floor.playerCol);
-  return { x: 0.5 + x / ISO_TILES_ACROSS, y: CAMERA_Y + y / ISO_TILES_ACROSS };
+  return { x: 0.5 + x / across, y: CAMERA_Y + y * ISO_MAP_SHAPE / across };
+}
+
+// How many tile widths fit across the isometric map, given its width on
+// the page in CSS pixels: fewer on a narrow phone, so tiles and glyphs
+// stay big enough to read. The player's five steps of sight still fit.
+function isoTilesAcross(pageWidth) {
+  return pageWidth < ISO_NARROW_MAP_WIDTH ? ISO_TILES_ACROSS_NARROW : ISO_TILES_ACROSS;
 }
 
 // The middle of a tile on the canvas, in pixels.
 function centre(row, col) {
   const { x, y } = isoScreenShare(row, col);
-  return [x * size, y * size];
+  return [x * width, y * height];
 }
 
 // Whether a tile, or a wall standing on it, shows anywhere on the canvas.
 function onScreen(row, col) {
   const [x, y] = centre(row, col);
-  return x > -tw && x < size + tw && y > -th && y < size + wallH + th;
+  return x > -tw && x < width + tw && y > -th && y < height + wallH + th;
 }
 
 function isWall(row, col) {

@@ -188,13 +188,17 @@ function drawFrame(now) {
 // Matches the canvas's pixels to its size on the page (sharp on high-DPI
 // screens). Returns false while the map isn't on screen (zero size), so
 // nothing is drawn until it is; the resize observer asks again then.
+// Top-down the map is square; isometric it is wider than tall (the
+// page's CSS sets the shape), so width and height are read separately.
 function fitCanvas() {
-  const size = Math.round(canvas.clientWidth * (window.devicePixelRatio || 1));
-  if (!size) return false;
-  if (canvas.width === size && scene.width === size) return true;
-  canvas.width = canvas.height = size;
-  scene.width = scene.height = size;
-  mistSprite = makeMistSprite(size / VIEWPORT_SIZE);
+  const ratio = window.devicePixelRatio || 1;
+  const width = Math.round(canvas.clientWidth * ratio);
+  const height = Math.round(canvas.clientHeight * ratio);
+  if (!width || !height) return false;
+  if (canvas.width === width && canvas.height === height && scene.width === width && scene.height === height) return true;
+  canvas.width = scene.width = width;
+  canvas.height = scene.height = height;
+  mistSprite = makeMistSprite(width / VIEWPORT_SIZE);
   dirty = true;
   snap = true;
   return true;
@@ -230,7 +234,7 @@ function drawScene(now) {
   ctx.fillStyle = HIDDEN_FLOOR;
   ctx.fillRect(0, 0, scene.width, scene.height);
   if (state.settings.isoView) {
-    drawIsoScene(ctx, scene.width, {
+    drawIsoScene(ctx, { width: scene.width, height: scene.height, pageWidth: canvas.clientWidth }, {
       colours, things: mapThings(), fogOf, paintGlyph, mistSprite, mistStrength, pulse, keepMoving,
     });
     return;
