@@ -75,8 +75,9 @@ Rules and data (no page/DOM access):
 | `rooms.js` | Hand-drawn room templates (`#` wall, `.` floor, `?` prop, `+` inner door). |
 | `dungeon.js` | Builds a floor layout from the templates: rooms, hallways, boss room, stairs. |
 | `decor.js` | Themes rooms and places pillars, papers, boxes (`makePlacer`). |
-| `floors.js` | `FLOOR_RECIPES`: what each floor holds (grid, rooms, loops, minions, light loss share, start/boss rooms, the floor's story lines); `floorRecipe(i)` reads it. Data only, grows with the level-design plan. |
-| `floor.js` | `buildFloor()`: a new floor as data — layout, furniture, boss, stairs, coin, the one special item (chest / rune / encounter), minions, then light, sight and camera. |
+| `floors.js` | `FLOOR_RECIPES`: what each floor holds (grid, rooms, loops, minions, light loss share, start/boss rooms, the floor's story lines, the beats met on the way to the boss); `floorRecipe(i)` reads it. Data only, grows with the level-design plan. |
+| `beats.js` | `placeBeats()`: puts the recipe's beats (paper, box, minion, special) on room tiles along the walk from the start to the boss, in the recipe's order. Called by `buildFloor()`. |
+| `floor.js` | `buildFloor()`: a new floor as data — layout, furniture, boss, stairs, the recipe's beats, coin, the one special item (chest / rune / encounter), minions, then light, sight and camera. |
 | `passage.js` | `whatBlocks(row, col)`: the single answer to "can I step here?". |
 | `sight.js` | The player's light (`computeVisibility`: `visibleSet` / `sightSet` / `exploredSet`), `canMakeOut`, and the camera (`updateCamera`). |
 | `light.js` | Boss light spreading through the floor; the run is lost at the coverage threshold. |

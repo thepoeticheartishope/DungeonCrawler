@@ -176,7 +176,10 @@ function placePillars(chamber, placer, pillars) {
   }
 }
 
-function rollProp(kind, theme, floorIndex) {
+// Rolls what a paper or box holds: a paper is lore or junk, a box is
+// trapped (a question for gold) or opens on the spot. beats.js uses it too,
+// so a beat's paper or box is rolled like any other.
+export function rollProp(kind, theme, floorIndex) {
   if (kind === 'paper') return { kind, theme, loot: Math.random() < PAPER_LORE_CHANCE ? 'lore' : 'junk' };
   const trapped = Math.random() < BOX_TRAP_CHANCE;
   const loot = trapped ? 'gold' : weighted(BOX_LOOT);
