@@ -27,6 +27,7 @@ Rules and data (no page/DOM access):
 | `rooms.js` | Hand-drawn room templates (`#` wall, `.` floor, `?` prop, `+` inner door). |
 | `dungeon.js` | Builds a floor layout from the templates: rooms, hallways, boss room, stairs. |
 | `decor.js` | Themes rooms and places pillars, papers, boxes (`makePlacer`). |
+| `floor.js` | `buildFloor()`: a new floor as data — layout, furniture, boss, stairs, coin, the one special item (chest / rune / encounter), minions, then light, sight and camera. |
 | `passage.js` | `whatBlocks(row, col)`: the single answer to "can I step here?". |
 | `sight.js` | The player's light (`computeVisibility`: `visibleSet` / `sightSet` / `exploredSet`), `canMakeOut`, and the camera (`updateCamera`). |
 | `light.js` | Boss light spreading through the floor; the run is lost at the coverage threshold. |
@@ -46,7 +47,7 @@ Drawing and page code:
 | `dataview.js` | DATA.SYS question viewer and comment export. |
 | `setloader.js` | Start screen options and the set loader (pasted, file, built-in, saved sets). |
 | `devpanel.js` | DEV panel: Skip room, Auto-win, Fog toggle, and the Inspect view (live state + a view-only ring of the last 20 events, fed by `drawEvents`). Gets the `main.js` actions it calls passed in. |
-| `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom` = `buildFloor` data + `drawFloor` page), `drawEvents()` (draws every rule event), turn and answer flow, end screens. 1,250 lines — being split up. |
+| `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom` = `buildFloor()` from floor.js + `drawFloor` page), `drawEvents()` (draws every rule event), turn and answer flow, end screens. 1,090 lines — being split up. |
 
 How a turn flows today: key/d-pad → `movePlayer()` (main.js) → `stepPlayer()` (moves.js,
 uses `whatBlocks()`) → events → `applyTurnOutcome(events)` → `advanceMonsters()` (combat.js) →
