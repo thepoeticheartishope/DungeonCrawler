@@ -203,7 +203,7 @@ export const BOX_GOLD = [1, 2]; // plus the floor index, before the darkness mul
 // Anything further than this many tiles away (in any direction, diagonals
 // included) shows as a '?' until the player gets closer — enemies, items
 // and furniture alike. The stairs are the exception.
-export const REVEAL_DISTANCE = 3;
+export const REVEAL_DISTANCE = 5;
 
 export const MAX_HEARTS = 3;
 export const ROOM_COUNT = 3;
@@ -219,7 +219,7 @@ export const MINION_MIN_START_DISTANCE = 6; // walkable steps from the player's 
 // The player's own light: every tile within PLAYER_LIGHT_RADIUS steps, plus
 // tiles up to PLAYER_CONE_RANGE steps inside the cone they're facing.
 export const PLAYER_LIGHT_RADIUS = 1;
-export const PLAYER_CONE_RANGE = 3;
+export const PLAYER_CONE_RANGE = 5;
 
 // The boss gives off light that spreads through the floor at a steady
 // speed: one more walkable step every LIGHT_TURNS_PER_STEP turns. The run
@@ -288,4 +288,4 @@ export const TIMER_SECONDS = 10;
 // The camera always renders a fixed VIEWPORT_SIZE x VIEWPORT_SIZE window of
 // the room, panning to follow the player. Must stay smaller than every
 // floor recipe's grid (floors.js), or there'd be nothing to pan.
-export const VIEWPORT_SIZE = 9;
+export const VIEWPORT_SIZE = 11;
