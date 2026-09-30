@@ -12,6 +12,8 @@ import {
 } from '../js/config.js';
 import { buildFloor } from '../js/floor.js';
 import { FLOOR_RECIPES } from '../js/floors.js';
+import { generateDungeonLayout } from '../js/dungeon.js';
+import { ROOM_TEMPLATES, parseTemplate } from '../js/rooms.js';
 
 const FLOORS_PER_DEPTH = 15;
 
@@ -107,5 +109,34 @@ test('the start room counts as visited and the player can see', () => {
     const start = f.chamberAt.get(key(f.playerRow, f.playerCol));
     if (start !== undefined) assert.ok(f.visitedChambers.has(start));
     assert.ok(f.visibleSet.has(key(f.playerRow, f.playerCol)));
+  });
+});
+
+// A chamber's floor without its doors out, which turning and mirroring
+// don't change: the drawing's floor minus its edge doors.
+function innerTiles(chamber, name) {
+  const tpl = parseTemplate(ROOM_TEMPLATES.find(t => t.name === name).rows);
+  const openDoors = chamber.doorKeys.size - tpl.innerDoors.length;
+  return { got: chamber.floorCells.length - openDoors, want: tpl.floor.length - tpl.doors.length };
+}
+
+test('the recipe\'s start and boss rooms are the named drawings', () => {
+  FLOOR_RECIPES.forEach(recipe => {
+    for (let i = 0; i < FLOORS_PER_DEPTH; i++) {
+      const layout = generateDungeonLayout(recipe.grid, recipe.rooms, recipe.loops,
+        { startRoom: recipe.startRoom, bossRoom: recipe.bossRoom });
+      assert.ok(layout.chambers.length > 1, 'fell back to the one-room floor');
+      const start = layout.chambers[layout.chamberAt.get(key(layout.start.row, layout.start.col))];
+      const boss = layout.chambers[layout.chamberAt.get(key(layout.spawn.row, layout.spawn.col))];
+      assert.equal(start.name, recipe.startRoom);
+      assert.ok(boss.isBoss);
+      assert.equal(boss.name, recipe.bossRoom);
+      [[start, recipe.startRoom], [boss, recipe.bossRoom]].forEach(([ch, name]) => {
+        const { got, want } = innerTiles(ch, name);
+        assert.equal(got, want, name + ' is not its drawing');
+      });
+      const others = layout.chambers.filter(ch => ch !== start && ch !== boss);
+      others.forEach(ch => assert.equal(ch.name, null, 'a named room was dealt at random'));
+    }
   });
 });
