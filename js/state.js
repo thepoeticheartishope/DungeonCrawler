@@ -8,7 +8,8 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { GRID_SIZES, CHAMBER_TARGETS, MAX_HEARTS, MC_SAMPLE_DATA } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA } from './config.js';
+import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
 // stored in a Set or looked up by position.
@@ -16,7 +17,7 @@ export function key(r, c) {
   return r + ',' + c;
 }
 
-const initialGridSize = GRID_SIZES[0];
+const initialGridSize = FLOOR_RECIPES[0].grid;
 
 export const state = {
   settings: {
@@ -45,7 +46,7 @@ export const state = {
 
   floor: {
     GRID_SIZE: initialGridSize,
-    CHAMBER_TARGET: CHAMBER_TARGETS[0],
+    CHAMBER_TARGET: FLOOR_RECIPES[0].rooms,
     PLAYER_START: { row: initialGridSize - 1, col: Math.floor(initialGridSize / 2) },
 
     playerRow: undefined,
@@ -64,7 +65,7 @@ export const state = {
     // Boss light (see light.js). Reset as each room loads.
     bossDist: new Map(),   // walkable steps from the boss, per floor tile key
     floorCount: 0,         // walkable tiles in the room
-    lightFullRadius: 0,    // light radius at which this floor's LIGHT_LOSS_COVERAGE is reached
+    lightFullRadius: 0,    // light radius at which this floor's lossCoverage is reached
     lightTurnBudget: 1,    // turns until that radius
     lightTurns: 0,         // turns spent in this room
     darkness: false,       // the boss has fallen on this floor (see DARK_* in config.js)

@@ -170,11 +170,8 @@ export const CATEGORY_LABELS = {
   W: 'Wisdom'
 };
 
-// Grid size and chamber count both grow as the run progresses: later
-// floors have more rooms, not bigger ones (each room is a drawing from
-// rooms.js). Index 0 = Room 1, index 1 = Room 2, index 2 = Room 3.
-export const GRID_SIZES = [33, 37, 41];
-export const CHAMBER_TARGETS = [4, 5, 6];
+// Grid size, room count, minions and the light's loss share per floor are
+// in the floor recipes (floors.js).
 
 // Room themes. Every room on a floor gets one, dealt out so a floor has a
 // mix (wording and lore are theme.* in text.js).
@@ -213,10 +210,9 @@ export const ROOM_COUNT = 3;
 
 export const BOSS_HP = 3;       // hits needed to defeat the boss
 export const MINION_HP = 1;     // hits needed to defeat one minion
-// Minions are placed when a room loads (no summoning) and roam freely:
-// they wander at random and only chase once the player is within
-// MINION_CHASE_RANGE walkable steps. Index = room, like GRID_SIZES.
-export const MINIONS_PER_ROOM = [2, 3, 4];
+// Minions are placed when a room loads (no summoning; how many is in the
+// floor recipe) and roam freely: they wander at random and only chase once
+// the player is within MINION_CHASE_RANGE walkable steps.
 export const MINION_CHASE_RANGE = 4;
 export const MINION_MIN_START_DISTANCE = 6; // walkable steps from the player's start
 
@@ -227,12 +223,10 @@ export const PLAYER_CONE_RANGE = 3;
 
 // The boss gives off light that spreads through the floor at a steady
 // speed: one more walkable step every LIGHT_TURNS_PER_STEP turns. The run
-// is lost when it covers that floor's LIGHT_LOSS_COVERAGE of the walkable
-// tiles, so the percentage is the difficulty dial — a higher one means
-// more turns. It drops each floor. Battles don't use turns, so answering
-// never costs light — only walking and waiting do. Index = room, like
-// GRID_SIZES.
-export const LIGHT_LOSS_COVERAGE = [0.9, 0.8, 0.7];
+// is lost when it covers that floor's lossCoverage (floors.js) of the
+// walkable tiles, so the percentage is the difficulty dial — a higher one
+// means more turns. It drops each floor. Battles don't use turns, so
+// answering never costs light — only walking and waiting do.
 export const LIGHT_TURNS_PER_STEP = 4;
 
 // Darkness: once the boss falls, its light dies and the floor goes dark
@@ -293,5 +287,5 @@ export const TIMER_SECONDS = 10;
 
 // The camera always renders a fixed VIEWPORT_SIZE x VIEWPORT_SIZE window of
 // the room, panning to follow the player. Must stay smaller than every
-// value in GRID_SIZES, or there'd be nothing to pan.
+// floor recipe's grid (floors.js), or there'd be nothing to pan.
 export const VIEWPORT_SIZE = 9;

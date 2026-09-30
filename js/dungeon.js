@@ -3,8 +3,8 @@
 // the rooms (never through them), picks a boss room, and guarantees that
 // room has exactly one entrance.
 //
-// This module is self-contained — it takes the grid size and chamber
-// target as plain arguments instead of reading shared game state, so it
+// This module is self-contained — it takes the grid size, chamber
+// target and extra-hallway cap (from the floor recipe) as plain arguments instead of reading shared game state, so it
 // can be tested on its own with no dependency on the rest of the game.
 
 import { key } from './state.js';
@@ -14,7 +14,6 @@ const CHAMBER_BUFFER = 2;    // empty tiles required between two rooms' outer wa
 const EDGE_MARGIN = 1;       // tiles kept free at the grid edge, so edge doors can lead somewhere
 const TURN_COST = 3;         // extra cost of a bend, so hallways run in long straight lines
 const REUSE_COST = 0.5;      // cost of a step along an existing hallway, so hallways merge
-const EXTRA_LOOPS_MAX = 3;   // extra hallways beyond the minimum, for more than one route
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
@@ -206,7 +205,7 @@ function openInterior(room) {
 // One attempt at building a dungeon. Returns null if something didn't fit
 // (too few rooms placed, a hallway that couldn't be routed, the boss room
 // not ending up with exactly one entrance), so the caller can try again.
-function attemptGenerate(gridSize, chamberTarget) {
+function attemptGenerate(gridSize, chamberTarget, maxLoops) {
   const fits = (tpl) => tpl.h + 2 * EDGE_MARGIN <= gridSize && tpl.w + 2 * EDGE_MARGIN <= gridSize;
 
   // The player's room sits along the bottom edge, roughly centered.
@@ -286,7 +285,7 @@ function attemptGenerate(gridSize, chamberTarget) {
   // nothing uses yet, so there's more than one route between areas. One
   // that can't be routed is simply skipped.
   const loopRooms = rooms.map((_, i) => i).filter(i => i !== bossIdx);
-  const loops = Math.min(EXTRA_LOOPS_MAX, Math.max(0, loopRooms.length - 2));
+  const loops = Math.min(maxLoops, Math.max(0, loopRooms.length - 2));
   for (let i = 0; i < loops; i++) {
     const a = loopRooms[Math.floor(Math.random() * loopRooms.length)];
     const others = loopRooms.filter(j => j !== a);
@@ -366,9 +365,9 @@ function attemptGenerate(gridSize, chamberTarget) {
 // Builds a dungeon, retrying from scratch if an attempt didn't fit — rare
 // enough that regenerating is simpler and more robust than trying to
 // out-think every placement that could go wrong.
-export function generateDungeonLayout(gridSize, chamberTarget) {
+export function generateDungeonLayout(gridSize, chamberTarget, maxLoops) {
   for (let attempt = 0; attempt < 60; attempt++) {
-    const layout = attemptGenerate(gridSize, chamberTarget);
+    const layout = attemptGenerate(gridSize, chamberTarget, maxLoops);
     if (layout) return layout;
   }
   // Extremely unlikely fallback: one plain room, boss at one end and the

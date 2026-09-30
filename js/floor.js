@@ -7,8 +7,9 @@ import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
 import { furnishFloor } from './decor.js';
 import {
-  BOSS_HP, GRID_SIZES, CHAMBER_TARGETS, MINIONS_PER_ROOM, MINION_MIN_START_DISTANCE
+  BOSS_HP, MINION_MIN_START_DISTANCE
 } from './config.js';
+import { floorRecipe } from './floors.js';
 import { shuffle } from './quiz.js';
 import { computeVisibility, updateCamera } from './sight.js';
 import { spawnMinion } from './combat.js';
@@ -54,13 +55,13 @@ function stepsFromStart() {
   return dist;
 }
 
-// The room's fixed set of minions (MINIONS_PER_ROOM), placed on room tiles
+// The room's fixed set of minions (the recipe's minions), placed on room tiles
 // outside the boss chamber and at least MINION_MIN_START_DISTANCE steps
 // from the player's start, so a room never opens with one in the player's
 // face. Falls back to any free reachable room tile if a small room can't
 // fit them that far away.
 function placeMinions(roomTiles, takenTiles) {
-  const count = MINIONS_PER_ROOM[Math.min(state.run.roomIndex, MINIONS_PER_ROOM.length - 1)];
+  const count = floorRecipe(state.run.roomIndex).minions;
   const dist = stepsFromStart();
   const isTaken = (k) => takenTiles.some(p => key(p.row, p.col) === k);
   const free = [...dist.keys()].filter(k => roomTiles.has(k) && !isTaken(k));
@@ -76,8 +77,9 @@ function placeMinions(roomTiles, takenTiles) {
 // special item and minions, plus the light, sight and camera that follow
 // from them. No page access.
 export function buildFloor() {
-  state.floor.GRID_SIZE = GRID_SIZES[Math.min(state.run.roomIndex, GRID_SIZES.length - 1)];
-  state.floor.CHAMBER_TARGET = CHAMBER_TARGETS[Math.min(state.run.roomIndex, CHAMBER_TARGETS.length - 1)];
+  const recipe = floorRecipe(state.run.roomIndex);
+  state.floor.GRID_SIZE = recipe.grid;
+  state.floor.CHAMBER_TARGET = recipe.rooms;
 
   state.floor.minions = [];
   state.floor.hunter = null;
@@ -87,7 +89,7 @@ export function buildFloor() {
   state.floor.runeHint = null;
   state.floor.lastChoiceType = null;
 
-  const layout = generateDungeonLayout(state.floor.GRID_SIZE, state.floor.CHAMBER_TARGET);
+  const layout = generateDungeonLayout(state.floor.GRID_SIZE, state.floor.CHAMBER_TARGET, recipe.loops);
   state.floor.wallSet = layout.walls;
   state.floor.PLAYER_START = { row: layout.start.row, col: layout.start.col };
 

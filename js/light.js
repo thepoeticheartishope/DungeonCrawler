@@ -1,11 +1,12 @@
 // The boss's light: it starts on the boss and spreads outward through the
-// floor one step every few turns. Reaching the floor's LIGHT_LOSS_COVERAGE
+// floor one step every few turns. Reaching the floor's loss coverage (floors.js)
 // of the walkable tiles loses the run; defeating the boss puts it out. No
 // DOM access here — render.js draws it, main.js decides what happens when
 // it's full.
 
 import { state, key } from './state.js';
-import { LIGHT_LOSS_COVERAGE, LIGHT_TURNS_PER_STEP } from './config.js';
+import { LIGHT_TURNS_PER_STEP } from './config.js';
+import { floorRecipe } from './floors.js';
 
 // Walkable steps from (row, col) to every reachable floor tile, walls only.
 function stepsFrom(row, col) {
@@ -28,12 +29,12 @@ function stepsFrom(row, col) {
 
 // Called once per room, after the layout, boss and player start are set.
 // Works out the radius at which the light covers this floor's
-// LIGHT_LOSS_COVERAGE, and so how many turns the player gets before the
+// loss coverage (floors.js), and so how many turns the player gets before the
 // steadily spreading light gets there.
 export function initBossLight() {
   state.floor.bossDist = stepsFrom(state.floor.boss.row, state.floor.boss.col);
   state.floor.floorCount = state.floor.bossDist.size;
-  const coverage = LIGHT_LOSS_COVERAGE[Math.min(state.run.roomIndex, LIGHT_LOSS_COVERAGE.length - 1)];
+  const coverage = floorRecipe(state.run.roomIndex).lossCoverage;
   const sorted = [...state.floor.bossDist.values()].sort((a, b) => a - b);
   const needed = Math.max(1, Math.ceil(state.floor.floorCount * coverage));
   state.floor.lightFullRadius = Math.max(1, sorted[needed - 1]);
@@ -75,7 +76,7 @@ export function lightCoverage() {
 }
 
 // How close the light is to consuming the floor: 0 at the start of a room,
-// 1 when it's reached this floor's LIGHT_LOSS_COVERAGE. Drives the eye.
+// 1 when it's reached this floor's loss coverage (floors.js). Drives the eye.
 export function lightProgress() {
   if (!state.floor.boss) return 0;
   return Math.min(1, state.floor.lightTurns / state.floor.lightTurnBudget);
