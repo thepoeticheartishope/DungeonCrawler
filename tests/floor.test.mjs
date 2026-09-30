@@ -12,6 +12,7 @@ import {
 } from '../js/config.js';
 import { buildFloor } from '../js/floor.js';
 import { FLOOR_RECIPES } from '../js/floors.js';
+import { TEXT } from '../js/text.js';
 import { generateDungeonLayout } from '../js/dungeon.js';
 import { ROOM_TEMPLATES, parseTemplate } from '../js/rooms.js';
 
@@ -139,4 +140,12 @@ test('the recipe\'s start and boss rooms are the named drawings', () => {
       others.forEach(ch => assert.equal(ch.name, null, 'a named room was dealt at random'));
     }
   });
+});
+
+test('each floor adds its story to the end of the run queue, and every line has wording', () => {
+  state.run.loreQueue = ['story.left.unread'];
+  build(0);
+  assert.deepEqual(state.run.loreQueue, ['story.left.unread', ...FLOOR_RECIPES[0].lore]);
+  FLOOR_RECIPES.forEach(r => (r.lore || []).forEach(k => assert.ok(k in TEXT, k)));
+  state.run.loreQueue = [];
 });

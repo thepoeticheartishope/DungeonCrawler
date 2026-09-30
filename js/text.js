@@ -217,6 +217,22 @@ export const TEXT = {
   'theme.shrine.enter': ['A shrine. Someone knelt here and asked.', 'Candles, long cold. The quiet feels deliberate.'], // draft
   'theme.shrine.lore': ['“The light promised rest. It lied.”', '“We prayed to be certain. We were answered.”', '“Ask. Then ask again.”'], // draft
 
+  // ---- The run's story: read in this order, one line per paper, wherever
+  // the papers lie (the order is each floor's lore list in floors.js).
+  // Floor 1 hints at each thing just before the player meets it; the light
+  // is hinted, not spoiled. Once a floor's lines run out, papers go back to
+  // the theme lore above.
+  'story.1.1': '“You are awake. Good. Read what we left. It is all we could carry.”', // draft
+  'story.1.2': '“The boxes keep what we could not. Some keep it jealously: they ask before they open.”', // draft
+  'story.1.3': '“Things reach for you in the dark. Answer them, and they let go.”', // draft
+  'story.1.4': '“A soft light is spreading somewhere below. It feels like rest.”', // draft
+  'story.2.1': '“A question you get wrong does not leave. It follows you, and it asks again.”', // draft
+  'story.2.2': '“The light never hurries. It does not have to.”', // draft
+  'story.2.3': '“When the belief breaks, the dark comes back. Something in the dark was waiting for that.”', // draft
+  'story.3.1': '“We are nearly out of pages.”', // draft
+  'story.3.2': '“It was never the dark we feared. It was being sure.”', // draft
+  'story.3.3': '“If you reach the end, think something new.”', // draft
+
   // ---- Intro, start and end screens ----
   'intro.call': 'YOU ARE NEEDED. ASCEND.',
   'start.enter': 'Enter the {@term.dungeon}', // draft
@@ -274,7 +290,22 @@ export const TEXT = {
 //     'log.boss.holds': ['IT DOES NOT BREAK.', 'IT WAITS FOR YOU TO DOUBT.'],
 //     'term.boss.symbol': 'Ω',
 //   },
+// Floor 1 speaks in the plain voice above; each floor below it leans a
+// little further in.
 export const AREAS = {
+  2: {
+    'room.wait': ['You hold still. The hum is louder here.', 'You wait. Something waits with you.'], // draft
+    'room.blocked.wall': 'The membrane holds. It is thicker here.', // draft
+    'room.paper.junk': ['The page is blank, but warm.', 'The same line, written over and over until it means nothing.', 'A name. Yours? The ink has run.'], // draft
+    'log.boss.holds': ['ITS {@term.boss} HOLDS.', 'IT HAS BEEN BELIEVED FOR A LONG TIME.'], // draft
+  },
+  3: {
+    'room.move': 'You press {direction}.', // draft
+    'room.wait': ['You hold still. The hum is inside you now.', 'You wait. The dark does not.'], // draft
+    'room.blocked.wall': ['The membrane holds.', 'The membrane gives a little, then holds.'], // draft
+    'room.paper.junk': ['The page is blank. It was always blank.', 'Your own handwriting. You do not remember writing it.'], // draft
+    'log.boss.holds': ['ITS {@term.boss} HOLDS.', 'IT IS CERTAIN. ARE YOU?'], // draft
+  },
 };
 
 let currentArea = null;

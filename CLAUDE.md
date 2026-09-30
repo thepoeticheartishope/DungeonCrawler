@@ -75,7 +75,7 @@ Rules and data (no page/DOM access):
 | `rooms.js` | Hand-drawn room templates (`#` wall, `.` floor, `?` prop, `+` inner door). |
 | `dungeon.js` | Builds a floor layout from the templates: rooms, hallways, boss room, stairs. |
 | `decor.js` | Themes rooms and places pillars, papers, boxes (`makePlacer`). |
-| `floors.js` | `FLOOR_RECIPES`: what each floor holds (grid, rooms, loops, minions, light loss share); `floorRecipe(i)` reads it. Data only, grows with the level-design plan. |
+| `floors.js` | `FLOOR_RECIPES`: what each floor holds (grid, rooms, loops, minions, light loss share, start/boss rooms, the floor's story lines); `floorRecipe(i)` reads it. Data only, grows with the level-design plan. |
 | `floor.js` | `buildFloor()`: a new floor as data — layout, furniture, boss, stairs, coin, the one special item (chest / rune / encounter), minions, then light, sight and camera. |
 | `passage.js` | `whatBlocks(row, col)`: the single answer to "can I step here?". |
 | `sight.js` | The player's light (`computeVisibility`: `visibleSet` / `sightSet` / `exploredSet`), `canMakeOut`, and the camera (`updateCamera`). |
@@ -83,7 +83,7 @@ Rules and data (no page/DOM access):
 | `haunts.js` | Missed questions that come back later in the run. |
 | `modifiers.js` | Rolls Blind / Gambler / Flip / Timer for fight choices. |
 | `combat.js` | Minion/hunter movement and turn advance. `advanceMonsters()` returns an events list; `main.js` `drawEvents()` draws it. |
-| `moves.js` | The player's step (`stepPlayer()`: turn, bump, walk, stairs, coin, paper, room entry, boxes) and `goldReward`. Returns an events list. |
+| `moves.js` | The player's step (`stepPlayer()`: turn, bump, walk, stairs, coin, paper (the next story line from `state.run.loreQueue`), room entry, boxes) and `goldReward`. Returns an events list. |
 | `answers.js` | Settling an answer (`settleAnswer()`: hearts, haunts, the Gambler wager, boss HP and the darkness, clearing or spending the target, gold and the rune's hint). Returns an events list. |
 | `quiz.js` | Picking questions, building multiple-choice options, fight choice labels. |
 | `sets.js` | Bundled sets (`lists/`) and saved custom sets (localStorage). |

@@ -575,6 +575,7 @@ function startGame() {
   state.run.hearts = MAX_HEARTS;
   state.run.turnCount = 0;
   state.run.coinsTotal = 0;
+  state.run.loreQueue = [];
   resetHaunts();
   state.settings.revealOnWrong = revealToggle.checked;
   // Every run is multiple choice. The typing path (answerForm,
@@ -766,9 +767,9 @@ function drawEvents(events) {
         break;
       case 'paperRead':
         actorEl(e.paper).classList.add('searched');
-        parts.push(e.loot === 'lore'
-          ? t('room.paper.lore', { lore: t('theme.' + e.paper.theme + '.lore') })
-          : t('room.paper.junk'));
+        if (e.loot === 'story') parts.push(t('room.paper.lore', { lore: t(e.story) }));
+        else if (e.loot === 'lore') parts.push(t('room.paper.lore', { lore: t('theme.' + e.paper.theme + '.lore') }));
+        else parts.push(t('room.paper.junk'));
         break;
       case 'roomEntered':
         parts.push(t('theme.' + e.theme + '.enter'));

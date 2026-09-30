@@ -80,6 +80,9 @@ export function buildFloor() {
   const recipe = floorRecipe(state.run.roomIndex);
   state.floor.GRID_SIZE = recipe.grid;
   state.floor.CHAMBER_TARGET = recipe.rooms;
+  // The floor's story joins the end of the run's queue, behind any lines
+  // the player left unread upstairs, so no line is skipped.
+  state.run.loreQueue.push(...(recipe.lore || []));
 
   state.floor.minions = [];
   state.floor.hunter = null;

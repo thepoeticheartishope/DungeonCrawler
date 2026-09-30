@@ -35,6 +35,7 @@ export const state = {
     haunts: new Map(), // missed question -> attempt it was last missed on (js/haunts.js)
     hauntsTotal: 0,
     hauntsSilenced: 0,
+    loreQueue: [], // story lines (text.js keys) still to be read, in order; each floor adds its recipe's lore (floors.js)
     extraSpaceCount: 0,
     seconds: 0,
     hearts: MAX_HEARTS,
