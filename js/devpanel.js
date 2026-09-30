@@ -10,6 +10,7 @@ const devSkipBtn = document.getElementById('devSkipBtn');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devViewBtn = document.getElementById('devViewBtn');
+const devCameraBtn = document.getElementById('devCameraBtn');
 
 export function initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter,
@@ -66,6 +67,16 @@ export function initDevPanel({
     renderViewShape();
     requestMapDraw();
     // The edge glow points along the screen, which the two views lay out differently.
+    renderRoomHints();
+  });
+
+  // Dev tool: the isometric camera glides after the player, or stays locked
+  // on them as it did before, so the two can be compared in play.
+  devCameraBtn.addEventListener('click', () => {
+    state.settings.isoCameraGlide = !state.settings.isoCameraGlide;
+    devCameraBtn.textContent = state.settings.isoCameraGlide ? 'Camera: glide (dev)' : 'Camera: locked (dev)';
+    devCameraBtn.setAttribute('aria-pressed', String(state.settings.isoCameraGlide));
+    requestMapDraw();
     renderRoomHints();
   });
 }

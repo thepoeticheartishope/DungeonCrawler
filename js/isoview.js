@@ -3,7 +3,8 @@
 // blocks, the floor dim diamond tiles, glyphs stand upright on their
 // tiles, and light fades over the player's five steps. A wall standing
 // between the camera and something the player can see is cut away, so
-// nothing in sight is ever hidden.
+// nothing in sight is ever hidden. The camera rests while the player
+// walks near the middle and glides after them past that.
 //
 // mapview.js calls drawIsoScene() from its drawScene when
 // state.settings.isoView is on, and passes in what the two views share:
@@ -14,7 +15,7 @@
 // points where this view shows things.
 
 import { state, key } from './state.js';
-import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE, ISO_WALL_HEIGHT, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE } from './config.js';
+import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE } from './config.js';
 import { FACING_VECTORS } from './sight.js';
 import { t } from './text.js';
 
@@ -27,7 +28,8 @@ const WALL_MIN_LEVEL = 0.28; // a wall beside remembered floor: still a shape
 const SEARCHED_LEVEL = 0.6;  // a box or paper already searched is dimmer
 
 // Sizes, as shares of a tile's width unless they say otherwise.
-const CAMERA_Y = 0.5;          // where the player stands, as a share of the map's height
+const CAMERA_Y = 0.5;          // where the camera's tile stands, as a share of the map's height
+const CAMERA_JUMP = 2;         // a player move longer than this many steps (a new floor, a new run) snaps the camera
 const PILLAR_INSET = 0.24;     // a pillar is thinner than its tile, so it reads as a column
 const PILLAR_HEIGHT = 1.15;    // as a share of a wall's height: a pillar stands above the walls
 const BOX_INSET = 0.3;
@@ -68,13 +70,21 @@ const EAST_FACE = '#0e1315';
 let tw = 0;         // a tile's width on the canvas, in pixels
 let th = 0;         // its height (half the width: the diamond)
 let wallH = 0;      // a wall's height in pixels
-let originX = 0;    // where the player's tile sits on the canvas
+let originX = 0;    // where the player's tile sits on the canvas (the light pool's middle)
 let originY = 0;
 let width = 0;      // the canvas's width and height, in pixels
 let height = 0;
 let across = ISO_TILES_ACROSS; // tile widths across the map this frame (fewer on a narrow map)
 let look = null;    // what mapview.js passed in
 let frontWalls = new Set(); // walls between the camera and something in sight, this frame
+
+// The camera: view-only, so it lives here and not in state. The tile the
+// map centres on, fractional while it glides.
+let camera = null;       // { row, col } shown this frame
+let cameraGoal = null;   // { row, col } it is gliding to, or resting on
+let glide = null;        // { from, start } while it glides to cameraGoal
+let cameraFloor = -1;    // the floor (state.run.roomIndex) the camera is on
+let cameraPlayer = null; // the player's tile when the camera last looked
 
 // Draws the whole isometric map as state has it now, in layer order:
 // floor, things lying on it (stairs, papers, the facing wedge, pillar
@@ -83,7 +93,8 @@ let frontWalls = new Set(); // walls between the camera and something in sight, 
 // in front of anything in sight are cut away.
 // `canvasSize` is { width, height } in pixels and `pageWidth`, the map's
 // width on the page. `shared` is { colours, things, fogOf, paintGlyph,
-// mistSprite, mistStrength, pulse, keepMoving } from mapview.js.
+// mistSprite, mistStrength, pulse, keepMoving, cameraMoving, now, still }
+// from mapview.js.
 export function drawIsoScene(ctx, canvasSize, shared) {
   look = shared;
   width = canvasSize.width;
@@ -92,8 +103,8 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   tw = width / across;
   th = tw / 2;
   wallH = tw * ISO_WALL_HEIGHT;
-  originX = width / 2;
-  originY = height * CAMERA_Y;
+  if (moveCamera(look.now, look.still)) look.cameraMoving();
+  [originX, originY] = centre(state.floor.playerRow, state.floor.playerCol);
   const tiles = tilesInView();
   findFrontWalls(tiles);
   tiles.forEach(({ row, col }) => {
@@ -128,9 +139,11 @@ export function drawIsoScene(ctx, canvasSize, shared) {
 // canvas, back to front.
 function tilesInView() {
   const reach = across + 2;
+  const midRow = Math.round(camera.row);
+  const midCol = Math.round(camera.col);
   const tiles = [];
-  for (let row = state.floor.playerRow - reach; row <= state.floor.playerRow + reach; row++) {
-    for (let col = state.floor.playerCol - reach; col <= state.floor.playerCol + reach; col++) {
+  for (let row = midRow - reach; row <= midRow + reach; row++) {
+    for (let col = midCol - reach; col <= midCol + reach; col++) {
       if (row < 0 || col < 0 || row >= state.floor.GRID_SIZE || col >= state.floor.GRID_SIZE) continue;
       if (onScreen(row, col)) tiles.push({ row, col });
     }
@@ -147,13 +160,66 @@ export function isoScreenOffset(dr, dc) {
 }
 
 // Where a tile's middle falls on the isometric map, as shares of the
-// map's width and height (0..1 is on the map). The camera follows the
-// player: their tile is always at the middle across, CAMERA_Y down. Rows
-// and columns may be fractional while something slides. The drawing and
-// render.js's edge glow both place things with it, so they agree.
+// map's width and height (0..1 is on the map). The camera's tile is at
+// the middle across, CAMERA_Y down (the player's tile before the first
+// frame). Rows and columns may be fractional while something slides or the
+// camera glides. The drawing and render.js's edge glow both place things
+// with it, so they agree.
 export function isoScreenShare(row, col) {
-  const { x, y } = isoScreenOffset(row - state.floor.playerRow, col - state.floor.playerCol);
+  const mid = camera || { row: state.floor.playerRow, col: state.floor.playerCol };
+  const { x, y } = isoScreenOffset(row - mid.row, col - mid.col);
   return { x: 0.5 + x / across, y: CAMERA_Y + y * ISO_MAP_SHAPE / across };
+}
+
+// Moves the camera for this frame. It rests while the player is inside
+// ISO_CAMERA_BOX and glides after them (easing out) when they step past
+// its edge, just far enough to bring them back to the edge, so walking
+// doesn't shift the whole scene every step. A new floor or run, a long
+// jump, the locked DEV setting and reduced motion put it straight where
+// it should be. Returns true while it glides, so mapview keeps drawing
+// frames and shows them without afterglow (a smeared scene is the
+// disorientation this is here to stop).
+function moveCamera(now, still) {
+  const player = { row: state.floor.playerRow, col: state.floor.playerCol };
+  const jumped = !cameraPlayer ||
+    Math.abs(player.row - cameraPlayer.row) + Math.abs(player.col - cameraPlayer.col) > CAMERA_JUMP;
+  cameraPlayer = player;
+  if (jumped || !state.settings.isoCameraGlide || cameraFloor !== state.run.roomIndex) {
+    cameraFloor = state.run.roomIndex;
+    camera = cameraGoal = player;
+    glide = null;
+    return false;
+  }
+  const goal = keepInBox(cameraGoal, player);
+  if (goal.row !== cameraGoal.row || goal.col !== cameraGoal.col) {
+    glide = still ? null : { from: camera, start: now };
+    cameraGoal = goal;
+  }
+  if (!glide) {
+    camera = cameraGoal;
+    return false;
+  }
+  const done = Math.min(1, (now - glide.start) / ISO_CAMERA_GLIDE_MS);
+  const eased = 1 - Math.pow(1 - done, 3);
+  camera = {
+    row: glide.from.row + (cameraGoal.row - glide.from.row) * eased,
+    col: glide.from.col + (cameraGoal.col - glide.from.col) * eased,
+  };
+  if (done === 1) glide = null;
+  return true;
+}
+
+// Where the camera should rest so the player stands inside its box: the
+// same place if they already do, else moved by how far past the box's
+// edge they are, on screen. The screen shift goes back to grid steps by
+// undoing isoScreenOffset (x = (dc - dr) / 2, y = (dc + dr) / 4).
+function keepInBox(goal, player) {
+  const { x, y } = isoScreenOffset(player.row - goal.row, player.col - goal.col);
+  const past = (v, edge) => (v > edge ? v - edge : v < -edge ? v + edge : 0);
+  const sx = past(x, ISO_CAMERA_BOX.x);
+  const sy = past(y, ISO_CAMERA_BOX.y);
+  if (!sx && !sy) return goal;
+  return { row: goal.row + 2 * sy - sx, col: goal.col + sx + 2 * sy };
 }
 
 // How many tile widths fit across the isometric map, given its width on

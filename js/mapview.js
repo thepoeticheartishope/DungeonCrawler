@@ -236,6 +236,7 @@ function drawScene(now) {
   if (state.settings.isoView) {
     drawIsoScene(ctx, { width: scene.width, height: scene.height, pageWidth: canvas.clientWidth }, {
       colours, things: mapThings(), fogOf, paintGlyph, mistSprite, mistStrength, pulse, keepMoving,
+      cameraMoving, now, still: reducedMotion.matches,
     });
     return;
   }
@@ -249,6 +250,13 @@ function drawScene(now) {
 // go on. The isometric view calls it for its own looping effects.
 function keepMoving() {
   looping = true;
+}
+
+// The isometric camera is gliding: keep drawing frames, and show each one
+// plain, with no afterglow, so the whole scene doesn't smear as it moves.
+function cameraMoving() {
+  looping = true;
+  snap = true;
 }
 
 // Calls fn(row, col, x, y) for every world tile in the camera's window,
