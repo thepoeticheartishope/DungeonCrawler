@@ -4,16 +4,20 @@
 // room has exactly one entrance.
 //
 // This module is self-contained — it takes the grid size, chamber
-// target and extra-hallway cap (from the floor recipe) as plain arguments instead of reading shared game state, so it
-// can be tested on its own with no dependency on the rest of the game.
+// target, extra-hallway cap and the names of the start and boss rooms
+// (from the floor recipe) as plain arguments instead of reading shared
+// game state, so it can be tested on its own with no dependency on the
+// rest of the game.
 
 import { key } from './state.js';
-import { randomTemplate, parseTemplate } from './rooms.js';
+import { randomTemplate, namedTemplate, parseTemplate } from './rooms.js';
 
 const CHAMBER_BUFFER = 2;    // empty tiles required between two rooms' outer walls
 const EDGE_MARGIN = 1;       // tiles kept free at the grid edge, so edge doors can lead somewhere
 const TURN_COST = 3;         // extra cost of a bend, so hallways run in long straight lines
 const REUSE_COST = 0.5;      // cost of a step along an existing hallway, so hallways merge
+
+const TURN_TRIES = 20;       // turns of a drawing tried before a room that won't fit gives up
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
@@ -27,7 +31,7 @@ function randInt(lo, hi) {
 function placeRoom(tpl, r0, c0) {
   const abs = p => ({ row: r0 + p.row, col: c0 + p.col });
   return {
-    r0, c0, h: tpl.h, w: tpl.w,
+    r0, c0, h: tpl.h, w: tpl.w, name: tpl.name,
     floorCells: tpl.floor.map(abs),
     doors: tpl.doors.map(d => ({ ...abs(d), exit: abs(d.exit) })),
     slots: tpl.slots.map(abs),
@@ -202,35 +206,76 @@ function openInterior(room) {
   return room.floorCells.filter(p => !avoid.has(key(p.row, p.col)));
 }
 
+// A parsed template that fits on the grid: the named room (turned until
+// it fits) or a random one. It keeps the name (null for a random room)
+// so a chamber can say which drawing it is. Null if none of the tries fit.
+function fittingTemplate(name, gridSize) {
+  const fits = (tpl) => tpl.h + 2 * EDGE_MARGIN <= gridSize && tpl.w + 2 * EDGE_MARGIN <= gridSize;
+  for (let i = 0; i < TURN_TRIES; i++) {
+    const tpl = parseTemplate(name ? namedTemplate(name) : randomTemplate());
+    if (fits(tpl)) return { ...tpl, name: name || null };
+  }
+  return null;
+}
+
+// The template placed at a random spot inside the grid's margin.
+function placeAtRandom(tpl, gridSize) {
+  return placeRoom(tpl,
+    randInt(EDGE_MARGIN, gridSize - tpl.h - EDGE_MARGIN),
+    randInt(EDGE_MARGIN, gridSize - tpl.w - EDGE_MARGIN));
+}
+
+// Places the recipe's boss room far from the player's. It tries as many
+// free spots as the floor has other rooms and keeps the farthest, which
+// matches the old rule (the boss took the farthest of the random rooms),
+// so the walk to the boss stays about as long as before. Null if no spot
+// was free.
+function placeBossRoom(tpl, rooms, gridSize, spots) {
+  let best = null;
+  let found = 0;
+  for (let guard = 0; found < spots && guard < 300; guard++) {
+    const room = placeAtRandom(tpl, gridSize);
+    if (rooms.some(other => overlaps(room, other, CHAMBER_BUFFER))) continue;
+    found++;
+    if (!best || roomDist(room, rooms[0]) > roomDist(best, rooms[0])) best = room;
+  }
+  return best;
+}
+
 // One attempt at building a dungeon. Returns null if something didn't fit
 // (too few rooms placed, a hallway that couldn't be routed, the boss room
 // not ending up with exactly one entrance), so the caller can try again.
-function attemptGenerate(gridSize, chamberTarget, maxLoops) {
-  const fits = (tpl) => tpl.h + 2 * EDGE_MARGIN <= gridSize && tpl.w + 2 * EDGE_MARGIN <= gridSize;
-
+// `named.startRoom` / `named.bossRoom` are template names from the
+// recipe; either one left out means a random room, as before.
+function attemptGenerate(gridSize, chamberTarget, maxLoops, named) {
   // The player's room sits along the bottom edge, roughly centered.
-  let startTpl = parseTemplate(randomTemplate());
-  for (let i = 0; i < 20 && !fits(startTpl); i++) startTpl = parseTemplate(randomTemplate());
-  if (!fits(startTpl)) return null;
+  const startTpl = fittingTemplate(named.startRoom, gridSize);
+  if (!startTpl) return null;
   const startC0 = Math.floor((gridSize - startTpl.w) / 2) + randInt(-3, 3);
   const rooms = [placeRoom(startTpl, gridSize - startTpl.h - EDGE_MARGIN,
     Math.max(EDGE_MARGIN, Math.min(startC0, gridSize - startTpl.w - EDGE_MARGIN)))];
 
+  if (named.bossRoom) {
+    const bossTpl = fittingTemplate(named.bossRoom, gridSize);
+    if (!bossTpl) return null;
+    const bossPlaced = placeBossRoom(bossTpl, rooms, gridSize, Math.max(1, chamberTarget - 1));
+    if (!bossPlaced) return null;
+    rooms.push(bossPlaced);
+  }
+
   for (let guard = 0; rooms.length < chamberTarget && guard < 300; guard++) {
-    const tpl = parseTemplate(randomTemplate());
-    if (!fits(tpl)) continue;
-    const room = placeRoom(tpl,
-      randInt(EDGE_MARGIN, gridSize - tpl.h - EDGE_MARGIN),
-      randInt(EDGE_MARGIN, gridSize - tpl.w - EDGE_MARGIN));
+    const tpl = fittingTemplate(null, gridSize);
+    if (!tpl) continue;
+    const room = placeAtRandom(tpl, gridSize);
     if (rooms.some(other => overlaps(room, other, CHAMBER_BUFFER))) continue;
     rooms.push(room);
   }
   if (rooms.length < 2) return null;
 
-  // The boss always camps in whichever room sits farthest from the
-  // player's.
+  // The boss camps in the recipe's boss room (placed second, above), or
+  // else in whichever room sits farthest from the player's.
   let bossIdx = 1;
-  for (let i = 2; i < rooms.length; i++) {
+  for (let i = 2; i < rooms.length && !named.bossRoom; i++) {
     if (roomDist(rooms[i], rooms[0]) > roomDist(rooms[bossIdx], rooms[0])) bossIdx = i;
   }
   const bossRoom = rooms[bossIdx];
@@ -352,6 +397,7 @@ function attemptGenerate(gridSize, chamberTarget, maxLoops) {
       floorCells: room.floorCells,
       doorKeys: new Set([...room.openDoors, ...room.innerDoors].map(d => key(d.row, d.col))),
       slots: room.slots,
+      name: room.name,
       isBoss: i === bossIdx,
     };
   });
@@ -364,10 +410,11 @@ function attemptGenerate(gridSize, chamberTarget, maxLoops) {
 
 // Builds a dungeon, retrying from scratch if an attempt didn't fit — rare
 // enough that regenerating is simpler and more robust than trying to
-// out-think every placement that could go wrong.
-export function generateDungeonLayout(gridSize, chamberTarget, maxLoops) {
+// out-think every placement that could go wrong. `named` holds the
+// recipe's startRoom / bossRoom template names (optional).
+export function generateDungeonLayout(gridSize, chamberTarget, maxLoops, named = {}) {
   for (let attempt = 0; attempt < 60; attempt++) {
-    const layout = attemptGenerate(gridSize, chamberTarget, maxLoops);
+    const layout = attemptGenerate(gridSize, chamberTarget, maxLoops, named);
     if (layout) return layout;
   }
   // Extremely unlikely fallback: one plain room, boss at one end and the
@@ -389,6 +436,6 @@ export function generateDungeonLayout(gridSize, chamberTarget, maxLoops) {
     spawn: { row: r0, col: r0 + 1 },
     stairs: { row: r0, col: r0 },
     start: { row: r0 + size - 1, col: r0 + size - 1 },
-    chambers: [{ floorCells, doorKeys: new Set(), slots: [], isBoss: true }],
+    chambers: [{ floorCells, doorKeys: new Set(), slots: [], name: null, isBoss: true }],
   };
 }

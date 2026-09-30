@@ -89,7 +89,8 @@ export function buildFloor() {
   state.floor.runeHint = null;
   state.floor.lastChoiceType = null;
 
-  const layout = generateDungeonLayout(state.floor.GRID_SIZE, state.floor.CHAMBER_TARGET, recipe.loops);
+  const layout = generateDungeonLayout(state.floor.GRID_SIZE, state.floor.CHAMBER_TARGET, recipe.loops,
+    { startRoom: recipe.startRoom, bossRoom: recipe.bossRoom });
   state.floor.wallSet = layout.walls;
   state.floor.PLAYER_START = { row: layout.start.row, col: layout.start.col };
 
