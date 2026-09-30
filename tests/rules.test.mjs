@@ -118,7 +118,11 @@ test('a pillar is lit but casts a shadow behind it', () => {
   state.floor.pillarSet.add(rel(-2, 0));
   computeVisibility();
   assert.ok(state.floor.sightSet.has(rel(-2, 0)));
-  assert.ok(!state.floor.visibleSet.has(rel(-3, 0)));
+  // Light creeps around the pillar's sides onto the tile just behind it,
+  // but a clear view is still blocked, so it can't be made out...
+  assert.ok(!canMakeOut(state.floor.playerRow - 3, state.floor.playerCol));
+  // ...and further back, where the way around is too long, it stays dark.
+  assert.ok(!state.floor.visibleSet.has(rel(-4, 0)));
 });
 
 test("the boss's light is visible but is not the player's sight", () => {
