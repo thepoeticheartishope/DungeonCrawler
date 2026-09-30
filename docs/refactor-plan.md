@@ -291,7 +291,7 @@ Shared rules for all three:
   identical, log and room notes included. Every answer log line came up except a missed
   chest or rune (the same `log.<kind>.trapped` path as a missed encounter and box, which did).
 
-### [x] 7. Group state + live inspector (split in two)
+### [x] 7. Group state + live inspector (split in two) (#76, #77)
 
 Group `state` into `run` / `floor` / `battle` / `settings`. Add a DEV-panel inspector
 showing live state and the last events. Line numbers are as of `main` at `6bbbfb6` (PR #75).
@@ -313,7 +313,7 @@ showing live state and the last events. Line numbers are as of `main` at `6bbbfb
 - Done: 581 references moved in 16 files; all 60 fields kept. Seeded bot (now reads
   `state.floor || state`, so it runs on either shape): 25 seeds identical to `main`, 0 errors.
 
-#### [x] 7b. Live inspector (small)
+#### [x] 7b. Live inspector (small) (#77)
 
 - `drawEvents(events)` (main.js ~907) is the one place every rule event passes through:
   keep the last ~20 in a view-only ring (not in `state`) with the turn number.
