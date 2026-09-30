@@ -15,6 +15,54 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 - Automated tests: `node --test tests/*.test.mjs` (rule unit tests, no dependencies) and
   `node tests/smoke.mjs` (Playwright, see its header).
 
+## Code style (keep new code like the cleaned-up modules)
+
+Model files: `moves.js`, `answers.js`, `passage.js`, `floor.js`, `state.js`. Read one before
+writing a new module or a big function.
+
+Layers:
+- **Rules** (change state, decide what happened) have no DOM access. They change `state` and
+  **return an events list** in the order things happened: `[{ type: 'coinTaken', gold }, ...]`.
+  Event types are camelCase past tense, and each event carries only the data a view needs.
+- **Views** draw from state + events. `main.js` `drawEvents()` is the one place that turns an
+  event into DOM changes and wording. New event → new `case` there, not a DOM call in a rule.
+- Page modules (`devpanel.js`, `setloader.js`) look up their own elements at the top and get
+  the `main.js` actions they call **passed in** (`initDevPanel({ advanceRoom, ... })`). They
+  don't import from `main.js`.
+- State goes in the right group in `state.js` (`settings` / `run` / `floor` / `battle`), with a
+  trailing comment saying what it holds. Never put DOM elements or timers in new state.
+- One source of truth per question: `whatBlocks()` decides blocking, `goldReward()` decides gold,
+  `renderHud()` is the only writer of hearts / gold / turns. Reuse these. Don't make a second copy.
+
+Comments:
+- Every file starts with a `//` header: what the file is for, who calls it, and
+  "No DOM access here." for rule files.
+- Every function has a comment above it that says what it does and why, in plain
+  sentences. Rule functions list the events they can return.
+- Comments explain design reasons ("Misses don't feed the light: they already cost a heart").
+  Don't narrate the code line by line, and don't leave commented-out code.
+- Plain words, short sentences, no jargon the game doesn't use (player, floor, room, minion,
+  boss, light, haunt).
+
+Code:
+- Plain ES modules, 2-space indent, semicolons, single quotes, `const` (or `let` if it changes),
+  `===`. No classes, no build step, no dependencies.
+- Named `export function`. Helpers only one module uses are not exported.
+- Early returns instead of nested `if`s. Short guard `if`s go on one line.
+- Arrow functions for callbacks (`props.find(p => p.kind === 'box')`).
+- Tile positions are `{ row, col }` objects. Tile sets and maps are keyed by `key(r, c)`.
+- No magic numbers: tunables go in `config.js` as `UPPER_SNAKE` with a comment.
+  No inline wording: use `t('key')` from `text.js`.
+- Move code with shell commands, unchanged. Don't rewrite it while moving it.
+
+Tests and commits:
+- A new or changed rule gets a check in `tests/*.test.mjs` (Node's built-in runner, set up
+  the floor with `resetFloor()`). Run `node --test tests/*.test.mjs` before a PR.
+  A change that could alter gameplay also gets `node tests/smoke.mjs`.
+- Commit subject: short and imperative ("Move floor setup out of main.js into floor.js",
+  "Fix: <symptom>"). The body says what changed and why, and ends with the
+  `CACHE_NAME vN -> vN+1` bump when there is one.
+
 ## Module map
 
 Rules and data (no page/DOM access):
