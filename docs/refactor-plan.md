@@ -291,7 +291,7 @@ Shared rules for all three:
   identical, log and room notes included. Every answer log line came up except a missed
   chest or rune (the same `log.<kind>.trapped` path as a missed encounter and box, which did).
 
-### [~] 7. Group state + live inspector (split in two)
+### [x] 7. Group state + live inspector (split in two) (#76, #77)
 
 Group `state` into `run` / `floor` / `battle` / `settings`. Add a DEV-panel inspector
 showing live state and the last events. Line numbers are as of `main` at `6bbbfb6` (PR #75).
@@ -313,7 +313,7 @@ showing live state and the last events. Line numbers are as of `main` at `6bbbfb
 - Done: 581 references moved in 16 files; all 60 fields kept. Seeded bot (now reads
   `state.floor || state`, so it runs on either shape): 25 seeds identical to `main`, 0 errors.
 
-#### [ ] 7b. Live inspector (small)
+#### [x] 7b. Live inspector (small) (#77)
 
 - `drawEvents(events)` (main.js ~907) is the one place every rule event passes through:
   keep the last ~20 in a view-only ring (not in `state`) with the turn number.
@@ -327,6 +327,13 @@ showing live state and the last events. Line numbers are as of `main` at `6bbbfb
   keys; the inspector's button does the same (it's a testing tool, not player wording).
 - Bump `CACHE_NAME`. Done when: both test commands pass; by hand, the panel follows a
   walk, a fight and a floor change. Tick 7 as a whole here.
+- Done: the ring and inspector live in `devpanel.js` (`recordEvents` at the end of
+  `drawEvents`, `refreshInspector` at the end of `loadRoom` so a floor change shows
+  without a move). Floor objects print as `kind @ row,col` everywhere, including inside
+  events; Sets/Maps print their size, `order` and choice `pool`s their question count.
+  Checked in Playwright: empty while closed; follows a walk (turned/stepped/minionMoved
+  per turn), a fight (`battlePhase`, `selectedTarget: minion @ r,c`, then
+  accepted/minionCleared) and Skip room (grid 33 → 37, `roomIndex` 0 → 1); no page errors.
 
 After 7: canvas map (only the map view changes) and a backend for saves (store `state`).
 
