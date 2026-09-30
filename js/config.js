@@ -311,6 +311,12 @@ export const ISO_TILES_ACROSS = 9;
 // How tall a wall stands, as a share of a tile's width. Pillars stand a
 // little above the walls and boxes much lower (sizes in isoview.js).
 export const ISO_WALL_HEIGHT = 1;
+// What happens to a wall standing between the camera and something the
+// player can see (the player, an enemy, a lit item): 'cut' drops it to a
+// stub with a dashed outline of its full height (closest to Signalis);
+// 'see' draws it as faint glass and traces what it hides on top. Kept as
+// a choice (DEV -> Walls) until Timothy has played both.
+export const ISO_FRONT_WALLS = 'cut';
 // How long each map animation takes, in ms. Looping ones stand still
 // under reduced motion.
 export const MAP_ANIMATION_MS = {

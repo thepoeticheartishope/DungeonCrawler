@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, ISO_FRONT_WALLS } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -25,6 +25,7 @@ export const state = {
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
     isoView: false,         // dev toggle: draw the map isometric (js/isoview.js) instead of top-down
+    isoFrontWalls: ISO_FRONT_WALLS, // dev toggle: 'cut' or 'see', how isometric walls in front of the camera show
     usingSample: true, // false once the person loads their own list
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
   },

@@ -12,6 +12,7 @@ import { lightProgress } from './light.js';
 import { whatBlocks } from './passage.js';
 import { FACING_VECTORS } from './sight.js';
 import { categoryLabel } from './quiz.js';
+import { isoScreenShare, isoScreenOffset } from './isoview.js';
 import { t } from './text.js';
 
 let els = {};
@@ -61,7 +62,9 @@ function renderMoveHints() {
 
 // While the boss is off screen, the edge of the view facing it glows —
 // brighter as its light spreads — so the player always has a sense of
-// where it is. A diagonal boss lights two edges.
+// where it is. A diagonal boss lights two edges. The edges are screen
+// edges, so in the isometric view they follow where the diamond puts it
+// (grid north is up and to the right there).
 //
 // After the boss, the same edges point at the hunter instead (in white,
 // not the boss's blue), brighter the closer it gets.
@@ -69,22 +72,38 @@ function renderLightHint() {
   const edges = els.lightHintEls;
   if (!edges) return;
   const boss = state.floor.boss || state.floor.hunter;
-  const offScreen = !!boss && (boss.row < state.floor.camRow || boss.row >= state.floor.camRow + VIEWPORT_SIZE ||
-    boss.col < state.floor.camCol || boss.col >= state.floor.camCol + VIEWPORT_SIZE);
+  const { dx, dy, offScreen } = boss ? placeOnScreen(boss) : { dx: 0, dy: 0, offScreen: false };
   const near = state.floor.hunter && !state.floor.boss
     ? 1 - Math.min(1, (Math.abs(boss.row - state.floor.playerRow) + Math.abs(boss.col - state.floor.playerCol)) / HUNTER_HINT_RANGE)
     : lightProgress();
   const strength = offScreen ? (0.25 + 0.6 * near).toFixed(2) : '0';
   Object.values(edges).forEach(el => el.classList.toggle('hunter-hint', !state.floor.boss && !!state.floor.hunter));
-  const dr = boss ? boss.row - state.floor.playerRow : 0;
-  const dc = boss ? boss.col - state.floor.playerCol : 0;
   const on = {
-    n: dr < 0 && Math.abs(dr) * 2 >= Math.abs(dc),
-    s: dr > 0 && Math.abs(dr) * 2 >= Math.abs(dc),
-    w: dc < 0 && Math.abs(dc) * 2 >= Math.abs(dr),
-    e: dc > 0 && Math.abs(dc) * 2 >= Math.abs(dr),
+    n: dy < 0 && Math.abs(dy) * 2 >= Math.abs(dx),
+    s: dy > 0 && Math.abs(dy) * 2 >= Math.abs(dx),
+    w: dx < 0 && Math.abs(dx) * 2 >= Math.abs(dy),
+    e: dx > 0 && Math.abs(dx) * 2 >= Math.abs(dy),
   };
   Object.entries(edges).forEach(([side, el]) => { el.style.opacity = on[side] ? strength : '0'; });
+}
+
+// Where a thing is on the map compared with the player, in the view being
+// drawn: dx right and dy down (any unit, only the direction is used), and
+// whether it is off the map. Top-down, that's its grid offset and the
+// camera's window; isometric, its place on the diamond.
+function placeOnScreen(thing) {
+  if (state.settings.isoView) {
+    const at = isoScreenShare(thing.row, thing.col);
+    const { x, y } = isoScreenOffset(thing.row - state.floor.playerRow, thing.col - state.floor.playerCol);
+    return { dx: x, dy: y, offScreen: at.x < 0 || at.x > 1 || at.y < 0 || at.y > 1 };
+  }
+  const f = state.floor;
+  return {
+    dx: thing.col - f.playerCol,
+    dy: thing.row - f.playerRow,
+    offScreen: thing.row < f.camRow || thing.row >= f.camRow + VIEWPORT_SIZE ||
+      thing.col < f.camCol || thing.col >= f.camCol + VIEWPORT_SIZE,
+  };
 }
 
 // The eye in the status bar: shut when a room begins, opening as the boss

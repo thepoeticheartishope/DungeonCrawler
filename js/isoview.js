@@ -1,14 +1,17 @@
 // The isometric map (DEV -> View): the floor drawn as phosphor-vector
 // blocks on a diamond grid. Walls and pillars are glowing wireframe
 // blocks, the floor dim diamond tiles, glyphs stand upright on their
-// tiles, and light fades over the player's five steps.
+// tiles, and light fades over the player's five steps. A wall standing
+// between the camera and something the player can see is cut away (or
+// drawn as glass, DEV -> Walls), so nothing in sight is ever hidden.
 //
 // mapview.js calls drawIsoScene() from its drawScene when
 // state.settings.isoView is on, and passes in what the two views share:
 // the colours, the list of things on the map, fog, glyph painting, the
 // boss mist and the pulses. So both views always show the same things;
 // this file only decides where and how they stand. It reads state and
-// never changes it.
+// never changes it. render.js reads isoScreenShare() / isoScreenOffset() so the edge glow
+// points where this view shows things.
 
 import { state, key } from './state.js';
 import { ISO_TILES_ACROSS, ISO_WALL_HEIGHT, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE } from './config.js';
@@ -49,6 +52,15 @@ const PAPER_SHEET = [[-0.8, -0.55], [0.75, -0.7], [0.8, 0.55], [-0.75, 0.7]];
 const PAPER_LINES = [-0.3, 0, 0.3];
 const PAPER_SCALE = 0.2;
 const TARGET_PULSE = [0.45, 1]; // the target diamond's strength at either end of its pulse, as top-down
+// Walls in front of the camera (ISO_FRONT_WALLS in config.js).
+const WALL_STUB = 0.22;          // a cut-away wall's stub, as a share of its height
+const WALL_COVER_WIDTH = 0.4;    // half the width of a wall that counts as covering something:
+                                 // under half a tile, so a wall only touching it at a corner stays
+const GHOST_LEVEL = 0.2;         // the dashed outline of a cut wall's full height
+const GHOST_DASH = [0.03, 0.04]; // its dash and gap, in tile widths
+const GLASS_FILL = 0.42;         // a see-through wall's faces and top
+const GLASS_EDGE = 0.8;          // its glowing edges
+const MIST_DEPTH = 0.25;         // the mist draws after its own tile's pillar, before what stands on it
 
 // The faces of a block, darker than its top so it reads as standing up.
 const SOUTH_FACE = '#0a0e0f';
@@ -62,11 +74,14 @@ let originX = 0;    // where the player's tile sits on the canvas
 let originY = 0;
 let size = 0;       // the canvas's width and height
 let look = null;    // what mapview.js passed in
+let frontWalls = new Set(); // walls between the camera and something in sight, this frame
 
 // Draws the whole isometric map as state has it now, in layer order:
 // floor, things lying on it (stairs, papers, the facing wedge, pillar
-// shadows), light (the player's pool, the boss mist), then everything
-// standing up back to front, so nearer things paint over farther ones.
+// shadows), the player's light pool, then everything standing up and the
+// boss mist back to front, so nearer things paint over farther ones. Walls
+// in front of anything in sight are cut away, or drawn as glass with what
+// they hide traced on top.
 // `shared` is { colours, things, fogOf, paintGlyph, mistSprite,
 // mistStrength, pulse, keepMoving } from mapview.js.
 export function drawIsoScene(ctx, canvasSize, shared) {
@@ -78,6 +93,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   originX = size / 2;
   originY = size * CAMERA_Y;
   const tiles = tilesInView();
+  const hidden = findFrontWalls(tiles);
   tiles.forEach(({ row, col }) => {
     if (!isWall(row, col) && look.fogOf(row, col) !== 'hidden') drawFloor(ctx, row, col);
   });
@@ -85,9 +101,13 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   tiles.forEach(({ row, col }) => {
     if (isWall(row, col)) {
       if (wallShown(row, col)) standing.push({ depth: row + col, draw: () => drawWall(ctx, row, col) });
-    } else if (state.floor.pillarSet.has(key(row, col)) && look.fogOf(row, col) !== 'hidden') {
+      return;
+    }
+    if (state.floor.pillarSet.has(key(row, col)) && look.fogOf(row, col) !== 'hidden') {
       standing.push({ depth: row + col, draw: () => drawPillar(ctx, row, col) });
     }
+    const mist = look.mistStrength(row, col);
+    if (mist) standing.push({ depth: row + col + MIST_DEPTH, draw: () => drawMist(ctx, row, col, mist) });
   });
   drawPillarShadows(ctx, tiles);
   look.things.forEach(thing => {
@@ -97,9 +117,9 @@ export function drawIsoScene(ctx, canvasSize, shared) {
     if (thing.kind === 'player') drawFacing(ctx, thing.at);
     standing.push({ depth: thing.at.row + thing.at.col + 0.5, draw: () => drawStanding(ctx, thing) });
   });
-  drawLight(ctx, tiles);
+  drawLightPool(ctx);
   standing.sort((a, b) => a.depth - b.depth).forEach(s => s.draw());
-  drawPlayerTrace(ctx, tiles);
+  if (state.settings.isoFrontWalls === 'see') hidden.forEach(thing => drawTrace(ctx, thing));
   drawTarget(ctx);
 }
 
@@ -117,13 +137,28 @@ function tilesInView() {
   return tiles.sort((a, b) => (a.row + a.col) - (b.row + b.col) || a.row - b.row);
 }
 
-// The middle of a tile on the canvas, in pixels. The camera follows the
-// player: their tile is always at the origin. Rows and columns may be
-// fractional while something slides.
+// How far a tile's middle sits from the player's on the isometric map,
+// in tile widths: x right, y down. A grid step is half a tile across and
+// a quarter down, so whole steps give exact numbers, which render.js's
+// edge glow needs: a grid direction lies right on its two-edge cutoff.
+export function isoScreenOffset(dr, dc) {
+  return { x: (dc - dr) / 2, y: (dc + dr) / 4 };
+}
+
+// Where a tile's middle falls on the isometric map, as shares of the
+// map's width and height (0..1 is on the map). The camera follows the
+// player: their tile is always at the middle across, CAMERA_Y down. Rows
+// and columns may be fractional while something slides. The drawing and
+// render.js's edge glow both place things with it, so they agree.
+export function isoScreenShare(row, col) {
+  const { x, y } = isoScreenOffset(row - state.floor.playerRow, col - state.floor.playerCol);
+  return { x: 0.5 + x / ISO_TILES_ACROSS, y: CAMERA_Y + y / ISO_TILES_ACROSS };
+}
+
+// The middle of a tile on the canvas, in pixels.
 function centre(row, col) {
-  const dr = row - state.floor.playerRow;
-  const dc = col - state.floor.playerCol;
-  return [originX + (dc - dr) * tw / 2, originY + (dc + dr) * th / 2];
+  const { x, y } = isoScreenShare(row, col);
+  return [x * size, y * size];
 }
 
 // Whether a tile, or a wall standing on it, shows anywhere on the canvas.
@@ -228,16 +263,105 @@ function drawFloor(ctx, row, col) {
   ctx.stroke();
 }
 
-// A wall block. Its top edges shared with a neighbouring wall are left
-// out, so a run of wall reads as one ridge, and a face with a wall in
-// front of it isn't drawn.
-function drawWall(ctx, row, col) {
-  const joined = (dr, dc) => isWall(row + dr, col + dc) && wallShown(row + dr, col + dc);
-  drawBlock(ctx, row, col, {
-    inset: 0, height: wallH, level: wallLevel(row, col),
-    southHidden: joined(1, 0), eastHidden: joined(0, 1),
-    ridge: { n: !joined(-1, 0), e: !joined(0, 1), s: !joined(1, 0), w: !joined(0, -1) },
+// Finds the walls standing between the camera and something the player
+// can see now (themselves, an enemy, a lit item, the stairs in sight):
+// nearer the camera than it, with a full-height shape covering it on
+// screen. Only those walls are cut away (or made glass), so the rest of
+// the room keeps its height. Returns the things they cover.
+function findFrontWalls(tiles) {
+  frontWalls = new Set();
+  const walls = tiles.filter(({ row, col }) => isWall(row, col) && wallShown(row, col));
+  return look.things.filter(thing => {
+    if (look.fogOf(Math.round(thing.at.row), Math.round(thing.at.col)) !== 'lit') return false;
+    const box = thingBox(thing);
+    const depth = thing.at.row + thing.at.col;
+    let covered = false;
+    walls.forEach(({ row, col }) => {
+      if (row + col <= depth || !overlaps(wallBox(row, col), box)) return;
+      frontWalls.add(key(row, col));
+      covered = true;
+    });
+    return covered;
   });
+}
+
+function isFront(row, col) {
+  return frontWalls.has(key(row, col));
+}
+
+// A thing's outline on the canvas, as [left, top, right, bottom]: a flat
+// thing's diamond, a box's block, or an upright glyph down to its tile.
+function thingBox(thing) {
+  const { row, col } = thing.at;
+  const d = diamond(row, col);
+  if (lyingFlat(thing)) return [d.L[0], d.T[1], d.R[0], d.B[1]];
+  if (isBlock(thing)) {
+    const b = diamond(row, col, BOX_INSET);
+    return [b.L[0], b.T[1] - tw * BOX_HEIGHT, b.R[0], b.B[1]];
+  }
+  const glyphSize = tw * GLYPH_CELL * MAP_GLYPH_SIZES[thing.look.size];
+  const [x, y] = glyphPlace(thing);
+  return [x - glyphSize * 0.3, y - glyphSize / 2, x + glyphSize * 0.3, d.cy + th * CONTACT_SHADOW];
+}
+
+// A wall's full-height outline on the canvas, as [left, top, right, bottom].
+function wallBox(row, col) {
+  const [cx, cy] = centre(row, col);
+  return [cx - tw * WALL_COVER_WIDTH, cy - th / 2 - wallH, cx + tw * WALL_COVER_WIDTH, cy + th / 2];
+}
+
+function overlaps(a, b) {
+  return a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+}
+
+// The stairs and a made-out paper lie flat on the floor; a made-out box
+// is a small block; everything else stands up as a glyph.
+function lyingFlat(thing) {
+  return thing.kind === 'stairs' || (thing.kind === 'paper' && thing.glyph !== null);
+}
+
+function isBlock(thing) {
+  return thing.kind === 'box' && thing.glyph !== null;
+}
+
+// A wall block. Its top edges shared with a neighbouring wall of the same
+// height are left out, so a run of wall reads as one ridge, and a face
+// with a wall at least as tall in front of it isn't drawn. A wall in front
+// of something in sight is cut to a stub with a dashed outline of its full
+// height, or drawn as glass (DEV -> Walls).
+function drawWall(ctx, row, col) {
+  const front = isFront(row, col);
+  const cut = front && state.settings.isoFrontWalls === 'cut';
+  const joined = (dr, dc) => isWall(row + dr, col + dc) && wallShown(row + dr, col + dc);
+  const sameHeight = (dr, dc) => joined(dr, dc) && isFront(row + dr, col + dc) === front;
+  const coversFace = (dr, dc) => joined(dr, dc) && (front || !isFront(row + dr, col + dc));
+  const ridge = { n: !sameHeight(-1, 0), e: !sameHeight(0, 1), s: !sameHeight(1, 0), w: !sameHeight(0, -1) };
+  drawBlock(ctx, row, col, {
+    inset: 0, height: cut ? wallH * WALL_STUB : wallH, level: wallLevel(row, col), glass: front && !cut,
+    southHidden: coversFace(1, 0), eastHidden: coversFace(0, 1), ridge,
+  });
+  if (cut) drawGhost(ctx, row, col, ridge);
+}
+
+// The dashed outline of a cut-away wall's full height: its top edges (not
+// those shared with the next cut wall) and its outer corners, so the
+// room's shape still reads where the wall was lowered.
+function drawGhost(ctx, row, col, ridge) {
+  const d = diamond(row, col);
+  const [T, R, B, L] = [d.T, d.R, d.B, d.L].map(p => up(p, wallH));
+  const stub = wallH * WALL_STUB;
+  ctx.save();
+  ctx.setLineDash(GHOST_DASH.map(n => n * tw));
+  ctx.lineWidth = EDGE_WIDTH * tw * 0.8;
+  ctx.strokeStyle = glow(GHOST_LEVEL);
+  if (ridge.n) line(ctx, T, R);
+  if (ridge.e) line(ctx, R, B);
+  if (ridge.s) line(ctx, B, L);
+  if (ridge.w) line(ctx, L, T);
+  if (ridge.s && ridge.e) line(ctx, up(d.B, stub), B);
+  if (ridge.s && ridge.w) line(ctx, up(d.L, stub), L);
+  if (ridge.n && ridge.e) line(ctx, up(d.R, stub), R);
+  ctx.restore();
 }
 
 // A pillar: a thin block a little taller than the walls.
@@ -251,8 +375,9 @@ function drawPillar(ctx, row, col) {
 // opaque, so whatever stands behind it is hidden; only its edges glow.
 // Options: inset (0..0.5), height in pixels, level (0..1), southHidden /
 // eastHidden (a face with a wall in front of it), ridge (which top edges
-// to draw: n, e, s, w; all by default).
-function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, eastHidden = false, ridge }) {
+// to draw: n, e, s, w; all by default), glass (faint, so what stands
+// behind shows through).
+function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, eastHidden = false, ridge, glass = false }) {
   const d = diamond(row, col, inset);
   const T = up(d.T, height);
   const R = up(d.R, height);
@@ -260,6 +385,7 @@ function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, e
   const L = up(d.L, height);
   const edges = ridge || { n: true, e: true, s: true, w: true };
   ctx.save();
+  if (glass) ctx.globalAlpha = GLASS_FILL;
   if (!southHidden) {
     poly(ctx, [d.L, d.B, B, L]);
     ctx.fillStyle = SOUTH_FACE;
@@ -273,6 +399,7 @@ function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, e
   poly(ctx, [T, R, B, L]);
   ctx.fillStyle = 'rgb(' + Math.round(14 + 10 * level) + ', ' + Math.round(18 + 12 * level) + ', ' + Math.round(19 + 12 * level) + ')';
   ctx.fill();
+  if (glass) ctx.globalAlpha = GLASS_EDGE;
   ctx.lineWidth = EDGE_WIDTH * tw;
   strokeGlow(ctx, 0.85 * level, RIDGE_BLUR * level);
   if (edges.n) line(ctx, T, R);
@@ -375,12 +502,10 @@ function drawPillarShadows(ctx, tiles) {
   });
 }
 
-// Light added over the floor: a pale pool round the player, and the boss
-// mist drifting on the floor it has reached.
-function drawLight(ctx, tiles) {
+// Light added over the floor: a pale pool round the player.
+function drawLightPool(ctx) {
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  ctx.save();
   ctx.translate(originX, originY);
   ctx.scale(1, th / tw);
   const g = ctx.createRadialGradient(0, 0, 0, 0, 0, tw * POOL_RADIUS);
@@ -390,15 +515,20 @@ function drawLight(ctx, tiles) {
   ctx.fillStyle = g;
   ctx.fillRect(-tw * POOL_RADIUS, -tw * POOL_RADIUS, tw * POOL_RADIUS * 2, tw * POOL_RADIUS * 2);
   ctx.restore();
+}
+
+// One tile's boss mist lying on the floor, added as light (`lighter`).
+// It is its own layer in the back-to-front order, not part of the floor:
+// so it spills over the foot of the wall behind its tile and stays under
+// the wall in front, instead of stopping in a hard line at every wall.
+function drawMist(ctx, row, col, strength) {
   const w = tw * MIST_WIDTH;
   const h = w * MIST_SQUASH;
-  tiles.forEach(({ row, col }) => {
-    const strength = look.mistStrength(row, col);
-    if (!strength) return;
-    const [cx, cy] = centre(row, col);
-    ctx.globalAlpha = strength;
-    ctx.drawImage(look.mistSprite, cx - w / 2, cy - h / 2, w, h);
-  });
+  const [cx, cy] = centre(row, col);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = strength;
+  ctx.drawImage(look.mistSprite, cx - w / 2, cy - h / 2, w, h);
   ctx.restore();
 }
 
@@ -414,7 +544,7 @@ function glyphPlace(thing) {
 // player's symbol; the facing wedge on the floor says which way they face.
 function drawStanding(ctx, thing) {
   const { at } = thing;
-  if (thing.kind === 'box' && thing.glyph !== null) {
+  if (isBlock(thing)) {
     const level = floorLevel(at.row, at.col) * (searched(at) ? SEARCHED_LEVEL : 1);
     drawBlock(ctx, at.row, at.col, { inset: BOX_INSET, height: tw * BOX_HEIGHT, level: Math.max(WALL_MIN_LEVEL, level) });
     return;
@@ -427,35 +557,40 @@ function drawStanding(ctx, thing) {
   ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
   ctx.fill();
   ctx.restore();
-  const glyph = thing.kind === 'player' ? t('term.player.symbol') : thing.glyph;
   const [x, y] = glyphPlace(thing);
-  look.paintGlyph(ctx, tw * GLYPH_CELL, x, y, glyph, thing.look);
+  look.paintGlyph(ctx, tw * GLYPH_CELL, x, y, standingGlyph(thing), thing.look);
 }
 
-// Until walls in front of the camera are cut away (isometric step 3), a
-// wall can stand between the camera and the player. When one does, the
-// player's glyph is traced over it as a glowing outline, so they are
-// never lost.
-function drawPlayerTrace(ctx, tiles) {
-  const player = look.things.find(thing => thing.kind === 'player');
-  const [x, y] = glyphPlace(player);
-  const glyphSize = tw * GLYPH_CELL * MAP_GLYPH_SIZES.player;
-  const box = [x - glyphSize * 0.3, y - glyphSize / 2, x + glyphSize * 0.3, y + glyphSize / 2];
-  const depth = player.at.row + player.at.col;
-  const covered = tiles.some(({ row, col }) => {
-    if (row + col <= depth || !isWall(row, col) || !wallShown(row, col)) return false;
-    const [cx, cy] = centre(row, col);
-    const wall = [cx - tw / 2, cy - th / 2 - wallH, cx + tw / 2, cy + th / 2];
-    return wall[0] < box[2] && box[0] < wall[2] && wall[1] < box[3] && box[1] < wall[3];
-  });
-  if (!covered) return;
+// The glyph a standing thing shows: the player as the player's symbol
+// (the facing wedge on the floor says which way they face), else its own
+// glyph, or null for the '?' of something too far to make out.
+function standingGlyph(thing) {
+  return thing.kind === 'player' ? t('term.player.symbol') : thing.glyph;
+}
+
+// See-through walls: something a glass wall stands in front of is traced
+// on top of it as a glowing outline, so the player never loses it. A glyph
+// traces its shape, a box or flat thing its outline, dashed.
+function drawTrace(ctx, thing) {
+  const { row, col } = thing.at;
   ctx.save();
-  ctx.font = Math.round(glyphSize) + 'px VT323, monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
   ctx.lineWidth = EDGE_WIDTH * tw * 1.1;
   strokeGlow(ctx, 0.95, RIDGE_BLUR * 1.6);
-  ctx.strokeText(t('term.player.symbol'), x, y);
+  if (lyingFlat(thing) || isBlock(thing)) {
+    const d = diamond(row, col, isBlock(thing) ? BOX_INSET : 0.1);
+    const h = isBlock(thing) ? tw * BOX_HEIGHT : 0;
+    ctx.setLineDash(GHOST_DASH.map(n => n * tw));
+    poly(ctx, [up(d.T, h), up(d.R, h), d.R, d.B, d.L, up(d.L, h)]);
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+  const glyph = standingGlyph(thing);
+  const [x, y] = glyphPlace(thing);
+  ctx.font = Math.round(tw * GLYPH_CELL * MAP_GLYPH_SIZES[thing.look.size]) + 'px VT323, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.strokeText(glyph === null ? t('term.unknown.symbol') : glyph, x, y);
   ctx.restore();
 }
 
