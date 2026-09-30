@@ -545,6 +545,21 @@
     position: relative;
   }
 
+  /* The canvas map (js/mapview.js) lies exactly over the grid. While it
+     shows, the grid keeps its place (so the page doesn't jump) but isn't
+     drawn; the edge glows stay on top of either map. */
+  .map-canvas {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    aspect-ratio: 1;
+    border: 1px solid var(--line);
+  }
+  .grid-wrap.canvas-map .map-canvas { display: block; }
+  .grid-wrap.canvas-map .grid { visibility: hidden; }
+
   .tile { background: var(--tile-a); }
   .tile.b { background: var(--tile-b); }
   .tile.wall {
@@ -1256,6 +1271,7 @@
     <button type="button" class="dev-skip stat-wide" id="devToggleBtn" title="Testing tools">DEV</button>
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
+      <button class="dev-skip" id="devMapBtn" type="button" aria-pressed="false" title="Testing only: draw the map on the canvas instead of the DOM tiles">Map: DOM (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
       <button class="dev-skip" id="devAutoWinBtn" type="button" aria-pressed="false" title="Testing only: every encounter plays itself out with correct answers">Auto-win: OFF (dev)</button>
       <button class="dev-skip" id="devInspectBtn" type="button" aria-pressed="false" title="Testing only: show live game state and the last events">Inspect: OFF (dev)</button>
@@ -1373,6 +1389,8 @@
         <div class="actor" id="playerActor">@</div>
         <div class="actor boss" id="bossActor"></div>
       </div>
+      <!-- The canvas map (js/mapview.js), shown instead of the grid by DEV -> Map. -->
+      <canvas class="map-canvas" id="mapCanvas" aria-hidden="true"></canvas>
       <!-- Edge glows pointing at an off-screen boss (render.js renderLightHint). -->
       <div class="light-hint light-hint-n" id="lightHintN" aria-hidden="true"></div>
       <div class="light-hint light-hint-s" id="lightHintS" aria-hidden="true"></div>

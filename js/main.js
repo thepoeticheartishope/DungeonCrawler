@@ -27,6 +27,7 @@ import { stepPlayer } from './moves.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader } from './setloader.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
+import { initMapView, requestMapDraw } from './mapview.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 
@@ -100,6 +101,7 @@ initRender({
   heartsEl, coinsTotalEl, turnCountEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightEyeEl, lightHintEls, dpadButtons
 });
+initMapView(document.getElementById('mapCanvas'), grid.parentElement);
 
 initDataView({ startScreen });
 
@@ -521,6 +523,7 @@ function leaveEncounter() {
   state.battle.battleTarget = null;
   refreshTargetValidity();
   renderTargeting();
+  requestMapDraw();
   nextQuestion();
   syncBattleScreen();
 }
@@ -675,6 +678,7 @@ function drawFloor() {
   renderFog();
   renderLightEye();
   renderTargeting();
+  requestMapDraw();
   syncBattleScreen(); // nothing's adjacent at spawn — makes sure we're back on the room screen
 
   setQuestion(pickQuestion(null));
@@ -875,6 +879,7 @@ function drawEvents(events) {
   renderFog();
   renderLightEye();
   renderTargeting();
+  requestMapDraw();
   recordEvents(events);
   return { cls, text: parts.join(' ') };
 }

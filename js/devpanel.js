@@ -1,13 +1,15 @@
-// DEV panel in the status bar: Skip room, Auto-win and Fog toggles, for
+// DEV panel in the status bar: Skip room, Auto-win, Fog and Map toggles, for
 // testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { renderFog } from './render.js';
+import { applyMapMode, requestMapDraw } from './mapview.js';
 
 const devToggleBtn = document.getElementById('devToggleBtn');
 const devPanel = document.getElementById('devPanel');
 const devSkipBtn = document.getElementById('devSkipBtn');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
+const devMapBtn = document.getElementById('devMapBtn');
 
 export function initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter,
@@ -53,6 +55,16 @@ export function initDevPanel({
     state.settings.fogEnabled = !state.settings.fogEnabled;
     devFogBtn.textContent = state.settings.fogEnabled ? 'Fog: ON (dev)' : 'Fog: OFF (dev)';
     renderFog();
+    requestMapDraw();
+  });
+
+  // Dev tool: swap between the DOM map and the canvas map (js/mapview.js)
+  // on the same floor, to compare them while the canvas map catches up.
+  devMapBtn.addEventListener('click', () => {
+    state.settings.canvasMap = !state.settings.canvasMap;
+    devMapBtn.textContent = state.settings.canvasMap ? 'Map: canvas (dev)' : 'Map: DOM (dev)';
+    devMapBtn.setAttribute('aria-pressed', String(state.settings.canvasMap));
+    applyMapMode();
   });
 }
 

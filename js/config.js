@@ -289,3 +289,19 @@ export const TIMER_SECONDS = 10;
 // the room, panning to follow the player. Must stay smaller than every
 // floor recipe's grid (floors.js), or there'd be nothing to pan.
 export const VIEWPORT_SIZE = 11;
+
+// Canvas map (js/mapview.js). Phosphor afterglow: each frame keeps
+// (1 - AFTERGLOW_FADE) of the last frame's light, measured at 60 frames a
+// second, so something the player leaves behind dims out over about half a
+// second and a moving glyph leaves a short trail. Off under reduced motion.
+export const AFTERGLOW_FADE = 0.1;
+// After this long with nothing new to draw, the fade is over: the canvas
+// takes the plain frame (so rounding can't leave faint ghosts) and stops.
+export const AFTERGLOW_SETTLE_MS = 900;
+// Glyph height on the canvas map, as a share of one tile. Matches the
+// DOM map's font sizes (26px on a ~31px tile, the boss bigger, the coin
+// smaller) so both maps read the same while the DEV toggle compares them.
+export const MAP_GLYPH_SIZES = {
+  player: 0.84, boss: 1.03, minion: 0.71, hunter: 0.9, coin: 0.65,
+  stairs: 0.71, chest: 0.77, rune: 0.77, encounter: 0.77, prop: 0.77,
+};
