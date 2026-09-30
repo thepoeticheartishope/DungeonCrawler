@@ -76,6 +76,7 @@ export const state = {
     lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
     runeHint: null,        // question a rune just hinted at — always offered as a choice until asked
     coin: null,            // { row, col } or null once collected
+    beats: [],             // [{ kind, row, col, at }] the recipe's beats and where they landed, `at` = step of the walk to the boss (beats.js)
     stairs: null,          // { row, col } — sits inside the boss chamber, past the boss
     chest: null,           // { row, col, el, kind: 'chest' } or null once opened/trapped
     rune: null,            // { row, col, el, kind: 'rune' } or null once read/trapped

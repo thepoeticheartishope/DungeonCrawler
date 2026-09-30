@@ -1,7 +1,8 @@
-// Building a floor as data: layout, furniture, boss, stairs, coin, the one
-// special item and minions, plus the light, sight and camera that follow
-// from them. No page access — main.js loadRoom() calls buildFloor(), then
-// drawFloor() puts the result on the page.
+// Building a floor as data: layout, furniture, boss, stairs, the recipe's
+// beats (beats.js), coin, the one special item and minions, plus the
+// light, sight and camera that follow from them. No page access — main.js
+// loadRoom() calls buildFloor(), then drawFloor() puts the result on the
+// page.
 
 import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
@@ -14,6 +15,7 @@ import { shuffle } from './quiz.js';
 import { computeVisibility, updateCamera } from './sight.js';
 import { spawnMinion } from './combat.js';
 import { initBossLight } from './light.js';
+import { placeBeats } from './beats.js';
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
 function pickCoinTile(walls, avoidList, allowedTiles) {
@@ -55,13 +57,12 @@ function stepsFromStart() {
   return dist;
 }
 
-// The room's fixed set of minions (the recipe's minions), placed on room tiles
-// outside the boss chamber and at least MINION_MIN_START_DISTANCE steps
+// The rest of the floor's minions (`count` of the recipe's, after any the
+// beats placed), put on room tiles outside the boss chamber and at least MINION_MIN_START_DISTANCE steps
 // from the player's start, so a room never opens with one in the player's
 // face. Falls back to any free reachable room tile if a small room can't
 // fit them that far away.
-function placeMinions(roomTiles, takenTiles) {
-  const count = floorRecipe(state.run.roomIndex).minions;
+function placeMinions(roomTiles, takenTiles, count) {
   const dist = stepsFromStart();
   const isTaken = (k) => takenTiles.some(p => key(p.row, p.col) === k);
   const free = [...dist.keys()].filter(k => roomTiles.has(k) && !isTaken(k));
@@ -73,9 +74,9 @@ function placeMinions(roomTiles, takenTiles) {
   });
 }
 
-// The floor as data only: layout, furniture, boss, stairs, coin, the one
-// special item and minions, plus the light, sight and camera that follow
-// from them. No page access.
+// The floor as data only: layout, furniture, boss, stairs, the recipe's
+// beats, coin, the one special item and minions, plus the light, sight
+// and camera that follow from them. No page access.
 export function buildFloor() {
   const recipe = floorRecipe(state.run.roomIndex);
   state.floor.GRID_SIZE = recipe.grid;
@@ -127,12 +128,23 @@ export function buildFloor() {
   // furniture (never in a doorway, never cutting the floor in two).
   const roomTiles = layout.roomTiles;
   const placer = furnishing.placer;
+  const fixedTiles = [state.floor.PLAYER_START, { row: state.floor.boss.row, col: state.floor.boss.col }, state.floor.stairs];
+
+  // The recipe's beats go down first, along the walk to the boss, so the
+  // random coin can't take their spots (beats.js).
+  const beats = placeBeats(recipe.beats, layout, placer, fixedTiles);
+  state.floor.beats = beats.placed;
+  beats.props.forEach(p => {
+    state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
+  });
+  beats.minionTiles.forEach(p => spawnMinion(p));
+
   const freeRoomTiles = new Set([...roomTiles].filter(k => !placer.blocked.has(k)));
 
-  const coinTile = pickCoinTile(state.floor.wallSet, [state.floor.PLAYER_START, { row: state.floor.boss.row, col: state.floor.boss.col }, state.floor.stairs], freeRoomTiles);
+  const takenTiles = [...fixedTiles, ...beats.minionTiles];
+  const coinTile = pickCoinTile(state.floor.wallSet, takenTiles, freeRoomTiles);
   state.floor.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
 
-  const takenTiles = [state.floor.PLAYER_START, { row: state.floor.boss.row, col: state.floor.boss.col }, state.floor.stairs];
   if (state.floor.coin) takenTiles.push(state.floor.coin);
 
   // Exactly one special interactive extra per room — a chest, a rune, or a
@@ -152,7 +164,7 @@ export function buildFloor() {
   const specialCandidates = [...freeRoomTiles]
     .map(k => { const [row, col] = k.split(',').map(Number); return { row, col }; })
     .filter(p => !takenTiles.some(q => q.row === p.row && q.col === p.col));
-  const specialTile = placer.pick(specialCandidates);
+  const specialTile = beats.specialTile || placer.pick(specialCandidates);
   if (specialTile) {
     const candidates = [
       { type: 'chest' },
@@ -174,7 +186,7 @@ export function buildFloor() {
 
   const minionTaken = takenTiles.slice();
   [state.floor.chest, state.floor.rune, ...state.floor.encounters].forEach(item => { if (item) minionTaken.push(item); });
-  placeMinions(roomTiles, minionTaken);
+  placeMinions(roomTiles, minionTaken, recipe.minions - beats.minionTiles.length);
 
   state.floor.darkness = false;
   initBossLight();

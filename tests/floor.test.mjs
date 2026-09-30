@@ -11,6 +11,7 @@ import {
   BOSS_HP, MC_SAMPLE_DATA,
 } from '../js/config.js';
 import { buildFloor } from '../js/floor.js';
+import { BEAT_KINDS } from '../js/beats.js';
 import { FLOOR_RECIPES } from '../js/floors.js';
 import { TEXT } from '../js/text.js';
 import { generateDungeonLayout } from '../js/dungeon.js';
@@ -148,4 +149,43 @@ test('each floor adds its story to the end of the run queue, and every line has 
   assert.deepEqual(state.run.loreQueue, ['story.left.unread', ...FLOOR_RECIPES[0].lore]);
   FLOOR_RECIPES.forEach(r => (r.lore || []).forEach(k => assert.ok(k in TEXT, k)));
   state.run.loreQueue = [];
+});
+
+test('every recipe\'s beats are known kinds, with no more minion beats than minions', () => {
+  FLOOR_RECIPES.forEach(r => {
+    (r.beats || []).forEach(kind => assert.ok(BEAT_KINDS.includes(kind), kind));
+    assert.ok((r.beats || []).filter(kind => kind === 'minion').length <= r.minions);
+  });
+});
+
+// Whether the paper, box, minion or special a beat asked for stands on
+// its tile when the floor is built.
+function beatThere(f, beat) {
+  const on = p => p && p.row === beat.row && p.col === beat.col;
+  if (beat.kind === 'paper' || beat.kind === 'box') return f.props.some(p => p.kind === beat.kind && on(p));
+  if (beat.kind === 'minion') return f.minions.some(on);
+  return specials(f).some(on);
+}
+
+test('beats land in rooms along the walk to the boss, in the recipe\'s order', () => {
+  let wanted = 0;
+  let placed = 0;
+  eachFloor((f, roomIndex) => {
+    const recipe = FLOOR_RECIPES[roomIndex];
+    wanted += recipe.beats.length;
+    placed += f.beats.length;
+    // The beats that landed are the recipe's list with at most a few left
+    // out, never swapped.
+    let next = 0;
+    f.beats.forEach((beat, i) => {
+      while (next < recipe.beats.length && recipe.beats[next] !== beat.kind) next++;
+      assert.ok(next < recipe.beats.length, 'beat out of order: ' + beat.kind);
+      next++;
+      assert.ok(f.chamberAt.has(key(beat.row, beat.col)), 'beat in a hallway');
+      assert.ok(beatThere(f, beat), beat.kind + ' missing from its tile');
+      if (i > 0) assert.ok(beat.at >= f.beats[i - 1].at, 'beat earlier on the walk than the one before');
+    });
+  });
+  // A crowded floor may drop a beat now and then, but almost all land.
+  assert.ok(placed / wanted > 0.95, 'only ' + placed + ' of ' + wanted + ' beats landed');
 });
