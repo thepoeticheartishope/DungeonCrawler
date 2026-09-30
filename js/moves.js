@@ -17,7 +17,7 @@ export function goldReward(base) {
 // blocked move — the player can "turn to look" a direction without
 // spending a turn. Events: turned { facing }, blocked { kind, thing },
 // stepped { facing }, stairsReached, coinTaken { gold },
-// paperRead { paper, loot }, roomEntered { theme }, and the box events
+// paperRead { paper, loot, story? }, roomEntered { theme }, and the box events
 // from examineProp. A turn is spent only by `stepped` or `propSearched`.
 export function stepPlayer(dRow, dCol) {
   const events = [];
@@ -72,10 +72,16 @@ export function stepPlayer(dRow, dCol) {
   return events;
 }
 
-// A paper is read by stepping onto it.
+// A paper is read by stepping onto it. While the run's story has lines
+// left, every paper gives the next one, whatever it rolled: that way the
+// story arrives in order wherever the papers lie, and doesn't hang on the
+// lore roll. Once it's told, a paper gives its own roll (a theme line or
+// nothing), as before.
 function readPaper(paper) {
   paper.searched = true;
   paper.identified = true;
+  const story = state.run.loreQueue.shift();
+  if (story) return { type: 'paperRead', paper, loot: 'story', story };
   return { type: 'paperRead', paper, loot: paper.loot };
 }
 

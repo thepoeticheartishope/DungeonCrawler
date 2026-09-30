@@ -52,6 +52,7 @@ function resetFloor(size = 21) {
   state.floor.coin = null;
   state.floor.stairs = null;
   state.run.coinsTotal = 0;
+  state.run.loreQueue = [];
   state.floor.chamberAt = new Map();
   state.floor.chamberThemes = [];
   state.floor.visitedChambers = new Set();
@@ -386,6 +387,17 @@ test('the first step into a room fires roomEntered once', () => {
   assert.deepEqual(first.map(e => e.type), ['stepped', 'roomEntered']);
   assert.equal(first[1].theme, 'crypt');
   assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['stepped']);
+});
+
+test('papers give the story in order, then their own roll', () => {
+  resetFloor();
+  const [r, c] = [state.floor.playerRow, state.floor.playerCol];
+  state.floor.props = [1, 2, 3].map(d => ({ row: r - d, col: c, kind: 'paper', theme: 'crypt', loot: 'junk' }));
+  state.run.loreQueue = ['story.a', 'story.b'];
+  const read = () => stepPlayer(-1, 0).find(e => e.type === 'paperRead');
+  assert.deepEqual([read(), read(), read()].map(e => [e.loot, e.story]),
+    [['story', 'story.a'], ['story', 'story.b'], ['junk', undefined]]);
+  assert.deepEqual(state.run.loreQueue, []);
 });
 
 // --- answers.js: settleAnswer ---
