@@ -304,6 +304,13 @@ export const MAP_GLYPH_SIZES = {
   player: 0.84, boss: 1.03, minion: 0.71, hunter: 0.9, coin: 0.65,
   stairs: 0.71, chest: 0.77, rune: 0.77, encounter: 0.77, prop: 0.77,
 };
+// The isometric map (js/isoview.js, DEV -> View). How many tile widths
+// fit across the map: fewer means bigger tiles. The camera stands on the
+// player, so about half this many tiles show each way along a row.
+export const ISO_TILES_ACROSS = 9;
+// How tall a wall stands, as a share of a tile's width. Pillars stand a
+// little above the walls and boxes much lower (sizes in isoview.js).
+export const ISO_WALL_HEIGHT = 1;
 // How long each map animation takes, in ms. Looping ones stand still
 // under reduced motion.
 export const MAP_ANIMATION_MS = {

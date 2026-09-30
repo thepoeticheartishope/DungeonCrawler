@@ -24,6 +24,7 @@ export const state = {
     revealOnWrong: false,
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
+    isoView: false,         // dev toggle: draw the map isometric (js/isoview.js) instead of top-down
     usingSample: true, // false once the person loads their own list
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
   },

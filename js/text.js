@@ -59,6 +59,9 @@ export const TEXT = {
   'term.paper.symbol': '=',
   'term.box': 'BOX', // draft
   'term.box.symbol': '&',
+  // The player on the isometric map (js/isoview.js); top-down shows the
+  // facing arrow instead (DIRECTION_ARROWS in config.js).
+  'term.player.symbol': '@',
   // What anything further than REVEAL_DISTANCE (config.js) shows as.
   'term.unknown.symbol': '?',
 

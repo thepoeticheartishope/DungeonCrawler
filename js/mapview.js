@@ -18,6 +18,7 @@ import {
 import { canMakeOut, FACING_VECTORS } from './sight.js';
 import { glyphForCategory } from './quiz.js';
 import { t } from './text.js';
+import { drawIsoScene } from './isoview.js';
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
 const PILLAR_INSET = 0.16;   // a pillar is smaller than its tile, so it reads as a column
@@ -94,7 +95,7 @@ export function initMapView(canvasEl) {
   colours = {
     tileA: read('--tile-a'), tileB: read('--tile-b'), wall: read('--wall'), line: read('--line'),
     text: read('--text'), muted: read('--muted'), torch: read('--torch'), bright: read('--torch-bright'),
-    glowRgb: read('--glow-rgb'), bossFogRgb: read('--boss-fog-rgb'),
+    glowRgb: read('--glow-rgb'), bossFogRgb: read('--boss-fog-rgb'), bossLightRgb: read('--boss-light-rgb'),
   };
   new ResizeObserver(() => {
     snap = true;
@@ -218,9 +219,9 @@ function makeMistSprite(cell) {
   return sprite;
 }
 
-// Draws the whole map as state has it at `now`, in layer order: floor
-// and walls, then the boss mist over them, then things on the
-// floor. Notes whether anything drawn keeps moving, so frames go on.
+// Draws the whole map as state has it at `now`: the isometric view
+// (isoview.js) when that's on, else top-down in layer order: floor and
+// walls, then the boss mist over them, then things on the floor. Notes whether anything drawn keeps moving, so frames go on.
 function drawScene(now) {
   frameNow = now;
   looping = false;
@@ -228,9 +229,22 @@ function drawScene(now) {
   const cell = scene.width / VIEWPORT_SIZE;
   ctx.fillStyle = HIDDEN_FLOOR;
   ctx.fillRect(0, 0, scene.width, scene.height);
+  if (state.settings.isoView) {
+    drawIsoScene(ctx, scene.width, {
+      colours, things: mapThings(), fogOf, paintGlyph, mistSprite, mistStrength, pulse, keepMoving,
+    });
+    return;
+  }
   forEachViewTile((row, col, x, y) => drawTile(ctx, row, col, x, y, cell));
   forEachViewTile((row, col, x, y) => drawMist(ctx, row, col, x, y, cell));
-  drawActors(ctx, cell);
+  mapThings().forEach(s => drawGlyph(ctx, cell, s.at, s.glyph, s.look));
+  drawTargetBox(ctx, cell);
+}
+
+// Tells the frame loop that something just drawn keeps moving, so frames
+// go on. The isometric view calls it for its own looping effects.
+function keepMoving() {
+  looping = true;
 }
 
 // Calls fn(row, col, x, y) for every world tile in the camera's window,
@@ -286,30 +300,46 @@ function drawTile(ctx, row, col, x, y, cell) {
 // The boss light's pale blue mist on a lit floor tile (not walls, not
 // floor the player has never seen). Remembered floor shows it dimmed.
 function drawMist(ctx, row, col, x, y, cell) {
-  const k = key(row, col);
-  if (!state.floor.bossLitSet.has(k) || state.floor.wallSet.has(k)) return;
-  const fog = fogOf(row, col);
-  if (fog === 'hidden') return;
-  looping = true;
-  const offset = MIST_OFFSETS_MS[(row * state.floor.GRID_SIZE + col) % MIST_OFFSETS_MS.length];
-  const strength = MIST_DRIFT[0] + (MIST_DRIFT[1] - MIST_DRIFT[0]) * pulse(MAP_ANIMATION_MS.mist, offset);
-  ctx.globalAlpha = strength * (fog === 'dim' ? 1 - FOG_DIM_ALPHA : 1);
+  const strength = mistStrength(row, col);
+  if (!strength) return;
+  ctx.globalAlpha = strength;
   const half = mistSprite.width / 2;
   ctx.drawImage(mistSprite, x + cell / 2 - half, y + cell / 2 - half);
   ctx.globalAlpha = 1;
 }
 
-// Every glyph on the map. Things are seen only on lit tiles, '?' until
-// the player is close enough to make them out (and then with no hostile
-// glow to give an enemy away), stairs always, papers and boxes remembered
-// dimly once seen. Moving things draw over items.
-function drawActors(ctx, cell) {
+// How strongly the boss mist shows on a tile this frame, from 0 (none) to
+// 1: only on lit floor (not walls, not floor the player has never seen),
+// dimmed on remembered floor, drifting over time. Both views draw with it.
+function mistStrength(row, col) {
+  const k = key(row, col);
+  if (!state.floor.bossLitSet.has(k) || state.floor.wallSet.has(k)) return 0;
+  const fog = fogOf(row, col);
+  if (fog === 'hidden') return 0;
+  looping = true;
+  const offset = MIST_OFFSETS_MS[(row * state.floor.GRID_SIZE + col) % MIST_OFFSETS_MS.length];
+  const strength = MIST_DRIFT[0] + (MIST_DRIFT[1] - MIST_DRIFT[0]) * pulse(MAP_ANIMATION_MS.mist, offset);
+  return strength * (fog === 'dim' ? 1 - FOG_DIM_ALPHA : 1);
+}
+
+// Every glyph on the map, as a list both views draw from, so they always
+// show the same things: { kind, at, glyph, look }. `at` is where it shows
+// this frame in tiles (between tiles while something slides), glyph is
+// null for the '?' of something too far to make out, and look holds the
+// paintGlyph options. Things are seen only on lit tiles, '?' until the
+// player is close enough to make them out (and then with no hostile glow
+// to give an enemy away), stairs always, papers and boxes remembered
+// dimly once seen. The list runs in drawing order: moving things after
+// items, so they draw over them.
+function mapThings() {
   const f = state.floor;
+  const things = [];
+  const add = (kind, at, glyph, look) => things.push({ kind, at, glyph, look });
   const isLit = (row, col) => !state.settings.fogEnabled || f.visibleSet.has(key(row, col));
   const glyphOrUnknown = (thing, glyph) => (canMakeOut(thing.row, thing.col) ? glyph : null);
 
   if (f.boss && isLit(f.boss.row, f.boss.col)) {
-    drawGlyph(ctx, cell, f.boss, glyphOrUnknown(f.boss, glyphOf(f.boss)), {
+    add('boss', f.boss, glyphOrUnknown(f.boss, glyphOf(f.boss)), {
       size: 'boss', bloom: 0.26, warp: warpAt(MAP_ANIMATION_MS.warp, 0),
       glow: glowAt(BOSS_GLOW, pulse(MAP_ANIMATION_MS.bossPulse)),
     });
@@ -322,69 +352,76 @@ function drawActors(ctx, cell) {
     const under = thing => thing.row === p.row && thing.col === p.col;
     if (p.kind === 'paper' && (under({ row: f.playerRow, col: f.playerCol }) || f.minions.some(under))) return;
     const known = !state.settings.fogEnabled || p.identified || canMakeOut(p.row, p.col);
-    drawGlyph(ctx, cell, p, known ? glyphOf(p) : null, {
+    add(p.kind, p, known ? glyphOf(p) : null, {
       size: 'prop', colour: p.searched ? colours.muted : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1,
     });
   });
   if (f.coin && isLit(f.coin.row, f.coin.col)) {
-    const lift = -COIN_BOB * pulse(MAP_ANIMATION_MS.coinBob);
-    drawGlyph(ctx, cell, { row: f.coin.row + lift, col: f.coin.col }, glyphOrUnknown(f.coin, t('term.gold.symbol')), {
-      size: 'coin', moves: true,
+    add('coin', f.coin, glyphOrUnknown(f.coin, t('term.gold.symbol')), {
+      size: 'coin', lift: COIN_BOB * pulse(MAP_ANIMATION_MS.coinBob), moves: true,
     });
   }
   if (f.chest && isLit(f.chest.row, f.chest.col)) {
-    drawGlyph(ctx, cell, f.chest, glyphOrUnknown(f.chest, glyphOf(f.chest)), { size: 'chest' });
+    add('chest', f.chest, glyphOrUnknown(f.chest, glyphOf(f.chest)), { size: 'chest' });
   }
   if (f.rune && isLit(f.rune.row, f.rune.col)) {
-    drawGlyph(ctx, cell, f.rune, glyphOrUnknown(f.rune, glyphOf(f.rune)), {
+    add('rune', f.rune, glyphOrUnknown(f.rune, glyphOf(f.rune)), {
       size: 'rune', glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
     });
   }
   // The stairs are never lost in the fog: they're the way out.
   if (f.stairs) {
-    drawGlyph(ctx, cell, f.stairs, t('term.exit.symbol'), {
+    add('stairs', f.stairs, t('term.exit.symbol'), {
       size: 'stairs', colour: colours.bright, glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
     });
   }
-  drawGlyph(ctx, cell, shownAt(PLAYER, f.playerRow, f.playerCol), DIRECTION_ARROWS[f.facing], { size: 'player' });
+  add('player', shownAt(PLAYER, f.playerRow, f.playerCol), DIRECTION_ARROWS[f.facing], { size: 'player' });
   f.encounters.forEach(e => {
     if (!isLit(e.row, e.col)) return;
-    drawGlyph(ctx, cell, e, glyphOrUnknown(e, glyphOf(e)), { size: 'encounter' });
+    add('encounter', e, glyphOrUnknown(e, glyphOf(e)), { size: 'encounter' });
   });
   f.minions.forEach(m => {
     if (!isLit(m.row, m.col)) return;
     const hunter = m.kind === 'hunter';
     const phase = phaseOf(m);
     const warpMs = hunter ? MAP_ANIMATION_MS.hunterWarp : MAP_ANIMATION_MS.warp;
-    drawGlyph(ctx, cell, shownAt(m, m.row, m.col), glyphOrUnknown(m, glyphOf(m)), {
+    add(m.kind, shownAt(m, m.row, m.col), glyphOrUnknown(m, glyphOf(m)), {
       size: m.kind, colour: hunter ? colours.bright : colours.text, bloom: hunter ? 0.32 : 0.26,
       warp: warpAt(warpMs, phase * warpMs),
       // Only minions drop out; the hunter is always there.
       dropout: hunter ? 0 : dropoutAt(((phase * 2) % 1) * MAP_ANIMATION_MS.glitchBar),
     });
   });
-  drawTargetBox(ctx, cell);
+  return things;
 }
 
-// Draws one glyph standing on its tile, with the terminal's soft phosphor
-// glow. `at` may fall between tiles while something slides. A null glyph is
-// the '?' of something too far to make out: dim, and without the hostile
-// bloom or any animation. Things outside the camera's window are skipped.
-// Options: size (a MAP_GLYPH_SIZES key), colour, alpha, bloom (the
-// strength of the glow behind a hostile glyph), warp ([scale x, scale y,
-// skew x, skew y] round the tile's middle, bloom and dropout included),
-// glow ([grey, strength, blur] in place of the soft glow), dropout (the
-// strength of a minion's black signal bar over it) and moves (it animates
-// with no other option saying so, like the coin's bob).
-function drawGlyph(ctx, cell, at, glyph, { size, colour = colours.text, alpha = 1, bloom = 0, warp, glow, dropout = 0, moves = false }) {
-  const vr = at.row - state.floor.camRow;
+// Draws one glyph standing on its tile in the top-down view. `at` may fall
+// between tiles while something slides; a lift raises it up the screen.
+// Things outside the camera's window are skipped.
+function drawGlyph(ctx, cell, at, glyph, look) {
+  const vr = at.row - (look.lift || 0) - state.floor.camRow;
   const vc = at.col - state.floor.camCol;
   if (vr <= -1 || vr >= VIEWPORT_SIZE || vc <= -1 || vc >= VIEWPORT_SIZE) return;
+  paintGlyph(ctx, cell, (vc + 0.5) * cell, (vr + 0.5) * cell, glyph, look);
+}
+
+// Paints one glyph centred on (x, y) in canvas pixels, sized for a tile
+// `cell` pixels wide, with the terminal's soft phosphor glow. Both views
+// paint with it. A null glyph is the '?' of something too far to make
+// out: dim, and without the hostile bloom or any animation.
+// Look options: size (a MAP_GLYPH_SIZES key), colour, alpha, bloom (the
+// strength of the glow behind a hostile glyph), warp ([scale x, scale y,
+// skew x, skew y] round the glyph's middle, bloom and dropout included),
+// glow ([grey, strength, blur] in place of the soft glow), dropout (the
+// strength of a minion's black signal bar over it), lift (how far it rises
+// off its tile, in tiles; the views place it) and moves (it animates with
+// no other option saying so, like the coin's bob).
+function paintGlyph(ctx, cell, x, y, glyph, { size, colour = colours.text, alpha = 1, bloom = 0, warp, glow, dropout = 0, moves = false }) {
   const known = glyph !== null;
   if (known && (warp || glow || moves)) looping = true;
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.translate((vc + 0.5) * cell, (vr + 0.5) * cell);
+  ctx.translate(x, y);
   if (known && warp) {
     const [sx, sy, kx, ky] = warp;
     const rad = Math.PI / 180;
