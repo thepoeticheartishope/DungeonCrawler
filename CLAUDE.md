@@ -94,9 +94,10 @@ Drawing and page code:
 | File | Job |
 |---|---|
 | `render.js` | Draws the grid, fog, actors, HUD (`renderHud()` is the only writer of hearts / gold / turns). Reads visibility and the camera from `sight.js`. |
+| `mapview.js` | The canvas map (isometric plan step 1a, behind DEV → Map): draws tiles, fog, walls, pillars, boss mist and glyphs from `state` onto one `<canvas>` with a phosphor afterglow. `requestMapDraw()` after anything on the map changes (end of `drawEvents`, `drawFloor`). Reads state only. |
 | `dataview.js` | DATA.SYS question viewer and comment export. |
 | `setloader.js` | Start screen options and the set loader (pasted, file, built-in, saved sets). |
-| `devpanel.js` | DEV panel: Skip room, Auto-win, Fog toggle, and the Inspect view (live state + a view-only ring of the last 20 events, fed by `drawEvents`). Gets the `main.js` actions it calls passed in. |
+| `devpanel.js` | DEV panel: Skip room, Auto-win, Fog toggle, Map toggle (DOM / canvas), and the Inspect view (live state + a view-only ring of the last 20 events, fed by `drawEvents`). Gets the `main.js` actions it calls passed in. |
 | `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom` = `buildFloor()` from floor.js + `drawFloor` page), `drawEvents()` (draws every rule event), turn and answer flow, end screens. 1,090 lines — being split up. |
 
 How a turn flows today: key/d-pad → `movePlayer()` (main.js) → `stepPlayer()` (moves.js,
