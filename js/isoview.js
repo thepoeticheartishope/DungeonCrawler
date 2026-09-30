@@ -2,8 +2,8 @@
 // blocks on a diamond grid. Walls and pillars are glowing wireframe
 // blocks, the floor dim diamond tiles, glyphs stand upright on their
 // tiles, and light fades over the player's five steps. A wall standing
-// between the camera and something the player can see is cut away (or
-// drawn as glass, DEV -> Walls), so nothing in sight is ever hidden.
+// between the camera and something the player can see is cut away, so
+// nothing in sight is ever hidden.
 //
 // mapview.js calls drawIsoScene() from its drawScene when
 // state.settings.isoView is on, and passes in what the two views share:
@@ -52,14 +52,12 @@ const PAPER_SHEET = [[-0.8, -0.55], [0.75, -0.7], [0.8, 0.55], [-0.75, 0.7]];
 const PAPER_LINES = [-0.3, 0, 0.3];
 const PAPER_SCALE = 0.2;
 const TARGET_PULSE = [0.45, 1]; // the target diamond's strength at either end of its pulse, as top-down
-// Walls in front of the camera (ISO_FRONT_WALLS in config.js).
+// Walls in front of the camera, cut away (Timothy chose this over see-through glass).
 const WALL_STUB = 0.22;          // a cut-away wall's stub, as a share of its height
 const WALL_COVER_WIDTH = 0.4;    // half the width of a wall that counts as covering something:
                                  // under half a tile, so a wall only touching it at a corner stays
 const GHOST_LEVEL = 0.2;         // the dashed outline of a cut wall's full height
 const GHOST_DASH = [0.03, 0.04]; // its dash and gap, in tile widths
-const GLASS_FILL = 0.42;         // a see-through wall's faces and top
-const GLASS_EDGE = 0.8;          // its glowing edges
 const MIST_DEPTH = 0.25;         // the mist draws after its own tile's pillar, before what stands on it
 
 // The faces of a block, darker than its top so it reads as standing up.
@@ -80,8 +78,7 @@ let frontWalls = new Set(); // walls between the camera and something in sight, 
 // floor, things lying on it (stairs, papers, the facing wedge, pillar
 // shadows), the player's light pool, then everything standing up and the
 // boss mist back to front, so nearer things paint over farther ones. Walls
-// in front of anything in sight are cut away, or drawn as glass with what
-// they hide traced on top.
+// in front of anything in sight are cut away.
 // `shared` is { colours, things, fogOf, paintGlyph, mistSprite,
 // mistStrength, pulse, keepMoving } from mapview.js.
 export function drawIsoScene(ctx, canvasSize, shared) {
@@ -93,7 +90,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   originX = size / 2;
   originY = size * CAMERA_Y;
   const tiles = tilesInView();
-  const hidden = findFrontWalls(tiles);
+  findFrontWalls(tiles);
   tiles.forEach(({ row, col }) => {
     if (!isWall(row, col) && look.fogOf(row, col) !== 'hidden') drawFloor(ctx, row, col);
   });
@@ -119,7 +116,6 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   });
   drawLightPool(ctx);
   standing.sort((a, b) => a.depth - b.depth).forEach(s => s.draw());
-  if (state.settings.isoFrontWalls === 'see') hidden.forEach(thing => drawTrace(ctx, thing));
   drawTarget(ctx);
 }
 
@@ -266,22 +262,18 @@ function drawFloor(ctx, row, col) {
 // Finds the walls standing between the camera and something the player
 // can see now (themselves, an enemy, a lit item, the stairs in sight):
 // nearer the camera than it, with a full-height shape covering it on
-// screen. Only those walls are cut away (or made glass), so the rest of
-// the room keeps its height. Returns the things they cover.
+// screen. Only those walls are cut away, so the rest of the room keeps
+// its height.
 function findFrontWalls(tiles) {
   frontWalls = new Set();
   const walls = tiles.filter(({ row, col }) => isWall(row, col) && wallShown(row, col));
-  return look.things.filter(thing => {
-    if (look.fogOf(Math.round(thing.at.row), Math.round(thing.at.col)) !== 'lit') return false;
+  look.things.forEach(thing => {
+    if (look.fogOf(Math.round(thing.at.row), Math.round(thing.at.col)) !== 'lit') return;
     const box = thingBox(thing);
     const depth = thing.at.row + thing.at.col;
-    let covered = false;
     walls.forEach(({ row, col }) => {
-      if (row + col <= depth || !overlaps(wallBox(row, col), box)) return;
-      frontWalls.add(key(row, col));
-      covered = true;
+      if (row + col > depth && overlaps(wallBox(row, col), box)) frontWalls.add(key(row, col));
     });
-    return covered;
   });
 }
 
@@ -328,19 +320,18 @@ function isBlock(thing) {
 // height are left out, so a run of wall reads as one ridge, and a face
 // with a wall at least as tall in front of it isn't drawn. A wall in front
 // of something in sight is cut to a stub with a dashed outline of its full
-// height, or drawn as glass (DEV -> Walls).
+// height.
 function drawWall(ctx, row, col) {
   const front = isFront(row, col);
-  const cut = front && state.settings.isoFrontWalls === 'cut';
   const joined = (dr, dc) => isWall(row + dr, col + dc) && wallShown(row + dr, col + dc);
   const sameHeight = (dr, dc) => joined(dr, dc) && isFront(row + dr, col + dc) === front;
   const coversFace = (dr, dc) => joined(dr, dc) && (front || !isFront(row + dr, col + dc));
   const ridge = { n: !sameHeight(-1, 0), e: !sameHeight(0, 1), s: !sameHeight(1, 0), w: !sameHeight(0, -1) };
   drawBlock(ctx, row, col, {
-    inset: 0, height: cut ? wallH * WALL_STUB : wallH, level: wallLevel(row, col), glass: front && !cut,
+    inset: 0, height: front ? wallH * WALL_STUB : wallH, level: wallLevel(row, col),
     southHidden: coversFace(1, 0), eastHidden: coversFace(0, 1), ridge,
   });
-  if (cut) drawGhost(ctx, row, col, ridge);
+  if (front) drawGhost(ctx, row, col, ridge);
 }
 
 // The dashed outline of a cut-away wall's full height: its top edges (not
@@ -375,9 +366,8 @@ function drawPillar(ctx, row, col) {
 // opaque, so whatever stands behind it is hidden; only its edges glow.
 // Options: inset (0..0.5), height in pixels, level (0..1), southHidden /
 // eastHidden (a face with a wall in front of it), ridge (which top edges
-// to draw: n, e, s, w; all by default), glass (faint, so what stands
-// behind shows through).
-function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, eastHidden = false, ridge, glass = false }) {
+// to draw: n, e, s, w; all by default).
+function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, eastHidden = false, ridge }) {
   const d = diamond(row, col, inset);
   const T = up(d.T, height);
   const R = up(d.R, height);
@@ -385,7 +375,6 @@ function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, e
   const L = up(d.L, height);
   const edges = ridge || { n: true, e: true, s: true, w: true };
   ctx.save();
-  if (glass) ctx.globalAlpha = GLASS_FILL;
   if (!southHidden) {
     poly(ctx, [d.L, d.B, B, L]);
     ctx.fillStyle = SOUTH_FACE;
@@ -399,7 +388,6 @@ function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, e
   poly(ctx, [T, R, B, L]);
   ctx.fillStyle = 'rgb(' + Math.round(14 + 10 * level) + ', ' + Math.round(18 + 12 * level) + ', ' + Math.round(19 + 12 * level) + ')';
   ctx.fill();
-  if (glass) ctx.globalAlpha = GLASS_EDGE;
   ctx.lineWidth = EDGE_WIDTH * tw;
   strokeGlow(ctx, 0.85 * level, RIDGE_BLUR * level);
   if (edges.n) line(ctx, T, R);
@@ -566,32 +554,6 @@ function drawStanding(ctx, thing) {
 // glyph, or null for the '?' of something too far to make out.
 function standingGlyph(thing) {
   return thing.kind === 'player' ? t('term.player.symbol') : thing.glyph;
-}
-
-// See-through walls: something a glass wall stands in front of is traced
-// on top of it as a glowing outline, so the player never loses it. A glyph
-// traces its shape, a box or flat thing its outline, dashed.
-function drawTrace(ctx, thing) {
-  const { row, col } = thing.at;
-  ctx.save();
-  ctx.lineWidth = EDGE_WIDTH * tw * 1.1;
-  strokeGlow(ctx, 0.95, RIDGE_BLUR * 1.6);
-  if (lyingFlat(thing) || isBlock(thing)) {
-    const d = diamond(row, col, isBlock(thing) ? BOX_INSET : 0.1);
-    const h = isBlock(thing) ? tw * BOX_HEIGHT : 0;
-    ctx.setLineDash(GHOST_DASH.map(n => n * tw));
-    poly(ctx, [up(d.T, h), up(d.R, h), d.R, d.B, d.L, up(d.L, h)]);
-    ctx.stroke();
-    ctx.restore();
-    return;
-  }
-  const glyph = standingGlyph(thing);
-  const [x, y] = glyphPlace(thing);
-  ctx.font = Math.round(tw * GLYPH_CELL * MAP_GLYPH_SIZES[thing.look.size]) + 'px VT323, monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.strokeText(glyph === null ? t('term.unknown.symbol') : glyph, x, y);
-  ctx.restore();
 }
 
 // The pulsing diamond round whatever the battle screen is fighting.

@@ -1,4 +1,4 @@
-// DEV panel in the status bar: Skip room, Auto-win, Fog, View and Walls toggles, for
+// DEV panel in the status bar: Skip room, Auto-win, Fog and View toggles, for
 // testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw } from './mapview.js';
@@ -10,7 +10,6 @@ const devSkipBtn = document.getElementById('devSkipBtn');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devViewBtn = document.getElementById('devViewBtn');
-const devWallsBtn = document.getElementById('devWallsBtn');
 
 export function initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter,
@@ -67,19 +66,6 @@ export function initDevPanel({
     requestMapDraw();
     // The edge glow points along the screen, which the two views lay out differently.
     renderRoomHints();
-  });
-
-  // Dev tool: switch how isometric walls in front of the camera show, cut
-  // away or see-through (isometric plan step 3), so both can be played
-  // before one is kept.
-  const labelWalls = () => {
-    devWallsBtn.textContent = state.settings.isoFrontWalls === 'cut' ? 'Walls: cut away (dev)' : 'Walls: see-through (dev)';
-  };
-  labelWalls();
-  devWallsBtn.addEventListener('click', () => {
-    state.settings.isoFrontWalls = state.settings.isoFrontWalls === 'cut' ? 'see' : 'cut';
-    labelWalls();
-    requestMapDraw();
   });
 }
 
