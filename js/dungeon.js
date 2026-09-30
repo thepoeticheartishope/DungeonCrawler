@@ -321,7 +321,7 @@ function attemptGenerate(gridSize, chamberTarget) {
   if (reachableFrom(start, floorSet).size !== floorSet.size) return null;
 
   // The boss stands exactly on its room's one real entrance tile,
-  // physically blocking entry — defeating it (main.js sets state.boss =
+  // physically blocking entry — defeating it (main.js sets state.floor.boss =
   // null) is what opens the way to the stairs further inside.
   const spawn = realEntrances[0];
 

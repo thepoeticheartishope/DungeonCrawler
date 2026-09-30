@@ -291,10 +291,42 @@ Shared rules for all three:
   identical, log and room notes included. Every answer log line came up except a missed
   chest or rune (the same `log.<kind>.trapped` path as a missed encounter and box, which did).
 
-### [ ] 7. Group state + live inspector
+### [~] 7. Group state + live inspector (split in two)
 
 Group `state` into `run` / `floor` / `battle` / `settings`. Add a DEV-panel inspector
-showing live state and the last events.
+showing live state and the last events. Line numbers are as of `main` at `6bbbfb6` (PR #75).
+
+#### [x] 7a. Group state (mechanical; any model) (#76)
+
+- Group by how long a value lives: `settings` (start screen / DEV panel: `revealOnWrong`,
+  `mcMode`, `fogEnabled`, `usingSample`, `activeData`), `run` (reset in `startGame`:
+  `order`, `roomIndex`, hearts, gold, turns, attempts, haunts, timer, `turnLocked`,
+  `runEnded`), `floor` (reset in `buildFloor`: layout, player, camera, sight sets, boss,
+  light, darkness, hunter, minions, items, props, rooms, `runeHint`, `lastChoiceType`),
+  `battle` (the current fight: question, choices, target, phase, wager).
+- Field names stay the same; only the path changes (`state.hearts` → `state.run.hearts`).
+  Done with one Perl rename from a field → group list (`(?<![\w$])state\.(field)\b`),
+  then `state.js` regrouped by hand with its comments kept.
+- Bump `CACHE_NAME`. Done when: both test commands pass, `grep -rnoE "state\.[a-zA-Z_]+" js tests`
+  finds only `state.run/floor/battle/settings` outside `state.js`, and the seeded bot
+  matches `main`.
+- Done: 581 references moved in 16 files; all 60 fields kept. Seeded bot (now reads
+  `state.floor || state`, so it runs on either shape): 25 seeds identical to `main`, 0 errors.
+
+#### [ ] 7b. Live inspector (small)
+
+- `drawEvents(events)` (main.js ~907) is the one place every rule event passes through:
+  keep the last ~20 in a view-only ring (not in `state`) with the turn number.
+- DEV panel (`devpanel.js`) gets an "Inspect" toggle that shows a `<pre>` with
+  `state.run`, `state.battle`, `state.settings` (minus `activeData`, show its length),
+  a short `state.floor` summary (player, boss, hunter, darkness, light turns, counts of
+  minions / props / sets, not the Sets themselves) and the event ring, newest first.
+  Redraw it after each `drawEvents()` while it's open; nothing when closed.
+- `selectedTarget` / `battleTarget` point at floor objects: print `kind @ row,col`, not the
+  object. The DEV panel's labels are plain text in `index.html` (~1244), not `text.js`
+  keys; the inspector's button does the same (it's a testing tool, not player wording).
+- Bump `CACHE_NAME`. Done when: both test commands pass; by hand, the panel follows a
+  walk, a fight and a floor change. Tick 7 as a whole here.
 
 After 7: canvas map (only the map view changes) and a backend for saves (store `state`).
 

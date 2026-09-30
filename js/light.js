@@ -16,9 +16,9 @@ function stepsFrom(row, col) {
     const d = dist.get(key(cur.row, cur.col));
     for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const nr = cur.row + dr, nc = cur.col + dc;
-      if (nr < 0 || nr >= state.GRID_SIZE || nc < 0 || nc >= state.GRID_SIZE) continue;
+      if (nr < 0 || nr >= state.floor.GRID_SIZE || nc < 0 || nc >= state.floor.GRID_SIZE) continue;
       const k = key(nr, nc);
-      if (dist.has(k) || state.wallSet.has(k)) continue;
+      if (dist.has(k) || state.floor.wallSet.has(k)) continue;
       dist.set(k, d + 1);
       queue.push({ row: nr, col: nc });
     }
@@ -31,14 +31,14 @@ function stepsFrom(row, col) {
 // LIGHT_LOSS_COVERAGE, and so how many turns the player gets before the
 // steadily spreading light gets there.
 export function initBossLight() {
-  state.bossDist = stepsFrom(state.boss.row, state.boss.col);
-  state.floorCount = state.bossDist.size;
-  const coverage = LIGHT_LOSS_COVERAGE[Math.min(state.roomIndex, LIGHT_LOSS_COVERAGE.length - 1)];
-  const sorted = [...state.bossDist.values()].sort((a, b) => a - b);
-  const needed = Math.max(1, Math.ceil(state.floorCount * coverage));
-  state.lightFullRadius = Math.max(1, sorted[needed - 1]);
-  state.lightTurnBudget = state.lightFullRadius * LIGHT_TURNS_PER_STEP;
-  state.lightTurns = 0;
+  state.floor.bossDist = stepsFrom(state.floor.boss.row, state.floor.boss.col);
+  state.floor.floorCount = state.floor.bossDist.size;
+  const coverage = LIGHT_LOSS_COVERAGE[Math.min(state.run.roomIndex, LIGHT_LOSS_COVERAGE.length - 1)];
+  const sorted = [...state.floor.bossDist.values()].sort((a, b) => a - b);
+  const needed = Math.max(1, Math.ceil(state.floor.floorCount * coverage));
+  state.floor.lightFullRadius = Math.max(1, sorted[needed - 1]);
+  state.floor.lightTurnBudget = state.floor.lightFullRadius * LIGHT_TURNS_PER_STEP;
+  state.floor.lightTurns = 0;
   updateBossLit();
 }
 
@@ -47,40 +47,40 @@ export function initBossLight() {
 // never drops below 1, so the boss and the tiles right around it always
 // glow.
 function currentRadius() {
-  return Math.max(1, Math.floor(state.lightTurns / LIGHT_TURNS_PER_STEP));
+  return Math.max(1, Math.floor(state.floor.lightTurns / LIGHT_TURNS_PER_STEP));
 }
 
 function updateBossLit() {
-  state.bossLitSet = new Set();
-  if (!state.boss) return;
+  state.floor.bossLitSet = new Set();
+  if (!state.floor.boss) return;
   const r = currentRadius();
-  state.bossDist.forEach((d, k) => { if (d <= r) state.bossLitSet.add(k); });
+  state.floor.bossDist.forEach((d, k) => { if (d <= r) state.floor.bossLitSet.add(k); });
 }
 
 // One turn passes. The light only spreads while the boss is alive.
 export function advanceLight() {
-  if (!state.boss) return;
-  state.lightTurns++;
+  if (!state.floor.boss) return;
+  state.floor.lightTurns++;
   updateBossLit();
 }
 
 // Puts the light out: the boss is gone, so is its glow.
 export function extinguishLight() {
-  state.bossLitSet = new Set();
+  state.floor.bossLitSet = new Set();
 }
 
 // Share of the floor the light reaches, 0..1.
 export function lightCoverage() {
-  return state.floorCount ? state.bossLitSet.size / state.floorCount : 0;
+  return state.floor.floorCount ? state.floor.bossLitSet.size / state.floor.floorCount : 0;
 }
 
 // How close the light is to consuming the floor: 0 at the start of a room,
 // 1 when it's reached this floor's LIGHT_LOSS_COVERAGE. Drives the eye.
 export function lightProgress() {
-  if (!state.boss) return 0;
-  return Math.min(1, state.lightTurns / state.lightTurnBudget);
+  if (!state.floor.boss) return 0;
+  return Math.min(1, state.floor.lightTurns / state.floor.lightTurnBudget);
 }
 
 export function lightConsumed() {
-  return !!state.boss && state.lightTurns >= state.lightTurnBudget;
+  return !!state.floor.boss && state.floor.lightTurns >= state.floor.lightTurnBudget;
 }

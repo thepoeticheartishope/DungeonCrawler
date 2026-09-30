@@ -20,7 +20,7 @@ export function initDevPanel({
   // Dev tool: jump to the next room instantly, skipping combat, for
   // faster testing of dungeon generation across levels.
   devSkipBtn.addEventListener('click', () => {
-    if (state.hearts <= 0) return;
+    if (state.run.hearts <= 0) return;
     advanceRoom();
   });
 
@@ -32,11 +32,11 @@ export function initDevPanel({
   let autoWinTimer = null;
 
   function autoWinStep() {
-    if (!battleScreen.classList.contains('show') || state.turnLocked || state.runEnded) return;
-    if (state.battlePhase === 'choosing') chooseCategory(0);
+    if (!battleScreen.classList.contains('show') || state.run.turnLocked || state.run.runEnded) return;
+    if (state.battle.battlePhase === 'choosing') chooseCategory(0);
     else if (!wagerRow.hidden) placeWager(1);
-    else if (state.battlePhase === 'answering' && state.selectedTarget) attemptAnswerMC(state.currentQuestion.meaning);
-    else if (state.battlePhase === 'ended') leaveEncounter();
+    else if (state.battle.battlePhase === 'answering' && state.battle.selectedTarget) attemptAnswerMC(state.battle.currentQuestion.meaning);
+    else if (state.battle.battlePhase === 'ended') leaveEncounter();
   }
 
   devAutoWinBtn.addEventListener('click', () => {
@@ -50,8 +50,8 @@ export function initDevPanel({
   // Dev tool: reveal the whole map instantly, to check that the layout,
   // boss placement, and entities are generating correctly under the fog.
   devFogBtn.addEventListener('click', () => {
-    state.fogEnabled = !state.fogEnabled;
-    devFogBtn.textContent = state.fogEnabled ? 'Fog: ON (dev)' : 'Fog: OFF (dev)';
+    state.settings.fogEnabled = !state.settings.fogEnabled;
+    devFogBtn.textContent = state.settings.fogEnabled ? 'Fog: ON (dev)' : 'Fog: OFF (dev)';
     renderFog();
   });
 }

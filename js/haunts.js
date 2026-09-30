@@ -4,7 +4,7 @@
 // missing it again keeps it waiting. No DOM access here — main.js logs
 // the lines and sets the question.
 //
-// state.haunts maps each missed question object to the attempt number it
+// state.run.haunts maps each missed question object to the attempt number it
 // was last missed on, so a haunt can't return until HAUNT_MIN_GAP more
 // questions have been answered.
 
@@ -12,9 +12,9 @@ import { state } from './state.js';
 import { HAUNT_CHANCE, HAUNT_MIN_GAP } from './config.js';
 
 export function resetHaunts() {
-  state.haunts = new Map();
-  state.hauntsTotal = 0;
-  state.hauntsSilenced = 0;
+  state.run.haunts = new Map();
+  state.run.hauntsTotal = 0;
+  state.run.hauntsSilenced = 0;
 }
 
 // A haunt from `pool` to ask instead of a random question, or null. Only
@@ -22,7 +22,7 @@ export function resetHaunts() {
 // asked, and only HAUNT_CHANCE of the time.
 export function pickHaunt(pool, exclude) {
   const ready = pool.filter(q =>
-    q !== exclude && state.haunts.has(q) && state.attempts - state.haunts.get(q) >= HAUNT_MIN_GAP);
+    q !== exclude && state.run.haunts.has(q) && state.run.attempts - state.run.haunts.get(q) >= HAUNT_MIN_GAP);
   if (!ready.length || Math.random() >= HAUNT_CHANCE) return null;
   return ready[Math.floor(Math.random() * ready.length)];
 }
@@ -31,15 +31,15 @@ export function pickHaunt(pool, exclude) {
 // right, 'lingers' when a haunt was missed again, 'new' for a first miss,
 // or null when nothing changed (a right answer that wasn't a haunt).
 export function recordHauntAnswer(q, isCorrect) {
-  const wasHaunt = state.haunts.has(q);
+  const wasHaunt = state.run.haunts.has(q);
   if (isCorrect) {
     if (!wasHaunt) return null;
-    state.haunts.delete(q);
-    state.hauntsSilenced++;
+    state.run.haunts.delete(q);
+    state.run.hauntsSilenced++;
     return 'silenced';
   }
-  state.haunts.set(q, state.attempts);
+  state.run.haunts.set(q, state.run.attempts);
   if (wasHaunt) return 'lingers';
-  state.hauntsTotal++;
+  state.run.hauntsTotal++;
   return 'new';
 }

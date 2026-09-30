@@ -73,9 +73,9 @@ export function initSetLoader() {
       loaderStatus.innerHTML = '<span class="loader-error">' + result.error + '</span>';
       return;
     }
-    state.activeData = result.data;
-    state.usingSample = false;
-    let msg = 'Loaded ' + state.activeData.length + ' items — this set will be used for the next run.';
+    state.settings.activeData = result.data;
+    state.settings.usingSample = false;
+    let msg = 'Loaded ' + state.settings.activeData.length + ' items — this set will be used for the next run.';
     if (result.warning) msg += ' ' + result.warning;
     loaderStatus.innerHTML = '<span class="loader-ok">' + msg + '</span>';
   });
@@ -86,8 +86,8 @@ export function initSetLoader() {
   }
 
   resetListBtn.addEventListener('click', () => {
-    state.usingSample = true;
-    state.activeData = defaultSample(true);
+    state.settings.usingSample = true;
+    state.settings.activeData = defaultSample(true);
     dataInput.value = '';
     fileInput.value = '';
     showSampleStatus();
@@ -120,8 +120,8 @@ export function initSetLoader() {
       loaderStatus.innerHTML = '<span class="loader-error">Could not load that set. Try again.</span>';
       return;
     }
-    state.activeData = data;
-    state.usingSample = false;
+    state.settings.activeData = data;
+    state.settings.usingSample = false;
     loaderStatus.innerHTML = '<span class="loader-ok">Loaded "' + escapeHtml(chosen.name) + '" (' +
       data.length + ' items) — this set will be used for the next run.</span>';
   });
@@ -143,8 +143,8 @@ export function initSetLoader() {
       row.querySelector('.load-saved-set').addEventListener('click', () => {
         const data = loadSavedSet(set.name);
         if (!data) return;
-        state.activeData = data;
-        state.usingSample = false;
+        state.settings.activeData = data;
+        state.settings.usingSample = false;
         loaderStatus.innerHTML = '<span class="loader-ok">Loaded "' + escapeHtml(set.name) + '" (' +
           data.length + ' items) — this set will be used for the next run.</span>';
       });
@@ -162,11 +162,11 @@ export function initSetLoader() {
       loaderStatus.innerHTML = '<span class="loader-error">Give this set a name first.</span>';
       return;
     }
-    if (state.usingSample || !state.activeData || state.activeData.length === 0) {
+    if (state.settings.usingSample || !state.settings.activeData || state.settings.activeData.length === 0) {
       loaderStatus.innerHTML = '<span class="loader-error">Load a set (built-in, pasted, or a file) before saving.</span>';
       return;
     }
-    saveSet(name, state.activeData);
+    saveSet(name, state.settings.activeData);
     saveSetName.value = '';
     loaderStatus.innerHTML = '<span class="loader-ok">Saved "' + escapeHtml(name) + '" — it now appears under My saved sets.</span>';
     renderSavedSets();

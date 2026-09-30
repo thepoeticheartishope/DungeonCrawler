@@ -29,7 +29,7 @@ export function showScreen(el) {
 }
 
 // The rendered grid is always VIEWPORT_SIZE x VIEWPORT_SIZE, regardless of
-// how big the room's own data (state.GRID_SIZE) is — the camera pans that
+// how big the room's own data (state.floor.GRID_SIZE) is — the camera pans that
 // fixed window over the larger world. Rebuilt once per room load; walls,
 // fog, and the checkerboard are re-applied on every camera move instead
 // (see renderWalls/renderFog), since which world tile lands in which
@@ -74,13 +74,13 @@ export function buildGridTiles() {
 export function renderWalls() {
   for (let vr = 0; vr < VIEWPORT_SIZE; vr++) {
     for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
-      const worldRow = state.camRow + vr;
-      const worldCol = state.camCol + vc;
+      const worldRow = state.floor.camRow + vr;
+      const worldCol = state.floor.camCol + vc;
       const tile = tileEls[vr * VIEWPORT_SIZE + vc];
       const k = key(worldRow, worldCol);
       tile.classList.toggle('b', (worldRow + worldCol) % 2 !== 0);
-      tile.classList.toggle('wall', state.wallSet.has(k));
-      tile.classList.toggle('pillar', state.pillarSet.has(k));
+      tile.classList.toggle('wall', state.floor.wallSet.has(k));
+      tile.classList.toggle('pillar', state.floor.pillarSet.has(k));
     }
   }
 }
@@ -120,19 +120,19 @@ const HUNTER_HINT_RANGE = 20;
 export function renderFog() {
   for (let vr = 0; vr < VIEWPORT_SIZE; vr++) {
     for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
-      const worldRow = state.camRow + vr;
-      const worldCol = state.camCol + vc;
+      const worldRow = state.floor.camRow + vr;
+      const worldCol = state.floor.camCol + vc;
       const el = tileEls[vr * VIEWPORT_SIZE + vc];
       el.classList.remove('fog-hidden', 'fog-dim');
       const k = key(worldRow, worldCol);
-      el.classList.toggle('boss-lit', state.bossLitSet.has(k));
-      if (!state.fogEnabled) continue;
-      if (state.visibleSet.has(k)) continue;
-      el.classList.add(state.exploredSet.has(k) ? 'fog-dim' : 'fog-hidden');
+      el.classList.toggle('boss-lit', state.floor.bossLitSet.has(k));
+      if (!state.settings.fogEnabled) continue;
+      if (state.floor.visibleSet.has(k)) continue;
+      el.classList.add(state.floor.exploredSet.has(k) ? 'fog-dim' : 'fog-hidden');
     }
   }
 
-  const isLit = (row, col) => !state.fogEnabled || state.visibleSet.has(key(row, col));
+  const isLit = (row, col) => !state.settings.fogEnabled || state.floor.visibleSet.has(key(row, col));
   const isNear = canMakeOut;
   // Too far to make out: a '?' instead of the real glyph (and none of the
   // hostile glow, which would give an enemy away).
@@ -142,27 +142,27 @@ export function renderFog() {
     if (glyph !== undefined && el.textContent !== glyph) el.textContent = glyph;
   };
 
-  if (state.boss) {
-    els.bossActor.classList.toggle('fog-hidden', !isLit(state.boss.row, state.boss.col));
-    showGlyph(els.bossActor, isNear(state.boss.row, state.boss.col));
+  if (state.floor.boss) {
+    els.bossActor.classList.toggle('fog-hidden', !isLit(state.floor.boss.row, state.floor.boss.col));
+    showGlyph(els.bossActor, isNear(state.floor.boss.row, state.floor.boss.col));
   }
-  state.minions.forEach(m => {
+  state.floor.minions.forEach(m => {
     const el = actorEl(m);
     el.classList.toggle('fog-hidden', !isLit(m.row, m.col));
     showGlyph(el, isNear(m.row, m.col));
   });
-  els.coinActor.classList.toggle('fog-hidden', !!state.coin && !isLit(state.coin.row, state.coin.col));
-  if (state.coin) showGlyph(els.coinActor, isNear(state.coin.row, state.coin.col));
+  els.coinActor.classList.toggle('fog-hidden', !!state.floor.coin && !isLit(state.floor.coin.row, state.floor.coin.col));
+  if (state.floor.coin) showGlyph(els.coinActor, isNear(state.floor.coin.row, state.floor.coin.col));
   // The stairs are never lost in the fog: they're the way out, and they
   // stay visible whenever they're on screen — including in the darkness
   // after the boss, when nothing else is remembered — so leaving or
   // staying for double gold is always a clear choice.
-  if (state.stairs) els.stairsActor.classList.remove('fog-hidden');
-  els.chestActor.classList.toggle('fog-hidden', !!state.chest && !isLit(state.chest.row, state.chest.col));
-  if (state.chest) showGlyph(els.chestActor, isNear(state.chest.row, state.chest.col));
-  els.runeActor.classList.toggle('fog-hidden', !!state.rune && !isLit(state.rune.row, state.rune.col));
-  if (state.rune) showGlyph(els.runeActor, isNear(state.rune.row, state.rune.col));
-  state.encounters.forEach(e => {
+  if (state.floor.stairs) els.stairsActor.classList.remove('fog-hidden');
+  els.chestActor.classList.toggle('fog-hidden', !!state.floor.chest && !isLit(state.floor.chest.row, state.floor.chest.col));
+  if (state.floor.chest) showGlyph(els.chestActor, isNear(state.floor.chest.row, state.floor.chest.col));
+  els.runeActor.classList.toggle('fog-hidden', !!state.floor.rune && !isLit(state.floor.rune.row, state.floor.rune.col));
+  if (state.floor.rune) showGlyph(els.runeActor, isNear(state.floor.rune.row, state.floor.rune.col));
+  state.floor.encounters.forEach(e => {
     const el = actorEl(e);
     el.classList.toggle('fog-hidden', !isLit(e.row, e.col));
     showGlyph(el, isNear(e.row, e.col));
@@ -170,18 +170,18 @@ export function renderFog() {
   // Papers and boxes don't move, so once seen they stay dimly remembered
   // on explored floor (not in the darkness, where nothing is). They keep
   // their '?' until the player has been close enough to make them out.
-  state.props.forEach(p => {
+  state.floor.props.forEach(p => {
     const el = actorEl(p);
     const k = key(p.row, p.col);
     const lit = isLit(p.row, p.col);
     if (isNear(p.row, p.col)) p.identified = true;
-    const remembered = state.fogEnabled && !lit && !state.darkness && state.exploredSet.has(k);
+    const remembered = state.settings.fogEnabled && !lit && !state.floor.darkness && state.floor.exploredSet.has(k);
     el.classList.toggle('fog-hidden', !lit && !remembered);
     el.classList.toggle('remembered', remembered);
-    showGlyph(el, !state.fogEnabled || p.identified);
+    showGlyph(el, !state.settings.fogEnabled || p.identified);
     // A paper under the player or a minion is hidden, so glyphs don't pile up.
-    const covered = p.kind === 'paper' && ((state.playerRow === p.row && state.playerCol === p.col) ||
-      state.minions.some(m => m.row === p.row && m.col === p.col));
+    const covered = p.kind === 'paper' && ((state.floor.playerRow === p.row && state.floor.playerCol === p.col) ||
+      state.floor.minions.some(m => m.row === p.row && m.col === p.col));
     el.classList.toggle('covered', covered);
   });
   renderLightHint();
@@ -197,9 +197,9 @@ function renderMoveHints() {
   for (const [dir, [dr, dc]] of Object.entries(FACING_VECTORS)) {
     const btn = buttons[dir];
     if (!btn) continue;
-    const row = state.playerRow + dr, col = state.playerCol + dc;
+    const row = state.floor.playerRow + dr, col = state.floor.playerCol + dc;
     const block = whatBlocks(row, col);
-    const unreadPaper = !block && state.props.some(p => p.kind === 'paper' && !p.searched && p.row === row && p.col === col);
+    const unreadPaper = !block && state.floor.props.some(p => p.kind === 'paper' && !p.searched && p.row === row && p.col === col);
     const examine = unreadPaper || (!!block && block.kind === 'prop' && !block.thing.searched);
     btn.classList.toggle('move-examine', examine);
     btn.classList.toggle('move-blocked', !!block && !examine);
@@ -226,16 +226,16 @@ export function bumpActor(el, facing) {
 function renderLightHint() {
   const edges = els.lightHintEls;
   if (!edges) return;
-  const boss = state.boss || state.hunter;
-  const offScreen = !!boss && (boss.row < state.camRow || boss.row >= state.camRow + VIEWPORT_SIZE ||
-    boss.col < state.camCol || boss.col >= state.camCol + VIEWPORT_SIZE);
-  const near = state.hunter && !state.boss
-    ? 1 - Math.min(1, (Math.abs(boss.row - state.playerRow) + Math.abs(boss.col - state.playerCol)) / HUNTER_HINT_RANGE)
+  const boss = state.floor.boss || state.floor.hunter;
+  const offScreen = !!boss && (boss.row < state.floor.camRow || boss.row >= state.floor.camRow + VIEWPORT_SIZE ||
+    boss.col < state.floor.camCol || boss.col >= state.floor.camCol + VIEWPORT_SIZE);
+  const near = state.floor.hunter && !state.floor.boss
+    ? 1 - Math.min(1, (Math.abs(boss.row - state.floor.playerRow) + Math.abs(boss.col - state.floor.playerCol)) / HUNTER_HINT_RANGE)
     : lightProgress();
   const strength = offScreen ? (0.25 + 0.6 * near).toFixed(2) : '0';
-  Object.values(edges).forEach(el => el.classList.toggle('hunter-hint', !state.boss && !!state.hunter));
-  const dr = boss ? boss.row - state.playerRow : 0;
-  const dc = boss ? boss.col - state.playerCol : 0;
+  Object.values(edges).forEach(el => el.classList.toggle('hunter-hint', !state.floor.boss && !!state.floor.hunter));
+  const dr = boss ? boss.row - state.floor.playerRow : 0;
+  const dc = boss ? boss.col - state.floor.playerCol : 0;
   const on = {
     n: dr < 0 && Math.abs(dr) * 2 >= Math.abs(dc),
     s: dr > 0 && Math.abs(dr) * 2 >= Math.abs(dc),
@@ -270,8 +270,8 @@ export function renderLightEye() {
 // on nearly every move. Real movement (a minion actually stepping to an
 // adjacent tile) should keep the smooth slide, so leave `instant` false there.
 export function positionActor(el, row, col, instant = false) {
-  const screenRow = row - state.camRow;
-  const screenCol = col - state.camCol;
+  const screenRow = row - state.floor.camRow;
+  const screenCol = col - state.floor.camCol;
   const offScreen = screenRow < 0 || screenRow >= VIEWPORT_SIZE || screenCol < 0 || screenCol >= VIEWPORT_SIZE;
   el.classList.toggle('off-screen', offScreen);
   if (offScreen) return;
@@ -295,9 +295,9 @@ export function positionActor(el, row, col, instant = false) {
 // Status bar numbers: hearts, gold and turn count. Call after any change to them.
 export function renderHud() {
   // ASCII rather than hearts: the terminal face has no symbol glyphs.
-  els.heartsEl.textContent = Math.max(state.hearts, 0) + '/' + MAX_HEARTS;
-  els.coinsTotalEl.textContent = state.coinsTotal;
-  els.turnCountEl.textContent = state.turnCount;
+  els.heartsEl.textContent = Math.max(state.run.hearts, 0) + '/' + MAX_HEARTS;
+  els.coinsTotalEl.textContent = state.run.coinsTotal;
+  els.turnCountEl.textContent = state.run.turnCount;
 }
 
 // HP pips for whichever target is currently engaged on the battle screen.
@@ -308,7 +308,7 @@ export function renderHud() {
 // pips need to still show at that moment (and at hp 0, right after) rather
 // than vanishing early.
 export function renderCombatStatus() {
-  const target = state.selectedTarget;
+  const target = state.battle.selectedTarget;
   if (!target || target.kind !== 'boss') {
     els.combatStatusEl.innerHTML = '';
     return;
@@ -321,20 +321,20 @@ export function renderCombatStatus() {
 }
 
 export function renderTargeting() {
-  els.bossActor.classList.toggle('targeted', !!state.boss && state.selectedTarget === state.boss);
-  state.minions.forEach(m => actorEl(m).classList.toggle('targeted', state.selectedTarget === m));
-  els.chestActor.classList.toggle('targeted', state.selectedTarget === state.chest);
-  els.runeActor.classList.toggle('targeted', state.selectedTarget === state.rune);
-  state.encounters.forEach(e => actorEl(e).classList.toggle('targeted', state.selectedTarget === e));
-  state.props.forEach(p => actorEl(p).classList.toggle('targeted', state.selectedTarget === p));
+  els.bossActor.classList.toggle('targeted', !!state.floor.boss && state.battle.selectedTarget === state.floor.boss);
+  state.floor.minions.forEach(m => actorEl(m).classList.toggle('targeted', state.battle.selectedTarget === m));
+  els.chestActor.classList.toggle('targeted', state.battle.selectedTarget === state.floor.chest);
+  els.runeActor.classList.toggle('targeted', state.battle.selectedTarget === state.floor.rune);
+  state.floor.encounters.forEach(e => actorEl(e).classList.toggle('targeted', state.battle.selectedTarget === e));
+  state.floor.props.forEach(p => actorEl(p).classList.toggle('targeted', state.battle.selectedTarget === p));
 
-  const target = state.selectedTarget;
+  const target = state.battle.selectedTarget;
   els.targetLabelEl.textContent = target
     ? t('target.' + target.kind, { category: target.category ? categoryLabel(target.category) : '' })
     : t('target.none');
 
-  const isObject = state.selectedTarget &&
-    ['chest', 'rune', 'encounter', 'box'].includes(state.selectedTarget.kind);
+  const isObject = state.battle.selectedTarget &&
+    ['chest', 'rune', 'encounter', 'box'].includes(state.battle.selectedTarget.kind);
   els.attackBtn.textContent = t(isObject ? 'battle.attempt' : 'battle.attack');
 }
 
@@ -353,10 +353,10 @@ export function stopTimer() {
 
 export function startTimer() {
   stopTimer();
-  state.seconds = 0;
+  state.run.seconds = 0;
   els.timerEl.textContent = formatTime(0);
   timerHandle = setInterval(() => {
-    state.seconds++;
-    els.timerEl.textContent = formatTime(state.seconds);
+    state.run.seconds++;
+    els.timerEl.textContent = formatTime(state.run.seconds);
   }, 1000);
 }

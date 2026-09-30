@@ -29,40 +29,40 @@ import { resetHaunts } from '../js/haunts.js';
 // An open size x size floor, player in the middle facing north, fog on,
 // nothing else on it.
 function resetFloor(size = 21) {
-  state.GRID_SIZE = size;
-  state.roomIndex = 0;
-  state.playerRow = Math.floor(size / 2);
-  state.playerCol = Math.floor(size / 2);
-  state.facing = 'N';
-  state.fogEnabled = true;
-  state.darkness = false;
-  state.wallSet = new Set();
-  state.pillarSet = new Set();
-  state.bossLitSet = new Set();
-  state.visibleSet = new Set();
-  state.sightSet = new Set();
-  state.exploredSet = new Set();
-  state.boss = null;
-  state.hunter = null;
-  state.minions = [];
-  state.chest = null;
-  state.rune = null;
-  state.encounters = [];
-  state.props = [];
-  state.coin = null;
-  state.stairs = null;
-  state.coinsTotal = 0;
-  state.chamberAt = new Map();
-  state.chamberThemes = [];
-  state.visitedChambers = new Set();
-  state.selectedTarget = null;
-  state.turnCount = 0;
-  state.darkTurns = 0;
+  state.floor.GRID_SIZE = size;
+  state.run.roomIndex = 0;
+  state.floor.playerRow = Math.floor(size / 2);
+  state.floor.playerCol = Math.floor(size / 2);
+  state.floor.facing = 'N';
+  state.settings.fogEnabled = true;
+  state.floor.darkness = false;
+  state.floor.wallSet = new Set();
+  state.floor.pillarSet = new Set();
+  state.floor.bossLitSet = new Set();
+  state.floor.visibleSet = new Set();
+  state.floor.sightSet = new Set();
+  state.floor.exploredSet = new Set();
+  state.floor.boss = null;
+  state.floor.hunter = null;
+  state.floor.minions = [];
+  state.floor.chest = null;
+  state.floor.rune = null;
+  state.floor.encounters = [];
+  state.floor.props = [];
+  state.floor.coin = null;
+  state.floor.stairs = null;
+  state.run.coinsTotal = 0;
+  state.floor.chamberAt = new Map();
+  state.floor.chamberThemes = [];
+  state.floor.visitedChambers = new Set();
+  state.battle.selectedTarget = null;
+  state.run.turnCount = 0;
+  state.floor.darkTurns = 0;
 }
 
 // A tile relative to the player.
 function rel(dr, dc) {
-  return key(state.playerRow + dr, state.playerCol + dc);
+  return key(state.floor.playerRow + dr, state.floor.playerCol + dc);
 }
 
 // --- sight.js: computeVisibility ---
@@ -70,81 +70,81 @@ function rel(dr, dc) {
 test('the player always sees their own tile', () => {
   resetFloor();
   computeVisibility();
-  assert.ok(state.visibleSet.has(rel(0, 0)));
-  assert.ok(state.sightSet.has(rel(0, 0)));
+  assert.ok(state.floor.visibleSet.has(rel(0, 0)));
+  assert.ok(state.floor.sightSet.has(rel(0, 0)));
 });
 
 test('the light radius reaches every side, even behind the player', () => {
   resetFloor();
   computeVisibility();
   for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-    assert.ok(state.sightSet.has(rel(dr * PLAYER_LIGHT_RADIUS, dc * PLAYER_LIGHT_RADIUS)));
+    assert.ok(state.floor.sightSet.has(rel(dr * PLAYER_LIGHT_RADIUS, dc * PLAYER_LIGHT_RADIUS)));
   }
   // Behind, past the radius: dark.
-  assert.ok(!state.visibleSet.has(rel(PLAYER_LIGHT_RADIUS + 1, 0)));
+  assert.ok(!state.floor.visibleSet.has(rel(PLAYER_LIGHT_RADIUS + 1, 0)));
 });
 
 test('the facing cone reaches PLAYER_CONE_RANGE ahead and widens, but no further', () => {
   resetFloor();
   computeVisibility();
-  assert.ok(state.sightSet.has(rel(-PLAYER_CONE_RANGE, 0)));
-  assert.ok(!state.visibleSet.has(rel(-PLAYER_CONE_RANGE - 1, 0)));
+  assert.ok(state.floor.sightSet.has(rel(-PLAYER_CONE_RANGE, 0)));
+  assert.ok(!state.floor.visibleSet.has(rel(-PLAYER_CONE_RANGE - 1, 0)));
   // Two ahead, one across: inside the widening cone (lateral <= forward).
-  assert.ok(state.sightSet.has(rel(-2, 1)));
+  assert.ok(state.floor.sightSet.has(rel(-2, 1)));
   // One ahead, two across: outside the cone and past the radius.
-  assert.ok(!state.visibleSet.has(rel(-1, 2)));
+  assert.ok(!state.floor.visibleSet.has(rel(-1, 2)));
 });
 
 test('turning changes which way the cone points', () => {
   resetFloor();
-  state.facing = 'E';
+  state.floor.facing = 'E';
   computeVisibility();
-  assert.ok(state.sightSet.has(rel(0, PLAYER_CONE_RANGE)));
-  assert.ok(!state.visibleSet.has(rel(-PLAYER_CONE_RANGE, 0)));
+  assert.ok(state.floor.sightSet.has(rel(0, PLAYER_CONE_RANGE)));
+  assert.ok(!state.floor.visibleSet.has(rel(-PLAYER_CONE_RANGE, 0)));
 });
 
 test('walls block the light and are not lit themselves', () => {
   resetFloor();
-  for (let c = 0; c < state.GRID_SIZE; c++) state.wallSet.add(key(state.playerRow - 2, c));
+  for (let c = 0; c < state.floor.GRID_SIZE; c++) state.floor.wallSet.add(key(state.floor.playerRow - 2, c));
   computeVisibility();
-  assert.ok(state.sightSet.has(rel(-1, 0)));
-  assert.ok(!state.visibleSet.has(rel(-2, 0)));
-  assert.ok(!state.visibleSet.has(rel(-3, 0)));
+  assert.ok(state.floor.sightSet.has(rel(-1, 0)));
+  assert.ok(!state.floor.visibleSet.has(rel(-2, 0)));
+  assert.ok(!state.floor.visibleSet.has(rel(-3, 0)));
 });
 
 test('a pillar is lit but casts a shadow behind it', () => {
   resetFloor();
-  state.pillarSet.add(rel(-2, 0));
+  state.floor.pillarSet.add(rel(-2, 0));
   computeVisibility();
-  assert.ok(state.sightSet.has(rel(-2, 0)));
-  assert.ok(!state.visibleSet.has(rel(-3, 0)));
+  assert.ok(state.floor.sightSet.has(rel(-2, 0)));
+  assert.ok(!state.floor.visibleSet.has(rel(-3, 0)));
 });
 
 test("the boss's light is visible but is not the player's sight", () => {
   resetFloor();
   const far = key(0, 0);
-  state.bossLitSet = new Set([far]);
+  state.floor.bossLitSet = new Set([far]);
   computeVisibility();
-  assert.ok(state.visibleSet.has(far));
-  assert.ok(!state.sightSet.has(far));
+  assert.ok(state.floor.visibleSet.has(far));
+  assert.ok(!state.floor.sightSet.has(far));
 });
 
 test('visible tiles are remembered, except in the darkness', () => {
   resetFloor();
   computeVisibility();
-  assert.ok(state.exploredSet.has(rel(-1, 0)));
+  assert.ok(state.floor.exploredSet.has(rel(-1, 0)));
 
   resetFloor();
-  state.darkness = true;
+  state.floor.darkness = true;
   computeVisibility();
-  assert.equal(state.exploredSet.size, 0);
+  assert.equal(state.floor.exploredSet.size, 0);
 });
 
 // --- sight.js: canMakeOut ---
 
 test('with fog off, everything can be made out', () => {
   resetFloor();
-  state.fogEnabled = false;
+  state.settings.fogEnabled = false;
   computeVisibility();
   assert.ok(canMakeOut(0, 0));
 });
@@ -152,25 +152,25 @@ test('with fog off, everything can be made out', () => {
 test('a tile in sight with a clear line can be made out', () => {
   resetFloor();
   computeVisibility();
-  assert.ok(canMakeOut(state.playerRow - 2, state.playerCol + 1));
+  assert.ok(canMakeOut(state.floor.playerRow - 2, state.floor.playerCol + 1));
 });
 
 test('a pillar in the line of view hides what is behind it', () => {
   resetFloor();
-  state.pillarSet.add(rel(-1, 0));
+  state.floor.pillarSet.add(rel(-1, 0));
   computeVisibility();
   // Still lit, around the pillar's side...
-  assert.ok(state.sightSet.has(rel(-2, 1)));
+  assert.ok(state.floor.sightSet.has(rel(-2, 1)));
   // ...but the straight line to it passes the pillar.
-  assert.ok(!canMakeOut(state.playerRow - 2, state.playerCol + 1));
+  assert.ok(!canMakeOut(state.floor.playerRow - 2, state.floor.playerCol + 1));
 });
 
 test('only boss light, or too far, cannot be made out', () => {
   resetFloor();
-  state.bossLitSet = new Set([rel(-1, 3)]);
+  state.floor.bossLitSet = new Set([rel(-1, 3)]);
   computeVisibility();
-  assert.ok(!canMakeOut(state.playerRow - 1, state.playerCol + 3));
-  assert.ok(!canMakeOut(state.playerRow - REVEAL_DISTANCE - 1, state.playerCol));
+  assert.ok(!canMakeOut(state.floor.playerRow - 1, state.floor.playerCol + 3));
+  assert.ok(!canMakeOut(state.floor.playerRow - REVEAL_DISTANCE - 1, state.floor.playerCol));
 });
 
 // --- sight.js: updateCamera ---
@@ -179,17 +179,17 @@ test('the camera centres on the player', () => {
   resetFloor(33);
   updateCamera();
   const half = Math.floor(VIEWPORT_SIZE / 2);
-  assert.equal(state.camRow, state.playerRow - half);
-  assert.equal(state.camCol, state.playerCol - half);
+  assert.equal(state.floor.camRow, state.floor.playerRow - half);
+  assert.equal(state.floor.camCol, state.floor.playerCol - half);
 });
 
 test("the camera never shows past the floor's edge", () => {
   resetFloor(33);
-  state.playerRow = 0;
-  state.playerCol = 32;
+  state.floor.playerRow = 0;
+  state.floor.playerCol = 32;
   updateCamera();
-  assert.equal(state.camRow, 0);
-  assert.equal(state.camCol, 33 - VIEWPORT_SIZE);
+  assert.equal(state.floor.camRow, 0);
+  assert.equal(state.floor.camCol, 33 - VIEWPORT_SIZE);
 });
 
 // --- light.js ---
@@ -197,27 +197,27 @@ test("the camera never shows past the floor's edge", () => {
 function openFloorWithBoss(size = 11) {
   resetFloor(size);
   const mid = Math.floor(size / 2);
-  state.boss = { row: mid, col: mid, hp: 1 };
+  state.floor.boss = { row: mid, col: mid, hp: 1 };
   initBossLight();
   return mid;
 }
 
 test('the boss light starts at radius 1 and spreads one step every LIGHT_TURNS_PER_STEP turns', () => {
   const mid = openFloorWithBoss();
-  assert.equal(state.floorCount, 11 * 11);
-  assert.equal(state.bossLitSet.size, 5); // the boss tile and its four neighbours
+  assert.equal(state.floor.floorCount, 11 * 11);
+  assert.equal(state.floor.bossLitSet.size, 5); // the boss tile and its four neighbours
   for (let i = 0; i < LIGHT_TURNS_PER_STEP * 2 - 1; i++) advanceLight();
-  assert.equal(state.bossLitSet.size, 5);
+  assert.equal(state.floor.bossLitSet.size, 5);
   advanceLight();
-  assert.equal(state.bossLitSet.size, 13); // radius 2 diamond
-  assert.ok(state.bossLitSet.has(key(mid - 2, mid)));
+  assert.equal(state.floor.bossLitSet.size, 13); // radius 2 diamond
+  assert.ok(state.floor.bossLitSet.has(key(mid - 2, mid)));
   assert.ok(lightCoverage() > 0 && lightCoverage() < 1);
 });
 
 test('the run is lost exactly when the turn budget runs out', () => {
   openFloorWithBoss();
   assert.equal(lightProgress(), 0);
-  for (let i = 0; i < state.lightTurnBudget - 1; i++) advanceLight();
+  for (let i = 0; i < state.floor.lightTurnBudget - 1; i++) advanceLight();
   assert.ok(!lightConsumed());
   advanceLight();
   assert.ok(lightConsumed());
@@ -226,21 +226,21 @@ test('the run is lost exactly when the turn budget runs out', () => {
 
 test('walls stop the light spreading', () => {
   resetFloor(11);
-  for (let r = 0; r < 11; r++) state.wallSet.add(key(r, 3));
-  state.boss = { row: 5, col: 8, hp: 1 };
+  for (let r = 0; r < 11; r++) state.floor.wallSet.add(key(r, 3));
+  state.floor.boss = { row: 5, col: 8, hp: 1 };
   initBossLight();
-  assert.equal(state.floorCount, 11 * 7); // columns 4..10 only
-  assert.ok(!state.bossDist.has(key(5, 1)));
+  assert.equal(state.floor.floorCount, 11 * 7); // columns 4..10 only
+  assert.ok(!state.floor.bossDist.has(key(5, 1)));
 });
 
 test('with no boss the light does nothing, and extinguishing clears it', () => {
   openFloorWithBoss();
   extinguishLight();
-  assert.equal(state.bossLitSet.size, 0);
-  state.boss = null;
-  const turns = state.lightTurns;
+  assert.equal(state.floor.bossLitSet.size, 0);
+  state.floor.boss = null;
+  const turns = state.floor.lightTurns;
   advanceLight();
-  assert.equal(state.lightTurns, turns);
+  assert.equal(state.floor.lightTurns, turns);
   assert.equal(lightProgress(), 0);
   assert.ok(!lightConsumed());
 });
@@ -249,8 +249,8 @@ test('with no boss the light does nothing, and extinguishing clears it', () => {
 
 test('open floor does not block; the edge, walls and pillars do', () => {
   resetFloor(11);
-  state.wallSet.add(key(1, 1));
-  state.pillarSet.add(key(2, 2));
+  state.floor.wallSet.add(key(1, 1));
+  state.floor.pillarSet.add(key(2, 2));
   assert.equal(whatBlocks(5, 5), null);
   assert.deepEqual(whatBlocks(-1, 5), { kind: 'wall' });
   assert.deepEqual(whatBlocks(5, 11), { kind: 'wall' });
@@ -262,12 +262,12 @@ test('actors block and report what they are', () => {
   resetFloor(11);
   const minion = { row: 3, col: 3 };
   const encounter = { row: 4, col: 4 };
-  state.boss = { row: 1, col: 5 };
-  state.hunter = { row: 2, col: 5 };
-  state.minions = [minion];
-  state.chest = { row: 6, col: 6 };
-  state.rune = { row: 7, col: 7 };
-  state.encounters = [encounter];
+  state.floor.boss = { row: 1, col: 5 };
+  state.floor.hunter = { row: 2, col: 5 };
+  state.floor.minions = [minion];
+  state.floor.chest = { row: 6, col: 6 };
+  state.floor.rune = { row: 7, col: 7 };
+  state.floor.encounters = [encounter];
   assert.equal(whatBlocks(1, 5).kind, 'boss');
   assert.equal(whatBlocks(2, 5).kind, 'hunter');
   assert.equal(whatBlocks(3, 3).thing, minion);
@@ -279,7 +279,7 @@ test('actors block and report what they are', () => {
 test('boxes block but papers lie flat', () => {
   resetFloor(11);
   const box = { row: 8, col: 8, kind: 'box' };
-  state.props = [box, { row: 9, col: 9, kind: 'paper' }];
+  state.floor.props = [box, { row: 9, col: 9, kind: 'paper' }];
   assert.deepEqual(whatBlocks(8, 8), { kind: 'prop', thing: box });
   assert.equal(whatBlocks(9, 9), null);
 });
@@ -291,26 +291,26 @@ const ofType = (events, type, field) => events.filter(e => e.type === type).map(
 
 test('a minion within chase range steps toward the player and is reported as moved', () => {
   resetFloor(21);
-  const m = spawnMinion({ row: state.playerRow - MINION_CHASE_RANGE, col: state.playerCol });
+  const m = spawnMinion({ row: state.floor.playerRow - MINION_CHASE_RANGE, col: state.floor.playerCol });
   const events = advanceMonsters();
-  assert.deepEqual({ row: m.row, col: m.col }, { row: state.playerRow - MINION_CHASE_RANGE + 1, col: state.playerCol });
+  assert.deepEqual({ row: m.row, col: m.col }, { row: state.floor.playerRow - MINION_CHASE_RANGE + 1, col: state.floor.playerCol });
   assert.deepEqual(events, [{ type: 'minionMoved', minion: m }]);
-  assert.equal(state.turnCount, 1);
+  assert.equal(state.run.turnCount, 1);
 });
 
 test('a minion next to the player engages from where it stands', () => {
   resetFloor(21);
-  const m = spawnMinion({ row: state.playerRow - 1, col: state.playerCol });
+  const m = spawnMinion({ row: state.floor.playerRow - 1, col: state.floor.playerCol });
   const events = advanceMonsters();
-  assert.deepEqual({ row: m.row, col: m.col }, { row: state.playerRow - 1, col: state.playerCol });
+  assert.deepEqual({ row: m.row, col: m.col }, { row: state.floor.playerRow - 1, col: state.floor.playerCol });
   assert.deepEqual(ofType(events, 'minionMoved', 'minion'), []);
-  assert.equal(state.selectedTarget, m);
+  assert.equal(state.battle.selectedTarget, m);
 });
 
 test('an engaging minion is reported as minionEngaged, in turn order', () => {
   resetFloor(21);
-  const near = spawnMinion({ row: state.playerRow - 1, col: state.playerCol });
-  const far = spawnMinion({ row: state.playerRow + 2, col: state.playerCol });
+  const near = spawnMinion({ row: state.floor.playerRow - 1, col: state.floor.playerCol });
+  const far = spawnMinion({ row: state.floor.playerRow + 2, col: state.floor.playerCol });
   const events = advanceMonsters();
   assert.deepEqual(events, [
     { type: 'minionEngaged', minion: near },
@@ -320,7 +320,7 @@ test('an engaging minion is reported as minionEngaged, in turn order', () => {
 
 test('a resting minion waits out its rest', () => {
   resetFloor(21);
-  const m = spawnMinion({ row: state.playerRow - 2, col: state.playerCol });
+  const m = spawnMinion({ row: state.floor.playerRow - 2, col: state.floor.playerCol });
   m.rest = 1;
   assert.deepEqual(advanceMonsters(), []);
   assert.equal(m.rest, 0);
@@ -329,10 +329,10 @@ test('a resting minion waits out its rest', () => {
 
 test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the player', () => {
   resetFloor(21);
-  state.darkness = true;
+  state.floor.darkness = true;
   for (let i = 1; i < HUNTER_SPAWN_DELAY; i++) {
     assert.deepEqual(ofType(advanceMonsters(), 'hunterWoke', 'hunter'), []);
-    assert.equal(state.hunter, null);
+    assert.equal(state.floor.hunter, null);
   }
   const events = advanceMonsters();
   const woke = ofType(events, 'hunterWoke', 'hunter');
@@ -340,11 +340,11 @@ test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the 
   const hunter = woke[0];
   // It wakes first, then takes its first step in the same turn.
   assert.equal(events[0].type, 'hunterWoke');
-  assert.equal(state.hunter, hunter);
+  assert.equal(state.floor.hunter, hunter);
   assert.equal(hunter.kind, 'hunter');
-  assert.ok(state.minions.includes(hunter));
+  assert.ok(state.floor.minions.includes(hunter));
   // Woke in a corner, so it's still far off after its first step.
-  const steps = Math.abs(hunter.row - state.playerRow) + Math.abs(hunter.col - state.playerCol);
+  const steps = Math.abs(hunter.row - state.floor.playerRow) + Math.abs(hunter.col - state.floor.playerCol);
   assert.ok(steps >= 18, 'hunter is ' + steps + ' steps away');
   // Only ever one.
   assert.deepEqual(ofType(advanceMonsters(), 'hunterWoke', 'hunter'), []);
@@ -354,34 +354,34 @@ test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the 
 
 test('a wall blocks the step; turning toward it still changes facing', () => {
   resetFloor();
-  const [r, c] = [state.playerRow, state.playerCol];
-  state.wallSet.add(key(r, c + 1));
+  const [r, c] = [state.floor.playerRow, state.floor.playerCol];
+  state.floor.wallSet.add(key(r, c + 1));
   const events = stepPlayer(0, 1);
   assert.deepEqual(events.map(e => e.type), ['turned', 'blocked']);
   assert.equal(events[1].kind, 'wall');
-  assert.equal(state.facing, 'E');
-  assert.deepEqual([state.playerRow, state.playerCol], [r, c]);
+  assert.equal(state.floor.facing, 'E');
+  assert.deepEqual([state.floor.playerRow, state.floor.playerCol], [r, c]);
 });
 
 test('the coin pays goldReward(1), doubled in the darkness', () => {
   for (const darkness of [false, true]) {
     resetFloor();
-    state.darkness = darkness;
-    state.coin = { row: state.playerRow - 1, col: state.playerCol };
+    state.floor.darkness = darkness;
+    state.floor.coin = { row: state.floor.playerRow - 1, col: state.floor.playerCol };
     const taken = stepPlayer(-1, 0).find(e => e.type === 'coinTaken');
     assert.equal(taken.gold, goldReward(1));
     assert.equal(taken.gold, darkness ? DARK_GOLD_MULTIPLIER : 1);
-    assert.equal(state.coinsTotal, taken.gold);
-    assert.equal(state.coin, null);
+    assert.equal(state.run.coinsTotal, taken.gold);
+    assert.equal(state.floor.coin, null);
   }
 });
 
 test('the first step into a room fires roomEntered once', () => {
   resetFloor();
-  const [r, c] = [state.playerRow, state.playerCol];
-  state.chamberAt.set(key(r - 1, c), 0);
-  state.chamberAt.set(key(r - 2, c), 0);
-  state.chamberThemes = ['crypt'];
+  const [r, c] = [state.floor.playerRow, state.floor.playerCol];
+  state.floor.chamberAt.set(key(r - 1, c), 0);
+  state.floor.chamberAt.set(key(r - 2, c), 0);
+  state.floor.chamberThemes = ['crypt'];
   const first = stepPlayer(-1, 0);
   assert.deepEqual(first.map(e => e.type), ['stepped', 'roomEntered']);
   assert.equal(first[1].theme, 'crypt');
@@ -394,13 +394,13 @@ test('the first step into a room fires roomEntered once', () => {
 function resetAnswer(target) {
   resetFloor();
   resetHaunts();
-  state.hearts = MAX_HEARTS;
-  state.wager = 0;
-  state.attempts = 1;
-  state.extraSpaceCount = 0;
-  state.runeHint = null;
-  state.currentQuestion = { term: 'Who built the ark?', meaning: 'Noah', difficulty: 'easy' };
-  state.selectedTarget = target;
+  state.run.hearts = MAX_HEARTS;
+  state.battle.wager = 0;
+  state.run.attempts = 1;
+  state.run.extraSpaceCount = 0;
+  state.floor.runeHint = null;
+  state.battle.currentQuestion = { term: 'Who built the ark?', meaning: 'Noah', difficulty: 'easy' };
+  state.battle.selectedTarget = target;
 }
 
 const types = (events) => events.map(e => e.type);
@@ -409,28 +409,28 @@ test('a miss costs 1 heart, 2 in the darkness, and ends at 0 hearts with signalL
   for (const darkness of [false, true]) {
     const chest = { row: 0, col: 0, kind: 'chest' };
     resetAnswer(chest);
-    state.chest = chest;
-    state.darkness = darkness;
+    state.floor.chest = chest;
+    state.floor.darkness = darkness;
     const events = settleAnswer(false, false, 'Moses');
     const rejected = events.find(e => e.type === 'rejected');
     assert.equal(rejected.cost, darkness ? DARK_MISS_COST : 1);
     assert.equal(rejected.expected, 'Noah');
-    assert.equal(state.hearts, MAX_HEARTS - rejected.cost);
+    assert.equal(state.run.hearts, MAX_HEARTS - rejected.cost);
     assert.deepEqual(types(events), ['answerGiven', 'rejected', 'targetSpent']);
     assert.equal(events[0].given, 'Moses');
   }
   const chest = { row: 0, col: 0, kind: 'chest' };
   resetAnswer(chest);
-  state.chest = chest;
-  state.hearts = 1;
+  state.floor.chest = chest;
+  state.run.hearts = 1;
   assert.deepEqual(types(settleAnswer(false, false, 'Moses')), ['answerGiven', 'rejected', 'signalLost']);
-  assert.equal(state.chest, chest, 'the target is left as it was');
+  assert.equal(state.floor.chest, chest, 'the target is left as it was');
 });
 
 test('boss hits count down, and the last one fires bossDefeated then darknessFell', () => {
   const boss = { row: 0, col: 0, kind: 'boss', hp: 2 };
   resetAnswer(boss);
-  state.boss = boss;
+  state.floor.boss = boss;
   assert.deepEqual(types(settleAnswer(false, false, 'Moses')), ['answerGiven', 'rejected', 'bossHeld']);
   resetHaunts(); // so the next right answer isn't also a silenced haunt
   const hit = settleAnswer(true, false, 'Noah');
@@ -439,48 +439,48 @@ test('boss hits count down, and the last one fires bossDefeated then darknessFel
   assert.equal(hit[2].max, BOSS_HP);
   assert.deepEqual(types(settleAnswer(true, false, 'Noah')),
     ['answerGiven', 'accepted', 'bossDefeated', 'darknessFell']);
-  assert.equal(state.boss, null);
-  assert.equal(state.darkness, true);
+  assert.equal(state.floor.boss, null);
+  assert.equal(state.floor.darkness, true);
 });
 
 test('a chest pays 2 gold and is spent', () => {
   const chest = { row: 0, col: 0, kind: 'chest' };
   resetAnswer(chest);
-  state.chest = chest;
+  state.floor.chest = chest;
   const events = settleAnswer(true, true, 'Noah');
   assert.deepEqual(types(events), ['answerGiven', 'accepted', 'extraSpaces', 'targetSpent', 'goldGained']);
   assert.deepEqual(events[4], { type: 'goldGained', amount: 2, from: 'chest' });
-  assert.equal(state.coinsTotal, 2);
-  assert.equal(state.chest, null);
-  assert.equal(state.extraSpaceCount, 1);
+  assert.equal(state.run.coinsTotal, 2);
+  assert.equal(state.floor.chest, null);
+  assert.equal(state.run.extraSpaceCount, 1);
 });
 
 test('a lost wager cannot take gold below 0; a won one pays it', () => {
   resetAnswer(null);
   const minion = spawnMinion({ row: 0, col: 0 });
-  state.selectedTarget = minion;
-  state.coinsTotal = 1;
-  state.wager = 3;
+  state.battle.selectedTarget = minion;
+  state.run.coinsTotal = 1;
+  state.battle.wager = 3;
   const lost = settleAnswer(false, false, 'Moses');
   assert.deepEqual(types(lost), ['answerGiven', 'rejected', 'wagerSettled', 'minionCleared']);
   assert.deepEqual(lost[2], { type: 'wagerSettled', won: false, n: 3 });
-  assert.equal(state.coinsTotal, 0);
-  assert.equal(state.wager, 0);
-  assert.deepEqual(state.minions, []);
+  assert.equal(state.run.coinsTotal, 0);
+  assert.equal(state.battle.wager, 0);
+  assert.deepEqual(state.floor.minions, []);
 
-  state.selectedTarget = spawnMinion({ row: 0, col: 0 });
-  state.wager = 2;
+  state.battle.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  state.battle.wager = 2;
   settleAnswer(true, false, 'Noah');
-  assert.equal(state.coinsTotal, 2);
+  assert.equal(state.run.coinsTotal, 2);
 });
 
 test('a missed question lingers when missed again and is silenced when answered right', () => {
   resetAnswer(null);
-  state.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  state.battle.selectedTarget = spawnMinion({ row: 0, col: 0 });
   assert.ok(!types(settleAnswer(false, false, 'Moses')).some(t => t.startsWith('haunt')));
-  state.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  state.battle.selectedTarget = spawnMinion({ row: 0, col: 0 });
   assert.ok(types(settleAnswer(false, false, 'Moses')).includes('hauntLingers'));
-  state.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  state.battle.selectedTarget = spawnMinion({ row: 0, col: 0 });
   assert.ok(types(settleAnswer(true, false, 'Noah')).includes('hauntSilenced'));
-  assert.equal(state.hauntsSilenced, 1);
+  assert.equal(state.run.hauntsSilenced, 1);
 });
