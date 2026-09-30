@@ -6,7 +6,8 @@
 // Run from the repo root:
 //   node tools/floor_stats.mjs [floors per depth] [--loss 0.9,0.8,0.7]
 // --loss measures each listed loss share on every floor instead of the
-// recipe's own, one column each (the table in the level-design plan).
+// recipe's own slack range, one column each (the table in the
+// level-design plan).
 
 import { state, key } from '../js/state.js';
 import { MC_SAMPLE_DATA } from '../js/config.js';
@@ -25,7 +26,7 @@ function spread(values) {
 }
 
 // Builds one floor at this depth and returns its walk to the boss, light
-// turn budget and slack. The walk is the boss light's own step count to
+// turn budget, slack and loss share. The walk is the boss light's own step count to
 // the start tile, so it goes around walls, pillars and boxes like the
 // player does.
 function measure(floorIndex) {
@@ -34,19 +35,29 @@ function measure(floorIndex) {
   buildFloor();
   const f = state.floor;
   const walk = f.bossDist.get(key(f.PLAYER_START.row, f.PLAYER_START.col));
-  return { walk, budget: f.lightTurnBudget, slack: f.lightTurnBudget - walk };
+  return { walk, budget: f.lightTurnBudget, slack: f.lightTurnBudget - walk, loss: Math.round(f.lightLossShare * 100) };
 }
 
-// Builds `count` floors at this depth with the recipe's loss share set to
-// `loss` (or left alone when it's undefined), and returns the measurements.
+// Builds `count` floors at this depth and returns the measurements. With
+// `loss` set, the recipe's slack range is set aside and that loss share is
+// used instead (the old dial), so the two can be compared.
 function sample(floorIndex, count, loss) {
   const recipe = FLOOR_RECIPES[floorIndex];
-  const saved = recipe.lossCoverage;
-  if (loss !== undefined) recipe.lossCoverage = loss;
+  const saved = { slack: recipe.slack, lossCoverage: recipe.lossCoverage };
+  if (loss !== undefined) {
+    delete recipe.slack;
+    recipe.lossCoverage = loss;
+  }
   const rows = [];
   for (let i = 0; i < count; i++) rows.push(measure(floorIndex));
-  recipe.lossCoverage = saved;
+  Object.assign(recipe, saved);
+  if (saved.slack === undefined) delete recipe.slack;
   return rows;
+}
+
+// The recipe's slack range as "min-max", or "-" when it has none.
+function slackRange(recipe) {
+  return recipe.slack ? recipe.slack.join('-') : '-';
 }
 
 // Reads the command line: a floor count and an optional --loss list.
@@ -60,12 +71,12 @@ function readArgs(argv) {
 // Prints the recipe table: rooms, walk, light budget and slack per floor.
 function printRecipeTable(count) {
   console.log(`${count} floors per depth, recipes as in js/floors.js. Slack = light turns - walk to the boss.\n`);
-  console.log('| Floor | Rooms | Loss % | Walk to boss (p10 / p50 / p90) | Light turns (p50) | Slack (p10 / p50 / p90) |');
-  console.log('|---|---|---|---|---|---|');
+  console.log('| Floor | Rooms | Slack range | Walk to boss (p10 / p50 / p90) | Light turns (p50) | Slack (p10 / p50 / p90) | Loss % (p10 / p50 / p90) |');
+  console.log('|---|---|---|---|---|---|---|');
   FLOOR_RECIPES.forEach((recipe, i) => {
     const rows = sample(i, count);
     const budget = [...rows.map(r => r.budget)].sort((a, b) => a - b);
-    console.log(`| ${i + 1} | ${recipe.rooms} | ${Math.round(recipe.lossCoverage * 100)} | ${spread(rows.map(r => r.walk))} | ${percentile(budget, 0.5)} | ${spread(rows.map(r => r.slack))} |`);
+    console.log(`| ${i + 1} | ${recipe.rooms} | ${slackRange(recipe)} | ${spread(rows.map(r => r.walk))} | ${percentile(budget, 0.5)} | ${spread(rows.map(r => r.slack))} | ${spread(rows.map(r => r.loss))} |`);
   });
 }
 

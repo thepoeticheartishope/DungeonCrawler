@@ -1,6 +1,6 @@
 // The boss's light: it starts on the boss and spreads outward through the
-// floor one step every few turns. Reaching the floor's loss coverage (floors.js)
-// of the walkable tiles loses the run; defeating the boss puts it out. No
+// floor one step every few turns. When the floor's turns run out (the walk
+// to the boss plus the recipe's slack, floors.js) the run is lost; defeating the boss puts it out. No
 // DOM access here — render.js draws it, main.js decides what happens when
 // it's full.
 
@@ -28,19 +28,45 @@ function stepsFrom(row, col) {
 }
 
 // Called once per room, after the layout, boss and player start are set.
-// Works out the radius at which the light covers this floor's
-// loss coverage (floors.js), and so how many turns the player gets before the
-// steadily spreading light gets there.
+// Works out how many turns the player gets before the light consumes the
+// floor, and the radius the steadily spreading light has reached by then.
+// The budget is the walk from the start to the boss plus the recipe's
+// slack, rounded up to whole light steps, so every floor at a depth leaves
+// the same time for exploring however far the layout put the boss. A
+// recipe without slack uses its lossCoverage share instead (floorBudget).
 export function initBossLight() {
   state.floor.bossDist = stepsFrom(state.floor.boss.row, state.floor.boss.col);
   state.floor.floorCount = state.floor.bossDist.size;
-  const coverage = floorRecipe(state.run.roomIndex).lossCoverage;
-  const sorted = [...state.floor.bossDist.values()].sort((a, b) => a - b);
-  const needed = Math.max(1, Math.ceil(state.floor.floorCount * coverage));
-  state.floor.lightFullRadius = Math.max(1, sorted[needed - 1]);
+  const walk = state.floor.bossDist.get(key(state.floor.playerRow, state.floor.playerCol)) || 0;
+  const turns = floorBudget(floorRecipe(state.run.roomIndex), walk);
+  state.floor.lightFullRadius = Math.max(1, Math.ceil(turns / LIGHT_TURNS_PER_STEP));
   state.floor.lightTurnBudget = state.floor.lightFullRadius * LIGHT_TURNS_PER_STEP;
+  state.floor.lightSlack = state.floor.lightTurnBudget - walk;
+  state.floor.lightLossShare = shareWithin(state.floor.lightFullRadius);
   state.floor.lightTurns = 0;
   updateBossLit();
+}
+
+// Turns the floor gives before the light wins. With a slack range: the
+// walk plus a slack rolled inside it. Without one: the turns until the
+// light covers the recipe's lossCoverage share of the floor, as before.
+function floorBudget(recipe, walk) {
+  if (recipe.slack) {
+    const [min, max] = recipe.slack;
+    return walk + min + Math.floor(Math.random() * (max - min + 1));
+  }
+  const sorted = [...state.floor.bossDist.values()].sort((a, b) => a - b);
+  const needed = Math.max(1, Math.ceil(state.floor.floorCount * recipe.lossCoverage));
+  return sorted[needed - 1] * LIGHT_TURNS_PER_STEP;
+}
+
+// Share of the walkable tiles within `radius` steps of the boss: how much
+// of the floor the light covers when it reaches that radius.
+function shareWithin(radius) {
+  if (!state.floor.floorCount) return 0;
+  let lit = 0;
+  state.floor.bossDist.forEach(d => { if (d <= radius) lit++; });
+  return lit / state.floor.floorCount;
 }
 
 // The light moves one walkable step further every LIGHT_TURNS_PER_STEP
@@ -76,7 +102,7 @@ export function lightCoverage() {
 }
 
 // How close the light is to consuming the floor: 0 at the start of a room,
-// 1 when it's reached this floor's loss coverage (floors.js). Drives the eye.
+// 1 when the floor's turns have run out. Drives the eye.
 export function lightProgress() {
   if (!state.floor.boss) return 0;
   return Math.min(1, state.floor.lightTurns / state.floor.lightTurnBudget);

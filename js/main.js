@@ -879,7 +879,7 @@ function drawEvents(events) {
   return { cls, text: parts.join(' ') };
 }
 
-// The boss light has reached this floor's loss coverage (floors.js): the run
+// The floor's turns have run out and the boss light has won: the run
 // ends where the player stands, after a beat to see it.
 function loseToLight() {
   state.run.runEnded = true;

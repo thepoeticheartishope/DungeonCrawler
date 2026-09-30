@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  BOSS_HP, MC_SAMPLE_DATA,
+  BOSS_HP, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP,
 } from '../js/config.js';
 import { buildFloor } from '../js/floor.js';
 import { BEAT_KINDS } from '../js/beats.js';
@@ -188,4 +188,30 @@ test('beats land in rooms along the walk to the boss, in the recipe\'s order', (
   });
   // A crowded floor may drop a beat now and then, but almost all land.
   assert.ok(placed / wanted > 0.95, 'only ' + placed + ' of ' + wanted + ' beats landed');
+});
+
+test('the light leaves each floor the slack its recipe asks for', () => {
+  eachFloor((f, roomIndex) => {
+    const [min, max] = FLOOR_RECIPES[roomIndex].slack;
+    const walk = f.bossDist.get(key(f.PLAYER_START.row, f.PLAYER_START.col));
+    assert.equal(f.lightSlack, f.lightTurnBudget - walk);
+    // The budget rounds up to whole light steps, so slack can run a few turns over.
+    assert.ok(f.lightSlack >= min && f.lightSlack < max + LIGHT_TURNS_PER_STEP,
+      `floor ${roomIndex + 1}: slack ${f.lightSlack} outside ${min}-${max}`);
+    assert.ok(f.lightLossShare > 0 && f.lightLossShare <= 1);
+  });
+});
+
+test('a recipe without slack falls back to its loss share', () => {
+  const recipe = FLOOR_RECIPES[0];
+  const saved = recipe.slack;
+  delete recipe.slack;
+  recipe.lossCoverage = 0.5;
+  try {
+    const f = build(0);
+    assert.ok(f.lightLossShare >= 0.5, `loss share ${f.lightLossShare} below 0.5`);
+  } finally {
+    recipe.slack = saved;
+    delete recipe.lossCoverage;
+  }
 });

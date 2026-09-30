@@ -2,7 +2,7 @@
 // light.js and state.js read it through floorRecipe(); dungeon.js gets
 // the numbers passed in. Whatever a recipe doesn't say stays random, so
 // the loop keeps its replay value. Later steps of the level-design plan
-// add more fields here (slack).
+// may add more fields here.
 // No DOM access here.
 
 // One entry per floor, first floor first. Floors past the end of the list
@@ -14,9 +14,18 @@
 //   loops         at most this many extra hallways beyond the minimum, for
 //                 more than one route (fewer when the floor has few rooms)
 //   minions       the floor's fixed set of minions (no summoning)
-//   lossCoverage  the run is lost when the boss light covers this share of
-//                 the walkable tiles. It is the difficulty dial: a higher
-//                 share means more turns. It drops each floor.
+//   slack         [min, max] turns the player gets beyond the walk to the
+//                 boss, the time left for exploring. It is the difficulty
+//                 dial and shrinks each floor. Each floor rolls a number in
+//                 the range, so luck with the layout no longer decides how
+//                 much time there is (light.js). The light still spreads
+//                 at the same speed; the share of the floor it covers when
+//                 time runs out (the loss %) follows from the slack.
+//                 Drafts for Timothy to tune by play-testing.
+//   lossCoverage  used only when a recipe has no slack: the run is lost
+//                 when the boss light covers this share of the walkable
+//                 tiles, whatever the walk (the old dial; the stats tool's
+//                 --loss mode uses it).
 //   startRoom     name of the rooms.js drawing the player wakes in
 //   bossRoom      name of the rooms.js drawing the boss guards
 //                 Either left out means a random room, as before. Every
@@ -36,15 +45,15 @@
 //                 floor 2 adds a second minion before the special, floor
 //                 3 puts minions between everything.
 export const FLOOR_RECIPES = [
-  { grid: 33, rooms: 4, loops: 3, minions: 2, lossCoverage: 0.9,
+  { grid: 33, rooms: 4, loops: 3, minions: 2, slack: [130, 160],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.1.1', 'story.1.2', 'story.1.3', 'story.1.4'],
     beats: ['paper', 'box', 'minion', 'special'] },
-  { grid: 37, rooms: 5, loops: 3, minions: 3, lossCoverage: 0.8,
+  { grid: 37, rooms: 5, loops: 3, minions: 3, slack: [105, 130],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.2.1', 'story.2.2', 'story.2.3'],
     beats: ['paper', 'minion', 'box', 'minion', 'special'] },
-  { grid: 41, rooms: 6, loops: 3, minions: 4, lossCoverage: 0.7,
+  { grid: 41, rooms: 6, loops: 3, minions: 4, slack: [80, 105],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.3.1', 'story.3.2', 'story.3.3'],
     beats: ['paper', 'minion', 'box', 'minion', 'special', 'minion'] },

@@ -101,6 +101,7 @@ function floorSummary() {
     darkness: f.darkness,
     darkTurns: f.darkTurns,
     lightTurns: f.lightTurns + ' / ' + f.lightTurnBudget,
+    lightSlack: f.lightSlack + ' (loss ' + Math.round(f.lightLossShare * 100) + '%)',
     minions: f.minions.length,
     props: f.props.length,
     encounters: f.encounters.length,
