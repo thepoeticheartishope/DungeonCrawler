@@ -157,7 +157,7 @@ export function repelHunter(m, answeredRight) {
 }
 
 // Places a minion on `spot` (a free floor tile) — loadRoom picks the tiles.
-// The caller draws it (render.js addMinionEl).
+// The map draws it from state (mapview.js).
 export function spawnMinion(spot) {
   const m = { row: spot.row, col: spot.col, hp: MINION_HP, kind: 'minion' };
   state.floor.minions.push(m);

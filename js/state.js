@@ -24,7 +24,6 @@ export const state = {
     revealOnWrong: false,
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
-    canvasMap: false,       // dev toggle: draw the map on the canvas (js/mapview.js) instead of the DOM tiles
     usingSample: true, // false once the person loads their own list
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
   },
@@ -63,7 +62,7 @@ export const state = {
     exploredSet: new Set(), // every tile ever seen this room (fog memory)
 
     boss: null,         // { row, col, hp }
-    minions: [],        // [{ row, col, hp, kind }] — elements live in render.js
+    minions: [],        // [{ row, col, hp, kind }]
     // Boss light (see light.js). Reset as each room loads.
     bossDist: new Map(),   // walkable steps from the boss, per floor tile key
     floorCount: 0,         // walkable tiles in the room
@@ -83,10 +82,10 @@ export const state = {
     stairs: null,          // { row, col } — sits inside the boss chamber, past the boss
     chest: null,           // { row, col, el, kind: 'chest' } or null once opened/trapped
     rune: null,            // { row, col, el, kind: 'rune' } or null once read/trapped
-    encounters: [],        // [{ row, col, el, kind: 'encounter', category, pool }], per-room, up to 3
+    encounters: [],        // [{ row, col, kind: 'encounter', category, pool }], per-room, up to 3
     // Furniture and themes (decor.js). Reset as each floor loads.
     pillarSet: new Set(),     // pillar tiles: solid, and they block the player's light
-    props: [],                // papers and boxes: [{ row, col, kind, theme, loot, gold, trapped, el, identified, searched, sprung }]
+    props: [],                // papers and boxes: [{ row, col, kind, theme, loot, gold, trapped, identified, searched, sprung }]
     chamberAt: new Map(),     // tile key -> which room on the floor it belongs to
     chamberThemes: [],        // theme per room
     visitedChambers: new Set(), // rooms the player has walked into (their theme line shows once)

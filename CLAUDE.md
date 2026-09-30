@@ -79,7 +79,7 @@ Rules and data (no page/DOM access):
 | `beats.js` | `placeBeats()`: puts the recipe's beats (paper, box, minion, special) on room tiles along the walk from the start to the boss, in the recipe's order. Called by `buildFloor()`. |
 | `floor.js` | `buildFloor()`: a new floor as data — layout, furniture, boss, stairs, the recipe's beats, coin, the one special item (chest / rune / encounter), minions, then light, sight and camera. |
 | `passage.js` | `whatBlocks(row, col)`: the single answer to "can I step here?". |
-| `sight.js` | The player's light (`computeVisibility`: `visibleSet` / `sightSet` / `exploredSet`), `canMakeOut`, and the camera (`updateCamera`). |
+| `sight.js` | The player's light (`computeVisibility`: `visibleSet` / `sightSet` / `exploredSet`, and marks papers/boxes made out as `identified`), `canMakeOut`, and the camera (`updateCamera`). |
 | `light.js` | Boss light spreading through the floor; the run is lost at the coverage threshold. |
 | `haunts.js` | Missed questions that come back later in the run. |
 | `modifiers.js` | Rolls Blind / Gambler / Flip / Timer for fight choices. |
@@ -93,11 +93,11 @@ Drawing and page code:
 
 | File | Job |
 |---|---|
-| `render.js` | Draws the grid, fog, actors, HUD (`renderHud()` is the only writer of hearts / gold / turns). Reads visibility and the camera from `sight.js`. |
-| `mapview.js` | The canvas map (isometric plan steps 1a–1b, behind DEV → Map): draws tiles, fog, walls, pillars, boss mist and glyphs from `state` onto one `<canvas>` with a phosphor afterglow and the DOM map's animations (looping warps/pulses/glows/mist drift from a frame clock; `slideOnMap()` / `bumpOnMap()` from their `drawEvents` cases). `requestMapDraw()` after anything on the map changes (end of `drawEvents`, `drawFloor`). Reads state only. |
+| `render.js` | Draws around the map: screens, the edge glow toward an off-screen boss/hunter and the d-pad hints (`renderRoomHints()`), the eye, and the HUD (`renderHud()` is the only writer of hearts / gold / turns), battle target line, timer. |
+| `mapview.js` | The map (isometric plan steps 1a–1c): draws tiles, fog, walls, pillars, boss mist, glyphs and the target box from `state` onto one `<canvas>` with a phosphor afterglow and the map's animations (looping warps/pulses/glows/mist drift from a frame clock; `slideOnMap()` / `bumpOnMap()` from their `drawEvents` cases). `requestMapDraw()` after anything on the map changes (end of `drawEvents`, `drawFloor`, `leaveEncounter`). `glyphOf(thing)` is the one source of a thing's glyph (the battle screen uses it too). Reads visibility and the camera from `sight.js`; reads state only. |
 | `dataview.js` | DATA.SYS question viewer and comment export. |
 | `setloader.js` | Start screen options and the set loader (pasted, file, built-in, saved sets). |
-| `devpanel.js` | DEV panel: Skip room, Auto-win, Fog toggle, Map toggle (DOM / canvas), and the Inspect view (live state + a view-only ring of the last 20 events, fed by `drawEvents`). Gets the `main.js` actions it calls passed in. |
+| `devpanel.js` | DEV panel: Skip room, Auto-win, Fog toggle, and the Inspect view (live state + a view-only ring of the last 20 events, fed by `drawEvents`). Gets the `main.js` actions it calls passed in. |
 | `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom` = `buildFloor()` from floor.js + `drawFloor` page), `drawEvents()` (draws every rule event), turn and answer flow, end screens. 1,090 lines — being split up. |
 
 How a turn flows today: key/d-pad → `movePlayer()` (main.js) → `stepPlayer()` (moves.js,
