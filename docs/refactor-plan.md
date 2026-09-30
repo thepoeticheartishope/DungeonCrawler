@@ -310,6 +310,8 @@ showing live state and the last events. Line numbers are as of `main` at `6bbbfb
 - Bump `CACHE_NAME`. Done when: both test commands pass, `grep -rnoE "state\.[a-zA-Z_]+" js tests`
   finds only `state.run/floor/battle/settings` outside `state.js`, and the seeded bot
   matches `main`.
+- Done: 581 references moved in 16 files; all 60 fields kept. Seeded bot (now reads
+  `state.floor || state`, so it runs on either shape): 25 seeds identical to `main`, 0 errors.
 
 #### [ ] 7b. Live inspector (small)
 
