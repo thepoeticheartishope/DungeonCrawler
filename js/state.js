@@ -66,8 +66,10 @@ export const state = {
     // Boss light (see light.js). Reset as each room loads.
     bossDist: new Map(),   // walkable steps from the boss, per floor tile key
     floorCount: 0,         // walkable tiles in the room
-    lightFullRadius: 0,    // light radius at which this floor's lossCoverage is reached
-    lightTurnBudget: 1,    // turns until that radius
+    lightFullRadius: 0,    // light radius at which the run is lost
+    lightTurnBudget: 1,    // turns until that radius: the walk to the boss plus the slack
+    lightSlack: 0,         // turns the budget gives beyond the walk to the boss (floors.js slack)
+    lightLossShare: 0,     // share of the walkable tiles the light covers when the budget runs out
     lightTurns: 0,         // turns spent in this room
     darkness: false,       // the boss has fallen on this floor (see DARK_* in config.js)
     darkTurns: 0,          // turns since the boss fell (the hunter wakes at HUNTER_SPAWN_DELAY)

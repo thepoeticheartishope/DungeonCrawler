@@ -223,9 +223,9 @@ export const PLAYER_CONE_RANGE = 3;
 
 // The boss gives off light that spreads through the floor at a steady
 // speed: one more walkable step every LIGHT_TURNS_PER_STEP turns. The run
-// is lost when it covers that floor's lossCoverage (floors.js) of the
-// walkable tiles, so the percentage is the difficulty dial — a higher one
-// means more turns. It drops each floor. Battles don't use turns, so
+// is lost when the floor's turns run out: the walk to the boss plus that
+// floor's slack (floors.js), which is the difficulty dial and shrinks each
+// floor. Battles don't use turns, so
 // answering never costs light — only walking and waiting do.
 export const LIGHT_TURNS_PER_STEP = 4;
 
