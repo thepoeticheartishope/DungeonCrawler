@@ -8,9 +8,10 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  GRID_SIZES, MINIONS_PER_ROOM, BOSS_HP, MC_SAMPLE_DATA,
+  BOSS_HP, MC_SAMPLE_DATA,
 } from '../js/config.js';
 import { buildFloor } from '../js/floor.js';
+import { FLOOR_RECIPES } from '../js/floors.js';
 
 const FLOORS_PER_DEPTH = 15;
 
@@ -23,7 +24,7 @@ function build(roomIndex) {
 
 // Every depth, many times over, so a rare bad placement still shows up.
 function eachFloor(check) {
-  GRID_SIZES.forEach((_, roomIndex) => {
+  FLOOR_RECIPES.forEach((_, roomIndex) => {
     for (let i = 0; i < FLOORS_PER_DEPTH; i++) check(build(roomIndex), roomIndex);
   });
 }
@@ -34,8 +35,8 @@ function specials(f) {
 
 test('grid size and minion count follow the depth', () => {
   eachFloor((f, roomIndex) => {
-    assert.equal(f.GRID_SIZE, GRID_SIZES[roomIndex]);
-    assert.equal(f.minions.length, MINIONS_PER_ROOM[roomIndex]);
+    assert.equal(f.GRID_SIZE, FLOOR_RECIPES[roomIndex].grid);
+    assert.equal(f.minions.length, FLOOR_RECIPES[roomIndex].minions);
   });
 });
 

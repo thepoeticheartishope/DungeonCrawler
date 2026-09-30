@@ -75,6 +75,7 @@ Rules and data (no page/DOM access):
 | `rooms.js` | Hand-drawn room templates (`#` wall, `.` floor, `?` prop, `+` inner door). |
 | `dungeon.js` | Builds a floor layout from the templates: rooms, hallways, boss room, stairs. |
 | `decor.js` | Themes rooms and places pillars, papers, boxes (`makePlacer`). |
+| `floors.js` | `FLOOR_RECIPES`: what each floor holds (grid, rooms, loops, minions, light loss share); `floorRecipe(i)` reads it. Data only, grows with the level-design plan. |
 | `floor.js` | `buildFloor()`: a new floor as data — layout, furniture, boss, stairs, coin, the one special item (chest / rune / encounter), minions, then light, sight and camera. |
 | `passage.js` | `whatBlocks(row, col)`: the single answer to "can I step here?". |
 | `sight.js` | The player's light (`computeVisibility`: `visibleSet` / `sightSet` / `exploredSet`), `canMakeOut`, and the camera (`updateCamera`). |
