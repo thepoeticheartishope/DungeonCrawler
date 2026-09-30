@@ -526,96 +526,23 @@
   .combat-status .pip-full { color: var(--torch-bright); }
   .combat-status .pip-empty { color: var(--muted); }
 
-  /* ---- Grid ---- */
+  /* ---- Map ---- */
   .grid-wrap {
     max-width: 340px;
     margin: 0 auto 14px;
     position: relative;
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(11, 1fr);
-    grid-template-rows: repeat(11, 1fr);
-    aspect-ratio: 1;
-    width: 100%;
-    border: 1px solid var(--line);
-    border-radius: 0;
-    overflow: hidden;
-    position: relative;
-  }
-
-  /* The canvas map (js/mapview.js) lies exactly over the grid. While it
-     shows, the grid keeps its place (so the page doesn't jump) but isn't
-     drawn; the edge glows stay on top of either map. */
+  /* The map (js/mapview.js): one square canvas; the edge glows lie on top. */
   .map-canvas {
-    display: none;
-    position: absolute;
-    left: 0;
-    top: 0;
+    display: block;
     width: 100%;
     aspect-ratio: 1;
     border: 1px solid var(--line);
-  }
-  .grid-wrap.canvas-map .map-canvas { display: block; }
-  .grid-wrap.canvas-map .grid { visibility: hidden; }
-
-  .tile { background: var(--tile-a); }
-  .tile.b { background: var(--tile-b); }
-  .tile.wall {
-    background: var(--wall);
-    box-shadow: inset 0 0 0 1px #000, inset 2px 2px 0 rgba(255,255,255,0.03);
-  }
-  .tile.fog-dim {
-    filter: brightness(0.32);
-    transition: filter 0.25s ease;
-  }
-  .tile.fog-hidden {
-    background: #050403 !important;
-    box-shadow: none !important;
-    filter: none !important;
-  }
-  /* A pillar: a solid block standing on the floor, drawn in CSS (the font
-     has no block glyphs). Smaller than the tile so it reads as a column,
-     not more wall. */
-  .tile.pillar::before {
-    content: '';
-    position: absolute;
-    inset: 16%;
-    background: var(--wall);
-    border: 1px solid var(--line);
-    box-shadow: inset 2px 2px 0 rgba(var(--glow-rgb), 0.08), 0 0 0 1px #000;
-  }
-  .tile.fog-hidden.pillar::before { display: none; }
-  /* Floor the boss light reaches reads as a pale blue fog, not tinted
-     tiles: each lit tile carries a soft round haze that spills past its
-     edges (inset: -60%), so neighbouring tiles blend into one continuous
-     mist with no hard borders. It sits above the floor (z-index 1) and
-     below every actor (z-index 2), and drifts slowly in brightness, with
-     three staggered phases so the mist doesn't pulse in lockstep. */
-  .tile { position: relative; }
-  .tile.boss-lit:not(.wall):not(.fog-hidden)::after {
-    content: '';
-    position: absolute;
-    inset: -60%;
-    z-index: 1;
-    pointer-events: none;
-    background: radial-gradient(closest-side,
-      rgba(var(--boss-fog-rgb), 0.13),
-      rgba(var(--boss-fog-rgb), 0.09) 45%,
-      rgba(var(--boss-fog-rgb), 0.03) 80%,
-      transparent);
-    animation: bossFog 7s ease-in-out infinite alternate;
-  }
-  .tile.boss-lit:nth-child(3n)::after { animation-delay: -2.3s; }
-  .tile.boss-lit:nth-child(3n+1)::after { animation-delay: -4.7s; }
-  @keyframes bossFog {
-    from { opacity: 0.7; }
-    to { opacity: 1; }
   }
 
   /* Edge glows toward an off-screen boss. Opacity is set per edge by
-     render.js renderLightHint; they never catch clicks. */
+     render.js renderLightHint, over the map; they never catch clicks. */
   .light-hint {
     position: absolute;
     pointer-events: none;
@@ -680,189 +607,6 @@
     92% { transform: translateX(1px); }
   }
 
-  .actor.fog-hidden { opacity: 0 !important; }
-  .actor.off-screen { opacity: 0 !important; }
-  .actor.no-transition { transition: none !important; }
-
-  .actor {
-    position: absolute;
-    width: 9.0909%;
-    height: 9.0909%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 26px;
-    transition: left 0.3s ease, top 0.3s ease;
-    pointer-events: none;
-    z-index: 2;
-  }
-
-  /* Phosphor bloom behind anything hostile — a quick "this is dangerous"
-     read distinct from items/coin, which get no such treatment. */
-  .actor.boss::before,
-  .actor.minion::before {
-    content: '';
-    position: absolute;
-    inset: -35%;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--glow-rgb),0.26) 0%, rgba(var(--glow-rgb),0.07) 55%, transparent 75%);
-    z-index: -1;
-    pointer-events: none;
-  }
-
-  .actor.boss {
-    font-size: 32px;
-    animation: bossPulse 2s ease-in-out infinite, monsterWarp 3.6s ease-in-out infinite;
-    z-index: 1;
-  }
-  @keyframes bossPulse {
-    0%, 100% { filter: drop-shadow(0 0 3px rgba(200,200,200,0.5)); }
-    50% { filter: drop-shadow(0 0 9px rgba(255,255,255,0.9)); }
-  }
-
-  /* A slight, irregular warp on hostile glyphs — not a clean bounce, just
-     enough asymmetry in the skew/scale timing that the shape reads as
-     subtly wrong rather than animated. Kept small (a few percent/degrees)
-     so it stays "unsettling," not cartoonish. */
-  @keyframes monsterWarp {
-    0%, 100% { transform: scale(1, 1) skew(0deg, 0deg); }
-    18%      { transform: scale(1.06, 0.94) skew(-4deg, 1deg); }
-    34%      { transform: scale(0.95, 1.05) skew(2deg, -3deg); }
-    52%      { transform: scale(1.03, 0.97) skew(3deg, 1deg); }
-    71%      { transform: scale(0.97, 1.04) skew(-2deg, -2deg); }
-    85%      { transform: scale(1.02, 0.98) skew(1deg, 2deg); }
-  }
-
-  .actor.minion {
-    font-size: 22px;
-    animation: monsterWarp 3.6s ease-in-out infinite;
-  }
-  /* The hunter: bigger than a minion and never still — the same warp,
-     faster, with the hostile bloom behind it. */
-  .actor.hunter {
-    font-size: 28px;
-    color: var(--torch-bright);
-    animation: monsterWarp 1.6s ease-in-out infinite;
-  }
-  .actor.hunter::before {
-    content: '';
-    position: absolute;
-    inset: -35%;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(var(--glow-rgb),0.32) 0%, rgba(var(--glow-rgb),0.08) 55%, transparent 75%);
-    z-index: -1;
-    pointer-events: none;
-  }
-
-  /* An occasional black bar sweeps over the glyph and fades back out, like
-     a brief signal dropout — a longer, rarer cycle than the constant warp,
-     so it reads as "something just glitched" rather than a steady effect.
-     --glitch-delay is set per-minion in JS so several on screen don't drop
-     out in sync. */
-  .actor.minion::after {
-    content: '';
-    position: absolute;
-    left: -20%;
-    right: -20%;
-    top: 15%;
-    height: 70%;
-    background: #000;
-    opacity: 0;
-    z-index: 5;
-    pointer-events: none;
-    animation: minionGlitchBar 6.5s ease-in-out infinite;
-    animation-delay: var(--glitch-delay, 0s);
-  }
-  @keyframes minionGlitchBar {
-    0%, 84%, 100% { opacity: 0; }
-    87% { opacity: 1; }
-    90% { opacity: 0; }
-    93% { opacity: 0.85; }
-    95% { opacity: 0; }
-  }
-
-  /* Items share the actors' layer (2), above the floor tiles and the boss
-     fog (tiles are position: relative, so anything lower is painted
-     under them). Moving actors still draw over items by DOM order: the
-     player comes after them in index.html and minions are appended later. */
-  .actor.coin {
-    font-size: 20px;
-    z-index: 2;
-    animation: coinBob 1.4s ease-in-out infinite;
-  }
-  @keyframes coinBob {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-  }
-
-  .actor.chest, .actor.rune, .actor.encounter {
-    font-size: 24px;
-    z-index: 2;
-  }
-  /* Papers and boxes: plain furniture glyphs. Remembered ones (seen, not
-     lit right now) sit dim like the explored floor; searched ones stay
-     but fade, so the player can tell what's been gone through. */
-  .actor.prop {
-    font-size: 24px;
-    z-index: 2;
-    color: var(--torch);
-    transition: opacity 0.25s ease;
-  }
-  .actor.prop.remembered { opacity: 0.35; }
-  .actor.prop.covered { opacity: 0; }
-  .actor.prop.searched { color: var(--muted); }
-  /* Too far away to make out: a plain '?', with no hostile glow, glitch
-     or pulse to give away what it is. */
-  .actor.unknown { animation: none; filter: none; color: var(--muted); }
-  .actor.unknown::before, .actor.unknown::after { display: none; }
-  .actor.rune {
-    animation: runeGlow 1.8s ease-in-out infinite;
-  }
-  @keyframes runeGlow {
-    0%, 100% { filter: drop-shadow(0 0 2px rgba(180,180,180,0.4)); }
-    50% { filter: drop-shadow(0 0 7px rgba(230,230,230,0.85)); }
-  }
-
-  .actor.stairs {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--torch-bright);
-    z-index: 2;
-    animation: stairsGlow 1.8s ease-in-out infinite;
-  }
-  @keyframes stairsGlow {
-    0%, 100% { filter: drop-shadow(0 0 2px rgba(180,180,180,0.4)); }
-    50% { filter: drop-shadow(0 0 7px rgba(230,230,230,0.85)); }
-  }
-
-  .actor.hit-flash { animation: actorHit 0.4s ease; }
-  @keyframes actorHit {
-    0% { transform: scale(1.5); filter: brightness(1.8); }
-    100% { transform: scale(1); filter: brightness(1); }
-  }
-
-  .actor.gone { opacity: 0; transition: opacity 0.3s ease; }
-
-  .actor.targeted::after {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border: 2px solid var(--torch-bright);
-    box-shadow: 0 0 6px rgba(var(--glow-rgb), 0.5);
-    animation: targetPulse 1.1s ease-in-out infinite;
-  }
-  @keyframes targetPulse {
-    0%, 100% { opacity: 0.45; }
-    50% { opacity: 1; }
-  }
-
-  .grid.shake { animation: gridShake 0.35s ease; }
-  @keyframes gridShake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-5px); }
-    40%, 80% { transform: translateX(5px); }
-  }
-
   /* ---- D-pad ---- */
   .dpad {
     display: grid;
@@ -891,12 +635,6 @@
      paper or box to examine shows in inverse video. */
   .dpad button.move-blocked { opacity: 0.3; }
   .dpad button.move-examine { background: var(--torch-bright); color: var(--ink); }
-
-  /* Walking into something: a short nudge toward it (render.js bumpActor). */
-  .actor.bump { animation: actorBump 0.18s ease-out; }
-  @keyframes actorBump {
-    50% { transform: translate(var(--bump-x, 0), var(--bump-y, 0)); }
-  }
 
   /* ---- Battle screen: styled as a terminal window ---- */
   .terminal { text-align: left; }
@@ -967,9 +705,8 @@
     flex-shrink: 0;
   }
 
-  /* Clear correct/wrong signal on the battle screen — the room's own
-     hit-flash/shake effects live on elements hidden behind this screen,
-     so a battle needs its own visible feedback. */
+  /* Clear correct/wrong signal on the battle screen — the map is hidden
+     behind this screen, so a battle needs its own visible feedback. */
   .battle-glyph.flash-correct { animation: battleCorrect 0.5s ease; }
   @keyframes battleCorrect {
     0% { transform: scale(1); color: var(--torch-bright); }
@@ -1153,8 +890,7 @@
   .choice-option .choice-label { flex: 1; }
   .choice-option .choice-hint { color: var(--torch-bright); margin-left: 8px; }
 
-  /* Brief glitch-in as a fight starts, standing in for the room's
-     shake/hit-flash, which now never fire from just walking around. */
+  /* Brief glitch-in as a fight starts. */
   #battleScreen.glitch-in .terminal { animation: battleGlitchIn 0.32s steps(4, end); }
   @keyframes battleGlitchIn {
     0% { clip-path: inset(40% 0 45% 0); transform: translateX(-4px); opacity: .6; }
@@ -1168,8 +904,6 @@
     .log-line { animation: none; }
     #battleScreen.glitch-in .terminal { animation: none; }
     .eye.eye-near { animation: none; }
-    .tile.boss-lit::after { animation: none; }
-    .actor.bump { animation: none; }
   }
 
   .feedback {
@@ -1243,8 +977,6 @@
 
   @media (max-width: 420px) {
     h1 { font-size: 34px; }
-    .actor { font-size: 22px; }
-    .actor.boss { font-size: 28px; }
   }
 </style>
 </head>
@@ -1271,7 +1003,6 @@
     <button type="button" class="dev-skip stat-wide" id="devToggleBtn" title="Testing tools">DEV</button>
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
-      <button class="dev-skip" id="devMapBtn" type="button" aria-pressed="false" title="Testing only: draw the map on the canvas instead of the DOM tiles">Map: DOM (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
       <button class="dev-skip" id="devAutoWinBtn" type="button" aria-pressed="false" title="Testing only: every encounter plays itself out with correct answers">Auto-win: OFF (dev)</button>
       <button class="dev-skip" id="devInspectBtn" type="button" aria-pressed="false" title="Testing only: show live game state and the last events">Inspect: OFF (dev)</button>
@@ -1380,16 +1111,7 @@
   <!-- Room screen -->
   <section class="screen" id="roomScreen">
     <div class="grid-wrap">
-      <div class="grid" id="grid">
-        <!-- Glyphs come from text.js term.*.symbol, set as each room loads. -->
-        <div class="actor coin" id="coinActor"></div>
-        <div class="actor chest" id="chestActor"></div>
-        <div class="actor rune" id="runeActor"></div>
-        <div class="actor stairs" id="stairsActor"></div>
-        <div class="actor" id="playerActor">@</div>
-        <div class="actor boss" id="bossActor"></div>
-      </div>
-      <!-- The canvas map (js/mapview.js), shown instead of the grid by DEV -> Map. -->
+      <!-- The map (js/mapview.js). Glyphs come from text.js term.*.symbol. -->
       <canvas class="map-canvas" id="mapCanvas" aria-hidden="true"></canvas>
       <!-- Edge glows pointing at an off-screen boss (render.js renderLightHint). -->
       <div class="light-hint light-hint-n" id="lightHintN" aria-hidden="true"></div>

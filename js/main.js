@@ -2,22 +2,19 @@ import { state, key } from './state.js';
 import { buildFloor } from './floor.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP,
-  DIRECTION_ARROWS, BATTLE_CHOICE_COUNT,
+  BATTLE_CHOICE_COUNT,
   BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS
 } from './config.js';
 import { rollModifier, rollCategoryModifiers, rollFlip, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
 import {
   shuffle, pickQuestion, escapeHtml,
-  buildChoices, normalizeSpaces, buildHint, poolFor, glyphForCategory, fightChoiceLabel,
+  buildChoices, normalizeSpaces, buildHint, poolFor, fightChoiceLabel,
   resolveImageSrc, buildCategoryChoices, categoryLabel
 } from './quiz.js';
 import {
-  initRender, showScreen, buildGridTiles, renderWalls,
-  renderFog, positionActor, setGlyph, bumpActor, renderHud, renderCombatStatus, renderTargeting,
-  addMinionEl,
-  formatTime, startTimer, stopTimer, renderLightEye,
-  addActorEl, actorEl, removeActorEl, clearActorEls
+  initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
+  formatTime, startTimer, stopTimer, renderLightEye
 } from './render.js';
 import {
   isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
@@ -27,7 +24,7 @@ import { stepPlayer } from './moves.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader } from './setloader.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, bumpOnMap } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, bumpOnMap, glyphOf } from './mapview.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 
@@ -49,14 +46,6 @@ const heartsEl = document.getElementById('hearts');
 const statsEl = document.getElementById('statsBar');
 const turnCountEl = document.getElementById('turnCount');
 const coinsTotalEl = document.getElementById('coinsTotal');
-
-const grid = document.getElementById('grid');
-const playerActor = document.getElementById('playerActor');
-const bossActor = document.getElementById('bossActor');
-const coinActor = document.getElementById('coinActor');
-const chestActor = document.getElementById('chestActor');
-const runeActor = document.getElementById('runeActor');
-const stairsActor = document.getElementById('stairsActor');
 
 const choicePanel = document.getElementById('choicePanel');
 const choiceListEl = document.getElementById('choiceList');
@@ -97,11 +86,10 @@ const dpadButtons = {
 
 initRender({
   startScreen, introGlitch, roomScreen, battleScreen, winScreen, loseScreen,
-  grid, playerActor, bossActor, coinActor, chestActor, runeActor, stairsActor,
   heartsEl, coinsTotalEl, turnCountEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightEyeEl, lightHintEls, dpadButtons
 });
-initMapView(document.getElementById('mapCanvas'), grid.parentElement);
+initMapView(document.getElementById('mapCanvas'));
 
 initDataView({ startScreen });
 
@@ -279,9 +267,8 @@ function syncQuestionForTarget() {
 // so resolving one adjacent thing and chaining straight into the next (e.g.
 // boxed in by two minions) updates in place without a spurious round trip
 // through the room screen.
-// Clear correct/wrong signal on the battle screen itself. The room's own
-// hit-flash/shake effects live on the grid and player icon, which sit
-// behind (and are invisible during) the battle screen, so a fight needs
+// Clear correct/wrong signal on the battle screen itself. The map sits
+// behind (and is invisible during) the battle screen, so a fight needs
 // its own visible feedback distinct from the feedback text alone.
 function flashBattleResult(isCorrect) {
   const cls = isCorrect ? 'flash-correct' : 'flash-wrong';
@@ -483,7 +470,7 @@ function chooseCategory(i) {
 function syncBattleScreen() {
   if (state.battle.selectedTarget) {
     const target = state.battle.selectedTarget;
-    battleGlyphEl.textContent = (actorEl(target) || bossActor).dataset.glyph;
+    battleGlyphEl.textContent = glyphOf(target);
     renderCombatStatus();
     const entering = !battleScreen.classList.contains('show');
     if (entering) {
@@ -526,28 +513,6 @@ function leaveEncounter() {
   requestMapDraw();
   nextQuestion();
   syncBattleScreen();
-}
-
-// Re-places every actor at its current world position relative to the
-// camera. Needed whenever the camera itself moves — the boss, minions,
-// coin, chest, and rune haven't moved in world space, but the viewport
-// window that maps world coordinates onto the screen has.
-// A hunter that woke this turn is in state.floor.minions before it has an element
-// (drawEvents makes it at its hunterWoke event, after the player's step is
-// drawn), so minions without one are skipped; addMinionEl places it.
-function repositionActors() {
-  positionActor(playerActor, state.floor.playerRow, state.floor.playerCol, true);
-  if (state.floor.boss) positionActor(bossActor, state.floor.boss.row, state.floor.boss.col, true);
-  state.floor.minions.forEach(m => {
-    const el = actorEl(m);
-    if (el) positionActor(el, m.row, m.col, true);
-  });
-  if (state.floor.coin) positionActor(coinActor, state.floor.coin.row, state.floor.coin.col, true);
-  if (state.floor.stairs) positionActor(stairsActor, state.floor.stairs.row, state.floor.stairs.col, true);
-  if (state.floor.chest) positionActor(chestActor, state.floor.chest.row, state.floor.chest.col, true);
-  if (state.floor.rune) positionActor(runeActor, state.floor.rune.row, state.floor.rune.col, true);
-  state.floor.encounters.forEach(e => positionActor(actorEl(e), e.row, e.col, true));
-  state.floor.props.forEach(p => positionActor(actorEl(p), p.row, p.col, true));
 }
 
 const INTRO_GLITCH_DURATION_MS = 2000;
@@ -603,79 +568,22 @@ function startGame() {
   }, INTRO_GLITCH_DURATION_MS);
 }
 
-// Map glyphs for the one-per-room actors, from their term.*.symbol lines in
-// text.js (so a room's AREAS overrides can change them too). Minions get
-// theirs as they spawn (combat.js).
-function applyActorSymbols() {
-  setGlyph(bossActor, t('term.boss.symbol'));
-  setGlyph(chestActor, t('term.chest.symbol'));
-  setGlyph(runeActor, t('term.rune.symbol'));
-  setGlyph(coinActor, t('term.gold.symbol'));
-  setGlyph(stairsActor, t('term.exit.symbol'));
-}
-
-// A new floor: forget the old floor's elements, make the new floor's data,
-// then put it on the page.
+// A new floor: make the new floor's data, then put it on the page.
 function loadRoom() {
-  clearActorEls();
   buildFloor();
   drawFloor();
   refreshInspector();
 }
 
-// Puts the floor buildFloor() made on the page: tiles, one element per
-// thing, fog, HUD, and a fresh room screen.
+// Puts the floor buildFloor() made on the page: the map, hints, HUD, and
+// a fresh room screen.
 function drawFloor() {
   roomNumEl.textContent = state.run.roomIndex + 1;
   // Per-room wording overrides (text.js AREAS) apply from here on.
   setTextArea(state.run.roomIndex + 1);
   applyStaticText();
-  applyActorSymbols();
 
-  buildGridTiles();
-  playerActor.textContent = DIRECTION_ARROWS[state.floor.facing];
-  positionActor(playerActor, state.floor.playerRow, state.floor.playerCol, true);
-
-  // Papers and boxes go in under the player in the DOM, like the other
-  // items, so anything moving draws over them.
-  state.floor.props.forEach(prop => {
-    const el = document.createElement('div');
-    el.className = 'actor prop ' + prop.kind;
-    setGlyph(el, t('term.' + prop.kind + '.symbol'));
-    grid.insertBefore(el, playerActor);
-    addActorEl(prop, el);
-    positionActor(el, prop.row, prop.col, true);
-  });
-  renderWalls();
-
-  bossActor.classList.remove('gone');
-  positionActor(bossActor, state.floor.boss.row, state.floor.boss.col, true);
-  stairsActor.classList.remove('gone');
-  positionActor(stairsActor, state.floor.stairs.row, state.floor.stairs.col, true);
-  coinActor.classList.toggle('gone', !state.floor.coin);
-  if (state.floor.coin) positionActor(coinActor, state.floor.coin.row, state.floor.coin.col, true);
-
-  chestActor.classList.toggle('gone', !state.floor.chest);
-  if (state.floor.chest) {
-    addActorEl(state.floor.chest, chestActor);
-    positionActor(chestActor, state.floor.chest.row, state.floor.chest.col, true);
-  }
-  runeActor.classList.toggle('gone', !state.floor.rune);
-  if (state.floor.rune) {
-    addActorEl(state.floor.rune, runeActor);
-    positionActor(runeActor, state.floor.rune.row, state.floor.rune.col, true);
-  }
-  state.floor.encounters.forEach(encounter => {
-    const el = document.createElement('div');
-    el.className = 'actor encounter';
-    setGlyph(el, glyphForCategory(encounter.category));
-    grid.appendChild(el);
-    addActorEl(encounter, el);
-    positionActor(el, encounter.row, encounter.col, true);
-  });
-  state.floor.minions.forEach(addMinionEl);
-
-  renderFog();
+  renderRoomHints();
   renderLightEye();
   renderTargeting();
   requestMapDraw();
@@ -744,11 +652,7 @@ function drawEvents(events) {
   let engaged = false;
   for (const e of events) {
     switch (e.type) {
-      case 'turned':
-        playerActor.textContent = DIRECTION_ARROWS[e.facing];
-        break;
       case 'blocked':
-        bumpActor(playerActor, state.floor.facing);
         bumpOnMap(state.floor.facing);
         cls = 'block-msg';
         parts.push(e.kind === 'prop' ? t('room.' + e.thing.kind + '.done')
@@ -756,22 +660,20 @@ function drawEvents(events) {
           : t('room.blocked.' + e.kind));
         break;
       case 'stepped':
-        renderWalls();
-        repositionActors();
         parts.push(t('room.move', { direction: t('room.dir.' + DIRECTION_NAMES[e.facing]) }));
         break;
       case 'waited':
         parts.push(t('room.wait'));
         break;
+      case 'turned':
       case 'stairsReached':
       case 'boxSprung':
+      case 'propSearched':
         break;
       case 'coinTaken':
-        coinActor.classList.add('gone');
         parts.push(t('room.coin'));
         break;
       case 'paperRead':
-        actorEl(e.paper).classList.add('searched');
         if (e.loot === 'story') parts.push(t('room.paper.lore', { lore: t(e.story) }));
         else if (e.loot === 'lore') parts.push(t('room.paper.lore', { lore: t('theme.' + e.paper.theme + '.lore') }));
         else parts.push(t('room.paper.junk'));
@@ -779,19 +681,14 @@ function drawEvents(events) {
       case 'roomEntered':
         parts.push(t('theme.' + e.theme + '.enter'));
         break;
-      case 'propSearched':
-        actorEl(e.prop).classList.add('searched');
-        break;
       case 'boxOpened':
         parts.push(e.gold ? t('room.box.gold', { gold: e.gold }) : t('room.box.junk'));
         break;
       case 'hunterWoke':
-        addMinionEl(e.hunter);
         parts.push(t('room.hunter.wakes'));
         cls = 'warn-msg';
         break;
       case 'minionMoved':
-        positionActor(actorEl(e.minion), e.minion.row, e.minion.col);
         slideOnMap(e.minion, e.from);
         break;
       case 'minionEngaged':
@@ -835,28 +732,18 @@ function drawEvents(events) {
         logLine(t('log.boss.holds'));
         break;
       case 'bossDefeated':
-        bossActor.classList.add('gone');
         logLine(t('log.boss.cleared'), 'bright');
         break;
       case 'darknessFell':
         logLine(t('log.darkness'), 'alert');
         break;
       case 'hunterRepelled':
-        positionActor(actorEl(e.hunter), e.hunter.row, e.hunter.col, true);
         logLine(t(e.right ? 'log.hunter.repelled' : 'log.hunter.retreats'), e.right ? 'bright' : undefined);
         break;
       case 'minionCleared':
-        actorEl(e.minion).remove();
-        removeActorEl(e.minion);
         logLine(t(e.right ? 'log.minion.cleared' : 'log.minion.disperses'), e.right ? 'bright' : undefined);
         break;
       case 'targetSpent':
-        if (e.target.kind === 'box') {
-          actorEl(e.target).classList.add('searched');
-        } else {
-          actorEl(e.target).classList.add('gone');
-          removeActorEl(e.target);
-        }
         if (!e.right) {
           logLine(t('log.' + e.target.kind + '.trapped', { category: e.category ? categoryLabel(e.category) : '' }));
         }
@@ -878,7 +765,7 @@ function drawEvents(events) {
   }
   renderHud();
   renderCombatStatus();
-  renderFog();
+  renderRoomHints();
   renderLightEye();
   renderTargeting();
   requestMapDraw();

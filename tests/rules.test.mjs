@@ -178,6 +178,19 @@ test('only boss light, or too far, cannot be made out', () => {
   assert.ok(!canMakeOut(state.floor.playerRow - REVEAL_DISTANCE - 1, state.floor.playerCol));
 });
 
+test('a paper once made out stays identified after the player walks off', () => {
+  resetFloor();
+  const near = { row: state.floor.playerRow - 2, col: state.floor.playerCol, kind: 'paper', identified: false };
+  const far = { row: state.floor.playerRow - REVEAL_DISTANCE - 1, col: state.floor.playerCol, kind: 'paper', identified: false };
+  state.floor.props = [near, far];
+  computeVisibility();
+  assert.ok(near.identified);
+  assert.ok(!far.identified);
+  state.floor.playerRow += 8;
+  computeVisibility();
+  assert.ok(near.identified);
+});
+
 // --- sight.js: updateCamera ---
 
 test('the camera centres on the player', () => {

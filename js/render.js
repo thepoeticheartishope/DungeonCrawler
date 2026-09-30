@@ -1,15 +1,16 @@
-// DOM rendering: screens, the tile grid, fog of war, actor positioning,
-// and the HUD (hearts / combat status / targeting / timer).
+// DOM rendering around the map: screens, the edge glow and d-pad hints,
+// and the HUD (hearts / combat status / targeting / timer). The map
+// itself is drawn on a canvas by mapview.js.
 //
 // Call initRender(elements) once, from main.js, before using anything else
 // here — it stores the DOM references every other function needs instead
 // of each one threading them through as parameters.
 
-import { state, key } from './state.js';
+import { state } from './state.js';
 import { MAX_HEARTS, BOSS_HP, VIEWPORT_SIZE } from './config.js';
 import { lightProgress } from './light.js';
 import { whatBlocks } from './passage.js';
-import { canMakeOut, FACING_VECTORS } from './sight.js';
+import { FACING_VECTORS } from './sight.js';
 import { categoryLabel } from './quiz.js';
 import { t } from './text.js';
 
@@ -28,162 +29,14 @@ export function showScreen(el) {
   els.statsEl.classList.toggle('show', el !== els.startScreen && el !== els.introGlitch);
 }
 
-// The rendered grid is always VIEWPORT_SIZE x VIEWPORT_SIZE, regardless of
-// how big the room's own data (state.floor.GRID_SIZE) is — the camera pans that
-// fixed window over the larger world. Rebuilt once per room load; walls,
-// fog, and the checkerboard are re-applied on every camera move instead
-// (see renderWalls/renderFog), since which world tile lands in which
-// viewport cell changes as the camera pans.
-// One element per viewport cell; view-only, so it lives here, not in state.
-let tileEls = [];
-
-// Elements for the map things that stay put (chest, rune, encounters,
-// papers and boxes), keyed by the state object. View-only, like tileEls,
-// so state stays plain data.
-const actorEls = new Map();
-export function addActorEl(thing, el) { actorEls.set(thing, el); }
-export function actorEl(thing) { return actorEls.get(thing); }
-export function removeActorEl(thing) { actorEls.delete(thing); }
-// Forgets every element and takes the ones made per floor (minions, the
-// hunter, encounters, papers, boxes) off the page. The chest and rune are
-// fixed elements that are only hidden, so they stay.
-export function clearActorEls() {
-  actorEls.forEach(el => { if (el !== els.chestActor && el !== els.runeActor) el.remove(); });
-  actorEls.clear();
-}
-
-export function buildGridTiles() {
-  els.grid.querySelectorAll('.tile').forEach(t => t.remove());
-  els.grid.style.gridTemplateColumns = 'repeat(' + VIEWPORT_SIZE + ', 1fr)';
-  els.grid.style.gridTemplateRows = 'repeat(' + VIEWPORT_SIZE + ', 1fr)';
-  tileEls = new Array(VIEWPORT_SIZE * VIEWPORT_SIZE);
-  for (let vr = 0; vr < VIEWPORT_SIZE; vr++) {
-    for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
-      const tile = document.createElement('div');
-      tile.className = 'tile';
-      els.grid.insertBefore(tile, els.playerActor);
-      tileEls[vr * VIEWPORT_SIZE + vc] = tile;
-    }
-  }
-}
-
-// Walls, pillars and the checkerboard all key off world
-// coordinates, so they're re-applied here from the current camera offset
-// rather than only once at build time — they'd otherwise stay fixed to
-// the screen instead of panning with the world.
-export function renderWalls() {
-  for (let vr = 0; vr < VIEWPORT_SIZE; vr++) {
-    for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
-      const worldRow = state.floor.camRow + vr;
-      const worldCol = state.floor.camCol + vc;
-      const tile = tileEls[vr * VIEWPORT_SIZE + vc];
-      const k = key(worldRow, worldCol);
-      tile.classList.toggle('b', (worldRow + worldCol) % 2 !== 0);
-      tile.classList.toggle('wall', state.floor.wallSet.has(k));
-      tile.classList.toggle('pillar', state.floor.pillarSet.has(k));
-    }
-  }
-}
-
-// Sets an actor's real map glyph. renderFog shows it, or '?' while the
-// actor is too far away to make out.
-export function setGlyph(el, glyph) {
-  el.dataset.glyph = glyph;
-  el.textContent = glyph;
-}
-
-// Draws a newly spawned minion or the hunter (combat.js spawnMinion):
-// makes its element, registers it and puts it in place without sliding.
-export function addMinionEl(m) {
-  const el = document.createElement('div');
-  el.className = 'actor ' + m.kind;
-  setGlyph(el, t('term.' + m.kind + '.symbol'));
-  // Offsets this minion's warp animation out of sync with any others already
-  // on screen — several identical creatures warping in perfect lockstep
-  // reads as mechanical, not unsettling. Same idea for the glitch-bar
-  // dropout, via a custom property its ::after reads (a pseudo-element
-  // isn't a real node, so its own animation-delay can't be set directly).
-  el.style.animationDelay = (Math.random() * -3.6).toFixed(2) + 's';
-  el.style.setProperty('--glitch-delay', (Math.random() * -6.5).toFixed(2) + 's');
-  els.grid.appendChild(el);
-  addActorEl(m, el);
-  positionActor(el, m.row, m.col, true);
-}
-
 // How far away (in steps, as the crow flies) the hunter's edge glow starts
 // to brighten.
 const HUNTER_HINT_RANGE = 20;
 
-// Applies fog classes to every tile, and hides or shows the boss,
-// minions, and coin based on whether their tile is currently lit.
-// Explored-but-not-currently-visible tiles stay dimly remembered.
-export function renderFog() {
-  for (let vr = 0; vr < VIEWPORT_SIZE; vr++) {
-    for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
-      const worldRow = state.floor.camRow + vr;
-      const worldCol = state.floor.camCol + vc;
-      const el = tileEls[vr * VIEWPORT_SIZE + vc];
-      el.classList.remove('fog-hidden', 'fog-dim');
-      const k = key(worldRow, worldCol);
-      el.classList.toggle('boss-lit', state.floor.bossLitSet.has(k));
-      if (!state.settings.fogEnabled) continue;
-      if (state.floor.visibleSet.has(k)) continue;
-      el.classList.add(state.floor.exploredSet.has(k) ? 'fog-dim' : 'fog-hidden');
-    }
-  }
-
-  const isLit = (row, col) => !state.settings.fogEnabled || state.floor.visibleSet.has(key(row, col));
-  const isNear = canMakeOut;
-  // Too far to make out: a '?' instead of the real glyph (and none of the
-  // hostile glow, which would give an enemy away).
-  const showGlyph = (el, known) => {
-    el.classList.toggle('unknown', !known);
-    const glyph = known ? el.dataset.glyph : t('term.unknown.symbol');
-    if (glyph !== undefined && el.textContent !== glyph) el.textContent = glyph;
-  };
-
-  if (state.floor.boss) {
-    els.bossActor.classList.toggle('fog-hidden', !isLit(state.floor.boss.row, state.floor.boss.col));
-    showGlyph(els.bossActor, isNear(state.floor.boss.row, state.floor.boss.col));
-  }
-  state.floor.minions.forEach(m => {
-    const el = actorEl(m);
-    el.classList.toggle('fog-hidden', !isLit(m.row, m.col));
-    showGlyph(el, isNear(m.row, m.col));
-  });
-  els.coinActor.classList.toggle('fog-hidden', !!state.floor.coin && !isLit(state.floor.coin.row, state.floor.coin.col));
-  if (state.floor.coin) showGlyph(els.coinActor, isNear(state.floor.coin.row, state.floor.coin.col));
-  // The stairs are never lost in the fog: they're the way out, and they
-  // stay visible whenever they're on screen — including in the darkness
-  // after the boss, when nothing else is remembered — so leaving or
-  // staying for double gold is always a clear choice.
-  if (state.floor.stairs) els.stairsActor.classList.remove('fog-hidden');
-  els.chestActor.classList.toggle('fog-hidden', !!state.floor.chest && !isLit(state.floor.chest.row, state.floor.chest.col));
-  if (state.floor.chest) showGlyph(els.chestActor, isNear(state.floor.chest.row, state.floor.chest.col));
-  els.runeActor.classList.toggle('fog-hidden', !!state.floor.rune && !isLit(state.floor.rune.row, state.floor.rune.col));
-  if (state.floor.rune) showGlyph(els.runeActor, isNear(state.floor.rune.row, state.floor.rune.col));
-  state.floor.encounters.forEach(e => {
-    const el = actorEl(e);
-    el.classList.toggle('fog-hidden', !isLit(e.row, e.col));
-    showGlyph(el, isNear(e.row, e.col));
-  });
-  // Papers and boxes don't move, so once seen they stay dimly remembered
-  // on explored floor (not in the darkness, where nothing is). They keep
-  // their '?' until the player has been close enough to make them out.
-  state.floor.props.forEach(p => {
-    const el = actorEl(p);
-    const k = key(p.row, p.col);
-    const lit = isLit(p.row, p.col);
-    if (isNear(p.row, p.col)) p.identified = true;
-    const remembered = state.settings.fogEnabled && !lit && !state.floor.darkness && state.floor.exploredSet.has(k);
-    el.classList.toggle('fog-hidden', !lit && !remembered);
-    el.classList.toggle('remembered', remembered);
-    showGlyph(el, !state.settings.fogEnabled || p.identified);
-    // A paper under the player or a minion is hidden, so glyphs don't pile up.
-    const covered = p.kind === 'paper' && ((state.floor.playerRow === p.row && state.floor.playerCol === p.col) ||
-      state.floor.minions.some(m => m.row === p.row && m.col === p.col));
-    el.classList.toggle('covered', covered);
-  });
+// The room screen's hints around the map: the edge glow toward an
+// off-screen boss or hunter, and which d-pad directions are open. Call
+// after anything that moves the player, the camera or what's around them.
+export function renderRoomHints() {
   renderLightHint();
   renderMoveHints();
 }
@@ -204,17 +57,6 @@ function renderMoveHints() {
     btn.classList.toggle('move-examine', examine);
     btn.classList.toggle('move-blocked', !!block && !examine);
   }
-}
-
-// A quick nudge toward `facing` and back — the feel of walking into
-// something, alongside the d-pad's blocked look.
-export function bumpActor(el, facing) {
-  const [dr, dc] = FACING_VECTORS[facing];
-  el.style.setProperty('--bump-x', (dc * 18) + '%');
-  el.style.setProperty('--bump-y', (dr * 18) + '%');
-  el.classList.remove('bump');
-  void el.offsetWidth; // restart the animation on a repeat bump
-  el.classList.add('bump');
 }
 
 // While the boss is off screen, the edge of the view facing it glows —
@@ -259,39 +101,6 @@ export function renderLightEye() {
   eye.setAttribute('aria-label', label);
 }
 
-// row/col are world coordinates; this converts them to a position within
-// the current camera window, and hides the actor entirely (off-screen)
-// if the camera has panned past it.
-//
-// `instant` skips the actor's usual sliding transition. Use it whenever the
-// screen position changes because the CAMERA panned (the actor's own world
-// position didn't move) — otherwise every on-screen actor visibly drifts
-// into place each time the player takes a step, since the camera re-centers
-// on nearly every move. Real movement (a minion actually stepping to an
-// adjacent tile) should keep the smooth slide, so leave `instant` false there.
-export function positionActor(el, row, col, instant = false) {
-  const screenRow = row - state.floor.camRow;
-  const screenCol = col - state.floor.camCol;
-  const offScreen = screenRow < 0 || screenRow >= VIEWPORT_SIZE || screenCol < 0 || screenCol >= VIEWPORT_SIZE;
-  el.classList.toggle('off-screen', offScreen);
-  if (offScreen) return;
-  const cell = 100 / VIEWPORT_SIZE;
-  if (instant) {
-    el.classList.add('no-transition');
-    el.style.left = (screenCol * cell) + '%';
-    el.style.top = (screenRow * cell) + '%';
-    el.style.width = cell + '%';
-    el.style.height = cell + '%';
-    void el.offsetWidth; // force layout so the class change above applies before it's removed
-    el.classList.remove('no-transition');
-    return;
-  }
-  el.style.left = (screenCol * cell) + '%';
-  el.style.top = (screenRow * cell) + '%';
-  el.style.width = cell + '%';
-  el.style.height = cell + '%';
-}
-
 // Status bar numbers: hearts, gold and turn count. Call after any change to them.
 export function renderHud() {
   // ASCII rather than hearts: the terminal face has no symbol glyphs.
@@ -320,14 +129,9 @@ export function renderCombatStatus() {
   els.combatStatusEl.innerHTML = 'HP: ' + pips;
 }
 
+// The battle screen's target line and the attack button's wording. The
+// box round the target on the map is drawn by mapview.js.
 export function renderTargeting() {
-  els.bossActor.classList.toggle('targeted', !!state.floor.boss && state.battle.selectedTarget === state.floor.boss);
-  state.floor.minions.forEach(m => actorEl(m).classList.toggle('targeted', state.battle.selectedTarget === m));
-  els.chestActor.classList.toggle('targeted', state.battle.selectedTarget === state.floor.chest);
-  els.runeActor.classList.toggle('targeted', state.battle.selectedTarget === state.floor.rune);
-  state.floor.encounters.forEach(e => actorEl(e).classList.toggle('targeted', state.battle.selectedTarget === e));
-  state.floor.props.forEach(p => actorEl(p).classList.toggle('targeted', state.battle.selectedTarget === p));
-
   const target = state.battle.selectedTarget;
   els.targetLabelEl.textContent = target
     ? t('target.' + target.kind, { category: target.category ? categoryLabel(target.category) : '' })

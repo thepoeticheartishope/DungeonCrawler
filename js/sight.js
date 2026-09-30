@@ -1,7 +1,7 @@
 // What the player can see and where the camera sits: the player's light
 // (visibleSet / sightSet / exploredSet), whether a tile can be made out
 // rather than shown as '?', and the camera offset. Rules only — no DOM
-// access here; render.js draws from what this writes.
+// access here; mapview.js draws from what this writes.
 
 import { state, key } from './state.js';
 import { PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, VIEWPORT_SIZE, REVEAL_DISTANCE } from './config.js';
@@ -12,8 +12,8 @@ function clamp(v, lo, hi) {
 
 // Centers the viewport on the player, clamped so it never shows past the
 // room's edge. Call this any time the player moves (or a room loads),
-// before renderWalls()/renderFog()/positionActor() — they all read
-// state.floor.camRow/camCol to know which world tile belongs in which cell.
+// before the map is drawn — mapview.js reads state.floor.camRow/camCol to
+// know which world tile belongs in which cell.
 export function updateCamera() {
   state.floor.camRow = clamp(state.floor.playerRow - Math.floor(VIEWPORT_SIZE / 2), 0, state.floor.GRID_SIZE - VIEWPORT_SIZE);
   state.floor.camCol = clamp(state.floor.playerCol - Math.floor(VIEWPORT_SIZE / 2), 0, state.floor.GRID_SIZE - VIEWPORT_SIZE);
@@ -80,6 +80,9 @@ export function computeVisibility() {
   // In the darkness after the boss, nothing is remembered: only what the
   // player's light touches right now can be seen.
   if (!state.floor.darkness) state.floor.visibleSet.forEach(k => state.floor.exploredSet.add(k));
+  // Papers and boxes don't move, so once the player has made one out it
+  // keeps its real glyph from then on, even when only remembered.
+  state.floor.props.forEach(p => { if (canMakeOut(p.row, p.col)) p.identified = true; });
 }
 
 // True if a straight line from the player's tile to (row, col) passes no

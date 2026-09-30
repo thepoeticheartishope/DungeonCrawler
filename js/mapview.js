@@ -1,15 +1,11 @@
-// Canvas map: draws the floor (tiles, fog, walls, pillars, the boss
-// light's mist, items and every actor's glyph) onto one <canvas> from
-// `state`, with a phosphor afterglow and the DOM map's animations (a
-// minion's step, the player's bump, warps, pulses, glows, the mist's
-// drift). It sits behind the DEV toggle "Map: DOM / canvas" until it has
-// caught up with the DOM map in render.js (isometric map plan, steps 1a
-// and 1b); the DOM map stays the default.
+// The map: draws the floor (tiles, fog, walls, pillars, the boss light's
+// mist, items and every actor's glyph) onto one <canvas> from `state`,
+// with a phosphor afterglow and the map's animations (a minion's step,
+// the player's bump, warps, pulses, glows, the mist's drift).
 //
 // main.js calls initMapView() once, requestMapDraw() after anything on
 // the map may have changed, and slideOnMap() / bumpOnMap() from their
-// drawEvents cases; devpanel.js flips state.settings.canvasMap and calls
-// applyMapMode(). This file reads state and never changes it.
+// drawEvents cases. This file reads state and never changes it.
 //
 // Everything is drawn into one canvas (the "phosphor"), so a later CRT
 // pass (curved glass, bloom) can read that canvas and draw on top of it.
@@ -23,28 +19,27 @@ import { canMakeOut, FACING_VECTORS } from './sight.js';
 import { glyphForCategory } from './quiz.js';
 import { t } from './text.js';
 
-// Drawing proportions copied from the DOM map's CSS in index.html, so the
-// two maps look the same side by side.
+// Drawing proportions, as shares of a tile or strengths from 0 to 1.
 const PILLAR_INSET = 0.16;   // a pillar is smaller than its tile, so it reads as a column
 const FOG_DIM_ALPHA = 0.68;  // explored-but-unlit floor at a third of its brightness
 const MIST_RADIUS = 1.1;     // boss mist spills past its tile, so lit tiles blend into one haze
 const MIST_DRIFT = [0.7, 1];  // the mist's strength at either end of its drift
 // The drift starts at three points in its cycle, tile by tile, so the mist
-// doesn't pulse in step (the DOM map's nth-child delays).
+// doesn't pulse in step.
 const MIST_OFFSETS_MS = [0, 2300, 4700];
 const BLOOM_RADIUS = 0.85;   // the hostile bloom behind the boss and minions
 const REMEMBERED_ALPHA = 0.35; // papers and boxes seen before but not lit now
 const TARGET_PULSE = [0.45, 1]; // the target box's strength at either end of its pulse
-const COIN_BOB = 0.1;        // how far the coin lifts, as a share of a tile (3px on the DOM map)
+const COIN_BOB = 0.1;        // how far the coin lifts, as a share of a tile
 const BUMP_DISTANCE = 0.18;  // how far the player nudges into what blocks them, in tiles
 // The glow behind a pulsing glyph at its dim and bright ends: grey level,
-// strength, and blur as a share of a tile (the DOM map's drop-shadows).
+// strength, and blur as a share of a tile.
 const BOSS_GLOW = { dim: [200, 0.5, 0.1], bright: [255, 0.9, 0.29] };
 const ITEM_GLOW = { dim: [180, 0.4, 0.065], bright: [230, 0.85, 0.23] };
 // The black bar of a minion's signal dropout, in tiles from the tile's top-left.
 const GLITCH_BAR = { left: -0.2, top: 0.15, width: 1.4, height: 0.7 };
 
-// Keyframes copied from index.html, as [share of the cycle, value]. The
+// Keyframes, as [share of the cycle, value]. The
 // warp's values are [scale x, scale y, skew x, skew y] in degrees; the
 // glitch bar's are its strength; a pulse runs from 0 (dim) to 1 (bright).
 const WARP_KEYS = [
@@ -54,8 +49,8 @@ const WARP_KEYS = [
 const GLITCH_KEYS = [[0, 0], [0.84, 0], [0.87, 1], [0.9, 0], [0.93, 0.85], [0.95, 0], [1, 0]];
 const PULSE_KEYS = [[0, 0], [0.5, 1], [1, 0]];
 
-// The CSS timing curves the DOM map's animations use, as functions from
-// time (0..1) to progress (0..1).
+// The CSS timing curves the animations use (ease, ease-in-out, ease-out),
+// as functions from time (0..1) to progress (0..1).
 const EASE = cubicBezier(0.25, 0.1, 0.25, 1);
 const EASE_IN_OUT = cubicBezier(0.42, 0, 0.58, 1);
 const EASE_OUT = cubicBezier(0, 0, 0.58, 1);
@@ -63,12 +58,11 @@ const EASE_OUT = cubicBezier(0, 0, 0.58, 1);
 // The key a player's bump is stored under; minions' slides use the minion.
 const PLAYER = 'player';
 
-// Floor beyond the player's memory, a touch warmer than black like the DOM map.
+// Floor beyond the player's memory, a touch warmer than black.
 const HIDDEN_FLOOR = '#050403';
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
-let wrap = null;    // .grid-wrap: its canvas-map class says which map shows
 let canvas = null;  // the phosphor: what the player sees, faded frame to frame
 let screen = null;  // the phosphor's 2D context
 const scene = document.createElement('canvas'); // this frame, drawn plain from state
@@ -92,9 +86,8 @@ let phaseCount = 0;
 // variables, so the palette has one source (index.html :root). Redraws
 // once the terminal font has loaded, since glyphs drawn before that come
 // out in the fallback font.
-export function initMapView(canvasEl, wrapEl) {
+export function initMapView(canvasEl) {
   canvas = canvasEl;
-  wrap = wrapEl;
   screen = canvas.getContext('2d');
   const css = getComputedStyle(document.documentElement);
   const read = name => css.getPropertyValue(name).trim();
@@ -108,31 +101,28 @@ export function initMapView(canvasEl, wrapEl) {
     requestMapDraw();
   }).observe(canvas);
   document.fonts.load('10px VT323').then(requestMapDraw);
-  applyMapMode();
 }
 
-// Shows whichever map state.settings.canvasMap picks. The DOM map keeps
-// updating underneath either way, so switching back and forth is instant.
-export function applyMapMode() {
-  wrap.classList.toggle('canvas-map', state.settings.canvasMap);
-  snap = true;
-  requestMapDraw();
+// The glyph a map thing shows once it's made out, from its term.*.symbol
+// line in text.js (so a room's AREAS overrides can change it); an
+// encounter shows its category's glyph. The battle screen shows the same.
+export function glyphOf(thing) {
+  if (thing.kind === 'encounter') return glyphForCategory(thing.category);
+  return t('term.' + thing.kind + '.symbol');
 }
 
 // Asks for the map to be drawn again from state on the next frame. Cheap
-// to call often: several calls before a frame make one drawing, and it
-// does nothing while the DOM map is showing.
+// to call often: several calls before a frame make one drawing.
 export function requestMapDraw() {
-  if (!canvas || !state.settings.canvasMap) return;
+  if (!canvas) return;
   dirty = true;
   queueFrame();
 }
 
-// Slides a minion that has just stepped from `from` to its new tile, like
-// the DOM map's 0.3s transition. A minion already sliding starts from
+// Slides a minion that has just stepped from `from` to its new tile. A minion already sliding starts from
 // where it shows now, so quick turns don't make it jump.
 export function slideOnMap(thing, from) {
-  if (!canvas || !state.settings.canvasMap || reducedMotion.matches) return;
+  if (!canvas || reducedMotion.matches) return;
   const now = performance.now();
   const running = effects.get(thing);
   const start = running && running.kind === 'slide' ? slidePlace(running, now) : from;
@@ -141,9 +131,9 @@ export function slideOnMap(thing, from) {
 }
 
 // Nudges the player toward `facing` and back: the feel of walking into
-// something, as the DOM map's bumpActor does.
+// something, alongside the d-pad's blocked look.
 export function bumpOnMap(facing) {
-  if (!canvas || !state.settings.canvasMap || reducedMotion.matches) return;
+  if (!canvas || reducedMotion.matches) return;
   effects.set(PLAYER, { kind: 'bump', start: performance.now(), ms: MAP_ANIMATION_MS.bump, facing });
   requestMapDraw();
 }
@@ -164,7 +154,7 @@ function queueFrame() {
 // fade and every animation.
 function drawFrame(now) {
   frameHandle = 0;
-  if (!state.settings.canvasMap || !fitCanvas()) return;
+  if (!fitCanvas()) return;
   const still = reducedMotion.matches;
   if (dirty || effects.size) lastChange = now;
   if (dirty || effects.size || (looping && !still)) {
@@ -228,8 +218,8 @@ function makeMistSprite(cell) {
   return sprite;
 }
 
-// Draws the whole map as state has it at `now`, in the DOM map's layer
-// order: floor and walls, then the boss mist over them, then things on the
+// Draws the whole map as state has it at `now`, in layer order: floor
+// and walls, then the boss mist over them, then things on the
 // floor. Notes whether anything drawn keeps moving, so frames go on.
 function drawScene(now) {
   frameNow = now;
@@ -271,7 +261,7 @@ function drawTile(ctx, row, col, x, y, cell) {
   if (state.floor.wallSet.has(k)) {
     ctx.fillStyle = colours.wall;
     ctx.fillRect(x, y, cell, cell);
-    // A black seam round each wall block, like the DOM map's inset edge.
+    // A black seam round each wall block.
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
@@ -309,18 +299,17 @@ function drawMist(ctx, row, col, x, y, cell) {
   ctx.globalAlpha = 1;
 }
 
-// Every glyph on the map, following render.js renderFog's rules for what
-// shows: things are seen only on lit tiles, '?' until the player is close
-// enough to make them out (and then with no hostile glow to give an enemy
-// away), stairs always, papers and boxes remembered dimly once seen.
-// Order follows the DOM map, so moving things draw over items.
+// Every glyph on the map. Things are seen only on lit tiles, '?' until
+// the player is close enough to make them out (and then with no hostile
+// glow to give an enemy away), stairs always, papers and boxes remembered
+// dimly once seen. Moving things draw over items.
 function drawActors(ctx, cell) {
   const f = state.floor;
   const isLit = (row, col) => !state.settings.fogEnabled || f.visibleSet.has(key(row, col));
   const glyphOrUnknown = (thing, glyph) => (canMakeOut(thing.row, thing.col) ? glyph : null);
 
   if (f.boss && isLit(f.boss.row, f.boss.col)) {
-    drawGlyph(ctx, cell, f.boss, glyphOrUnknown(f.boss, t('term.boss.symbol')), {
+    drawGlyph(ctx, cell, f.boss, glyphOrUnknown(f.boss, glyphOf(f.boss)), {
       size: 'boss', bloom: 0.26, warp: warpAt(MAP_ANIMATION_MS.warp, 0),
       glow: glowAt(BOSS_GLOW, pulse(MAP_ANIMATION_MS.bossPulse)),
     });
@@ -333,7 +322,7 @@ function drawActors(ctx, cell) {
     const under = thing => thing.row === p.row && thing.col === p.col;
     if (p.kind === 'paper' && (under({ row: f.playerRow, col: f.playerCol }) || f.minions.some(under))) return;
     const known = !state.settings.fogEnabled || p.identified || canMakeOut(p.row, p.col);
-    drawGlyph(ctx, cell, p, known ? t('term.' + p.kind + '.symbol') : null, {
+    drawGlyph(ctx, cell, p, known ? glyphOf(p) : null, {
       size: 'prop', colour: p.searched ? colours.muted : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1,
     });
   });
@@ -344,10 +333,10 @@ function drawActors(ctx, cell) {
     });
   }
   if (f.chest && isLit(f.chest.row, f.chest.col)) {
-    drawGlyph(ctx, cell, f.chest, glyphOrUnknown(f.chest, t('term.chest.symbol')), { size: 'chest' });
+    drawGlyph(ctx, cell, f.chest, glyphOrUnknown(f.chest, glyphOf(f.chest)), { size: 'chest' });
   }
   if (f.rune && isLit(f.rune.row, f.rune.col)) {
-    drawGlyph(ctx, cell, f.rune, glyphOrUnknown(f.rune, t('term.rune.symbol')), {
+    drawGlyph(ctx, cell, f.rune, glyphOrUnknown(f.rune, glyphOf(f.rune)), {
       size: 'rune', glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
     });
   }
@@ -360,14 +349,14 @@ function drawActors(ctx, cell) {
   drawGlyph(ctx, cell, shownAt(PLAYER, f.playerRow, f.playerCol), DIRECTION_ARROWS[f.facing], { size: 'player' });
   f.encounters.forEach(e => {
     if (!isLit(e.row, e.col)) return;
-    drawGlyph(ctx, cell, e, glyphOrUnknown(e, glyphForCategory(e.category)), { size: 'encounter' });
+    drawGlyph(ctx, cell, e, glyphOrUnknown(e, glyphOf(e)), { size: 'encounter' });
   });
   f.minions.forEach(m => {
     if (!isLit(m.row, m.col)) return;
     const hunter = m.kind === 'hunter';
     const phase = phaseOf(m);
     const warpMs = hunter ? MAP_ANIMATION_MS.hunterWarp : MAP_ANIMATION_MS.warp;
-    drawGlyph(ctx, cell, shownAt(m, m.row, m.col), glyphOrUnknown(m, t('term.' + m.kind + '.symbol')), {
+    drawGlyph(ctx, cell, shownAt(m, m.row, m.col), glyphOrUnknown(m, glyphOf(m)), {
       size: m.kind, colour: hunter ? colours.bright : colours.text, bloom: hunter ? 0.32 : 0.26,
       warp: warpAt(warpMs, phase * warpMs),
       // Only minions drop out; the hunter is always there.
@@ -431,8 +420,7 @@ function drawGlyph(ctx, cell, at, glyph, { size, colour = colours.text, alpha = 
   ctx.restore();
 }
 
-// The box around whatever the battle screen is fighting, like the DOM
-// map's .targeted outline, pulsing.
+// The pulsing box around whatever the battle screen is fighting.
 function drawTargetBox(ctx, cell) {
   const target = state.battle.selectedTarget;
   if (!target || target.row === undefined) return;

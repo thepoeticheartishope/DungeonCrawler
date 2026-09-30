@@ -1,7 +1,7 @@
 // Furnishing: gives each room on a floor a theme, then fills it with that
 // theme's pillars, papers and boxes. Runs once per
-// floor, on the layout from dungeon.js. No DOM access here — main.js
-// creates the map pieces and render.js draws them.
+// floor, on the layout from dungeon.js. No DOM access here — mapview.js
+// draws the map pieces.
 //
 // Anything solid (pillars, boxes, and later the chest/rune) is only put
 // down where it keeps every open tile reachable and leaves something to

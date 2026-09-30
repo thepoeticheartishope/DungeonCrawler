@@ -1,7 +1,7 @@
 // The boss's light: it starts on the boss and spreads outward through the
 // floor one step every few turns. When the floor's turns run out (the walk
 // to the boss plus the recipe's slack, floors.js) the run is lost; defeating the boss puts it out. No
-// DOM access here — render.js draws it, main.js decides what happens when
+// DOM access here — mapview.js draws it, main.js decides what happens when
 // it's full.
 
 import { state, key } from './state.js';
