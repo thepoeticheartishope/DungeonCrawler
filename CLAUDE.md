@@ -11,7 +11,7 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 - All player-facing wording lives in `js/text.js` (`t(key, vars)`). Never write wording inline.
 - Tunables live in `js/config.js`. Game state lives in `js/state.js`.
 - "Still broken right after a fix" is usually a stale service worker: test in Incognito first.
-- Test with the DEV button (status bar): Fog off, Skip room, Auto-win.
+- Test with the DEV button (status bar): Fog off, Skip room, Auto-win, Inspect (live state + last 20 events).
 - Automated tests: `node --test tests/*.test.mjs` (rule unit tests, no dependencies) and
   `node tests/smoke.mjs` (Playwright, see its header).
 
@@ -45,7 +45,7 @@ Drawing and page code:
 | `render.js` | Draws the grid, fog, actors, HUD (`renderHud()` is the only writer of hearts / gold / turns). Reads visibility and the camera from `sight.js`. |
 | `dataview.js` | DATA.SYS question viewer and comment export. |
 | `setloader.js` | Start screen options and the set loader (pasted, file, built-in, saved sets). |
-| `devpanel.js` | DEV panel: Skip room, Auto-win, Fog toggle. Gets the `main.js` actions it calls passed in. |
+| `devpanel.js` | DEV panel: Skip room, Auto-win, Fog toggle, and the Inspect view (live state + a view-only ring of the last 20 events, fed by `drawEvents`). Gets the `main.js` actions it calls passed in. |
 | `main.js` | Everything else: element lookups, battle screen, floor setup (`loadRoom` = `buildFloor` data + `drawFloor` page), `drawEvents()` (draws every rule event), turn and answer flow, end screens. 1,250 lines — being split up. |
 
 How a turn flows today: key/d-pad → `movePlayer()` (main.js) → `stepPlayer()` (moves.js,

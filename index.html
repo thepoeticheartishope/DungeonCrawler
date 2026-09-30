@@ -510,6 +510,18 @@
     gap: 0 6px;
   }
   .dev-panel.show { display: flex; }
+  /* DEV Inspect: live state and the last events (devpanel.js). */
+  .dev-inspect {
+    flex-basis: 100%;
+    max-height: 50vh;
+    overflow: auto;
+    margin: 4px 0;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.1;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
 
   .combat-status .pip-full { color: var(--torch-bright); }
   .combat-status .pip-empty { color: var(--muted); }
@@ -1246,6 +1258,8 @@
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
       <button class="dev-skip" id="devAutoWinBtn" type="button" aria-pressed="false" title="Testing only: every encounter plays itself out with correct answers">Auto-win: OFF (dev)</button>
+      <button class="dev-skip" id="devInspectBtn" type="button" aria-pressed="false" title="Testing only: show live game state and the last events">Inspect: OFF (dev)</button>
+      <pre class="dev-inspect" id="devInspectOut" hidden></pre>
     </div>
   </div>
 

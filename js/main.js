@@ -30,7 +30,7 @@ import { initBossLight, lightConsumed } from './light.js';
 import { stepPlayer } from './moves.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader } from './setloader.js';
-import { initDevPanel } from './devpanel.js';
+import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 
@@ -678,6 +678,7 @@ function loadRoom() {
   clearActorEls();
   buildFloor();
   drawFloor();
+  refreshInspector();
 }
 
 // The floor as data only: layout, furniture, boss, stairs, coin, the one
@@ -1045,6 +1046,7 @@ function drawEvents(events) {
   renderFog();
   renderLightEye();
   renderTargeting();
+  recordEvents(events);
   return { cls, text: parts.join(' ') };
 }
 
