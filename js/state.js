@@ -5,7 +5,7 @@
 // Grouped by how long a value lives:
 //   settings — picked on the start screen (or the DEV panel); outlive every run
 //   run      — one run, from startGame() to the end screen
-//   floor    — one floor, rebuilt by buildFloor() in main.js
+//   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
 import { GRID_SIZES, CHAMBER_TARGETS, MAX_HEARTS, MC_SAMPLE_DATA } from './config.js';
