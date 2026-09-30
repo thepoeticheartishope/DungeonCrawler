@@ -27,7 +27,7 @@ import { stepPlayer } from './moves.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader } from './setloader.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, bumpOnMap } from './mapview.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 
@@ -749,6 +749,7 @@ function drawEvents(events) {
         break;
       case 'blocked':
         bumpActor(playerActor, state.floor.facing);
+        bumpOnMap(state.floor.facing);
         cls = 'block-msg';
         parts.push(e.kind === 'prop' ? t('room.' + e.thing.kind + '.done')
           : e.kind === 'encounter' ? t('room.blocked.encounter', { category: categoryLabel(e.thing.category) })
@@ -791,6 +792,7 @@ function drawEvents(events) {
         break;
       case 'minionMoved':
         positionActor(actorEl(e.minion), e.minion.row, e.minion.col);
+        slideOnMap(e.minion, e.from);
         break;
       case 'minionEngaged':
         if (!engaged) parts.push(t('room.engage'));

@@ -305,3 +305,18 @@ export const MAP_GLYPH_SIZES = {
   player: 0.84, boss: 1.03, minion: 0.71, hunter: 0.9, coin: 0.65,
   stairs: 0.71, chest: 0.77, rune: 0.77, encounter: 0.77, prop: 0.77,
 };
+// How long each canvas map animation takes, in ms. They match the DOM
+// map's CSS keyframes in index.html while the DEV toggle compares the two
+// maps. Looping ones stand still under reduced motion.
+export const MAP_ANIMATION_MS = {
+  slide: 300,       // a minion stepping to the next tile
+  bump: 180,        // the player walking into something, out and back
+  bossPulse: 2000,  // the boss's glow swelling and fading
+  warp: 3600,       // the slight wrongness of the boss's and a minion's shape
+  hunterWarp: 1600, // the same warp, faster: the hunter is never still
+  glitchBar: 6500,  // how often a minion's signal drops out
+  coinBob: 1400,    // the coin lifting and settling
+  glow: 1800,       // the rune's and the stairs' glow
+  mist: 14000,      // the boss mist's slow drift, there and back
+  target: 1100,     // the box round the thing being fought
+};

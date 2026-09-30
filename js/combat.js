@@ -179,7 +179,8 @@ function wanderStep(m) {
 // the turn counter increases. Called after any player action. Touches no
 // page element; returns the events of the turn, in the order they happened,
 // for main.js to draw: { type: 'hunterWoke', hunter }, { type: 'minionMoved',
-// minion } and { type: 'minionEngaged', minion }.
+// minion, from } (from = the tile it left, so the map can slide it) and
+// { type: 'minionEngaged', minion }.
 export function advanceMonsters() {
   state.run.turnCount++;
   advanceLight();
@@ -212,9 +213,10 @@ export function advanceMonsters() {
         if (!state.battle.selectedTarget) state.battle.selectedTarget = m;
         events.push({ type: 'minionEngaged', minion: m });
       } else {
+        const from = { row: m.row, col: m.col };
         m.row = next.row;
         m.col = next.col;
-        events.push({ type: 'minionMoved', minion: m });
+        events.push({ type: 'minionMoved', minion: m, from });
       }
     }
     // If next is null, this minion has no route around current

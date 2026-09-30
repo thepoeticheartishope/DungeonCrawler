@@ -296,10 +296,11 @@ const ofType = (events, type, field) => events.filter(e => e.type === type).map(
 
 test('a minion within chase range steps toward the player and is reported as moved', () => {
   resetFloor(21);
-  const m = spawnMinion({ row: state.floor.playerRow - MINION_CHASE_RANGE, col: state.floor.playerCol });
+  const from = { row: state.floor.playerRow - MINION_CHASE_RANGE, col: state.floor.playerCol };
+  const m = spawnMinion(from);
   const events = advanceMonsters();
   assert.deepEqual({ row: m.row, col: m.col }, { row: state.floor.playerRow - MINION_CHASE_RANGE + 1, col: state.floor.playerCol });
-  assert.deepEqual(events, [{ type: 'minionMoved', minion: m }]);
+  assert.deepEqual(events, [{ type: 'minionMoved', minion: m, from }]);
   assert.equal(state.run.turnCount, 1);
 });
 
@@ -319,7 +320,7 @@ test('an engaging minion is reported as minionEngaged, in turn order', () => {
   const events = advanceMonsters();
   assert.deepEqual(events, [
     { type: 'minionEngaged', minion: near },
-    { type: 'minionMoved', minion: far },
+    { type: 'minionMoved', minion: far, from: { row: state.floor.playerRow + 2, col: state.floor.playerCol } },
   ]);
 });
 
