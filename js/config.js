@@ -318,6 +318,15 @@ export const ISO_NARROW_MAP_WIDTH = 400;
 // down: a square map would be mostly empty rows. Keep in step with
 // .grid-wrap.iso .map-canvas's aspect-ratio in index.html.
 export const ISO_MAP_SHAPE = 3 / 2;
+// The isometric camera (DEV -> Camera). It holds still while the player
+// walks inside a box round the middle of the map, ISO_CAMERA_BOX tile
+// widths each way from the middle (x across, y down), and glides after
+// them over ISO_CAMERA_GLIDE_MS once they step out of it. Locked to the
+// player, every step shifted the whole scene along a diagonal, which
+// Timothy found disorienting. The box stays small so the player's five
+// steps of sight still fit on a phone's map (7 tiles across).
+export const ISO_CAMERA_BOX = { x: 1, y: 0.5 };
+export const ISO_CAMERA_GLIDE_MS = 220;
 // How tall a wall stands, as a share of a tile's width. Pillars stand a
 // little above the walls and boxes much lower (sizes in isoview.js).
 export const ISO_WALL_HEIGHT = 1;
