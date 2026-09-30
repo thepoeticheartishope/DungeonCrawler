@@ -30,6 +30,17 @@ export function showScreen(el) {
   els.statsEl.classList.toggle('show', el !== els.startScreen && el !== els.introGlitch);
 }
 
+// Lays the room screen out for the view being drawn. Isometric takes a
+// wider, shorter map (grid rows lie flat on the diamond) and turns the
+// d-pad 45 degrees, so each button points where its step goes on screen:
+// north is up and to the right. The arrow keys follow the grid the same
+// way (up = north). Call once at start and whenever the view changes.
+export function renderViewShape() {
+  const iso = state.settings.isoView;
+  els.mapWrapEl.classList.toggle('iso', iso);
+  els.dpadEl.classList.toggle('iso', iso);
+}
+
 // How far away (in steps, as the crow flies) the hunter's edge glow starts
 // to brighten.
 const HUNTER_HINT_RANGE = 20;

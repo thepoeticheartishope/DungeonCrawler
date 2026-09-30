@@ -308,6 +308,16 @@ export const MAP_GLYPH_SIZES = {
 // fit across the map: fewer means bigger tiles. The camera stands on the
 // player, so about half this many tiles show each way along a row.
 export const ISO_TILES_ACROSS = 9;
+// On a map narrower than ISO_NARROW_MAP_WIDTH CSS pixels (a phone), fewer
+// tiles fit across, so tiles and glyphs stay big enough to read. 7 still
+// holds the player's five steps of sight (2.5 tile widths each way).
+export const ISO_TILES_ACROSS_NARROW = 7;
+export const ISO_NARROW_MAP_WIDTH = 400;
+// The isometric map's width over its height. The diamond is half as tall
+// as it is wide, so five steps of sight only reach 1.25 tile widths up or
+// down: a square map would be mostly empty rows. Keep in step with
+// .grid-wrap.iso .map-canvas's aspect-ratio in index.html.
+export const ISO_MAP_SHAPE = 3 / 2;
 // How tall a wall stands, as a share of a tile's width. Pillars stand a
 // little above the walls and boxes much lower (sizes in isoview.js).
 export const ISO_WALL_HEIGHT = 1;

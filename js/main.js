@@ -13,7 +13,7 @@ import {
   resolveImageSrc, buildCategoryChoices, categoryLabel
 } from './quiz.js';
 import {
-  initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
+  initRender, showScreen, renderViewShape, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
   formatTime, startTimer, stopTimer, renderLightEye
 } from './render.js';
 import {
@@ -87,8 +87,10 @@ const dpadButtons = {
 initRender({
   startScreen, introGlitch, roomScreen, battleScreen, winScreen, loseScreen,
   heartsEl, coinsTotalEl, turnCountEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
-  lightEyeEl, lightHintEls, dpadButtons
+  lightEyeEl, lightHintEls, dpadButtons,
+  mapWrapEl: document.getElementById('mapWrap'), dpadEl: document.getElementById('dpad'),
 });
+renderViewShape();
 initMapView(document.getElementById('mapCanvas'));
 
 initDataView({ startScreen });
