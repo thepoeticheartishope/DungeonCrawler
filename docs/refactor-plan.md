@@ -296,7 +296,7 @@ Shared rules for all three:
 Group `state` into `run` / `floor` / `battle` / `settings`. Add a DEV-panel inspector
 showing live state and the last events. Line numbers are as of `main` at `6bbbfb6` (PR #75).
 
-#### [~] 7a. Group state (mechanical; any model)
+#### [x] 7a. Group state (mechanical; any model) (#76)
 
 - Group by how long a value lives: `settings` (start screen / DEV panel: `revealOnWrong`,
   `mcMode`, `fogEnabled`, `usingSample`, `activeData`), `run` (reset in `startGame`:
