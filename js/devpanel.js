@@ -2,6 +2,7 @@
 // testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw } from './mapview.js';
+import { renderRoomHints } from './render.js';
 
 const devToggleBtn = document.getElementById('devToggleBtn');
 const devPanel = document.getElementById('devPanel');
@@ -63,6 +64,8 @@ export function initDevPanel({
     devViewBtn.textContent = state.settings.isoView ? 'View: isometric (dev)' : 'View: top-down (dev)';
     devViewBtn.setAttribute('aria-pressed', String(state.settings.isoView));
     requestMapDraw();
+    // The edge glow points along the screen, which the two views lay out differently.
+    renderRoomHints();
   });
 }
 
