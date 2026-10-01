@@ -449,6 +449,13 @@ function mapThings() {
       size: 'rune', glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
     });
   }
+  // THE UNFOLDING warps like the boss, slower: a shape the eye keeps losing.
+  if (f.exchange && isLit(f.exchange.row, f.exchange.col)) {
+    add('exchange', f.exchange, glyphOrUnknown(f.exchange, glyphOf(f.exchange)), {
+      size: 'exchange', colour: colours.bright, warp: warpAt(MAP_ANIMATION_MS.exchangeWarp, 0),
+      glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
+    });
+  }
   // The stairs are never lost in the fog: they're the way out.
   if (f.stairs) {
     add('stairs', f.stairs, t('term.exit.symbol'), {

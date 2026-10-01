@@ -6,7 +6,7 @@
 
 import { state, key } from './state.js';
 import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
-import { furnishFloor, rollProp } from './decor.js';
+import { furnishFloor, rollProp, makePlacer, freeStanding } from './decor.js';
 import {
   BOSS_HP, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, ROOM_THEMES
 } from './config.js';
@@ -98,6 +98,7 @@ export function buildFloor() {
 
   state.floor.minions = [];
   state.floor.hunter = null;
+  state.floor.exchange = null; // THE UNFOLDING lives on rest floors only
   state.floor.darkTurns = 0;
   state.floor.encounters = [];
   state.floor.props = [];
@@ -238,6 +239,24 @@ function clearDanger() {
   f.lightLossShare = 0;
 }
 
+// Where THE UNFOLDING stands on a rest floor: a room tile out in the open
+// (floor on all eight sides) if there is one, so it reads as something
+// standing in the room rather than furniture against a wall. makePlacer
+// keeps it off the doorway, the start and the stairs, and away from
+// anything that would cut the room in two. Never on a paper. Null only if
+// no tile at all can hold it.
+function placeExchange(layout, papers) {
+  const placer = makePlacer(layout, REST_GRID);
+  const onPaper = p => papers.some(paper => paper.row === p.row && paper.col === p.col);
+  const tiles = [...layout.roomTiles].map(k => {
+    const [row, col] = k.split(',').map(Number);
+    return { row, col };
+  }).filter(p => !onPaper(p));
+  const open = tiles.filter(p => freeStanding(p, layout.roomTiles));
+  const at = placer.pick(open.length ? open : tiles);
+  return at ? { row: at.row, col: at.col, kind: 'exchange' } : null;
+}
+
 // The way that faces from `from` toward `to` along the longer axis, so
 // the player wakes on a rest floor looking into the room, not at the wall.
 function facingToward(from, to) {
@@ -283,7 +302,10 @@ export function buildRestFloor(kind) {
   }));
 
   f.stairs = { row: layout.stairs.row, col: layout.stairs.col };
-  const coinTile = pickCoinTile(f.wallSet, [f.PLAYER_START, f.stairs, ...f.props], layout.roomTiles);
+  f.exchange = placeExchange(layout, f.props);
+  f.exchangeBought = new Set();
+  const avoid = [f.PLAYER_START, f.stairs, ...f.props, ...(f.exchange ? [f.exchange] : [])];
+  const coinTile = pickCoinTile(f.wallSet, avoid, layout.roomTiles);
   f.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
 
   f.visibleSet = new Set();

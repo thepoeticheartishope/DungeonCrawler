@@ -29,6 +29,8 @@ import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, g
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad } from './dpad.js';
+import { buy } from './exchange.js';
+import { initExchangeView, renderExchange } from './exchangeview.js';
 
 const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
@@ -37,6 +39,7 @@ const revealToggle = document.getElementById('revealToggle');
 const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
 const battleScreen = document.getElementById('battleScreen');
+const exchangeScreen = document.getElementById('exchangeScreen');
 const battleGlyphEl = document.getElementById('battleGlyph');
 const winScreen = document.getElementById('winScreen');
 const loseScreen = document.getElementById('loseScreen');
@@ -89,7 +92,7 @@ const dpadButtons = {
 };
 
 initRender({
-  startScreen, introGlitch, roomScreen, battleScreen, winScreen, loseScreen,
+  startScreen, introGlitch, roomScreen, battleScreen, exchangeScreen, winScreen, loseScreen,
   heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightEyeEl, lightHintEls, dpadButtons,
   mapWrapEl: document.getElementById('mapWrap'), dpadEl: document.getElementById('dpad'),
@@ -98,6 +101,7 @@ renderViewShape();
 initMapView(document.getElementById('mapCanvas'));
 
 initDataView({ startScreen });
+initExchangeView({ buyItem, leaveExchange });
 
 applyStaticText();
 
@@ -549,6 +553,8 @@ function startGame() {
   state.run.correctTotal = 0;
   state.run.extraSpaceCount = 0;
   state.run.hearts = MAX_HEARTS;
+  state.run.maxHearts = MAX_HEARTS;
+  state.run.bonusSlack = 0;
   state.run.turnCount = 0;
   state.run.coinsTotal = 0;
   state.run.loreQueue = [];
@@ -695,6 +701,20 @@ function drawEvents(events) {
       case 'boxSprung':
       case 'propSearched':
         break;
+      case 'exchangeOpened':
+        parts.push(t('room.exchange.opened'));
+        break;
+      case 'itemBought':
+        parts.push(t('exchange.bought'));
+        break;
+      case 'cannotAfford':
+        parts.push(t('exchange.cannotAfford'));
+        break;
+      case 'notOffered':
+        parts.push(t('exchange.why.' + e.reason));
+        break;
+      case 'hauntSilenced':
+        break;
       case 'coinTaken':
         parts.push(t('room.coin'));
         break;
@@ -831,8 +851,29 @@ function movePlayer(dRow, dCol) {
     const note = drawEvents(events);
     if (note.text) showRoomNote(note.cls, note.text);
     if (has('boxSprung')) syncBattleScreen();
+    if (has('exchangeOpened')) openExchange();
   }
   state.run.turnLocked = false;
+}
+
+// THE UNFOLDING's screen (exchangeview.js), opened by bumping it on a rest
+// floor. The room stays as it was underneath: nothing moves while it's up.
+function openExchange() {
+  renderExchange('');
+  showScreen(exchangeScreen);
+}
+
+// One trade at THE UNFOLDING (exchange.js buy()): draws its events (myelin
+// and stability in the HUD), then the screen again with what it added up to.
+function buyItem(itemId) {
+  const note = drawEvents(buy(itemId));
+  renderExchange(note.text);
+}
+
+// Back to the room from THE UNFOLDING's screen.
+function leaveExchange() {
+  showScreen(roomScreen);
+  showRoomNote('move-msg', t('room.exchange.left'));
 }
 
 function skipTurn() {

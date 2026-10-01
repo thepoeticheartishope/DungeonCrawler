@@ -232,6 +232,24 @@ export const BOX_GOLD = [1, 2]; // plus the floor index, before the darkness mul
 export const REVEAL_DISTANCE = 5;
 
 export const MAX_HEARTS = 3;
+// THE UNFOLDING (js/exchange.js) can raise max stability, never past this.
+export const MAX_HEARTS_CAP = 5;
+
+// What THE UNFOLDING (code name: exchange, on every rest floor) trades for
+// myelin, in the order its screen lists them. A depth pays roughly 5-10
+// myelin, so +1 max stability means saving across floors. Prices are
+// Timothy's "middle" set; tune after play-tests.
+//   silence       silences the oldest haunt (not offered with none)
+//   heal          +1 stability (not offered at max)
+//   maxStability  +1 max stability, does not heal; once per rest, up to MAX_HEARTS_CAP
+//   slack         EXCHANGE_SLACK_TURNS more turns on the next depth; once per rest, not on the epilogue
+export const EXCHANGE_ITEMS = [
+  { id: 'silence', price: 2 },
+  { id: 'heal', price: 4 },
+  { id: 'maxStability', price: 10 },
+  { id: 'slack', price: 3 },
+];
+export const EXCHANGE_SLACK_TURNS = 20;
 // The longest name the start screen takes, so it fits on one line in a paper.
 export const PLAYER_NAME_MAX_LENGTH = 20;
 export const ROOM_COUNT = 3;
@@ -339,7 +357,7 @@ export const MAP_MAX_PIXEL_RATIO = 2;
 // the player, minions and the coin smaller.
 export const MAP_GLYPH_SIZES = {
   player: 0.84, boss: 1.03, minion: 0.71, hunter: 0.9, coin: 0.65,
-  stairs: 0.71, chest: 0.77, rune: 0.77, encounter: 0.77, prop: 0.77,
+  stairs: 0.71, chest: 0.77, rune: 0.77, encounter: 0.77, prop: 0.77, exchange: 0.9,
 };
 // The isometric map (js/isoview.js, DEV -> View). How many tile widths
 // fit across the map: fewer means bigger tiles. The camera stands on the
@@ -377,6 +395,7 @@ export const MAP_ANIMATION_MS = {
   bossPulse: 2000,  // the boss's glow swelling and fading
   warp: 3600,       // the slight wrongness of the boss's and a minion's shape
   hunterWarp: 1600, // the same warp, faster: the hunter is never still
+  exchangeWarp: 7000, // the same warp, slow: THE UNFOLDING never quite settles into one shape
   glitchBar: 6500,  // how often a minion's signal drops out
   coinBob: 1400,    // the coin lifting and settling
   glow: 1800,       // the rune's and the stairs' glow

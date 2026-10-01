@@ -58,6 +58,8 @@ export const TEXT = {
   'term.paper': 'PAPER', // draft
   'term.paper.symbol': '=',
   'term.box': 'BOX', // draft
+  'term.exchange': 'THE UNFOLDING', // Timothy's name; code name exchange (js/exchange.js)
+  'term.exchange.symbol': '8', // a loop folded over itself
   'term.box.symbol': '&',
   // The player on the isometric map (js/isoview.js); top-down shows the
   // facing arrow instead (DIRECTION_ARROWS in config.js).
@@ -203,6 +205,28 @@ export const TEXT = {
   'room.box.gold': 'Inside: {gold} {@term.gold}.', // draft
   'room.box.junk': ['Empty.', 'Dust, and a smell like old rain.', 'A broken lens. Useless.', 'Rags. Nothing more.'], // draft
   'room.box.done': 'It is empty now.', // draft
+
+  // ---- THE UNFOLDING's screen (js/exchangeview.js), on every rest floor.
+  // It never speaks: every line describes it, in the narrator's voice.
+  // All drafts for Timothy.
+  'exchange.title': '{@term.exchange}',
+  'exchange.look': 'A shape the eye keeps losing.', // draft
+  'exchange.held': 'You hold {gold} {@term.gold}.', // draft
+  'exchange.price': '{price} {@term.gold}',
+  'exchange.item.silence': 'Silence a doubt', // draft — the oldest haunt
+  'exchange.item.heal': '+1 {@term.hp}', // draft
+  'exchange.item.maxStability': '+1 max {@term.hp}', // draft — does not heal
+  'exchange.item.slack': 'More time on the next {@term.room}', // draft
+  'exchange.why.bought': 'Already taken here.', // draft
+  'exchange.why.noHaunts': 'No doubts to silence.', // draft
+  'exchange.why.fullStability': '{@term.hp} is full.', // draft
+  'exchange.why.atCap': 'It will not hold more.', // draft
+  'exchange.why.noDepth': 'There is no next {@term.room}.', // draft
+  'exchange.bought': 'It takes the {@term.gold}. Something in you settles.', // draft
+  'exchange.cannotAfford': 'It does not turn toward you.', // draft
+  'exchange.leave': 'LOOK AWAY', // draft — the button that closes the screen
+  'room.exchange.opened': 'Something here was never folded right.', // draft — room log, on bumping it
+  'room.exchange.left': 'You look away. It is easier.', // draft — room log, on leaving its screen
 
   // ---- Room themes: each room on a floor gets one (ROOM_THEMES in
   // config.js). enter shows the first time the player walks in; lore is

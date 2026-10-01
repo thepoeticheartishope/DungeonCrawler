@@ -45,6 +45,8 @@ export const state = {
     extraSpaceCount: 0,
     seconds: 0,
     hearts: MAX_HEARTS,
+    maxHearts: MAX_HEARTS, // max stability; THE UNFOLDING can raise it (js/exchange.js)
+    bonusSlack: 0,         // turns bought at THE UNFOLDING for the next depth's light budget (light.js initBossLight spends it)
     turnCount: 0,
     coinsTotal: 0,
     turnLocked: false,
@@ -88,6 +90,8 @@ export const state = {
     stairs: null,          // { row, col } — sits inside the boss chamber, past the boss
     chest: null,           // { row, col, el, kind: 'chest' } or null once opened/trapped
     rune: null,            // { row, col, el, kind: 'rune' } or null once read/trapped
+    exchange: null,        // THE UNFOLDING on a rest floor: { row, col, kind: 'exchange' }, or null on a depth
+    exchangeBought: new Set(), // once-per-rest items (exchange.js) already bought on this floor
     encounters: [],        // [{ row, col, kind: 'encounter', category, pool }], per-room, up to 3
     // Furniture and themes (decor.js). Reset as each floor loads.
     pillarSet: new Set(),     // pillar tiles: solid, and they block the player's light

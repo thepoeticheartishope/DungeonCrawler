@@ -17,8 +17,9 @@ export function goldReward(base) {
 // blocked move — the player can "turn to look" a direction without
 // spending a turn. Events: turned { facing }, blocked { kind, thing },
 // stepped { facing }, stairsReached, coinTaken { gold },
-// paperRead { paper, loot, story? }, roomEntered { theme }, and the box events
-// from examineProp. A turn is spent only by `stepped` or `propSearched`.
+// paperRead { paper, loot, story? }, roomEntered { theme }, exchangeOpened
+// (bumped THE UNFOLDING; main.js opens its screen) and the box events from
+// examineProp. A turn is spent only by `stepped` or `propSearched`.
 export function stepPlayer(dRow, dCol) {
   const events = [];
   const facing = dRow === -1 ? 'N' : dRow === 1 ? 'S' : dCol === 1 ? 'E' : 'W';
@@ -35,6 +36,11 @@ export function stepPlayer(dRow, dCol) {
   const block = whatBlocks(newRow, newCol);
   if (block && block.kind === 'prop') {
     events.push(...examineProp(block.thing));
+    return events;
+  }
+  // Looking into it costs no turn: a rest floor has no light to feed.
+  if (block && block.kind === 'exchange') {
+    events.push({ type: 'exchangeOpened' });
     return events;
   }
   if (block) {
