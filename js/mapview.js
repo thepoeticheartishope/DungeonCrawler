@@ -19,9 +19,13 @@ import { canMakeOut, FACING_VECTORS } from './sight.js';
 import { glyphForCategory } from './quiz.js';
 import { t } from './text.js';
 import { drawIsoScene } from './isoview.js';
+import { artAt, art, setTileArtColour } from './tileart.js';
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
-const PILLAR_INSET = 0.16;   // a pillar is smaller than its tile, so it reads as a column
+const WALL_RIM = 0.05;       // the lit edge a wall shows where it meets floor, as a share of a tile
+const WALL_RIM_STRENGTH = 0.55;
+const WALL_SHADOW = 0.28;    // how far a wall's shadow falls onto the floor below and right of it
+const WALL_SHADOW_STRENGTH = 0.6;
 const FOG_DIM_ALPHA = 0.68;  // explored-but-unlit floor at a third of its brightness
 const MIST_RADIUS = 1.1;     // boss mist spills past its tile, so lit tiles blend into one haze
 const MIST_DRIFT = [0.7, 1];  // the mist's strength at either end of its drift
@@ -94,10 +98,10 @@ export function initMapView(canvasEl) {
   const css = getComputedStyle(document.documentElement);
   const read = name => css.getPropertyValue(name).trim();
   colours = {
-    tileA: read('--tile-a'), tileB: read('--tile-b'), wall: read('--wall'), line: read('--line'),
     text: read('--text'), muted: read('--muted'), torch: read('--torch'), bright: read('--torch-bright'),
     glowRgb: read('--glow-rgb'), bossFogRgb: read('--boss-fog-rgb'), bossLightRgb: read('--boss-light-rgb'),
   };
+  setTileArtColour(colours.glowRgb);
   // The canvas's size is noted here, when it changes, instead of read each
   // frame: reading it makes the browser lay the page out first.
   new ResizeObserver(entries => {
@@ -302,34 +306,73 @@ function fogOf(row, col) {
   return state.floor.exploredSet.has(k) ? 'dim' : 'hidden';
 }
 
-// One floor tile: the checkerboard, a wall block, or a pillar standing on
-// the floor, dimmed if only remembered.
+// One tile: stone bricks for a wall, else its room's floor (tileart.js),
+// with a pillar standing on it, dimmed if only remembered. A wall shows a
+// lit rim where it meets floor and throws a shadow onto the floor below
+// and to its right, so walls stand out from the floor and from the dark.
 function drawTile(ctx, row, col, x, y, cell) {
-  const fog = fogOf(row, col);
-  if (fog === 'hidden') return;
   const k = key(row, col);
-  if (state.floor.wallSet.has(k)) {
-    ctx.fillStyle = colours.wall;
-    ctx.fillRect(x, y, cell, cell);
-    // A black seam round each wall block.
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
-  } else {
-    ctx.fillStyle = (row + col) % 2 !== 0 ? colours.tileB : colours.tileA;
-    ctx.fillRect(x, y, cell, cell);
-  }
-  if (state.floor.pillarSet.has(k)) {
-    const inset = cell * PILLAR_INSET;
-    ctx.fillStyle = colours.wall;
-    ctx.fillRect(x + inset, y + inset, cell - inset * 2, cell - inset * 2);
-    ctx.strokeStyle = colours.line;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x + inset + 0.5, y + inset + 0.5, cell - inset * 2 - 1, cell - inset * 2 - 1);
-  }
+  const wall = state.floor.wallSet.has(k);
+  const fog = wall ? wallFogOf(row, col) : fogOf(row, col);
+  if (fog === 'hidden') return;
+  ctx.drawImage(artAt(row, col, cell), x, y, cell, cell);
+  if (wall) drawWallRim(ctx, row, col, x, y, cell);
+  else drawWallShadow(ctx, row, col, x, y, cell);
+  if (state.floor.pillarSet.has(k)) ctx.drawImage(art('pillarTop', row, col, cell), x, y, cell, cell);
   if (fog === 'dim') {
     ctx.fillStyle = 'rgba(0, 0, 0, ' + FOG_DIM_ALPHA + ')';
     ctx.fillRect(x, y, cell, cell);
+  }
+}
+
+// How much of a wall the player sees. The light stops at walls, so they
+// are never lit themselves: a wall shows as lit beside lit floor, dim
+// beside remembered floor (corners included), else not at all. Without
+// this the walls never showed and a room had no edges.
+function wallFogOf(row, col) {
+  if (!state.settings.fogEnabled) return 'lit';
+  let best = 'hidden';
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      if (state.floor.wallSet.has(key(row + dr, col + dc))) continue;
+      const fog = fogOf(row + dr, col + dc);
+      if (fog === 'lit') return 'lit';
+      if (fog === 'dim') best = 'dim';
+    }
+  }
+  return best;
+}
+
+// The lit edge along each side of a wall that faces floor the player has
+// seen: the outline of the room, like the glowing ridge the isometric view
+// draws. Floor never seen gets no edge, so the rim gives nothing away.
+function drawWallRim(ctx, row, col, x, y, cell) {
+  const rim = Math.max(1, Math.round(cell * WALL_RIM));
+  const open = (dr, dc) => !state.floor.wallSet.has(key(row + dr, col + dc)) && fogOf(row + dr, col + dc) !== 'hidden';
+  ctx.fillStyle = 'rgba(' + colours.glowRgb + ', ' + WALL_RIM_STRENGTH + ')';
+  if (open(-1, 0)) ctx.fillRect(x, y, cell, rim);
+  if (open(1, 0)) ctx.fillRect(x, y + cell - rim, cell, rim);
+  if (open(0, -1)) ctx.fillRect(x, y, rim, cell);
+  if (open(0, 1)) ctx.fillRect(x + cell - rim, y, rim, cell);
+}
+
+// The soft shadow a wall above or to the left of a floor tile throws onto
+// it (the light comes from the top left, as on the stones themselves).
+function drawWallShadow(ctx, row, col, x, y, cell) {
+  const reach = cell * WALL_SHADOW;
+  const fall = (x0, y0, x1, y1) => {
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, 'rgba(0, 0, 0, ' + WALL_SHADOW_STRENGTH + ')');
+    g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = g;
+  };
+  if (state.floor.wallSet.has(key(row - 1, col))) {
+    fall(x, y, x, y + reach);
+    ctx.fillRect(x, y, cell, reach);
+  }
+  if (state.floor.wallSet.has(key(row, col - 1))) {
+    fall(x, y, x + reach, y);
+    ctx.fillRect(x, y, reach, cell);
   }
 }
 

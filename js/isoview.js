@@ -18,6 +18,7 @@ import { state, key } from './state.js';
 import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE } from './config.js';
 import { FACING_VECTORS } from './sight.js';
 import { t } from './text.js';
+import { artAt, art } from './tileart.js';
 
 // How bright a lit tile is, by its steps from the player (0 = their own
 // tile): the light fades over the five steps they can see.
@@ -71,9 +72,19 @@ const GHOST_DASH = [0.03, 0.04]; // its dash and gap, in tile widths
 const WALL_CUT_MAX_FRAME_MS = 50; // a wall's cut moves at most this much time per frame, so a long pause doesn't make it snap
 const MIST_DEPTH = 0.25;         // the mist draws after its own tile's pillar, before what stands on it
 
-// The faces of a block, darker than its top so it reads as standing up.
+// The faces of a block, darker than its top so it reads as standing up:
+// the colour under the texture, then how much darker the texture is drawn
+// (0..1). The light falls from the back left, so the south face is darkest.
 const SOUTH_FACE = '#0a0e0f';
 const EAST_FACE = '#0e1315';
+const SOUTH_SHADE = 0.5;
+const EAST_SHADE = 0.3;
+// How strongly a floor or block texture shows, unlit (remembered) to fully lit.
+const TEXTURE_STRENGTH = [0.3, 1];
+// A floor diamond's edge, as phosphor strength: unlit, plus this much more
+// fully lit. Fainter than before the textures: the stones show the tiles now.
+const FLOOR_EDGE = [0.06, 0.3];
+const FILL_PAD = 2; // spare pixels round a kept fill picture, so its soft edges aren't cut off
 
 // This frame's layout, set by drawIsoScene.
 let tw = 0;         // a tile's width on the canvas, in pixels
@@ -91,6 +102,8 @@ let frontWalls = new Set(); // walls between the camera and something in sight, 
 let wallCuts = new Map(); // key(row, col) -> 0..1
 let lastCutAt = 0;          // the frame time wallCuts last moved
 let halo = null;    // the glow strokeGlow set up for the next lines: [{ colour, width }] in pixels, or null
+// Floor and block fills drawn once and copied (drawCachedFill): texture -> id -> picture.
+const fillCache = new WeakMap();
 
 // The camera: view-only, so it lives here and not in state. The tile the
 // map centres on, fractional while it glides.
@@ -337,8 +350,12 @@ function glowStroke(ctx) {
 // The four corners of a tile's diamond, shrunk by `inset` (0..0.5).
 function diamond(row, col, inset = 0) {
   const [cx, cy] = centre(row, col);
-  const hw = tw / 2 * (1 - 2 * inset);
-  const hh = th / 2 * (1 - 2 * inset);
+  return diamondAt(cx, cy, tw / 2 * (1 - 2 * inset), th / 2 * (1 - 2 * inset));
+}
+
+// A diamond's corners round the middle (cx, cy), `hw` and `hh` pixels
+// out across and down.
+function diamondAt(cx, cy, hw, hh) {
   return { T: [cx, cy - hh], R: [cx + hw, cy], B: [cx, cy + hh], L: [cx - hw, cy], cx, cy };
 }
 
@@ -362,21 +379,44 @@ function up(p, h) {
   return [p[0], p[1] - h];
 }
 
-// One floor diamond: a faint checkerboard fill and a phosphor edge, blue
-// where the boss's light lies on it.
+// One floor diamond: its room's floor texture (tileart.js) lying flat, as
+// bright as the light on it, and a faint phosphor edge, blue where the
+// boss's light lies on it.
 function drawFloor(ctx, row, col) {
   const level = floorLevel(row, col);
-  const d = diamond(row, col, 0.02);
-  const checker = (row + col) % 2 ? 0.1 : 0.08;
-  poly(ctx, [d.T, d.R, d.B, d.L]);
-  ctx.fillStyle = glow(checker * level * level + 0.012);
-  ctx.fill();
+  const texture = artAt(row, col, tw);
+  drawCachedFill(ctx, texture, String(level), diamond(row, col), 0, (c, d) => {
+    c.globalAlpha = textureStrength(level);
+    // The texture's across runs along the tile's columns, its down along
+    // its rows, the same as top-down.
+    drawArt(c, texture, d.T, [tw / 2, th / 2], [-tw / 2, th / 2]);
+  });
+  const e = diamond(row, col, 0.02);
+  poly(ctx, [e.T, e.R, e.B, e.L]);
   const bossLit = state.floor.bossLitSet.has(key(row, col));
   ctx.strokeStyle = bossLit
     ? 'rgba(' + look.colours.bossLightRgb + ', ' + (0.25 + 0.35 * level) + ')'
-    : glow(0.1 + 0.5 * level);
+    : glow(FLOOR_EDGE[0] + FLOOR_EDGE[1] * level);
   ctx.lineWidth = EDGE_WIDTH * tw * 0.8;
   ctx.stroke();
+}
+
+// How strongly a texture shows at a light level (0..1): never quite gone,
+// so remembered floor and walls keep their look.
+function textureStrength(level) {
+  return TEXTURE_STRENGTH[0] + (TEXTURE_STRENGTH[1] - TEXTURE_STRENGTH[0]) * level;
+}
+
+// Draws a square texture onto a flat shape on the canvas: its top-left
+// corner at `origin`, its top edge running along `across` and its left
+// edge along `down` (both in pixels). A floor diamond, a block's top or a
+// wall's face is the square bent this way.
+function drawArt(ctx, sprite, origin, across, down) {
+  const s = sprite.width;
+  ctx.save();
+  ctx.transform(across[0] / s, across[1] / s, down[0] / s, down[1] / s, origin[0], origin[1]);
+  ctx.drawImage(sprite, 0, 0);
+  ctx.restore();
 }
 
 // Finds the walls and pillars standing between the camera and something
@@ -506,6 +546,7 @@ function drawWall(ctx, row, col) {
   drawBlock(ctx, row, col, {
     inset: 0, height, level: wallLevel(row, col),
     southHidden: coversFace(1, 0), eastHidden: coversFace(0, 1), ridge,
+    skin: { side: 'wall', top: 'wallTop', full: wallH },
   });
   if (cut > 0) drawGhost(ctx, row, col, ridge, height, cut);
 }
@@ -541,36 +582,35 @@ function drawPillar(ctx, row, col) {
   const height = full * (1 - cut * (1 - WALL_STUB));
   drawBlock(ctx, row, col, {
     inset: PILLAR_INSET, height, level: Math.max(WALL_MIN_LEVEL, floorLevel(row, col)),
+    skin: { side: 'pillarSide', top: 'wallTop', full },
   });
   if (cut > 0) drawGhost(ctx, row, col, { n: true, e: true, s: true, w: true }, height, cut, { inset: PILLAR_INSET, full });
 }
 
 // A block standing on a tile: a wall, pillar or box. Its faces are
-// opaque, so whatever stands behind it is hidden; only its edges glow.
+// opaque, so whatever stands behind it is hidden; they carry its texture
+// (tileart.js), the south face darkest, and its edges glow.
 // Options: inset (0..0.5), height in pixels, level (0..1), southHidden /
 // eastHidden (a face with a wall in front of it), ridge (which top edges
-// to draw: n, e, s, w; all by default).
-function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, eastHidden = false, ridge }) {
+// to draw: n, e, s, w; all by default), skin ({ side, top } texture names
+// and `full`, the block's full height in pixels: a cut wall shows the
+// bottom of its texture, so its bricks stay put as it lowers).
+function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, eastHidden = false, ridge, skin }) {
   const d = diamond(row, col, inset);
   const T = up(d.T, height);
   const R = up(d.R, height);
   const B = up(d.B, height);
   const L = up(d.L, height);
   const edges = ridge || { n: true, e: true, s: true, w: true };
+  const paint = (c, at) => paintBlockFill(c, row, col, at, height, skin, level, southHidden, eastHidden);
+  if (height === skin.full) {
+    // A full-height block looks the same wherever it stands, so it is drawn once and copied.
+    const id = [skin.side, skin.top, level, southHidden, eastHidden, inset].join(':');
+    drawCachedFill(ctx, art(skin.side, row, col, tw), id, d, height, paint);
+  } else {
+    paint(ctx, d);
+  }
   ctx.save();
-  if (!southHidden) {
-    poly(ctx, [d.L, d.B, B, L]);
-    ctx.fillStyle = SOUTH_FACE;
-    ctx.fill();
-  }
-  if (!eastHidden) {
-    poly(ctx, [d.B, d.R, R, B]);
-    ctx.fillStyle = EAST_FACE;
-    ctx.fill();
-  }
-  poly(ctx, [T, R, B, L]);
-  ctx.fillStyle = 'rgb(' + Math.round(14 + 10 * level) + ', ' + Math.round(18 + 12 * level) + ', ' + Math.round(19 + 12 * level) + ')';
-  ctx.fill();
   ctx.lineWidth = EDGE_WIDTH * tw;
   strokeGlow(ctx, 0.85 * level, RIDGE_BLUR * level);
   if (edges.n) line(ctx, T, R);
@@ -585,6 +625,76 @@ function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, e
   strokeGlow(ctx, 0.3 * level, 0);
   if (!southHidden) line(ctx, d.L, d.B);
   if (!eastHidden) line(ctx, d.B, d.R);
+  ctx.restore();
+}
+
+// The filled part of a block standing on diamond `d` (the canvas's own, or
+// the same diamond in a cached picture's pixels): its textured faces,
+// `height` pixels tall, and its textured top. drawBlock adds the glowing
+// edges.
+function paintBlockFill(ctx, row, col, d, height, skin, level, southHidden, eastHidden) {
+  const [T, R, B, L] = [d.T, d.R, d.B, d.L].map(p => up(p, height));
+  const strength = textureStrength(level);
+  if (!southHidden) {
+    poly(ctx, [d.L, d.B, B, L]);
+    ctx.fillStyle = SOUTH_FACE;
+    ctx.fill();
+    drawFace(ctx, art(skin.side, row, col, tw, SOUTH_SHADE), d.L, d.B, skin.full, height, strength);
+  }
+  if (!eastHidden) {
+    poly(ctx, [d.B, d.R, R, B]);
+    ctx.fillStyle = EAST_FACE;
+    ctx.fill();
+    drawFace(ctx, art(skin.side, row, col, tw, EAST_SHADE), d.B, d.R, skin.full, height, strength);
+  }
+  poly(ctx, [T, R, B, L]);
+  ctx.fillStyle = 'rgb(' + Math.round(14 + 10 * level) + ', ' + Math.round(18 + 12 * level) + ', ' + Math.round(19 + 12 * level) + ')';
+  ctx.fill();
+  ctx.save();
+  ctx.globalAlpha = strength;
+  drawArt(ctx, art(skin.top, row, col, tw), T, [R[0] - T[0], R[1] - T[1]], [L[0] - T[0], L[1] - T[1]]);
+  ctx.restore();
+}
+
+// Draws a fill (a floor diamond's or a block's textures) onto diamond `d`
+// from a picture drawn once and kept, painting it the first time:
+// `paint(ctx, local)` draws onto `local`, the same diamond in the
+// picture's own pixels, and `rise` is how far it reaches above the
+// diamond, in pixels. The picture is kept per texture (`texture`, which
+// tileart.js renews when the tile size changes) and `id`, what else it
+// shows. Copying one flat picture is several times cheaper than bending
+// textures onto every diamond and face: a phone redraws every tile each
+// frame while the camera glides.
+function drawCachedFill(ctx, texture, id, d, rise, paint) {
+  const hw = d.R[0] - d.cx;
+  const hh = d.B[1] - d.cy;
+  if (!fillCache.has(texture)) fillCache.set(texture, new Map());
+  const kept = fillCache.get(texture);
+  let picture = kept.get(id);
+  if (!picture) {
+    picture = document.createElement('canvas');
+    picture.width = Math.ceil(hw * 2 + FILL_PAD * 2);
+    picture.height = Math.ceil(hh * 2 + rise + FILL_PAD * 2);
+    paint(picture.getContext('2d'), diamondAt(FILL_PAD + hw, FILL_PAD + rise + hh, hw, hh));
+    kept.set(id, picture);
+  }
+  ctx.drawImage(picture, d.cx - hw - FILL_PAD, d.cy - hh - rise - FILL_PAD);
+}
+
+// One upright face of a block, from foot corner `a` to foot corner `b`,
+// `height` pixels tall, filled with its (already shaded) texture at
+// `strength`. The texture spans the block's full height, `full` pixels; a
+// cut wall shows only its bottom part, so its bricks stay put as it
+// lowers. Drawn as a slice of the texture, not clipped: a clip per face
+// made every frame several times slower.
+function drawFace(ctx, sprite, a, b, full, height, strength) {
+  const s = sprite.width;
+  const shown = Math.min(1, height / full);
+  const top = up(a, height);
+  ctx.save();
+  ctx.globalAlpha = strength;
+  ctx.transform((b[0] - a[0]) / s, (b[1] - a[1]) / s, 0, height / s, top[0], top[1]);
+  ctx.drawImage(sprite, 0, s * (1 - shown), s, s * shown, 0, 0, s, s);
   ctx.restore();
 }
 
@@ -717,7 +827,10 @@ function drawStanding(ctx, thing) {
   const { at } = thing;
   if (isBlock(thing)) {
     const level = floorLevel(at.row, at.col) * (searched(at) ? SEARCHED_LEVEL : 1);
-    drawBlock(ctx, at.row, at.col, { inset: BOX_INSET, height: tw * BOX_HEIGHT, level: Math.max(WALL_MIN_LEVEL, level) });
+    drawBlock(ctx, at.row, at.col, {
+      inset: BOX_INSET, height: tw * BOX_HEIGHT, level: Math.max(WALL_MIN_LEVEL, level),
+      skin: { side: 'crate', top: 'crate', full: tw * BOX_HEIGHT },
+    });
     return;
   }
   const [cx, cy] = centre(at.row, at.col);
