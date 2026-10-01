@@ -24,7 +24,7 @@ import { stepPlayer } from './moves.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader } from './setloader.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, bumpOnMap, glyphOf } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, glyphOf } from './mapview.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 
@@ -662,6 +662,7 @@ function drawEvents(events) {
           : t('room.blocked.' + e.kind));
         break;
       case 'stepped':
+        slidePlayerOnMap(e.facing);
         parts.push(t('room.move', { direction: t('room.dir.' + DIRECTION_NAMES[e.facing]) }));
         break;
       case 'waited':

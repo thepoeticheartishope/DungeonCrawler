@@ -136,6 +136,22 @@ export function slideOnMap(thing, from) {
   requestMapDraw();
 }
 
+// Slides the player onto the tile they just stepped to, from the one
+// behind them (a step is always one tile toward `facing`). A slide still
+// playing starts from where the player shows now. Isometric only: top-down's
+// camera jumps with the player, so a slide there would make the glyph lurch
+// back and forth on screen.
+export function slidePlayerOnMap(facing) {
+  if (!canvas || reducedMotion.matches || !state.settings.isoView) return;
+  const f = state.floor;
+  const [dr, dc] = FACING_VECTORS[facing];
+  const now = performance.now();
+  const running = effects.get(PLAYER);
+  const from = running && running.kind === 'slide' ? slidePlace(running, now) : { row: f.playerRow - dr, col: f.playerCol - dc };
+  effects.set(PLAYER, { kind: 'slide', start: now, ms: MAP_ANIMATION_MS.step, from, to: { row: f.playerRow, col: f.playerCol } });
+  requestMapDraw();
+}
+
 // Nudges the player toward `facing` and back: the feel of walking into
 // something, alongside the d-pad's blocked look.
 export function bumpOnMap(facing) {
@@ -241,7 +257,7 @@ function drawScene(now) {
   if (state.settings.isoView) {
     drawIsoScene(ctx, { width: scene.width, height: scene.height, pageWidth: pageSize.width }, {
       colours, things: mapThings(), fogOf, paintGlyph, mistSprite, mistStrength, pulse, keepMoving,
-      cameraMoving, now, still: reducedMotion.matches,
+      showPlain, now, still: reducedMotion.matches,
     });
     return;
   }
@@ -257,9 +273,12 @@ function keepMoving() {
   looping = true;
 }
 
-// The isometric camera is gliding: keep drawing frames, and show each one
-// plain, with no afterglow, so the whole scene doesn't smear as it moves.
-function cameraMoving() {
+// The isometric view is moving something big this frame (the camera
+// gliding, the player sliding, a wall lowering or rising): keep drawing
+// frames, and show each one plain, with no afterglow. The afterglow keeps
+// every in-between place, so a gliding scene smeared and a lowering wall
+// looked like a stack of boxes.
+function showPlain() {
   looping = true;
   snap = true;
 }
@@ -340,8 +359,9 @@ function mistStrength(row, col) {
 }
 
 // Every glyph on the map, as a list both views draw from, so they always
-// show the same things: { kind, at, glyph, look }. `at` is where it shows
-// this frame in tiles (between tiles while something slides), glyph is
+// show the same things: { kind, at, tile, glyph, look }. `at` is where it
+// shows this frame in tiles (between tiles while something slides), `tile`
+// the tile the rules have it on (where a slide ends), glyph is
 // null for the '?' of something too far to make out, and look holds the
 // paintGlyph options. Things are seen only on lit tiles, '?' until the
 // player is close enough to make them out (and then with no hostile glow
@@ -351,7 +371,7 @@ function mistStrength(row, col) {
 function mapThings() {
   const f = state.floor;
   const things = [];
-  const add = (kind, at, glyph, look) => things.push({ kind, at, glyph, look });
+  const add = (kind, at, glyph, look, tile = at) => things.push({ kind, at, tile: { row: tile.row, col: tile.col }, glyph, look });
   const isLit = (row, col) => !state.settings.fogEnabled || f.visibleSet.has(key(row, col));
   const glyphOrUnknown = (thing, glyph) => (canMakeOut(thing.row, thing.col) ? glyph : null);
 
@@ -392,7 +412,8 @@ function mapThings() {
       size: 'stairs', colour: colours.bright, glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
     });
   }
-  add('player', shownAt(PLAYER, f.playerRow, f.playerCol), DIRECTION_ARROWS[f.facing], { size: 'player' });
+  add('player', shownAt(PLAYER, f.playerRow, f.playerCol), DIRECTION_ARROWS[f.facing], { size: 'player' },
+    { row: f.playerRow, col: f.playerCol });
   f.encounters.forEach(e => {
     if (!isLit(e.row, e.col)) return;
     add('encounter', e, glyphOrUnknown(e, glyphOf(e)), { size: 'encounter' });
@@ -407,7 +428,7 @@ function mapThings() {
       warp: warpAt(warpMs, phase * warpMs),
       // Only minions drop out; the hunter is always there.
       dropout: hunter ? 0 : dropoutAt(((phase * 2) % 1) * MAP_ANIMATION_MS.glitchBar),
-    });
+    }, m);
   });
   return things;
 }
@@ -512,7 +533,7 @@ function shownAt(effectKey, row, col) {
   return { row: row + dr * out, col: col + dc * out };
 }
 
-// How far along its slide a minion is at `now`, as a place in tiles.
+// How far along its slide a minion (or the player) is at `now`, as a place in tiles.
 function slidePlace(fx, now) {
   const s = EASE(Math.min(1, Math.max(0, (now - fx.start) / fx.ms)));
   return { row: fx.from.row + (fx.to.row - fx.from.row) * s, col: fx.from.col + (fx.to.col - fx.from.col) * s };

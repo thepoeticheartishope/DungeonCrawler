@@ -338,6 +338,8 @@ export const ISO_WALL_HEIGHT = 1;
 // under reduced motion.
 export const MAP_ANIMATION_MS = {
   slide: 300,       // a minion stepping to the next tile
+  step: 140,        // the player stepping to the next tile (isometric): short, so walking stays quick
+  wallCut: 160,     // a wall lowering to a stub in front of something in sight, or rising again (isometric)
   bump: 180,        // the player walking into something, out and back
   bossPulse: 2000,  // the boss's glow swelling and fading
   warp: 3600,       // the slight wrongness of the boss's and a minion's shape
