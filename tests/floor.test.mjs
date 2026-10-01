@@ -226,3 +226,11 @@ test('a recipe without slack falls back to its loss share', () => {
     delete recipe.lossCoverage;
   }
 });
+
+test('every floor built counts as a new floor, even the same depth again', () => {
+  const before = state.run.floorsEntered;
+  build(0);
+  build(0);
+  build(1);
+  assert.equal(state.run.floorsEntered, before + 3);
+});

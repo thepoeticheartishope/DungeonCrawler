@@ -88,6 +88,7 @@ function makeSpaceForPaper(paper) {
 // beats, coin, the one special item and minions, plus the light, sight
 // and camera that follow from them. No page access.
 export function buildFloor() {
+  state.run.floorsEntered++;
   const recipe = floorRecipe(state.run.roomIndex);
   state.floor.GRID_SIZE = recipe.grid;
   state.floor.CHAMBER_TARGET = recipe.rooms;
