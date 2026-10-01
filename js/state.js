@@ -34,6 +34,7 @@ export const state = {
   run: {
     order: [],
     roomIndex: 0,          // which danger depth (picks the recipe); a rest floor won't change it
+    resting: false,        // on a rest floor (opening, between depths, or the epilogue); run.js nextFloor() flips it
     floorsEntered: 0,      // goes up each time a floor is built; never reset, so a retry is a new floor too (isoview's camera snaps on it)
     attempts: 0,
     correctTotal: 0,       // right answers this run (the papers' {answered})

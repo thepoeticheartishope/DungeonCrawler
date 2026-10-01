@@ -123,6 +123,8 @@ function placeOnScreen(thing) {
 export function renderLightEye() {
   const eye = els.lightEyeEl;
   if (!eye) return;
+  // A rest floor has no light. Hidden, not removed, so the bar keeps its shape.
+  eye.style.visibility = state.run.resting ? 'hidden' : '';
   const p = lightProgress();
   eye.style.setProperty('--open', p.toFixed(3));
   eye.classList.toggle('eye-near', p >= 0.8);
@@ -131,12 +133,16 @@ export function renderLightEye() {
   eye.setAttribute('aria-label', label);
 }
 
-// Status bar numbers: hearts, gold and turn count. Call after any change to them.
+// Status bar numbers: hearts, gold, turn count and the depth (REST on a
+// rest floor, which isn't a depth). Call after any change to them.
 export function renderHud() {
   // ASCII rather than hearts: the terminal face has no symbol glyphs.
   els.heartsEl.textContent = Math.max(state.run.hearts, 0) + '/' + MAX_HEARTS;
   els.coinsTotalEl.textContent = state.run.coinsTotal;
   els.turnCountEl.textContent = state.run.turnCount;
+  els.roomNumEl.textContent = state.run.resting ? t('stat.rest') : state.run.roomIndex + 1;
+  els.roomOfEl.style.display = state.run.resting ? 'none' : '';
+  els.roomTotalEl.textContent = state.run.order.length;
 }
 
 // HP pips for whichever target is currently engaged on the battle screen.

@@ -10,10 +10,14 @@ import { key } from '../js/state.js';
 import { REST_GRID, VIEWPORT_SIZE } from '../js/config.js';
 import { buildRestLayout } from '../js/dungeon.js';
 import { ROOM_TEMPLATES } from '../js/rooms.js';
+import { REST_RECIPES } from '../js/floors.js';
 
 const LAYOUTS_PER_DRAWING = 40;
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-const REST_ROOMS = ROOM_TEMPLATES.filter(t => t.role === 'rest');
+// Every 'rest' drawing, and every drawing a rest recipe names (the opening
+// uses the waking room, which has more than one door to wall up).
+const restNames = new Set(Object.values(REST_RECIPES).map(r => r.room));
+const REST_ROOMS = ROOM_TEMPLATES.filter(t => t.role === 'rest' || restNames.has(t.name));
 
 // Every rest drawing, many times over, so every turn and mirror shows up.
 function eachLayout(check) {

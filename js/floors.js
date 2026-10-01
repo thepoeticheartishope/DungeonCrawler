@@ -59,6 +59,16 @@ export const FLOOR_RECIPES = [
     beats: ['paper', 'minion', 'box', 'minion', 'special', 'minion'] },
 ];
 
+// Rest floors (run.js nextFloor()): one hand-drawn room each, by kind.
+//   room   name of the rooms.js drawing (dungeon.js buildRestLayout)
+// The opening wakes the player in the same room as every depth's start.
+// Later steps of the rest-floors plan add each kind's story lines here.
+export const REST_RECIPES = {
+  opening: { room: 'wake' },
+  between: { room: 'rest' },
+  epilogue: { room: 'rest' },
+};
+
 // The recipe for the floor at this index (0 = the first floor). Past the
 // last recipe the last one repeats, so a longer run never runs out.
 export function floorRecipe(floorIndex) {

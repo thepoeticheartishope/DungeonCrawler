@@ -1,16 +1,16 @@
 // Building a floor as data: layout, furniture, boss, stairs, the recipe's
 // beats (beats.js), coin, the one special item and minions, plus the
-// light, sight and camera that follow from them. No page access — main.js
-// loadRoom() calls buildFloor(), then drawFloor() puts the result on the
-// page.
+// light, sight and camera that follow from them; and a rest floor's one
+// quiet room (buildRestFloor). No page access — main.js loadRoom() calls
+// one of them, then drawFloor() puts the result on the page.
 
 import { state, key } from './state.js';
-import { generateDungeonLayout } from './dungeon.js';
-import { furnishFloor } from './decor.js';
+import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
+import { furnishFloor, rollProp } from './decor.js';
 import {
-  BOSS_HP, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM
+  BOSS_HP, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, ROOM_THEMES
 } from './config.js';
-import { floorRecipe } from './floors.js';
+import { floorRecipe, REST_RECIPES } from './floors.js';
 import { shuffle } from './quiz.js';
 import { computeVisibility, updateCamera } from './sight.js';
 import { spawnMinion } from './combat.js';
@@ -210,4 +210,80 @@ export function buildFloor() {
   // The room the player wakes in counts as visited (drawFloor announces it).
   const startChamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
   if (startChamber !== undefined) state.floor.visitedChambers.add(startChamber);
+}
+
+// Clears everything dangerous a floor can hold, and the boss light's
+// numbers, so nothing from the floor before reaches a rest floor. The
+// budget is 1, not 0: lightProgress() divides by it.
+function clearDanger() {
+  const f = state.floor;
+  f.boss = null;
+  f.minions = [];
+  f.hunter = null;
+  f.darkness = false;
+  f.darkTurns = 0;
+  f.encounters = [];
+  f.chest = null;
+  f.rune = null;
+  f.runeHint = null;
+  f.lastChoiceType = null;
+  f.beats = [];
+  f.bossLitSet = new Set();
+  f.bossDist = new Map();
+  f.floorCount = 0;
+  f.lightTurns = 0;
+  f.lightTurnBudget = 1;
+  f.lightFullRadius = 0;
+  f.lightSlack = 0;
+  f.lightLossShare = 0;
+}
+
+// The way that faces from `from` toward `to` along the longer axis, so
+// the player wakes on a rest floor looking into the room, not at the wall.
+function facingToward(from, to) {
+  const dr = to.row - from.row, dc = to.col - from.col;
+  if (Math.abs(dr) >= Math.abs(dc)) return dr < 0 ? 'N' : 'S';
+  return dc < 0 ? 'W' : 'E';
+}
+
+// A rest floor as data: one hand-drawn room (REST_RECIPES[kind].room) with
+// the stairs, a coin and papers on the drawing's '?' spots. Nothing
+// dangerous: no boss, light, minions, hunter, boxes or special, so a rest
+// can never cost a heart. `kind` is 'opening', 'between' or 'epilogue'
+// (run.js nextFloor()). No page access.
+export function buildRestFloor(kind) {
+  state.run.floorsEntered++;
+  const f = state.floor;
+  f.GRID_SIZE = REST_GRID;
+  f.CHAMBER_TARGET = 1;
+  clearDanger();
+
+  const layout = buildRestLayout(REST_RECIPES[kind].room, REST_GRID);
+  f.wallSet = layout.walls;
+  f.PLAYER_START = { row: layout.start.row, col: layout.start.col };
+  f.playerRow = f.PLAYER_START.row;
+  f.playerCol = f.PLAYER_START.col;
+  f.facing = facingToward(layout.start, layout.stairs);
+  updateCamera();
+
+  const themeKeys = Object.keys(ROOM_THEMES);
+  const theme = themeKeys[Math.floor(Math.random() * themeKeys.length)];
+  f.pillarSet = new Set();
+  f.chamberAt = layout.chamberAt;
+  f.chamberThemes = [theme];
+  f.visitedChambers = new Set([0]);
+  // Papers lie flat, so they need no placer: nobody is blocked by them.
+  f.props = layout.chambers[0].slots.map(s => ({
+    row: s.row, col: s.col, ...rollProp('paper', theme, state.run.roomIndex),
+    identified: false, searched: false, sprung: false,
+  }));
+
+  f.stairs = { row: layout.stairs.row, col: layout.stairs.col };
+  const coinTile = pickCoinTile(f.wallSet, [f.PLAYER_START, f.stairs, ...f.props], layout.roomTiles);
+  f.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
+
+  f.visibleSet = new Set();
+  f.exploredSet = new Set();
+  computeVisibility();
+  state.battle.selectedTarget = null;
 }

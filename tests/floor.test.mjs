@@ -22,6 +22,7 @@ const FLOORS_PER_DEPTH = 15;
 function build(roomIndex) {
   state.settings.activeData = MC_SAMPLE_DATA;
   state.run.roomIndex = roomIndex;
+  state.run.resting = false;
   buildFloor();
   return state.floor;
 }

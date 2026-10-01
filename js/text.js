@@ -71,6 +71,7 @@ export const TEXT = {
   'stat.turn': 'CYCLE', // draft
   'stat.room': '{@term.room}',
   'stat.time': 'TIME',
+  'stat.rest': 'REST', // draft — shown for the depth number while on a rest floor
   'stat.light': 'The {@term.boss} light: {pct}% of the way to consuming everything', // draft (the eye's tooltip)
 
   // ---- Encounter log: opening lines (what it is, a hint of what's at stake) ----
