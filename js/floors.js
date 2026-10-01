@@ -47,27 +47,41 @@
 export const FLOOR_RECIPES = [
   { grid: 33, rooms: 4, loops: 3, minions: 2, slack: [130, 160],
     startRoom: 'wake', bossRoom: 'antechamber',
-    lore: ['story.1.1', 'story.1.2', 'story.1.3', 'story.1.4'],
+    lore: ['story.1.2', 'story.1.3'],
     beats: ['paper', 'box', 'minion', 'special'] },
   { grid: 37, rooms: 5, loops: 3, minions: 3, slack: [105, 130],
     startRoom: 'wake', bossRoom: 'antechamber',
-    lore: ['story.2.1', 'story.2.2', 'story.2.3'],
+    lore: ['story.2.1', 'story.2.2'],
     beats: ['paper', 'minion', 'box', 'minion', 'special'] },
   { grid: 41, rooms: 6, loops: 3, minions: 4, slack: [80, 105],
     startRoom: 'wake', bossRoom: 'antechamber',
-    lore: ['story.3.1', 'story.3.2', 'story.3.3'],
+    lore: ['story.3.1', 'story.3.2'],
     beats: ['paper', 'minion', 'box', 'minion', 'special', 'minion'] },
 ];
 
 // Rest floors (run.js nextFloor()): one hand-drawn room each, by kind.
 //   room   name of the rooms.js drawing (dungeon.js buildRestLayout)
+//   lore   the rest's story lines, queued like a depth's (floor.js
+//          buildRestFloor). `between` comes once after each depth but the
+//          last, so it holds one list per rest, in run order. The epilogue's
+//          line is always the one its paper shows: building it drops any
+//          lines still unread (the player chose not to read them).
 // The opening wakes the player in the same room as every depth's start.
-// Later steps of the rest-floors plan add each kind's story lines here.
+// The split of lines across floors is a draft for Timothy.
 export const REST_RECIPES = {
-  opening: { room: 'wake' },
-  between: { room: 'rest' },
-  epilogue: { room: 'rest' },
+  opening: { room: 'wake', lore: ['story.1.1'] },
+  between: { room: 'rest', lore: [['story.1.4'], ['story.2.3']] },
+  epilogue: { room: 'rest', lore: ['story.3.3'] },
 };
+
+// The story lines of the rest of this kind at this depth (state.run.roomIndex:
+// the between rest after depth 1 is at 1). Past the last between list, the
+// rest has no lines of its own.
+export function restLore(kind, roomIndex) {
+  const lore = REST_RECIPES[kind].lore;
+  if (kind !== 'between') return lore;
+  return lore[roomIndex - 1] || [];
+}
 
 // The recipe for the floor at this index (0 = the first floor). Past the
 // last recipe the last one repeats, so a longer run never runs out.
