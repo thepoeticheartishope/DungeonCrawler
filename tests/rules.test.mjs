@@ -31,6 +31,7 @@ import { resetHaunts } from '../js/haunts.js';
 function resetFloor(size = 21) {
   state.floor.GRID_SIZE = size;
   state.run.roomIndex = 0;
+  state.run.resting = false;
   state.floor.playerRow = Math.floor(size / 2);
   state.floor.playerCol = Math.floor(size / 2);
   state.floor.facing = 'N';

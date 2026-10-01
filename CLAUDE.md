@@ -77,7 +77,8 @@ Rules and data (no page/DOM access):
 | `decor.js` | Themes rooms and places pillars, papers, boxes (`makePlacer`). |
 | `floors.js` | `FLOOR_RECIPES`: what each floor holds (grid, rooms, loops, minions, light loss share, start/boss rooms, the floor's story lines, the beats met on the way to the boss); `floorRecipe(i)` reads it. Data only, grows with the level-design plan. |
 | `beats.js` | `placeBeats()`: puts the recipe's beats (paper, box, minion, special) on room tiles along the walk from the start to the boss, in the recipe's order. Called by `buildFloor()`. |
-| `floor.js` | `buildFloor()`: a new floor as data — layout, furniture, boss, stairs, the recipe's beats, coin, the one special item (chest / rune / encounter), minions, then light, sight and camera. |
+| `floor.js` | `buildFloor()`: a new floor as data — layout, furniture, boss, stairs, the recipe's beats, coin, the one special item (chest / rune / encounter), minions, then light, sight and camera. `buildRestFloor(kind)`: a rest floor (opening / between / epilogue) — one room (`REST_RECIPES` in floors.js), papers on its `?` spots, coin, stairs, every danger and light field cleared. |
+| `run.js` | `nextFloor()`: the run's shape, opening rest -> depth -> rest -> ... -> depth 3 -> epilogue rest -> win. `state.run.resting` says a rest floor is up; `roomIndex` counts danger depths only and goes up as a depth is left. |
 | `passage.js` | `whatBlocks(row, col)`: the single answer to "can I step here?". |
 | `sight.js` | The player's light (`computeVisibility`: `visibleSet` / `sightSet` / `exploredSet`, and marks papers/boxes made out as `identified`), `canMakeOut`, and the camera (`updateCamera`). |
 | `light.js` | Boss light spreading through the floor; the run is lost at the coverage threshold. |

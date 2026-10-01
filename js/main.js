@@ -1,5 +1,6 @@
 import { state, key } from './state.js';
-import { buildFloor } from './floor.js';
+import { buildFloor, buildRestFloor } from './floor.js';
+import { nextFloor } from './run.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP,
   BATTLE_CHOICE_COUNT,
@@ -42,6 +43,7 @@ const loseScreen = document.getElementById('loseScreen');
 
 const roomNumEl = document.getElementById('roomNum');
 const roomTotalEl = document.getElementById('roomTotal');
+const roomOfEl = document.getElementById('roomOf');
 const combatStatusEl = document.getElementById('combatStatus');
 const timerEl = document.getElementById('timer');
 const heartsEl = document.getElementById('hearts');
@@ -88,7 +90,7 @@ const dpadButtons = {
 
 initRender({
   startScreen, introGlitch, roomScreen, battleScreen, winScreen, loseScreen,
-  heartsEl, coinsTotalEl, turnCountEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
+  heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightEyeEl, lightHintEls, dpadButtons,
   mapWrapEl: document.getElementById('mapWrap'), dpadEl: document.getElementById('dpad'),
 });
@@ -541,6 +543,7 @@ function randomGlitchCode() {
 function startGame() {
   state.run.order = shuffle(state.settings.activeData).slice(0, Math.min(ROOM_COUNT, state.settings.activeData.length));
   state.run.roomIndex = 0;
+  state.run.resting = true; // every run opens on a rest floor
   state.run.runEnded = false;
   state.run.attempts = 0;
   state.run.correctTotal = 0;
@@ -560,13 +563,12 @@ function startGame() {
   answerForm.style.display = state.settings.mcMode ? 'none' : 'flex';
   mcOptionsEl.classList.toggle('show', state.settings.mcMode);
   renderHud();
-  roomTotalEl.textContent = state.run.order.length;
 
   // Room setup happens immediately (invisibly, behind the glitch screen) so
   // there's no added real loading time — only a deliberate dramatic pause
   // before the player actually sees the room. The elapsed-time clock starts
   // once that pause ends, not before, so it isn't charged against the player.
-  loadRoom();
+  loadRoom('opening');
   glitchCode.textContent = randomGlitchCode();
   showScreen(introGlitch);
   setTimeout(() => {
@@ -576,8 +578,11 @@ function startGame() {
 }
 
 // A new floor: make the new floor's data, then put it on the page.
-function loadRoom() {
-  buildFloor();
+// `restKind` ('opening' / 'between' / 'epilogue') builds a rest floor;
+// none builds the danger floor at the current depth.
+function loadRoom(restKind) {
+  if (restKind) buildRestFloor(restKind);
+  else buildFloor();
   drawFloor();
   refreshInspector();
 }
@@ -585,7 +590,7 @@ function loadRoom() {
 // Puts the floor buildFloor() made on the page: the map, hints, HUD, and
 // a fresh room screen.
 function drawFloor() {
-  roomNumEl.textContent = state.run.roomIndex + 1;
+  renderHud();
   // Per-room wording overrides (text.js AREAS) apply from here on.
   setTextArea(state.run.roomIndex + 1);
   applyStaticText();
@@ -611,13 +616,11 @@ function drawFloor() {
 }
 
 // Shared by the stairs (reaching them mid-move) and the dev skip button.
+// run.js decides what comes next: a depth, a rest floor, or the win.
 function advanceRoom() {
-  state.run.roomIndex++;
-  if (state.run.roomIndex >= state.run.order.length) {
-    endWin();
-  } else {
-    loadRoom();
-  }
+  const next = nextFloor();
+  if (next.kind === 'win') endWin();
+  else loadRoom(next.kind === 'rest' ? next.rest : null);
 }
 
 function setControlsEnabled(enabled) {

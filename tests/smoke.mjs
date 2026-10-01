@@ -9,7 +9,10 @@
 //
 //   1. Skip-room run: one manual step, then "Skip room (dev)" repeatedly to
 //      clear the floor, asserting the win or lose screen is reached.
-//   2. Battle run: walks with the arrow keys and "Skip turn" until a minion
+//      A run is 7 floors (opening rest, then depth / rest three times, the
+//      last rest being the epilogue), so it takes 7 skips; the cap is 10.
+//   2. Battle run: skips out of the opening rest (it has no minions), then
+//      walks with the arrow keys and "Skip turn" until a minion
 //      engages and the battle screen appears, then lets Auto-win settle the
 //      fight, asserting an ACCEPTED. line appeared in the encounter log and
 //      the game is back on the room screen afterward.
@@ -196,6 +199,9 @@ async function attemptBattle(page, url) {
   await installBattleWatchers(page);
   await startGameAndWaitForRoom(page);
   await turnOnAutoWin(page);
+  // The run opens on a rest floor with no minions: go down to depth 1.
+  await page.click('#devSkipBtn');
+  await page.waitForTimeout(200);
 
   let dir = 0;
   for (let i = 0; i < BATTLE_MAX_STEPS; i++) {

@@ -467,7 +467,8 @@ export function buildRestLayout(templateName, gridSize) {
   // entry's line. The stairs take the deepest tile, nearest the line.
   const depth = p => (p.row - entry.row) * inward.row + (p.col - entry.col) * inward.col;
   const offLine = p => Math.abs((p.row - entry.row) * inward.col - (p.col - entry.col) * inward.row);
-  const options = openInterior({ ...room, openDoors: [] })
+  // Only real floor: the other edge doors are walled up, so never stairs.
+  const options = openInterior({ ...room, floorCells, openDoors: [] })
     .sort((a, b) => depth(b) - depth(a) || offLine(a) - offLine(b));
   if (options.length === 0) throw new Error('Rest room ' + templateName + ' has no room for the stairs');
   const stairs = { row: options[0].row, col: options[0].col };
