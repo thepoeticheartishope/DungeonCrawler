@@ -418,7 +418,7 @@ function easeWallCuts(tiles, now, still) {
     const cut = wallCuts.get(k) || 0;
     const held = cut > 0 && nearPlayer(row, col);
     const target = frontWalls.has(k) || held ? 1 : 0;
-    const next = still ? target : target > cut ? Math.min(1, cut + step) : Math.max(0, cut - step);
+    const next = still ? target : target > cut ? Math.min(target, cut + step) : Math.max(target, cut - step);
     if (next > 0) kept.set(k, next);
     if (next !== target) look.showPlain();
   });
