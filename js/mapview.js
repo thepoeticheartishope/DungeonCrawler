@@ -12,7 +12,7 @@
 
 import { state, key } from './state.js';
 import {
-  VIEWPORT_SIZE, DIRECTION_ARROWS, AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_GLYPH_SIZES,
+  VIEWPORT_SIZE, DIRECTION_ARROWS, AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
   MAP_ANIMATION_MS,
 } from './config.js';
 import { canMakeOut, FACING_VECTORS } from './sight.js';
@@ -70,6 +70,7 @@ const scene = document.createElement('canvas'); // this frame, drawn plain from 
 const sceneCtx = scene.getContext('2d');
 let mistSprite = null; // one tile's worth of boss mist, redrawn when the size changes
 let colours = {};
+let pageSize = { width: 0, height: 0 }; // the canvas's size on the page in CSS pixels, from the resize observer
 let frameHandle = 0; // the queued animation frame, or 0 when nothing is queued
 let dirty = false;   // state may have changed since the scene was last drawn
 let snap = false;    // show the next scene straight away, with no afterglow
@@ -97,7 +98,11 @@ export function initMapView(canvasEl) {
     text: read('--text'), muted: read('--muted'), torch: read('--torch'), bright: read('--torch-bright'),
     glowRgb: read('--glow-rgb'), bossFogRgb: read('--boss-fog-rgb'), bossLightRgb: read('--boss-light-rgb'),
   };
-  new ResizeObserver(() => {
+  // The canvas's size is noted here, when it changes, instead of read each
+  // frame: reading it makes the browser lay the page out first.
+  new ResizeObserver(entries => {
+    const box = entries[entries.length - 1].contentRect;
+    pageSize = { width: box.width, height: box.height };
     snap = true;
     requestMapDraw();
   }).observe(canvas);
@@ -191,9 +196,9 @@ function drawFrame(now) {
 // Top-down the map is square; isometric it is wider than tall (the
 // page's CSS sets the shape), so width and height are read separately.
 function fitCanvas() {
-  const ratio = window.devicePixelRatio || 1;
-  const width = Math.round(canvas.clientWidth * ratio);
-  const height = Math.round(canvas.clientHeight * ratio);
+  const ratio = Math.min(window.devicePixelRatio || 1, MAP_MAX_PIXEL_RATIO);
+  const width = Math.round(pageSize.width * ratio);
+  const height = Math.round(pageSize.height * ratio);
   if (!width || !height) return false;
   if (canvas.width === width && canvas.height === height && scene.width === width && scene.height === height) return true;
   canvas.width = scene.width = width;
@@ -234,7 +239,7 @@ function drawScene(now) {
   ctx.fillStyle = HIDDEN_FLOOR;
   ctx.fillRect(0, 0, scene.width, scene.height);
   if (state.settings.isoView) {
-    drawIsoScene(ctx, { width: scene.width, height: scene.height, pageWidth: canvas.clientWidth }, {
+    drawIsoScene(ctx, { width: scene.width, height: scene.height, pageWidth: pageSize.width }, {
       colours, things: mapThings(), fogOf, paintGlyph, mistSprite, mistStrength, pulse, keepMoving,
       cameraMoving, now, still: reducedMotion.matches,
     });

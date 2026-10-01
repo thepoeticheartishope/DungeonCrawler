@@ -40,6 +40,13 @@ const CONTACT_SHADOW = 0.2;    // the dark ellipse a glyph stands on, as a share
 const EDGE_WIDTH = 0.02;       // a phosphor line
 const RIDGE_BLUR = 0.1;        // the glow along a block's top edges
 const FACE_BLUR = 0.07;        // the fainter glow down its corners
+// A line's glow is drawn as wider, fainter lines under it, not with the
+// canvas's shadow blur: blur is the costliest thing a canvas can draw, and
+// a phone redraws every wall each frame while the camera glides. Two
+// layers, wide and faint then narrow and less faint, so it falls off
+// softly like the blur did. Width is extra width per unit of blur above,
+// strength a share of the line's own.
+const HALO_LAYERS = [{ width: 0.9, strength: 0.07 }, { width: 0.4, strength: 0.14 }];
 const POOL_RADIUS = 2.2;       // the player's light pool, in tiles
 const MIST_WIDTH = 2;          // one tile's boss mist, in tiles across
 const MIST_SQUASH = 0.62;      // the mist lies flat: its height over its width
@@ -77,6 +84,7 @@ let height = 0;
 let across = ISO_TILES_ACROSS; // tile widths across the map this frame (fewer on a narrow map)
 let look = null;    // what mapview.js passed in
 let frontWalls = new Set(); // walls between the camera and something in sight, this frame
+let halo = null;    // the glow strokeGlow set up for the next lines: [{ colour, width }] in pixels, or null
 
 // The camera: view-only, so it lives here and not in state. The tile the
 // map centres on, fractional while it glides.
@@ -286,11 +294,34 @@ function glow(a) {
   return 'rgba(' + look.colours.glowRgb + ', ' + a + ')';
 }
 
-// Sets a glowing line style at strength `a`, with a blur (a share of a tile).
+// Sets a glowing line style at strength `a`, with a glow `blur` wide (a
+// share of a tile; 0 for a plain line). glowStroke() draws with it.
 function strokeGlow(ctx, a, blur) {
   ctx.strokeStyle = glow(a);
-  ctx.shadowColor = glow(Math.min(0.8, a));
-  ctx.shadowBlur = blur * tw;
+  halo = blur > 0 ? haloOf(glow, Math.min(0.8, a), blur) : null;
+}
+
+// The halo layers for a glow `blur` wide (a share of a tile), in the
+// colour `tint` gives at a strength.
+function haloOf(tint, a, blur) {
+  return HALO_LAYERS.map(l => ({ colour: tint(a * l.strength), width: blur * tw * l.width }));
+}
+
+// Strokes the current path as a phosphor line: the halo strokeGlow set up
+// first, wide and faint, then the line itself on top.
+function glowStroke(ctx) {
+  if (halo) {
+    const width = ctx.lineWidth;
+    const style = ctx.strokeStyle;
+    halo.forEach(l => {
+      ctx.lineWidth = width + l.width;
+      ctx.strokeStyle = l.colour;
+      ctx.stroke();
+    });
+    ctx.lineWidth = width;
+    ctx.strokeStyle = style;
+  }
+  ctx.stroke();
 }
 
 // The four corners of a tile's diamond, shrunk by `inset` (0..0.5).
@@ -308,11 +339,12 @@ function poly(ctx, points) {
   ctx.closePath();
 }
 
+// One straight phosphor line from a to b, with the glow strokeGlow set up.
 function line(ctx, a, b) {
   ctx.beginPath();
   ctx.moveTo(a[0], a[1]);
   ctx.lineTo(b[0], b[1]);
-  ctx.stroke();
+  glowStroke(ctx);
 }
 
 // A point raised `h` pixels straight up the screen.
@@ -420,6 +452,7 @@ function drawGhost(ctx, row, col, ridge) {
   const [T, R, B, L] = [d.T, d.R, d.B, d.L].map(p => up(p, wallH));
   const stub = wallH * WALL_STUB;
   ctx.save();
+  halo = null;
   ctx.setLineDash(GHOST_DASH.map(n => n * tw));
   ctx.lineWidth = EDGE_WIDTH * tw * 0.8;
   ctx.strokeStyle = glow(GHOST_LEVEL);
@@ -497,7 +530,7 @@ function drawStairs(ctx, at) {
     ctx.fillStyle = 'rgba(0, 0, 0, ' + (0.25 + i * 0.18) + ')';
     ctx.fill();
     strokeGlow(ctx, (0.95 - i * 0.18) * strength, RIDGE_BLUR * 1.4 - i * 0.03);
-    ctx.stroke();
+    glowStroke(ctx);
   }
   ctx.restore();
 }
@@ -514,7 +547,7 @@ function drawPaper(ctx, at) {
   ctx.fill();
   ctx.lineWidth = EDGE_WIDTH * tw * 0.8;
   strokeGlow(ctx, 0.8 * level, FACE_BLUR);
-  ctx.stroke();
+  glowStroke(ctx);
   strokeGlow(ctx, 0.45 * level, 0);
   PAPER_LINES.forEach(v => line(ctx, p([-0.5, v - 0.05]), p([0.5, v - 0.15])));
   ctx.restore();
@@ -644,9 +677,8 @@ function drawTarget(ctx) {
   ctx.globalAlpha = TARGET_PULSE[0] + (TARGET_PULSE[1] - TARGET_PULSE[0]) * look.pulse(MAP_ANIMATION_MS.target);
   ctx.lineWidth = EDGE_WIDTH * tw * 2;
   ctx.strokeStyle = look.colours.bright;
-  ctx.shadowColor = glow(0.5);
-  ctx.shadowBlur = RIDGE_BLUR * tw;
+  halo = haloOf(glow, 0.5, RIDGE_BLUR);
   poly(ctx, [d.T, d.R, d.B, d.L]);
-  ctx.stroke();
+  glowStroke(ctx);
   ctx.restore();
 }
