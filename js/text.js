@@ -217,19 +217,21 @@ export const TEXT = {
 
   // ---- The run's story: read in this order, one line per paper, wherever
   // the papers lie (the order is each floor's lore list in floors.js).
-  // Floor 1 hints at each thing just before the player meets it; the light
-  // is hinted, not spoiled. Once a floor's lines run out, papers go back to
-  // the theme lore above.
-  'story.1.1': '“You are awake. Good. Read what we left. It is all we could carry.”', // draft
-  'story.1.2': '“The boxes keep what we could not. Some keep it jealously: they ask before they open.”', // draft
-  'story.1.3': '“Things reach for you in the dark. Answer them, and they let go.”', // draft
-  'story.1.4': '“A soft light is spreading somewhere below. It feels like rest.”', // draft
-  'story.2.1': '“A question you get wrong does not leave. It follows you, and it asks again.”', // draft
-  'story.2.2': '“The light never hurries. It does not have to.”', // draft
-  'story.2.3': '“When the belief breaks, the dark comes back. Something in the dark was waiting for that.”', // draft
-  'story.3.1': '“We are nearly out of pages.”', // draft
-  'story.3.2': '“It was never the dark we feared. It was being sure.”', // draft
-  'story.3.3': '“If you reach the end, think something new.”', // draft
+  // A voice speaking to the player, kinder than the dungeon. {name} is the
+  // name from the start screen (story.nameless if blank); {answered} is the
+  // run's correct answers so far. Once a floor's lines run out, papers go
+  // back to the theme lore above.
+  'story.1.1': '“Do not be afraid.”', // draft
+  'story.1.2': '“Seek the light, and slay the pretender.”', // draft
+  'story.1.3': '“I know you will know the answers.”', // draft
+  'story.1.4': '“This time is different. I know it will be.”', // draft
+  'story.2.1': '“Rumination will not be your ruin.”', // draft
+  'story.2.2': '“The maw of light consumes all.”', // draft
+  'story.2.3': '“Focus on the journey, lest {@term.hunter} take you.”', // draft
+  'story.3.1': '“Do not be afraid, {name}.”', // draft
+  'story.3.2': '“Look at what you have already accomplished: {answered} {answered|plural:answer}.”', // draft
+  'story.3.3': '“It is time to live.”', // draft
+  'story.nameless': 'stranger', // draft — {name} in a story line when the start screen's name was left blank
 
   // ---- Intro, start and end screens ----
   'intro.call': 'YOU ARE NEEDED. ASCEND.',

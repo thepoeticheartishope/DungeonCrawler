@@ -35,6 +35,7 @@ export const state = {
     order: [],
     roomIndex: 0,
     attempts: 0,
+    correctTotal: 0,       // right answers this run (the papers' {answered})
     haunts: new Map(), // missed question -> attempt it was last missed on (js/haunts.js)
     hauntsTotal: 0,
     hauntsSilenced: 0,

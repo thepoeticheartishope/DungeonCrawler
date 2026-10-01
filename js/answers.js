@@ -28,6 +28,7 @@ export function settleAnswer(isCorrect, hadExtraSpace, given) {
   const events = [{ type: 'answerGiven', given }];
 
   if (isCorrect) {
+    state.run.correctTotal++;
     events.push({ type: 'accepted' });
     if (hadExtraSpace) {
       state.run.extraSpaceCount++;

@@ -427,6 +427,7 @@ function resetAnswer(target) {
   state.run.hearts = MAX_HEARTS;
   state.battle.wager = 0;
   state.run.attempts = 1;
+  state.run.correctTotal = 0;
   state.run.extraSpaceCount = 0;
   state.floor.runeHint = null;
   state.battle.currentQuestion = { term: 'Who built the ark?', meaning: 'Noah', difficulty: 'easy' };
@@ -455,6 +456,19 @@ test('a miss costs 1 heart, 2 in the darkness, and ends at 0 hearts with signalL
   state.run.hearts = 1;
   assert.deepEqual(types(settleAnswer(false, false, 'Moses')), ['answerGiven', 'rejected', 'signalLost']);
   assert.equal(state.floor.chest, chest, 'the target is left as it was');
+});
+
+test('a right answer adds to the run\'s correct total, a miss does not', () => {
+  const chest = { row: 0, col: 0, kind: 'chest' };
+  resetAnswer(chest);
+  state.floor.chest = chest;
+  settleAnswer(false, false, 'Moses');
+  assert.equal(state.run.correctTotal, 0);
+  resetAnswer(chest);
+  state.floor.chest = chest;
+  state.run.correctTotal = 4;
+  settleAnswer(true, false, 'Noah');
+  assert.equal(state.run.correctTotal, 5);
 });
 
 test('boss hits count down, and the last one fires bossDefeated then darknessFell', () => {
