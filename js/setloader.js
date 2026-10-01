@@ -1,12 +1,14 @@
-// Start screen options and the set loader: remembered options, pasted/file
+// Start screen options and the set loader: remembered options and name, pasted/file
 // sets, built-in sets and saved sets. Uses only state, sets.js and quiz.js.
 import { state } from './state.js';
+import { PLAYER_NAME_MAX_LENGTH } from './config.js';
 import { defaultSample, parseListInput, escapeHtml } from './quiz.js';
 import {
   fetchManifest, fetchBundledSet, listSavedSets, saveSet, loadSavedSet, deleteSet
 } from './sets.js';
 
 const revealToggle = document.getElementById('revealToggle');
+const playerNameInput = document.getElementById('playerName');
 const toggleLoaderBtn = document.getElementById('toggleLoader');
 const loaderPanel = document.getElementById('loaderPanel');
 const fileInput = document.getElementById('fileInput');
@@ -22,7 +24,7 @@ const savedSetsList = document.getElementById('savedSetsList');
 let builtinSets = [];
 
 export function initSetLoader() {
-  // ---- Remember the reveal/multiple-choice option toggles across sessions ----
+  // ---- Remember the reveal toggle and the player's name across sessions ----
   // localStorage access is wrapped in try/catch — private browsing or disabled
   // storage should degrade to "just use the checkbox defaults" rather than
   // break the start screen.
@@ -41,6 +43,7 @@ export function initSetLoader() {
     try {
       localStorage.setItem(OPTION_STORAGE_KEY, JSON.stringify({
         revealOnWrong: revealToggle.checked,
+        playerName: playerNameInput.value,
       }));
     } catch (e) {
       // Storage unavailable — the checkboxes still work for this session.
@@ -49,8 +52,11 @@ export function initSetLoader() {
 
   const savedOptions = loadSavedOptions();
   if (typeof savedOptions.revealOnWrong === 'boolean') revealToggle.checked = savedOptions.revealOnWrong;
+  playerNameInput.maxLength = PLAYER_NAME_MAX_LENGTH;
+  if (typeof savedOptions.playerName === 'string') playerNameInput.value = savedOptions.playerName.slice(0, PLAYER_NAME_MAX_LENGTH);
 
   revealToggle.addEventListener('change', saveOptions);
+  playerNameInput.addEventListener('input', saveOptions);
 
   toggleLoaderBtn.addEventListener('click', () => {
     loaderPanel.classList.toggle('show');
