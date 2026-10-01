@@ -63,6 +63,7 @@ const PAPER_SCALE = 0.2;
 const TARGET_PULSE = [0.45, 1]; // the target diamond's strength at either end of its pulse, as top-down
 // Walls in front of the camera, cut away (Timothy chose this over see-through glass).
 const WALL_STUB = 0.22;          // a cut-away wall's stub, as a share of its height
+const WALL_HOLD_STEPS = 2;       // a lowered wall stays down while the player is this many steps away or nearer
 const WALL_COVER_WIDTH = 0.4;    // half the width of a wall that counts as covering something:
                                  // under half a tile, so a wall only touching it at a corner stays
 const GHOST_LEVEL = 0.2;         // the dashed outline of a cut wall's full height
@@ -87,7 +88,7 @@ let look = null;    // what mapview.js passed in
 let frontWalls = new Set(); // walls between the camera and something in sight, this frame
 // How far each wall in view is cut down, 0 (full height) to 1 (a stub),
 // easing toward whether it's in front now. Walls at full height aren't kept.
-const wallCuts = new Map(); // key(row, col) -> 0..1
+let wallCuts = new Map(); // key(row, col) -> 0..1
 let lastCutAt = 0;          // the frame time wallCuts last moved
 let halo = null;    // the glow strokeGlow set up for the next lines: [{ colour, width }] in pixels, or null
 
@@ -400,25 +401,35 @@ function findFrontWalls(tiles) {
   });
 }
 
-// Moves each wall's cut toward its target this frame: down to a stub if it
-// is in front of something in sight, back up if not, over
-// MAP_ANIMATION_MS.wallCut, so walls lower and rise instead of snapping as
-// the player walks. A wall first seen this frame starts where it should be.
-// Straight there under reduced motion. While any is moving, frames go on
-// and are shown plain (no afterglow).
+// Moves each wall's cut toward its target this frame, over
+// MAP_ANIMATION_MS.wallCut, so walls lower and rise instead of snapping:
+// down to a stub if it is in front of something in sight, and it stays
+// down while the player is within WALL_HOLD_STEPS of it. Without the hold,
+// walking along a wall lowered the block ahead and raised the one just
+// passed on every step, so the walls beside the player bobbed (Timothy
+// saw it as shaking). Straight there under reduced motion. While any is
+// moving, frames go on and are shown plain (no afterglow).
 function easeWallCuts(tiles, now, still) {
   const step = Math.min(now - lastCutAt, WALL_CUT_MAX_FRAME_MS) / MAP_ANIMATION_MS.wallCut;
   lastCutAt = now;
-  const inView = new Set(tiles.map(({ row, col }) => key(row, col)));
-  for (const k of wallCuts.keys()) if (!inView.has(k)) wallCuts.delete(k);
-  frontWalls.forEach(k => { if (!wallCuts.has(k)) wallCuts.set(k, still ? 1 : 0); });
-  for (const [k, cut] of wallCuts) {
-    const target = frontWalls.has(k) ? 1 : 0;
+  const kept = new Map();
+  tiles.forEach(({ row, col }) => {
+    const k = key(row, col);
+    const cut = wallCuts.get(k) || 0;
+    const held = cut > 0 && nearPlayer(row, col);
+    const target = frontWalls.has(k) || held ? 1 : 0;
     const next = still ? target : target > cut ? Math.min(1, cut + step) : Math.max(0, cut - step);
-    if (next === 0 && !target) wallCuts.delete(k);
-    else wallCuts.set(k, next);
+    if (next > 0) kept.set(k, next);
     if (next !== target) look.showPlain();
-  }
+  });
+  wallCuts = kept;
+}
+
+// Whether a tile is within WALL_HOLD_STEPS steps of the player's tile, in
+// any direction (diagonals count as one step).
+function nearPlayer(row, col) {
+  const f = state.floor;
+  return Math.max(Math.abs(row - f.playerRow), Math.abs(col - f.playerCol)) <= WALL_HOLD_STEPS;
 }
 
 // How far a wall is cut down this frame, eased: 0 (full height) to 1 (a stub).
