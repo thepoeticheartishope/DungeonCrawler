@@ -660,8 +660,6 @@ function applyTurnOutcome(events) {
   showRoomNote(note.cls, note.text);
 }
 
-const DIRECTION_NAMES = { N: 'north', S: 'south', E: 'east', W: 'west' };
-
 // Draws a list of rule events, in order, then redraws the HUD, fog, eye
 // and targeting once. Returns the room note the events add up to
 // ({ cls, text }, text in event order); the caller decides whether to show it.
@@ -678,9 +676,9 @@ function drawEvents(events) {
           : e.kind === 'encounter' ? t('room.blocked.encounter', { category: categoryLabel(e.thing.category) })
           : t('room.blocked.' + e.kind));
         break;
+      // A step says nothing: the map already shows where the player went.
       case 'stepped':
         slidePlayerOnMap(e.facing);
-        parts.push(t('room.move', { direction: t('room.dir.' + DIRECTION_NAMES[e.facing]) }));
         break;
       case 'waited':
         parts.push(t('room.wait'));
