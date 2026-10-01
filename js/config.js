@@ -350,3 +350,12 @@ export const MAP_ANIMATION_MS = {
   mist: 14000,      // the boss mist's slow drift, there and back
   target: 1100,     // the box round the thing being fought
 };
+
+// On-screen d-pad (js/dpad.js): holding an arrow walks like holding an
+// arrow key. The first step lands on the press; after DPAD_HOLD_DELAY_MS the
+// player keeps stepping every DPAD_HOLD_REPEAT_MS until the finger lifts.
+// The repeat is a little slower than the iso step slide, so each step reads.
+export const DPAD_HOLD_DELAY_MS = 300;
+export const DPAD_HOLD_REPEAT_MS = 170;
+// The room log left of the d-pad keeps this many notes, newest at the bottom.
+export const ROOM_LOG_LINES = 5;
