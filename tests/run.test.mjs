@@ -10,6 +10,8 @@ import { state, key } from '../js/state.js';
 import { MC_SAMPLE_DATA, REST_GRID } from '../js/config.js';
 import { nextFloor } from '../js/run.js';
 import { buildFloor, buildRestFloor } from '../js/floor.js';
+import { FLOOR_RECIPES, REST_RECIPES } from '../js/floors.js';
+import { TEXT } from '../js/text.js';
 import { lightProgress, lightConsumed } from '../js/light.js';
 
 const REST_KINDS = ['opening', 'between', 'epilogue'];
@@ -111,4 +113,54 @@ test('building a rest floor counts as entering a floor', () => {
   const before = state.run.floorsEntered;
   buildRestFloor('between');
   assert.equal(state.run.floorsEntered, before + 1);
+});
+
+// Walks a whole run floor by floor, building each, and returns the story
+// keys each floor queued (the queue is emptied after each, as if read).
+function storyByFloor() {
+  startRun(3);
+  state.run.loreQueue = [];
+  const floors = [];
+  const take = name => { floors.push([name, state.run.loreQueue]); state.run.loreQueue = []; };
+  buildRestFloor('opening');
+  take('opening');
+  for (;;) {
+    const next = nextFloor();
+    if (next.kind === 'win') break;
+    if (next.kind === 'rest') buildRestFloor(next.rest);
+    else buildFloor();
+    take(next.kind === 'rest' ? next.rest : 'depth' + (state.run.roomIndex + 1));
+  }
+  return floors;
+}
+
+test('each floor of a run queues its own story lines once, in story order', () => {
+  const floors = storyByFloor();
+  assert.deepEqual(floors.map(f => f[0]),
+    ['opening', 'depth1', 'between', 'depth2', 'between', 'depth3', 'epilogue']);
+  const all = floors.flatMap(f => f[1]);
+  assert.equal(new Set(all).size, all.length, 'a line is queued twice');
+  assert.deepEqual(all, [...all].sort(), 'lines out of story order');
+  assert.ok(floors.every(f => f[1].length > 0), 'a floor has no story');
+  all.forEach(k => assert.ok(k in TEXT, k));
+});
+
+test('the epilogue paper always shows the last line, dropping unread ones', () => {
+  startRun(3);
+  state.run.roomIndex = 3;
+  state.run.loreQueue = ['story.left.unread', 'story.also.unread'];
+  buildRestFloor('epilogue');
+  assert.deepEqual(state.run.loreQueue, REST_RECIPES.epilogue.lore);
+  const last = FLOOR_RECIPES.concat().pop();
+  assert.ok(REST_RECIPES.epilogue.lore[0] > last.lore[last.lore.length - 1]);
+  state.run.loreQueue = [];
+});
+
+test('a between rest keeps lines left unread on the depth before it', () => {
+  startRun(3);
+  state.run.roomIndex = 1;
+  state.run.loreQueue = ['story.left.unread'];
+  buildRestFloor('between');
+  assert.deepEqual(state.run.loreQueue, ['story.left.unread', ...REST_RECIPES.between.lore[0]]);
+  state.run.loreQueue = [];
 });

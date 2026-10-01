@@ -10,7 +10,7 @@ import { furnishFloor, rollProp } from './decor.js';
 import {
   BOSS_HP, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, ROOM_THEMES
 } from './config.js';
-import { floorRecipe, REST_RECIPES } from './floors.js';
+import { floorRecipe, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './quiz.js';
 import { computeVisibility, updateCamera } from './sight.js';
 import { spawnMinion } from './combat.js';
@@ -247,9 +247,9 @@ function facingToward(from, to) {
 }
 
 // A rest floor as data: one hand-drawn room (REST_RECIPES[kind].room) with
-// the stairs, a coin and papers on the drawing's '?' spots. Nothing
-// dangerous: no boss, light, minions, hunter, boxes or special, so a rest
-// can never cost a heart. `kind` is 'opening', 'between' or 'epilogue'
+// the stairs, a coin, papers on the drawing's '?' spots and the rest's
+// story lines queued for them. Nothing dangerous: no boss, light, minions,
+// hunter, boxes or special, so a rest can never cost a heart. `kind` is 'opening', 'between' or 'epilogue'
 // (run.js nextFloor()). No page access.
 export function buildRestFloor(kind) {
   state.run.floorsEntered++;
@@ -257,6 +257,10 @@ export function buildRestFloor(kind) {
   f.GRID_SIZE = REST_GRID;
   f.CHAMBER_TARGET = 1;
   clearDanger();
+  // A rest's story joins the queue like a depth's. The epilogue ends the
+  // story, so its own line replaces whatever is left unread.
+  if (kind === 'epilogue') state.run.loreQueue = [];
+  state.run.loreQueue.push(...restLore(kind, state.run.roomIndex));
 
   const layout = buildRestLayout(REST_RECIPES[kind].room, REST_GRID);
   f.wallSet = layout.walls;
