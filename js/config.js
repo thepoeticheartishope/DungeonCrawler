@@ -229,6 +229,8 @@ export const BOX_GOLD = [1, 2]; // plus the floor index, before the darkness mul
 export const REVEAL_DISTANCE = 5;
 
 export const MAX_HEARTS = 3;
+// The longest name the start screen takes, so it fits on one line in a paper.
+export const PLAYER_NAME_MAX_LENGTH = 20;
 export const ROOM_COUNT = 3;
 
 export const BOSS_HP = 3;       // hits needed to defeat the boss

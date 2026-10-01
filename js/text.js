@@ -234,6 +234,8 @@ export const TEXT = {
   // ---- Intro, start and end screens ----
   'intro.call': 'YOU ARE NEEDED. ASCEND.',
   'start.enter': 'Enter the {@term.dungeon}', // draft
+  'start.name.label': 'Your name', // draft
+  'start.name.placeholder': 'Leave blank to stay nameless', // draft
 
   // ---- Question data viewer (start screen) ----
   'data.open': 'View question data',

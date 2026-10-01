@@ -33,6 +33,7 @@ const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
 const glitchCode = document.getElementById('glitchCode');
 const revealToggle = document.getElementById('revealToggle');
+const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
 const battleScreen = document.getElementById('battleScreen');
 const battleGlyphEl = document.getElementById('battleGlyph');
@@ -549,6 +550,8 @@ function startGame() {
   state.run.loreQueue = [];
   resetHaunts();
   state.settings.revealOnWrong = revealToggle.checked;
+  // Read on every start, so a retry keeps the name without asking again.
+  state.settings.playerName = playerNameInput.value.trim();
   // Every run is multiple choice. The typing path (answerForm,
   // attemptAnswer, TYPING_SAMPLE_DATA) is parked, not deleted: it becomes a
   // per-question "type it in" modifier once question modifiers are designed.

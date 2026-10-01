@@ -232,6 +232,16 @@
   }
   .option-toggle input:focus-visible { outline: 1px dashed var(--text); outline-offset: 3px; }
 
+  /* The player's name, asked once on the start screen. */
+  .name-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 20px;
+    color: var(--muted);
+    margin-bottom: 22px;
+  }
+
   .loader {
     margin: 0 0 20px;
     text-align: left;
@@ -1054,6 +1064,11 @@
 
   <!-- Start screen -->
   <section class="screen show intro" id="startScreen">
+    <label class="name-field">
+      <span data-t="start.name.label"></span>
+      <input type="text" id="playerName" autocomplete="off" spellcheck="false" data-t-placeholder="start.name.placeholder">
+    </label>
+
     <label class="option-toggle">
       <input type="checkbox" id="revealToggle">
       Reveal the correct answer after a wrong attempt

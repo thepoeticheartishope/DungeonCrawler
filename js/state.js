@@ -22,6 +22,7 @@ const initialGridSize = FLOOR_RECIPES[0].grid;
 export const state = {
   settings: {
     revealOnWrong: false,
+    playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
     isoView: true,          // draw the map isometric (js/isoview.js), the default; DEV -> View switches to top-down
