@@ -592,7 +592,7 @@ function drawPillar(ctx, row, col) {
 // (tileart.js), the south face darkest, and its edges glow.
 // Options: inset (0..0.5), height in pixels, level (0..1), southHidden /
 // eastHidden (a face with a wall in front of it), ridge (which top edges
-// to draw: n, e, s, w; all by default), skin ({ side, top } texture names
+// to draw: n, e, s, w; all by default), skin ({ side, top } TILE_ART parts
 // and `full`, the block's full height in pixels: a cut wall shows the
 // bottom of its texture, so its bricks stay put as it lowers).
 function drawBlock(ctx, row, col, { inset, height, level, southHidden = false, eastHidden = false, ridge, skin }) {
@@ -829,7 +829,7 @@ function drawStanding(ctx, thing) {
     const level = floorLevel(at.row, at.col) * (searched(at) ? SEARCHED_LEVEL : 1);
     drawBlock(ctx, at.row, at.col, {
       inset: BOX_INSET, height: tw * BOX_HEIGHT, level: Math.max(WALL_MIN_LEVEL, level),
-      skin: { side: 'crate', top: 'crate', full: tw * BOX_HEIGHT },
+      skin: { side: 'box', top: 'box', full: tw * BOX_HEIGHT },
     });
     return;
   }

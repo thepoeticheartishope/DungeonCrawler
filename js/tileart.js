@@ -1,8 +1,8 @@
 // Tile art: the filled-in textures the map draws its floors, walls, pillars
 // and boxes with, so a wall reads as stone and each kind of room has its
-// own floor. Each room theme has its own floor (crypt flagstones, library
-// planks, flooded wet stone, shrine inlay; hallways are cobbles). Walls are
-// stone bricks.
+// own floor. Which texture goes where is TILE_ART in config.js (walls are
+// bricks, hallways cobbles, crypt flagstones, library planks, flooded wet
+// stone, shrine inlay); the painters for each texture are here.
 //
 // mapview.js (top-down) and isoview.js (isometric) both call artAt() /
 // art() for a square texture and draw it: top-down as a square, isometric
@@ -14,20 +14,17 @@
 // So a tile looks the same every time it's drawn.
 
 import { state, key } from './state.js';
-
-// How many looks each texture has; a tile picks one by its place.
-const VARIANTS = 4;
+import { TILE_ART, TILE_ART_TONES, TILE_ART_LOOKS } from './config.js';
 
 // The darkest colour of each texture, under its tinted strokes: the mortar
 // between bricks, the gaps between floor stones.
 const GROUT = '#070909';
 
-// Strengths of the phosphor tint (0..1) each texture is drawn with. Floors
-// stay low so glyphs on them read first (Timothy found busy floors "noise,
-// not depth"); walls are brighter, so a wall reads as solid at a glance.
-const FLOOR_TONE = [0.07, 0.11];  // a floor stone's fill, from darkest to lightest
-const WALL_TONE = [0.17, 0.24];   // a brick's fill
-const CAP_TONE = [0.2, 0.26];     // the top of a wall in the isometric view
+// How each texture is drawn. Which texture goes where, and how bright they
+// are, is TILE_ART / TILE_ART_TONES in config.js.
+const FLOOR_TONE = TILE_ART_TONES.floor; // a floor stone's fill, from darkest to lightest
+const WALL_TONE = TILE_ART_TONES.wall;   // a brick's fill
+const CAP_TONE = TILE_ART_TONES.cap;     // the top of a wall in the isometric view
 const BEVEL = 0.07;               // the lit top-left edge of a stone, added to its fill
 const SHADE = 0.45;               // the dark bottom-right edge of a stone
 
@@ -36,8 +33,8 @@ const BRICK_COURSES = 4;
 const BRICKS_PER_COURSE = 2;
 const GAP = 0.035; // the grout between stones and boards, as a share of the tile
 
-// The crypt's flagstone layouts, as [left, top, width, height] shares of
-// the tile. Each look uses one.
+// The flagstone layouts, as [left, top, width, height] shares of the
+// tile. Each look uses one.
 const SLAB_LAYOUTS = [
   [[0, 0, 1, 1]],
   [[0, 0, 1, 0.55], [0, 0.55, 1, 0.45]],
@@ -45,9 +42,24 @@ const SLAB_LAYOUTS = [
   [[0, 0, 0.6, 0.6], [0.6, 0, 0.4, 0.6], [0, 0.6, 1, 0.4]],
 ];
 
+// Every texture by the name TILE_ART uses for it. A new look for the map
+// is a new painter here plus its name in TILE_ART.
+const PAINTERS = {
+  bricks: paintBricks,
+  capstone: paintCap,
+  columnTop: paintPillarTop,
+  columnSide: paintPillarSide,
+  crate: paintCrate,
+  cobbles: paintCobbles,
+  flagstones: paintFlagstones,
+  planks: paintPlanks,
+  wetStone: paintWetStone,
+  inlay: paintInlay,
+};
+
 let colourRgb = '190, 220, 228'; // the phosphor tint, from the page's --glow-rgb
 let cacheSize = 0;               // the texture size the cache holds, in pixels
-const cache = new Map();         // 'name:variant' -> canvas
+const cache = new Map();         // 'texture:look:shade' -> canvas
 
 // Takes the phosphor tint from the page's colours, so the textures match
 // the rest of the map. mapview.js calls it once at start.
@@ -56,45 +68,58 @@ export function setTileArtColour(glowRgb) {
   cache.clear();
 }
 
-// The texture a tile's floor or wall is drawn with, `size` pixels square:
-// bricks for a wall, else the floor of the room the tile is in (cobbles in
-// a hallway). Neighbouring tiles get different looks.
-export function artAt(row, col, size) {
-  const k = key(row, col);
-  if (state.floor.wallSet.has(k)) return art('wall', row, col, size);
-  return art(floorMaterial(k), row, col, size);
+// Whether tileart.js can draw a texture of this name. The tests check
+// every name in TILE_ART with it, so a typo there fails a test instead of
+// quietly drawing hallway cobbles.
+export function hasTexture(name) {
+  return Object.hasOwn(PAINTERS, name);
 }
 
-// A named texture for a tile, `size` pixels square: 'wall', 'wallTop',
-// 'pillarTop', 'pillarSide', 'crate', or a floor ('hall', 'crypt',
-// 'library', 'flooded', 'shrine'). The tile's place picks its look.
-// `shade` (0..1) darkens it, for a block's faces in shadow: baked in here
-// once, not filled over every face every frame.
-export function art(name, row, col, size, shade = 0) {
+// The texture a tile's floor or wall is drawn with, `size` pixels square:
+// the wall texture for a wall, else its room theme's floor (the hallway
+// floor outside rooms). Neighbouring tiles get different looks.
+export function artAt(row, col, size) {
+  const k = key(row, col);
+  if (state.floor.wallSet.has(k)) return texture(TILE_ART.wall, row, col, size);
+  return texture(floorTexture(k), row, col, size);
+}
+
+// The texture for one part of the map (a TILE_ART key: 'wall', 'wallTop',
+// 'pillarTop', 'pillarSide', 'box') on a tile, `size` pixels square. The
+// tile's place picks its look. `shade` (0..1) darkens it, for a block's
+// faces in shadow: baked in here once, not filled over every face every
+// frame.
+export function art(part, row, col, size, shade = 0) {
+  return texture(TILE_ART[part], row, col, size, shade);
+}
+
+// A texture by name, drawn once per size, look and shade and then reused.
+function texture(name, row, col, size, shade = 0) {
   const px = Math.max(8, Math.round(size));
   if (px !== cacheSize) {
     cache.clear();
     cacheSize = px;
   }
-  const variant = lookOf(row, col);
-  const id = name + ':' + variant + ':' + shade;
-  if (!cache.has(id)) cache.set(id, paint(name, variant, px, shade));
+  const look = lookOf(row, col);
+  const id = name + ':' + look + ':' + shade;
+  if (!cache.has(id)) cache.set(id, paint(name, look, px, shade));
   return cache.get(id);
 }
 
-// The floor a tile has: its room's theme, or 'hall' outside the rooms.
-function floorMaterial(k) {
+// The floor texture a tile has: its room theme's, or the hallway's
+// outside the rooms (and for a theme TILE_ART.floors doesn't name).
+function floorTexture(k) {
   const chamber = state.floor.chamberAt.get(k);
-  if (chamber === undefined) return 'hall';
-  return state.floor.chamberThemes[chamber] || 'hall';
+  const theme = chamber === undefined ? null : state.floor.chamberThemes[chamber];
+  return TILE_ART.floors[theme] || TILE_ART.hall;
 }
 
-// Which of the VARIANTS looks a tile shows: mixed from its place and the
-// floor number, so the pattern doesn't repeat in rows.
+// Which of the TILE_ART_LOOKS looks a tile shows: mixed from its place
+// and the floor number, so the pattern doesn't repeat in rows.
 function lookOf(row, col) {
   let h = (row * 73856093) ^ (col * 19349663) ^ ((state.run.roomIndex + 1) * 83492791);
   h = Math.imul(h ^ (h >>> 13), 0x5bd1e995);
-  return ((h ^ (h >>> 15)) >>> 0) % VARIANTS;
+  return ((h ^ (h >>> 15)) >>> 0) % TILE_ART_LOOKS;
 }
 
 // Draws one texture into a new canvas `px` pixels square, darkened by
@@ -105,7 +130,7 @@ function paint(name, variant, px, shade) {
   const ctx = sprite.getContext('2d');
   ctx.scale(px, px);
   const rand = seeded(name.length * 131 + name.charCodeAt(0) * 17 + variant * 7919);
-  const painter = PAINTERS[name] || PAINTERS.hall;
+  const painter = PAINTERS[name] || PAINTERS[TILE_ART.hall];
   painter(ctx, rand, variant, px);
   if (shade > 0) {
     ctx.globalCompositeOperation = 'source-atop';
@@ -114,19 +139,6 @@ function paint(name, variant, px, shade) {
   }
   return sprite;
 }
-
-const PAINTERS = {
-  wall: paintBricks,
-  wallTop: paintCap,
-  pillarTop: paintPillarTop,
-  pillarSide: paintPillarSide,
-  crate: paintCrate,
-  hall: paintCobbles,
-  crypt: paintFlagstones,
-  library: paintPlanks,
-  flooded: paintWetStone,
-  shrine: paintInlay,
-};
 
 // A phosphor tint at strength `a`.
 function tone(a) {
