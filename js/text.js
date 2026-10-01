@@ -182,11 +182,6 @@ export const TEXT = {
   'target.encounter': 'Target: {category} {@term.encounter}',
 
   // ---- Room (map) screen ----
-  'room.move': 'You drift {direction}.', // draft
-  'room.dir.north': 'north',
-  'room.dir.south': 'south',
-  'room.dir.east': 'east',
-  'room.dir.west': 'west',
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft
   'room.engage': 'Something fires in the dark.', // draft
@@ -303,7 +298,6 @@ export const AREAS = {
     'log.boss.holds': ['ITS {@term.boss} HOLDS.', 'IT HAS BEEN BELIEVED FOR A LONG TIME.'], // draft
   },
   3: {
-    'room.move': 'You press {direction}.', // draft
     'room.wait': ['You hold still. The hum is inside you now.', 'You wait. The dark does not.'], // draft
     'room.blocked.wall': ['The membrane holds.', 'The membrane gives a little, then holds.'], // draft
     'room.paper.junk': ['The page is blank. It was always blank.', 'Your own handwriting. You do not remember writing it.'], // draft
