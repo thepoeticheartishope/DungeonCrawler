@@ -922,6 +922,10 @@
   .choice-option:focus-visible:not(:disabled) .letter { color: var(--stone-dark); }
   .choice-option .choice-label { flex: 1; }
   .choice-option .choice-hint { color: var(--torch-bright); margin-left: 8px; }
+  /* THE UNFOLDING's items: price on the right, why one isn't offered below it. */
+  .choice-option .exchange-price { color: var(--torch-bright); margin-left: 8px; }
+  .choice-option .exchange-why { display: block; color: var(--muted); text-transform: none; }
+  .exchange-note { min-height: 1.2em; }
 
   /* Brief glitch-in as a fight starts. */
   #battleScreen.glitch-in .terminal { animation: battleGlitchIn 0.32s steps(4, end); }
@@ -1240,6 +1244,22 @@
 
         <div class="end-panel" id="endPanel" hidden>
           <button type="button" id="continueBtn" data-t="battle.continue"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE UNFOLDING (js/exchangeview.js): trading myelin on a rest floor. -->
+  <section class="screen" id="exchangeScreen">
+    <div class="terminal">
+      <div class="rule"><span data-t="exchange.title"></span></div>
+      <div class="terminal-body">
+        <div class="term-line" data-t="exchange.look"></div>
+        <div class="term-line" id="exchangeHeld"></div>
+        <div class="choice-list" id="exchangeItems"></div>
+        <div class="term-line exchange-note" id="exchangeNote" aria-live="polite"></div>
+        <div class="end-panel">
+          <button type="button" id="exchangeLeaveBtn" data-t="exchange.leave"></button>
         </div>
       </div>
     </div>

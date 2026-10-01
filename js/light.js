@@ -34,11 +34,14 @@ function stepsFrom(row, col) {
 // slack, rounded up to whole light steps, so every floor at a depth leaves
 // the same time for exploring however far the layout put the boss. A
 // recipe without slack uses its lossCoverage share instead (floorBudget).
+// Turns bought at THE UNFOLDING (state.run.bonusSlack) are added on top
+// and spent here, so they only help the next depth.
 export function initBossLight() {
   state.floor.bossDist = stepsFrom(state.floor.boss.row, state.floor.boss.col);
   state.floor.floorCount = state.floor.bossDist.size;
   const walk = state.floor.bossDist.get(key(state.floor.playerRow, state.floor.playerCol)) || 0;
-  const turns = floorBudget(floorRecipe(state.run.roomIndex), walk);
+  const turns = floorBudget(floorRecipe(state.run.roomIndex), walk) + state.run.bonusSlack;
+  state.run.bonusSlack = 0;
   state.floor.lightFullRadius = Math.max(1, Math.ceil(turns / LIGHT_TURNS_PER_STEP));
   state.floor.lightTurnBudget = state.floor.lightFullRadius * LIGHT_TURNS_PER_STEP;
   state.floor.lightSlack = state.floor.lightTurnBudget - walk;

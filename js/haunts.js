@@ -17,6 +17,19 @@ export function resetHaunts() {
   state.run.hauntsSilenced = 0;
 }
 
+// Silences the oldest haunt without asking it (THE UNFOLDING sells this).
+// Oldest is the first in the Map: missing a haunt again sets it again, but
+// Map.set keeps its first place, so first means "first missed". It counts
+// as silenced on the end screen, like an answered one. Returns the
+// question, or null with no haunts.
+export function silenceOldestHaunt() {
+  const oldest = state.run.haunts.keys().next();
+  if (oldest.done) return null;
+  state.run.haunts.delete(oldest.value);
+  state.run.hauntsSilenced++;
+  return oldest.value;
+}
+
 // A haunt from `pool` to ask instead of a random question, or null. Only
 // haunts missed long enough ago are eligible, never the question just
 // asked, and only HAUNT_CHANCE of the time.

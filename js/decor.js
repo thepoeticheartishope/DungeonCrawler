@@ -137,8 +137,9 @@ function hasWallNeighbour(p, walls) {
   return DIRS.some(([dr, dc]) => walls.has(key(p.row + dr, p.col + dc)));
 }
 
-// Free-standing floor: nothing but floor on all eight sides.
-function freeStanding(p, floorKeys) {
+// Free-standing floor: nothing but floor on all eight sides. Also used by
+// floor.js to stand THE UNFOLDING out in its room.
+export function freeStanding(p, floorKeys) {
   for (let dr = -1; dr <= 1; dr++) {
     for (let dc = -1; dc <= 1; dc++) {
       if (!floorKeys.has(key(p.row + dr, p.col + dc))) return false;

@@ -7,7 +7,7 @@
 // of each one threading them through as parameters.
 
 import { state } from './state.js';
-import { MAX_HEARTS, BOSS_HP, VIEWPORT_SIZE } from './config.js';
+import { BOSS_HP, VIEWPORT_SIZE } from './config.js';
 import { lightProgress } from './light.js';
 import { whatBlocks } from './passage.js';
 import { FACING_VECTORS } from './sight.js';
@@ -22,7 +22,7 @@ export function initRender(elements) {
 }
 
 export function showScreen(el) {
-  [els.startScreen, els.introGlitch, els.roomScreen, els.battleScreen, els.winScreen, els.loseScreen].forEach(s => s.classList.remove('show'));
+  [els.startScreen, els.introGlitch, els.roomScreen, els.battleScreen, els.exchangeScreen, els.winScreen, els.loseScreen].forEach(s => s.classList.remove('show'));
   el.classList.add('show');
   // Hearts/coins/turn/room/timer are meaningless before a run starts (and
   // during the intro glitch, which plays before the timer even starts), so
@@ -55,7 +55,8 @@ export function renderRoomHints() {
 
 // The d-pad shows which ways the player can go: a blocked direction dims
 // (pressing it still turns to look that way), and one with a paper or box
-// not yet gone through lights up, since that press reads or examines it.
+// not yet gone through lights up, since that press reads or examines it;
+// so does THE UNFOLDING, which a press opens.
 function renderMoveHints() {
   const buttons = els.dpadButtons;
   if (!buttons) return;
@@ -65,7 +66,8 @@ function renderMoveHints() {
     const row = state.floor.playerRow + dr, col = state.floor.playerCol + dc;
     const block = whatBlocks(row, col);
     const unreadPaper = !block && state.floor.props.some(p => p.kind === 'paper' && !p.searched && p.row === row && p.col === col);
-    const examine = unreadPaper || (!!block && block.kind === 'prop' && !block.thing.searched);
+    const examine = unreadPaper || (!!block && block.kind === 'prop' && !block.thing.searched) ||
+      (!!block && block.kind === 'exchange');
     btn.classList.toggle('move-examine', examine);
     btn.classList.toggle('move-blocked', !!block && !examine);
   }
@@ -137,7 +139,7 @@ export function renderLightEye() {
 // rest floor, which isn't a depth). Call after any change to them.
 export function renderHud() {
   // ASCII rather than hearts: the terminal face has no symbol glyphs.
-  els.heartsEl.textContent = Math.max(state.run.hearts, 0) + '/' + MAX_HEARTS;
+  els.heartsEl.textContent = Math.max(state.run.hearts, 0) + '/' + state.run.maxHearts;
   els.coinsTotalEl.textContent = state.run.coinsTotal;
   els.turnCountEl.textContent = state.run.turnCount;
   els.roomNumEl.textContent = state.run.resting ? t('stat.rest') : state.run.roomIndex + 1;
