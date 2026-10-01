@@ -359,8 +359,9 @@ function mistStrength(row, col) {
 }
 
 // Every glyph on the map, as a list both views draw from, so they always
-// show the same things: { kind, at, glyph, look }. `at` is where it shows
-// this frame in tiles (between tiles while something slides), glyph is
+// show the same things: { kind, at, tile, glyph, look }. `at` is where it
+// shows this frame in tiles (between tiles while something slides), `tile`
+// the tile the rules have it on (where a slide ends), glyph is
 // null for the '?' of something too far to make out, and look holds the
 // paintGlyph options. Things are seen only on lit tiles, '?' until the
 // player is close enough to make them out (and then with no hostile glow
@@ -370,7 +371,7 @@ function mistStrength(row, col) {
 function mapThings() {
   const f = state.floor;
   const things = [];
-  const add = (kind, at, glyph, look) => things.push({ kind, at, glyph, look });
+  const add = (kind, at, glyph, look, tile = at) => things.push({ kind, at, tile: { row: tile.row, col: tile.col }, glyph, look });
   const isLit = (row, col) => !state.settings.fogEnabled || f.visibleSet.has(key(row, col));
   const glyphOrUnknown = (thing, glyph) => (canMakeOut(thing.row, thing.col) ? glyph : null);
 
@@ -411,7 +412,8 @@ function mapThings() {
       size: 'stairs', colour: colours.bright, glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
     });
   }
-  add('player', shownAt(PLAYER, f.playerRow, f.playerCol), DIRECTION_ARROWS[f.facing], { size: 'player' });
+  add('player', shownAt(PLAYER, f.playerRow, f.playerCol), DIRECTION_ARROWS[f.facing], { size: 'player' },
+    { row: f.playerRow, col: f.playerCol });
   f.encounters.forEach(e => {
     if (!isLit(e.row, e.col)) return;
     add('encounter', e, glyphOrUnknown(e, glyphOf(e)), { size: 'encounter' });
@@ -426,7 +428,7 @@ function mapThings() {
       warp: warpAt(warpMs, phase * warpMs),
       // Only minions drop out; the hunter is always there.
       dropout: hunter ? 0 : dropoutAt(((phase * 2) % 1) * MAP_ANIMATION_MS.glitchBar),
-    });
+    }, m);
   });
   return things;
 }

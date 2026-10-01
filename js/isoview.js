@@ -382,12 +382,16 @@ function drawFloor(ctx, row, col) {
 // can see now (themselves, an enemy, a lit item, the stairs in sight):
 // nearer the camera than it, with a full-height shape covering it on
 // screen. Only those walls are cut away, so the rest of the room keeps
-// its height.
+// its height. Each thing counts on the tile the rules have it on, not
+// where it shows mid-slide: the light moves to the new tile at once, so
+// counting the sliding glyph made a wall stop covering anything for a few
+// frames, start rising and lower again (it shook).
 function findFrontWalls(tiles) {
   frontWalls = new Set();
   const walls = tiles.filter(({ row, col }) => isWall(row, col) && wallShown(row, col));
-  look.things.forEach(thing => {
-    if (look.fogOf(Math.round(thing.at.row), Math.round(thing.at.col)) !== 'lit') return;
+  look.things.forEach(shown => {
+    const thing = { ...shown, at: shown.tile };
+    if (look.fogOf(thing.at.row, thing.at.col) !== 'lit') return;
     const box = thingBox(thing);
     const depth = thing.at.row + thing.at.col;
     walls.forEach(({ row, col }) => {
