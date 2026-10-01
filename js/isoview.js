@@ -133,7 +133,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
       if (wallShown(row, col)) standing.push({ depth: row + col, draw: () => drawWall(ctx, row, col) });
       return;
     }
-    if (state.floor.pillarSet.has(key(row, col)) && look.fogOf(row, col) !== 'hidden') {
+    if (isPillar(row, col)) {
       standing.push({ depth: row + col, draw: () => drawPillar(ctx, row, col) });
     }
     const mist = look.mistStrength(row, col);
@@ -379,24 +379,29 @@ function drawFloor(ctx, row, col) {
   ctx.stroke();
 }
 
-// Finds the walls standing between the camera and something the player
-// can see now (themselves, an enemy, a lit item, the stairs in sight):
-// nearer the camera than it, with a full-height shape covering it on
-// screen. Only those walls are cut away, so the rest of the room keeps
-// its height. Each thing counts on the tile the rules have it on, not
+// Finds the walls and pillars standing between the camera and something
+// the player can see now (themselves, an enemy, a lit item, the stairs in
+// sight): nearer the camera than it, with a full-height shape covering it
+// on screen. Only those are cut away, so the rest of the room keeps its
+// height. Pillars count too: one tile in front of the player hid them
+// completely. Each thing counts on the tile the rules have it on, not
 // where it shows mid-slide: the light moves to the new tile at once, so
 // counting the sliding glyph made a wall stop covering anything for a few
 // frames, start rising and lower again (it shook).
 function findFrontWalls(tiles) {
   frontWalls = new Set();
-  const walls = tiles.filter(({ row, col }) => isWall(row, col) && wallShown(row, col));
+  const blocks = [];
+  tiles.forEach(({ row, col }) => {
+    if (isWall(row, col) && wallShown(row, col)) blocks.push({ row, col, box: wallBox(row, col) });
+    else if (isPillar(row, col)) blocks.push({ row, col, box: pillarBox(row, col) });
+  });
   look.things.forEach(shown => {
     const thing = { ...shown, at: shown.tile };
     if (look.fogOf(thing.at.row, thing.at.col) !== 'lit') return;
     const box = thingBox(thing);
     const depth = thing.at.row + thing.at.col;
-    walls.forEach(({ row, col }) => {
-      if (row + col > depth && overlaps(wallBox(row, col), box)) frontWalls.add(key(row, col));
+    blocks.forEach(b => {
+      if (b.row + b.col > depth && overlaps(b.box, box)) frontWalls.add(key(b.row, b.col));
     });
   });
 }
@@ -453,6 +458,19 @@ function thingBox(thing) {
   return [x - glyphSize * 0.3, y - glyphSize / 2, x + glyphSize * 0.3, d.cy + th * CONTACT_SHADOW];
 }
 
+// Whether a tile holds a pillar the player knows about (drawn on the map).
+function isPillar(row, col) {
+  return state.floor.pillarSet.has(key(row, col)) && look.fogOf(row, col) !== 'hidden';
+}
+
+// A pillar's full-height outline on the canvas, as [left, top, right,
+// bottom]: thinner than a wall and a little taller.
+function pillarBox(row, col) {
+  const [cx, cy] = centre(row, col);
+  const half = tw * (0.5 - PILLAR_INSET);
+  return [cx - half, cy - th / 2 - wallH * PILLAR_HEIGHT, cx + half, cy + th / 2];
+}
+
 // A wall's full-height outline on the canvas, as [left, top, right, bottom].
 function wallBox(row, col) {
   const [cx, cy] = centre(row, col);
@@ -492,13 +510,14 @@ function drawWall(ctx, row, col) {
   if (cut > 0) drawGhost(ctx, row, col, ridge, height, cut);
 }
 
-// The dashed outline of a cut-away wall's full height: its top edges (not
-// those shared with the next cut wall) and its outer corners from the
-// wall's top (`stub` pixels up) to full height, so the room's shape still
-// reads where the wall was lowered. As strong as the wall is cut (`cut`).
-function drawGhost(ctx, row, col, ridge, stub, cut) {
-  const d = diamond(row, col);
-  const [T, R, B, L] = [d.T, d.R, d.B, d.L].map(p => up(p, wallH));
+// The dashed outline of a cut-away wall's or pillar's full height: its top
+// edges (not those shared with the next cut wall) and its outer corners
+// from its top (`stub` pixels up) to full height (`full` pixels), so the
+// room's shape still reads where it was lowered. As strong as it is cut
+// (`cut`). `inset` shrinks the outline for a pillar, like drawBlock's.
+function drawGhost(ctx, row, col, ridge, stub, cut, { inset = 0, full = wallH } = {}) {
+  const d = diamond(row, col, inset);
+  const [T, R, B, L] = [d.T, d.R, d.B, d.L].map(p => up(p, full));
   ctx.save();
   halo = null;
   ctx.setLineDash(GHOST_DASH.map(n => n * tw));
@@ -514,11 +533,16 @@ function drawGhost(ctx, row, col, ridge, stub, cut) {
   ctx.restore();
 }
 
-// A pillar: a thin block a little taller than the walls.
+// A pillar: a thin block a little taller than the walls. Cut down like a
+// wall when it stands in front of something in sight (cutOf).
 function drawPillar(ctx, row, col) {
+  const cut = cutOf(row, col);
+  const full = wallH * PILLAR_HEIGHT;
+  const height = full * (1 - cut * (1 - WALL_STUB));
   drawBlock(ctx, row, col, {
-    inset: PILLAR_INSET, height: wallH * PILLAR_HEIGHT, level: Math.max(WALL_MIN_LEVEL, floorLevel(row, col)),
+    inset: PILLAR_INSET, height, level: Math.max(WALL_MIN_LEVEL, floorLevel(row, col)),
   });
+  if (cut > 0) drawGhost(ctx, row, col, { n: true, e: true, s: true, w: true }, height, cut, { inset: PILLAR_INSET, full });
 }
 
 // A block standing on a tile: a wall, pillar or box. Its faces are
