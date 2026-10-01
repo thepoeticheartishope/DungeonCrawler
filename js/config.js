@@ -318,6 +318,11 @@ export const TIMER_SECONDS = 10;
 // floor recipe's grid (floors.js), or there'd be nothing to pan.
 export const VIEWPORT_SIZE = 11;
 
+// A rest floor (dungeon.js buildRestLayout) is one room centred on a
+// REST_GRID x REST_GRID grid. At least VIEWPORT_SIZE, so the top-down view
+// never runs off the grid; the rest is solid wall around the room.
+export const REST_GRID = 15;
+
 // The map (js/mapview.js). Phosphor afterglow: each frame keeps
 // (1 - AFTERGLOW_FADE) of the last frame's light, measured at 60 frames a
 // second, so something the player leaves behind dims out over about half a

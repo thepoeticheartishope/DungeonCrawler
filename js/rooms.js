@@ -15,6 +15,9 @@
 // A template may carry a name and a role:
 //   role 'start'  the room the player wakes in, when a recipe names it
 //   role 'boss'   the boss's room, when a recipe names it
+//   role 'rest'   a rest floor's only room (dungeon.js buildRestLayout).
+//                 It has one door, the way in, which is walled up behind
+//                 the player; the stairs go on the far side.
 //   no role       any room: the pool the rest of a floor is dealt from
 // Rooms with a role are never dealt at random, so the waking room and the
 // boss room only appear where a recipe puts them.
@@ -84,6 +87,20 @@ export const ROOM_TEMPLATES = [
     '#.........#',
     '#.........#',
     '###########',
+  ] },
+
+  // A rest floor's room. DRAFT by Claude for Timothy to redraw. The two
+  // '?' spots hold its papers; the open middle is kept for the exchange.
+  { name: 'rest', role: 'rest', rows: [
+    '###########',
+    '##.......##',
+    '#.........#',
+    '#..?...?..#',
+    '#.........#',
+    '#.........#',
+    '#.........#',
+    '##.......##',
+    '#####.#####',
   ] },
 ];
 
