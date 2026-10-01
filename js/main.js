@@ -543,6 +543,7 @@ function startGame() {
   state.run.roomIndex = 0;
   state.run.runEnded = false;
   state.run.attempts = 0;
+  state.run.correctTotal = 0;
   state.run.extraSpaceCount = 0;
   state.run.hearts = MAX_HEARTS;
   state.run.turnCount = 0;
@@ -695,7 +696,10 @@ function drawEvents(events) {
         parts.push(t('room.coin'));
         break;
       case 'paperRead':
-        if (e.loot === 'story') parts.push(t('room.paper.lore', { lore: t(e.story) }));
+        if (e.loot === 'story') {
+          const story = t(e.story, { name: state.settings.playerName || t('story.nameless'), answered: state.run.correctTotal });
+          parts.push(t('room.paper.lore', { lore: story }));
+        }
         else if (e.loot === 'lore') parts.push(t('room.paper.lore', { lore: t('theme.' + e.paper.theme + '.lore') }));
         else parts.push(t('room.paper.junk'));
         break;
