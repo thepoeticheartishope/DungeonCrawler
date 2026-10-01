@@ -1,7 +1,8 @@
 // Dungeon generation: places rooms from the hand-drawn templates in
 // rooms.js, joins them with hallways that run from door to door around
 // the rooms (never through them), picks a boss room, and guarantees that
-// room has exactly one entrance.
+// room has exactly one entrance. Rest floors get a one-room layout of
+// their own (buildRestLayout).
 //
 // This module is self-contained — it takes the grid size, chamber
 // target, extra-hallway cap and the names of the start and boss rooms
@@ -437,5 +438,57 @@ export function generateDungeonLayout(gridSize, chamberTarget, maxLoops, named =
     stairs: { row: r0, col: r0 },
     start: { row: r0 + size - 1, col: r0 + size - 1 },
     chambers: [{ floorCells, doorKeys: new Set(), slots: [], name: null, isBoss: true }],
+  };
+}
+
+// A rest floor's layout: one drawing (a `role: 'rest'` template, turned at
+// random) centred on the grid, everything else wall. Its one door is the
+// way in: it is walled up, the player starts on the tile just inside it,
+// and the stairs go straight across on the far side, so the middle of the
+// room stays open. `spawn` is the stairs tile: there is no boss, but
+// makePlacer (decor.js) keeps things off `spawn`, and the stairs must stay
+// clear. Returns the same shape as generateDungeonLayout. A drawing that
+// doesn't fit or has no door is a mistake in rooms.js, so it throws.
+export function buildRestLayout(templateName, gridSize) {
+  const tpl = parseTemplate(namedTemplate(templateName));
+  if (tpl.h > gridSize || tpl.w > gridSize) throw new Error('Rest room ' + templateName + ' does not fit the grid');
+  if (tpl.doors.length === 0) throw new Error('Rest room ' + templateName + ' has no door');
+  const room = placeRoom({ ...tpl, name: templateName },
+    Math.floor((gridSize - tpl.h) / 2), Math.floor((gridSize - tpl.w) / 2));
+
+  // The way in, walled up. Its inward step points across the room.
+  const entry = room.doors[0];
+  const inward = { row: entry.row - entry.exit.row, col: entry.col - entry.exit.col };
+  const start = { row: entry.row + inward.row, col: entry.col + inward.col };
+  const doorKeys = new Set(room.doors.map(d => key(d.row, d.col)));
+  const floorCells = room.floorCells.filter(p => !doorKeys.has(key(p.row, p.col)));
+
+  // How far a tile is into the room from the entry, and how far off the
+  // entry's line. The stairs take the deepest tile, nearest the line.
+  const depth = p => (p.row - entry.row) * inward.row + (p.col - entry.col) * inward.col;
+  const offLine = p => Math.abs((p.row - entry.row) * inward.col - (p.col - entry.col) * inward.row);
+  const options = openInterior({ ...room, openDoors: [] })
+    .sort((a, b) => depth(b) - depth(a) || offLine(a) - offLine(b));
+  if (options.length === 0) throw new Error('Rest room ' + templateName + ' has no room for the stairs');
+  const stairs = { row: options[0].row, col: options[0].col };
+
+  const roomTiles = new Set(floorCells.map(p => key(p.row, p.col)));
+  const walls = new Set();
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
+      if (!roomTiles.has(key(r, c))) walls.add(key(r, c));
+    }
+  }
+  const chamberAt = new Map([...roomTiles].map(k => [k, 0]));
+  return {
+    walls, roomTiles, chamberAt, stairs, start,
+    spawn: { ...stairs },
+    chambers: [{
+      floorCells,
+      doorKeys: new Set(room.innerDoors.map(d => key(d.row, d.col))),
+      slots: room.slots,
+      name: templateName,
+      isBoss: false,
+    }],
   };
 }

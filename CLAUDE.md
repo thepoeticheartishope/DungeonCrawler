@@ -73,7 +73,7 @@ Rules and data (no page/DOM access):
 | `state.js` | The one shared `state` object, plus `key(r, c)`. Grouped by lifetime: `state.settings` (start screen / DEV panel), `state.run` (one run), `state.floor` (rebuilt each floor), `state.battle` (the current fight). |
 | `text.js` | All wording. `t()`, per-floor overrides, `data-t` labels. |
 | `rooms.js` | Hand-drawn room templates (`#` wall, `.` floor, `?` prop, `+` inner door). |
-| `dungeon.js` | Builds a floor layout from the templates: rooms, hallways, boss room, stairs. |
+| `dungeon.js` | Builds a floor layout from the templates: rooms, hallways, boss room, stairs; `buildRestLayout()` for a rest floor's one room. |
 | `decor.js` | Themes rooms and places pillars, papers, boxes (`makePlacer`). |
 | `floors.js` | `FLOOR_RECIPES`: what each floor holds (grid, rooms, loops, minions, light loss share, start/boss rooms, the floor's story lines, the beats met on the way to the boss); `floorRecipe(i)` reads it. Data only, grows with the level-design plan. |
 | `beats.js` | `placeBeats()`: puts the recipe's beats (paper, box, minion, special) on room tiles along the walk from the start to the boss, in the recipe's order. Called by `buildFloor()`. |
