@@ -67,6 +67,7 @@ const WALL_COVER_WIDTH = 0.4;    // half the width of a wall that counts as cove
                                  // under half a tile, so a wall only touching it at a corner stays
 const GHOST_LEVEL = 0.2;         // the dashed outline of a cut wall's full height
 const GHOST_DASH = [0.03, 0.04]; // its dash and gap, in tile widths
+const WALL_CUT_MAX_FRAME_MS = 50; // a wall's cut moves at most this much time per frame, so a long pause doesn't make it snap
 const MIST_DEPTH = 0.25;         // the mist draws after its own tile's pillar, before what stands on it
 
 // The faces of a block, darker than its top so it reads as standing up.
@@ -84,6 +85,10 @@ let height = 0;
 let across = ISO_TILES_ACROSS; // tile widths across the map this frame (fewer on a narrow map)
 let look = null;    // what mapview.js passed in
 let frontWalls = new Set(); // walls between the camera and something in sight, this frame
+// How far each wall in view is cut down, 0 (full height) to 1 (a stub),
+// easing toward whether it's in front now. Walls at full height aren't kept.
+const wallCuts = new Map(); // key(row, col) -> 0..1
+let lastCutAt = 0;          // the frame time wallCuts last moved
 let halo = null;    // the glow strokeGlow set up for the next lines: [{ colour, width }] in pixels, or null
 
 // The camera: view-only, so it lives here and not in state. The tile the
@@ -101,7 +106,7 @@ let cameraPlayer = null; // the player's tile when the camera last looked
 // in front of anything in sight are cut away.
 // `canvasSize` is { width, height } in pixels and `pageWidth`, the map's
 // width on the page. `shared` is { colours, things, fogOf, paintGlyph,
-// mistSprite, mistStrength, pulse, keepMoving, cameraMoving, now, still }
+// mistSprite, mistStrength, pulse, keepMoving, showPlain, now, still }
 // from mapview.js.
 export function drawIsoScene(ctx, canvasSize, shared) {
   look = shared;
@@ -111,10 +116,13 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   tw = width / across;
   th = tw / 2;
   wallH = tw * ISO_WALL_HEIGHT;
-  if (moveCamera(look.now, look.still)) look.cameraMoving();
-  [originX, originY] = centre(state.floor.playerRow, state.floor.playerCol);
+  if (moveCamera(look.now, look.still)) look.showPlain();
+  const player = look.things.find(thing => thing.kind === 'player');
+  if (player.at.row !== state.floor.playerRow || player.at.col !== state.floor.playerCol) look.showPlain();
+  [originX, originY] = centre(player.at.row, player.at.col);
   const tiles = tilesInView();
   findFrontWalls(tiles);
+  easeWallCuts(tiles, look.now, look.still);
   tiles.forEach(({ row, col }) => {
     if (!isWall(row, col) && look.fogOf(row, col) !== 'hidden') drawFloor(ctx, row, col);
   });
@@ -193,6 +201,7 @@ function moveCamera(now, still) {
     Math.abs(player.row - cameraPlayer.row) + Math.abs(player.col - cameraPlayer.col) > CAMERA_JUMP;
   cameraPlayer = player;
   if (jumped || !state.settings.isoCameraGlide || cameraFloor !== state.run.roomIndex) {
+    if (jumped || cameraFloor !== state.run.roomIndex) wallCuts.clear();
     cameraFloor = state.run.roomIndex;
     camera = cameraGoal = player;
     glide = null;
@@ -387,8 +396,31 @@ function findFrontWalls(tiles) {
   });
 }
 
-function isFront(row, col) {
-  return frontWalls.has(key(row, col));
+// Moves each wall's cut toward its target this frame: down to a stub if it
+// is in front of something in sight, back up if not, over
+// MAP_ANIMATION_MS.wallCut, so walls lower and rise instead of snapping as
+// the player walks. A wall first seen this frame starts where it should be.
+// Straight there under reduced motion. While any is moving, frames go on
+// and are shown plain (no afterglow).
+function easeWallCuts(tiles, now, still) {
+  const step = Math.min(now - lastCutAt, WALL_CUT_MAX_FRAME_MS) / MAP_ANIMATION_MS.wallCut;
+  lastCutAt = now;
+  const inView = new Set(tiles.map(({ row, col }) => key(row, col)));
+  for (const k of wallCuts.keys()) if (!inView.has(k)) wallCuts.delete(k);
+  frontWalls.forEach(k => { if (!wallCuts.has(k)) wallCuts.set(k, still ? 1 : 0); });
+  for (const [k, cut] of wallCuts) {
+    const target = frontWalls.has(k) ? 1 : 0;
+    const next = still ? target : target > cut ? Math.min(1, cut + step) : Math.max(0, cut - step);
+    if (next === 0 && !target) wallCuts.delete(k);
+    else wallCuts.set(k, next);
+    if (next !== target) look.showPlain();
+  }
+}
+
+// How far a wall is cut down this frame, eased: 0 (full height) to 1 (a stub).
+function cutOf(row, col) {
+  const cut = wallCuts.get(key(row, col)) || 0;
+  return cut * cut * (3 - 2 * cut);
 }
 
 // A thing's outline on the canvas, as [left, top, right, bottom]: a flat
@@ -429,33 +461,34 @@ function isBlock(thing) {
 // A wall block. Its top edges shared with a neighbouring wall of the same
 // height are left out, so a run of wall reads as one ridge, and a face
 // with a wall at least as tall in front of it isn't drawn. A wall in front
-// of something in sight is cut to a stub with a dashed outline of its full
-// height.
+// of something in sight is cut toward a stub (cutOf), with a dashed
+// outline of its full height that shows as it lowers.
 function drawWall(ctx, row, col) {
-  const front = isFront(row, col);
+  const cut = cutOf(row, col);
   const joined = (dr, dc) => isWall(row + dr, col + dc) && wallShown(row + dr, col + dc);
-  const sameHeight = (dr, dc) => joined(dr, dc) && isFront(row + dr, col + dc) === front;
-  const coversFace = (dr, dc) => joined(dr, dc) && (front || !isFront(row + dr, col + dc));
+  const sameHeight = (dr, dc) => joined(dr, dc) && cutOf(row + dr, col + dc) === cut;
+  const coversFace = (dr, dc) => joined(dr, dc) && cut >= cutOf(row + dr, col + dc);
   const ridge = { n: !sameHeight(-1, 0), e: !sameHeight(0, 1), s: !sameHeight(1, 0), w: !sameHeight(0, -1) };
+  const height = wallH * (1 - cut * (1 - WALL_STUB));
   drawBlock(ctx, row, col, {
-    inset: 0, height: front ? wallH * WALL_STUB : wallH, level: wallLevel(row, col),
+    inset: 0, height, level: wallLevel(row, col),
     southHidden: coversFace(1, 0), eastHidden: coversFace(0, 1), ridge,
   });
-  if (front) drawGhost(ctx, row, col, ridge);
+  if (cut > 0) drawGhost(ctx, row, col, ridge, height, cut);
 }
 
 // The dashed outline of a cut-away wall's full height: its top edges (not
-// those shared with the next cut wall) and its outer corners, so the
-// room's shape still reads where the wall was lowered.
-function drawGhost(ctx, row, col, ridge) {
+// those shared with the next cut wall) and its outer corners from the
+// wall's top (`stub` pixels up) to full height, so the room's shape still
+// reads where the wall was lowered. As strong as the wall is cut (`cut`).
+function drawGhost(ctx, row, col, ridge, stub, cut) {
   const d = diamond(row, col);
   const [T, R, B, L] = [d.T, d.R, d.B, d.L].map(p => up(p, wallH));
-  const stub = wallH * WALL_STUB;
   ctx.save();
   halo = null;
   ctx.setLineDash(GHOST_DASH.map(n => n * tw));
   ctx.lineWidth = EDGE_WIDTH * tw * 0.8;
-  ctx.strokeStyle = glow(GHOST_LEVEL);
+  ctx.strokeStyle = glow(GHOST_LEVEL * cut);
   if (ridge.n) line(ctx, T, R);
   if (ridge.e) line(ctx, R, B);
   if (ridge.s) line(ctx, B, L);
