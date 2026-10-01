@@ -185,6 +185,29 @@ export const ROOM_THEMES = {
   flooded: { pillarChance: 0.15, props: [0, 2], boxShare: 0.6 },
   shrine:  { pillarChance: 0.40, props: [0, 1], boxShare: 0.3 },
 };
+
+// Map textures (js/tileart.js): which texture each part of the map is drawn
+// with, by name. To restyle something, point it at another texture here; a
+// new kind of texture is a new painter in tileart.js's PAINTERS.
+// Textures: bricks, capstone, columnTop, columnSide, crate, cobbles,
+// flagstones, planks, wetStone, inlay.
+//   floors  one per ROOM_THEMES key; a room with no entry gets `hall`
+export const TILE_ART = {
+  wall: 'bricks',           // walls (top-down) and wall faces (isometric)
+  wallTop: 'capstone',      // the top of a wall or pillar (isometric)
+  pillarTop: 'columnTop',   // a pillar seen from above (top-down)
+  pillarSide: 'columnSide', // a pillar's sides (isometric)
+  box: 'crate',             // a box's sides and lid (isometric)
+  hall: 'cobbles',          // hallways, and any room theme not in `floors`
+  floors: { crypt: 'flagstones', library: 'planks', flooded: 'wetStone', shrine: 'inlay' },
+};
+// How bright the textures are, as phosphor strength [darkest, lightest]
+// (0..1). Floors stay low so glyphs on them read first (busy floors were
+// "noise, not depth"); walls are brighter, so a wall reads as solid.
+export const TILE_ART_TONES = { floor: [0.07, 0.11], wall: [0.17, 0.24], cap: [0.2, 0.26] };
+// How many looks each texture has; a tile picks one by its place, so the
+// pattern doesn't repeat in rows.
+export const TILE_ART_LOOKS = 4;
 // Pillars block walking and the player's light; the boss light spreads
 // past them. A room with pillars gets a mirrored set of one of these sizes.
 export const PILLARS_PER_ROOM = [2, 4];
