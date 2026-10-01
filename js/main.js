@@ -3,7 +3,7 @@ import { buildFloor } from './floor.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP,
   BATTLE_CHOICE_COUNT,
-  BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS
+  BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS, ROOM_LOG_LINES
 } from './config.js';
 import { rollModifier, rollCategoryModifiers, rollFlip, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -27,6 +27,7 @@ import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, glyphOf } from './mapview.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
+import { initDpad } from './dpad.js';
 
 const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
@@ -624,10 +625,26 @@ function setControlsEnabled(enabled) {
   continueBtn.disabled = !enabled;
 }
 
-// One line on the room screen under the map. Escaped, since some wording
-// carries values from custom lists (category names).
+// Adds a note to the room log beside the d-pad, newest at the bottom, and
+// keeps only the last ROOM_LOG_LINES. The same note twice in a row (walking a
+// hallway) counts up on one line instead of pushing the older notes out.
+// Escaped, since some wording carries values from custom lists (category names).
 function showRoomNote(cls, text) {
-  roomFeedback.innerHTML = '<span class="' + cls + '">' + escapeHtml(text) + '</span>';
+  if (!text) return;
+  const last = roomFeedback.lastElementChild;
+  if (last && last.dataset.text === text) {
+    last.dataset.count = String(Number(last.dataset.count) + 1);
+    last.innerHTML = escapeHtml(text) + ' <span class="note-count">x' + last.dataset.count + '</span>';
+  } else {
+    const line = document.createElement('div');
+    line.className = 'room-note ' + cls;
+    line.dataset.text = text;
+    line.dataset.count = '1';
+    line.textContent = text;
+    roomFeedback.appendChild(line);
+    while (roomFeedback.children.length > ROOM_LOG_LINES) roomFeedback.firstChild.remove();
+  }
+  [...roomFeedback.children].forEach((line, i, all) => line.classList.toggle('note-old', i < all.length - 1));
 }
 
 // A spent turn: the player's events plus the monsters' turn, drawn once,
@@ -885,11 +902,10 @@ answerForm.addEventListener('submit', (e) => {
   attemptAnswer();
 });
 
-dpadButtons.N.addEventListener('click', () => movePlayer(-1, 0));
-dpadButtons.S.addEventListener('click', () => movePlayer(1, 0));
-dpadButtons.E.addEventListener('click', () => movePlayer(0, 1));
-dpadButtons.W.addEventListener('click', () => movePlayer(0, -1));
-dpadButtons.Skip.addEventListener('click', skipTurn);
+initDpad({
+  buttons: dpadButtons, movePlayer, skipTurn,
+  canWalk: () => roomScreen.classList.contains('show') && !state.run.runEnded,
+});
 
 // Arrow-key support on desktop, ignored while typing in the answer box.
 document.addEventListener('keydown', (e) => {

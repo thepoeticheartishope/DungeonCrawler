@@ -612,6 +612,14 @@
     92% { transform: translateX(1px); }
   }
 
+  /* ---- Room log + d-pad, side by side under the map ---- */
+  .room-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
   /* ---- D-pad ---- */
   .dpad {
     display: grid;
@@ -619,10 +627,16 @@
     grid-template-rows: repeat(3, 48px);
     gap: 4px;
     justify-content: center;
-    margin: 0 auto 20px;
+    flex: none;
   }
 
   .dpad button {
+    /* Held to walk (js/dpad.js): no scrolling, text selection or callout
+       menu under a finger that stays down. */
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
     padding: 0;
     min-height: 0;
     font-size: 28px;
@@ -637,7 +651,8 @@
   .dpad-e { grid-column: 3; grid-row: 2; }
   .dpad-s { grid-column: 2; grid-row: 3; }
   /* Isometric: the d-pad turns with the diamond, so ^ points up and to
-     the right, where a step north goes on screen. */
+     the right, where a step north goes on screen. Its corners are empty,
+     so turned it still fits its own box and needs no room from the log. */
   .dpad.iso { transform: rotate(45deg); }
   /* Which ways are open (render.js renderMoveHints): blocked dims, a
      paper or box to examine shows in inverse video. */
@@ -914,12 +929,29 @@
     .eye.eye-near { animation: none; }
   }
 
+  /* The room log: the last few notes as a small terminal stream, as tall
+     as the d-pad. Older notes dim, like the encounter transcript. Reversed
+     so the browser keeps it scrolled to the newest note, even after the
+     view changes its width; the notes keep their order inside #roomFeedback. */
   .feedback {
-    min-height: 40px;
-    margin-top: 14px;
-    font-size: 20px;
+    flex: 1;
+    min-width: 0;
+    height: 152px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    display: flex;
+    flex-direction: column-reverse;
+    border-left: 1px solid var(--line);
+    padding-left: 8px;
+    font-size: 16px;
+    line-height: 1.2;
     text-align: left;
+    overflow-wrap: anywhere;
   }
+  .feedback::-webkit-scrollbar { display: none; }
+  .feedback .room-note { margin-top: 4px; }
+  .feedback .room-note.note-old { opacity: 0.55; }
+  .feedback .note-count { color: var(--muted); }
   /* ---- Encounter transcript (battle screen) ----
      No panel or title of its own: it reads as the terminal's scrollback
      above the current prompt. Capped at 8 lines so a long boss fight never
@@ -971,7 +1003,7 @@
   }
   .feedback .warn-msg::before { content: '! '; }
   .feedback .block-msg { color: var(--block); }
-  .feedback .move-msg { color: var(--muted); display: block; }
+  .feedback .move-msg { color: var(--muted); }
 
   /* ---- Win / lose screens ---- */
   .win p, .lose p { color: var(--muted); font-size: 20px; margin-bottom: 22px; }
@@ -1130,6 +1162,11 @@
       <div class="light-hint light-hint-w" id="lightHintW" aria-hidden="true"></div>
     </div>
 
+    <!-- The room log (main.js showRoomNote) sits left of the d-pad, so the
+         latest notes are read beside the thumb that walks. -->
+    <div class="room-controls">
+      <div class="feedback" role="log" aria-live="polite"><div id="roomFeedback"></div></div>
+
     <div class="dpad" id="dpad">
       <button class="dpad-n" id="btnN" type="button" aria-label="Move north">^</button>
       <button class="dpad-w" id="btnW" type="button" aria-label="Move west">&lt;</button>
@@ -1137,8 +1174,7 @@
       <button class="dpad-e" id="btnE" type="button" aria-label="Move east">&gt;</button>
       <button class="dpad-s" id="btnS" type="button" aria-label="Move south">v</button>
     </div>
-
-    <div class="feedback" id="roomFeedback"></div>
+    </div>
   </section>
 
   <!-- Battle screen: shown whenever the player is adjacent to something
