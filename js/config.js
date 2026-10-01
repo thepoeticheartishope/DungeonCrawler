@@ -298,6 +298,10 @@ export const AFTERGLOW_FADE = 0.1;
 // After this long with nothing new to draw, the fade is over: the canvas
 // takes the plain frame (so rounding can't leave faint ghosts) and stops.
 export const AFTERGLOW_SETTLE_MS = 900;
+// The map canvas draws at most this many pixels per CSS pixel. Many phones
+// are 3x, which makes every frame's fills, glows and afterglow copy 2.25x
+// the work of 2x for a difference the soft phosphor look doesn't show.
+export const MAP_MAX_PIXEL_RATIO = 2;
 // Glyph height on the map, as a share of one tile: the boss bigger than
 // the player, minions and the coin smaller.
 export const MAP_GLYPH_SIZES = {
