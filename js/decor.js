@@ -11,7 +11,7 @@
 
 import { key } from './state.js';
 import {
-  ROOM_THEMES, PILLARS_PER_ROOM, PAPER_LORE_CHANCE, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD,
+  ROOM_THEMES, PILLARS_PER_ROOM, PAPER_LORE_CHANCE, PAPERS_PER_ROOM, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD,
 } from './config.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -209,22 +209,35 @@ export function furnishFloor(layout, gridSize, floorIndex) {
     const theme = themes[i];
     const cfg = ROOM_THEMES[theme];
     const propKind = () => (Math.random() < cfg.boxShare ? 'box' : 'paper');
+    // A room holds at most PAPERS_PER_ROOM papers, so it can't be littered
+    // with them and gives at most that many lines.
+    let papers = 0;
+    const roomFull = () => papers >= PAPERS_PER_ROOM;
 
     if (Math.random() < cfg.pillarChance) placePillars(chamber, placer, pillars);
 
-    // The drawing's '?' spots always get something.
+    // The drawing's '?' spots always get something: a box, once the room
+    // has its papers.
     chamber.slots.forEach(s => {
-      if (placer.tryBlock([s], true)) props.push({ row: s.row, col: s.col, ...rollProp(propKind(), theme, floorIndex) });
+      if (!placer.tryBlock([s], true)) return;
+      const kind = roomFull() ? 'box' : propKind();
+      if (kind === 'paper') papers++;
+      props.push({ row: s.row, col: s.col, ...rollProp(kind, theme, floorIndex) });
     });
 
     // A few more, mostly against the walls, where furniture would stand.
+    // One that rolls a paper the room has no room for is left out.
     const extra = randInt(cfg.props[0], cfg.props[1]);
     const byWall = chamber.floorCells.filter(p => hasWallNeighbour(p, layout.walls));
     const open = chamber.floorCells.filter(p => !hasWallNeighbour(p, layout.walls));
     for (let n = 0; n < extra; n++) {
+      const kind = propKind();
+      if (kind === 'paper' && roomFull()) continue;
       const pool = Math.random() < 0.75 && byWall.length ? byWall : open;
       const spot = placer.pick(pool, true);
-      if (spot) props.push({ ...spot, ...rollProp(propKind(), theme, floorIndex) });
+      if (!spot) continue;
+      if (kind === 'paper') papers++;
+      props.push({ ...spot, ...rollProp(kind, theme, floorIndex) });
     }
 
   });

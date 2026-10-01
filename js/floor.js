@@ -8,7 +8,7 @@ import { state, key } from './state.js';
 import { generateDungeonLayout } from './dungeon.js';
 import { furnishFloor } from './decor.js';
 import {
-  BOSS_HP, MINION_MIN_START_DISTANCE
+  BOSS_HP, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM
 } from './config.js';
 import { floorRecipe } from './floors.js';
 import { shuffle } from './quiz.js';
@@ -74,6 +74,16 @@ function placeMinions(roomTiles, takenTiles, count) {
   });
 }
 
+// Makes space for a beat's paper in its room. A room holds at most
+// PAPERS_PER_ROOM papers (decor.js), and the beat's paper is the one the
+// floor's pacing needs, so the room's own papers give way, oldest first.
+function makeSpaceForPaper(paper) {
+  const f = state.floor;
+  const room = f.chamberAt.get(key(paper.row, paper.col));
+  const inRoom = f.props.filter(p => p.kind === 'paper' && f.chamberAt.get(key(p.row, p.col)) === room);
+  inRoom.slice(0, inRoom.length - PAPERS_PER_ROOM + 1).forEach(p => f.props.splice(f.props.indexOf(p), 1));
+}
+
 // The floor as data only: layout, furniture, boss, stairs, the recipe's
 // beats, coin, the one special item and minions, plus the light, sight
 // and camera that follow from them. No page access.
@@ -135,6 +145,7 @@ export function buildFloor() {
   const beats = placeBeats(recipe.beats, layout, placer, fixedTiles);
   state.floor.beats = beats.placed;
   beats.props.forEach(p => {
+    if (p.kind === 'paper') makeSpaceForPaper(p);
     state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
   });
   beats.minionTiles.forEach(p => spawnMinion(p));
