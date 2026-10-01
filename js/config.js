@@ -219,6 +219,9 @@ export const PILLARS_PER_ROOM = [2, 4];
 // (weights, not %). Boxes never restore hearts — like the chest, healing
 // is kept for something else.
 export const PAPER_LORE_CHANCE = 0.4;
+// Papers one room may hold (Timothy: no room littered with papers), so a
+// room gives at most this many lines. Beat papers count too (floor.js).
+export const PAPERS_PER_ROOM = 1;
 export const BOX_TRAP_CHANCE = 0.3;
 export const BOX_LOOT = { junk: 50, gold: 50 };
 export const BOX_GOLD = [1, 2]; // plus the floor index, before the darkness multiplier

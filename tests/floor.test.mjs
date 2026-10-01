@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  BOSS_HP, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP,
+  BOSS_HP, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP, PAPERS_PER_ROOM,
 } from '../js/config.js';
 import { buildFloor } from '../js/floor.js';
 import { BEAT_KINDS } from '../js/beats.js';
@@ -70,6 +70,17 @@ test('nothing shares a tile or sits in a wall or pillar', () => {
       assert.ok(!f.wallSet.has(k), 'thing in a wall: ' + k);
       assert.ok(!f.pillarSet.has(k), 'thing in a pillar: ' + k);
     });
+  });
+});
+
+test('no room holds more than PAPERS_PER_ROOM papers, beat papers included', () => {
+  eachFloor((f) => {
+    const perRoom = new Map();
+    f.props.filter(p => p.kind === 'paper').forEach(p => {
+      const room = f.chamberAt.get(key(p.row, p.col));
+      perRoom.set(room, (perRoom.get(room) || 0) + 1);
+    });
+    perRoom.forEach(n => assert.ok(n <= PAPERS_PER_ROOM, n + ' papers in one room'));
   });
 });
 
