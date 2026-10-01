@@ -110,7 +110,7 @@ const fillCache = new WeakMap();
 let camera = null;       // { row, col } shown this frame
 let cameraGoal = null;   // { row, col } it is gliding to, or resting on
 let glide = null;        // { from, start } while it glides to cameraGoal
-let cameraFloor = -1;    // the floor (state.run.roomIndex) the camera is on
+let cameraFloor = -1;    // the floor (state.run.floorsEntered) the camera is on
 let cameraPlayer = null; // the player's tile when the camera last looked
 
 // Draws the whole isometric map as state has it now, in layer order:
@@ -214,9 +214,9 @@ function moveCamera(now, still) {
   const jumped = !cameraPlayer ||
     Math.abs(player.row - cameraPlayer.row) + Math.abs(player.col - cameraPlayer.col) > CAMERA_JUMP;
   cameraPlayer = player;
-  if (jumped || !state.settings.isoCameraGlide || cameraFloor !== state.run.roomIndex) {
-    if (jumped || cameraFloor !== state.run.roomIndex) wallCuts.clear();
-    cameraFloor = state.run.roomIndex;
+  if (jumped || !state.settings.isoCameraGlide || cameraFloor !== state.run.floorsEntered) {
+    if (jumped || cameraFloor !== state.run.floorsEntered) wallCuts.clear();
+    cameraFloor = state.run.floorsEntered;
     camera = cameraGoal = player;
     glide = null;
     return false;
