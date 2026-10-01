@@ -58,8 +58,8 @@ export function initDevPanel({
     requestMapDraw();
   });
 
-  // Dev tool: switch the map between top-down and isometric (isometric
-  // plan step 2), so the new view can be played before it's the default.
+  // Dev tool: switch the map between isometric (the default since plan
+  // step 4b) and the old top-down view, kept for comparing and testing.
   devViewBtn.addEventListener('click', () => {
     state.settings.isoView = !state.settings.isoView;
     devViewBtn.textContent = state.settings.isoView ? 'View: isometric (dev)' : 'View: top-down (dev)';
