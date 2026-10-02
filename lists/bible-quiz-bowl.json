@@ -10309,5 +10309,754 @@
     "source": "Eccl 12:1",
     "answerType": "name",
     "fact": true
+  },
+  {
+    "term": "Who fled from Solomon and stayed in Egypt until Solomon's death?",
+    "meaning": "Jeroboam",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "1 Kings 11:40",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which king of Israel destroyed the house of Jeroboam?",
+    "meaning": "Baasha",
+    "category": "HG",
+    "difficulty": "hard",
+    "source": "1 Kings 15:29",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Whose two sons died, thereby fulfilling Joshua's curse?",
+    "meaning": "Hiel",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "1 Kings 16:34",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What was the name of the child God gave to David to show that he still loved him despite his great sin?",
+    "meaning": "Solomon",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "2 Sam 12:24",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "How many years was king Jehoiachin of Judah kept prisoner in Babylon?",
+    "meaning": "37",
+    "category": "LNS",
+    "difficulty": "hard",
+    "source": "Jer 52:31",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "As recorded in Matthew, what happened immediately after Jesus yielded up his spirit upon the cross?",
+    "meaning": "The veil of the temple was torn in two",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "Matt 27:51",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What does the book of James say of faith without works or good deeds?",
+    "meaning": "Dead",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "James 2:17",
+    "answerType": "adjective",
+    "fact": true
+  },
+  {
+    "term": "How did Eli die?",
+    "meaning": "Fell backward off his seat and broke his neck",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "1 Sam 4:18",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Name the two books in the Bible named after women.",
+    "meaning": "Ruth and Esther",
+    "category": "HG",
+    "difficulty": "easy",
+    "answerType": "book",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What are the two effects of the second vial (bowl) in Revelation?",
+    "meaning": "The sea becomes blood and everything in it dies",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Rev 16:3",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who asked Solomon to let Abishag marry Adonijah?",
+    "meaning": "Bathsheba",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "1 Kings 2:19-21",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible follows Lamentations?",
+    "meaning": "Ezekiel",
+    "category": "LNS",
+    "difficulty": "easy",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Who said the following: \"Lord, I am not worthy that thou shouldest come under my roof: but speak the word only, and my servant shall be healed\"?",
+    "meaning": "Centurion",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "Matt 8:8",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What two examples of Abraham's great faith are cited in the epistle to the Hebrews?",
+    "meaning": "Moving to an unknown land and willingness to sacrifice Isaac",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Heb 11:8, 17",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who received a number of plagues although he didn't know his prospective mistress was married?",
+    "meaning": "Pharaoh",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "Gen 12:17",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What modern country was represented by the OT name Put?",
+    "meaning": "Libya",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "How many of each tribe of Israel are sealed in Revelation 7?",
+    "meaning": "12000",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Rev 7:4-8",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Who was the father of James and John, the disciples of Jesus?",
+    "meaning": "Zebedee",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Matt 4:21",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "How many books in the Bible begin with the letter \"L\"?",
+    "meaning": "3",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "What was Paul's trade?",
+    "meaning": "Tentmaker",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Acts 18:3",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "Which book stresses that belief in God is not enough because even the devils believe God exists?",
+    "meaning": "James",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "James 2:19",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Whose punishment involved the death of 70,000 men from a plague?",
+    "meaning": "David",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "2 Sam 24:1-17",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Who wrote \"The City of God\" in the 5th century?",
+    "meaning": "Augustine",
+    "category": "HG",
+    "difficulty": "medium",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "In Revelation 6:5, what is the rider of the black horse carrying when the third seal is opened?",
+    "meaning": "Balances",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Rev 6:5",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "What relative was Abinadab of Ishbosheth?",
+    "meaning": "Brother",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "2 Sam 2:10; 1 Sam 31:2",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible immediately precedes Leviticus?",
+    "meaning": "Exodus",
+    "category": "LNS",
+    "difficulty": "easy",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Who complained to Jesus about being left alone to prepare dinner?",
+    "meaning": "Martha",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Luke 10:40",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Complete the following verse: \"Pray ye therefore the Lord of the harvest, that he will...\"",
+    "meaning": "send forth labourers into his harvest",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Matt 9:38",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Who was pressured by the Israelites into building a golden calf?",
+    "meaning": "Aaron",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Ex 32:1",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What did a widow do, in the time when the Judges ruled the Israelites, to indicate her willingness to marry her husband's relative?",
+    "meaning": "Lay down at his feet",
+    "category": "HG",
+    "difficulty": "hard",
+    "source": "Ruth 3:7",
+    "answerType": "verb",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Which number of woe were the locusts in Revelation?",
+    "meaning": "1",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Rev 9:1-12",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "What was the name of Abednego before he was captured and taken to king Nebuchadnezzar's household?",
+    "meaning": "Azariah",
+    "category": "N",
+    "difficulty": "hard",
+    "source": "Dan 1:7",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What is the last book of the OT?",
+    "meaning": "Malachi",
+    "category": "LNS",
+    "difficulty": "easy",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Who fell asleep during Paul's preaching and fell to his death out of a window, but was later revived by Paul?",
+    "meaning": "Eutychus",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "Acts 20:9-12",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Who in the OT asks the question, \"If a man die, shall he live again?\"",
+    "meaning": "Job",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Job 14:14",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "To whom did God give the covenant of circumcision?",
+    "meaning": "Abraham",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Gen 17:9-10",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "In what city did Rahab live?",
+    "meaning": "Jericho",
+    "category": "HG",
+    "difficulty": "easy",
+    "source": "Josh 2",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "Which OT prophet prophesied the period of Judah's captivity in Babylon would be 70 years?",
+    "meaning": "Jeremiah",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "2 Chron 36:21",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What relation was Sarah to Abraham before they were married?",
+    "meaning": "Half-sister",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Gen 20:12",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "How many times did Noah send the dove out of the ark after the flood?",
+    "meaning": "3",
+    "category": "LNS",
+    "difficulty": "medium",
+    "source": "Gen 8:8-12",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Complete the following verse: \"My God, my God...\"",
+    "meaning": "why hast thou forsaken me?",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Matt 27:46",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Complete the following verse: \"For if ye love them which love you, what thank have ye?...\"",
+    "meaning": "for sinners also love those that love them",
+    "category": "W",
+    "difficulty": "hard",
+    "source": "Luke 6:32",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "In which book did a woman boil and eat her own son during a famine?",
+    "meaning": "2 Kings",
+    "category": "OT",
+    "difficulty": "hard",
+    "source": "2 Kings 6:29",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Vashti was queen over what land?",
+    "meaning": "Persia",
+    "category": "HG",
+    "difficulty": "medium",
+    "source": "Esther 1:1-9",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "What did John in Revelation eat which made his belly bitter and tasted like honey?",
+    "meaning": "Book",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Rev 10:9",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "Who was the husband of Abigail prior to David?",
+    "meaning": "Nabal",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "1 Sam 25",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "In order of birth, what number of son was Joseph of Jacob?",
+    "meaning": "11",
+    "category": "LNS",
+    "difficulty": "medium",
+    "source": "Gen 29-30",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Which book says that when Jesus returns, every eye shall see him?",
+    "meaning": "Revelation",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Rev 1:7",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Fill in the blank with two words: \"Make a ____ unto the Lord, all ye lands.\"",
+    "meaning": "joyful noise",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Psalm 100:1",
+    "answerType": "object",
+    "draft": true,
+    "fact": false,
+    "factNote": "KJV, ASV \"joyful noise\" / WEB \"Shout for joy\" (Psalm 100:1)"
+  },
+  {
+    "term": "How many books are contained in the group of OT books known as the \"Histories\"?",
+    "meaning": "12",
+    "category": "HG",
+    "difficulty": "medium",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "How did the sailors in Jonah, chapter one, calm the sea?",
+    "meaning": "Threw Jonah overboard",
+    "category": "P",
+    "difficulty": "easy",
+    "source": "Jonah 1:15",
+    "answerType": "verb",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Whom did Balak try to persuade to put a curse upon the Israelites?",
+    "meaning": "Balaam",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Num 22-24",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Which book of the Bible immediately follows Jeremiah?",
+    "meaning": "Lamentations",
+    "category": "LNS",
+    "difficulty": "easy",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "When Jesus spoke of his ascension and second coming, who asked, \"Lord, we know not whither thou goest; and how can we know the way?\"",
+    "meaning": "Thomas",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "John 14:5",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What did Solomon say is the whole duty of man?",
+    "meaning": "Fear God and keep his commandments",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Eccl 12:13",
+    "answerType": "theology",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What object did Samson use to kill one thousand Philistines?",
+    "meaning": "Jawbone",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Judg 15:15",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "What was the site of Jesus' discourse on the end of the age?",
+    "meaning": "Olivet",
+    "category": "HG",
+    "difficulty": "medium",
+    "source": "Matt 24:3",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "Which of the four beasts in Daniel's dream was the ten-horned beast: first, second, third or fourth?",
+    "meaning": "4",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Dan 7:7",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Who adopted Esther?",
+    "meaning": "Mordecai",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "Esther 2:7",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "How many concubines did Solomon have?",
+    "meaning": "300",
+    "category": "LNS",
+    "difficulty": "medium",
+    "source": "1 Kings 11:3",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Complete the following verse of Jesus at the Last Supper: \"This is my body which is given for you:...\"",
+    "meaning": "this do in remembrance of me",
+    "category": "NT",
+    "difficulty": "easy",
+    "source": "Luke 22:19",
+    "answerType": "object",
+    "draft": true,
+    "fact": false,
+    "factNote": "KJV, ASV \"in remembrance of me\" / WEB \"in memory of me\" (Luke 22:19)"
+  },
+  {
+    "term": "In Paul's analogy of armour, what represents faith?",
+    "meaning": "Shield",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Eph 6:16",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "What name has traditionally been given to the group of books consisting of Job, Psalms, Proverbs, Ecclesiastes and Song of Solomon?",
+    "meaning": "Wisdom",
+    "category": "OT",
+    "difficulty": "medium",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "In the book of John, what place did some mistake as Jesus' place of origin?",
+    "meaning": "Galilee",
+    "category": "HG",
+    "difficulty": "medium",
+    "source": "John 7:41",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "What city's name is on the forehead of the whore in Revelation?",
+    "meaning": "Babylon",
+    "category": "P",
+    "difficulty": "easy",
+    "source": "Rev 17:5",
+    "answerType": "location",
+    "fact": true
+  },
+  {
+    "term": "How many generations were there from Rebekah to Benjamin?",
+    "meaning": "2",
+    "category": "N",
+    "difficulty": "medium",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Which book in the Bible immediately follows 2 Thessalonians?",
+    "meaning": "1 Timothy",
+    "category": "LNS",
+    "difficulty": "easy",
+    "answerType": "book",
+    "fact": true
+  },
+  {
+    "term": "Who in the Bible is stated to have had large handwriting?",
+    "meaning": "Paul",
+    "category": "NT",
+    "difficulty": "hard",
+    "source": "Gal 6:11",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "According to Proverbs 31:30, what kind of a woman is to be praised?",
+    "meaning": "God-fearing",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "Prov 31:30",
+    "answerType": "adjective",
+    "fact": true
+  },
+  {
+    "term": "Whose 37 mighty men are named in the Bible?",
+    "meaning": "David",
+    "category": "OT",
+    "difficulty": "medium",
+    "source": "2 Sam 23",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "What man introduced Gentile blood into the family tree of Jesus?",
+    "meaning": "Boaz",
+    "category": "HG",
+    "difficulty": "hard",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "How many days will the world gaze upon the bodies of the two witnesses in Revelation?",
+    "meaning": "3.5",
+    "category": "P",
+    "difficulty": "hard",
+    "source": "Rev 11:9",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "Whose head did David carry into Jerusalem?",
+    "meaning": "Goliath",
+    "category": "N",
+    "difficulty": "easy",
+    "source": "1 Sam 17:54",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Approximately how many years of church expansion are represented in the book of Acts: 3, 5, 10, 20, 30 or 40?",
+    "meaning": "30",
+    "category": "LNS",
+    "difficulty": "hard",
+    "answerType": "number",
+    "fact": true
+  },
+  {
+    "term": "What is the unique distinction of the book of James?",
+    "meaning": "It was the first book of the NT written",
+    "category": "NT",
+    "difficulty": "hard",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "Complete the following verse of Jesus: \"Many are called...\"",
+    "meaning": "but few are chosen",
+    "category": "W",
+    "difficulty": "easy",
+    "source": "Matt 22:14",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
+  },
+  {
+    "term": "What did both Miriam and David do as an act of praise to the Lord?",
+    "meaning": "Danced",
+    "category": "OT",
+    "difficulty": "easy",
+    "source": "Ex 15:20",
+    "answerType": "verb",
+    "fact": true
+  },
+  {
+    "term": "Who led the first act of dancing recorded in the Bible?",
+    "meaning": "Miriam",
+    "category": "HG",
+    "difficulty": "medium",
+    "source": "Ex 15:20",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "According to Isaiah 11:6, in the Messiah's peaceful kingdom, the leopard shall lie down with what?",
+    "meaning": "Kid",
+    "category": "P",
+    "difficulty": "medium",
+    "source": "Isa 11:6",
+    "answerType": "creature",
+    "fact": true
+  },
+  {
+    "term": "Who died \"being old and full of days\"?",
+    "meaning": "Job",
+    "category": "N",
+    "difficulty": "medium",
+    "source": "Job 42:17",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "In the hierarchy of the Roman Catholic Church which office is immediately below that of cardinal?",
+    "meaning": "Archbishop",
+    "category": "LNS",
+    "difficulty": "medium",
+    "answerType": "object",
+    "fact": true
+  },
+  {
+    "term": "To whom was Jesus speaking the earliest time He is recorded as saying: \"Mine hour is not yet come\"?",
+    "meaning": "Mary",
+    "category": "NT",
+    "difficulty": "medium",
+    "source": "John 2:4",
+    "answerType": "name",
+    "fact": true
+  },
+  {
+    "term": "Complete the following statement of Jesus: \"These things have I spoken unto you, that my joy might remain in you, and that your...\"",
+    "meaning": "joy might be full",
+    "category": "W",
+    "difficulty": "medium",
+    "source": "John 15:11",
+    "answerType": "object",
+    "draft": true,
+    "fact": true
   }
 ]

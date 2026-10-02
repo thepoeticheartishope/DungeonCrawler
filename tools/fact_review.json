@@ -322,5 +322,45 @@
   "Complete the following quotation of Jesus: \"But seek ye first the kingdom of God, and his righteousness; and . . .\"": {
     "fact": false,
     "note": "KJV \"shall be added unto you\" / WEB \"will be given to you as well\" (Matt 6:33)"
+  },
+  "How did Eli die?": {
+    "fact": true,
+    "note": "ASV \"he fell from off his seat backward\": same death (1 Sam 4:18)"
+  },
+  "In Revelation 6:5, what is the rider of the black horse carrying when the third seal is opened?": {
+    "fact": true,
+    "note": "ASV, WEB \"a balance\": same object (Rev 6:5)"
+  },
+  "Complete the following verse: \"Pray ye therefore the Lord of the harvest, that he will...\"": {
+    "fact": true,
+    "note": "ASV, WEB \"laborers\": spelling (Matt 9:38)"
+  },
+  "Which number of woe were the locusts in Revelation?": {
+    "fact": true,
+    "note": "first woe in every translation (Rev 9:12)"
+  },
+  "Complete the following verse: \"My God, my God...\"": {
+    "fact": true,
+    "note": "WEB \"why have you forsaken me\": archaic pronoun (Matt 27:46)"
+  },
+  "Complete the following verse: \"For if ye love them which love you, what thank have ye?...\"": {
+    "fact": true,
+    "note": "ASV, WEB \"even sinners love those who love them\": same sense (Luke 6:32)"
+  },
+  "Fill in the blank with two words: \"Make a ____ unto the Lord, all ye lands.\"": {
+    "fact": false,
+    "note": "KJV, ASV \"joyful noise\" / WEB \"Shout for joy\" (Psalm 100:1)"
+  },
+  "Complete the following verse of Jesus at the Last Supper: \"This is my body which is given for you:...\"": {
+    "fact": false,
+    "note": "KJV, ASV \"in remembrance of me\" / WEB \"in memory of me\" (Luke 22:19)"
+  },
+  "According to Isaiah 11:6, in the Messiah's peaceful kingdom, the leopard shall lie down with what?": {
+    "fact": true,
+    "note": "WEB \"young goat\": same animal (Isa 11:6)"
+  },
+  "Complete the following statement of Jesus: \"These things have I spoken unto you, that my joy might remain in you, and that your...\"": {
+    "fact": true,
+    "note": "ASV, WEB \"your joy may be made full\": same sense (John 15:11)"
   }
 }
