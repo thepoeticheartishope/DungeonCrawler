@@ -386,5 +386,41 @@
   "Complete the following quotation of Jesus: \"If ye abide in me, and my words abide in you, ...\"": {
     "fact": true,
     "note": "WEB \"you will ask whatever you desire, and it will be done for you\": same promise (John 15:7)"
+  },
+  "In Jesus' parable of the wedding feast where did he say we should choose to sit?": {
+    "fact": false,
+    "note": "KJV \"lowest room\" / ASV, WEB \"lowest place\" (Luke 14:10)"
+  },
+  "Where does God gather the kings and armies of all nations in Revelation?": {
+    "fact": true,
+    "note": "ASV, WEB \"Har-Magedon\": same place, another spelling (Rev 16:16)"
+  },
+  "Complete the following verse: \"When I was a child, I spake as a child, I understood as a child, I thought as a child: but . . .\"": {
+    "fact": true,
+    "note": "ASV \"now that I am become a man\": same sense (1 Cor 13:11)"
+  },
+  "Why did Jesus say to the Centurion at Capernaum, \"Verily I say unto you, I have not found so great faith, no, not in Israel.\"?": {
+    "fact": true,
+    "note": "same account in every translation (Matt 8:5-13)"
+  },
+  "Complete the following verse: \"Seek, and ye shall find, . . .\"": {
+    "fact": true,
+    "note": "WEB \"Knock, and it will be opened for you\": archaic forms (Matt 7:7)"
+  },
+  "What did God tell the Israelites to do before every battle in their own land when an enemy oppressed them?": {
+    "fact": true,
+    "note": "ASV, WEB \"sound an alarm with the trumpets\": same act (Num 10:9)"
+  },
+  "What did Enoch and Elijah have in common?": {
+    "fact": true,
+    "note": "same in every translation (Gen 5:24; 2 Kings 2:11)"
+  },
+  "To what mountain did David flee during his flight from Absalom?": {
+    "fact": true,
+    "note": "ASV, WEB \"mount of Olives\": same mountain (2 Sam 15:30)"
+  },
+  "What were the last words of Jesus on the cross recorded in Matthew and Mark?": {
+    "fact": true,
+    "note": "WEB \"why have you forsaken me\": archaic pronoun (Matt 27:46)"
   }
 }
