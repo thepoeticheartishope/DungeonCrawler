@@ -294,5 +294,33 @@
   "According to Jesus, on what two great commandments do the law and the prophets hang?": {
     "fact": true,
     "note": "ASV, WEB \"neighbor\", \"you\": same two commandments (Matt 22:37-40)"
+  },
+  "What does God say He will do with lukewarm believers?": {
+    "fact": false,
+    "note": "KJV \"spue\" / ASV \"spew\", WEB \"vomit\" (Rev 3:16)"
+  },
+  "Finish the scriptural sentence from 1 Thessalonians: \"And the dead in Christ . . .\"": {
+    "fact": true,
+    "note": "WEB \"will rise first\": same promise (1 Thess 4:16)"
+  },
+  "Who said, \"Behold the Lamb of God, which taketh away the sin of the world\"?": {
+    "fact": true,
+    "note": "John the Baptist in every translation (John 1:29)"
+  },
+  "What is the only tangible weapon that Jesus is recorded as holding in the Bible?": {
+    "fact": false,
+    "note": "KJV, ASV \"scourge\" / WEB \"whip\" (John 2:15)"
+  },
+  "Complete the following verse about the birth of Jesus: \"And she brought forth her firstborn son, . . .\"": {
+    "fact": false,
+    "note": "KJV \"swaddling clothes... manger\" / WEB \"bands of cloth... feeding trough\" (Luke 2:7)"
+  },
+  "Quote the last sentence of the Bible attributed to Jesus.": {
+    "fact": false,
+    "note": "KJV \"Surely I come quickly\" / ASV \"Yea: I come quickly\", WEB \"Yes, I come quickly\" (Rev 22:20)"
+  },
+  "Complete the following quotation of Jesus: \"But seek ye first the kingdom of God, and his righteousness; and . . .\"": {
+    "fact": false,
+    "note": "KJV \"shall be added unto you\" / WEB \"will be given to you as well\" (Matt 6:33)"
   }
 }
