@@ -258,5 +258,169 @@
   "Complete the following verse from Proverbs: \"A man that hath friends must shew himself friendly: and there is a friend that...\"": {
     "fact": true,
     "note": "WEB \"sticks closer than a brother\": archaic verb form"
+  },
+  "What did Jesus say was the second greatest commandment?": {
+    "fact": true,
+    "note": "ASV, WEB \"neighbor\": spelling (Matt 22:39)"
+  },
+  "As recorded in Matthew, what happened to the earth and the rocks respectively immediately after the death of Jesus on the cross?": {
+    "fact": true,
+    "note": "WEB \"the earth quaked and the rocks were split\": same event (Matt 27:51)"
+  },
+  "Complete the following sentence of scripture: \"All things are lawful for me, but I will not be brought...\"": {
+    "fact": true,
+    "note": "WEB \"anything\": same sense (1 Cor 6:12)"
+  },
+  "After whose birth did man begin to pray for the first time?": {
+    "fact": true,
+    "note": "ASV, WEB \"Enosh\": spelling (Gen 4:26)"
+  },
+  "Finish this sentence from scripture: \"I can do all things...\"": {
+    "fact": false,
+    "note": "KJV, WEB \"through Christ\" / ASV \"in him that strengtheneth me\": manuscript difference (Phil 4:13)"
+  },
+  "Complete the following statement of Paul about the sacrament of communion: \"He that eateth and drinketh unworthily, eateth and drinketh...\"": {
+    "fact": false,
+    "note": "KJV \"damnation\" / ASV, WEB \"judgment\" (1 Cor 11:29)"
+  },
+  "What was Jezebel doing just before the arrival of her expected executioners?": {
+    "fact": false,
+    "note": "KJV \"painted her face\" / ASV, WEB \"painted her eyes\" (2 Kings 9:30)"
+  },
+  "What is the English translation of the word \"Rabbi\"?": {
+    "fact": false,
+    "note": "KJV \"Master\" / ASV, WEB \"Teacher\" (John 1:38)"
+  },
+  "According to Jesus, on what two great commandments do the law and the prophets hang?": {
+    "fact": true,
+    "note": "ASV, WEB \"neighbor\", \"you\": same two commandments (Matt 22:37-40)"
+  },
+  "What does God say He will do with lukewarm believers?": {
+    "fact": false,
+    "note": "KJV \"spue\" / ASV \"spew\", WEB \"vomit\" (Rev 3:16)"
+  },
+  "Finish the scriptural sentence from 1 Thessalonians: \"And the dead in Christ . . .\"": {
+    "fact": true,
+    "note": "WEB \"will rise first\": same promise (1 Thess 4:16)"
+  },
+  "Who said, \"Behold the Lamb of God, which taketh away the sin of the world\"?": {
+    "fact": true,
+    "note": "John the Baptist in every translation (John 1:29)"
+  },
+  "What is the only tangible weapon that Jesus is recorded as holding in the Bible?": {
+    "fact": false,
+    "note": "KJV, ASV \"scourge\" / WEB \"whip\" (John 2:15)"
+  },
+  "Complete the following verse about the birth of Jesus: \"And she brought forth her firstborn son, . . .\"": {
+    "fact": false,
+    "note": "KJV \"swaddling clothes... manger\" / WEB \"bands of cloth... feeding trough\" (Luke 2:7)"
+  },
+  "Quote the last sentence of the Bible attributed to Jesus.": {
+    "fact": false,
+    "note": "KJV \"Surely I come quickly\" / ASV \"Yea: I come quickly\", WEB \"Yes, I come quickly\" (Rev 22:20)"
+  },
+  "Complete the following quotation of Jesus: \"But seek ye first the kingdom of God, and his righteousness; and . . .\"": {
+    "fact": false,
+    "note": "KJV \"shall be added unto you\" / WEB \"will be given to you as well\" (Matt 6:33)"
+  },
+  "How did Eli die?": {
+    "fact": true,
+    "note": "ASV \"he fell from off his seat backward\": same death (1 Sam 4:18)"
+  },
+  "In Revelation 6:5, what is the rider of the black horse carrying when the third seal is opened?": {
+    "fact": true,
+    "note": "ASV, WEB \"a balance\": same object (Rev 6:5)"
+  },
+  "Complete the following verse: \"Pray ye therefore the Lord of the harvest, that he will...\"": {
+    "fact": true,
+    "note": "ASV, WEB \"laborers\": spelling (Matt 9:38)"
+  },
+  "Which number of woe were the locusts in Revelation?": {
+    "fact": true,
+    "note": "first woe in every translation (Rev 9:12)"
+  },
+  "Complete the following verse: \"My God, my God...\"": {
+    "fact": true,
+    "note": "WEB \"why have you forsaken me\": archaic pronoun (Matt 27:46)"
+  },
+  "Complete the following verse: \"For if ye love them which love you, what thank have ye?...\"": {
+    "fact": true,
+    "note": "ASV, WEB \"even sinners love those who love them\": same sense (Luke 6:32)"
+  },
+  "Fill in the blank with two words: \"Make a ____ unto the Lord, all ye lands.\"": {
+    "fact": false,
+    "note": "KJV, ASV \"joyful noise\" / WEB \"Shout for joy\" (Psalm 100:1)"
+  },
+  "Complete the following verse of Jesus at the Last Supper: \"This is my body which is given for you:...\"": {
+    "fact": false,
+    "note": "KJV, ASV \"in remembrance of me\" / WEB \"in memory of me\" (Luke 22:19)"
+  },
+  "According to Isaiah 11:6, in the Messiah's peaceful kingdom, the leopard shall lie down with what?": {
+    "fact": true,
+    "note": "WEB \"young goat\": same animal (Isa 11:6)"
+  },
+  "Complete the following statement of Jesus: \"These things have I spoken unto you, that my joy might remain in you, and that your...\"": {
+    "fact": true,
+    "note": "ASV, WEB \"your joy may be made full\": same sense (John 15:11)"
+  },
+  "What two things did the apostle Paul say must occur before the day of Christ?": {
+    "fact": false,
+    "note": "KJV, ASV \"a falling away\" / WEB \"the rebellion\" (2 Thess 2:3)"
+  },
+  "In what situation were quail first mentioned in the Bible?": {
+    "fact": true,
+    "note": "same event in every translation (Ex 16:13-21)"
+  },
+  "What did Jesus mean by the \"sign of Jonah\"?": {
+    "fact": true,
+    "note": "same sign in every translation (Matt 12:38-41)"
+  },
+  "What are the 3 great virtues of 1 Corinthians 13?": {
+    "fact": false,
+    "note": "KJV \"charity\" / ASV, WEB \"love\" (1 Cor 13:13)"
+  },
+  "Complete the following verse: \"A man's heart deviseth his way: ...\"": {
+    "fact": true,
+    "note": "WEB \"Yahweh directs his steps\": same sense (Prov 16:9)"
+  },
+  "Complete the following quotation of Jesus: \"If ye abide in me, and my words abide in you, ...\"": {
+    "fact": true,
+    "note": "WEB \"you will ask whatever you desire, and it will be done for you\": same promise (John 15:7)"
+  },
+  "In Jesus' parable of the wedding feast where did he say we should choose to sit?": {
+    "fact": false,
+    "note": "KJV \"lowest room\" / ASV, WEB \"lowest place\" (Luke 14:10)"
+  },
+  "Where does God gather the kings and armies of all nations in Revelation?": {
+    "fact": true,
+    "note": "ASV, WEB \"Har-Magedon\": same place, another spelling (Rev 16:16)"
+  },
+  "Complete the following verse: \"When I was a child, I spake as a child, I understood as a child, I thought as a child: but . . .\"": {
+    "fact": true,
+    "note": "ASV \"now that I am become a man\": same sense (1 Cor 13:11)"
+  },
+  "Why did Jesus say to the Centurion at Capernaum, \"Verily I say unto you, I have not found so great faith, no, not in Israel.\"?": {
+    "fact": true,
+    "note": "same account in every translation (Matt 8:5-13)"
+  },
+  "Complete the following verse: \"Seek, and ye shall find, . . .\"": {
+    "fact": true,
+    "note": "WEB \"Knock, and it will be opened for you\": archaic forms (Matt 7:7)"
+  },
+  "What did God tell the Israelites to do before every battle in their own land when an enemy oppressed them?": {
+    "fact": true,
+    "note": "ASV, WEB \"sound an alarm with the trumpets\": same act (Num 10:9)"
+  },
+  "What did Enoch and Elijah have in common?": {
+    "fact": true,
+    "note": "same in every translation (Gen 5:24; 2 Kings 2:11)"
+  },
+  "To what mountain did David flee during his flight from Absalom?": {
+    "fact": true,
+    "note": "ASV, WEB \"mount of Olives\": same mountain (2 Sam 15:30)"
+  },
+  "What were the last words of Jesus on the cross recorded in Matthew and Mark?": {
+    "fact": true,
+    "note": "WEB \"why have you forsaken me\": archaic pronoun (Matt 27:46)"
   }
 }
