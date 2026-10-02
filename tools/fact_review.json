@@ -258,5 +258,41 @@
   "Complete the following verse from Proverbs: \"A man that hath friends must shew himself friendly: and there is a friend that...\"": {
     "fact": true,
     "note": "WEB \"sticks closer than a brother\": archaic verb form"
+  },
+  "What did Jesus say was the second greatest commandment?": {
+    "fact": true,
+    "note": "ASV, WEB \"neighbor\": spelling (Matt 22:39)"
+  },
+  "As recorded in Matthew, what happened to the earth and the rocks respectively immediately after the death of Jesus on the cross?": {
+    "fact": true,
+    "note": "WEB \"the earth quaked and the rocks were split\": same event (Matt 27:51)"
+  },
+  "Complete the following sentence of scripture: \"All things are lawful for me, but I will not be brought...\"": {
+    "fact": true,
+    "note": "WEB \"anything\": same sense (1 Cor 6:12)"
+  },
+  "After whose birth did man begin to pray for the first time?": {
+    "fact": true,
+    "note": "ASV, WEB \"Enosh\": spelling (Gen 4:26)"
+  },
+  "Finish this sentence from scripture: \"I can do all things...\"": {
+    "fact": false,
+    "note": "KJV, WEB \"through Christ\" / ASV \"in him that strengtheneth me\": manuscript difference (Phil 4:13)"
+  },
+  "Complete the following statement of Paul about the sacrament of communion: \"He that eateth and drinketh unworthily, eateth and drinketh...\"": {
+    "fact": false,
+    "note": "KJV \"damnation\" / ASV, WEB \"judgment\" (1 Cor 11:29)"
+  },
+  "What was Jezebel doing just before the arrival of her expected executioners?": {
+    "fact": false,
+    "note": "KJV \"painted her face\" / ASV, WEB \"painted her eyes\" (2 Kings 9:30)"
+  },
+  "What is the English translation of the word \"Rabbi\"?": {
+    "fact": false,
+    "note": "KJV \"Master\" / ASV, WEB \"Teacher\" (John 1:38)"
+  },
+  "According to Jesus, on what two great commandments do the law and the prophets hang?": {
+    "fact": true,
+    "note": "ASV, WEB \"neighbor\", \"you\": same two commandments (Matt 22:37-40)"
   }
 }
