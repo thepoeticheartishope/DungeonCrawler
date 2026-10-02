@@ -200,8 +200,8 @@
       "back": "e240602a6ce96d7eff8d55795fda4f9d"
     },
     "set": "lists/bible-quiz-bowl.json",
-    "added": 69,
-    "pr": null
+    "added": 68,
+    "pr": 108
   },
   {
     "date": "2026-10-01",
@@ -212,8 +212,8 @@
       "back": "fe19985409e2470ff05776a92153ab67"
     },
     "set": "lists/bible-quiz-bowl.json",
-    "added": 83,
-    "pr": null
+    "added": 82,
+    "pr": 108
   },
   {
     "date": "2026-10-01",
@@ -224,8 +224,8 @@
       "back": "5d7b93842f9c1fce2b557ba75ef7e776"
     },
     "set": "lists/bible-quiz-bowl.json",
-    "added": 84,
-    "pr": null
+    "added": 83,
+    "pr": 108
   },
   {
     "date": "2026-10-01",
@@ -237,7 +237,7 @@
     },
     "set": "lists/bible-quiz-bowl.json",
     "added": 84,
-    "pr": null
+    "pr": 108
   },
   {
     "date": "2026-10-01",
@@ -249,6 +249,6 @@
     },
     "set": "lists/bible-quiz-bowl.json",
     "added": 81,
-    "pr": null
+    "pr": 108
   }
 ]
