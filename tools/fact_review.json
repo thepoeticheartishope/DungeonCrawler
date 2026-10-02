@@ -362,5 +362,29 @@
   "Complete the following statement of Jesus: \"These things have I spoken unto you, that my joy might remain in you, and that your...\"": {
     "fact": true,
     "note": "ASV, WEB \"your joy may be made full\": same sense (John 15:11)"
+  },
+  "What two things did the apostle Paul say must occur before the day of Christ?": {
+    "fact": false,
+    "note": "KJV, ASV \"a falling away\" / WEB \"the rebellion\" (2 Thess 2:3)"
+  },
+  "In what situation were quail first mentioned in the Bible?": {
+    "fact": true,
+    "note": "same event in every translation (Ex 16:13-21)"
+  },
+  "What did Jesus mean by the \"sign of Jonah\"?": {
+    "fact": true,
+    "note": "same sign in every translation (Matt 12:38-41)"
+  },
+  "What are the 3 great virtues of 1 Corinthians 13?": {
+    "fact": false,
+    "note": "KJV \"charity\" / ASV, WEB \"love\" (1 Cor 13:13)"
+  },
+  "Complete the following verse: \"A man's heart deviseth his way: ...\"": {
+    "fact": true,
+    "note": "WEB \"Yahweh directs his steps\": same sense (Prov 16:9)"
+  },
+  "Complete the following quotation of Jesus: \"If ye abide in me, and my words abide in you, ...\"": {
+    "fact": true,
+    "note": "WEB \"you will ask whatever you desire, and it will be done for you\": same promise (John 15:7)"
   }
 }
