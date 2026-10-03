@@ -6,7 +6,7 @@ Python 3, standard library only. Run them from the repo root.
 
 | Script | Needs internet | What it does |
 |---|---|---|
-| `validate.py` | no | Rules every set must pass: fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", every Bible question labelled `fact`. Run it before every PR that touches a question set. |
+| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", every Bible question labelled `fact`. Run it before every PR that touches a question set. |
 | `convert_batch.py` | yes (cached) | The steps for a photographed card batch in one place: checks the photos weren't converted before, refuses exact duplicates and lists likely near-duplicates, adds the batch, bumps `CACHE_NAME`, then runs the three scripts above for just the new questions. |
 | `kjv_check.py` | first run only | Checks citations and quotes against the KJV text: citations exist, "Which verse says…?" quotes match, quoted phrases are in the cited verses. Reports only. |
 | `fact_check.py` | yes (cached) | Labels every Bible question `"fact": true` or `false` by comparing the cited verse in the KJV, ASV and WEB. Writes the label into the JSON. |
