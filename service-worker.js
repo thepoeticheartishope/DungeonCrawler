@@ -43,6 +43,7 @@ const APP_SHELL = [
   './lists/comptia-aplus.json',
   './lists/bible-trivia.json',
   './lists/bible-quiz-bowl.json',
+  './lists/dictionaries/bible.json',
   './lists/images/cpu-chip.svg',
   './fonts/VT323-Regular.ttf',
   './icons/icon-192.png',

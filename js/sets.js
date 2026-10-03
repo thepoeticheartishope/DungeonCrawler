@@ -8,9 +8,10 @@ const CUSTOM_SETS_KEY = 'termDungeon.customSets';
 //
 // Each manifest entry: { id, subject, name, description, file }. Sets with
 // the same "subject" (e.g. both Bible sets are "bible") cover the same
-// material; CompTIA subjects are per exam ("comptia-aplus"). Not used in
-// play yet: it will pick the subject's term dictionary (plan: ByClaude
-// "stem-matching-dictionary.md"). Pasted/saved custom sets have no subject.
+// material; CompTIA subjects are per exam ("comptia-aplus"). The subject
+// picks the term dictionary wrong answers are drawn from
+// (lists/dictionaries/<subject>.json, see quiz.js buildChoices). Pasted and
+// saved custom sets have no subject, so no dictionary.
 
 // Returns the manifest array, or [] if it can't be fetched (offline before
 // the service worker has cached it, opened over file://, etc.) — the start
@@ -31,6 +32,22 @@ export async function fetchManifest() {
 export async function fetchBundledSet(file) {
   try {
     const res = await fetch('lists/' + file);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) ? data : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Returns a subject's term dictionary (lists/dictionaries/<subject>.json),
+// or null when the set has no subject, the subject has no dictionary, or it
+// can't be fetched. Null just means wrong answers come from the set's own
+// answers, as before dictionaries existed.
+export async function fetchDictionary(subject) {
+  if (!subject) return null;
+  try {
+    const res = await fetch('lists/dictionaries/' + subject + '.json');
     if (!res.ok) return null;
     const data = await res.json();
     return Array.isArray(data) ? data : null;

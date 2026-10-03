@@ -4,7 +4,7 @@ import { state } from './state.js';
 import { PLAYER_NAME_MAX_LENGTH } from './config.js';
 import { defaultSample, parseListInput, escapeHtml } from './quiz.js';
 import {
-  fetchManifest, fetchBundledSet, listSavedSets, saveSet, loadSavedSet, deleteSet
+  fetchManifest, fetchBundledSet, fetchDictionary, listSavedSets, saveSet, loadSavedSet, deleteSet
 } from './sets.js';
 
 const revealToggle = document.getElementById('revealToggle');
@@ -80,6 +80,7 @@ export function initSetLoader() {
       return;
     }
     state.settings.activeData = result.data;
+    state.settings.activeDictionary = null;
     state.settings.usingSample = false;
     let msg = 'Loaded ' + state.settings.activeData.length + ' items — this set will be used for the next run.';
     if (result.warning) msg += ' ' + result.warning;
@@ -94,6 +95,7 @@ export function initSetLoader() {
   resetListBtn.addEventListener('click', () => {
     state.settings.usingSample = true;
     state.settings.activeData = defaultSample(true);
+    state.settings.activeDictionary = null;
     dataInput.value = '';
     fileInput.value = '';
     showSampleStatus();
@@ -121,12 +123,13 @@ export function initSetLoader() {
     const chosen = builtinSets.find((set) => set.id === builtinSetSelect.value);
     if (!chosen) return;
     loaderStatus.innerHTML = '<span class="loader-ok">Loading ' + escapeHtml(chosen.name) + '…</span>';
-    const data = await fetchBundledSet(chosen.file);
+    const [data, dictionary] = await Promise.all([fetchBundledSet(chosen.file), fetchDictionary(chosen.subject)]);
     if (!data) {
       loaderStatus.innerHTML = '<span class="loader-error">Could not load that set. Try again.</span>';
       return;
     }
     state.settings.activeData = data;
+    state.settings.activeDictionary = dictionary;
     state.settings.usingSample = false;
     loaderStatus.innerHTML = '<span class="loader-ok">Loaded "' + escapeHtml(chosen.name) + '" (' +
       data.length + ' items) — this set will be used for the next run.</span>';
@@ -150,6 +153,7 @@ export function initSetLoader() {
         const data = loadSavedSet(set.name);
         if (!data) return;
         state.settings.activeData = data;
+        state.settings.activeDictionary = null;
         state.settings.usingSample = false;
         loaderStatus.innerHTML = '<span class="loader-ok">Loaded "' + escapeHtml(set.name) + '" (' +
           data.length + ' items) — this set will be used for the next run.</span>';
