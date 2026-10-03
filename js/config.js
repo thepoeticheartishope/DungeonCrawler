@@ -26,49 +26,25 @@ export const MC_SAMPLE_DATA = [
     term: "RAID",
     meaning: "Redundant Array of Independent Disks",
     category: "Hardware",
-    difficulty: "medium",
-    options: [
-      "Redundant Array of Independent Disks",
-      "Random Access Interface Device",
-      "Rapid Application Integration Driver",
-      "Remote Authentication Dial-In Device"
-    ]
+    difficulty: "medium"
   },
   {
     term: "HTTP",
     meaning: "Hypertext Transfer Protocol",
     category: "Networking",
-    difficulty: "easy",
-    options: [
-      "Hypertext Transfer Protocol",
-      "High Throughput Transmission Protocol",
-      "Host Transfer Text Program",
-      "Hyperlink Text Transport Process"
-    ]
+    difficulty: "easy"
   },
   {
     term: "VPN",
     meaning: "Virtual Private Network",
     category: "Networking",
-    difficulty: "hard",
-    options: [
-      "Virtual Private Network",
-      "Verified Public Node",
-      "Virtual Protocol Negotiation",
-      "Variable Packet Node"
-    ]
+    difficulty: "hard"
   },
   {
     term: "DHCP",
     meaning: "Dynamic Host Configuration Protocol",
     category: "Networking",
-    difficulty: "medium",
-    options: [
-      "Dynamic Host Configuration Protocol",
-      "Direct Hardware Control Panel",
-      "Distributed Host Connection Process",
-      "Dynamic Hardware Configuration Program"
-    ]
+    difficulty: "medium"
   }
 ];
 

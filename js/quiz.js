@@ -322,6 +322,19 @@ function sharesPart(e, own) {
   return e.of === own.of || rel(e.relation) === rel(own.relation);
 }
 
+// How alike two acronyms look: 2 when they share their first two letters
+// (RAM / RAID), 1 for the first letter only (RAM / RSA), else 0. For an
+// acronym question the right answer's initials match the acronym, so wrong
+// answers with other initials would give it away; look-alike acronyms'
+// definitions start with the same letters too, and they're real terms.
+function acronymLikeness(e, own) {
+  if (!own || !own.acronym || !e.acronym) return 0;
+  const a = own.acronym.toUpperCase();
+  const b = e.acronym.toUpperCase();
+  if (a.slice(0, 2) === b.slice(0, 2)) return 2;
+  return a[0] === b[0] ? 1 : 0;
+}
+
 // What kind of answer an entry is: a plain term, a description ("The
 // gardener") or a list of several terms ("Abraham and Sarah"). A choice
 // list keeps to one kind, so the right answer can't stand out as the only
@@ -409,8 +422,10 @@ function answerTypeOf(d) {
 // lists/dictionaries/) and the question has an answerType, the first tiers
 // are dictionary entries of that type: for a person named through another
 // ("Pharaoh's daughter"), ones sharing a part first ("Jairus' daughter",
-// "Pharaoh's ..."; sharesPart); then same kind (term / description / list,
-// entryForm) and same draft status, then same kind, then any kind.
+// "Pharaoh's ..."; sharesPart), and for an acronym's definition ones whose
+// acronym looks alike (same first two letters, then first letter;
+// acronymLikeness); then same kind (term / description / list, entryForm)
+// and same draft status, then same kind, then any kind.
 // The dictionary holds every term of the subject, not just the answers of
 // the set in play, so a small set still gets close wrong answers.
 //
@@ -478,6 +493,8 @@ export function buildChoices(item) {
     const meanings = items => items.map(d => shown(d.meaning));
     const tiers = [
       terms(dictPool.filter(e => sharesPart(e, own) && sameForm(e) && sameDraft(e))),
+      terms(dictPool.filter(e => acronymLikeness(e, own) === 2)),
+      terms(dictPool.filter(e => acronymLikeness(e, own) === 1)),
       terms(dictPool.filter(e => sameForm(e) && sameDraft(e))),
       terms(dictPool.filter(sameForm)),
       terms(dictPool),
