@@ -17,7 +17,6 @@
 import { state, key } from './state.js';
 import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE } from './config.js';
 import { FACING_VECTORS } from './sight.js';
-import { t } from './text.js';
 import { artAt, art } from './tileart.js';
 
 // How bright a lit tile is, by its steps from the player (0 = their own
@@ -61,6 +60,14 @@ const STAIR_DROP = 0.1;           // how far each step sinks, as a share of a ti
 const PAPER_SHEET = [[-0.8, -0.55], [0.75, -0.7], [0.8, 0.55], [-0.75, 0.7]];
 const PAPER_LINES = [-0.3, 0, 0.3];
 const PAPER_SCALE = 0.2;
+// The player, drawn as a stick man standing on their tile.
+const STICK_HEIGHT = 0.62;     // feet to top of head
+const STICK_LINE = 0.035;      // line width (never under 1.5px)
+const STICK_BLUR = 0.12;       // its glow
+const STICK_BREATH = 0.022;    // how far the chest lifts on a breath, as a share of its height
+const STICK_ARM_SWAY = 0.012;  // how far the hands move with the breath
+const STICK_STRIDE = 0.16;     // how far the feet swing apart on a step
+const STICK_GLANCE = 0.8;      // how far the head turns on an idle glance, as a share of its radius
 const TARGET_PULSE = [0.45, 1]; // the target diamond's strength at either end of its pulse, as top-down
 // Walls in front of the camera, cut away (Timothy chose this over see-through glass).
 const WALL_STUB = 0.22;          // a cut-away wall's stub, as a share of its height
@@ -112,6 +119,8 @@ let cameraGoal = null;   // { row, col } it is gliding to, or resting on
 let glide = null;        // { from, start } while it glides to cameraGoal
 let cameraFloor = -1;    // the floor (state.run.floorsEntered) the camera is on
 let cameraPlayer = null; // the player's tile when the camera last looked
+let stickSeen = null;    // the player's tile and facing when the stick man last stood still
+let stickActiveAt = 0;   // when the player last moved, turned or bumped: idle time counts from here
 
 // Draws the whole isometric map as state has it now, in layer order:
 // floor, things lying on it (stairs, papers, the facing wedge, pillar
@@ -820,9 +829,9 @@ function glyphPlace(thing) {
   return [cx, cy - glyphSize * GLYPH_RISE - (thing.look.lift || 0) * tw];
 }
 
-// Something standing on the floor: a box the player has made out, or a
-// glyph upright on a small contact shadow. The player shows as the
-// player's symbol; the facing wedge on the floor says which way they face.
+// Something standing on the floor: a box the player has made out, a
+// glyph upright on a small contact shadow, or the player as a stick man
+// (the facing wedge on the floor says which way they face).
 function drawStanding(ctx, thing) {
   const { at } = thing;
   if (isBlock(thing)) {
@@ -841,15 +850,81 @@ function drawStanding(ctx, thing) {
   ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
   ctx.fill();
   ctx.restore();
+  if (thing.kind === 'player') return drawStickMan(ctx, thing.at, cx, cy);
   const [x, y] = glyphPlace(thing);
-  look.paintGlyph(ctx, tw * GLYPH_CELL, x, y, standingGlyph(thing), thing.look);
+  look.paintGlyph(ctx, tw * GLYPH_CELL, x, y, thing.glyph, thing.look);
 }
 
-// The glyph a standing thing shows: the player as the player's symbol
-// (the facing wedge on the floor says which way they face), else its own
-// glyph, or null for the '?' of something too far to make out.
-function standingGlyph(thing) {
-  return thing.kind === 'player' ? t('term.player.symbol') : thing.glyph;
+// The player as a stick man, feet at (fx, fy). It breathes while it
+// stands; after MAP_ANIMATION_MS.playerIdle with no move, turn or bump it
+// also glances to the side now and then. The feet swing on a step. A dot
+// on the face shows which way it looks, hidden when it faces away.
+function drawStickMan(ctx, at, fx, fy) {
+  const f = state.floor;
+  const h = tw * STICK_HEIGHT;
+  const [fr, fc] = FACING_VECTORS[f.facing];
+  const side = fc - fr;          // which way it faces across the screen
+  const away = fr + fc < 0;      // north and west face up the screen
+  // How far through a step or bump it is: 0 standing on its tile.
+  const off = Math.max(Math.abs(at.row - f.playerRow), Math.abs(at.col - f.playerCol));
+  const now = look.now;
+  if (off || !stickSeen || stickSeen.row !== f.playerRow || stickSeen.col !== f.playerCol || stickSeen.facing !== f.facing) {
+    stickSeen = { row: f.playerRow, col: f.playerCol, facing: f.facing };
+    stickActiveAt = now;
+  }
+  let breath = 0;  // 0..1 through a breath
+  let sway = 0;    // -1..1, the hands following it
+  let glance = 0;
+  if (!look.still) {
+    look.keepMoving();
+    const b = (now % MAP_ANIMATION_MS.playerBreath) / MAP_ANIMATION_MS.playerBreath * Math.PI * 2;
+    breath = 0.5 - 0.5 * Math.cos(b);
+    sway = Math.sin(b);
+    const idle = now - stickActiveAt - MAP_ANIMATION_MS.playerIdle;
+    if (idle > 0) {
+      const glances = idle / MAP_ANIMATION_MS.playerGlance;
+      const part = glances % 1;
+      // A glance takes the first 30% of each cycle, to one side then the other.
+      if (part < 0.3) glance = Math.sin(part / 0.3 * Math.PI) * (Math.floor(glances) % 2 ? 1 : -1);
+    }
+  }
+  const lift = breath * STICK_BREATH * h;
+  const swing = Math.sin(Math.min(off, 1) * Math.PI);
+  const hip = [fx, fy - h * 0.45];
+  const neck = [fx, fy - h * 0.78 - lift];
+  const headR = h * 0.12;
+  const turn = glance * STICK_GLANCE + side * 0.35;
+  const head = [neck[0] + turn * headR * 0.5, neck[1] - headR * 1.15];
+  const stride = swing * STICK_STRIDE * h;
+  const shoulder = [neck[0], neck[1] + (hip[1] - neck[1]) * 0.18];
+  const arm = sway * STICK_ARM_SWAY * h + swing * h * 0.1;
+  const handY = shoulder[1] + h * 0.3 - lift * 0.4;
+  const lineWidth = Math.max(1.5, tw * STICK_LINE);
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = lineWidth;
+  strokeGlow(ctx, 1, STICK_BLUR);
+  ctx.strokeStyle = look.colours.text;
+  ctx.beginPath();
+  ctx.moveTo(fx - h * 0.1 + stride, fy);
+  ctx.lineTo(hip[0], hip[1]);
+  ctx.lineTo(fx + h * 0.1 - stride, fy);
+  ctx.moveTo(hip[0], hip[1]);
+  ctx.lineTo(neck[0], neck[1]);
+  ctx.moveTo(shoulder[0] - h * 0.2 - arm, handY);
+  ctx.lineTo(shoulder[0], shoulder[1]);
+  ctx.lineTo(shoulder[0] + h * 0.2 + arm, handY);
+  ctx.moveTo(head[0] + headR, head[1]);
+  ctx.arc(head[0], head[1], headR, 0, Math.PI * 2);
+  glowStroke(ctx);
+  if (!away) {
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(head[0] + turn * headR * 0.45, head[1] + headR * 0.1, lineWidth * 0.55, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 // The pulsing diamond round whatever the battle screen is fighting.

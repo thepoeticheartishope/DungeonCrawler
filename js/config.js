@@ -412,6 +412,9 @@ export const MAP_ANIMATION_MS = {
   glow: 1800,       // the rune's and the stairs' glow
   mist: 14000,      // the boss mist's slow drift, there and back
   target: 1100,     // the box round the thing being fought
+  playerBreath: 2600, // the stick man's chest rising and falling (isometric)
+  playerIdle: 3000, // how long the player stands without moving or turning before the stick man starts looking round
+  playerGlance: 5200, // once idle, one glance to the side and back in each of these
 };
 
 // On-screen d-pad (js/dpad.js): holding an arrow walks like holding an
