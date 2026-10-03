@@ -119,6 +119,7 @@ export function buildFloor() {
   const furnishing = furnishFloor(layout, state.floor.GRID_SIZE, state.run.roomIndex);
   state.floor.pillarSet = furnishing.pillars;
   state.floor.chamberAt = layout.chamberAt;
+  state.floor.doorSet = doorTiles(layout);
   state.floor.chamberThemes = furnishing.themes;
   state.floor.visitedChambers = new Set();
   furnishing.props.forEach(p => {
@@ -265,6 +266,13 @@ function facingToward(from, to) {
   return dc < 0 ? 'W' : 'E';
 }
 
+// Every doorway on a floor, as tile keys: each room's open doors and inner
+// doors. Only the map uses them (an arch over each), so a way through
+// reads from any side.
+function doorTiles(layout) {
+  return new Set(layout.chambers.flatMap(ch => [...ch.doorKeys]));
+}
+
 // A rest floor as data: one hand-drawn room (REST_RECIPES[kind].room) with
 // the stairs, a coin, papers on the drawing's '?' spots and the rest's
 // story lines queued for them. Nothing dangerous: no boss, light, minions,
@@ -293,6 +301,7 @@ export function buildRestFloor(kind) {
   const theme = themeKeys[Math.floor(Math.random() * themeKeys.length)];
   f.pillarSet = new Set();
   f.chamberAt = layout.chamberAt;
+  f.doorSet = doorTiles(layout);
   f.chamberThemes = [theme];
   f.visitedChambers = new Set([0]);
   // Papers lie flat, so they need no placer: nobody is blocked by them.

@@ -98,6 +98,7 @@ export const state = {
     pillarSet: new Set(),     // pillar tiles: solid, and they block the player's light
     props: [],                // papers and boxes: [{ row, col, kind, theme, loot, gold, trapped, identified, searched, sprung }]
     chamberAt: new Map(),     // tile key -> which room on the floor it belongs to
+    doorSet: new Set(),       // doorway tiles: each room's open doors and inner doors (isoview.js draws an arch over each)
     chamberThemes: [],        // theme per room
     visitedChambers: new Set(), // rooms the player has walked into (their theme line shows once)
   },
