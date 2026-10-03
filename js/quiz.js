@@ -265,20 +265,71 @@ export function normalizeSpaces(s) {
   return s.trim().replace(/\s+/g, ' ');
 }
 
-// Shuffles `pool` and returns its distinct meanings (case/space-insensitive,
+// Shuffles `meanings` and returns the distinct ones (case/space-insensitive,
 // first occurrence wins), so two different questions that happen to share
 // an answer (e.g. two "who wrote this?" entries both answered "John") never
 // both land in the same choice list looking like duplicate options.
-function distinctMeanings(pool) {
+function distinctMeanings(meanings) {
   const seen = new Set();
   const out = [];
-  for (const d of shuffle(pool)) {
-    const key = normalizeSpaces(d.meaning).toLowerCase();
+  for (const m of shuffle(meanings)) {
+    const key = normalizeSpaces(m).toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push(d.meaning);
+    out.push(m);
   }
   return out;
+}
+
+// A case/space-insensitive key for an answer's spelling.
+function spellingKey(s) {
+  return normalizeSpaces(String(s)).toLowerCase();
+}
+
+// Every spelling in `dictionary` (each entry's term and "aka"s) -> its
+// entries, built once per dictionary. A name and a book can share a
+// spelling ("Jonah"), so a spelling can hold more than one entry.
+const spellingMaps = new WeakMap();
+function spellingsOf(dictionary) {
+  if (spellingMaps.has(dictionary)) return spellingMaps.get(dictionary);
+  const map = new Map();
+  for (const e of dictionary) {
+    for (const spelling of [e.term, ...(e.aka || [])]) {
+      const k = spellingKey(spelling);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k).push(e);
+    }
+  }
+  spellingMaps.set(dictionary, map);
+  return map;
+}
+
+// The dictionary entry an answer stands for (by term or "aka", same type
+// first), or null when it has none.
+function dictionaryEntry(dictionary, meaning, type) {
+  const found = spellingsOf(dictionary).get(spellingKey(meaning)) || [];
+  return found.find(e => e.type === type) || found[0] || null;
+}
+
+// Whether dictionary entry `e` shares a part with `own`, an answer named
+// through another person ("of" / "relation": "Lot's wife" and "Lot's
+// daughters" share Lot; "Pharaoh's daughter" and "Jairus' daughter" share
+// daughter). Those are the closest wrong answers: the player has to know
+// exactly which wife or which daughter.
+function sharesPart(e, own) {
+  if (!own || !own.of || !e.of) return false;
+  const rel = s => String(s || '').toLowerCase().replace(/s$/, '');
+  return e.of === own.of || rel(e.relation) === rel(own.relation);
+}
+
+// What kind of answer an entry is: a plain term, a description ("The
+// gardener") or a list of several terms ("Abraham and Sarah"). A choice
+// list keeps to one kind, so the right answer can't stand out as the only
+// description among names.
+function entryForm(e) {
+  if (e.description) return 'description';
+  if (e.list) return 'list';
+  return 'term';
 }
 
 // The number an answer states, with any unit after it ("8 GB" -> { value:
@@ -335,18 +386,30 @@ function nearestNumbersFirst(meanings, n) {
 
 // Builds 2-4 answer choices for a question. Uses the item's own "options"
 // list if the loaded JSON provided one (adding the correct meaning in if
-// it's missing); otherwise picks up to 3 random distractor meanings from
-// the rest of the active list, preferring ones that share the item's
-// answerType (a name for a name, a number for a number, ...) so the correct
-// choice can't be spotted just by its shape. Candidates are drawn in tiers,
-// topping up from the next tier only when the previous runs out: same
-// answerType and same draft status (a one-word answer isn't offered next
-// to multi-word draft answers), then same answerType, then the same
-// top-level shape (ANSWER_TYPE_GROUPS in config.js: another noun for a
-// noun), again draft-matched first, then (for a number question) any
-// number with the same unit, then anything. For a number question each
-// tier offers the numbers nearest in size first (nearestNumbersFirst), so
-// this works for any set, typed or not.
+// it's missing); otherwise picks up to 3 wrong answers, in tiers, topping
+// up from the next tier only when the previous runs out.
+//
+// When the set has a subject dictionary (state.settings.activeDictionary,
+// lists/dictionaries/) and the question has an answerType, the first tiers
+// are dictionary entries of that type: for a person named through another
+// ("Pharaoh's daughter"), ones sharing a part first ("Jairus' daughter",
+// "Pharaoh's ..."; sharesPart); then same kind (term / description / list,
+// entryForm) and same draft status, then same kind, then any kind.
+// The dictionary holds every term of the subject, not just the answers of
+// the set in play, so a small set still gets close wrong answers.
+//
+// Then the answers of the other questions in the set: same answerType and
+// same draft status (a one-word answer isn't offered next to multi-word
+// draft answers), then same answerType, then the same top-level shape
+// (ANSWER_TYPE_GROUPS in config.js: another noun for a noun), again
+// draft-matched first, then (for a number question) any number with the
+// same unit, then anything. For a number question each tier offers the
+// numbers nearest in size first (nearestNumbersFirst), so this works for
+// any set, typed or not.
+//
+// A wrong answer is never the right answer under another spelling: an
+// answer the dictionary lists as an "aka" counts as its entry's term
+// ("David's" is David), and is shown as that term.
 export function buildChoices(item) {
   let opts;
   if (Array.isArray(item.options) && item.options.length >= 2) {
@@ -354,9 +417,20 @@ export function buildChoices(item) {
     const hasCorrect = opts.some(o => normalizeSpaces(o).toLowerCase() === normalizeSpaces(item.meaning).toLowerCase());
     if (!hasCorrect) opts.push(item.meaning);
   } else {
-    const basePool = state.settings.activeData.filter(d => d !== item &&
-      normalizeSpaces(d.meaning).toLowerCase() !== normalizeSpaces(item.meaning).toLowerCase() &&
-      !EXPLICIT_ANSWER_TERMS.test(d.meaning));
+    const dictionary = state.settings.activeDictionary || [];
+    const own = dictionaryEntry(dictionary, item.meaning, item.answerType);
+    // A set answer's shown spelling: its dictionary entry's term, if any.
+    const shown = m => { const e = dictionaryEntry(dictionary, m); return e ? e.term : m; };
+    const rightKey = spellingKey(shown(item.meaning));
+    const isWrong = m => spellingKey(shown(m)) !== rightKey && !EXPLICIT_ANSWER_TERMS.test(m);
+
+    const dictPool = item.answerType
+      ? dictionary.filter(e => e.type === item.answerType && isWrong(e.term))
+      : [];
+    const sameForm = e => !own || entryForm(e) === entryForm(own);
+    const sameDraft = d => !d.draft === !item.draft;
+
+    const basePool = state.settings.activeData.filter(d => d !== item && isWrong(d.meaning));
     const typedPool = item.answerType
       ? basePool.filter(d => d.answerType === item.answerType)
       : [];
@@ -368,23 +442,28 @@ export function buildChoices(item) {
     const numberPool = num
       ? basePool.filter(d => { const v = numericAnswer(d.meaning); return v && v.unit === num.unit; })
       : [];
-    const sameDraft = d => !d.draft === !item.draft;
+    const terms = entries => entries.map(e => e.term);
+    const meanings = items => items.map(d => shown(d.meaning));
     const tiers = [
-      typedPool.filter(sameDraft),
-      typedPool,
-      groupPool.filter(sameDraft),
-      groupPool,
-      numberPool,
-      basePool
+      terms(dictPool.filter(e => sharesPart(e, own) && sameForm(e) && sameDraft(e))),
+      terms(dictPool.filter(e => sameForm(e) && sameDraft(e))),
+      terms(dictPool.filter(sameForm)),
+      terms(dictPool),
+      meanings(typedPool.filter(sameDraft)),
+      meanings(typedPool),
+      meanings(groupPool.filter(sameDraft)),
+      meanings(groupPool),
+      meanings(numberPool),
+      meanings(basePool)
     ];
     const distractors = [];
     const seen = new Set();
     for (const tier of tiers) {
-      const meanings = distinctMeanings(tier);
-      for (const m of num ? nearestNumbersFirst(meanings, num) : meanings) {
+      const distinct = distinctMeanings(tier);
+      for (const m of num ? nearestNumbersFirst(distinct, num) : distinct) {
         if (distractors.length >= 3) break;
         const v = num && numericAnswer(m);
-        const key = v ? v.value + ' ' + v.unit : normalizeSpaces(m).toLowerCase();
+        const key = v ? v.value + ' ' + v.unit : spellingKey(m);
         if (seen.has(key)) continue;
         seen.add(key);
         distractors.push(m);

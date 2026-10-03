@@ -29,6 +29,7 @@ export const state = {
     isoCameraGlide: true,   // dev toggle: the isometric camera glides after the player (false: locked to them)
     usingSample: true, // false once the person loads their own list
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
+    activeDictionary: null, // the active set's subject dictionary (lists/dictionaries/), or null (pasted, saved and sample sets)
   },
 
   run: {
