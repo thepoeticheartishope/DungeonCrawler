@@ -6,7 +6,8 @@ Python 3, standard library only. Run them from the repo root.
 
 | Script | Needs internet | What it does |
 |---|---|---|
-| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", every Bible question labelled `fact`. Run it before every PR that touches a question set. |
+| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), every answer is in the subject's dictionary when it has one, fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", every Bible question labelled `fact`. Run it before every PR that touches a question set. |
+| `build_dictionary.py` | no | `python3 tools/build_dictionary.py bible`: adds every answer of the subject's sets that `lists/dictionaries/<subject>.json` doesn't cover yet. Keeps existing entries as they are, so edits are safe. See "Subject dictionaries" below. |
 | `convert_batch.py` | yes (cached) | The steps for a photographed card batch in one place: checks the photos weren't converted before, refuses exact duplicates and lists likely near-duplicates, adds the batch, bumps `CACHE_NAME`, then runs the three scripts above for just the new questions. |
 | `kjv_check.py` | first run only | Checks citations and quotes against the KJV text: citations exist, "Which verse says…?" quotes match, quoted phrases are in the cited verses. Reports only. |
 | `fact_check.py` | yes (cached) | Labels every Bible question `"fact": true` or `false` by comparing the cited verse in the KJV, ASV and WEB. Writes the label into the JSON. |
@@ -49,7 +50,30 @@ cached so re-runs are quick.
    ```
    Spelling differences (Elias / Elijah, colours / colors) and the same thing
    under another name (Diana / Artemis) count as facts. Then run step 3 again.
-5. `python3 tools/validate.py` should print "All question sets pass."
+5. `python3 tools/build_dictionary.py bible`: adds the new answers to the dictionary; check what it marks.
+6. `python3 tools/validate.py` should print "All question sets and dictionaries pass."
+
+## Subject dictionaries
+
+`lists/dictionaries/<subject>.json` lists the terms of one subject (all sets
+with that `subject` in `lists/manifest.json`), one entry per line:
+
+```json
+{"term": "David", "type": "name", "aka": ["David's"]}
+{"term": "The woman Jesus met at the well", "type": "name", "description": true}
+{"term": "Abraham and Sarah", "type": "name", "list": true}
+```
+
+- `type`: an answerType. A name and a book with the same text ("Jonah") are two entries.
+- `aka`: other spellings that mean this entry. A question's answer matches an
+  entry by its `term` or an `aka`.
+- `description`: the answer describes rather than names. `list`: it names
+  several terms. `draft`: every question with this answer is a draft.
+
+`build_dictionary.py` only guesses `description` / `list` / the possessive
+`aka`s; review its new entries. Only terms from the course material belong
+here (names in the Bible, acronyms on the exam's list). The game doesn't use
+the dictionary yet: the plan is that wrong answers come from it.
 
 ## What "fact" means
 

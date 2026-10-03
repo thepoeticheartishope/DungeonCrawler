@@ -13,7 +13,9 @@
     python3 tools/convert_batch.py check
         For the questions that are new compared with origin/main: the KJV
         check, fact labels (tools/fact_check.py) with anything still needing
-        review, and tools/validate.py. Re-run after fixing or reviewing.
+        review, new answers added to lists/dictionaries/bible.json
+        (tools/build_dictionary.py), and tools/validate.py. Re-run after
+        fixing or reviewing.
 
     python3 tools/convert_batch.py pr NUMBER
         Record the PR number on the latest batch in tools/batches.json.
@@ -220,6 +222,9 @@ def cmd_check(a=None):
             print(f'{path}: {sum(e.get("fact") is True for e in batch)} fact / '
                   f'{sum(e.get("fact") is False for e in batch)} not fact, '
                   f'{sum(1 for e in batch if e.get("draft"))} draft')
+    print('\n### Dictionary (new answers are added for review)')
+    d = run('build_dictionary.py', 'bible')
+    print((d.stdout + d.stderr).strip())
     print('\n### validate')
     v = run('validate.py')
     print((v.stdout + v.stderr).strip())
