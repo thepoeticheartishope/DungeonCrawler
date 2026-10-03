@@ -30,12 +30,6 @@
     "category": "Hardware",
     "difficulty": "medium",
     "source": "Combines multiple physical disks into one logical unit for redundancy, performance, or both.",
-    "options": [
-      "Redundant Array of Independent Disks",
-      "Random Access Interface Device",
-      "Rapid Application Integration Driver",
-      "Remote Authentication Dial-In Device"
-    ],
     "answerType": "term"
   },
   {
@@ -52,12 +46,6 @@
     "category": "Networking",
     "difficulty": "easy",
     "source": "The protocol web browsers use to request and receive pages from a server.",
-    "options": [
-      "Hypertext Transfer Protocol",
-      "High Throughput Transmission Protocol",
-      "Host Transfer Text Program",
-      "Hyperlink Text Transport Process"
-    ],
     "answerType": "term"
   },
   {
@@ -66,12 +54,6 @@
     "category": "Networking",
     "difficulty": "hard",
     "source": "Creates an encrypted tunnel over a public network so traffic behaves as if it's on a private one.",
-    "options": [
-      "Virtual Private Network",
-      "Verified Public Node",
-      "Virtual Protocol Negotiation",
-      "Variable Packet Node"
-    ],
     "answerType": "term"
   },
   {
@@ -80,12 +62,6 @@
     "category": "Networking",
     "difficulty": "medium",
     "source": "Automatically assigns IP addresses and network settings to devices as they join a network.",
-    "options": [
-      "Dynamic Host Configuration Protocol",
-      "Direct Hardware Control Panel",
-      "Distributed Host Connection Process",
-      "Dynamic Hardware Configuration Program"
-    ],
     "answerType": "term"
   }
 ]

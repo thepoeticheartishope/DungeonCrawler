@@ -203,3 +203,18 @@ test('a tag the stem does not allow wins, and the stem is ignored', () => {
     assert.deepEqual(buildChoices(item).slice().sort(), ['Faith', 'False gods', 'Grace', 'Hope']);
   }
 });
+
+test('an acronym question gets definitions of look-alike acronyms first', () => {
+  const item = q('RAID', 'Redundant Array of Independent Disks', { answerType: 'term' });
+  state.settings.activeData = [item];
+  const term = (t, acronym) => entry(t, 'term', { acronym });
+  state.settings.activeDictionary = [term('Redundant Array of Independent Disks', 'RAID'),
+    term('Random-access Memory', 'RAM'), term('Rivest, Shamir, Adleman', 'RSA'), term('Remote Desktop Protocol', 'RDP'),
+    term('Domain Name System', 'DNS'), term('Liquid Crystal Display', 'LCD'), term('Secure Shell', 'SSH')];
+  for (let i = 0; i < 20; i++) {
+    const got = buildChoices(item);
+    assert.ok(got.includes('Random-access Memory'));
+    assert.ok(got.every(c => c[0] === 'R'));
+  }
+  state.settings.activeDictionary = null;
+});
