@@ -56,6 +56,26 @@ const PILLAR_SHADOW_WIDTH = 0.2; // its width at the pillar; it spreads to 1.8x 
 const STAIR_STEPS = 4;
 const STAIR_INSET = [0.08, 0.09]; // the first step's inset, then each next one's
 const STAIR_DROP = 0.1;           // how far each step sinks, as a share of a tile's height
+// The stairs' column of light, rising out of them above the walls so the
+// way out shows even behind a wall. Soft layers, widest and faintest
+// first: width a share of a tile's width, strength at the stairs.
+const STAIR_BEAM_HEIGHT = 2.1;    // as a share of a wall's height
+const STAIR_BEAM_LAYERS = [{ width: 0.55, strength: 0.16 }, { width: 0.32, strength: 0.26 }, { width: 0.12, strength: 0.5 }];
+const STAIR_BEAM_FADE = [0.75, 0.5]; // where up the column it has faded to this share of its strength
+const STAIR_BEAM_DEPTH = 0.5;     // the column draws among the standing things, with its own tile
+// A doorway: two thin posts with an arch over them and a faint haze in the
+// opening, so a way through reads from any side and its arch shows over a
+// wall in front of it (Timothy picked this from the door frames mockup).
+// The posts cut down with the walls beside them; the arch fades out and
+// leaves a dashed outline.
+const DOOR_POST = 0.07;          // half a post's width, in tiles
+const DOOR_ARCH_RISE = 0.34;     // how far the arch rises above the walls, as a share of a wall's height
+const DOOR_ARCH_THICK = 0.08;    // the arch's thickness, as a share of a wall's height
+const DOOR_ARCH_STEPS = 16;      // straight pieces in each line of the arch
+const DOOR_MIN_LEVEL = 0.5;      // a remembered doorway's arch is still this bright
+const DOOR_HAZE = [0.2, 0.02];   // the haze's strength at the floor and at the arch
+const DOOR_GHOST_LEVEL = 0.5;    // the dashed outline of a cut doorway: brighter than a wall's, it marks the way
+const DOOR_DEPTH = 0.6;          // draws after a thing standing in the doorway, before the wall past it
 // The paper lying flat, in the tile's own two directions (-1..1 across it).
 const PAPER_SHEET = [[-0.8, -0.55], [0.75, -0.7], [0.8, 0.55], [-0.75, 0.7]];
 const PAPER_LINES = [-0.3, 0, 0.3];
@@ -158,13 +178,18 @@ export function drawIsoScene(ctx, canvasSize, shared) {
     if (isPillar(row, col)) {
       standing.push({ depth: row + col, draw: () => drawPillar(ctx, row, col) });
     }
+    const door = doorwayAt(row, col);
+    if (door) standing.push({ depth: row + col + DOOR_DEPTH, draw: () => drawDoorway(ctx, door) });
     const mist = look.mistStrength(row, col);
     if (mist) standing.push({ depth: row + col + MIST_DEPTH, draw: () => drawMist(ctx, row, col, mist) });
   });
   drawPillarShadows(ctx, tiles);
   look.things.forEach(thing => {
     if (!onScreen(thing.at.row, thing.at.col)) return;
-    if (thing.kind === 'stairs') return drawStairs(ctx, thing.at);
+    if (thing.kind === 'stairs') {
+      standing.push({ depth: thing.at.row + thing.at.col + STAIR_BEAM_DEPTH, draw: () => drawStairBeam(ctx, thing.at) });
+      return drawStairs(ctx, thing.at);
+    }
     if (thing.kind === 'paper' && thing.glyph !== null) return drawPaper(ctx, thing.at);
     if (thing.kind === 'player') drawFacing(ctx, thing.at);
     standing.push({ depth: thing.at.row + thing.at.col + 0.5, draw: () => drawStanding(ctx, thing) });
@@ -723,6 +748,155 @@ function drawStairs(ctx, at) {
     strokeGlow(ctx, (0.95 - i * 0.18) * strength, RIDGE_BLUR * 1.4 - i * 0.03);
     glowStroke(ctx);
   }
+  ctx.restore();
+}
+
+// The stairs' column of light: soft upright layers rising from the stairs,
+// pulsing with them and fading toward the top. Drawn among the standing
+// things, so a wall in front hides its foot and the rest rises above it.
+function drawStairBeam(ctx, at) {
+  const [x, y] = centre(at.row, at.col);
+  const strength = 0.82 + 0.18 * look.pulse(MAP_ANIMATION_MS.glow);
+  const top = y - wallH * STAIR_BEAM_HEIGHT;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  STAIR_BEAM_LAYERS.forEach(layer => {
+    const a = layer.strength * strength;
+    const fade = ctx.createLinearGradient(0, y, 0, top);
+    fade.addColorStop(0, glow(a));
+    fade.addColorStop(STAIR_BEAM_FADE[0], glow(a * STAIR_BEAM_FADE[1]));
+    fade.addColorStop(1, glow(0));
+    ctx.fillStyle = fade;
+    const half = tw * layer.width / 2;
+    ctx.beginPath();
+    ctx.ellipse(x, y, half, half / 2, 0, 0, Math.PI);
+    ctx.lineTo(x - half, top);
+    ctx.lineTo(x + half, top);
+    ctx.closePath();
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+// The doorway on a tile, if it is one the player has seen with a wall on
+// either side: { row, col, across }, where `across` says the walls beside
+// it are west and east (true) or north and south (false). Null otherwise.
+function doorwayAt(row, col) {
+  if (!state.floor.doorSet.has(key(row, col))) return null;
+  if (look.fogOf(row, col) === 'hidden') return null;
+  if (isWall(row, col - 1) && isWall(row, col + 1)) return { row, col, across: true };
+  if (isWall(row - 1, col) && isWall(row + 1, col)) return { row, col, across: false };
+  return null;
+}
+
+// The two walls a doorway stands between, back one first.
+function doorSides(door) {
+  const { row, col } = door;
+  return door.across ? [[row, col - 1], [row, col + 1]] : [[row - 1, col], [row + 1, col]];
+}
+
+// A point on the doorway's wall line, from one post (t = 0) to the other
+// (t = 1), `h` pixels up.
+function doorPoint(door, t, h) {
+  const span = 1 - 2 * DOOR_POST;
+  const at = door.across
+    ? centre(door.row, door.col - 0.5 + DOOR_POST + t * span)
+    : centre(door.row - 0.5 + DOOR_POST + t * span, door.col);
+  return up(at, h);
+}
+
+// One line of the arch, from post top to post top: `base` pixels up at
+// the posts, rising `rise` pixels more at the middle.
+function archLine(door, base, rise) {
+  const points = [];
+  for (let i = 0; i <= DOOR_ARCH_STEPS; i++) {
+    const t = i / DOOR_ARCH_STEPS;
+    points.push(doorPoint(door, t, base + rise * Math.sin(Math.PI * t)));
+  }
+  return points;
+}
+
+function strokeLine(ctx, points) {
+  ctx.beginPath();
+  points.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+  glowStroke(ctx);
+}
+
+// A doorway: the haze in the opening, two posts as tall as the walls
+// beside them, and the arch over them. When those walls are cut, the posts
+// lower with them (the more cut of the two), the arch fades out and a
+// dashed outline of it stays at full height.
+function drawDoorway(ctx, door) {
+  const level = Math.max(DOOR_MIN_LEVEL, floorLevel(door.row, door.col));
+  const cut = Math.max(...doorSides(door).map(([r, c]) => cutOf(r, c)));
+  const height = wallH * (1 - cut * (1 - WALL_STUB));
+  const rise = wallH * DOOR_ARCH_RISE;
+  const thick = wallH * DOOR_ARCH_THICK;
+  const outer = archLine(door, height, rise * (1 - cut));
+  const inner = archLine(door, height - thick * (1 - cut), (rise - thick) * (1 - cut));
+  drawDoorHaze(ctx, door, inner, height, level);
+  drawPost(ctx, door, 0, height, level);
+  if (cut < 1) {
+    ctx.save();
+    ctx.globalAlpha = 1 - cut;
+    poly(ctx, [...outer, ...inner.slice().reverse()]);
+    ctx.fillStyle = EAST_FACE;
+    ctx.fill();
+    ctx.lineWidth = EDGE_WIDTH * tw * 1.2;
+    strokeGlow(ctx, Math.min(1, level * 1.1), RIDGE_BLUR * 1.4 * level);
+    strokeLine(ctx, outer);
+    strokeLine(ctx, inner);
+    ctx.restore();
+  }
+  if (cut > 0) {
+    ctx.save();
+    halo = null;
+    ctx.setLineDash(GHOST_DASH.map(n => n * tw));
+    ctx.lineWidth = EDGE_WIDTH * tw * 0.8;
+    ctx.strokeStyle = glow(DOOR_GHOST_LEVEL * cut);
+    strokeLine(ctx, archLine(door, wallH, rise));
+    line(ctx, doorPoint(door, 0, height), doorPoint(door, 0, wallH));
+    line(ctx, doorPoint(door, 1, height), doorPoint(door, 1, wallH));
+    ctx.restore();
+  }
+  drawPost(ctx, door, 1, height, level);
+}
+
+// The faint glow filling a doorway, from its floor up to the arch's inner
+// line, brightest at the floor.
+function drawDoorHaze(ctx, door, inner, height, level) {
+  const [, floorY] = centre(door.row, door.col);
+  const fade = ctx.createLinearGradient(0, floorY + th / 2, 0, floorY - height - wallH * DOOR_ARCH_RISE);
+  fade.addColorStop(0, glow(DOOR_HAZE[0] * level));
+  fade.addColorStop(1, glow(DOOR_HAZE[1]));
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  poly(ctx, [doorPoint(door, 0, 0), doorPoint(door, 1, 0), ...inner.slice().reverse()]);
+  ctx.fillStyle = fade;
+  ctx.fill();
+  ctx.restore();
+}
+
+// One of a doorway's posts (`end` 0 or 1): a thin plain block, `height`
+// pixels tall, with glowing edges. Too thin to need a texture.
+function drawPost(ctx, door, end, height, level) {
+  const foot = doorPoint(door, end, 0);
+  const d = diamondAt(foot[0], foot[1], tw * DOOR_POST, th * DOOR_POST);
+  const [T, R, B, L] = [d.T, d.R, d.B, d.L].map(p => up(p, height));
+  poly(ctx, [d.L, d.B, B, L]);
+  ctx.fillStyle = SOUTH_FACE;
+  ctx.fill();
+  poly(ctx, [d.B, d.R, R, B]);
+  ctx.fillStyle = EAST_FACE;
+  ctx.fill();
+  ctx.save();
+  ctx.lineWidth = EDGE_WIDTH * tw;
+  strokeGlow(ctx, Math.min(1, level * 1.05), RIDGE_BLUR * level);
+  poly(ctx, [T, R, B, L]);
+  glowStroke(ctx);
+  line(ctx, d.L, L);
+  line(ctx, d.B, B);
+  line(ctx, d.R, R);
   ctx.restore();
 }
 
