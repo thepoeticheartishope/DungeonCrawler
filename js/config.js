@@ -96,6 +96,10 @@ export const EXPLICIT_ANSWER_TERMS = /\b(sex|sexual|rape[sd]?|incest\w*|adulter\
 
 export const ANSWER_TYPE_GROUPS = {
   name: 'noun',
+  relation: 'noun',  // a relative: "Brother", "Son-in-law"
+  group: 'noun',     // a group of people: "Pharisees", "Magi"
+  role: 'noun',      // a role or trade: "Scribe", "Centurion"
+  related: 'noun',   // one person named through another: "Pharaoh's daughter"
   location: 'noun',
   book: 'noun',
   creature: 'noun',
@@ -126,7 +130,8 @@ export const BATTLE_CHOICE_COUNT = 3;
 
 // A fight's query choices are answer types first ("Names", "Numbers",
 // "Books" ...): each answerType maps to the choice it's offered under.
-// Creatures share "Things" with objects (too few to stand alone); types
+// Creatures share "Things" with objects (too few to stand alone); the
+// person subtypes (relation, group, role, related) are all "Names"; types
 // missing here (adjective, verb, CompTIA's term) are never a choice of
 // their own — they're still asked by chests, runes and encounters, and
 // still used as wrong answers. A type is only offered with at least
@@ -134,6 +139,10 @@ export const BATTLE_CHOICE_COUNT = 3;
 // such types falls back to category choices (below).
 export const CHOICE_TYPES = {
   name: 'name',
+  relation: 'name',
+  group: 'name',
+  role: 'name',
+  related: 'name',
   location: 'location',
   book: 'book',
   verse: 'verse',

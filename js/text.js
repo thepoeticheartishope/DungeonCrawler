@@ -143,6 +143,10 @@ export const TEXT = {
 
   // ---- Answer types, as shown in a fight's query choices ("OT · Names") ----
   'type.name': 'Names',
+  'type.relation': 'Relatives',
+  'type.group': 'Groups',
+  'type.role': 'Roles',
+  'type.related': 'Known by kin',
   'type.location': 'Places',
   'type.book': 'Books',
   'type.verse': 'Verses',

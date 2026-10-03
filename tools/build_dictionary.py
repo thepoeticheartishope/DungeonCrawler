@@ -19,6 +19,10 @@ Entry fields:
   list         true when the answer names several terms ("Abraham and Sarah",
                "1 Kings, 2 Kings, 2 Chronicles")
   draft        true when every question with this answer is a draft
+  of, relation for type "related" (one person named through another):
+               "Pharaoh's daughter" is of "Pharaoh", relation "daughter".
+               Wrong answers sharing a part ("Jairus' daughter", "Lot's
+               daughters") are offered first.
 
 New entries are guesses for review: check "description" / "list", fold any
 other variants into "aka", and remove a flag when it's wrong.
@@ -34,6 +38,7 @@ DESCRIPTION = re.compile(r'\(|\.$|^(The|A|An) [a-z0-9]|^\S+( \S+){3,}$')
 # capitalized ("Shadrach, Meshach and Abednego", "1 Kings, 2 Kings").
 LIST_SPLIT = re.compile(r'\s*[,;/]\s*(?:and |or )?|\s+(?:and|or)\s+')
 POSSESSIVE = re.compile(r"^(.*?)['’]s$")
+RELATED = re.compile(r"^(.+?)['’]s? (.+)$")
 
 
 def key(s):
@@ -55,8 +60,16 @@ def collect(subject):
     return [s['file'] for s in sets], answers
 
 
+def related_parts(term):
+    """{"of", "relation"} of a "related" answer ("Pharaoh's daughter"), or {}."""
+    m = RELATED.match(term)
+    return {'of': m.group(1), 'relation': m.group(2).lower()} if m else {}
+
+
 def new_entry(term, type_, all_draft):
     entry = {'term': term, 'type': type_}
+    if type_ == 'related':
+        entry.update(related_parts(term))
     if type_ not in ('number', 'verse'):
         parts = LIST_SPLIT.split(term)
         if len(parts) > 1 and '(' not in term and all(p[:1].isupper() or p[:1].isdigit() for p in parts):

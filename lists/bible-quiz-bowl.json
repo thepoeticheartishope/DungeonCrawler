@@ -521,7 +521,7 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "John 4:9",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -927,7 +927,7 @@
     "category": "N",
     "difficulty": "hard",
     "source": "John 18:13",
-    "answerType": "name",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -2430,7 +2430,7 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Deut 28:52-53",
-    "answerType": "name",
+    "answerType": "relation",
     "draft": true,
     "fact": true
   },
@@ -2521,7 +2521,7 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Matt 22:15-17",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -2805,7 +2805,7 @@
     "category": "N",
     "difficulty": "hard",
     "source": "2 Kings 8:17-18",
-    "answerType": "name",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -4093,7 +4093,7 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "1 Sam 18:27",
-    "answerType": "name",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -4811,7 +4811,7 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Matt 14:1-10",
-    "answerType": "name",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -4855,8 +4855,7 @@
     "category": "NT",
     "difficulty": "hard",
     "source": "Matt 27:19",
-    "answerType": "name",
-    "draft": true,
+    "answerType": "related",
     "fact": true
   },
   {
@@ -4874,8 +4873,7 @@
     "category": "OT",
     "difficulty": "medium",
     "source": "Gen 39:14-20",
-    "answerType": "name",
-    "draft": true,
+    "answerType": "related",
     "fact": true
   },
   {
@@ -5168,7 +5166,7 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 11:2",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -6129,7 +6127,7 @@
     "category": "NT",
     "difficulty": "easy",
     "source": "John 4:9",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -6305,7 +6303,7 @@
     "category": "NT",
     "difficulty": "easy",
     "source": "Matt 8:14-15",
-    "answerType": "name",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -6352,7 +6350,7 @@
     "category": "N",
     "difficulty": "hard",
     "source": "2 Chron 22:11",
-    "answerType": "name",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -7465,7 +7463,7 @@
     "category": "N",
     "difficulty": "hard",
     "source": "1 Sam 31:2",
-    "answerType": "name",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -7556,7 +7554,7 @@
     "category": "OT",
     "difficulty": "hard",
     "source": "2 Kings 18:18",
-    "answerType": "name",
+    "answerType": "role",
     "fact": true
   },
   {
@@ -7629,7 +7627,7 @@
     "category": "HG",
     "difficulty": "easy",
     "source": "Num 20:26",
-    "answerType": "name",
+    "answerType": "role",
     "draft": true,
     "fact": true
   },
@@ -7666,7 +7664,7 @@
     "category": "NT",
     "difficulty": "easy",
     "source": "Luke 16:20",
-    "answerType": "name",
+    "answerType": "role",
     "fact": true
   },
   {
@@ -7774,7 +7772,7 @@
     "category": "N",
     "difficulty": "hard",
     "source": "Ex 6:20",
-    "answerType": "name",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -7900,8 +7898,7 @@
     "category": "N",
     "difficulty": "easy",
     "source": "Ex 2:10",
-    "answerType": "name",
-    "draft": true,
+    "answerType": "related",
     "fact": true
   },
   {
@@ -8646,7 +8643,7 @@
     "category": "N",
     "difficulty": "hard",
     "source": "1 Sam 31:2; 2 Sam 2:10",
-    "answerType": "object",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -9330,7 +9327,7 @@
     "category": "N",
     "difficulty": "medium",
     "source": "1 Chron 2:3",
-    "answerType": "object",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -9672,7 +9669,7 @@
     "category": "NT",
     "difficulty": "easy",
     "source": "Matt 2:2",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -10426,7 +10423,7 @@
     "category": "NT",
     "difficulty": "medium",
     "source": "Matt 8:8",
-    "answerType": "name",
+    "answerType": "role",
     "fact": true
   },
   {
@@ -10488,7 +10485,7 @@
     "category": "NT",
     "difficulty": "easy",
     "source": "Acts 18:3",
-    "answerType": "object",
+    "answerType": "role",
     "fact": true
   },
   {
@@ -10532,7 +10529,7 @@
     "category": "N",
     "difficulty": "hard",
     "source": "2 Sam 2:10; 1 Sam 31:2",
-    "answerType": "object",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -11413,8 +11410,7 @@
     "category": "N",
     "difficulty": "easy",
     "source": "Ex 2:10",
-    "answerType": "name",
-    "draft": true,
+    "answerType": "related",
     "fact": true
   },
   {
@@ -11432,7 +11428,7 @@
     "category": "NT",
     "difficulty": "easy",
     "source": "Matt 2:7",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -11607,7 +11603,7 @@
     "category": "N",
     "difficulty": "medium",
     "source": "John 18:13",
-    "answerType": "name",
+    "answerType": "relation",
     "fact": true
   },
   {
@@ -11783,7 +11779,7 @@
     "meaning": "Sadducees",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
