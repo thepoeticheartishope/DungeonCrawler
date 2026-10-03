@@ -2,7 +2,7 @@
 // selection, and multiple-choice option building. No DOM access here.
 
 import { state } from './state.js';
-import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE, CHOICE_TYPES, NO_REPEAT_CHOICE_TYPES } from './config.js';
+import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE, CHOICE_TYPES, NO_REPEAT_CHOICE_TYPES, NUMBER_NEAR_POOL } from './config.js';
 import { t } from './text.js';
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
@@ -281,6 +281,58 @@ function distinctMeanings(pool) {
   return out;
 }
 
+// The number an answer states, with any unit after it ("8 GB" -> { value:
+// 8, unit: 'gb' }), or null when the answer doesn't start with a number.
+// Commas are thousands separators ("144,000"). A unit can't hold digits,
+// so a verse address ("1 Corinthians 1:27") isn't a number.
+export function numericAnswer(s) {
+  const m = /^\s*(-?\d[\d,]*(?:\.\d+)?)\s*([^\d]*)$/.exec(String(s));
+  if (!m) return null;
+  const value = parseFloat(m[1].replace(/,/g, ''));
+  if (!Number.isFinite(value)) return null;
+  return { value, unit: normalizeSpaces(m[2]).toLowerCase() };
+}
+
+// Whether `item` is a number question, for any set: its answerType is in
+// the number shape, or it has no answerType and its answer is a number
+// (a pasted list), or its answer is a bare number whatever its type. A
+// typed non-number answer with words after the number ("1 Corinthians",
+// a book) is not.
+function numberQuestion(item) {
+  const n = numericAnswer(item.meaning);
+  if (!n) return null;
+  if (ANSWER_TYPE_GROUPS[item.answerType] === 'number' || !item.answerType || !n.unit) return n;
+  return null;
+}
+
+// How far apart two numbers are in size (ratio, not difference: 2 vs 3 is
+// as far as 2000 vs 3000).
+function numberDistance(a, b) {
+  return Math.abs(Math.log((Math.abs(a) + 1) / (Math.abs(b) + 1)));
+}
+
+// `meanings` reordered for a number question `n`: numbers with the same
+// unit first, nearest in size first (the NUMBER_NEAR_POOL nearest
+// shuffled, see below), then everything else in its old order.
+function nearestNumbersFirst(meanings, n) {
+  const near = [];
+  const rest = [];
+  for (const m of meanings) {
+    const v = numericAnswer(m);
+    if (v && v.unit === n.unit && v.value !== n.value) near.push({ m, d: numberDistance(v.value, n.value) });
+    else if (!v || v.value !== n.value || v.unit !== n.unit) rest.push(m);
+  }
+  near.sort((a, b) => a.d - b.d);
+  // Shuffle the 3 nearest together with any others no more than twice as
+  // far as the 3rd nearest (up to NUMBER_NEAR_POOL), so a set dense in
+  // numbers varies its choices but a sparse one never reaches far ones.
+  const third = near.length >= 3 ? near[2].d : Infinity;
+  let cut = Math.min(3, near.length);
+  while (cut < Math.min(NUMBER_NEAR_POOL, near.length) && near[cut].d <= third * 2) cut++;
+  const ordered = near.map(x => x.m);
+  return [...shuffle(ordered.slice(0, cut)), ...ordered.slice(cut), ...rest];
+}
+
 // Builds 2-4 answer choices for a question. Uses the item's own "options"
 // list if the loaded JSON provided one (adding the correct meaning in if
 // it's missing); otherwise picks up to 3 random distractor meanings from
@@ -291,7 +343,10 @@ function distinctMeanings(pool) {
 // answerType and same draft status (a one-word answer isn't offered next
 // to multi-word draft answers), then same answerType, then the same
 // top-level shape (ANSWER_TYPE_GROUPS in config.js: another noun for a
-// noun), again draft-matched first, then anything.
+// noun), again draft-matched first, then (for a number question) any
+// number with the same unit, then anything. For a number question each
+// tier offers the numbers nearest in size first (nearestNumbersFirst), so
+// this works for any set, typed or not.
 export function buildChoices(item) {
   let opts;
   if (Array.isArray(item.options) && item.options.length >= 2) {
@@ -309,20 +364,27 @@ export function buildChoices(item) {
     const groupPool = group
       ? basePool.filter(d => ANSWER_TYPE_GROUPS[d.answerType] === group)
       : [];
+    const num = numberQuestion(item);
+    const numberPool = num
+      ? basePool.filter(d => { const v = numericAnswer(d.meaning); return v && v.unit === num.unit; })
+      : [];
     const sameDraft = d => !d.draft === !item.draft;
     const tiers = [
       typedPool.filter(sameDraft),
       typedPool,
       groupPool.filter(sameDraft),
       groupPool,
+      numberPool,
       basePool
     ];
     const distractors = [];
     const seen = new Set();
     for (const tier of tiers) {
-      for (const m of distinctMeanings(tier)) {
+      const meanings = distinctMeanings(tier);
+      for (const m of num ? nearestNumbersFirst(meanings, num) : meanings) {
         if (distractors.length >= 3) break;
-        const key = normalizeSpaces(m).toLowerCase();
+        const v = num && numericAnswer(m);
+        const key = v ? v.value + ' ' + v.unit : normalizeSpaces(m).toLowerCase();
         if (seen.has(key)) continue;
         seen.add(key);
         distractors.push(m);
