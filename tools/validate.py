@@ -6,7 +6,7 @@ that touches a question set; it exits non-zero on any problem.
 import json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TYPES = {'name', 'location', 'book', 'creature', 'object', 'theology', 'adjective', 'verb', 'number', 'verse', 'term'}
+TYPES = {'name', 'relation', 'group', 'role', 'related', 'location', 'book', 'creature', 'object', 'theology', 'adjective', 'verb', 'number', 'verse', 'term'}
 DIFFICULTIES = {'easy', 'medium', 'hard'}
 # Keep in step with EXPLICIT_ANSWER_TERMS in js/config.js.
 EXPLICIT = re.compile(r'\b(sex|sexual|rape[sd]?|incest\w*|adulter\w*|fornicat\w*|harlot\w*|whore\w*|prostitut\w*)\b', re.I)
@@ -74,6 +74,8 @@ for subject, answers in answers_by_subject.items():
             continue
         if e.get('type') not in TYPES:
             errors.append(f'{tag}: unknown type {e.get("type")!r}')
+        if e.get('type') == 'related' and not (str(e.get('of', '')).strip() and str(e.get('relation', '')).strip()):
+            errors.append(f'{tag}: a "related" entry needs "of" and "relation" ("Pharaoh\'s daughter": of Pharaoh, relation daughter)')
         for flag in ('description', 'list', 'draft'):
             if flag in e and e[flag] is not True:
                 errors.append(f'{tag}: "{flag}" must be true when present')

@@ -25,7 +25,8 @@ cached so re-runs are quick.
    (`tools/batches.json` keeps every batch's photo hashes and PR).
 2. Transcribe the cards into a JSON list of entries (`term`, `meaning`,
    `category`, `difficulty`, `source`, `answerType`, `draft` when the answer is
-   more than one word), then
+   more than one word; a person named through another, "Pharaoh's daughter",
+   counts as one answer: type `related`), then
    `python3 tools/convert_batch.py add BATCH.json --front FRONT.jpg --back BACK.jpg`.
    It refuses exact duplicates, lists near-duplicates to judge (skip only true
    duplicates), adds the rest, bumps `CACHE_NAME` and runs the checks.
@@ -67,6 +68,9 @@ with that `subject` in `lists/manifest.json`), one entry per line:
 - `type`: an answerType. A name and a book with the same text ("Jonah") are two entries.
 - `aka`: other spellings that mean this entry. A question's answer matches an
   entry by its `term` or an `aka`.
+- `of` / `relation`: for type `related` (one person named through another):
+  "Pharaoh's daughter" is of "Pharaoh", relation "daughter". Wrong answers
+  that share a part ("Jairus' daughter", "Lot's daughters") come first.
 - `description`: the answer describes rather than names. `list`: it names
   several terms. `draft`: every question with this answer is a draft.
 
