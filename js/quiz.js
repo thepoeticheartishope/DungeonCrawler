@@ -2,7 +2,7 @@
 // selection, and multiple-choice option building. No DOM access here.
 
 import { state } from './state.js';
-import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE, CHOICE_TYPES, NO_REPEAT_CHOICE_TYPES, NUMBER_NEAR_POOL } from './config.js';
+import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE, CHOICE_TYPES, NO_REPEAT_CHOICE_TYPES, NUMBER_NEAR_POOL, STEM_CUES } from './config.js';
 import { t } from './text.js';
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
@@ -384,6 +384,22 @@ function nearestNumbersFirst(meanings, n) {
   return [...shuffle(ordered.slice(0, cut)), ...ordered.slice(cut), ...rest];
 }
 
+// The answer types a question's stem allows (STEM_CUES in config.js:
+// "Who…?" -> the person types), or null when no cue matches.
+export function stemTypes(question) {
+  const stem = normalizeSpaces(String(question || ''));
+  const found = STEM_CUES.find(c => c.cue.test(stem));
+  return found ? found.types : null;
+}
+
+// A question's answer type: its tag, or for an untagged question (a
+// pasted list) the first type its stem allows, or undefined.
+function answerTypeOf(d) {
+  if (d.answerType) return d.answerType;
+  const types = stemTypes(d.term);
+  return types ? types[0] : undefined;
+}
+
 // Builds 2-4 answer choices for a question. Uses the item's own "options"
 // list if the loaded JSON provided one (adding the correct meaning in if
 // it's missing); otherwise picks up to 3 wrong answers, in tiers, topping
@@ -407,6 +423,15 @@ function nearestNumbersFirst(meanings, n) {
 // numbers nearest in size first (nearestNumbersFirst), so this works for
 // any set, typed or not.
 //
+// The stem lock (STEM_CUES): when the stem allows a set of types and the
+// question's type is one of them, every tier above keeps to those types
+// first, plus a tier of any allowed type (dictionary, then set) before the
+// shape tiers: a "Who…?" question short of relatives gets other people,
+// never a place. Only when the allowed types can't fill the choices do the
+// shape and "anything" tiers run again without the lock. An untagged
+// question takes its type from its stem (answerTypeOf), so a pasted list
+// of "Who…?" and "How many…?" questions gets the same matching.
+//
 // A wrong answer is never the right answer under another spelling: an
 // answer the dictionary lists as an "aka" counts as its entry's term
 // ("David's" is David), and is shown as that term.
@@ -418,26 +443,33 @@ export function buildChoices(item) {
     if (!hasCorrect) opts.push(item.meaning);
   } else {
     const dictionary = state.settings.activeDictionary || [];
-    const own = dictionaryEntry(dictionary, item.meaning, item.answerType);
+    const itemType = answerTypeOf(item);
+    const allowed = stemTypes(item.term);
+    const lock = allowed && allowed.includes(itemType) ? allowed : null;
+    const fits = type => !lock || lock.includes(type);
+    const own = dictionaryEntry(dictionary, item.meaning, itemType);
     // A set answer's shown spelling: its dictionary entry's term, if any.
     const shown = m => { const e = dictionaryEntry(dictionary, m); return e ? e.term : m; };
     const rightKey = spellingKey(shown(item.meaning));
     const isWrong = m => spellingKey(shown(m)) !== rightKey && !EXPLICIT_ANSWER_TERMS.test(m);
 
-    const dictPool = item.answerType
-      ? dictionary.filter(e => e.type === item.answerType && isWrong(e.term))
+    const dictPool = itemType
+      ? dictionary.filter(e => e.type === itemType && isWrong(e.term))
       : [];
+    const allowedDict = lock ? dictionary.filter(e => e.type !== itemType && fits(e.type) && isWrong(e.term)) : [];
     const sameForm = e => !own || entryForm(e) === entryForm(own);
     const sameDraft = d => !d.draft === !item.draft;
 
     const basePool = state.settings.activeData.filter(d => d !== item && isWrong(d.meaning));
-    const typedPool = item.answerType
-      ? basePool.filter(d => d.answerType === item.answerType)
+    const typedPool = itemType
+      ? basePool.filter(d => answerTypeOf(d) === itemType)
       : [];
-    const group = ANSWER_TYPE_GROUPS[item.answerType];
+    const allowedSet = lock ? basePool.filter(d => fits(answerTypeOf(d))) : [];
+    const group = ANSWER_TYPE_GROUPS[itemType];
     const groupPool = group
-      ? basePool.filter(d => ANSWER_TYPE_GROUPS[d.answerType] === group)
+      ? basePool.filter(d => ANSWER_TYPE_GROUPS[answerTypeOf(d)] === group)
       : [];
+    const locked = items => items.filter(d => fits(answerTypeOf(d)));
     const num = numberQuestion(item);
     const numberPool = num
       ? basePool.filter(d => { const v = numericAnswer(d.meaning); return v && v.unit === num.unit; })
@@ -451,7 +483,14 @@ export function buildChoices(item) {
       terms(dictPool),
       meanings(typedPool.filter(sameDraft)),
       meanings(typedPool),
-      meanings(groupPool.filter(sameDraft)),
+      terms(allowedDict.filter(sameForm)),
+      terms(allowedDict),
+      meanings(allowedSet),
+      meanings(locked(groupPool).filter(sameDraft)),
+      meanings(locked(groupPool)),
+      meanings(locked(numberPool)),
+      meanings(locked(basePool)),
+      // Soft lock: reached only when the allowed types can't fill the choices.
       meanings(groupPool),
       meanings(numberPool),
       meanings(basePool)
