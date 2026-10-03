@@ -112,6 +112,25 @@ export const ANSWER_TYPE_GROUPS = {
   verse: 'reference'
 };
 
+// The answer types a question's stem allows, read from its first words
+// ("Who…?" asks for a person, "How many…?" for a number). First match wins.
+// buildChoices uses it two ways: a question with no answerType (a pasted
+// list) takes the first type listed, and wrong answers stay inside these
+// types as long as they can fill the choices (a soft lock: if they can't,
+// it tops up from outside rather than show fewer options). A tag always
+// wins: when it isn't one the stem allows, the stem is ignored, and
+// tools/stem_check.mjs lists the question for review. Stems with no cue
+// (most "What…?", bare terms like CompTIA's "RAID 5") are left to tags.
+const PERSON_TYPES = ['name', 'relation', 'group', 'role', 'related', 'creature'];
+export const STEM_CUES = [
+  { cue: /^(in )?(which|what) verse\b/i, types: ['verse'] },
+  { cue: /^(in )?(which|what) book\b(?!, chapter)/i, types: ['book'] },
+  { cue: /^how (many|old)\b/i, types: ['number'] },
+  { cue: /^(who|whom|whose|(to|by|from|with|for) whom)\b/i, types: PERSON_TYPES },
+  { cue: /^which (prophet|prophetess|king|queen|apostle|disciple|judge|priest|man|woman|men|women)\b/i, types: PERSON_TYPES },
+  { cue: /^where\b/i, types: ['location'] }
+];
+
 export const ENCOUNTER_GLYPHS = ['!', '%', '&', '*', '+', '~', '≈', '='];
 
 // Player glyph is directional now — an arrow matching which way they're

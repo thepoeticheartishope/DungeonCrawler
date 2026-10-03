@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { state } from '../js/state.js';
-import { buildChoices, numericAnswer } from '../js/quiz.js';
+import { buildChoices, numericAnswer, stemTypes } from '../js/quiz.js';
 
 const q = (term, meaning, extra = {}) => ({ term, meaning, ...extra });
 
@@ -152,4 +152,54 @@ test('a relation shared only by plural ("daughters") still counts', () => {
     assert.ok(!got.includes("Job's wife") && !got.includes("Noah's wife"));
   }
   state.settings.activeDictionary = null;
+});
+
+// ---- Stem lock (STEM_CUES in config.js) ----
+
+test('stemTypes reads the first words of a question', () => {
+  assert.ok(stemTypes('Who built the ark?').includes('name'));
+  assert.ok(stemTypes('To whom did Paul write?').includes('relation'));
+  assert.deepEqual(stemTypes('How many tribes?'), ['number']);
+  assert.deepEqual(stemTypes('Which book follows Joel?'), ['book']);
+  assert.deepEqual(stemTypes('Which verse says: "Jesus wept"?'), ['verse']);
+  assert.deepEqual(stemTypes('Where was Jesus born?'), ['location']);
+  assert.equal(stemTypes('In what book, chapter and verse is "heaven" first mentioned?'), null);
+  assert.equal(stemTypes('What did Jesus eat?'), null);
+  assert.equal(stemTypes('RAID 5'), null);
+});
+
+test('an untagged list takes its types from the stems', () => {
+  const item = q('Who built the ark?', 'Noah');
+  state.settings.activeData = [item, q('Who led Israel?', 'Moses'), q('Who was king?', 'Saul'),
+    q('Whom did Ruth marry?', 'Boaz'), q('How many tribes?', '12'), q('Where was Jesus born?', 'Bethlehem'),
+    q('What did he eat?', 'Locusts')];
+  for (let i = 0; i < 20; i++) {
+    assert.deepEqual(buildChoices(item).slice().sort(), ['Boaz', 'Moses', 'Noah', 'Saul']);
+  }
+});
+
+test('a "Who" question short of its own type gets other people before places', () => {
+  const item = q('Who was Caiaphas to Annas?', 'Son-in-law', { answerType: 'relation' });
+  state.settings.activeData = [item, q('Who?', 'Brother', { answerType: 'relation' }),
+    q('Who?', 'Moses', { answerType: 'name' }), q('Who?', 'Pharisees', { answerType: 'group' }),
+    q('Where?', 'Bethel', { answerType: 'location' }), q('What?', 'Bread', { answerType: 'object' })];
+  for (let i = 0; i < 20; i++) {
+    assert.deepEqual(buildChoices(item).slice().sort(), ['Brother', 'Moses', 'Pharisees', 'Son-in-law']);
+  }
+});
+
+test('the lock is soft: it tops up from outside rather than show fewer options', () => {
+  const item = q('Who?', 'Moses', { answerType: 'name' });
+  state.settings.activeData = [item, q('Who?', 'Aaron', { answerType: 'name' }),
+    q('Where?', 'Bethel', { answerType: 'location' }), q('Where?', 'Egypt', { answerType: 'location' })];
+  for (let i = 0; i < 20; i++) assert.equal(buildChoices(item).length, 4);
+});
+
+test('a tag the stem does not allow wins, and the stem is ignored', () => {
+  const item = q('Who were Baalim and Ashtaroth?', 'False gods', { answerType: 'theology' });
+  state.settings.activeData = [item, q('?', 'Grace', { answerType: 'theology' }), q('?', 'Faith', { answerType: 'theology' }),
+    q('?', 'Hope', { answerType: 'theology' }), q('Who?', 'Moses', { answerType: 'name' })];
+  for (let i = 0; i < 20; i++) {
+    assert.deepEqual(buildChoices(item).slice().sort(), ['Faith', 'False gods', 'Grace', 'Hope']);
+  }
 });
