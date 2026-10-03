@@ -8,6 +8,7 @@ Python 3, standard library only. Run them from the repo root.
 |---|---|---|
 | `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), every answer is in the subject's dictionary when it has one, fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", every Bible question labelled `fact`. Run it before every PR that touches a question set. |
 | `stem_check.mjs` | no | `node tools/stem_check.mjs` (Node): per set, how many questions a stem cue covers (`STEM_CUES` in `js/config.js`: "Who…?" → people, "How many…?" → numbers) and which tagged questions have a type their stem doesn't allow. The tag wins in play, so each listed one is a tagging mistake to fix or a real exception to leave. Reports only. |
+| `import_acronyms.py` | no | `python3 tools/import_acronyms.py comptia-aplus OBJECTIVES.pdf [MORE.pdf]` (needs `pdftotext`): adds a CompTIA objectives PDF's acronym list to the subject's dictionary, one `term` entry per definition with its `acronym`. Reports spellings it merged and definitions listed twice. Re-running only adds what's new. |
 | `build_dictionary.py` | no | `python3 tools/build_dictionary.py bible`: adds every answer of the subject's sets that `lists/dictionaries/<subject>.json` doesn't cover yet. Keeps existing entries as they are, so edits are safe. See "Subject dictionaries" below. |
 | `convert_batch.py` | yes (cached) | The steps for a photographed card batch in one place: checks the photos weren't converted before, refuses exact duplicates and lists likely near-duplicates, adds the batch, bumps `CACHE_NAME`, then runs the three scripts above for just the new questions. |
 | `kjv_check.py` | first run only | Checks citations and quotes against the KJV text: citations exist, "Which verse says…?" quotes match, quoted phrases are in the cited verses. Reports only. |
@@ -72,6 +73,10 @@ with that `subject` in `lists/manifest.json`), one entry per line:
 - `of` / `relation`: for type `related` (one person named through another):
   "Pharaoh's daughter" is of "Pharaoh", relation "daughter". Wrong answers
   that share a part ("Jairus' daughter", "Lot's daughters") come first.
+- `acronym`: for CompTIA terms, the acronym the definition belongs to
+  (`tools/import_acronyms.py`). `lists/dictionaries/comptia-aplus.json` is
+  the A+ 220-1201 + 220-1202 objectives' acronym lists; the 220-1201 list's
+  "XXS" (Cross-site Scripting) is fixed to XSS by hand.
 - `description`: the answer describes rather than names. `list`: it names
   several terms. `draft`: every question with this answer is a draft.
 
