@@ -66,15 +66,13 @@ const STAIR_BEAM_DEPTH = 0.5;     // the column draws among the standing things,
 // A doorway: two thin posts with an arch over them and a faint haze in the
 // opening, so a way through reads from any side and its arch shows over a
 // wall in front of it (Timothy picked this from the door frames mockup).
-// The posts cut down with the walls beside them; the arch fades out and
-// leaves a dashed outline.
+// It never cuts down with the walls beside it: it marks a way out.
 const DOOR_POST = 0.07;          // half a post's width, in tiles
 const DOOR_ARCH_RISE = 0.34;     // how far the arch rises above the walls, as a share of a wall's height
 const DOOR_ARCH_THICK = 0.08;    // the arch's thickness, as a share of a wall's height
 const DOOR_ARCH_STEPS = 16;      // straight pieces in each line of the arch
 const DOOR_MIN_LEVEL = 0.5;      // a remembered doorway's arch is still this bright
 const DOOR_HAZE = [0.2, 0.02];   // the haze's strength at the floor and at the arch
-const DOOR_GHOST_LEVEL = 0.5;    // the dashed outline of a cut doorway: brighter than a wall's, it marks the way
 const DOOR_DEPTH = 0.6;          // draws after a thing standing in the doorway, before the wall past it
 // The paper lying flat, in the tile's own two directions (-1..1 across it).
 const PAPER_SHEET = [[-0.8, -0.55], [0.75, -0.7], [0.8, 0.55], [-0.75, 0.7]];
@@ -789,12 +787,6 @@ function doorwayAt(row, col) {
   return null;
 }
 
-// The two walls a doorway stands between, back one first.
-function doorSides(door) {
-  const { row, col } = door;
-  return door.across ? [[row, col - 1], [row, col + 1]] : [[row - 1, col], [row + 1, col]];
-}
-
 // A point on the doorway's wall line, from one post (t = 0) to the other
 // (t = 1), `h` pixels up.
 function doorPoint(door, t, h) {
@@ -822,44 +814,28 @@ function strokeLine(ctx, points) {
   glowStroke(ctx);
 }
 
-// A doorway: the haze in the opening, two posts as tall as the walls
-// beside them, and the arch over them. When those walls are cut, the posts
-// lower with them (the more cut of the two), the arch fades out and a
-// dashed outline of it stays at full height.
+// A doorway: the haze in the opening, two posts as tall as the walls and
+// the arch over them. It always stands at full height, even when the
+// walls beside it are cut: it is how the player sees a way out of the
+// room (Timothy's call after playing it).
 function drawDoorway(ctx, door) {
   const level = Math.max(DOOR_MIN_LEVEL, floorLevel(door.row, door.col));
-  const cut = Math.max(...doorSides(door).map(([r, c]) => cutOf(r, c)));
-  const height = wallH * (1 - cut * (1 - WALL_STUB));
   const rise = wallH * DOOR_ARCH_RISE;
   const thick = wallH * DOOR_ARCH_THICK;
-  const outer = archLine(door, height, rise * (1 - cut));
-  const inner = archLine(door, height - thick * (1 - cut), (rise - thick) * (1 - cut));
-  drawDoorHaze(ctx, door, inner, height, level);
-  drawPost(ctx, door, 0, height, level);
-  if (cut < 1) {
-    ctx.save();
-    ctx.globalAlpha = 1 - cut;
-    poly(ctx, [...outer, ...inner.slice().reverse()]);
-    ctx.fillStyle = EAST_FACE;
-    ctx.fill();
-    ctx.lineWidth = EDGE_WIDTH * tw * 1.2;
-    strokeGlow(ctx, Math.min(1, level * 1.1), RIDGE_BLUR * 1.4 * level);
-    strokeLine(ctx, outer);
-    strokeLine(ctx, inner);
-    ctx.restore();
-  }
-  if (cut > 0) {
-    ctx.save();
-    halo = null;
-    ctx.setLineDash(GHOST_DASH.map(n => n * tw));
-    ctx.lineWidth = EDGE_WIDTH * tw * 0.8;
-    ctx.strokeStyle = glow(DOOR_GHOST_LEVEL * cut);
-    strokeLine(ctx, archLine(door, wallH, rise));
-    line(ctx, doorPoint(door, 0, height), doorPoint(door, 0, wallH));
-    line(ctx, doorPoint(door, 1, height), doorPoint(door, 1, wallH));
-    ctx.restore();
-  }
-  drawPost(ctx, door, 1, height, level);
+  const outer = archLine(door, wallH, rise);
+  const inner = archLine(door, wallH - thick, rise - thick);
+  drawDoorHaze(ctx, door, inner, wallH, level);
+  drawPost(ctx, door, 0, wallH, level);
+  ctx.save();
+  poly(ctx, [...outer, ...inner.slice().reverse()]);
+  ctx.fillStyle = EAST_FACE;
+  ctx.fill();
+  ctx.lineWidth = EDGE_WIDTH * tw * 1.2;
+  strokeGlow(ctx, Math.min(1, level * 1.1), RIDGE_BLUR * 1.4 * level);
+  strokeLine(ctx, outer);
+  strokeLine(ctx, inner);
+  ctx.restore();
+  drawPost(ctx, door, 1, wallH, level);
 }
 
 // The faint glow filling a doorway, from its floor up to the arch's inner
