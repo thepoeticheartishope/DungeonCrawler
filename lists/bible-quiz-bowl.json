@@ -78,7 +78,7 @@
     "category": "HG",
     "difficulty": "hard",
     "source": "Acts 11:26",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -2250,7 +2250,7 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Obadiah 1:1",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -4175,7 +4175,7 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Rev 6:9",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -5055,7 +5055,7 @@
     "category": "P",
     "difficulty": "hard",
     "source": "Deut 28:53",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -5711,7 +5711,7 @@
     "meaning": "Maccabees",
     "category": "HG",
     "difficulty": "hard",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -6672,7 +6672,7 @@
     "category": "W",
     "difficulty": "easy",
     "source": "Matt 5:9",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
@@ -6931,7 +6931,7 @@
     "category": "HG",
     "difficulty": "easy",
     "source": "1 Sam 17:4",
-    "answerType": "name",
+    "answerType": "group",
     "fact": true
   },
   {
