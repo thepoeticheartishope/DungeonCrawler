@@ -10,6 +10,7 @@ TYPES = {'name', 'location', 'book', 'creature', 'object', 'theology', 'adjectiv
 DIFFICULTIES = {'easy', 'medium', 'hard'}
 # Keep in step with EXPLICIT_ANSWER_TERMS in js/config.js.
 EXPLICIT = re.compile(r'\b(sex|sexual|rape[sd]?|incest\w*|adulter\w*|fornicat\w*|harlot\w*|whore\w*|prostitut\w*)\b', re.I)
+SUBJECT = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
 VERSE_ADDRESS = re.compile(r'^(\d )?[A-Za-z]+( of [A-Za-z]+)? \d+(:\d+(-\d+)?)?$')
 
 errors = []
@@ -17,7 +18,10 @@ manifest = json.load(open(os.path.join(ROOT, 'lists', 'manifest.json'), encoding
 for set_info in manifest:
     path = os.path.join('lists', set_info['file'])
     data = json.load(open(os.path.join(ROOT, path), encoding='utf-8'))
-    is_bible = set_info['id'].startswith('bible')
+    subject = set_info.get('subject')
+    if not isinstance(subject, str) or not SUBJECT.match(subject):
+        errors.append(f'lists/manifest.json {set_info["id"]}: "subject" must be a lowercase name like "bible" or "comptia-aplus", got {subject!r}')
+    is_bible = subject == 'bible'
     seen = {}
     for i, e in enumerate(data):
         tag = f'{path} #{i + 1}'

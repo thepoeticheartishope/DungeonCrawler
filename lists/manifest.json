@@ -1,18 +1,21 @@
 [
   {
     "id": "comptia-aplus",
+    "subject": "comptia-aplus",
     "name": "CompTIA A+ Sample",
     "description": "Hardware and networking acronyms (CPU, RAID, DNS, VPN, and more).",
     "file": "comptia-aplus.json"
   },
   {
     "id": "bible-trivia",
+    "subject": "bible",
     "name": "Bible Trivia",
     "description": "30 questions on Old and New Testament people and events, across easy/medium/hard difficulty.",
     "file": "bible-trivia.json"
   },
   {
     "id": "bible-quiz-bowl",
+    "subject": "bible",
     "name": "Bible Quiz Bowl",
     "description": "647 competition-style questions across Old Testament, Prophets, History & Geography, Names, Letters/Numbers/Symbols, New Testament, and Wisdom. Harder than Bible Trivia — some ask for the exact verse a line of scripture comes from.",
     "file": "bible-quiz-bowl.json"

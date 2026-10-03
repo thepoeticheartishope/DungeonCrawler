@@ -5,6 +5,12 @@
 const CUSTOM_SETS_KEY = 'termDungeon.customSets';
 
 // ---- Bundled sets (lists/manifest.json + lists/<file>.json) ----
+//
+// Each manifest entry: { id, subject, name, description, file }. Sets with
+// the same "subject" (e.g. both Bible sets are "bible") cover the same
+// material; CompTIA subjects are per exam ("comptia-aplus"). Not used in
+// play yet: it will pick the subject's term dictionary (plan: ByClaude
+// "stem-matching-dictionary.md"). Pasted/saved custom sets have no subject.
 
 // Returns the manifest array, or [] if it can't be fetched (offline before
 // the service worker has cached it, opened over file://, etc.) — the start
