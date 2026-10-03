@@ -147,6 +147,13 @@ export const CHOICE_TYPES = {
 // familiar pool can't be the safe pick every turn.
 export const NO_REPEAT_CHOICE_TYPES = ['name'];
 
+// When the answer is a number, buildChoices offers the wrong numbers nearest
+// to it in size, so the right one can't be spotted as the odd size out
+// (144000 next to 2, 7 and 1). It shuffles up to NUMBER_NEAR_POOL of the
+// nearest (only ones about as close as the 3rd nearest) so the same
+// question doesn't always show the same three.
+export const NUMBER_NEAR_POOL = 6;
+
 // Fallback for sets without enough answer types (CompTIA, small lists):
 // a fight's query choices split a category by answer type ("OT · Names")
 // only where that type has at least this many questions in the category;
