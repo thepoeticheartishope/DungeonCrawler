@@ -1,9 +1,9 @@
 // The gun (gun combat plan, step 3): reloading by answering a question,
 // picking a target on the map, firing at a minion in the player's light,
 // the damage bar, a minion's strike when it reaches the player, and a
-// landed shot staggering the hunter. Only pickTarget is called yet (a tap
-// on the map with DEV -> Combat on gun); step 6 wires the rest into the
-// turn and the question panel. Each rule changes state and returns an events list
+// landed shot staggering the hunter. Played with DEV -> Combat on gun
+// (state.settings.gunCombat): main.js runs reload and fire as turns, and
+// combat.js advanceMonsters calls minionStrike. Each rule changes state and returns an events list
 // in the order things happened, for main.js drawEvents() to draw.
 // Spending the turn (minions move, the light spreads) is the caller's job.
 // No DOM access here.
@@ -15,7 +15,7 @@ import {
 } from './config.js';
 import { fightGroups, shuffle } from './quiz.js';
 import { recordHauntAnswer } from './haunts.js';
-import { shootBlock, aimChance } from './sight.js';
+import { shootBlock, canShoot, aimChance } from './sight.js';
 import { goldReward } from './moves.js';
 import { tileOccupied } from './combat.js';
 
@@ -89,13 +89,52 @@ export function pickTarget(tile) {
   return [{ type: 'targetPicked', target }];
 }
 
+// What the gun can fire at right now: seen minions and the hunter that
+// sight.js canShoot allows, best aim first (so the nearest comes first).
+function shootable() {
+  const f = state.floor;
+  return f.minions
+    .filter(m => !state.settings.fogEnabled || f.visibleSet.has(key(m.row, m.col)))
+    .filter(canShoot)
+    .sort((a, b) => aimChance(b) - aimChance(a));
+}
+
+// Keeps the gun's target up to date after a turn: a target that died,
+// went out of sight or can no longer be shot is dropped, and with none,
+// the best shootable thing is picked, so FIRE always has something to
+// aim at when anything is in reach. A target the player tapped that
+// can't be shot stays until the next turn, so the map can say why not.
+// Events: targetPicked { target, auto: true } when it picks one.
+export function refreshGunTarget() {
+  const f = state.floor;
+  if (f.gunTarget && (!f.minions.includes(f.gunTarget) || !canShoot(f.gunTarget))) f.gunTarget = null;
+  if (f.gunTarget) return [];
+  const best = shootable()[0];
+  if (!best) return [];
+  f.gunTarget = best;
+  return [{ type: 'targetPicked', target: best, auto: true }];
+}
+
+// The next shootable thing after the current target, best aim first,
+// round and round (T on the keyboard). Costs no turn.
+// Events: targetPicked { target }, or fireBlocked { reason: 'noTarget' }
+// when nothing is in reach.
+export function cycleTarget() {
+  const list = shootable();
+  if (!list.length) return [{ type: 'fireBlocked', target: null, reason: 'noTarget' }];
+  const target = list[(list.indexOf(state.floor.gunTarget) + 1) % list.length];
+  state.floor.gunTarget = target;
+  return [{ type: 'targetPicked', target }];
+}
+
 // Why `target` can't be fired at right now, or null if it can: an empty
-// chamber ('chamberEmpty'), something that isn't a minion or the hunter
-// ('notShootable': the boss and items stay on the battle screen), or a
-// sight.js shootBlock reason.
+// chamber ('chamberEmpty'), no target ('noTarget'), something that isn't
+// a minion or the hunter ('notShootable': the boss and items stay on the
+// battle screen), or a sight.js shootBlock reason.
 export function fireBlock(target) {
   if (state.run.ammo <= 0) return 'chamberEmpty';
-  if (!target || (target.kind !== 'minion' && target.kind !== 'hunter')) return 'notShootable';
+  if (!target) return 'noTarget';
+  if (target.kind !== 'minion' && target.kind !== 'hunter') return 'notShootable';
   return shootBlock(target);
 }
 

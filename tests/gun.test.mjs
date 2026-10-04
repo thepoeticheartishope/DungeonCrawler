@@ -16,10 +16,11 @@ import {
   DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS,
 } from '../js/config.js';
 import { computeVisibility } from '../js/sight.js';
-import { spawnMinion } from '../js/combat.js';
+import { spawnMinion, advanceMonsters, findAdjacentEnemies } from '../js/combat.js';
 import { resetHaunts } from '../js/haunts.js';
 import {
-  reloadCategory, reloadOffers, settleReload, pickTarget, fireBlock, fire, settleShot, minionStrike, staggerHunter,
+  reloadCategory, reloadOffers, settleReload, pickTarget, refreshGunTarget, cycleTarget, fireBlock, fire, settleShot,
+  minionStrike, staggerHunter,
 } from '../js/gun.js';
 
 const SET = [
@@ -43,6 +44,7 @@ function resetFloor(size = 21) {
   state.floor.facing = 'N';
   state.settings.fogEnabled = true;
   state.settings.activeData = SET;
+  state.settings.gunCombat = false;
   state.floor.darkness = false;
   state.floor.wallSet = new Set();
   state.floor.pillarSet = new Set();
@@ -291,4 +293,86 @@ test('staggerHunter rests the hunter without moving it', () => {
   assert.deepEqual(staggerHunter(h), [{ type: 'hunterStaggered', hunter: h }]);
   assert.equal(h.rest, HUNTER_REST_TURNS);
   assert.equal(h.row, 1);
+});
+
+// --- gun combat in the turn (step 6) ---
+
+test('fire with no target says so', () => {
+  resetFloor();
+  assert.equal(fireBlock(null), 'noTarget');
+});
+
+test('refreshGunTarget picks the best shootable minion and drops a dead one', () => {
+  resetFloor();
+  const far = minionAt(-3, 0);
+  const near = minionAt(-1, 0);
+  assert.deepEqual(refreshGunTarget(), [{ type: 'targetPicked', target: near, auto: true }]);
+  assert.equal(state.floor.gunTarget, near);
+  assert.deepEqual(refreshGunTarget(), [], 'a target that can still be shot stays');
+  state.floor.minions = state.floor.minions.filter(m => m !== near);
+  refreshGunTarget();
+  assert.equal(state.floor.gunTarget, far);
+});
+
+test('refreshGunTarget drops a target that can no longer be shot', () => {
+  resetFloor();
+  const behind = minionAt(2, 0);
+  state.floor.gunTarget = behind;
+  assert.deepEqual(refreshGunTarget(), []);
+  assert.equal(state.floor.gunTarget, null);
+});
+
+test('cycleTarget goes round the shootable minions, and says when there are none', () => {
+  resetFloor();
+  assert.deepEqual(cycleTarget(), [{ type: 'fireBlocked', target: null, reason: 'noTarget' }]);
+  const near = minionAt(-1, 0);
+  const far = minionAt(-3, 0);
+  minionAt(3, 0); // behind the player: out of the light
+  assert.equal(cycleTarget()[0].target, near);
+  assert.equal(cycleTarget()[0].target, far);
+  assert.equal(cycleTarget()[0].target, near);
+});
+
+test('with the gun on, a minion that reaches the player strikes instead of engaging', () => {
+  resetFloor();
+  state.settings.gunCombat = true;
+  state.run.turnCount = 0;
+  const m = minionAt(-1, 0);
+  m.trail = [{ row: m.row - 3, col: m.col }];
+  const events = advanceMonsters();
+  assert.deepEqual(events.map(e => e.type), ['minionStruck', 'knockedBack']);
+  assert.equal(state.run.hearts, MAX_HEARTS - MINION_STRIKE_COST);
+  assert.equal(state.battle.selectedTarget, null, 'no battle screen');
+  assert.deepEqual(findAdjacentEnemies(), []);
+});
+
+test('with the gun on, the hunter still engages and stays on the battle screen', () => {
+  resetFloor();
+  state.settings.gunCombat = true;
+  const hunter = minionAt(-1, 0, null);
+  hunter.kind = 'hunter';
+  hunter.rest = 0;
+  assert.deepEqual(advanceMonsters().map(e => e.type), ['minionEngaged']);
+  assert.deepEqual(findAdjacentEnemies(), [hunter]);
+});
+
+test('with the gun on, a slow kind moves only every moveEvery turns', () => {
+  resetFloor();
+  state.settings.gunCombat = true;
+  state.run.turnCount = 0;
+  const husk = minionAt(-3, 0, 'HUSK');
+  const moves = [];
+  for (let i = 0; i < 4; i++) {
+    moves.push(advanceMonsters().some(e => e.type === 'minionMoved' && e.minion === husk));
+  }
+  assert.equal(MINION_KINDS.HUSK.moveEvery, 2);
+  assert.deepEqual(moves, [false, true, false, true]);
+});
+
+test('in classic combat a minion that reaches the player engages, as before', () => {
+  resetFloor();
+  const m = minionAt(-1, 0);
+  assert.deepEqual(advanceMonsters().map(e => e.type), ['minionEngaged']);
+  assert.equal(state.battle.selectedTarget, m);
+  assert.equal(state.run.hearts, MAX_HEARTS);
 });
