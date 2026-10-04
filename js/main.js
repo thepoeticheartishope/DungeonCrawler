@@ -4,7 +4,7 @@ import { nextFloor } from './run.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, GUN_START_ROUNDS, GUN_CHAMBER,
   BATTLE_CHOICE_COUNT,
-  TIMER_SECONDS, ROOM_LOG_LINES, REALTIME_POLL_MS
+  TIMER_SECONDS, ROOM_LOG_LINES, REALTIME_POLL_MS, REALTIME_WALK_MS
 } from './config.js';
 import { rollModifier, rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -15,7 +15,7 @@ import {
 } from './quiz.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
-  formatTime, startTimer, stopTimer, renderLightEye
+  formatTime, startTimer, stopTimer, renderLightEye, renderClock
 } from './render.js';
 import {
   isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
@@ -107,6 +107,8 @@ initRender({
   gunTarget: document.getElementById('gunTarget'),
   gunAim: document.getElementById('gunAim'),
   gunActions: document.getElementById('gunActions'),
+  clockStat: document.getElementById('clockStat'),
+  clockFill: document.getElementById('clockFill'),
   btnReload, btnFire,
 });
 initMapView(document.getElementById('mapCanvas'));
@@ -753,9 +755,12 @@ function clockMayRun() {
 
 // One poll of the real-time clock; when the world's turn is due, the
 // minions, the hunter and the light take it, as after a step in turn mode.
+// The HUD's NEXT meter follows each poll.
 function clockTick() {
-  if (!pollClock(performance.now(), clockMayRun())) return;
-  applyTurnOutcome([], true);
+  const running = clockMayRun();
+  const due = pollClock(performance.now(), running);
+  renderClock(running);
+  if (due) applyTurnOutcome([], true);
 }
 setInterval(clockTick, REALTIME_POLL_MS);
 
@@ -965,14 +970,21 @@ function loseToLight() {
   setTimeout(() => endLose('light'), 1400);
 }
 
+// When the player last took a step, for Real time's REALTIME_WALK_MS.
+// View-side timing, so a module var rather than state.
+let lastWalkAt = -Infinity;
+
 // One arrow press (stepPlayer in moves.js). A step or a first look in a
 // box spends a turn; stairs load the next floor; a trapped box opens the
-// battle screen; a bump or a turn toward a wall only draws.
+// battle screen; a bump or a turn toward a wall only draws. With Real time
+// on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
 function movePlayer(dRow, dCol) {
   if (state.run.turnLocked || state.run.runEnded) return;
+  if (state.settings.realTime && performance.now() - lastWalkAt < REALTIME_WALK_MS) return;
   state.run.turnLocked = true;
   const events = stepPlayer(dRow, dCol);
   const has = (type) => events.some(e => e.type === type);
+  if (has('stepped')) lastWalkAt = performance.now();
   if (has('stairsReached')) {
     drawEvents(events);
     state.run.turnLocked = false;

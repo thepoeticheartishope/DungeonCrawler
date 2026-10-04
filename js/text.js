@@ -344,6 +344,7 @@ export const TEXT = {
   'stat.target': 'TARGET', // draft. HUD: the gun's target and its hp, # left and - lost
   'stat.aim': 'AIM', // draft. HUD: the chance a shot at the target lands
   'stat.noTarget': '-', // the HUD's target and aim with nothing targeted
+  'stat.clock': 'NEXT', // draft. HUD, Real time only: a meter that reaches its end as the dark next moves
   'minionKind.SHARD': 'SHARD', // draft. A minion kind's name (config.js MINION_KINDS), in the HUD
   'minionKind.HUSK': 'HUSK', // draft
   'minionKind.STALKER': 'STALKER', // draft

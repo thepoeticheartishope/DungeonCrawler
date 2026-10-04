@@ -626,6 +626,29 @@
   .light-hint-w { left: 0; background: linear-gradient(to right, rgba(var(--hint-rgb), 0.28), transparent); }
   .light-hint-e { right: 0; background: linear-gradient(to left, rgba(var(--hint-rgb), 0.28), transparent); }
 
+  /* The NEXT meter in the status bar (Real time only, render.js
+     renderClock): an ink outline whose fill edge glides between the clock's
+     polls (REALTIME_POLL_MS, 100 ms), dim while the clock is paused. Under
+     reduced motion it steps in quarters with no glide. */
+  .clock-meter {
+    position: relative;
+    display: inline-block;
+    align-self: center;
+    width: 34px;
+    height: 8px;
+    border: 1px solid var(--ink);
+  }
+  .clock-fill {
+    position: absolute;
+    top: 0; bottom: 0; left: 0; width: 0;
+    background: var(--ink);
+    transition: left 100ms linear, width 100ms linear;
+  }
+  .clock-held .clock-meter { opacity: 0.4; }
+  @media (prefers-reduced-motion: reduce) {
+    .clock-fill { transition: none; }
+  }
+
   /* The eye in the status bar (ink on the inverse bar). --open runs 0..1
      with the boss light's progress: a shut lid at 0, an almond opening
      around a dark iris as it grows. It twitches once nearly open. */
@@ -1125,6 +1148,8 @@
     <div class="stat"><span class="stat-label" data-t="stat.hp"></span><span class="hearts" id="hearts">3/3</span></div>
     <div class="stat"><span class="stat-label" data-t="stat.gold"></span><strong id="coinsTotal">0</strong></div>
     <div class="stat"><span class="stat-label" data-t="stat.turn"></span><strong id="turnCount">0</strong></div>
+    <!-- Real time only (gun plan step 8): when the world next moves (render.js renderClock). -->
+    <div class="stat" id="clockStat" hidden><span class="stat-label" data-t="stat.clock"></span><span class="clock-meter"><span class="clock-fill" id="clockFill"></span></span></div>
     <!-- The gun (gun plan step 6), only with DEV -> Combat on gun (render.js renderHud). -->
     <div class="stat" id="gunRoundsStat" hidden><span class="stat-label" data-t="stat.rounds"></span><strong id="gunRounds"></strong></div>
     <div class="stat" id="gunTargetStat" hidden><span class="stat-label" data-t="stat.target"></span><strong id="gunTarget"></strong></div>

@@ -23,8 +23,9 @@
 //   4. Real-time run: Real time on (start screen), DEV -> Combat on gun,
 //      Auto-win off. With the DEV panel open the clock holds still; closed,
 //      the world takes turns with no input; the player's own steps don't
-//      add turns; and the clock keeps running while a reload question is
-//      open over the map. Then the option is still checked after a reload
+//      add turns, and arrows pressed faster than REALTIME_WALK_MS take one
+//      step at most; the NEXT meter shows; and the clock keeps running
+//      while a reload question is open over the map. Then the option is still checked after a reload
 //      of the page (it's remembered).
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
@@ -418,6 +419,20 @@ async function checkRealTime(page, url) {
     await page.waitForTimeout(40);
   }
   if (await turnsShown(page) - beforeSteps > 1) return 'the player\'s own steps moved the world';
+  if (await page.isHidden('#clockStat')) return 'the NEXT meter is not shown';
+
+  // Arrows pressed faster than REALTIME_WALK_MS take one step at most.
+  await page.waitForTimeout(300);
+  const where = () => page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    return state.floor.playerRow * 1000 + state.floor.playerCol;
+  });
+  const visited = new Set([await where()]);
+  for (const k of ['ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft']) {
+    await page.keyboard.press(k);
+    visited.add(await where());
+  }
+  if (visited.size > 2) return `${visited.size - 1} steps taken inside REALTIME_WALK_MS`;
 
   await page.keyboard.press('r');
   await page.waitForSelector('#reloadPanel:not([hidden])', { timeout: 2000 });

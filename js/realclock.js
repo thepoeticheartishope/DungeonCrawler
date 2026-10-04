@@ -11,6 +11,9 @@ import { REALTIME_STEP_MS, REALTIME_POLL_MS } from './config.js';
 // timing, so module vars rather than state (state holds no timers).
 let banked = 0;
 let lastPoll = null;
+// Which way the NEXT meter's edge runs this step: filling, or emptying. It
+// turns at each tick, so the meter never jumps back to empty.
+let filling = true;
 
 // One poll at time `now` (ms). `running` says whether the clock may run
 // right now. Returns true when the world's turn is due; the caller runs it.
@@ -23,7 +26,15 @@ export function pollClock(now, running) {
   banked += gap;
   if (banked < REALTIME_STEP_MS) return false;
   banked -= REALTIME_STEP_MS;
+  filling = !filling;
   return true;
+}
+
+// How far along the next tick is, for the HUD's NEXT meter: `share` 0..1
+// and whether this step fills the meter or empties it. Either way the
+// meter's edge reaches the far end as the world moves.
+export function clockReading() {
+  return { share: Math.min(banked / REALTIME_STEP_MS, 1), filling };
 }
 
 // Starts the count again from nothing: a new run or a new floor gets the
@@ -31,4 +42,5 @@ export function pollClock(now, running) {
 export function resetClock() {
   banked = 0;
   lastPoll = null;
+  filling = true;
 }
