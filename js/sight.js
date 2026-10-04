@@ -1,10 +1,12 @@
 // What the player can see: the player's light (visibleSet / sightSet /
-// exploredSet) and whether a tile can be made out rather than shown as
-// '?'. Rules only — no DOM access here; mapview.js draws from what this
+// exploredSet), whether a tile can be made out rather than shown as
+// '?', and whether a thing can be shot (canShoot / aimChance). Rules only — no DOM access here; mapview.js draws from what this
 // writes.
 
 import { state, key } from './state.js';
-import { PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE } from './config.js';
+import {
+  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, AIM_FALLOFF_PER_TILE, AIM_MIN,
+} from './config.js';
 
 // Facing vectors for the cone test below.
 export const FACING_VECTORS = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] };
@@ -96,4 +98,31 @@ export function canMakeOut(row, col) {
   if (!state.settings.fogEnabled) return true;
   if (Math.max(Math.abs(row - state.floor.playerRow), Math.abs(col - state.floor.playerCol)) > REVEAL_DISTANCE) return false;
   return state.floor.sightSet.has(key(row, col)) && clearLineTo(row, col);
+}
+
+// Why the player can't shoot `thing` (anything with row/col) right now, as
+// a text.js key under 'gun.block.', or null if they can. It has to be in
+// the player's own light (sightSet, not the boss's) with a clear line to
+// it, like making a thing out. Range is the light's reach in walkable
+// steps (PLAYER_CONE_RANGE), so "out of range" only shows when turning
+// toward it wouldn't help.
+export function shootBlock(thing) {
+  const dr = thing.row - state.floor.playerRow;
+  const dc = thing.col - state.floor.playerCol;
+  if (Math.abs(dr) + Math.abs(dc) > PLAYER_CONE_RANGE) return 'outOfRange';
+  if (!state.floor.sightSet.has(key(thing.row, thing.col))) return 'notInLight';
+  if (!clearLineTo(thing.row, thing.col)) return 'noLineOfSight';
+  return null;
+}
+
+export function canShoot(thing) {
+  return shootBlock(thing) === null;
+}
+
+// The chance a shot at `thing` lands: 1 next to the player (diagonals
+// included), less by AIM_FALLOFF_PER_TILE per tile of straight-line
+// distance past the first, never below AIM_MIN. It doesn't check canShoot.
+export function aimChance(thing) {
+  const distance = Math.hypot(thing.row - state.floor.playerRow, thing.col - state.floor.playerCol);
+  return Math.min(1, Math.max(AIM_MIN, 1 - (distance - 1) * AIM_FALLOFF_PER_TILE));
 }

@@ -15,8 +15,9 @@ import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE,
   LIGHT_TURNS_PER_STEP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, DARK_GOLD_MULTIPLIER,
   MAX_HEARTS, DARK_MISS_COST, BOSS_HP, MINION_KINDS, MINION_TRAIL_LENGTH,
+  AIM_FALLOFF_PER_TILE, AIM_MIN,
 } from '../js/config.js';
-import { computeVisibility, canMakeOut } from '../js/sight.js';
+import { computeVisibility, canMakeOut, shootBlock, canShoot, aimChance } from '../js/sight.js';
 import {
   initBossLight, advanceLight, extinguishLight, lightCoverage, lightProgress, lightConsumed,
 } from '../js/light.js';
@@ -190,6 +191,66 @@ test('a paper once made out stays identified after the player walks off', () => 
   state.floor.playerRow += 8;
   computeVisibility();
   assert.ok(near.identified);
+});
+
+// --- sight.js: shootBlock / canShoot / aimChance ---
+
+// A thing relative to the player.
+function at(dr, dc) {
+  return { row: state.floor.playerRow + dr, col: state.floor.playerCol + dc };
+}
+
+test('a thing in the light with a clear line can be shot', () => {
+  resetFloor();
+  computeVisibility();
+  assert.equal(shootBlock(at(-3, 1)), null);
+  assert.ok(canShoot(at(-3, 1)));
+  assert.ok(canShoot(at(-PLAYER_CONE_RANGE, 0)));
+  assert.ok(canShoot(at(1, 0)), 'next to the player, even behind, is in the light');
+});
+
+test('past the light\'s reach is out of range', () => {
+  resetFloor();
+  computeVisibility();
+  assert.equal(shootBlock(at(-PLAYER_CONE_RANGE - 1, 0)), 'outOfRange');
+  assert.equal(shootBlock(at(-4, 3)), 'outOfRange', 'reach counts walkable steps');
+  assert.equal(shootBlock(at(PLAYER_CONE_RANGE + 1, 0)), 'outOfRange', 'behind and far is range, not light');
+  assert.ok(!canShoot(at(-PLAYER_CONE_RANGE - 1, 0)));
+});
+
+test('in range but outside the cone is not in your light', () => {
+  resetFloor();
+  computeVisibility();
+  assert.equal(shootBlock(at(2, 0)), 'notInLight');
+  assert.equal(shootBlock(at(1, 1)), 'notInLight', 'a diagonal behind needs turning toward');
+  assert.equal(shootBlock(at(-1, 3)), 'notInLight');
+});
+
+test('only the boss\'s light is not enough to shoot', () => {
+  resetFloor();
+  state.floor.bossLitSet = new Set([rel(2, 0)]);
+  computeVisibility();
+  assert.equal(shootBlock(at(2, 0)), 'notInLight');
+});
+
+test('a pillar in the line blocks the shot', () => {
+  resetFloor();
+  state.floor.pillarSet = new Set([rel(-1, 0)]);
+  computeVisibility();
+  // Lit by creeping round the pillar, but there's no straight line to it.
+  assert.ok(state.floor.sightSet.has(rel(-2, 1)));
+  assert.equal(shootBlock(at(-2, 1)), 'noLineOfSight');
+  assert.ok(canShoot(at(-1, 0)), 'the pillar tile itself can be shot at');
+});
+
+test('aim is 100% next to the player and falls off with distance', () => {
+  resetFloor();
+  assert.equal(aimChance(at(-1, 0)), 1);
+  assert.equal(aimChance(at(0, -1)), 1);
+  assert.ok(Math.abs(aimChance(at(-3, 0)) - (1 - 2 * AIM_FALLOFF_PER_TILE)) < 1e-9);
+  const diagonal = aimChance(at(-1, 1));
+  assert.ok(diagonal < 1 && diagonal > 1 - AIM_FALLOFF_PER_TILE, 'a diagonal counts as about 1.4 tiles');
+  assert.equal(aimChance(at(-20, 0)), AIM_MIN, 'never below the minimum');
 });
 
 // --- light.js ---

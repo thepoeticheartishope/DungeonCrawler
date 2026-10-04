@@ -292,6 +292,14 @@ export const MINION_MIN_START_DISTANCE = 6; // walkable steps from the player's 
 export const PLAYER_LIGHT_RADIUS = 1;
 export const PLAYER_CONE_RANGE = 5;
 
+// Shooting (gun combat plan, step 2; sight.js canShoot / aimChance). A
+// minion can be shot when it is in the player's own light with a clear line
+// to it. Aim is 100% next to the player and drops AIM_FALLOFF_PER_TILE per
+// tile of straight-line distance past the first, never below AIM_MIN.
+// Values from the reload-and-fire mockup.
+export const AIM_FALLOFF_PER_TILE = 0.15;
+export const AIM_MIN = 0.3;
+
 // The boss gives off light that spreads through the floor at a steady
 // speed: one more walkable step every LIGHT_TURNS_PER_STEP turns. The run
 // is lost when the floor's turns run out: the walk to the boss plus that

@@ -311,6 +311,11 @@ export const TEXT = {
   'end.lose.light.title': 'A thought was born. It consumes.',
   'end.lose.stats': 'Reached {@term.room} {room} of {rooms} in {time} and {turns} cycles. {@term.gold} gathered: {coins}.', // draft
   'end.lose.retry': 'Wake', // draft
+
+  // ---- Gun (gun combat plan): why a target can't be shot (sight.js shootBlock).
+  'gun.block.outOfRange': 'Out of range.', // draft
+  'gun.block.notInLight': 'Not in your light. Turn toward it.', // draft
+  'gun.block.noLineOfSight': 'No line of sight.', // draft
 };
 
 // Per-room overrides, keyed by room number (1 = the first room). List only
