@@ -128,7 +128,8 @@ export function renderHud() {
 
 // HP pips for whichever target is currently engaged on the battle screen.
 // Only shown for a multi-hit fight — the boss, under the current constants
-// (MINION_HP is always 1, and chest/rune/encounters have no hp at all).
+// (a minion's fight still settles in one answer, and chest/rune/encounters
+// have no hp at all).
 // Gating on `target.kind === 'boss'` rather than `target.hp > 1` matters:
 // hp is exactly 1 right before the boss's final, most dramatic hit, and the
 // pips need to still show at that moment (and at hp 0, right after) rather

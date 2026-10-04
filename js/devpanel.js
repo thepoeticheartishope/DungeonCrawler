@@ -114,7 +114,7 @@ function floorSummary() {
     darkTurns: f.darkTurns,
     lightTurns: f.lightTurns + ' / ' + f.lightTurnBudget,
     lightSlack: f.lightSlack + ' (loss ' + Math.round(f.lightLossShare * 100) + '%)',
-    minions: f.minions.length,
+    minions: f.minions.map(m => where(m) + (m.minionKind ? ' ' + m.minionKind + ' hp ' + m.hpLeft : '')),
     props: f.props.length,
     encounters: f.encounters.length,
     chest: where(f.chest),

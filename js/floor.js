@@ -8,7 +8,7 @@ import { state, key } from './state.js';
 import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding } from './decor.js';
 import {
-  BOSS_HP, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, ROOM_THEMES
+  BOSS_HP, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, ROOM_THEMES
 } from './config.js';
 import { floorRecipe, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './quiz.js';
@@ -62,7 +62,7 @@ function stepsFromStart() {
 // from the player's start, so a room never opens with one in the player's
 // face. Falls back to any free reachable room tile if a small room can't
 // fit them that far away.
-function placeMinions(roomTiles, takenTiles, count) {
+function placeMinions(roomTiles, takenTiles, count, recipe) {
   const dist = stepsFromStart();
   const isTaken = (k) => takenTiles.some(p => key(p.row, p.col) === k);
   const free = [...dist.keys()].filter(k => roomTiles.has(k) && !isTaken(k));
@@ -70,8 +70,18 @@ function placeMinions(roomTiles, takenTiles, count) {
   const near = shuffle(free.filter(k => dist.get(k) < MINION_MIN_START_DISTANCE && dist.get(k) >= 3));
   [...far, ...near].slice(0, count).forEach(k => {
     const [row, col] = k.split(',').map(Number);
-    spawnMinion({ row, col });
+    spawnMinion({ row, col }, nextMinionKind(recipe));
   });
+}
+
+// The kind of the next minion placed on this floor: the recipe's
+// `minionKinds` in order, then MINION_KIND_ORDER round and round. Never
+// random, so placing kinds draws no random numbers and a seeded run lays
+// out the same floor as before kinds existed.
+function nextMinionKind(recipe) {
+  const placed = state.floor.minions.length;
+  const named = recipe.minionKinds || [];
+  return named[placed] || MINION_KIND_ORDER[placed % MINION_KIND_ORDER.length];
 }
 
 // Makes space for a beat's paper in its room. A room holds at most
@@ -150,7 +160,7 @@ export function buildFloor() {
     if (p.kind === 'paper') makeSpaceForPaper(p);
     state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
   });
-  beats.minionTiles.forEach(p => spawnMinion(p));
+  beats.minionTiles.forEach(p => spawnMinion(p, nextMinionKind(recipe)));
 
   const freeRoomTiles = new Set([...roomTiles].filter(k => !placer.blocked.has(k)));
 
@@ -199,7 +209,7 @@ export function buildFloor() {
 
   const minionTaken = takenTiles.slice();
   [state.floor.chest, state.floor.rune, ...state.floor.encounters].forEach(item => { if (item) minionTaken.push(item); });
-  placeMinions(roomTiles, minionTaken, recipe.minions - beats.minionTiles.length);
+  placeMinions(roomTiles, minionTaken, recipe.minions - beats.minionTiles.length, recipe);
 
   state.floor.darkness = false;
   initBossLight();

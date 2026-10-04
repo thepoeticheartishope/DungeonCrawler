@@ -261,7 +261,26 @@ export const PLAYER_NAME_MAX_LENGTH = 20;
 export const ROOM_COUNT = 3;
 
 export const BOSS_HP = 3;       // hits needed to defeat the boss
-export const MINION_HP = 1;     // hits needed to defeat one minion
+// The kinds of minion (gun combat plan, step 1). Each minion is one of
+// these (`minionKind`); the floor recipe can name which (floors.js
+// `minionKinds`). Until the gun arrives a fight still settles in one
+// answer, so only the map's later steps read these numbers:
+//   hp         hits a minion of this kind takes before it falls
+//   moveEvery  it moves every this many turns (1 = every turn)
+//   weakWidth  the share of the damage bar that is its weak point
+//   size       how big it is drawn, against a tile
+//   limbs      limbs a weak-point shot can cut off
+// Starting values from the reload-and-fire mockup, for Timothy to tune.
+export const MINION_KINDS = {
+  SHARD: { hp: 2, moveEvery: 1, weakWidth: 0.06, size: 0.85, limbs: 2 },
+  HUSK: { hp: 5, moveEvery: 2, weakWidth: 0.1, size: 1.15, limbs: 2 },
+  STALKER: { hp: 3, moveEvery: 1, weakWidth: 0.035, size: 1.0, limbs: 2 },
+};
+// The order kinds come in on a floor whose recipe names none (or too few).
+export const MINION_KIND_ORDER = ['SHARD', 'STALKER', 'HUSK'];
+// How many of its last tiles a minion remembers, newest last. A strike
+// knocks it back along them, the way it came (the mockup's KNOCKBACK).
+export const MINION_TRAIL_LENGTH = 3;
 // Minions are placed when a room loads (no summoning; how many is in the
 // floor recipe) and roam freely: they wander at random and only chase once
 // the player is within MINION_CHASE_RANGE walkable steps.

@@ -75,7 +75,7 @@ Rules and data (no page/DOM access):
 | `rooms.js` | Hand-drawn room templates (`#` wall, `.` floor, `?` prop, `+` inner door). |
 | `dungeon.js` | Builds a floor layout from the templates: rooms, hallways, boss room, stairs; `buildRestLayout()` for a rest floor's one room. |
 | `decor.js` | Themes rooms and places pillars, papers, boxes (`makePlacer`). |
-| `floors.js` | `FLOOR_RECIPES`: what each floor holds (grid, rooms, loops, minions, light loss share, start/boss rooms, the floor's story lines, the beats met on the way to the boss); `floorRecipe(i)` reads it. Data only, grows with the level-design plan. |
+| `floors.js` | `FLOOR_RECIPES`: what each floor holds (grid, rooms, loops, minions and their kinds, light loss share, start/boss rooms, the floor's story lines, the beats met on the way to the boss); `floorRecipe(i)` reads it. Data only, grows with the level-design plan. |
 | `beats.js` | `placeBeats()`: puts the recipe's beats (paper, box, minion, special) on room tiles along the walk from the start to the boss, in the recipe's order. Called by `buildFloor()`. |
 | `floor.js` | `buildFloor()`: a new floor as data — layout, furniture, boss, stairs, the recipe's beats, coin, the one special item (chest / rune / encounter), minions, then light, sight and camera. `buildRestFloor(kind)`: a rest floor (opening / between / epilogue) — one room (`REST_RECIPES` in floors.js), papers on its `?` spots, the rest's story lines (`restLore`; the epilogue drops unread lines), coin, stairs, every danger and light field cleared. |
 | `run.js` | `nextFloor()`: the run's shape, opening rest -> depth -> rest -> ... -> depth 3 -> epilogue rest -> win. `state.run.resting` says a rest floor is up; `roomIndex` counts danger depths only and goes up as a depth is left. |
@@ -85,7 +85,7 @@ Rules and data (no page/DOM access):
 | `haunts.js` | Missed questions that come back later in the run. |
 | `exchange.js` | THE UNFOLDING (code name exchange), on every rest floor: `offers()` (each `EXCHANGE_ITEMS` item, offered or why not) and `buy(id)` (spends myelin, applies the item, returns events). Max stability is `state.run.maxHearts`; bought slack waits in `state.run.bonusSlack` until `initBossLight()` spends it. |
 | `modifiers.js` | Rolls Blind / Gambler / Flip / Timer for fight choices. |
-| `combat.js` | Minion/hunter movement and turn advance. `advanceMonsters()` returns an events list; `main.js` `drawEvents()` draws it. |
+| `combat.js` | Minion/hunter movement and turn advance. `spawnMinion(spot, minionKind)` makes a minion of a `MINION_KINDS` kind (config.js): `minionKind`, `hpLeft`, `limbs`, `trail` (its last tiles, for knockback). `advanceMonsters()` returns an events list; `main.js` `drawEvents()` draws it. |
 | `moves.js` | The player's step (`stepPlayer()`: turn, bump, walk, stairs, coin, paper (the next story line from `state.run.loreQueue`), room entry, boxes) and `goldReward`. Returns an events list. |
 | `answers.js` | Settling an answer (`settleAnswer()`: hearts, haunts, the Gambler wager, boss HP and the darkness, clearing or spending the target, gold and the rune's hint). Returns an events list. |
 | `quiz.js` | Picking questions, building multiple-choice options, fight choice labels. |
