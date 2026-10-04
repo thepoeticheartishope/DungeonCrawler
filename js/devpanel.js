@@ -1,5 +1,5 @@
 // DEV panel in the status bar: Skip room, Auto-win, Fog, Camera and Combat
-// toggles and a test shot, for testing. main.js passes in the game actions and elements it needs.
+// toggles, a test shot and a test reload, for testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw } from './mapview.js';
 import { renderRoomHints } from './render.js';
@@ -12,9 +12,10 @@ const devFogBtn = document.getElementById('devFogBtn');
 const devCameraBtn = document.getElementById('devCameraBtn');
 const devCombatBtn = document.getElementById('devCombatBtn');
 const devShotBtn = document.getElementById('devShotBtn');
+const devReloadBtn = document.getElementById('devReloadBtn');
 
 export function initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter, devTestShot,
+  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter, devTestShot, devTestReload, endGunTests,
   battleScreen, wagerRow,
 }) {
   devToggleBtn.addEventListener('click', () => {
@@ -71,8 +72,10 @@ export function initDevPanel({
 
   // Dev tool (gun plan): classic combat, or the gun on the map. For now it
   // only switches the map's drawing (the gun, its reach, the target picked
-  // by a tap) and shows Test shot; step 6 puts the gun's rules behind it.
-  // Turning it off drops the target and any shot waiting for the damage bar.
+  // by a tap) and shows Test shot and Test reload; step 6 puts the gun's
+  // rules behind it.
+  // Turning it off drops the target and any shot waiting for the damage bar,
+  // and closes a gun panel left open over the map.
   devCombatBtn.addEventListener('click', () => {
     const on = !state.settings.gunCombat;
     state.settings.gunCombat = on;
@@ -83,11 +86,14 @@ export function initDevPanel({
     devCombatBtn.textContent = on ? 'Combat: gun (dev)' : 'Combat: classic (dev)';
     devCombatBtn.setAttribute('aria-pressed', String(on));
     devShotBtn.hidden = !on;
+    devReloadBtn.hidden = !on;
+    if (!on) endGunTests();
     requestMapDraw();
     refreshInspector();
   });
 
   devShotBtn.addEventListener('click', devTestShot);
+  devReloadBtn.addEventListener('click', devTestReload);
 }
 
 // Dev tool: a live look at the game state and the last rule events, for

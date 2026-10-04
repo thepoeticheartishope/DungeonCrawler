@@ -4,14 +4,14 @@ import { nextFloor } from './run.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, GUN_START_ROUNDS, GUN_CHAMBER,
   BATTLE_CHOICE_COUNT,
-  BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS, ROOM_LOG_LINES
+  TIMER_SECONDS, ROOM_LOG_LINES
 } from './config.js';
-import { rollModifier, rollCategoryModifiers, rollFlip, maxWager } from './modifiers.js';
+import { rollModifier, rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
 import {
   shuffle, pickQuestion, escapeHtml,
-  buildChoices, normalizeSpaces, buildHint, poolFor, fightChoiceLabel,
-  resolveImageSrc, buildCategoryChoices, categoryLabel
+  normalizeSpaces, buildHint, poolFor, fightChoiceLabel,
+  buildCategoryChoices, categoryLabel
 } from './quiz.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
@@ -26,12 +26,14 @@ import { settleAnswer } from './answers.js';
 import { initSetLoader } from './setloader.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapTap, glyphOf } from './mapview.js';
-import { pickTarget, fire, settleShot } from './gun.js';
+import { pickTarget, fire, settleShot, reloadOffers, settleReload } from './gun.js';
+import { initGunPanels, showReloadPanel, showQuestionOnMap, showDamageBar, closeMapPanels, mapPanelShown } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad } from './dpad.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
+import { mountQuestionPanel, setQuestion, retypeQuestion, clearModifier, applyModifier, placeWager } from './questionview.js';
 
 const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
@@ -58,16 +60,13 @@ const coinsTotalEl = document.getElementById('coinsTotal');
 const choicePanel = document.getElementById('choicePanel');
 const choiceListEl = document.getElementById('choiceList');
 const queryPanel = document.getElementById('queryPanel');
-const enemyName = document.getElementById('enemyName');
-const queryImage = document.getElementById('queryImage');
+const battleQuestionSlot = document.getElementById('battleQuestionSlot');
 const targetLabelEl = document.getElementById('targetLabel');
 const answerForm = document.getElementById('answerForm');
 const answerInput = document.getElementById('answerInput');
 const attackBtn = document.getElementById('attackBtn');
 const mcOptionsEl = document.getElementById('mcOptions');
 const wagerRow = document.getElementById('wagerRow');
-const wagerButtons = document.getElementById('wagerButtons');
-const modTimerEl = document.getElementById('modTimer');
 const encounterLogEl = document.getElementById('encounterLog');
 const endPanel = document.getElementById('endPanel');
 const continueBtn = document.getElementById('continueBtn');
@@ -102,12 +101,13 @@ onMapTap(tapMap);
 
 initDataView({ startScreen });
 initExchangeView({ buyItem, leaveExchange });
+initGunPanels({ pickReload, cancelReload: () => endReload(), stopBar: stopDamageBar });
 
 applyStaticText();
 
 initSetLoader();
 initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter, devTestShot,
+  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter, devTestShot, devTestReload, endGunTests,
   battleScreen, wagerRow,
 });
 
@@ -119,158 +119,73 @@ function tapMap(tile) {
 }
 
 // DEV -> Test shot: fires at the gun's target through the real rules
-// (gun.js), or, with a landed shot waiting for the damage bar, stops the
-// bar at a random place, so the map's gun drawing can be checked before
-// step 6 puts the gun into play. Fills an empty chamber first. Spends no
-// turn: minions don't move and the light doesn't spread.
+// (gun.js); a landed shot opens the damage bar over the map (gunpanels.js),
+// so the gun's drawing and panels can be checked before step 6 puts the
+// gun into play. Fills an empty chamber first. Spends no turn: minions
+// don't move and the light doesn't spread.
 function devTestShot() {
   if (!state.settings.gunCombat || state.run.turnLocked || state.run.runEnded) return;
   if (state.run.ammo <= 0) state.run.ammo = GUN_CHAMBER;
   const target = state.floor.minions.includes(state.floor.gunTarget) ? state.floor.gunTarget : null;
-  const note = drawEvents(state.battle.aim ? settleShot(Math.random()) : fire(target));
+  if (!state.battle.aim) {
+    const note = drawEvents(fire(target));
+    if (note.text) showRoomNote(note.cls, note.text);
+  }
+  if (!state.battle.aim) return;
+  state.run.turnLocked = true;
+  showDamageBar(state.battle.aim);
+}
+
+// The player stopped the damage bar at `barPosition`: the shot's damage.
+function stopDamageBar(barPosition) {
+  closeMapPanels();
+  state.run.turnLocked = false;
+  const note = drawEvents(settleShot(barPosition));
   if (note.text) showRoomNote(note.cls, note.text);
 }
 
-function renderChoices() {
-  const letters = ['A', 'B', 'C', 'D'];
-  mcOptionsEl.innerHTML = '';
-  state.battle.currentChoices.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'mc-option';
-    btn.innerHTML = '<span class="letter">' + letters[i] + '</span><span class="opt-text">' + escapeHtml(opt) + '</span>';
-    btn.addEventListener('click', () => attemptAnswerMC(opt));
-    mcOptionsEl.appendChild(btn);
+// DEV -> Test reload: the real reload (gun.js reloadOffers / settleReload)
+// through the panels over the map: pick an offer, answer its question.
+// Spends no turn, like Test shot.
+function devTestReload() {
+  if (!state.settings.gunCombat || state.run.turnLocked || state.run.runEnded) return;
+  const offered = reloadOffers();
+  if (offered.block) { showRoomNote('block-msg', t('gun.block.' + offered.block)); return; }
+  state.run.turnLocked = true;
+  showReloadPanel(offered);
+}
+
+// A reload offer was picked: its question, with its modifiers, over the
+// map. Any answer (or the Timer running out) settles the reload.
+function pickReload(offer, category) {
+  const settle = (isCorrect) => endReload(() => settleReload(isCorrect, offer));
+  showQuestionOnMap({
+    onChoice: choice => settle(matchesAnswer(choice)),
+    onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
+    onTimeout: () => settle(false),
+    log: text => showRoomNote('', text),
   });
+  setQuestion(pickQuestion(state.battle.currentQuestion, category.pool));
+  offer.modifiers.forEach(applyModifier);
 }
 
-// Sets the active question, and (in MC mode) its answer choices.
-// Types `text` into `el` one character at a time, terminal-style, instead
-// of setting it all at once. Cancels any typing already in progress on
-// that element first, so rapid-fire question changes (a quick correct
-// answer against the boss, say) never leave two runs racing each other.
-const typewriterTimers = new WeakMap();
-// A fixed per-character delay made short answers ("CPU") finish in ~50ms —
-// too fast to read as typing at all. Instead, aim for a roughly constant
-// total reveal time and derive the per-character delay from the string's
-// length, clamped so short strings type slowly enough to notice and long
-// ones don't drag.
-function typeText(el, text, targetDurationMs = 450) {
-  const speedMs = Math.min(140, Math.max(12, targetDurationMs / Math.max(text.length, 1)));
-  const existing = typewriterTimers.get(el);
-  if (existing) clearInterval(existing);
-  el.textContent = '';
-  let i = 0;
-  const timer = setInterval(() => {
-    i++;
-    el.textContent = text.slice(0, i);
-    if (i >= text.length) {
-      clearInterval(timer);
-      typewriterTimers.delete(el);
-    }
-  }, speedMs);
-  typewriterTimers.set(el, timer);
-}
-
-// ---- Question modifiers (see modifiers.js) ----
-// A category offered in a fight may carry one; it applies to the question
-// asked once that category is picked, and is cleared by the next question.
-let blindTimer = null;
-let countdownTimer = null;
-
-function clearModifier() {
-  clearTimeout(blindTimer);
-  blindTimer = null;
-  clearInterval(countdownTimer);
-  countdownTimer = null;
-  modTimerEl.hidden = true;
-  modTimerEl.classList.remove('urgent');
-  state.battle.wager = 0;
-  mcOptionsEl.classList.remove('mod-blind');
-  wagerRow.hidden = true;
-  wagerButtons.innerHTML = '';
-}
-
-function applyModifier(modifier) {
-  logLine(t('log.modifier', { name: t('mod.' + modifier) }), 'sys');
-  const buttons = [...mcOptionsEl.querySelectorAll('.mc-option')];
-  if (modifier === 'blind') {
-    // Longer answers stay readable for longer.
-    const words = state.battle.currentChoices.reduce((n, opt) => n + opt.trim().split(/\s+/).length, 0);
-    const ms = Math.min(BLIND_MAX_MS, BLIND_BASE_MS + BLIND_MS_PER_WORD * words);
-    blindTimer = setTimeout(() => mcOptionsEl.classList.add('mod-blind'), ms);
-  } else if (modifier === 'flip') {
-    const { slots, mode } = rollFlip(buttons.length);
-    buttons.forEach((b, i) => { if (slots.has(i)) b.querySelector('.opt-text').classList.add('flip-' + mode); });
-  } else if (modifier === 'gambler') {
-    // Answers stay locked until a wager of 1..maxWager() is placed.
-    buttons.forEach(b => { b.disabled = true; });
-    wagerButtons.innerHTML = '';
-    for (let n = 1; n <= maxWager(); n++) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'wager-option';
-      btn.textContent = String(n);
-      btn.addEventListener('click', () => placeWager(n));
-      wagerButtons.appendChild(btn);
-    }
-    wagerRow.hidden = false;
-  } else if (modifier === 'timer') {
-    startCountdown();
-  }
-}
-
-// Timer modifier: TIMER_SECONDS to answer. Running out counts as a miss,
-// through the same path as a wrong answer.
-function startCountdown() {
-  let left = TIMER_SECONDS;
-  const q = state.battle.currentQuestion;
-  const show = () => {
-    modTimerEl.textContent = t('battle.timer', { s: left });
-    modTimerEl.classList.toggle('urgent', left <= 3);
-  };
-  show();
-  modTimerEl.hidden = false;
-  countdownTimer = setInterval(() => {
-    left--;
-    show();
-    if (left > 0) return;
-    clearInterval(countdownTimer);
-    countdownTimer = null;
-    // Only if that same question is still waiting on an answer.
-    if (state.battle.currentQuestion !== q || state.battle.battlePhase !== 'answering' || state.run.turnLocked || !state.battle.selectedTarget) return;
-    state.run.turnLocked = true;
-    state.run.attempts++;
-    logLine(t('log.timeout'), 'alert');
-    applyAnswerResult(false, false, t('battle.noAnswer'));
-  }, 1000);
-}
-
-function placeWager(n) {
-  if (state.battle.wager || wagerRow.hidden) return;
-  state.battle.wager = n;
-  wagerRow.hidden = true;
-  logLine(t('log.wager', { n }), 'sys');
-  mcOptionsEl.querySelectorAll('.mc-option').forEach(b => { b.disabled = false; });
-}
-
-function setQuestion(q) {
+// Closes the gun's panels, hands the question panel back to the battle
+// screen and frees the turn; `settle` (if given) is the rule that ends it.
+function endReload(settle) {
   clearModifier();
-  state.battle.currentQuestion = q;
-  typeText(enemyName, q.term);
-  answerInput.value = '';
-  const imageSrc = resolveImageSrc(q.image);
-  if (imageSrc) {
-    queryImage.src = imageSrc;
-    queryImage.hidden = false;
-  } else {
-    queryImage.hidden = true;
-    queryImage.removeAttribute('src');
-  }
-  if (state.settings.mcMode) {
-    state.battle.currentChoices = buildChoices(q);
-    renderChoices();
-  }
+  closeMapPanels();
+  mountBattleQuestion();
+  state.run.turnLocked = false;
+  if (!settle) return;
+  const note = drawEvents(settle());
+  if (note.text) showRoomNote(note.cls, note.text);
+}
+
+// DEV -> Combat back to classic: close whatever gun panel is open, and
+// drop a shot waiting for the damage bar.
+function endGunTests() {
+  if (!mapPanelShown()) return;
+  endReload();
 }
 
 function nextQuestion() {
@@ -461,7 +376,7 @@ function startBattleTurn() {
     // The question was very likely set well before this moment, off-screen
     // (loadRoom() sets one at room load), so re-type it fresh every time a
     // turn starts rather than letting the effect be skipped.
-    typeText(enemyName, state.battle.currentQuestion.term);
+    retypeQuestion();
     // A boss question always carries a modifier, even with no category
     // choice to show it on.
     if (target.kind === 'boss') {
@@ -504,6 +419,7 @@ function syncBattleScreen() {
     renderCombatStatus();
     const entering = !battleScreen.classList.contains('show');
     if (entering) {
+      mountBattleQuestion();
       showScreen(battleScreen);
       battleScreen.classList.remove('glitch-in');
       void battleScreen.offsetWidth;
@@ -849,6 +765,13 @@ function drawEvents(events) {
       case 'hunterStaggered':
         shotOnMap(e.hunter, false);
         break;
+      case 'reloaded':
+        parts.push(t('gun.reloaded', { rounds: e.rounds }));
+        break;
+      case 'jammed':
+        cls = 'block-msg';
+        parts.push(t('gun.jammed'));
+        break;
       case 'runeDecoded': {
         const hint = buildHint(e.question);
         const choiceLabel = fightChoiceLabel(e.question, state.settings.activeData, BATTLE_CHOICE_COUNT);
@@ -955,21 +878,18 @@ function applyAnswerResult(isCorrect, hadExtraSpace, given) {
   state.run.turnLocked = false;
 }
 
-function attemptAnswer() {
+function attemptAnswer(raw) {
   if (state.run.turnLocked || state.battle.battlePhase !== 'answering') return;
   if (!state.battle.selectedTarget || !isAdjacentToPlayer(state.battle.selectedTarget)) {
     logLine(t('log.outOfRange'), 'sys');
     return;
   }
-  const raw = answerInput.value;
   if (!raw.trim()) return;
 
   state.run.turnLocked = true;
   state.run.attempts++;
   const hadExtraSpace = raw !== raw.trim() || /\s{2,}/.test(raw);
-  const cleanInput = normalizeSpaces(raw).toLowerCase();
-  const cleanAnswer = normalizeSpaces(state.battle.currentQuestion.meaning).toLowerCase();
-  applyAnswerResult(cleanInput === cleanAnswer, hadExtraSpace, normalizeSpaces(raw));
+  applyAnswerResult(matchesAnswer(raw), hadExtraSpace, normalizeSpaces(raw));
 }
 
 function attemptAnswerMC(choice) {
@@ -980,24 +900,38 @@ function attemptAnswerMC(choice) {
   }
   state.run.turnLocked = true;
   state.run.attempts++;
-  const isCorrect = normalizeSpaces(choice).toLowerCase() === normalizeSpaces(state.battle.currentQuestion.meaning).toLowerCase();
-  applyAnswerResult(isCorrect, false, choice);
+  applyAnswerResult(matchesAnswer(choice), false, choice);
 }
 
-attackBtn.addEventListener('click', attemptAnswer);
+// Whether `given` is the current question's answer, ignoring case and
+// extra spaces.
+function matchesAnswer(given) {
+  return normalizeSpaces(given).toLowerCase() === normalizeSpaces(state.battle.currentQuestion.meaning).toLowerCase();
+}
+
+// Timer modifier on the battle screen: running out counts as a miss,
+// through the same path as a wrong answer, if the fight is still waiting.
+function answerTimedOut() {
+  if (state.battle.battlePhase !== 'answering' || state.run.turnLocked || !state.battle.selectedTarget) return;
+  state.run.turnLocked = true;
+  state.run.attempts++;
+  logLine(t('log.timeout'), 'alert');
+  applyAnswerResult(false, false, t('battle.noAnswer'));
+}
+
+// What the question panel's input means on the battle screen.
+const battleAnswers = {
+  onChoice: attemptAnswerMC, onTyped: attemptAnswer, onTimeout: answerTimedOut, log: logLine,
+};
+
+// Puts the question panel back on the battle screen (it may have been
+// over the map for a reload).
+function mountBattleQuestion() {
+  mountQuestionPanel(battleQuestionSlot, battleAnswers);
+}
+mountBattleQuestion();
+
 continueBtn.addEventListener('click', leaveEncounter);
-
-answerInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    attemptAnswer();
-  }
-});
-
-answerForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  attemptAnswer();
-});
 
 initDpad({
   buttons: dpadButtons, movePlayer, skipTurn,
@@ -1005,14 +939,16 @@ initDpad({
 });
 
 // Arrow-key support on desktop, ignored while typing in the answer box.
+// Letter and number keys answer a question shown over the map, unless the
+// gun panels already used the key (picking a reload with 1-3).
 document.addEventListener('keydown', (e) => {
-  if (document.activeElement === answerInput) return;
+  if (document.activeElement === answerInput || e.defaultPrevented) return;
   if (!roomScreen.classList.contains('show')) return;
   if (e.key === 'ArrowUp') { e.preventDefault(); movePlayer(-1, 0); }
   else if (e.key === 'ArrowDown') { e.preventDefault(); movePlayer(1, 0); }
   else if (e.key === 'ArrowLeft') { e.preventDefault(); movePlayer(0, -1); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(0, 1); }
-  else if (state.settings.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {
+  else if (mapPanelShown() === 'question' && state.settings.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {
     const idxMap = { 1: 0, a: 0, 2: 1, b: 1, 3: 2, c: 2, 4: 3, d: 3 };
     const idx = idxMap[e.key.toLowerCase()];
     const btn = mcOptionsEl.children[idx];

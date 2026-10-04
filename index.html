@@ -554,6 +554,60 @@
     border: 1px solid var(--line);
   }
 
+  /* The gun's panels (js/gunpanels.js): reload choices, the question, the
+     damage bar. They start just below the map's middle, where the camera
+     keeps the player, so the player and what's coming stay visible; a
+     long one grows down over the d-pad and room log (both unused while
+     a panel is up) instead of up over the map. Above the edge glows. */
+  .map-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 56%;
+    min-height: 44%;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 12px 10px;
+    background: var(--stone-dark);
+    border-top: 1px solid var(--line);
+    text-align: left;
+  }
+  .map-panel[hidden] { display: none; }
+  .map-panel .enemy-name { font-size: 22px; margin-bottom: 6px; }
+  .map-panel-cancel { align-self: flex-start; }
+  .choice-option .reload-room { color: var(--muted); margin-left: 8px; }
+
+  /* The damage bar: the marker sweeps across; where it stops sets the
+     damage. Same size at every distance (distance only decides whether a
+     shot lands). */
+  .damage-bar {
+    position: relative;
+    height: 32px;
+    border: 1px solid var(--muted);
+    cursor: crosshair;
+    touch-action: manipulation;
+  }
+  .damage-bar:focus-visible { outline: 1px solid var(--torch-bright); }
+  .damage-zone { position: absolute; top: 0; bottom: 0; }
+  .damage-hit {
+    background: rgba(var(--glow-rgb), 0.12);
+    border-left: 1px dashed var(--muted);
+    border-right: 1px dashed var(--muted);
+  }
+  .damage-weak { background: rgba(var(--glow-rgb), 0.42); }
+  .damage-marker {
+    position: absolute;
+    top: -6px;
+    bottom: -6px;
+    width: 3px;
+    margin-left: -1px;
+    background: var(--torch-bright);
+    box-shadow: 0 0 8px var(--torch-bright);
+  }
+  .damage-legend { display: flex; justify-content: space-between; color: var(--muted); font-size: 16px; text-transform: uppercase; }
+
   /* Edge glows toward an off-screen boss. Opacity is set per edge by
      render.js renderLightHint, over the map; they never catch clicks. */
   .light-hint {
@@ -1057,7 +1111,8 @@
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devCameraBtn" type="button" title="Testing only: in isometric, the camera glides after the player or stays locked to them" aria-pressed="true">Camera: glide (dev)</button>
       <button class="dev-skip" id="devCombatBtn" type="button" aria-pressed="false" title="Testing only: classic combat, or the gun on the map (for now only the map's drawing; tap a minion to target it)">Combat: classic (dev)</button>
-      <button class="dev-skip" id="devShotBtn" type="button" hidden title="Testing only: fire at the gun's target, or stop a landed shot's damage bar at random (fills an empty chamber, spends no turn)">Test shot (dev)</button>
+      <button class="dev-skip" id="devShotBtn" type="button" hidden title="Testing only: fire at the gun&#39;s target; a landed shot opens the damage bar over the map (fills an empty chamber, spends no turn)">Test shot (dev)</button>
+      <button class="dev-skip" id="devReloadBtn" type="button" hidden title="Testing only: the reload panel and its question over the map (spends no turn)">Test reload (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
       <button class="dev-skip" id="devAutoWinBtn" type="button" aria-pressed="false" title="Testing only: every encounter plays itself out with correct answers">Auto-win: OFF (dev)</button>
       <button class="dev-skip" id="devInspectBtn" type="button" aria-pressed="false" title="Testing only: show live game state and the last events">Inspect: OFF (dev)</button>
@@ -1178,6 +1233,28 @@
       <div class="light-hint light-hint-s" id="lightHintS" aria-hidden="true"></div>
       <div class="light-hint light-hint-e" id="lightHintE" aria-hidden="true"></div>
       <div class="light-hint light-hint-w" id="lightHintW" aria-hidden="true"></div>
+
+      <!-- The gun's panels (js/gunpanels.js): they slide up over the lower
+           part of the map, so what's coming stays in view. One at a time. -->
+      <div class="map-panel" id="reloadPanel" hidden>
+        <div class="term-line" id="reloadTitle"></div>
+        <div class="choice-list" id="reloadChoices"></div>
+        <button type="button" class="map-panel-cancel" id="reloadCancel" data-t="gun.reload.cancel"></button>
+      </div>
+      <div class="map-panel" id="mapQuestionPanel" hidden>
+        <div id="mapQuestionSlot"></div>
+      </div>
+      <div class="map-panel" id="aimPanel" hidden>
+        <div class="term-line" data-t="gun.bar.prompt"></div>
+        <div class="damage-bar" id="damageBar" role="button" tabindex="0">
+          <div class="damage-zone damage-hit" id="damageHit"></div>
+          <div class="damage-zone damage-weak" id="damageWeak"></div>
+          <div class="damage-marker" id="damageMarker"></div>
+        </div>
+        <div class="damage-legend">
+          <span data-t="gun.bar.graze"></span><span data-t="gun.bar.hit"></span><span data-t="gun.bar.weak"></span><span data-t="gun.bar.hit"></span><span data-t="gun.bar.graze"></span>
+        </div>
+      </div>
     </div>
 
     <!-- The room log (main.js showRoomNote) sits left of the d-pad, so the
@@ -1221,6 +1298,9 @@
           <div class="choice-list" id="choiceList"></div>
         </div>
 
+        <!-- The question panel (js/questionview.js). It lives here, and
+             moves to the map's panel (#mapQuestionSlot) for a reload. -->
+        <div id="battleQuestionSlot">
         <div id="queryPanel">
           <img class="query-image" id="queryImage" alt="" hidden>
           <div class="term-line term-label" data-t="battle.query"></div>
@@ -1239,6 +1319,7 @@
             <span class="wager-buttons" id="wagerButtons"></span>
           </div>
           <div class="mc-options" id="mcOptions"></div>
+        </div>
         </div>
 
         <div class="end-panel" id="endPanel" hidden>
