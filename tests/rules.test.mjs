@@ -28,7 +28,8 @@ import { settleAnswer } from '../js/answers.js';
 import { resetHaunts } from '../js/haunts.js';
 
 // An open size x size floor, player in the middle facing north, fog on,
-// nothing else on it.
+// nothing else on it. Classic combat (the gun is the game's default since
+// gun plan step 9; its rules are tested in gun.test.mjs).
 function resetFloor(size = 21) {
   state.floor.GRID_SIZE = size;
   state.run.roomIndex = 0;
@@ -37,6 +38,7 @@ function resetFloor(size = 21) {
   state.floor.playerCol = Math.floor(size / 2);
   state.floor.facing = 'N';
   state.settings.fogEnabled = true;
+  state.settings.gunCombat = false;
   state.floor.darkness = false;
   state.floor.wallSet = new Set();
   state.floor.pillarSet = new Set();

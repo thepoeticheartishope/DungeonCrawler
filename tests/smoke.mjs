@@ -11,16 +11,17 @@
 //      clear the floor, asserting the win or lose screen is reached.
 //      A run is 7 floors (opening rest, then depth / rest three times, the
 //      last rest being the epilogue), so it takes 7 skips; the cap is 10.
-//   2. Battle run: skips out of the opening rest (it has no minions), then
+//   2. Battle run: DEV -> Combat back to classic (the gun is the default),
+//      skips out of the opening rest (it has no minions), then
 //      walks with the arrow keys and "Skip turn" until a minion
 //      engages and the battle screen appears, then lets Auto-win settle the
 //      fight, asserting an ACCEPTED. line appeared in the encounter log and
 //      the game is back on the room screen afterward (classic combat).
-//   3. Gun run: DEV -> Combat on gun, then wanders as run 2 does, pressing
+//   3. Gun run (the default combat), wanders as run 2 does, pressing
 //      R to reload and F to fire (Auto-win answers the reload and stops the
 //      damage bar on the weak point) until a reload loaded rounds and a
 //      shot killed a minion.
-//   4. Real-time run: Real time on (start screen), DEV -> Combat on gun,
+//   4. Real-time run: Real time on (start screen), gun combat (the default),
 //      Auto-win off. With the DEV panel open the clock holds still; closed,
 //      the world takes turns with no input; the player's own steps don't
 //      add turns, and arrows pressed faster than REALTIME_WALK_MS take one
@@ -210,6 +211,9 @@ async function attemptBattle(page, url) {
   await installBattleWatchers(page);
   await startGameAndWaitForRoom(page);
   await turnOnAutoWin(page);
+  // The gun is the default (gun plan step 9): DEV -> Combat back to classic,
+  // so a minion that reaches the player opens the battle screen.
+  await page.click('#devCombatBtn');
   // The run opens on a rest floor with no minions: go down to depth 1.
   await page.click('#devSkipBtn');
   await page.waitForTimeout(200);
@@ -309,7 +313,7 @@ async function installGunWatchers(page) {
 
 const GUN_MAX_STEPS = 500;
 
-// One attempt: a fresh run with DEV -> Combat on gun and Auto-win on (it
+// One attempt: a fresh run with the gun (the default) and Auto-win on (it
 // answers reloads right and stops the damage bar on the weak point). Wander
 // as the battle run does; press F whenever the HUD shows an aim %, and R
 // every few steps while the chamber isn't full, until a reload loaded and
@@ -319,7 +323,6 @@ async function attemptGun(page, url) {
   await startGameAndWaitForRoom(page);
   await installGunWatchers(page);
   await turnOnAutoWin(page);
-  await page.click('#devCombatBtn');
   await page.click('#devSkipBtn');
   await page.waitForTimeout(200);
 
@@ -400,7 +403,6 @@ async function checkRealTime(page, url) {
   await startGameAndWaitForRoom(page);
   await page.click('#devToggleBtn');
   await page.waitForSelector('#devPanel.show', { timeout: 5000 });
-  await page.click('#devCombatBtn');
   await page.click('#devSkipBtn');
 
   const step = await page.evaluate(async () => (await import('./js/config.js')).REALTIME_STEP_MS);
