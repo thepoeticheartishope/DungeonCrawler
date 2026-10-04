@@ -22,6 +22,7 @@ const initialGridSize = FLOOR_RECIPES[0].grid;
 export const state = {
   settings: {
     revealOnWrong: false,
+    realTime: false,        // start screen option: the world moves on a clock (realclock.js), not after each action; remembered
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
