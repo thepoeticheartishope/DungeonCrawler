@@ -14,6 +14,12 @@
 //   loops         at most this many extra hallways beyond the minimum, for
 //                 more than one route (fewer when the floor has few rooms)
 //   minions       the floor's fixed set of minions (no summoning)
+//   minionKinds   which kind each of those minions is (config.js
+//                 MINION_KINDS), in the order they are placed: the beats'
+//                 minions first, along the walk, then the roamers. Left out
+//                 or too short, the rest follow MINION_KIND_ORDER. Drafts
+//                 for Timothy: floor 1 meets only SHARDs, floor 2 adds a
+//                 STALKER, floor 3 adds a HUSK.
 //   slack         [min, max] turns the player gets beyond the walk to the
 //                 boss, the time left for exploring. It is the difficulty
 //                 dial and shrinks each floor. Each floor rolls a number in
@@ -45,15 +51,15 @@
 //                 floor 2 adds a second minion before the special, floor
 //                 3 puts minions between everything.
 export const FLOOR_RECIPES = [
-  { grid: 33, rooms: 4, loops: 3, minions: 2, slack: [130, 160],
+  { grid: 33, rooms: 4, loops: 3, minions: 2, minionKinds: ['SHARD', 'SHARD'], slack: [130, 160],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.1.2', 'story.1.3'],
     beats: ['paper', 'box', 'minion', 'special'] },
-  { grid: 37, rooms: 5, loops: 3, minions: 3, slack: [105, 130],
+  { grid: 37, rooms: 5, loops: 3, minions: 3, minionKinds: ['SHARD', 'STALKER', 'SHARD'], slack: [105, 130],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.2.1', 'story.2.2'],
     beats: ['paper', 'minion', 'box', 'minion', 'special'] },
-  { grid: 41, rooms: 6, loops: 3, minions: 4, slack: [80, 105],
+  { grid: 41, rooms: 6, loops: 3, minions: 4, minionKinds: ['SHARD', 'STALKER', 'HUSK', 'STALKER'], slack: [80, 105],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.3.1', 'story.3.2'],
     beats: ['paper', 'minion', 'box', 'minion', 'special', 'minion'] },

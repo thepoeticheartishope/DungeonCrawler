@@ -14,7 +14,7 @@ import { state, key } from '../js/state.js';
 import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE,
   LIGHT_TURNS_PER_STEP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, DARK_GOLD_MULTIPLIER,
-  MAX_HEARTS, DARK_MISS_COST, BOSS_HP,
+  MAX_HEARTS, DARK_MISS_COST, BOSS_HP, MINION_KINDS, MINION_TRAIL_LENGTH,
 } from '../js/config.js';
 import { computeVisibility, canMakeOut } from '../js/sight.js';
 import {
@@ -299,6 +299,32 @@ test('a minion within chase range steps toward the player and is reported as mov
   assert.equal(state.run.turnCount, 1);
 });
 
+test('a minion starts with its kind\'s hp and limbs and an empty trail', () => {
+  resetFloor(21);
+  for (const [name, stats] of Object.entries(MINION_KINDS)) {
+    const m = spawnMinion({ row: 0, col: 0 }, name);
+    assert.equal(m.kind, 'minion');
+    assert.equal(m.minionKind, name);
+    assert.equal(m.hpLeft, stats.hp);
+    assert.equal(m.limbs, stats.limbs);
+    assert.deepEqual(m.trail, []);
+  }
+});
+
+test('a moving minion remembers its last MINION_TRAIL_LENGTH tiles, newest last', () => {
+  resetFloor(21);
+  const m = spawnMinion({ row: state.floor.playerRow - MINION_CHASE_RANGE, col: state.floor.playerCol }, 'SHARD');
+  // The player backs away a tile each turn, so the minion keeps chasing
+  // for more steps than its trail holds.
+  const left = [];
+  for (let i = 0; i < MINION_TRAIL_LENGTH + 3; i++) {
+    state.floor.playerRow++;
+    advanceMonsters().filter(e => e.type === 'minionMoved' && e.minion === m).forEach(e => left.push(e.from));
+  }
+  assert.ok(left.length > MINION_TRAIL_LENGTH, 'moved ' + left.length + ' times');
+  assert.deepEqual(m.trail, left.slice(-MINION_TRAIL_LENGTH));
+});
+
 test('a minion next to the player engages from where it stands', () => {
   resetFloor(21);
   const m = spawnMinion({ row: state.floor.playerRow - 1, col: state.floor.playerCol });
@@ -343,6 +369,9 @@ test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the 
   assert.equal(events[0].type, 'hunterWoke');
   assert.equal(state.floor.hunter, hunter);
   assert.equal(hunter.kind, 'hunter');
+  assert.equal(hunter.minionKind, null, 'the hunter has no minion kind');
+  assert.equal(hunter.hpLeft, null);
+  assert.equal(hunter.limbs, 0);
   assert.ok(state.floor.minions.includes(hunter));
   // Woke in a corner, so it's still far off after its first step.
   const steps = Math.abs(hunter.row - state.floor.playerRow) + Math.abs(hunter.col - state.floor.playerCol);

@@ -3,7 +3,7 @@
 // that change what's on the map return what changed, and main.js draws it.
 
 import { state, key } from './state.js';
-import { MINION_HP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS } from './config.js';
+import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS } from './config.js';
 import { advanceLight } from './light.js';
 import { computeVisibility } from './sight.js';
 
@@ -136,7 +136,7 @@ function farthestFromPlayer() {
 function wakeHunter() {
   const spot = farthestFromPlayer();
   if (!spot) return null;
-  const m = spawnMinion(spot);
+  const m = spawnMinion(spot, null);
   m.kind = 'hunter';
   m.rest = 0;
   state.floor.hunter = m;
@@ -156,10 +156,19 @@ export function repelHunter(m, answeredRight) {
   return !!spot;
 }
 
-// Places a minion on `spot` (a free floor tile) — loadRoom picks the tiles.
-// The map draws it from state (mapview.js).
-export function spawnMinion(spot) {
-  const m = { row: spot.row, col: spot.col, hp: MINION_HP, kind: 'minion' };
+// Places a minion of `minionKind` (a MINION_KINDS name) on `spot` (a free
+// floor tile) — buildFloor picks the tiles and kinds. The map draws it from
+// state (mapview.js). The hunter is made here too, with no kind: it can't
+// be killed and has no limbs to lose, so it gets no hp and no limbs.
+export function spawnMinion(spot, minionKind = 'SHARD') {
+  const stats = MINION_KINDS[minionKind];
+  const m = {
+    row: spot.row, col: spot.col, kind: 'minion',
+    minionKind: stats ? minionKind : null,
+    hpLeft: stats ? stats.hp : null,
+    limbs: stats ? stats.limbs : 0,
+    trail: [],
+  };
   state.floor.minions.push(m);
   return m;
 }
@@ -216,6 +225,7 @@ export function advanceMonsters() {
         const from = { row: m.row, col: m.col };
         m.row = next.row;
         m.col = next.col;
+        m.trail = [...m.trail, from].slice(-MINION_TRAIL_LENGTH);
         events.push({ type: 'minionMoved', minion: m, from });
       }
     }

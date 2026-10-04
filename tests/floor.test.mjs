@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  BOSS_HP, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP, PAPERS_PER_ROOM,
+  BOSS_HP, MINION_KINDS, MINION_KIND_ORDER, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP, PAPERS_PER_ROOM,
 } from '../js/config.js';
 import { buildFloor } from '../js/floor.js';
 import { BEAT_KINDS } from '../js/beats.js';
@@ -234,4 +234,33 @@ test('every floor built counts as a new floor, even the same depth again', () =>
   build(0);
   build(1);
   assert.equal(state.run.floorsEntered, before + 3);
+});
+
+test('every minion has a kind, in the order its recipe names them', () => {
+  eachFloor((f, roomIndex) => {
+    const named = FLOOR_RECIPES[roomIndex].minionKinds || [];
+    f.minions.forEach((m, i) => {
+      const expected = named[i] || MINION_KIND_ORDER[i % MINION_KIND_ORDER.length];
+      assert.equal(m.minionKind, expected, `floor ${roomIndex + 1}, minion ${i + 1}`);
+      assert.equal(m.hpLeft, MINION_KINDS[expected].hp);
+    });
+  });
+});
+
+test('every kind a recipe names is a real minion kind', () => {
+  FLOOR_RECIPES.forEach((recipe, i) => (recipe.minionKinds || []).forEach(name =>
+    assert.ok(MINION_KINDS[name], `floor ${i + 1} names unknown kind ${name}`)));
+  MINION_KIND_ORDER.forEach(name => assert.ok(MINION_KINDS[name], `MINION_KIND_ORDER has unknown kind ${name}`));
+});
+
+test('a recipe naming no kinds falls back to MINION_KIND_ORDER', () => {
+  const recipe = FLOOR_RECIPES[2];
+  const saved = recipe.minionKinds;
+  delete recipe.minionKinds;
+  try {
+    const f = build(2);
+    f.minions.forEach((m, i) => assert.equal(m.minionKind, MINION_KIND_ORDER[i % MINION_KIND_ORDER.length]));
+  } finally {
+    recipe.minionKinds = saved;
+  }
 });
