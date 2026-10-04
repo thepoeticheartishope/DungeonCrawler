@@ -455,7 +455,18 @@ export const MAP_ANIMATION_MS = {
   gunShot: 260,     // the shot's flash from the gun to where it went, fading (gun plan)
   gunMiss: 900,     // MISS floating up over a minion the shot missed, fading
   gunRecoil: 120,   // the gun kicking back toward the player as it fires
+  // Minions as text forms (gun plan step 4b, js/textforms.js). Slow on
+  // purpose: the calm rule for motion- and flicker-sensitive players.
+  formRewrite: 9000, // each letter of a form becomes another letter about this often, never two together
+  formFade: 1200,    // the crossfade from the old letter to the new one
+  formHit: 500,      // a hurt form's soft brightening and one small push
+  formLimb: 1400,    // a limb shot off drifting away and fading
+  formDeath: 1800,   // a killed form's letters floating apart
 };
+// A text form shows its strike tell (limbs reaching out, swelling) when it
+// is this many steps from the player or nearer: one more step brings it
+// next to them. Straight steps (rows + columns), like shootBlock's range.
+export const FORM_TELL_STEPS = 2;
 
 // On-screen d-pad (js/dpad.js): holding an arrow walks like holding an
 // arrow key. The first step lands on the press; after DPAD_HOLD_DELAY_MS the

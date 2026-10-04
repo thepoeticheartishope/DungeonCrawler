@@ -25,7 +25,7 @@ import { stepPlayer } from './moves.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader } from './setloader.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, onMapTap, glyphOf } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapTap, glyphOf } from './mapview.js';
 import { pickTarget, fire, settleShot } from './gun.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
@@ -811,6 +811,7 @@ function drawEvents(events) {
         logLine(t(e.right ? 'log.hunter.repelled' : 'log.hunter.retreats'), e.right ? 'bright' : undefined);
         break;
       case 'minionCleared':
+        deathOnMap(e.minion);
         logLine(t(e.right ? 'log.minion.cleared' : 'log.minion.disperses'), e.right ? 'bright' : undefined);
         break;
       case 'targetSpent':
@@ -833,8 +834,17 @@ function drawEvents(events) {
         shotOnMap(e.target, true);
         break;
       case 'shotGrazed':
+        shotOnMap(e.minion, false);
+        break;
       case 'minionHurt':
         shotOnMap(e.minion, false);
+        hurtOnMap(e.minion);
+        break;
+      case 'limbLost':
+        limbOffOnMap(e.minion);
+        break;
+      case 'minionKilled':
+        deathOnMap(e.minion);
         break;
       case 'hunterStaggered':
         shotOnMap(e.hunter, false);
