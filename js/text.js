@@ -321,6 +321,19 @@ export const TEXT = {
   'gun.block.notShootable': 'The gun does nothing to that.', // draft
   'gun.aimChance': '{chance}%', // over a target and on each tile the gun reaches: the chance a shot there lands
   'gun.miss': 'MISS', // floats up over a minion the shot missed
+  // The gun's panels over the map (gunpanels.js).
+  'gun.reload.title': 'SELECT RELOAD: {category|upper}', // draft. Over the reload choices; {category} is the next category
+  'gun.reload.titlePlain': 'SELECT RELOAD', // draft. The same, for a set with no categories
+  'gun.reload.offer': 'LOAD {rounds} {rounds|plural:ROUND}', // draft
+  'gun.reload.room': 'room for {room}', // draft. When fewer rounds fit in the chamber than the offer loads
+  'gun.reload.cancel': 'CANCEL', // draft
+  'gun.bar.prompt': 'TAP TO FIRE', // draft. Over the damage bar
+  'gun.bar.label': 'Damage bar. Tap, or press Space or F, to fire.', // draft. Read out by screen readers
+  'gun.bar.graze': 'graze 0', // draft. The damage bar's legend, left to right: graze, hit, weak point, hit, graze
+  'gun.bar.hit': 'hit 1', // draft
+  'gun.bar.weak': 'weak 2', // draft
+  'gun.reloaded': 'Loaded {rounds} {rounds|plural:round}.', // draft. A right reload answer
+  'gun.jammed': 'Jammed. Nothing loads.', // draft. A wrong reload answer
 };
 
 // Per-room overrides, keyed by room number (1 = the first room). List only

@@ -463,6 +463,12 @@ export const MAP_ANIMATION_MS = {
   formLimb: 1400,    // a limb shot off drifting away and fading
   formDeath: 1800,   // a killed form's letters floating apart
 };
+// The damage bar (gunpanels.js): ms for its marker to sweep from one end
+// to the other (then it comes back). Under reduced motion the marker
+// still has to move, since its timing is the shot, so it sweeps at half
+// speed instead (the mockup's "slower sweep").
+export const DAMAGE_BAR_SWEEP_MS = 1300;
+export const DAMAGE_BAR_SLOW_SWEEP_MS = 2600;
 // A text form shows its strike tell (limbs reaching out, swelling) when it
 // is this many steps from the player or nearer: one more step brings it
 // next to them. Straight steps (rows + columns), like shootBlock's range.
