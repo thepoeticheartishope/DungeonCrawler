@@ -7,7 +7,7 @@
 // of each one threading them through as parameters.
 
 import { state } from './state.js';
-import { BOSS_HP, VIEWPORT_SIZE } from './config.js';
+import { BOSS_HP } from './config.js';
 import { lightProgress } from './light.js';
 import { whatBlocks } from './passage.js';
 import { FACING_VECTORS } from './sight.js';
@@ -28,17 +28,6 @@ export function showScreen(el) {
   // during the intro glitch, which plays before the timer even starts), so
   // the header only shows them once the player has actually reached a room.
   els.statsEl.classList.toggle('show', el !== els.startScreen && el !== els.introGlitch);
-}
-
-// Lays the room screen out for the view being drawn. Isometric takes a
-// wider, shorter map (grid rows lie flat on the diamond) and turns the
-// d-pad 45 degrees, so each button points where its step goes on screen:
-// north is up and to the right. The arrow keys follow the grid the same
-// way (up = north). Call once at start and whenever the view changes.
-export function renderViewShape() {
-  const iso = state.settings.isoView;
-  els.mapWrapEl.classList.toggle('iso', iso);
-  els.dpadEl.classList.toggle('iso', iso);
 }
 
 // How far away (in steps, as the crow flies) the hunter's edge glow starts
@@ -76,8 +65,8 @@ function renderMoveHints() {
 // While the boss is off screen, the edge of the view facing it glows —
 // brighter as its light spreads — so the player always has a sense of
 // where it is. A diagonal boss lights two edges. The edges are screen
-// edges, so in the isometric view they follow where the diamond puts it
-// (grid north is up and to the right there).
+// edges, so they follow where the diamond puts it (grid north is up and
+// to the right).
 //
 // After the boss, the same edges point at the hunter instead (in white,
 // not the boss's blue), brighter the closer it gets.
@@ -100,23 +89,13 @@ function renderLightHint() {
   Object.entries(edges).forEach(([side, el]) => { el.style.opacity = on[side] ? strength : '0'; });
 }
 
-// Where a thing is on the map compared with the player, in the view being
-// drawn: dx right and dy down (any unit, only the direction is used), and
-// whether it is off the map. Top-down, that's its grid offset and the
-// camera's window; isometric, its place on the diamond.
+// Where a thing is on the map compared with the player, by its place on
+// the diamond: dx right and dy down (any unit, only the direction is
+// used), and whether it is off the map.
 function placeOnScreen(thing) {
-  if (state.settings.isoView) {
-    const at = isoScreenShare(thing.row, thing.col);
-    const { x, y } = isoScreenOffset(thing.row - state.floor.playerRow, thing.col - state.floor.playerCol);
-    return { dx: x, dy: y, offScreen: at.x < 0 || at.x > 1 || at.y < 0 || at.y > 1 };
-  }
-  const f = state.floor;
-  return {
-    dx: thing.col - f.playerCol,
-    dy: thing.row - f.playerRow,
-    offScreen: thing.row < f.camRow || thing.row >= f.camRow + VIEWPORT_SIZE ||
-      thing.col < f.camCol || thing.col >= f.camCol + VIEWPORT_SIZE,
-  };
+  const at = isoScreenShare(thing.row, thing.col);
+  const { x, y } = isoScreenOffset(thing.row - state.floor.playerRow, thing.col - state.floor.playerCol);
+  return { dx: x, dy: y, offScreen: at.x < 0 || at.x > 1 || at.y < 0 || at.y > 1 };
 }
 
 // The eye in the status bar: shut when a room begins, opening as the boss

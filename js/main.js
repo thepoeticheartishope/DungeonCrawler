@@ -14,7 +14,7 @@ import {
   resolveImageSrc, buildCategoryChoices, categoryLabel
 } from './quiz.js';
 import {
-  initRender, showScreen, renderViewShape, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
+  initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
   formatTime, startTimer, stopTimer, renderLightEye
 } from './render.js';
 import {
@@ -95,9 +95,7 @@ initRender({
   startScreen, introGlitch, roomScreen, battleScreen, exchangeScreen, winScreen, loseScreen,
   heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightEyeEl, lightHintEls, dpadButtons,
-  mapWrapEl: document.getElementById('mapWrap'), dpadEl: document.getElementById('dpad'),
 });
-renderViewShape();
 initMapView(document.getElementById('mapCanvas'));
 
 initDataView({ startScreen });

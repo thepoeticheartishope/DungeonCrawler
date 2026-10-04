@@ -1,4 +1,4 @@
-// The isometric map (DEV -> View): the floor drawn as phosphor-vector
+// The isometric map, the only map view: the floor drawn as phosphor-vector
 // blocks on a diamond grid. Walls and pillars are glowing wireframe
 // blocks, the floor dim diamond tiles, glyphs stand upright on their
 // tiles, and light fades over the player's five steps. A wall standing
@@ -6,11 +6,10 @@
 // nothing in sight is ever hidden. The camera rests while the player
 // walks near the middle and glides after them past that.
 //
-// mapview.js calls drawIsoScene() from its drawScene when
-// state.settings.isoView is on, and passes in what the two views share:
-// the colours, the list of things on the map, fog, glyph painting, the
-// boss mist and the pulses. So both views always show the same things;
-// this file only decides where and how they stand. It reads state and
+// mapview.js calls drawIsoScene() from its drawScene and passes in what
+// it owns: the colours, the list of things on the map, fog, glyph
+// painting, the boss mist and the pulses; this file only decides where
+// and how they stand. It reads state and
 // never changes it. render.js reads isoScreenShare() / isoScreenOffset() so the edge glow
 // points where this view shows things.
 
@@ -86,7 +85,7 @@ const STICK_BREATH = 0.022;    // how far the chest lifts on a breath, as a shar
 const STICK_ARM_SWAY = 0.012;  // how far the hands move with the breath
 const STICK_STRIDE = 0.16;     // how far the feet swing apart on a step
 const STICK_GLANCE = 0.8;      // how far the head turns on an idle glance, as a share of its radius
-const TARGET_PULSE = [0.45, 1]; // the target diamond's strength at either end of its pulse, as top-down
+const TARGET_PULSE = [0.45, 1]; // the target diamond's strength at either end of its pulse
 // Walls in front of the camera, cut away (Timothy chose this over see-through glass).
 const WALL_STUB = 0.22;          // a cut-away wall's stub, as a share of its height
 const WALL_HOLD_STEPS = 2;       // a lowered wall stays down while the player is this many steps away or nearer
@@ -420,7 +419,7 @@ function drawFloor(ctx, row, col) {
   drawCachedFill(ctx, texture, String(level), diamond(row, col), 0, (c, d) => {
     c.globalAlpha = textureStrength(level);
     // The texture's across runs along the tile's columns, its down along
-    // its rows, the same as top-down.
+    // its rows.
     drawArt(c, texture, d.T, [tw / 2, th / 2], [-tw / 2, th / 2]);
   });
   const e = diamond(row, col, 0.02);
@@ -900,8 +899,8 @@ function searched(at) {
   return Boolean(prop && prop.searched);
 }
 
-// The wedge on the floor pointing where the player faces. The top-down
-// arrows (^ v < >) would point the wrong way on a diamond.
+// The wedge on the floor pointing where the player faces. Arrow glyphs
+// (^ v < >) would point the wrong way on a diamond.
 function drawFacing(ctx, at) {
   const [cx, cy] = centre(at.row, at.col);
   const [fr, fc] = FACING_VECTORS[state.floor.facing];

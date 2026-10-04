@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { key } from '../js/state.js';
-import { REST_GRID, VIEWPORT_SIZE } from '../js/config.js';
+import { REST_GRID } from '../js/config.js';
 import { buildRestLayout } from '../js/dungeon.js';
 import { ROOM_TEMPLATES } from '../js/rooms.js';
 import { REST_RECIPES } from '../js/floors.js';
@@ -44,9 +44,8 @@ function walkDistances(layout, from) {
   return dist;
 }
 
-test('there is a rest drawing, and the rest grid is no smaller than the view', () => {
+test('there is a rest drawing', () => {
   assert.ok(REST_ROOMS.length > 0);
-  assert.ok(REST_GRID >= VIEWPORT_SIZE, `REST_GRID ${REST_GRID} < VIEWPORT_SIZE ${VIEWPORT_SIZE}`);
 });
 
 test('a rest layout is one chamber, not a boss room, walled in all round', () => {

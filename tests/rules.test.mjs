@@ -12,11 +12,11 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, VIEWPORT_SIZE,
+  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE,
   LIGHT_TURNS_PER_STEP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, DARK_GOLD_MULTIPLIER,
   MAX_HEARTS, DARK_MISS_COST, BOSS_HP,
 } from '../js/config.js';
-import { computeVisibility, canMakeOut, updateCamera } from '../js/sight.js';
+import { computeVisibility, canMakeOut } from '../js/sight.js';
 import {
   initBossLight, advanceLight, extinguishLight, lightCoverage, lightProgress, lightConsumed,
 } from '../js/light.js';
@@ -190,25 +190,6 @@ test('a paper once made out stays identified after the player walks off', () => 
   state.floor.playerRow += 8;
   computeVisibility();
   assert.ok(near.identified);
-});
-
-// --- sight.js: updateCamera ---
-
-test('the camera centres on the player', () => {
-  resetFloor(33);
-  updateCamera();
-  const half = Math.floor(VIEWPORT_SIZE / 2);
-  assert.equal(state.floor.camRow, state.floor.playerRow - half);
-  assert.equal(state.floor.camCol, state.floor.playerCol - half);
-});
-
-test("the camera never shows past the floor's edge", () => {
-  resetFloor(33);
-  state.floor.playerRow = 0;
-  state.floor.playerCol = 32;
-  updateCamera();
-  assert.equal(state.floor.camRow, 0);
-  assert.equal(state.floor.camCol, 33 - VIEWPORT_SIZE);
 });
 
 // --- light.js ---
