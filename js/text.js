@@ -319,6 +319,8 @@ export const TEXT = {
   'gun.block.chamberEmpty': 'The chamber is empty. Reload.', // draft
   'gun.block.chamberFull': 'The chamber is full.', // draft
   'gun.block.notShootable': 'The gun does nothing to that.', // draft
+  'gun.aimChance': '{chance}%', // over a target and on each tile the gun reaches: the chance a shot there lands
+  'gun.miss': 'MISS', // floats up over a minion the shot missed
 };
 
 // Per-room overrides, keyed by room number (1 = the first room). List only

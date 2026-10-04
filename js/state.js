@@ -26,6 +26,7 @@ export const state = {
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
     isoCameraGlide: true,   // dev toggle: the isometric camera glides after the player (false: locked to them)
+    gunCombat: false,       // dev toggle (DEV -> Combat): the gun on the map (gun plan). Step 4a: only the map's drawing; step 6 switches the rules
     usingSample: true, // false once the person loads their own list
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
     activeDictionary: null, // the active set's subject dictionary (lists/dictionaries/), or null (pasted, saved and sample sets)
@@ -82,6 +83,7 @@ export const state = {
     darkness: false,       // the boss has fallen on this floor (see DARK_* in config.js)
     darkTurns: 0,          // turns since the boss fell (the hunter wakes at HUNTER_SPAWN_DELAY)
     hunter: null,          // the hunter, once awake — also in state.floor.minions, with kind 'hunter'
+    gunTarget: null,       // the minion (or hunter) the gun is aimed at, picked by a tap on the map (gun.js pickTarget), or null
     bossLitSet: new Set(), // tiles the boss light currently reaches
     lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
     runeHint: null,        // question a rune just hinted at — always offered as a choice until asked

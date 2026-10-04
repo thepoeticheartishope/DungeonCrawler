@@ -19,7 +19,7 @@ import { computeVisibility } from '../js/sight.js';
 import { spawnMinion } from '../js/combat.js';
 import { resetHaunts } from '../js/haunts.js';
 import {
-  reloadCategory, reloadOffers, settleReload, fireBlock, fire, settleShot, minionStrike, staggerHunter,
+  reloadCategory, reloadOffers, settleReload, pickTarget, fireBlock, fire, settleShot, minionStrike, staggerHunter,
 } from '../js/gun.js';
 
 const SET = [
@@ -61,6 +61,7 @@ function resetFloor(size = 21) {
   state.run.ammo = 1;
   state.run.reloadIndex = 0;
   state.battle.selectedTarget = null;
+  state.floor.gunTarget = null;
   state.battle.aim = null;
   state.battle.currentQuestion = SET[0];
   resetHaunts();
@@ -186,6 +187,24 @@ test('a landed shot staggers the hunter where it stands', () => {
   assert.equal(state.floor.minions.length, 1, 'the hunter never dies');
 });
 
+// --- pickTarget ---
+
+test('tapping a minion in sight targets it, even out of reach; tapping anything else clears it', () => {
+  resetFloor();
+  const m = minionAt(-1, 0);
+  assert.deepEqual(pickTarget({ row: m.row, col: m.col }), [{ type: 'targetPicked', target: m }]);
+  assert.equal(state.floor.gunTarget, m);
+  assert.deepEqual(pickTarget({ row: m.row + 1, col: m.col + 3 }), [{ type: 'targetCleared' }]);
+  assert.equal(state.floor.gunTarget, null);
+});
+
+test('a minion the player can\'t see can\'t be picked', () => {
+  resetFloor();
+  const m = minionAt(3, 0); // behind the player, out of their light
+  assert.deepEqual(pickTarget({ row: m.row, col: m.col }), [{ type: 'targetCleared' }]);
+  assert.equal(state.floor.gunTarget, null);
+});
+
 // --- settleShot ---
 
 test('the damage bar: graze outside the hit zone, 1 inside it, 2 and a limb at the weak point', () => {
@@ -212,12 +231,14 @@ test('a kill takes the minion off the floor and pays its gold, doubled in the da
   state.floor.darkness = true;
   const m = minionAt(-1, 0, 'SHARD');
   state.battle.selectedTarget = m;
+  state.floor.gunTarget = m;
   withRandom(0, () => fire(m));
   const events = settleShot(0.5);
   const gold = MINION_KINDS.SHARD.gold * DARK_GOLD_MULTIPLIER;
   assert.deepEqual(events.slice(-2), [{ type: 'minionKilled', minion: m }, { type: 'goldGained', amount: gold, from: 'kill' }]);
   assert.equal(state.floor.minions.length, 0);
   assert.equal(state.battle.selectedTarget, null);
+  assert.equal(state.floor.gunTarget, null, 'a dead minion is no longer the target');
   assert.equal(state.run.coinsTotal, gold);
 });
 

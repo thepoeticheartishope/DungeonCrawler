@@ -12,10 +12,18 @@
 // and how they stand. It reads state and
 // never changes it. render.js reads isoScreenShare() / isoScreenOffset() so the edge glow
 // points where this view shows things.
+//
+// With DEV -> Combat on gun (state.settings.gunCombat) it also draws the
+// gun (gun plan step 4a): the stick man holds it (raised while a landed
+// shot waits for the damage bar), the tiles it reaches are lit by the
+// chance a shot there lands, corner brackets mark what can be shot, a
+// dashed laser runs to the target, and showShot() plays a shot or a MISS.
+// isoTileAt() turns a tap on the map back into a tile.
 
 import { state, key } from './state.js';
 import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE } from './config.js';
-import { FACING_VECTORS } from './sight.js';
+import { FACING_VECTORS, canShoot, aimChance } from './sight.js';
+import { t } from './text.js';
 import { artAt, art } from './tileart.js';
 
 // How bright a lit tile is, by its steps from the player (0 = their own
@@ -86,6 +94,31 @@ const STICK_ARM_SWAY = 0.012;  // how far the hands move with the breath
 const STICK_STRIDE = 0.16;     // how far the feet swing apart on a step
 const STICK_GLANCE = 0.8;      // how far the head turns on an idle glance, as a share of its radius
 const TARGET_PULSE = [0.45, 1]; // the target diamond's strength at either end of its pulse
+// The gun (gun plan), as shares of the stick man's height unless they say
+// otherwise. Laid out as in the fight mockup (reload-fire-iso-mockup.html).
+const GUN_REACH = 0.22;          // the gun hand, out from the shoulder toward where he faces
+const GUN_DROP = 0.16;           // and down from the shoulder
+const GUN_LENGTH = 0.3;          // grip to muzzle
+const GUN_GRIP = 0.09;           // the grip, hanging under the gun hand
+const GUN_RAISE = 0.08;          // how far the gun lifts while a landed shot waits for the damage bar
+const GUN_KICK = 0.08;           // how far it kicks back on a shot
+const GUN_LINE = 1.2;            // its line, as a share of the stick man's
+const REACH_FILL = [0.03, 0.12]; // a reached tile's fill strength: plus this much more at 100% aim
+const AIM_TEXT = [0.25, 0.4];    // a tile's aim % strength: plus this much more at 100% aim
+const AIM_TEXT_SIZE = 0.2;       // its height, as a share of a tile's width
+const BRACKET_ARM = 0.12;        // a corner bracket's arms, as a share of a tile's width
+const BRACKET_HALF = 0.32;       // the narrowest a bracket box is, half its width as a share of a tile's
+const BRACKET_LEVEL = [0.4, 0.95]; // a shootable thing's brackets, then the target's
+const BRACKET_PULSE = 0.025;     // how far the target's brackets breathe out, as a share of a tile's width
+const BRACKET_TEXT_SIZE = 0.26;  // the target's aim % over its brackets, as a share of a tile's width
+const LASER_LEVEL = [0.45, 0.8]; // the laser's strength, then while a landed shot waits
+const LASER_DASH = [0.06, 0.1];  // its dash and gap, in tile widths
+const SHOT_RISE = 0.3;           // where a shot ends above its tile, as a share of a tile's width
+const SHOT_RING = [0.06, 0.25];  // the ring where it lands: its first radius, then how much it grows, in tile widths
+const MISS_PAST = 0.6;           // how far past the minion a missed shot goes, in tiles
+const MISS_SIDE = 0.5;           // and how far to one side
+const MISS_TEXT_SIZE = 0.36;     // MISS's height, as a share of a tile's width
+const MISS_RISE = [1.15, 0.25];  // where MISS starts above its tile, then how far it floats up, in tile widths (slow: the calm rule)
 // Walls in front of the camera, cut away (Timothy chose this over see-through glass).
 const WALL_STUB = 0.22;          // a cut-away wall's stub, as a share of its height
 const WALL_HOLD_STEPS = 2;       // a lowered wall stays down while the player is this many steps away or nearer
@@ -138,6 +171,12 @@ let cameraFloor = -1;    // the floor (state.run.floorsEntered) the camera is on
 let cameraPlayer = null; // the player's tile when the camera last looked
 let stickSeen = null;    // the player's tile and facing when the stick man last stood still
 let stickActiveAt = 0;   // when the player last moved, turned or bumped: idle time counts from here
+// The gun's effects: view-only, like the camera.
+let shot = null;         // the last shot, from showShot(): { start, to: { row, col }, missed }
+let muzzle = null;       // where the gun's muzzle is this frame, in pixels (null with no gun drawn)
+let tapBoxes = [];       // this frame's minions, front first, for isoTileAt: [{ box, tile }]
+let pageScale = 1;       // canvas pixels per CSS pixel this frame
+let shotsShown = 0;      // shots shown so far, so a miss goes to the left and right in turn
 
 // Draws the whole isometric map as state has it now, in layer order:
 // floor, things lying on it (stairs, papers, the facing wedge, pillar
@@ -153,6 +192,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   width = canvasSize.width;
   height = canvasSize.height;
   across = isoTilesAcross(canvasSize.pageWidth);
+  pageScale = canvasSize.pageWidth ? width / canvasSize.pageWidth : 1;
   tw = width / across;
   th = tw / 2;
   wallH = tw * ISO_WALL_HEIGHT;
@@ -181,6 +221,9 @@ export function drawIsoScene(ctx, canvasSize, shared) {
     if (mist) standing.push({ depth: row + col + MIST_DEPTH, draw: () => drawMist(ctx, row, col, mist) });
   });
   drawPillarShadows(ctx, tiles);
+  const gun = state.settings.gunCombat;
+  if (gun) drawReach(ctx, tiles);
+  muzzle = null;
   look.things.forEach(thing => {
     if (!onScreen(thing.at.row, thing.at.col)) return;
     if (thing.kind === 'stairs') {
@@ -193,6 +236,13 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   });
   drawLightPool(ctx);
   standing.sort((a, b) => a.depth - b.depth).forEach(s => s.draw());
+  noteTapBoxes();
+  if (gun) {
+    drawAimNumbers(ctx, tiles);
+    drawBrackets(ctx);
+    drawLaser(ctx);
+    drawShot(ctx);
+  }
   drawTarget(ctx);
 }
 
@@ -1007,7 +1057,9 @@ function drawStanding(ctx, thing) {
 // The player as a stick man, feet at (fx, fy). It breathes while it
 // stands; after MAP_ANIMATION_MS.playerIdle with no move, turn or bump it
 // also glances to the side now and then. The feet swing on a step. A dot
-// on the face shows which way it looks, hidden when it faces away.
+// on the face shows which way it looks, hidden when it faces away. With
+// the gun on, both hands hold it pointing where it faces (behind the body
+// when it faces away), and the muzzle is noted for the laser and shots.
 function drawStickMan(ctx, at, fx, fy) {
   const f = state.floor;
   const h = tw * STICK_HEIGHT;
@@ -1049,24 +1101,34 @@ function drawStickMan(ctx, at, fx, fy) {
   const arm = sway * STICK_ARM_SWAY * h + swing * h * 0.1;
   const handY = shoulder[1] + h * 0.3 - lift * 0.4;
   const lineWidth = Math.max(1.5, tw * STICK_LINE);
+  const gun = state.settings.gunCombat ? holdGun(shoulder, h, side) : null;
+  if (gun) muzzle = gun.muzzle;
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.lineWidth = lineWidth;
   strokeGlow(ctx, 1, STICK_BLUR);
   ctx.strokeStyle = look.colours.text;
+  if (gun && away) drawGun(ctx, gun, lineWidth);
+  ctx.lineWidth = lineWidth;
   ctx.beginPath();
   ctx.moveTo(fx - h * 0.1 + stride, fy);
   ctx.lineTo(hip[0], hip[1]);
   ctx.lineTo(fx + h * 0.1 - stride, fy);
   ctx.moveTo(hip[0], hip[1]);
   ctx.lineTo(neck[0], neck[1]);
-  ctx.moveTo(shoulder[0] - h * 0.2 - arm, handY);
-  ctx.lineTo(shoulder[0], shoulder[1]);
-  ctx.lineTo(shoulder[0] + h * 0.2 + arm, handY);
+  if (gun) {
+    ctx.moveTo(gun.backHand[0], gun.backHand[1]);
+    ctx.lineTo(shoulder[0], shoulder[1]);
+    ctx.lineTo(gun.grip[0], gun.grip[1]);
+  } else {
+    ctx.moveTo(shoulder[0] - h * 0.2 - arm, handY);
+    ctx.lineTo(shoulder[0], shoulder[1]);
+    ctx.lineTo(shoulder[0] + h * 0.2 + arm, handY);
+  }
   ctx.moveTo(head[0] + headR, head[1]);
   ctx.arc(head[0], head[1], headR, 0, Math.PI * 2);
   glowStroke(ctx);
+  if (gun && !away) drawGun(ctx, gun, lineWidth);
   if (!away) {
     ctx.fillStyle = '#000';
     ctx.beginPath();
@@ -1090,4 +1152,256 @@ function drawTarget(ctx) {
   poly(ctx, [d.T, d.R, d.B, d.L]);
   glowStroke(ctx);
   ctx.restore();
+}
+
+// Where the stick man's hands and gun go, from its shoulder: the gun hand
+// out toward where it faces (on screen), the other hand under it, the gun
+// raised while a landed shot waits for the damage bar (state.battle.aim)
+// and kicked back for a moment after a shot. `h` is the stick man's
+// height and `side` which way it faces across the screen.
+// Returns { grip, backHand, butt, muzzle, gripFoot }, in pixels.
+function holdGun(shoulder, h, side) {
+  const [fr, fc] = FACING_VECTORS[state.floor.facing];
+  const screenX = fc - fr;
+  const screenY = (fc + fr) / 2;
+  const length = Math.hypot(screenX, screenY);
+  const dx = screenX / length;
+  const dy = screenY / length;
+  const raise = state.battle.aim ? h * GUN_RAISE : 0;
+  const kick = recoil() * h * GUN_KICK;
+  const grip = [shoulder[0] + dx * (h * GUN_REACH - kick), shoulder[1] + h * GUN_DROP + dy * h * 0.12 - raise];
+  return {
+    grip,
+    backHand: [grip[0] - dx * h * 0.02 - side * h * 0.04, grip[1] + h * 0.04],
+    butt: [grip[0] - dx * h * 0.06, grip[1] - dy * h * 0.03],
+    muzzle: [grip[0] + dx * h * GUN_LENGTH, grip[1] + dy * h * GUN_LENGTH / 2 - h * 0.02],
+    gripFoot: [grip[0] - dx * h * 0.02, grip[1] + h * GUN_GRIP],
+  };
+}
+
+// How far through its kick the gun is, 1 just fired to 0 settled. Still
+// under reduced motion.
+function recoil() {
+  if (!shot || look.still) return 0;
+  const age = look.now - shot.start;
+  if (age >= MAP_ANIMATION_MS.gunRecoil) return 0;
+  look.keepMoving();
+  return 1 - age / MAP_ANIMATION_MS.gunRecoil;
+}
+
+// The gun as two phosphor lines, butt to muzzle and the grip under it,
+// a little thicker than the stick man's lines. Uses the glow already set.
+function drawGun(ctx, gun, lineWidth) {
+  ctx.lineWidth = lineWidth * GUN_LINE;
+  ctx.beginPath();
+  ctx.moveTo(gun.butt[0], gun.butt[1]);
+  ctx.lineTo(gun.muzzle[0], gun.muzzle[1]);
+  ctx.moveTo(gun.grip[0], gun.grip[1]);
+  ctx.lineTo(gun.gripFoot[0], gun.gripFoot[1]);
+  glowStroke(ctx);
+}
+
+// Whether the gun reaches a floor tile: one the player could shoot at
+// (sight.js canShoot: in their own light, in range, a clear line), not
+// their own tile and not a pillar.
+function inReach(row, col) {
+  const f = state.floor;
+  if (row === f.playerRow && col === f.playerCol) return false;
+  if (isWall(row, col) || f.pillarSet.has(key(row, col))) return false;
+  return canShoot({ row, col });
+}
+
+// The tiles the gun reaches, lit faintly over the floor by the chance a
+// shot there lands, so the drop in aim shows as the area fading out.
+function drawReach(ctx, tiles) {
+  tiles.forEach(({ row, col }) => {
+    if (!inReach(row, col)) return;
+    const d = diamond(row, col, 0.04);
+    poly(ctx, [d.T, d.R, d.B, d.L]);
+    ctx.fillStyle = glow(REACH_FILL[0] + REACH_FILL[1] * aimChance({ row, col }));
+    ctx.fill();
+  });
+}
+
+// The aim % on each tile the gun reaches with nothing standing on it
+// (a minion, a box, an item: only flat things like papers let it show),
+// drawn after the walls so a wall in front doesn't hide it.
+function drawAimNumbers(ctx, tiles) {
+  const taken = new Set(look.things.filter(thing => !lyingFlat(thing)).map(thing => key(thing.tile.row, thing.tile.col)));
+  ctx.save();
+  ctx.font = Math.round(tw * AIM_TEXT_SIZE) + 'px VT323, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  tiles.forEach(({ row, col }) => {
+    if (!inReach(row, col) || taken.has(key(row, col))) return;
+    const chance = aimChance({ row, col });
+    const [x, y] = centre(row, col);
+    ctx.fillStyle = glow(AIM_TEXT[0] + AIM_TEXT[1] * chance);
+    ctx.fillText(t('gun.aimChance', { chance: Math.round(chance * 100) }), x, y);
+  });
+  ctx.restore();
+}
+
+// The minion (or hunter) on a tile, if any.
+function minionOn(tile) {
+  return state.floor.minions.find(m => m.row === tile.row && m.col === tile.col);
+}
+
+// The gun's target, if it is still on the floor (a fight on the battle
+// screen can clear a minion the gun was aimed at).
+function liveTarget() {
+  const target = state.floor.gunTarget;
+  return target && state.floor.minions.includes(target) ? target : null;
+}
+
+// The map things that are minions or the hunter, as shown this frame.
+function shownMinions() {
+  return look.things.filter(thing => thing.kind === 'minion' || thing.kind === 'hunter');
+}
+
+// The box a bracket frame (and a tap) takes round a standing thing, as
+// [left, top, right, bottom] in pixels: its glyph down to its tile, never
+// narrower than BRACKET_HALF a tile each side.
+function bracketBox(thing) {
+  const box = thingBox(thing);
+  const [cx, cy] = centre(thing.at.row, thing.at.col);
+  const half = Math.max((box[2] - box[0]) / 2, tw * BRACKET_HALF);
+  return [cx - half, box[1] - tw * 0.06, cx + half, cy + th * 0.3];
+}
+
+// Notes where each minion stands on screen this frame, front first, so a
+// tap on its glyph picks it even though the glyph rises over the tiles
+// behind it.
+function noteTapBoxes() {
+  tapBoxes = shownMinions()
+    .sort((a, b) => (b.at.row + b.at.col) - (a.at.row + a.at.col))
+    .map(thing => ({ box: bracketBox(thing), tile: thing.tile }));
+}
+
+// Corner brackets round everything the gun can shoot right now, faint,
+// and round the target, bright and slowly breathing, with its aim % over
+// it. A target that can't be shot keeps bright brackets but no aim %.
+function drawBrackets(ctx) {
+  const target = liveTarget();
+  shownMinions().forEach(thing => {
+    const m = minionOn(thing.tile);
+    if (!m) return;
+    const chosen = m === target;
+    const shootable = canShoot(m);
+    if (!chosen && !shootable) return;
+    let breathe = 0;
+    if (chosen && !look.still) {
+      look.keepMoving();
+      breathe = look.pulse(MAP_ANIMATION_MS.target) * tw * BRACKET_PULSE;
+    }
+    const [l, top, r, bottom] = bracketBox(thing);
+    const arm = tw * BRACKET_ARM;
+    const level = BRACKET_LEVEL[chosen ? 1 : 0];
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineWidth = EDGE_WIDTH * tw * (chosen ? 1.6 : 1);
+    strokeGlow(ctx, level, RIDGE_BLUR);
+    ctx.beginPath();
+    [[l - breathe, top - breathe, 1, 1], [r + breathe, top - breathe, -1, 1],
+      [l - breathe, bottom + breathe, 1, -1], [r + breathe, bottom + breathe, -1, -1]].forEach(([x, y, sx, sy]) => {
+      ctx.moveTo(x + sx * arm, y);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x, y + sy * arm);
+    });
+    glowStroke(ctx);
+    if (chosen && shootable) {
+      ctx.fillStyle = glow(level);
+      ctx.font = Math.round(tw * BRACKET_TEXT_SIZE) + 'px VT323, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(t('gun.aimChance', { chance: Math.round(aimChance(m) * 100) }), (l + r) / 2, top - breathe - th * 0.1);
+    }
+    ctx.restore();
+  });
+}
+
+// The dashed laser from the gun's muzzle to the target, while it can be
+// shot; brighter while a landed shot waits for the damage bar.
+function drawLaser(ctx) {
+  const target = liveTarget();
+  if (!target || !muzzle || !canShoot(target)) return;
+  const thing = shownMinions().find(th => th.tile.row === target.row && th.tile.col === target.col);
+  if (!thing) return;
+  ctx.save();
+  ctx.setLineDash(LASER_DASH.map(n => n * tw));
+  ctx.lineWidth = EDGE_WIDTH * tw * 1.2;
+  strokeGlow(ctx, LASER_LEVEL[state.battle.aim ? 1 : 0], 0);
+  line(ctx, muzzle, glyphPlace(thing));
+  ctx.restore();
+}
+
+// Plays a shot on the map (mapview.js shotOnMap calls it from main.js
+// drawEvents): a flash from the gun to `target`, or past it when it
+// `missed`, with MISS floating up over it. A miss goes to one side, then
+// the other, so two misses in a row don't look the same (never
+// Math.random: the seeded tests own it).
+export function showShot(target, missed) {
+  const at = { row: target.row, col: target.col };
+  let to = at;
+  if (missed) {
+    const dr = Math.sign(target.row - state.floor.playerRow);
+    const dc = Math.sign(target.col - state.floor.playerCol);
+    const side = shotsShown % 2 ? MISS_SIDE : -MISS_SIDE;
+    to = { row: at.row + dr * MISS_PAST + (dc ? side : 0), col: at.col + dc * MISS_PAST + (dr ? side : 0) };
+  }
+  shotsShown++;
+  shot = { start: performance.now(), at, to, missed };
+}
+
+// The last shot while it plays: the flash and the ring where it lands
+// (not under reduced motion), then MISS over a missed minion, fading as
+// it floats up (held still under reduced motion). Frames are shown plain
+// while it plays: the afterglow left a trail of MISSes under the rising
+// one, which read as the word shaking.
+function drawShot(ctx) {
+  if (!shot) return;
+  const age = look.now - shot.start;
+  if (!look.still && age < Math.max(MAP_ANIMATION_MS.gunShot, shot.missed ? MAP_ANIMATION_MS.gunMiss : 0)) look.showPlain();
+  ctx.save();
+  if (!look.still && muzzle && age < MAP_ANIMATION_MS.gunShot) {
+    look.keepMoving();
+    const done = age / MAP_ANIMATION_MS.gunShot;
+    const end = up(centre(shot.to.row, shot.to.col), tw * SHOT_RISE);
+    ctx.lineCap = 'round';
+    ctx.lineWidth = EDGE_WIDTH * tw * 2;
+    strokeGlow(ctx, 1 - done, RIDGE_BLUR);
+    line(ctx, muzzle, end);
+    ctx.lineWidth = EDGE_WIDTH * tw * 1.5;
+    ctx.beginPath();
+    ctx.arc(end[0], end[1], tw * (SHOT_RING[0] + SHOT_RING[1] * done), 0, Math.PI * 2);
+    glowStroke(ctx);
+  }
+  if (shot.missed && age < MAP_ANIMATION_MS.gunMiss) {
+    const done = age / MAP_ANIMATION_MS.gunMiss;
+    if (!look.still) look.keepMoving();
+    const [x, y] = centre(shot.at.row, shot.at.col);
+    ctx.fillStyle = glow(look.still ? 1 : 1 - done);
+    ctx.font = Math.round(tw * MISS_TEXT_SIZE) + 'px VT323, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(t('gun.miss'), x, y - tw * (MISS_RISE[0] + (look.still ? 0 : MISS_RISE[1] * done)));
+  }
+  ctx.restore();
+}
+
+// The tile under a tap on the map, at (px, py) CSS pixels from the map's
+// top-left, or null before the first frame. A tap on a minion's glyph
+// picks its tile (its glyph rises over the tiles behind it); anywhere else
+// undoes isoScreenShare: across = (dc - dr) / 2 and down = (dc + dr) / 4
+// tile widths from the camera's tile, and each tile's diamond is a whole
+// row and column, so rounding each gives the tile.
+export function isoTileAt(px, py) {
+  if (!camera || !width) return null;
+  const x = px * pageScale;
+  const y = py * pageScale;
+  const hit = tapBoxes.find(({ box }) => x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3]);
+  if (hit) return { row: hit.tile.row, col: hit.tile.col };
+  const sx = (x / width - 0.5) * across;
+  const sy = (y / height - CAMERA_Y) * across / ISO_MAP_SHAPE;
+  return { row: Math.round(camera.row + 2 * sy - sx), col: Math.round(camera.col + sx + 2 * sy) };
 }

@@ -108,6 +108,7 @@ export function buildFloor() {
 
   state.floor.minions = [];
   state.floor.hunter = null;
+  state.floor.gunTarget = null;
   state.floor.exchange = null; // THE UNFOLDING lives on rest floors only
   state.floor.darkTurns = 0;
   state.floor.encounters = [];
@@ -231,6 +232,7 @@ function clearDanger() {
   f.boss = null;
   f.minions = [];
   f.hunter = null;
+  f.gunTarget = null;
   f.darkness = false;
   f.darkTurns = 0;
   f.encounters = [];

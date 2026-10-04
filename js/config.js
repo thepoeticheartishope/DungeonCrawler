@@ -452,6 +452,9 @@ export const MAP_ANIMATION_MS = {
   playerBreath: 2600, // the stick man's chest rising and falling (isometric)
   playerIdle: 3000, // how long the player stands without moving or turning before the stick man starts looking round
   playerGlance: 5200, // once idle, one glance to the side and back in each of these
+  gunShot: 260,     // the shot's flash from the gun to where it went, fading (gun plan)
+  gunMiss: 900,     // MISS floating up over a minion the shot missed, fading
+  gunRecoil: 120,   // the gun kicking back toward the player as it fires
 };
 
 // On-screen d-pad (js/dpad.js): holding an arrow walks like holding an

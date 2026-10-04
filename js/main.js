@@ -2,7 +2,7 @@ import { state, key } from './state.js';
 import { buildFloor, buildRestFloor } from './floor.js';
 import { nextFloor } from './run.js';
 import {
-  MAX_HEARTS, ROOM_COUNT, BOSS_HP, GUN_START_ROUNDS,
+  MAX_HEARTS, ROOM_COUNT, BOSS_HP, GUN_START_ROUNDS, GUN_CHAMBER,
   BATTLE_CHOICE_COUNT,
   BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS, ROOM_LOG_LINES
 } from './config.js';
@@ -25,7 +25,8 @@ import { stepPlayer } from './moves.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader } from './setloader.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, glyphOf } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, onMapTap, glyphOf } from './mapview.js';
+import { pickTarget, fire, settleShot } from './gun.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad } from './dpad.js';
@@ -97,6 +98,7 @@ initRender({
   lightEyeEl, lightHintEls, dpadButtons,
 });
 initMapView(document.getElementById('mapCanvas'));
+onMapTap(tapMap);
 
 initDataView({ startScreen });
 initExchangeView({ buyItem, leaveExchange });
@@ -105,9 +107,29 @@ applyStaticText();
 
 initSetLoader();
 initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter,
+  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter, devTestShot,
   battleScreen, wagerRow,
 });
+
+// A tap on the map. With the gun on (DEV -> Combat), it picks the gun's
+// target: the minion on that tile, or none. Costs no turn.
+function tapMap(tile) {
+  if (!state.settings.gunCombat || state.run.turnLocked || state.run.runEnded) return;
+  drawEvents(pickTarget(tile));
+}
+
+// DEV -> Test shot: fires at the gun's target through the real rules
+// (gun.js), or, with a landed shot waiting for the damage bar, stops the
+// bar at a random place, so the map's gun drawing can be checked before
+// step 6 puts the gun into play. Fills an empty chamber first. Spends no
+// turn: minions don't move and the light doesn't spread.
+function devTestShot() {
+  if (!state.settings.gunCombat || state.run.turnLocked || state.run.runEnded) return;
+  if (state.run.ammo <= 0) state.run.ammo = GUN_CHAMBER;
+  const target = state.floor.minions.includes(state.floor.gunTarget) ? state.floor.gunTarget : null;
+  const note = drawEvents(state.battle.aim ? settleShot(Math.random()) : fire(target));
+  if (note.text) showRoomNote(note.cls, note.text);
+}
 
 function renderChoices() {
   const letters = ['A', 'B', 'C', 'D'];
@@ -800,6 +822,22 @@ function drawEvents(events) {
         logLine(e.from === 'encounter'
           ? t('log.encounter.mastered', { category: e.category ? categoryLabel(e.category) : '', gold: e.amount })
           : t(e.from === 'chest' ? 'log.chest.opened' : 'log.box.gold', { gold: e.amount }), 'bright');
+        break;
+      // The gun (gun plan). Only DEV -> Test shot fires it so far; step 6
+      // adds the log lines. A landed shot flies once the damage bar stops.
+      case 'fireBlocked':
+        cls = 'block-msg';
+        parts.push(t('gun.block.' + e.reason));
+        break;
+      case 'shotMissed':
+        shotOnMap(e.target, true);
+        break;
+      case 'shotGrazed':
+      case 'minionHurt':
+        shotOnMap(e.minion, false);
+        break;
+      case 'hunterStaggered':
+        shotOnMap(e.hunter, false);
         break;
       case 'runeDecoded': {
         const hint = buildHint(e.question);
