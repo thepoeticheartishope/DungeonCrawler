@@ -482,3 +482,10 @@ export const DPAD_HOLD_DELAY_MS = 300;
 export const DPAD_HOLD_REPEAT_MS = 170;
 // The room log left of the d-pad keeps this many notes, newest at the bottom.
 export const ROOM_LOG_LINES = 5;
+
+// Real time (start screen option, gun plan step 8): the world (minions,
+// the hunter, the boss's light) takes its turn every REALTIME_STEP_MS
+// instead of after each of the player's actions. realclock.js counts
+// time in polls of REALTIME_POLL_MS, and only while the clock may run.
+export const REALTIME_STEP_MS = 2500;
+export const REALTIME_POLL_MS = 100;

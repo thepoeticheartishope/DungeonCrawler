@@ -8,6 +8,7 @@ import {
 } from './sets.js';
 
 const revealToggle = document.getElementById('revealToggle');
+const realTimeToggle = document.getElementById('realTimeToggle');
 const playerNameInput = document.getElementById('playerName');
 const toggleLoaderBtn = document.getElementById('toggleLoader');
 const loaderPanel = document.getElementById('loaderPanel');
@@ -24,7 +25,7 @@ const savedSetsList = document.getElementById('savedSetsList');
 let builtinSets = [];
 
 export function initSetLoader() {
-  // ---- Remember the reveal toggle and the player's name across sessions ----
+  // ---- Remember the reveal and real-time toggles and the player's name across sessions ----
   // localStorage access is wrapped in try/catch — private browsing or disabled
   // storage should degrade to "just use the checkbox defaults" rather than
   // break the start screen.
@@ -43,6 +44,7 @@ export function initSetLoader() {
     try {
       localStorage.setItem(OPTION_STORAGE_KEY, JSON.stringify({
         revealOnWrong: revealToggle.checked,
+        realTime: realTimeToggle.checked,
         playerName: playerNameInput.value,
       }));
     } catch (e) {
@@ -52,10 +54,12 @@ export function initSetLoader() {
 
   const savedOptions = loadSavedOptions();
   if (typeof savedOptions.revealOnWrong === 'boolean') revealToggle.checked = savedOptions.revealOnWrong;
+  if (typeof savedOptions.realTime === 'boolean') realTimeToggle.checked = savedOptions.realTime;
   playerNameInput.maxLength = PLAYER_NAME_MAX_LENGTH;
   if (typeof savedOptions.playerName === 'string') playerNameInput.value = savedOptions.playerName.slice(0, PLAYER_NAME_MAX_LENGTH);
 
   revealToggle.addEventListener('change', saveOptions);
+  realTimeToggle.addEventListener('change', saveOptions);
   playerNameInput.addEventListener('input', saveOptions);
 
   toggleLoaderBtn.addEventListener('click', () => {

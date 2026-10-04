@@ -4,7 +4,7 @@ import { nextFloor } from './run.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, GUN_START_ROUNDS, GUN_CHAMBER,
   BATTLE_CHOICE_COUNT,
-  TIMER_SECONDS, ROOM_LOG_LINES
+  TIMER_SECONDS, ROOM_LOG_LINES, REALTIME_POLL_MS
 } from './config.js';
 import { rollModifier, rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -33,12 +33,14 @@ import { initDataView } from './dataview.js';
 import { initDpad } from './dpad.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
+import { pollClock, resetClock } from './realclock.js';
 import { mountQuestionPanel, setQuestion, retypeQuestion, clearModifier, applyModifier, placeWager } from './questionview.js';
 
 const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
 const glitchCode = document.getElementById('glitchCode');
 const revealToggle = document.getElementById('revealToggle');
+const realTimeToggle = document.getElementById('realTimeToggle');
 const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
 const battleScreen = document.getElementById('battleScreen');
@@ -71,6 +73,7 @@ const encounterLogEl = document.getElementById('encounterLog');
 const endPanel = document.getElementById('endPanel');
 const continueBtn = document.getElementById('continueBtn');
 const roomFeedback = document.getElementById('roomFeedback');
+const devPanel = document.getElementById('devPanel');
 
 const winStats = document.getElementById('winStats');
 const loseStats = document.getElementById('loseStats');
@@ -592,6 +595,8 @@ function startGame() {
   state.run.loreQueue = [];
   resetHaunts();
   state.settings.revealOnWrong = revealToggle.checked;
+  state.settings.realTime = realTimeToggle.checked;
+  resetClock();
   // Read on every start, so a retry keeps the name without asking again.
   state.settings.playerName = playerNameInput.value.trim();
   // Every run is multiple choice. The typing path (answerForm,
@@ -628,6 +633,7 @@ function loadRoom(restKind) {
 // Puts the floor buildFloor() made on the page: the map, hints, HUD, and
 // a fresh room screen.
 function drawFloor() {
+  resetClock();
   if (state.settings.gunCombat) refreshGunTarget();
   renderHud();
   // Per-room wording overrides (text.js AREAS) apply from here on.
@@ -699,9 +705,12 @@ function showRoomNote(cls, text) {
 // A spent turn: the player's events plus the monsters' turn, drawn once,
 // then the room note from all of them (or the run ends in the light, or,
 // with the gun on, to a minion's strike). With the gun on, its target
-// catches up with where everything is now.
-function applyTurnOutcome(events) {
-  const turn = events.concat(advanceMonsters());
+// catches up with where everything is now. With Real time on, the
+// player's own actions don't move the world (`worldMoves` false): the clock
+// does (clockTick), so here only the targets catch up with the player.
+function applyTurnOutcome(events, worldMoves = !state.settings.realTime) {
+  const turn = worldMoves ? events.concat(advanceMonsters()) : events;
+  if (!worldMoves) refreshTargetValidity();
   if (state.settings.gunCombat) turn.push(...refreshGunTarget());
   const note = drawEvents(turn);
   if (lightConsumed()) {
@@ -710,16 +719,45 @@ function applyTurnOutcome(events) {
   }
   if (turn.some(e => e.type === 'signalLost')) {
     state.run.runEnded = true;
+    closeReloadOnRunEnd();
     showRoomNote('warn-msg', note.text);
     setControlsEnabled(false);
     stopTimer();
     setTimeout(endLose, 900);
     return;
   }
-  syncQuestionForTarget();
+  // A reload's question may be open over the map while the clock moves
+  // the world: it stays as it is.
+  if (!mapPanelShown()) syncQuestionForTarget();
   syncBattleScreen();
   showRoomNote(note.cls, note.text);
 }
+
+// The run ended while a reload was open over the map (with Real time on,
+// the clock can take the last stability or the last light mid-question):
+// the panels close so nothing is answered on a lost run.
+function closeReloadOnRunEnd() {
+  if (mapPanelShown()) endReload();
+}
+
+// Whether the real-time clock may run: Real time on, a run going, the
+// room screen up with nothing paused over it. It keeps running while a
+// reload is picked and answered over the map (that's the pressure); it
+// stops for the damage bar (the shot's timing is the player's), the battle
+// screen, THE UNFOLDING, the DEV panel, the end screens and a hidden tab.
+function clockMayRun() {
+  return state.settings.realTime && !state.run.runEnded && !document.hidden &&
+    roomScreen.classList.contains('show') && mapPanelShown() !== 'aim' &&
+    !devPanel.classList.contains('show');
+}
+
+// One poll of the real-time clock; when the world's turn is due, the
+// minions, the hunter and the light take it, as after a step in turn mode.
+function clockTick() {
+  if (!pollClock(performance.now(), clockMayRun())) return;
+  applyTurnOutcome([], true);
+}
+setInterval(clockTick, REALTIME_POLL_MS);
 
 // Draws a list of rule events, in order, then redraws the HUD, fog, eye
 // and targeting once. Returns the room note the events add up to
@@ -920,6 +958,7 @@ function drawEvents(events) {
 // ends where the player stands, after a beat to see it.
 function loseToLight() {
   state.run.runEnded = true;
+  closeReloadOnRunEnd();
   showRoomNote('warn-msg', t('room.light.consumed'));
   setControlsEnabled(false);
   stopTimer();

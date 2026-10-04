@@ -4,7 +4,7 @@
 //
 // Starts a static server for this repo, then drives the game in a real
 // browser via Playwright (imported from ~/Repo/codecraft-classroom/node_modules
-// — do NOT add Playwright or node_modules to this repo) through three runs,
+// — do NOT add Playwright or node_modules to this repo) through four runs,
 // all loading the built-in "Bible Quiz Bowl" set with Auto-win on:
 //
 //   1. Skip-room run: one manual step, then "Skip room (dev)" repeatedly to
@@ -20,6 +20,12 @@
 //      R to reload and F to fire (Auto-win answers the reload and stops the
 //      damage bar on the weak point) until a reload loaded rounds and a
 //      shot killed a minion.
+//   4. Real-time run: Real time on (start screen), DEV -> Combat on gun,
+//      Auto-win off. With the DEV panel open the clock holds still; closed,
+//      the world takes turns with no input; the player's own steps don't
+//      add turns; and the clock keeps running while a reload question is
+//      open over the map. Then the option is still checked after a reload
+//      of the page (it's remembered).
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -378,6 +384,69 @@ async function runGun(browser, url) {
   return { ok: true, detail: 'a reload loaded and a shot killed a minion on the map', consoleErrors, pageErrors };
 }
 
+// ---- Run 4: real time ----
+
+// The HUD's turn count (render.js writes the world's turns there).
+function turnsShown(page) {
+  return page.evaluate(() => Number(document.getElementById('turnCount').textContent));
+}
+
+// Real time on, then the checks listed in the header. Returns what failed
+// ('' when everything held).
+async function checkRealTime(page, url) {
+  await loadPageAndSet(page, url);
+  await page.check('#realTimeToggle');
+  await startGameAndWaitForRoom(page);
+  await page.click('#devToggleBtn');
+  await page.waitForSelector('#devPanel.show', { timeout: 5000 });
+  await page.click('#devCombatBtn');
+  await page.click('#devSkipBtn');
+
+  const step = await page.evaluate(async () => (await import('./js/config.js')).REALTIME_STEP_MS);
+  const before = await turnsShown(page);
+  await page.waitForTimeout(step * 1.5);
+  if (await turnsShown(page) !== before) return 'the clock ran with the DEV panel open';
+
+  await page.click('#devToggleBtn');
+  await page.waitForTimeout(step * 2.5);
+  const ticked = await turnsShown(page);
+  if (ticked - before < 2) return `only ${ticked - before} world turns in ${step * 2.5} ms with no input`;
+
+  const beforeSteps = await turnsShown(page);
+  for (const k of ['ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight']) {
+    await page.keyboard.press(k);
+    await page.waitForTimeout(40);
+  }
+  if (await turnsShown(page) - beforeSteps > 1) return 'the player\'s own steps moved the world';
+
+  await page.keyboard.press('r');
+  await page.waitForSelector('#reloadPanel:not([hidden])', { timeout: 2000 });
+  await page.keyboard.press('1');
+  await page.waitForSelector('#mapQuestionPanel:not([hidden])', { timeout: 2000 });
+  const beforeQuestion = await turnsShown(page);
+  await page.waitForTimeout(step * 1.5);
+  const lost = await page.evaluate(() => document.getElementById('loseScreen').classList.contains('show'));
+  if (!lost && await turnsShown(page) === beforeQuestion) return 'the clock stopped while a reload question was open';
+
+  await page.goto(url, { waitUntil: 'load' });
+  if (!await page.isChecked('#realTimeToggle')) return 'the Real time option was not remembered';
+  return '';
+}
+
+async function runRealTime(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkRealTime(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'the clock moved the world, paused for the DEV panel and ran through a reload question', consoleErrors, pageErrors };
+}
+
 // ---- Main ----
 
 async function main() {
@@ -402,11 +471,12 @@ async function main() {
       const skipRoomResult = await runSkipRoom(browser, url);
       const battleResult = await runBattle(browser, url);
       const gunResult = await runGun(browser, url);
+      const realTimeResult = await runRealTime(browser, url);
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult]]) {
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult]]) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {

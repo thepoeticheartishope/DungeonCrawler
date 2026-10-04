@@ -87,6 +87,7 @@ Rules and data (no page/DOM access):
 | `modifiers.js` | Rolls Blind / Gambler / Flip / Timer for fight choices. |
 | `combat.js` | Minion/hunter movement and turn advance. `spawnMinion(spot, minionKind)` makes a minion of a `MINION_KINDS` kind (config.js): `minionKind`, `hpLeft`, `limbs`, `trail` (its last tiles, for knockback). `advanceMonsters()` returns an events list; `main.js` `drawEvents()` draws it. With the gun on (`state.settings.gunCombat`, gun plan step 6) a minion or the hunter that reaches the player strikes (gun.js `minionStrike`) instead of engaging (step 7: the hunter strikes and is knocked back like a minion; a landed shot staggers it for `HUNTER_REST_TURNS`), kinds move only every `moveEvery` turns, and `findAdjacentEnemies()` leaves minions and the hunter out (no battle screen for them; the boss and items still open it). |
 | `gun.js` | The gun (gun combat plan step 3; played since step 6 with DEV → Combat on gun): `pickTarget(tile)` (a seen minion or the hunter on the tapped tile becomes `state.floor.gunTarget`, anything else clears it; no turn), `refreshGunTarget()` (after a turn: drop a dead / unseen / unshootable target, then pick the best shootable one), `cycleTarget()` (T: the next shootable one), `reloadCategory()` (the next group of `fightGroups`, by `state.run.reloadIndex`), `reloadOffers()` (that category with no / one / two modifiers for `GUN_RELOAD_ROUNDS` 1/2/3, Gambler never), `settleReload()` (right loads up to `GUN_CHAMBER`, wrong jams, no heart lost), `fireBlock()` (`chamberEmpty`, `noTarget`, `notShootable` or a shootBlock reason) / `fire(target)` (aim roll; a landed shot on a minion waits in `state.battle.aim`, on the hunter it staggers), `settleShot(barPosition)` (graze 0 / hit 1 inside `GUN_HIT_HALF` / weak point 2 + a limb; a kill pays the kind's `gold` via `goldReward`), `minionStrike(m)` (`MINION_STRIKE_COST`, `DARK_MISS_COST` in the darkness, knocked back to the oldest trail tile), `staggerHunter()`. Rounds are `state.run.ammo`. Returns events lists; the caller spends the turn. |
+| `realclock.js` | The real-time clock (gun plan step 8, start screen option Real time, `state.settings.realTime`, remembered in `noesisProtocol.options`): `pollClock(now, running)` banks time only while the clock may run and says when the world's turn is due, every `REALTIME_STEP_MS`; `resetClock()` on a new run or floor. No timers: main.js polls it every `REALTIME_POLL_MS` (`clockTick`, `clockMayRun`). |
 | `moves.js` | The player's step (`stepPlayer()`: turn, bump, walk, stairs, coin, paper (the next story line from `state.run.loreQueue`), room entry, boxes) and `goldReward`. Returns an events list. |
 | `answers.js` | Settling an answer (`settleAnswer()`: hearts, haunts, the Gambler wager, boss HP and the darkness, clearing or spending the target, gold and the rune's hint). Returns an events list. |
 | `quiz.js` | Picking questions, building multiple-choice options, fight choice labels. |
@@ -121,6 +122,13 @@ reload panel → question over the map → `settleReload()`; F, FIRE or tapping 
 `fireGun()` → `fire()` (a landed shot on a minion opens the damage bar → `settleShot()`); T →
 `cycleTarget()` (free); `.` waits. Each ends in `applyTurnOutcome(events)`, which also runs
 `refreshGunTarget()` and ends the run if a minion's strike took the last stability.
+
+With Real time on (start screen), the player's actions don't move the world:
+`applyTurnOutcome(events)` only draws them and catches the targets up. main.js `clockTick()`
+polls `realclock.js` and runs `applyTurnOutcome([], true)` (= `advanceMonsters()`: minions,
+hunter, light, turn count) every `REALTIME_STEP_MS`. The clock keeps running while a reload is
+picked and answered over the map (a run lost mid-question closes the panels); it pauses for the
+damage bar, the battle screen, THE UNFOLDING, the DEV panel, end screens and a hidden tab.
 
 ## Refactor in progress
 
