@@ -1,13 +1,14 @@
 // The gun (gun combat plan, step 3): reloading by answering a question,
-// firing at a minion in the player's light, the damage bar, a minion's
-// strike when it reaches the player, and a landed shot staggering the
-// hunter. Nothing calls these yet; step 6 wires them into the turn and
-// the question panel. Each rule changes state and returns an events list
+// picking a target on the map, firing at a minion in the player's light,
+// the damage bar, a minion's strike when it reaches the player, and a
+// landed shot staggering the hunter. Only pickTarget is called yet (a tap
+// on the map with DEV -> Combat on gun); step 6 wires the rest into the
+// turn and the question panel. Each rule changes state and returns an events list
 // in the order things happened, for main.js drawEvents() to draw.
 // Spending the turn (minions move, the light spreads) is the caller's job.
 // No DOM access here.
 
-import { state } from './state.js';
+import { state, key } from './state.js';
 import {
   BATTLE_CHOICE_COUNT, GUN_CHAMBER, GUN_RELOAD_MODIFIERS, GUN_RELOAD_ROUNDS, GUN_HIT_HALF,
   MINION_KINDS, MINION_STRIKE_COST, DARK_MISS_COST, HUNTER_REST_TURNS,
@@ -69,6 +70,23 @@ export function settleReload(isCorrect, offer) {
   else if (haunt === 'lingers') events.push({ type: 'hauntLingers' });
   state.run.reloadIndex++;
   return events;
+}
+
+// The player tapped `tile` on the map. A minion or the hunter standing
+// there, in sight (visibleSet, so the map is showing it), becomes the gun's
+// target, even if it can't be shot right now: the map then says why not.
+// Anything else clears the target. Picking costs no turn.
+// Events: targetPicked { target } or targetCleared.
+export function pickTarget(tile) {
+  const f = state.floor;
+  const target = f.minions.find(m => m.row === tile.row && m.col === tile.col);
+  const seen = target && (!state.settings.fogEnabled || f.visibleSet.has(key(target.row, target.col)));
+  if (!seen) {
+    f.gunTarget = null;
+    return [{ type: 'targetCleared' }];
+  }
+  f.gunTarget = target;
+  return [{ type: 'targetPicked', target }];
 }
 
 // Why `target` can't be fired at right now, or null if it can: an empty
@@ -135,6 +153,7 @@ export function settleShot(barPosition) {
 
   state.floor.minions = state.floor.minions.filter(x => x !== m);
   if (state.battle.selectedTarget === m) state.battle.selectedTarget = null;
+  if (state.floor.gunTarget === m) state.floor.gunTarget = null;
   const gold = goldReward(MINION_KINDS[m.minionKind].gold);
   state.run.coinsTotal += gold;
   events.push({ type: 'minionKilled', minion: m }, { type: 'goldGained', amount: gold, from: 'kill' });

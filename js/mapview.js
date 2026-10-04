@@ -4,8 +4,8 @@
 // the player's bump, warps, pulses, glows, the mist's drift).
 //
 // main.js calls initMapView() once, requestMapDraw() after anything on
-// the map may have changed, and slideOnMap() / bumpOnMap() from their
-// drawEvents cases. This file reads state and never changes it.
+// the map may have changed, slideOnMap() / bumpOnMap() / shotOnMap() from
+// their drawEvents cases, and onMapTap() to hear taps on the map. This file reads state and never changes it.
 //
 // Everything is drawn into one canvas (the "phosphor"), so a later CRT
 // pass (curved glass, bloom) can read that canvas and draw on top of it.
@@ -18,7 +18,7 @@ import {
 import { canMakeOut, FACING_VECTORS } from './sight.js';
 import { glyphForCategory } from './quiz.js';
 import { t } from './text.js';
-import { drawIsoScene } from './isoview.js';
+import { drawIsoScene, showShot, isoTileAt } from './isoview.js';
 import { setTileArtColour } from './tileart.js';
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
@@ -156,6 +156,27 @@ export function bumpOnMap(facing) {
   if (!canvas || reducedMotion.matches) return;
   effects.set(PLAYER, { kind: 'bump', start: performance.now(), ms: MAP_ANIMATION_MS.bump, facing });
   requestMapDraw();
+}
+
+// Plays a gun shot at `target` on the map (isoview.js showShot): a flash
+// to it, or past it with MISS over it when it `missed`. One more frame is
+// asked for once MISS is done, so it clears even under reduced motion,
+// where nothing else keeps frames going.
+export function shotOnMap(target, missed) {
+  if (!canvas) return;
+  showShot(target, missed);
+  requestMapDraw();
+  setTimeout(requestMapDraw, MAP_ANIMATION_MS.gunMiss);
+}
+
+// Calls `handler(tile)` with the tile under each tap or click on the map
+// (isoview.js isoTileAt), so main.js can act on it.
+export function onMapTap(handler) {
+  canvas.addEventListener('click', e => {
+    const box = canvas.getBoundingClientRect();
+    const tile = isoTileAt(e.clientX - box.left, e.clientY - box.top);
+    if (tile) handler(tile);
+  });
 }
 
 function queueFrame() {

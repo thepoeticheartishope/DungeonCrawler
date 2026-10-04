@@ -1,5 +1,5 @@
-// DEV panel in the status bar: Skip room, Auto-win, Fog and Camera toggles, for
-// testing. main.js passes in the game actions and elements it needs.
+// DEV panel in the status bar: Skip room, Auto-win, Fog, Camera and Combat
+// toggles and a test shot, for testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw } from './mapview.js';
 import { renderRoomHints } from './render.js';
@@ -10,9 +10,11 @@ const devSkipBtn = document.getElementById('devSkipBtn');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devCameraBtn = document.getElementById('devCameraBtn');
+const devCombatBtn = document.getElementById('devCombatBtn');
+const devShotBtn = document.getElementById('devShotBtn');
 
 export function initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter,
+  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter, devTestShot,
   battleScreen, wagerRow,
 }) {
   devToggleBtn.addEventListener('click', () => {
@@ -66,6 +68,26 @@ export function initDevPanel({
     requestMapDraw();
     renderRoomHints();
   });
+
+  // Dev tool (gun plan): classic combat, or the gun on the map. For now it
+  // only switches the map's drawing (the gun, its reach, the target picked
+  // by a tap) and shows Test shot; step 6 puts the gun's rules behind it.
+  // Turning it off drops the target and any shot waiting for the damage bar.
+  devCombatBtn.addEventListener('click', () => {
+    const on = !state.settings.gunCombat;
+    state.settings.gunCombat = on;
+    if (!on) {
+      state.floor.gunTarget = null;
+      state.battle.aim = null;
+    }
+    devCombatBtn.textContent = on ? 'Combat: gun (dev)' : 'Combat: classic (dev)';
+    devCombatBtn.setAttribute('aria-pressed', String(on));
+    devShotBtn.hidden = !on;
+    requestMapDraw();
+    refreshInspector();
+  });
+
+  devShotBtn.addEventListener('click', devTestShot);
 }
 
 // Dev tool: a live look at the game state and the last rule events, for
@@ -115,6 +137,7 @@ function floorSummary() {
     lightTurns: f.lightTurns + ' / ' + f.lightTurnBudget,
     lightSlack: f.lightSlack + ' (loss ' + Math.round(f.lightLossShare * 100) + '%)',
     minions: f.minions.map(m => where(m) + (m.minionKind ? ' ' + m.minionKind + ' hp ' + m.hpLeft : '')),
+    gunTarget: where(f.gunTarget),
     props: f.props.length,
     encounters: f.encounters.length,
     chest: where(f.chest),
