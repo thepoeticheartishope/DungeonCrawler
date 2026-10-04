@@ -74,10 +74,10 @@ export function initDevPanel({
     renderRoomHints();
   });
 
-  // Dev tool (gun plan): classic combat, or the gun on the map. With the
-  // gun, minions no longer open the battle screen: they strike when they
-  // reach the player, and are fought with RELOAD and FIRE (main.js), each a
-  // turn. It also shows Test shot and Test reload, which spend no turn.
+  // Dev tool (gun plan): the gun on the map (the default since step 9), or
+  // classic combat. With the gun, minions don't open the battle screen: they
+  // strike when they reach the player, and are fought with RELOAD and FIRE
+  // (main.js), each a turn. It also shows Test shot and Test reload, which spend no turn.
   // Turning it off drops the target and any shot waiting for the damage bar,
   // and closes a gun panel left open over the map.
   devCombatBtn.addEventListener('click', () => {

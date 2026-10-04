@@ -27,7 +27,7 @@ export const state = {
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
     isoCameraGlide: true,   // dev toggle: the isometric camera glides after the player (false: locked to them)
-    gunCombat: false,       // dev toggle (DEV -> Combat): the gun on the map (gun plan). Step 4a: only the map's drawing; step 6 switches the rules
+    gunCombat: true,        // the gun on the map (gun plan; the default since step 9). DEV -> Combat switches back to classic (minions on the battle screen)
     usingSample: true, // false once the person loads their own list
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
     activeDictionary: null, // the active set's subject dictionary (lists/dictionaries/), or null (pasted, saved and sample sets)
