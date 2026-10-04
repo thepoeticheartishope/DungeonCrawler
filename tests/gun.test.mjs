@@ -346,14 +346,38 @@ test('with the gun on, a minion that reaches the player strikes instead of engag
   assert.deepEqual(findAdjacentEnemies(), []);
 });
 
-test('with the gun on, the hunter still engages and stays on the battle screen', () => {
+test('with the gun on, the hunter strikes like a minion and never opens the battle screen', () => {
   resetFloor();
   state.settings.gunCombat = true;
+  state.floor.darkness = true;
+  state.floor.darkTurns = 0;
   const hunter = minionAt(-1, 0, null);
   hunter.kind = 'hunter';
   hunter.rest = 0;
-  assert.deepEqual(advanceMonsters().map(e => e.type), ['minionEngaged']);
-  assert.deepEqual(findAdjacentEnemies(), [hunter]);
+  state.floor.hunter = hunter;
+  hunter.trail = [{ row: hunter.row - 3, col: hunter.col }];
+  assert.deepEqual(findAdjacentEnemies(), []);
+  const events = advanceMonsters();
+  assert.deepEqual(events.map(e => e.type), ['minionStruck', 'knockedBack']);
+  assert.equal(events[0].minion, hunter);
+  assert.equal(state.run.hearts, MAX_HEARTS - DARK_MISS_COST, 'the hunter only walks in the darkness');
+  assert.equal(state.battle.selectedTarget, null, 'no battle screen');
+});
+
+test('with the gun on, a staggered hunter stands still for HUNTER_REST_TURNS turns, then hunts again', () => {
+  resetFloor();
+  state.settings.gunCombat = true;
+  state.floor.darkness = true;
+  state.floor.darkTurns = 0;
+  const hunter = minionAt(-3, 0, null);
+  hunter.kind = 'hunter';
+  hunter.rest = 0;
+  state.floor.hunter = hunter;
+  staggerHunter(hunter);
+  const start = { row: hunter.row, col: hunter.col };
+  for (let i = 0; i < HUNTER_REST_TURNS; i++) advanceMonsters();
+  assert.deepEqual({ row: hunter.row, col: hunter.col }, start);
+  assert.ok(advanceMonsters().some(e => e.type === 'minionMoved' && e.minion === hunter));
 });
 
 test('with the gun on, a slow kind moves only every moveEvery turns', () => {

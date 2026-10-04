@@ -884,7 +884,7 @@ function drawEvents(events) {
       case 'minionStruck':
         flashHearts();
         cls = 'warn-msg';
-        parts.push(t('gun.struck', { cost: e.cost }));
+        parts.push(t(e.minion.kind === 'hunter' ? 'gun.hunterStruck' : 'gun.struck', { cost: e.cost }));
         break;
       case 'knockedBack':
         slideOnMap(e.minion, e.from);
