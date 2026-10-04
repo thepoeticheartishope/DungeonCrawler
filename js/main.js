@@ -2,7 +2,7 @@ import { state, key } from './state.js';
 import { buildFloor, buildRestFloor } from './floor.js';
 import { nextFloor } from './run.js';
 import {
-  MAX_HEARTS, ROOM_COUNT, BOSS_HP,
+  MAX_HEARTS, ROOM_COUNT, BOSS_HP, GUN_START_ROUNDS,
   BATTLE_CHOICE_COUNT,
   BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS, ROOM_LOG_LINES
 } from './config.js';
@@ -555,6 +555,8 @@ function startGame() {
   state.run.bonusSlack = 0;
   state.run.turnCount = 0;
   state.run.coinsTotal = 0;
+  state.run.ammo = GUN_START_ROUNDS;
+  state.run.reloadIndex = 0;
   state.run.loreQueue = [];
   resetHaunts();
   state.settings.revealOnWrong = revealToggle.checked;

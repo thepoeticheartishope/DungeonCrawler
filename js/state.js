@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, GUN_START_ROUNDS } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -49,6 +49,8 @@ export const state = {
     bonusSlack: 0,         // turns bought at THE UNFOLDING for the next depth's light budget (light.js initBossLight spends it)
     turnCount: 0,
     coinsTotal: 0,
+    ammo: GUN_START_ROUNDS, // rounds in the gun's chamber (js/gun.js); carried from floor to floor
+    reloadIndex: 0,        // reloads settled this run; picks the next category in the reload rotation (gun.js)
     turnLocked: false,
     runEnded: false,       // the light consumed the floor; no more moves this run
   },
@@ -108,5 +110,6 @@ export const state = {
     battleTarget: null,    // whichever target the battle screen last set up a turn for
     battlePhase: 'answering', // 'choosing' (pick a category) | 'answering' (question showing) | 'ended' (settled, awaiting continue)
     categoryChoices: [],   // [{ label, pool }] offered while battlePhase is 'choosing'
+    aim: null,             // a gun shot that landed and waits for the damage bar: { target, hitHalf, weakWidth } (gun.js)
   },
 };
