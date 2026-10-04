@@ -5,7 +5,7 @@
 
 import { state, key } from './state.js';
 import { whatBlocks } from './passage.js';
-import { computeVisibility, updateCamera } from './sight.js';
+import { computeVisibility } from './sight.js';
 import { DARK_GOLD_MULTIPLIER, BOX_GOLD } from './config.js';
 
 // Gold pays DARK_GOLD_MULTIPLIER times as much in the darkness after the boss.
@@ -50,7 +50,6 @@ export function stepPlayer(dRow, dCol) {
 
   state.floor.playerRow = newRow;
   state.floor.playerCol = newCol;
-  updateCamera();
   computeVisibility();
   events.push({ type: 'stepped', facing });
 

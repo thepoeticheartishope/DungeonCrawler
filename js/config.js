@@ -109,10 +109,6 @@ export const STEM_CUES = [
 
 export const ENCOUNTER_GLYPHS = ['!', '%', '&', '*', '+', '~', '≈', '='];
 
-// Player glyph is directional now — an arrow matching which way they're
-// facing, updated on every move attempt (even a blocked one, so "turning
-// to look" costs nothing) rather than a fixed '@'.
-export const DIRECTION_ARROWS = { N: '^', S: 'v', E: '>', W: '<' };
 
 // Coins awarded for correctly answering a vocab encounter, by the
 // question's own difficulty tier. Falls back to "medium" if a question is
@@ -200,15 +196,14 @@ export const ROOM_THEMES = {
 // Map textures (js/tileart.js): which texture each part of the map is drawn
 // with, by name. To restyle something, point it at another texture here; a
 // new kind of texture is a new painter in tileart.js's PAINTERS.
-// Textures: bricks, capstone, columnTop, columnSide, crate, cobbles,
+// Textures: bricks, capstone, columnSide, crate, cobbles,
 // flagstones, planks, wetStone, inlay.
 //   floors  one per ROOM_THEMES key; a room with no entry gets `hall`
 export const TILE_ART = {
-  wall: 'bricks',           // walls (top-down) and wall faces (isometric)
-  wallTop: 'capstone',      // the top of a wall or pillar (isometric)
-  pillarTop: 'columnTop',   // a pillar seen from above (top-down)
-  pillarSide: 'columnSide', // a pillar's sides (isometric)
-  box: 'crate',             // a box's sides and lid (isometric)
+  wall: 'bricks',           // wall faces
+  wallTop: 'capstone',      // the top of a wall or pillar
+  pillarSide: 'columnSide', // a pillar's sides
+  box: 'crate',             // a box's sides and lid
   hall: 'cobbles',          // hallways, and any room theme not in `floors`
   floors: { crypt: 'flagstones', library: 'planks', flooded: 'wetStone', shrine: 'inlay' },
 };
@@ -342,14 +337,8 @@ export const FLIP_MAX_ANSWERS = 3;
 // running out counts as a miss.
 export const TIMER_SECONDS = 10;
 
-// The camera always renders a fixed VIEWPORT_SIZE x VIEWPORT_SIZE window of
-// the room, panning to follow the player. Must stay smaller than every
-// floor recipe's grid (floors.js), or there'd be nothing to pan.
-export const VIEWPORT_SIZE = 11;
-
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
-// REST_GRID x REST_GRID grid. At least VIEWPORT_SIZE, so the top-down view
-// never runs off the grid; the rest is solid wall around the room.
+// REST_GRID x REST_GRID grid; the rest is solid wall around the room.
 export const REST_GRID = 15;
 
 // The map (js/mapview.js). Phosphor afterglow: each frame keeps
@@ -382,7 +371,7 @@ export const ISO_NARROW_MAP_WIDTH = 400;
 // The isometric map's width over its height. The diamond is half as tall
 // as it is wide, so five steps of sight only reach 1.25 tile widths up or
 // down: a square map would be mostly empty rows. Keep in step with
-// .grid-wrap.iso .map-canvas's aspect-ratio in index.html.
+// .map-canvas's aspect-ratio in index.html.
 export const ISO_MAP_SHAPE = 3 / 2;
 // The isometric camera (DEV -> Camera). It holds still while the player
 // walks inside a box round the middle of the map, ISO_CAMERA_BOX tile

@@ -12,29 +12,25 @@
 
 import { state, key } from './state.js';
 import {
-  VIEWPORT_SIZE, DIRECTION_ARROWS, AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
+  AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
   MAP_ANIMATION_MS,
 } from './config.js';
 import { canMakeOut, FACING_VECTORS } from './sight.js';
 import { glyphForCategory } from './quiz.js';
 import { t } from './text.js';
 import { drawIsoScene } from './isoview.js';
-import { artAt, art, setTileArtColour } from './tileart.js';
+import { setTileArtColour } from './tileart.js';
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
-const WALL_RIM = 0.05;       // the lit edge a wall shows where it meets floor, as a share of a tile
-const WALL_RIM_STRENGTH = 0.55;
-const WALL_SHADOW = 0.28;    // how far a wall's shadow falls onto the floor below and right of it
-const WALL_SHADOW_STRENGTH = 0.6;
 const FOG_DIM_ALPHA = 0.68;  // explored-but-unlit floor at a third of its brightness
 const MIST_RADIUS = 1.1;     // boss mist spills past its tile, so lit tiles blend into one haze
+const MIST_SPRITE_SHARE = 1 / 11; // the mist sprite's tile, as a share of the canvas width (isoview scales it)
 const MIST_DRIFT = [0.7, 1];  // the mist's strength at either end of its drift
 // The drift starts at three points in its cycle, tile by tile, so the mist
 // doesn't pulse in step.
 const MIST_OFFSETS_MS = [0, 2300, 4700];
 const BLOOM_RADIUS = 0.85;   // the hostile bloom behind the boss and minions
 const REMEMBERED_ALPHA = 0.35; // papers and boxes seen before but not lit now
-const TARGET_PULSE = [0.45, 1]; // the target box's strength at either end of its pulse
 const COIN_BOB = 0.1;        // how far the coin lifts, as a share of a tile
 const BUMP_DISTANCE = 0.18;  // how far the player nudges into what blocks them, in tiles
 // The glow behind a pulsing glyph at its dim and bright ends: grey level,
@@ -142,11 +138,9 @@ export function slideOnMap(thing, from) {
 
 // Slides the player onto the tile they just stepped to, from the one
 // behind them (a step is always one tile toward `facing`). A slide still
-// playing starts from where the player shows now. Isometric only: top-down's
-// camera jumps with the player, so a slide there would make the glyph lurch
-// back and forth on screen.
+// playing starts from where the player shows now.
 export function slidePlayerOnMap(facing) {
-  if (!canvas || reducedMotion.matches || !state.settings.isoView) return;
+  if (!canvas || reducedMotion.matches) return;
   const f = state.floor;
   const [dr, dc] = FACING_VECTORS[facing];
   const now = performance.now();
@@ -213,8 +207,8 @@ function drawFrame(now) {
 // Matches the canvas's pixels to its size on the page (sharp on high-DPI
 // screens). Returns false while the map isn't on screen (zero size), so
 // nothing is drawn until it is; the resize observer asks again then.
-// Top-down the map is square; isometric it is wider than tall (the
-// page's CSS sets the shape), so width and height are read separately.
+// The map is wider than tall (the page's CSS sets the shape), so width
+// and height are read separately.
 function fitCanvas() {
   const ratio = Math.min(window.devicePixelRatio || 1, MAP_MAX_PIXEL_RATIO);
   const width = Math.round(pageSize.width * ratio);
@@ -223,7 +217,7 @@ function fitCanvas() {
   if (canvas.width === width && canvas.height === height && scene.width === width && scene.height === height) return true;
   canvas.width = scene.width = width;
   canvas.height = scene.height = height;
-  mistSprite = makeMistSprite(width / VIEWPORT_SIZE);
+  mistSprite = makeMistSprite(width * MIST_SPRITE_SHARE);
   dirty = true;
   snap = true;
   return true;
@@ -248,27 +242,18 @@ function makeMistSprite(cell) {
   return sprite;
 }
 
-// Draws the whole map as state has it at `now`: the isometric view
-// (isoview.js) when that's on, else top-down in layer order: floor and
-// walls, then the boss mist over them, then things on the floor. Notes whether anything drawn keeps moving, so frames go on.
+// Draws the whole map as state has it at `now`, isometric (isoview.js).
+// Notes whether anything drawn keeps moving, so frames go on.
 function drawScene(now) {
   frameNow = now;
   looping = false;
   const ctx = sceneCtx;
-  const cell = scene.width / VIEWPORT_SIZE;
   ctx.fillStyle = HIDDEN_FLOOR;
   ctx.fillRect(0, 0, scene.width, scene.height);
-  if (state.settings.isoView) {
-    drawIsoScene(ctx, { width: scene.width, height: scene.height, pageWidth: pageSize.width }, {
-      colours, things: mapThings(), fogOf, paintGlyph, mistSprite, mistStrength, pulse, keepMoving,
-      showPlain, now, still: reducedMotion.matches,
-    });
-    return;
-  }
-  forEachViewTile((row, col, x, y) => drawTile(ctx, row, col, x, y, cell));
-  forEachViewTile((row, col, x, y) => drawMist(ctx, row, col, x, y, cell));
-  mapThings().forEach(s => drawGlyph(ctx, cell, s.at, s.glyph, s.look));
-  drawTargetBox(ctx, cell);
+  drawIsoScene(ctx, { width: scene.width, height: scene.height, pageWidth: pageSize.width }, {
+    colours, things: mapThings(), fogOf, paintGlyph, mistSprite, mistStrength, pulse, keepMoving,
+    showPlain, now, still: reducedMotion.matches,
+  });
 }
 
 // Tells the frame loop that something just drawn keeps moving, so frames
@@ -287,17 +272,6 @@ function showPlain() {
   snap = true;
 }
 
-// Calls fn(row, col, x, y) for every world tile in the camera's window,
-// with the tile's top-left corner in canvas pixels.
-function forEachViewTile(fn) {
-  const cell = scene.width / VIEWPORT_SIZE;
-  for (let vr = 0; vr < VIEWPORT_SIZE; vr++) {
-    for (let vc = 0; vc < VIEWPORT_SIZE; vc++) {
-      fn(state.floor.camRow + vr, state.floor.camCol + vc, vc * cell, vr * cell);
-    }
-  }
-}
-
 // How much of a tile the player sees: 'lit' now, 'dim' (explored, not lit
 // now) or 'hidden' (never seen, or wiped by the darkness).
 function fogOf(row, col) {
@@ -306,90 +280,9 @@ function fogOf(row, col) {
   return state.floor.exploredSet.has(k) ? 'dim' : 'hidden';
 }
 
-// One tile: stone bricks for a wall, else its room's floor (tileart.js),
-// with a pillar standing on it, dimmed if only remembered. A wall shows a
-// lit rim where it meets floor and throws a shadow onto the floor below
-// and to its right, so walls stand out from the floor and from the dark.
-function drawTile(ctx, row, col, x, y, cell) {
-  const k = key(row, col);
-  const wall = state.floor.wallSet.has(k);
-  const fog = wall ? wallFogOf(row, col) : fogOf(row, col);
-  if (fog === 'hidden') return;
-  ctx.drawImage(artAt(row, col, cell), x, y, cell, cell);
-  if (wall) drawWallRim(ctx, row, col, x, y, cell);
-  else drawWallShadow(ctx, row, col, x, y, cell);
-  if (state.floor.pillarSet.has(k)) ctx.drawImage(art('pillarTop', row, col, cell), x, y, cell, cell);
-  if (fog === 'dim') {
-    ctx.fillStyle = 'rgba(0, 0, 0, ' + FOG_DIM_ALPHA + ')';
-    ctx.fillRect(x, y, cell, cell);
-  }
-}
-
-// How much of a wall the player sees. The light stops at walls, so they
-// are never lit themselves: a wall shows as lit beside lit floor, dim
-// beside remembered floor (corners included), else not at all. Without
-// this the walls never showed and a room had no edges.
-function wallFogOf(row, col) {
-  if (!state.settings.fogEnabled) return 'lit';
-  let best = 'hidden';
-  for (let dr = -1; dr <= 1; dr++) {
-    for (let dc = -1; dc <= 1; dc++) {
-      if (state.floor.wallSet.has(key(row + dr, col + dc))) continue;
-      const fog = fogOf(row + dr, col + dc);
-      if (fog === 'lit') return 'lit';
-      if (fog === 'dim') best = 'dim';
-    }
-  }
-  return best;
-}
-
-// The lit edge along each side of a wall that faces floor the player has
-// seen: the outline of the room, like the glowing ridge the isometric view
-// draws. Floor never seen gets no edge, so the rim gives nothing away.
-function drawWallRim(ctx, row, col, x, y, cell) {
-  const rim = Math.max(1, Math.round(cell * WALL_RIM));
-  const open = (dr, dc) => !state.floor.wallSet.has(key(row + dr, col + dc)) && fogOf(row + dr, col + dc) !== 'hidden';
-  ctx.fillStyle = 'rgba(' + colours.glowRgb + ', ' + WALL_RIM_STRENGTH + ')';
-  if (open(-1, 0)) ctx.fillRect(x, y, cell, rim);
-  if (open(1, 0)) ctx.fillRect(x, y + cell - rim, cell, rim);
-  if (open(0, -1)) ctx.fillRect(x, y, rim, cell);
-  if (open(0, 1)) ctx.fillRect(x + cell - rim, y, rim, cell);
-}
-
-// The soft shadow a wall above or to the left of a floor tile throws onto
-// it (the light comes from the top left, as on the stones themselves).
-function drawWallShadow(ctx, row, col, x, y, cell) {
-  const reach = cell * WALL_SHADOW;
-  const fall = (x0, y0, x1, y1) => {
-    const g = ctx.createLinearGradient(x0, y0, x1, y1);
-    g.addColorStop(0, 'rgba(0, 0, 0, ' + WALL_SHADOW_STRENGTH + ')');
-    g.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = g;
-  };
-  if (state.floor.wallSet.has(key(row - 1, col))) {
-    fall(x, y, x, y + reach);
-    ctx.fillRect(x, y, cell, reach);
-  }
-  if (state.floor.wallSet.has(key(row, col - 1))) {
-    fall(x, y, x + reach, y);
-    ctx.fillRect(x, y, reach, cell);
-  }
-}
-
-// The boss light's pale blue mist on a lit floor tile (not walls, not
-// floor the player has never seen). Remembered floor shows it dimmed.
-function drawMist(ctx, row, col, x, y, cell) {
-  const strength = mistStrength(row, col);
-  if (!strength) return;
-  ctx.globalAlpha = strength;
-  const half = mistSprite.width / 2;
-  ctx.drawImage(mistSprite, x + cell / 2 - half, y + cell / 2 - half);
-  ctx.globalAlpha = 1;
-}
-
 // How strongly the boss mist shows on a tile this frame, from 0 (none) to
 // 1: only on lit floor (not walls, not floor the player has never seen),
-// dimmed on remembered floor, drifting over time. Both views draw with it.
+// dimmed on remembered floor, drifting over time. The isometric view draws with it.
 function mistStrength(row, col) {
   const k = key(row, col);
   if (!state.floor.bossLitSet.has(k) || state.floor.wallSet.has(k)) return 0;
@@ -401,8 +294,7 @@ function mistStrength(row, col) {
   return strength * (fog === 'dim' ? 1 - FOG_DIM_ALPHA : 1);
 }
 
-// Every glyph on the map, as a list both views draw from, so they always
-// show the same things: { kind, at, tile, glyph, look }. `at` is where it
+// Every glyph on the map, as a list the isometric view draws from: { kind, at, tile, glyph, look }. `at` is where it
 // shows this frame in tiles (between tiles while something slides), `tile`
 // the tile the rules have it on (where a slide ends), glyph is
 // null for the '?' of something too far to make out, and look holds the
@@ -462,7 +354,7 @@ function mapThings() {
       size: 'stairs', colour: colours.bright, glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
     });
   }
-  add('player', shownAt(PLAYER, f.playerRow, f.playerCol), DIRECTION_ARROWS[f.facing], { size: 'player' },
+  add('player', shownAt(PLAYER, f.playerRow, f.playerCol), t('term.player.symbol'), { size: 'player' },
     { row: f.playerRow, col: f.playerCol });
   f.encounters.forEach(e => {
     if (!isLit(e.row, e.col)) return;
@@ -483,19 +375,9 @@ function mapThings() {
   return things;
 }
 
-// Draws one glyph standing on its tile in the top-down view. `at` may fall
-// between tiles while something slides; a lift raises it up the screen.
-// Things outside the camera's window are skipped.
-function drawGlyph(ctx, cell, at, glyph, look) {
-  const vr = at.row - (look.lift || 0) - state.floor.camRow;
-  const vc = at.col - state.floor.camCol;
-  if (vr <= -1 || vr >= VIEWPORT_SIZE || vc <= -1 || vc >= VIEWPORT_SIZE) return;
-  paintGlyph(ctx, cell, (vc + 0.5) * cell, (vr + 0.5) * cell, glyph, look);
-}
-
 // Paints one glyph centred on (x, y) in canvas pixels, sized for a tile
-// `cell` pixels wide, with the terminal's soft phosphor glow. Both views
-// paint with it. A null glyph is the '?' of something too far to make
+// `cell` pixels wide, with the terminal's soft phosphor glow. The isometric
+// view paints with it. A null glyph is the '?' of something too far to make
 // out: dim, and without the hostile bloom or any animation.
 // Look options: size (a MAP_GLYPH_SIZES key), colour, alpha, bloom (the
 // strength of the glow behind a hostile glyph), warp ([scale x, scale y,
@@ -543,25 +425,6 @@ function paintGlyph(ctx, cell, x, y, glyph, { size, colour = colours.text, alpha
     ctx.fillRect((GLITCH_BAR.left - 0.5) * cell, (GLITCH_BAR.top - 0.5) * cell, GLITCH_BAR.width * cell, GLITCH_BAR.height * cell);
   }
   ctx.restore();
-}
-
-// The pulsing box around whatever the battle screen is fighting.
-function drawTargetBox(ctx, cell) {
-  const target = state.battle.selectedTarget;
-  if (!target || target.row === undefined) return;
-  const vr = target.row - state.floor.camRow;
-  const vc = target.col - state.floor.camCol;
-  if (vr < 0 || vr >= VIEWPORT_SIZE || vc < 0 || vc >= VIEWPORT_SIZE) return;
-  looping = true;
-  const line = Math.max(2, cell * 0.06);
-  ctx.globalAlpha = TARGET_PULSE[0] + (TARGET_PULSE[1] - TARGET_PULSE[0]) * pulse(MAP_ANIMATION_MS.target);
-  ctx.strokeStyle = colours.bright;
-  ctx.lineWidth = line;
-  ctx.shadowColor = 'rgba(' + colours.glowRgb + ', 0.5)';
-  ctx.shadowBlur = line * 3;
-  ctx.strokeRect(vc * cell + line / 2, vr * cell + line / 2, cell - line, cell - line);
-  ctx.shadowBlur = 0;
-  ctx.globalAlpha = 1;
 }
 
 // Where something shows this frame, in tiles: its own tile, or part way

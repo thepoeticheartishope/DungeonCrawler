@@ -4,8 +4,7 @@
 // bricks, hallways cobbles, crypt flagstones, library planks, flooded wet
 // stone, shrine inlay); the painters for each texture are here.
 //
-// mapview.js (top-down) and isoview.js (isometric) both call artAt() /
-// art() for a square texture and draw it: top-down as a square, isometric
+// isoview.js calls artAt() / art() for a square texture and draws it
 // mapped onto the floor's diamond and the faces of a block. Textures are
 // drawn once per size into small canvases and reused every frame.
 //
@@ -47,7 +46,6 @@ const SLAB_LAYOUTS = [
 const PAINTERS = {
   bricks: paintBricks,
   capstone: paintCap,
-  columnTop: paintPillarTop,
   columnSide: paintPillarSide,
   crate: paintCrate,
   cobbles: paintCobbles,
@@ -85,7 +83,7 @@ export function artAt(row, col, size) {
 }
 
 // The texture for one part of the map (a TILE_ART key: 'wall', 'wallTop',
-// 'pillarTop', 'pillarSide', 'box') on a tile, `size` pixels square. The
+// 'pillarSide', 'box') on a tile, `size` pixels square. The
 // tile's place picks its look. `shade` (0..1) darkens it, for a block's
 // faces in shadow: baked in here once, not filled over every face every
 // frame.
@@ -245,36 +243,6 @@ function paintCap(ctx, rand, variant, px) {
   ctx.fillRect(0, 0, 1, 1);
   stone(ctx, rand, GAP, GAP, 1 - GAP * 2, 1 - GAP * 2, between(rand, CAP_TONE), line);
   if (variant === 3) crack(ctx, rand, GAP, GAP, 1 - GAP * 2, 1 - GAP * 2, line);
-}
-
-// A pillar seen from above (top-down): a round column on a dark footing,
-// lit from the top left, with rings where its drums meet.
-function paintPillarTop(ctx, rand, variant, px) {
-  const line = 1 / px;
-  ctx.beginPath();
-  ctx.arc(0.53, 0.55, 0.42, 0, Math.PI * 2);
-  ctx.fillStyle = shadow(0.6);
-  ctx.fill();
-  const g = ctx.createRadialGradient(0.38, 0.38, 0.02, 0.5, 0.5, 0.4);
-  g.addColorStop(0, tone(0.45));
-  g.addColorStop(0.6, tone(0.24));
-  g.addColorStop(1, tone(0.12));
-  ctx.beginPath();
-  ctx.arc(0.5, 0.5, 0.38, 0, Math.PI * 2);
-  ctx.fillStyle = '#0b0e0f';
-  ctx.fill();
-  ctx.fillStyle = g;
-  ctx.fill();
-  ctx.lineWidth = line * 1.5;
-  ctx.strokeStyle = tone(0.55);
-  ctx.stroke();
-  [0.27, 0.16].forEach(r => {
-    ctx.beginPath();
-    ctx.arc(0.5, 0.5, r, 0, Math.PI * 2);
-    ctx.strokeStyle = shadow(0.4);
-    ctx.stroke();
-  });
-  specks(ctx, rand, 0.3, 0.3, 0.4, 0.4, line, 4 + variant);
 }
 
 // A pillar's side in the isometric view: stacked stone drums with

@@ -1,23 +1,10 @@
-// What the player can see and where the camera sits: the player's light
-// (visibleSet / sightSet / exploredSet), whether a tile can be made out
-// rather than shown as '?', and the camera offset. Rules only — no DOM
-// access here; mapview.js draws from what this writes.
+// What the player can see: the player's light (visibleSet / sightSet /
+// exploredSet) and whether a tile can be made out rather than shown as
+// '?'. Rules only — no DOM access here; mapview.js draws from what this
+// writes.
 
 import { state, key } from './state.js';
-import { PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, VIEWPORT_SIZE, REVEAL_DISTANCE } from './config.js';
-
-function clamp(v, lo, hi) {
-  return Math.max(lo, Math.min(v, hi));
-}
-
-// Centers the viewport on the player, clamped so it never shows past the
-// room's edge. Call this any time the player moves (or a room loads),
-// before the map is drawn — mapview.js reads state.floor.camRow/camCol to
-// know which world tile belongs in which cell.
-export function updateCamera() {
-  state.floor.camRow = clamp(state.floor.playerRow - Math.floor(VIEWPORT_SIZE / 2), 0, state.floor.GRID_SIZE - VIEWPORT_SIZE);
-  state.floor.camCol = clamp(state.floor.playerCol - Math.floor(VIEWPORT_SIZE / 2), 0, state.floor.GRID_SIZE - VIEWPORT_SIZE);
-}
+import { PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE } from './config.js';
 
 // Facing vectors for the cone test below.
 export const FACING_VECTORS = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] };

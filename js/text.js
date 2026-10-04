@@ -61,8 +61,7 @@ export const TEXT = {
   'term.exchange': 'THE UNFOLDING', // Timothy's name; code name exchange (js/exchange.js)
   'term.exchange.symbol': '8', // a loop folded over itself
   'term.box.symbol': '&',
-  // The player on the isometric map (js/isoview.js); top-down shows the
-  // facing arrow instead (DIRECTION_ARROWS in config.js).
+  // The player's glyph (the isometric map draws a stick man in its place).
   'term.player.symbol': '@',
   // What anything further than REVEAL_DISTANCE (config.js) shows as.
   'term.unknown.symbol': '?',

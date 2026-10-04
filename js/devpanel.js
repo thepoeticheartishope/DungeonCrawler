@@ -1,15 +1,14 @@
-// DEV panel in the status bar: Skip room, Auto-win, Fog and View toggles, for
+// DEV panel in the status bar: Skip room, Auto-win, Fog and Camera toggles, for
 // testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw } from './mapview.js';
-import { renderViewShape, renderRoomHints } from './render.js';
+import { renderRoomHints } from './render.js';
 
 const devToggleBtn = document.getElementById('devToggleBtn');
 const devPanel = document.getElementById('devPanel');
 const devSkipBtn = document.getElementById('devSkipBtn');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
-const devViewBtn = document.getElementById('devViewBtn');
 const devCameraBtn = document.getElementById('devCameraBtn');
 
 export function initDevPanel({
@@ -56,18 +55,6 @@ export function initDevPanel({
     state.settings.fogEnabled = !state.settings.fogEnabled;
     devFogBtn.textContent = state.settings.fogEnabled ? 'Fog: ON (dev)' : 'Fog: OFF (dev)';
     requestMapDraw();
-  });
-
-  // Dev tool: switch the map between isometric (the default since plan
-  // step 4b) and the old top-down view, kept for comparing and testing.
-  devViewBtn.addEventListener('click', () => {
-    state.settings.isoView = !state.settings.isoView;
-    devViewBtn.textContent = state.settings.isoView ? 'View: isometric (dev)' : 'View: top-down (dev)';
-    devViewBtn.setAttribute('aria-pressed', String(state.settings.isoView));
-    renderViewShape();
-    requestMapDraw();
-    // The edge glow points along the screen, which the two views lay out differently.
-    renderRoomHints();
   });
 
   // Dev tool: the isometric camera glides after the player, or stays locked

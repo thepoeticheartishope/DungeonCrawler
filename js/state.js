@@ -25,7 +25,6 @@ export const state = {
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
-    isoView: true,          // draw the map isometric (js/isoview.js), the default; DEV -> View switches to top-down
     isoCameraGlide: true,   // dev toggle: the isometric camera glides after the player (false: locked to them)
     usingSample: true, // false once the person loads their own list
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
@@ -62,8 +61,6 @@ export const state = {
     playerRow: undefined,
     playerCol: undefined,
     facing: 'N', // 'N'|'S'|'E'|'W' — which way the player is looking; gates the fog-of-war cone
-    camRow: 0, // world-space row/col of the viewport's top-left corner
-    camCol: 0,
     wallSet: new Set(),
 
     visibleSet: new Set(),  // tiles lit right now, from the player's spot
