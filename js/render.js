@@ -13,9 +13,11 @@ import { whatBlocks } from './passage.js';
 import { FACING_VECTORS, shootBlock, aimChance } from './sight.js';
 import { categoryLabel } from './quiz.js';
 import { isoScreenShare, isoScreenOffset } from './isoview.js';
+import { clockReading } from './realclock.js';
 import { t } from './text.js';
 
 let els = {};
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 export function initRender(elements) {
   els = elements;
@@ -125,6 +127,22 @@ export function renderHud() {
   els.roomOfEl.style.display = state.run.resting ? 'none' : '';
   els.roomTotalEl.textContent = state.run.order.length;
   renderGunHud();
+}
+
+// The NEXT meter (Real time only): how long until the world next moves.
+// Its edge runs slowly across and reaches the far end as the world moves,
+// filling the meter one step and emptying it the next, so it never jumps.
+// Dim while the clock is paused (`running` false). Under reduced motion it
+// moves in still quarter steps instead of gliding. Called on each clock
+// poll (main.js clockTick).
+export function renderClock(running) {
+  els.clockStat.hidden = !state.settings.realTime;
+  if (!state.settings.realTime) return;
+  const { share, filling } = clockReading();
+  const edge = reducedMotion.matches ? Math.floor(share * 4) / 4 : share;
+  els.clockFill.style.left = (filling ? 0 : edge) * 100 + '%';
+  els.clockFill.style.width = (filling ? edge : 1 - edge) * 100 + '%';
+  els.clockStat.classList.toggle('clock-held', !running);
 }
 
 // The gun's part of the HUD (gun plan step 6), shown only with DEV ->

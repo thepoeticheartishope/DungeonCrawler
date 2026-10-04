@@ -1,5 +1,6 @@
 // Unit tests for the real-time clock (realclock.js pollClock / resetClock):
 // a tick every REALTIME_STEP_MS of running time, paused time never counts,
+// the NEXT meter (clockReading) turns direction at each tick,
 // and a stalled page can't fire ticks back to back.
 //
 // Run: node --test tests/*.test.mjs
@@ -8,7 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { REALTIME_STEP_MS, REALTIME_POLL_MS } from '../js/config.js';
-import { pollClock, resetClock } from '../js/realclock.js';
+import { pollClock, resetClock, clockReading } from '../js/realclock.js';
 
 // Polls every REALTIME_POLL_MS from `start` for `ms`, all running or all
 // paused. Returns how many ticks came and the time it ended at.
@@ -52,4 +53,15 @@ test('resetClock gives a new floor the full step before the world moves', () => 
   resetClock();
   const after = run(now, REALTIME_STEP_MS - REALTIME_POLL_MS * 2, true);
   assert.equal(after.ticks, 0);
+});
+
+test('the NEXT meter fills one step and empties the next, never jumping', () => {
+  resetClock();
+  pollClock(0, true);
+  assert.deepEqual(clockReading(), { share: 0, filling: true });
+  const first = run(REALTIME_POLL_MS, REALTIME_STEP_MS, true);
+  assert.equal(first.ticks, 1);
+  assert.equal(clockReading().filling, false);
+  run(first.now, REALTIME_STEP_MS, true);
+  assert.equal(clockReading().filling, true);
 });

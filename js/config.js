@@ -489,3 +489,7 @@ export const ROOM_LOG_LINES = 5;
 // time in polls of REALTIME_POLL_MS, and only while the clock may run.
 export const REALTIME_STEP_MS = 2500;
 export const REALTIME_POLL_MS = 100;
+// With Real time on, the player can take a step at most this often (about
+// four a second), so holding an arrow can't outrun the clock. An arrow
+// pressed sooner is ignored; the gun isn't held back.
+export const REALTIME_WALK_MS = 250;
