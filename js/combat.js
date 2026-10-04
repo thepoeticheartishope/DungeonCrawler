@@ -6,15 +6,20 @@ import { state, key } from './state.js';
 import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS } from './config.js';
 import { advanceLight } from './light.js';
 import { computeVisibility } from './sight.js';
+import { minionStrike } from './gun.js';
 
 export function isAdjacentToPlayer(entity) {
   return Math.abs(entity.row - state.floor.playerRow) + Math.abs(entity.col - state.floor.playerCol) === 1;
 }
 
+// Everything next to the player that opens the battle screen. With the
+// gun on (DEV -> Combat), minions are fought on the map, so they're left
+// out; the hunter, the boss and items still open it.
 export function findAdjacentEnemies() {
   const result = [];
   if (state.floor.boss && isAdjacentToPlayer(state.floor.boss)) result.push(state.floor.boss);
   for (const m of state.floor.minions) {
+    if (state.settings.gunCombat && m.kind === 'minion') continue;
     if (isAdjacentToPlayer(m)) result.push(m);
   }
   if (state.floor.chest && isAdjacentToPlayer(state.floor.chest)) result.push(state.floor.chest);
@@ -189,16 +194,19 @@ function wanderStep(m) {
 // page element; returns the events of the turn, in the order they happened,
 // for main.js to draw: { type: 'hunterWoke', hunter }, { type: 'minionMoved',
 // minion, from } (from = the tile it left, so the map can slide it) and
-// { type: 'minionEngaged', minion }.
+// { type: 'minionEngaged', minion }; with the gun on, a minion's strike
+// instead (gun.js minionStrike: minionStruck, knockedBack, signalLost).
 export function advanceMonsters() {
   state.run.turnCount++;
   advanceLight();
 
-  // Walking around is safe: a minion that reaches the player never deals
-  // damage here. It engages instead — it becomes the target, which puts the
-  // battle screen up, and hearts are only ever lost by missing a question.
-  // Minions roam freely and only give chase once the player is within
-  // MINION_CHASE_RANGE walkable steps.
+  // In classic combat walking around is safe: a minion that reaches the
+  // player never deals damage. It engages instead — it becomes the target,
+  // which puts the battle screen up, and hearts are only ever lost by
+  // missing a question. With the gun on, it strikes, and slow kinds only
+  // move every MINION_KINDS moveEvery turns. Minions roam freely and only
+  // give chase once the player is within MINION_CHASE_RANGE walkable steps.
+  const gun = state.settings.gunCombat;
   const events = [];
   if (state.floor.darkness) {
     state.floor.darkTurns++;
@@ -210,6 +218,10 @@ export function advanceMonsters() {
       m.rest--;
       continue;
     }
+    // A strike took the last stability: the run is over, nothing else moves.
+    if (state.run.hearts <= 0) break;
+    const stats = MINION_KINDS[m.minionKind];
+    if (gun && stats && state.run.turnCount % stats.moveEvery !== 0) continue;
     const path = bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blockedTilesFor(m));
     // In the darkness after the boss falls, every minion hunts, from anywhere.
     const chasing = path && (state.floor.darkness || path.length - 1 <= MINION_CHASE_RANGE);
@@ -217,7 +229,9 @@ export function advanceMonsters() {
     if (next) {
       const isPlayerTile = next.row === state.floor.playerRow && next.col === state.floor.playerCol;
 
-      if (isPlayerTile) {
+      if (isPlayerTile && gun && m.kind === 'minion') {
+        events.push(...minionStrike(m));
+      } else if (isPlayerTile) {
         // Engage from where it stands, never occupying the player's tile.
         if (!state.battle.selectedTarget) state.battle.selectedTarget = m;
         events.push({ type: 'minionEngaged', minion: m });

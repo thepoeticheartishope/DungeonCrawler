@@ -4,8 +4,8 @@
 //
 // Starts a static server for this repo, then drives the game in a real
 // browser via Playwright (imported from ~/Repo/codecraft-classroom/node_modules
-// — do NOT add Playwright or node_modules to this repo) through two runs,
-// both loading the built-in "Bible Quiz Bowl" set with Auto-win on:
+// — do NOT add Playwright or node_modules to this repo) through three runs,
+// all loading the built-in "Bible Quiz Bowl" set with Auto-win on:
 //
 //   1. Skip-room run: one manual step, then "Skip room (dev)" repeatedly to
 //      clear the floor, asserting the win or lose screen is reached.
@@ -15,9 +15,13 @@
 //      walks with the arrow keys and "Skip turn" until a minion
 //      engages and the battle screen appears, then lets Auto-win settle the
 //      fight, asserting an ACCEPTED. line appeared in the encounter log and
-//      the game is back on the room screen afterward.
+//      the game is back on the room screen afterward (classic combat).
+//   3. Gun run: DEV -> Combat on gun, then wanders as run 2 does, pressing
+//      R to reload and F to fire (Auto-win answers the reload and stops the
+//      damage bar on the weak point) until a reload loaded rounds and a
+//      shot killed a minion.
 //
-// Both runs must produce zero console errors or page errors. Exits non-zero
+// Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
 
 import { createRequire } from 'node:module';
@@ -273,6 +277,107 @@ async function runBattle(browser, url) {
   return { ok: true, detail: 'a fight settled (ACCEPTED. in the log) and returned to the room screen', consoleErrors, pageErrors };
 }
 
+// ---- Run 3: gun ----
+
+// Installs page-side watchers (test-only) that record whether a reload
+// loaded rounds and whether a shot killed a minion, by the start of their
+// room notes (js/text.js 'gun.reloaded' / 'gun.killed', read from the page
+// so a reworded line doesn't break the test).
+async function installGunWatchers(page) {
+  await page.evaluate(async () => {
+    const { t } = await import('./js/text.js');
+    const lead = (k, vars) => t(k, vars).split('@@')[0];
+    const reloaded = lead('gun.reloaded', { rounds: '@@' });
+    const killed = lead('gun.killed', { gold: '@@' });
+    window.__smokeReloaded = false;
+    window.__smokeKilled = false;
+    const feed = document.getElementById('roomFeedback');
+    new MutationObserver(() => {
+      const text = feed.textContent;
+      if (text.includes(reloaded)) window.__smokeReloaded = true;
+      if (text.includes(killed)) window.__smokeKilled = true;
+    }).observe(feed, { childList: true, subtree: true, characterData: true });
+  });
+}
+
+const GUN_MAX_STEPS = 500;
+
+// One attempt: a fresh run with DEV -> Combat on gun and Auto-win on (it
+// answers reloads right and stops the damage bar on the weak point). Wander
+// as the battle run does; press F whenever the HUD shows an aim %, and R
+// every few steps while the chamber isn't full, until a reload loaded and
+// a shot killed a minion.
+async function attemptGun(page, url) {
+  await loadPageAndSet(page, url);
+  await startGameAndWaitForRoom(page);
+  await installGunWatchers(page);
+  await turnOnAutoWin(page);
+  await page.click('#devCombatBtn');
+  await page.click('#devSkipBtn');
+  await page.waitForTimeout(200);
+
+  let dir = 0;
+  for (let i = 0; i < GUN_MAX_STEPS; i++) {
+    const status = await page.evaluate(() => ({
+      reloaded: window.__smokeReloaded === true,
+      killed: window.__smokeKilled === true,
+      inRoom: document.getElementById('roomScreen').classList.contains('show'),
+      lost: document.getElementById('loseScreen').classList.contains('show'),
+      panel: ['reloadPanel', 'mapQuestionPanel', 'aimPanel'].some(id => !document.getElementById(id).hidden),
+      canFire: !document.getElementById('btnFire').disabled && document.getElementById('gunAim').textContent.includes('%'),
+      canReload: !document.getElementById('btnReload').disabled,
+    }));
+    if (status.reloaded && status.killed && status.inRoom && !status.panel) return true;
+    if (status.lost) return false;
+    // A panel over the map (Auto-win answers it), or the battle screen
+    // (the boss, the hunter or an item; Auto-win plays it out).
+    if (status.panel || !status.inRoom) {
+      await page.waitForTimeout(250);
+      continue;
+    }
+    if (status.canFire) {
+      await page.keyboard.press('f');
+    } else if (status.canReload && i % 6 === 5) {
+      await page.keyboard.press('r');
+    } else {
+      const blocked = await page.evaluate(
+        () => document.getElementById('roomFeedback').innerHTML.includes('block-msg')
+      );
+      if (blocked) dir = (dir + 1) % ARROW_KEYS.length;
+      await page.keyboard.press(i % 5 === 4 ? '.' : ARROW_KEYS[dir]);
+    }
+    await page.waitForTimeout(40);
+  }
+  return false;
+}
+
+async function runGun(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+
+  const MAX_RESTARTS = 2;
+  let done = false;
+  for (let attempt = 0; attempt <= MAX_RESTARTS && !done; attempt++) {
+    done = await attemptGun(page, url);
+  }
+
+  await context.close();
+
+  if (!done) {
+    return {
+      ok: false,
+      reason: `no reload and kill within ${GUN_MAX_STEPS} steps, after ${MAX_RESTARTS + 1} attempts`,
+      consoleErrors,
+      pageErrors,
+    };
+  }
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'a reload loaded and a shot killed a minion on the map', consoleErrors, pageErrors };
+}
+
 // ---- Main ----
 
 async function main() {
@@ -296,11 +401,12 @@ async function main() {
     try {
       const skipRoomResult = await runSkipRoom(browser, url);
       const battleResult = await runBattle(browser, url);
+      const gunResult = await runGun(browser, url);
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult]]) {
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult]]) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {

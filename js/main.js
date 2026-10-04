@@ -26,7 +26,7 @@ import { settleAnswer } from './answers.js';
 import { initSetLoader } from './setloader.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapTap, glyphOf } from './mapview.js';
-import { pickTarget, fire, settleShot, reloadOffers, settleReload } from './gun.js';
+import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionOnMap, showDamageBar, closeMapPanels, mapPanelShown } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
@@ -90,11 +90,21 @@ const dpadButtons = {
   W: document.getElementById('btnW'),
   Skip: document.getElementById('btnSkip')
 };
+const btnReload = document.getElementById('btnReload');
+const btnFire = document.getElementById('btnFire');
 
 initRender({
   startScreen, introGlitch, roomScreen, battleScreen, exchangeScreen, winScreen, loseScreen,
   heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightEyeEl, lightHintEls, dpadButtons,
+  gunRoundsStat: document.getElementById('gunRoundsStat'),
+  gunTargetStat: document.getElementById('gunTargetStat'),
+  gunAimStat: document.getElementById('gunAimStat'),
+  gunRounds: document.getElementById('gunRounds'),
+  gunTarget: document.getElementById('gunTarget'),
+  gunAim: document.getElementById('gunAim'),
+  gunActions: document.getElementById('gunActions'),
+  btnReload, btnFire,
 });
 initMapView(document.getElementById('mapCanvas'));
 onMapTap(tapMap);
@@ -108,30 +118,97 @@ applyStaticText();
 initSetLoader();
 initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter, devTestShot, devTestReload, endGunTests,
-  battleScreen, wagerRow,
+  gunCombatChanged, autoWinGun, battleScreen, wagerRow,
 });
 
 // A tap on the map. With the gun on (DEV -> Combat), it picks the gun's
-// target: the minion on that tile, or none. Costs no turn.
+// target: the minion on that tile, or none. Costs no turn. Tapping the
+// target again fires at it.
 function tapMap(tile) {
-  if (!state.settings.gunCombat || state.run.turnLocked || state.run.runEnded) return;
+  if (!gunReady()) return;
+  const target = state.floor.gunTarget;
+  if (target && target.row === tile.row && target.col === tile.col) { fireGun(); return; }
   drawEvents(pickTarget(tile));
 }
 
+// Whether the gun can be used right now: gun combat on, the room screen
+// up with no gun panel over it, and no turn in progress.
+function gunReady() {
+  return state.settings.gunCombat && !state.run.turnLocked && !state.run.runEnded &&
+    roomScreen.classList.contains('show') && !mapPanelShown();
+}
+
+// True while the gun panel that's open came from a DEV test button, whose
+// result is drawn without spending a turn.
+let gunTest = false;
+
+// What a reload or a shot comes to once its panel closes: a real one is
+// a turn (minions move, the light spreads, a minion may strike); a DEV
+// test only draws.
+function finishGunAction(events) {
+  if (!gunTest) { applyTurnOutcome(events); return; }
+  const note = drawEvents(events);
+  if (note.text) showRoomNote(note.cls, note.text);
+}
+
+// FIRE (button, F, or tapping the target again): shoots the gun's target
+// (gun.js fire). A blocked shot only says why and costs nothing; a miss,
+// or a landed shot on the hunter, is the turn; a landed shot on a minion
+// opens the damage bar first, and the turn is spent when it stops.
+function fireGun() {
+  if (!gunReady()) return;
+  const events = fire(state.floor.gunTarget);
+  if (events.some(e => e.type === 'fireBlocked')) {
+    const note = drawEvents(events);
+    showRoomNote(note.cls, note.text);
+    return;
+  }
+  gunTest = false;
+  state.run.turnLocked = true;
+  if (state.battle.aim) {
+    drawEvents(events);
+    showDamageBar(state.battle.aim);
+    return;
+  }
+  applyTurnOutcome(events);
+  state.run.turnLocked = false;
+}
+
+// T: the gun's next target in reach. Costs no turn.
+function nextGunTarget() {
+  if (!gunReady()) return;
+  const note = drawEvents(cycleTarget());
+  if (note.text) showRoomNote(note.cls, note.text);
+}
+
+// RELOAD (button or R): the reload panel over the map (gun.js
+// reloadOffers). Picking an offer asks its question; the answer is the
+// turn. Cancelling costs nothing.
+function reloadGun() {
+  if (!gunReady()) return;
+  openReload(false);
+}
+
+// Opens the reload panel, or says why not (a full chamber).
+function openReload(test) {
+  const offered = reloadOffers();
+  if (offered.block) { showRoomNote('block-msg', t('gun.block.' + offered.block)); return; }
+  gunTest = test;
+  state.run.turnLocked = true;
+  showReloadPanel(offered);
+}
+
 // DEV -> Test shot: fires at the gun's target through the real rules
-// (gun.js); a landed shot opens the damage bar over the map (gunpanels.js),
-// so the gun's drawing and panels can be checked before step 6 puts the
-// gun into play. Fills an empty chamber first. Spends no turn: minions
-// don't move and the light doesn't spread.
+// (gun.js), without spending a turn: minions don't move and the light
+// doesn't spread. Fills an empty chamber first.
 function devTestShot() {
-  if (!state.settings.gunCombat || state.run.turnLocked || state.run.runEnded) return;
+  if (!gunReady()) return;
   if (state.run.ammo <= 0) state.run.ammo = GUN_CHAMBER;
   const target = state.floor.minions.includes(state.floor.gunTarget) ? state.floor.gunTarget : null;
-  if (!state.battle.aim) {
-    const note = drawEvents(fire(target));
-    if (note.text) showRoomNote(note.cls, note.text);
-  }
+  const note = drawEvents(fire(target));
+  if (note.text) showRoomNote(note.cls, note.text);
   if (!state.battle.aim) return;
+  gunTest = true;
   state.run.turnLocked = true;
   showDamageBar(state.battle.aim);
 }
@@ -139,32 +216,32 @@ function devTestShot() {
 // The player stopped the damage bar at `barPosition`: the shot's damage.
 function stopDamageBar(barPosition) {
   closeMapPanels();
+  finishGunAction(settleShot(barPosition));
   state.run.turnLocked = false;
-  const note = drawEvents(settleShot(barPosition));
-  if (note.text) showRoomNote(note.cls, note.text);
 }
 
-// DEV -> Test reload: the real reload (gun.js reloadOffers / settleReload)
-// through the panels over the map: pick an offer, answer its question.
-// Spends no turn, like Test shot.
+// DEV -> Test reload: the real reload through the panels over the map,
+// without spending a turn, like Test shot.
 function devTestReload() {
-  if (!state.settings.gunCombat || state.run.turnLocked || state.run.runEnded) return;
-  const offered = reloadOffers();
-  if (offered.block) { showRoomNote('block-msg', t('gun.block.' + offered.block)); return; }
-  state.run.turnLocked = true;
-  showReloadPanel(offered);
+  if (!gunReady()) return;
+  openReload(true);
 }
+
+// What the question panel's input means over the map, for the reload
+// that's open (set by pickReload; DEV -> Auto-win answers through it).
+let mapAnswers = null;
 
 // A reload offer was picked: its question, with its modifiers, over the
 // map. Any answer (or the Timer running out) settles the reload.
 function pickReload(offer, category) {
   const settle = (isCorrect) => endReload(() => settleReload(isCorrect, offer));
-  showQuestionOnMap({
+  mapAnswers = {
     onChoice: choice => settle(matchesAnswer(choice)),
     onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
     onTimeout: () => settle(false),
     log: text => showRoomNote('', text),
-  });
+  };
+  showQuestionOnMap(mapAnswers);
   setQuestion(pickQuestion(state.battle.currentQuestion, category.pool));
   offer.modifiers.forEach(applyModifier);
 }
@@ -175,10 +252,9 @@ function endReload(settle) {
   clearModifier();
   closeMapPanels();
   mountBattleQuestion();
+  mapAnswers = null;
+  if (settle) finishGunAction(settle());
   state.run.turnLocked = false;
-  if (!settle) return;
-  const note = drawEvents(settle());
-  if (note.text) showRoomNote(note.cls, note.text);
 }
 
 // DEV -> Combat back to classic: close whatever gun panel is open, and
@@ -186,6 +262,21 @@ function endReload(settle) {
 function endGunTests() {
   if (!mapPanelShown()) return;
   endReload();
+}
+
+// DEV -> Combat switched: the gun's target and the HUD catch up.
+function gunCombatChanged() {
+  drawEvents(state.settings.gunCombat ? refreshGunTarget() : []);
+}
+
+// DEV -> Auto-win, with a gun panel open: picks the first reload, answers
+// its question right, and stops the damage bar on the weak point.
+// Walking, reloading and firing stay the player's.
+function autoWinGun() {
+  const shown = mapPanelShown();
+  if (shown === 'reload') pickReload(reloadOffers().offers[0], reloadCategory());
+  else if (shown === 'question' && mapAnswers) mapAnswers.onChoice(state.battle.currentQuestion.meaning);
+  else if (shown === 'aim') stopDamageBar(0.5);
 }
 
 function nextQuestion() {
@@ -220,11 +311,14 @@ function flashBattleResult(isCorrect) {
   battleGlyphEl.classList.remove('flash-correct', 'flash-wrong');
   void battleGlyphEl.offsetWidth;
   battleGlyphEl.classList.add(cls);
-  if (!isCorrect) {
-    heartsEl.classList.remove('hit-flash');
-    void heartsEl.offsetWidth;
-    heartsEl.classList.add('hit-flash');
-  }
+  if (!isCorrect) flashHearts();
+}
+
+// The stability count flashes when it drops: a miss, or a minion's strike.
+function flashHearts() {
+  heartsEl.classList.remove('hit-flash');
+  void heartsEl.offsetWidth;
+  heartsEl.classList.add('hit-flash');
 }
 
 // Scrambles `text` into glitch characters, then resolves it left to right —
@@ -534,6 +628,7 @@ function loadRoom(restKind) {
 // Puts the floor buildFloor() made on the page: the map, hints, HUD, and
 // a fresh room screen.
 function drawFloor() {
+  if (state.settings.gunCombat) refreshGunTarget();
   renderHud();
   // Per-room wording overrides (text.js AREAS) apply from here on.
   setTextArea(state.run.roomIndex + 1);
@@ -571,6 +666,9 @@ function setControlsEnabled(enabled) {
   answerInput.disabled = !enabled;
   attackBtn.disabled = !enabled;
   Object.values(dpadButtons).forEach(b => b.disabled = !enabled);
+  // RELOAD and FIRE also depend on the chamber, which renderHud knows.
+  if (enabled) renderHud();
+  else { btnReload.disabled = true; btnFire.disabled = true; }
   mcOptionsEl.querySelectorAll('button').forEach(b => b.disabled = !enabled);
   choiceListEl.querySelectorAll('button').forEach(b => b.disabled = !enabled);
   continueBtn.disabled = !enabled;
@@ -599,11 +697,23 @@ function showRoomNote(cls, text) {
 }
 
 // A spent turn: the player's events plus the monsters' turn, drawn once,
-// then the room note from all of them (or the run ends in the light).
+// then the room note from all of them (or the run ends in the light, or,
+// with the gun on, to a minion's strike). With the gun on, its target
+// catches up with where everything is now.
 function applyTurnOutcome(events) {
-  const note = drawEvents(events.concat(advanceMonsters()));
+  const turn = events.concat(advanceMonsters());
+  if (state.settings.gunCombat) turn.push(...refreshGunTarget());
+  const note = drawEvents(turn);
   if (lightConsumed()) {
     loseToLight();
+    return;
+  }
+  if (turn.some(e => e.type === 'signalLost')) {
+    state.run.runEnded = true;
+    showRoomNote('warn-msg', note.text);
+    setControlsEnabled(false);
+    stopTimer();
+    setTimeout(endLose, 900);
     return;
   }
   syncQuestionForTarget();
@@ -736,34 +846,48 @@ function drawEvents(events) {
         }
         break;
       case 'goldGained':
+        if (e.from === 'kill') { parts.push(t('gun.killed', { gold: e.amount })); break; }
         logLine(e.from === 'encounter'
           ? t('log.encounter.mastered', { category: e.category ? categoryLabel(e.category) : '', gold: e.amount })
           : t(e.from === 'chest' ? 'log.chest.opened' : 'log.box.gold', { gold: e.amount }), 'bright');
         break;
-      // The gun (gun plan). Only DEV -> Test shot fires it so far; step 6
-      // adds the log lines. A landed shot flies once the damage bar stops.
+      // The gun (gun plan): room notes, and the map's effects. A landed
+      // shot flies once the damage bar stops.
       case 'fireBlocked':
         cls = 'block-msg';
         parts.push(t('gun.block.' + e.reason));
         break;
       case 'shotMissed':
         shotOnMap(e.target, true);
+        parts.push(t('gun.missed'));
         break;
       case 'shotGrazed':
         shotOnMap(e.minion, false);
+        parts.push(t('gun.grazed'));
         break;
       case 'minionHurt':
         shotOnMap(e.minion, false);
         hurtOnMap(e.minion);
+        parts.push(t(e.weakPoint ? 'gun.weakPoint' : 'gun.hit'));
         break;
       case 'limbLost':
         limbOffOnMap(e.minion);
+        parts.push(t('gun.limbLost'));
         break;
       case 'minionKilled':
         deathOnMap(e.minion);
         break;
       case 'hunterStaggered':
         shotOnMap(e.hunter, false);
+        parts.push(t('gun.hunterStaggered'));
+        break;
+      case 'minionStruck':
+        flashHearts();
+        cls = 'warn-msg';
+        parts.push(t('gun.struck', { cost: e.cost }));
+        break;
+      case 'knockedBack':
+        slideOnMap(e.minion, e.from);
         break;
       case 'reloaded':
         parts.push(t('gun.reloaded', { rounds: e.rounds }));
@@ -932,6 +1056,8 @@ function mountBattleQuestion() {
 mountBattleQuestion();
 
 continueBtn.addEventListener('click', leaveEncounter);
+btnReload.addEventListener('click', reloadGun);
+btnFire.addEventListener('click', fireGun);
 
 initDpad({
   buttons: dpadButtons, movePlayer, skipTurn,
@@ -939,8 +1065,10 @@ initDpad({
 });
 
 // Arrow-key support on desktop, ignored while typing in the answer box.
+// With the gun on: R reloads, F fires, T picks the next target, . waits.
 // Letter and number keys answer a question shown over the map, unless the
-// gun panels already used the key (picking a reload with 1-3).
+// gun panels already used the key (picking a reload with 1-3, or F / Space
+// stopping the damage bar).
 document.addEventListener('keydown', (e) => {
   if (document.activeElement === answerInput || e.defaultPrevented) return;
   if (!roomScreen.classList.contains('show')) return;
@@ -948,6 +1076,10 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'ArrowDown') { e.preventDefault(); movePlayer(1, 0); }
   else if (e.key === 'ArrowLeft') { e.preventDefault(); movePlayer(0, -1); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(0, 1); }
+  else if (gunReady() && (e.key === 'r' || e.key === 'R')) { e.preventDefault(); reloadGun(); }
+  else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); fireGun(); }
+  else if (gunReady() && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
+  else if (gunReady() && e.key === '.') { e.preventDefault(); skipTurn(); }
   else if (mapPanelShown() === 'question' && state.settings.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {
     const idxMap = { 1: 0, a: 0, 2: 1, b: 1, 3: 2, c: 2, 4: 3, d: 3 };
     const idx = idxMap[e.key.toLowerCase()];

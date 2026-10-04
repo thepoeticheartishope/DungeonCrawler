@@ -16,6 +16,7 @@ const devReloadBtn = document.getElementById('devReloadBtn');
 
 export function initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter, devTestShot, devTestReload, endGunTests,
+  gunCombatChanged, autoWinGun,
   battleScreen, wagerRow,
 }) {
   devToggleBtn.addEventListener('click', () => {
@@ -32,11 +33,14 @@ export function initDevPanel({
   // Dev tool: while on, every encounter plays itself out — the first query
   // category is picked, the correct answer given, and CONTINUE pressed — one
   // step every AUTO_WIN_STEP_MS so the log stays readable. Walking stays
-  // manual, so the boss light, minions and darkness behave as usual.
+  // manual, so the boss light, minions and darkness behave as usual. With
+  // the gun on, an open reload is answered right and the damage bar stops
+  // on the weak point (main.js autoWinGun); RELOAD and FIRE stay manual.
   const AUTO_WIN_STEP_MS = 300;
   let autoWinTimer = null;
 
   function autoWinStep() {
+    if (state.settings.gunCombat && !battleScreen.classList.contains('show')) { autoWinGun(); return; }
     if (!battleScreen.classList.contains('show') || state.run.turnLocked || state.run.runEnded) return;
     if (state.battle.battlePhase === 'choosing') chooseCategory(0);
     else if (!wagerRow.hidden) placeWager(1);
@@ -70,10 +74,10 @@ export function initDevPanel({
     renderRoomHints();
   });
 
-  // Dev tool (gun plan): classic combat, or the gun on the map. For now it
-  // only switches the map's drawing (the gun, its reach, the target picked
-  // by a tap) and shows Test shot and Test reload; step 6 puts the gun's
-  // rules behind it.
+  // Dev tool (gun plan): classic combat, or the gun on the map. With the
+  // gun, minions no longer open the battle screen: they strike when they
+  // reach the player, and are fought with RELOAD and FIRE (main.js), each a
+  // turn. It also shows Test shot and Test reload, which spend no turn.
   // Turning it off drops the target and any shot waiting for the damage bar,
   // and closes a gun panel left open over the map.
   devCombatBtn.addEventListener('click', () => {
@@ -88,6 +92,7 @@ export function initDevPanel({
     devShotBtn.hidden = !on;
     devReloadBtn.hidden = !on;
     if (!on) endGunTests();
+    gunCombatChanged();
     requestMapDraw();
     refreshInspector();
   });

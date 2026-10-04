@@ -7,10 +7,10 @@
 // of each one threading them through as parameters.
 
 import { state } from './state.js';
-import { BOSS_HP } from './config.js';
+import { BOSS_HP, GUN_CHAMBER, MINION_KINDS } from './config.js';
 import { lightProgress } from './light.js';
 import { whatBlocks } from './passage.js';
-import { FACING_VECTORS } from './sight.js';
+import { FACING_VECTORS, shootBlock, aimChance } from './sight.js';
 import { categoryLabel } from './quiz.js';
 import { isoScreenShare, isoScreenOffset } from './isoview.js';
 import { t } from './text.js';
@@ -124,6 +124,34 @@ export function renderHud() {
   els.roomNumEl.textContent = state.run.resting ? t('stat.rest') : state.run.roomIndex + 1;
   els.roomOfEl.style.display = state.run.resting ? 'none' : '';
   els.roomTotalEl.textContent = state.run.order.length;
+  renderGunHud();
+}
+
+// The gun's part of the HUD (gun plan step 6), shown only with DEV ->
+// Combat on gun: rounds in the chamber, the target and its hp, the aim %
+// (or '-' when the target can't be shot), and whether RELOAD and FIRE
+// can be pressed. Part of renderHud, the one writer of the HUD.
+function renderGunHud() {
+  const on = state.settings.gunCombat;
+  [els.gunRoundsStat, els.gunTargetStat, els.gunAimStat, els.gunActions].forEach(el => { el.hidden = !on; });
+  if (!on) return;
+  const ammo = state.run.ammo;
+  els.gunRounds.textContent = '#'.repeat(ammo) + '-'.repeat(Math.max(GUN_CHAMBER - ammo, 0));
+  const target = state.floor.gunTarget;
+  els.gunTarget.textContent = target ? gunTargetName(target) : t('stat.noTarget');
+  els.gunAim.textContent = target && !shootBlock(target)
+    ? t('gun.aimChance', { chance: Math.round(aimChance(target) * 100) })
+    : t('stat.noTarget');
+  els.btnReload.disabled = state.run.runEnded || ammo >= GUN_CHAMBER;
+  els.btnFire.disabled = state.run.runEnded || ammo <= 0;
+}
+
+// The HUD's name for the gun's target: a minion's kind and its hp (# left,
+// - lost), or the hunter, which has no hp.
+function gunTargetName(target) {
+  if (target.kind === 'hunter') return t('term.hunter');
+  const hp = MINION_KINDS[target.minionKind].hp;
+  return t('minionKind.' + target.minionKind) + ' ' + '#'.repeat(target.hpLeft) + '-'.repeat(hp - target.hpLeft);
 }
 
 // HP pips for whichever target is currently engaged on the battle screen.

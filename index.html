@@ -721,6 +721,29 @@
   .dpad button.move-blocked { opacity: 0.3; }
   .dpad button.move-examine { background: var(--torch-bright); color: var(--ink); }
 
+  /* ---- The gun's buttons (gun plan step 6), right of the d-pad; only
+     with DEV -> Combat on gun. ---- */
+  .gun-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: none;
+  }
+  .gun-actions[hidden], .stat[hidden] { display: none; }
+  .gun-actions button {
+    min-width: 76px;
+    min-height: 48px;
+    padding: 0 8px;
+    touch-action: manipulation;
+  }
+  /* On a phone a third column squeezes the room log to a word a line, so
+     the buttons go in a row of their own between the map and the log. */
+  @media (max-width: 480px) {
+    .room-controls { flex-wrap: wrap; }
+    .gun-actions { order: -1; flex-direction: row; width: 100%; }
+    .gun-actions button { flex: 1; }
+  }
+
   /* ---- Battle screen: styled as a terminal window ---- */
   .terminal { text-align: left; }
 
@@ -1102,6 +1125,10 @@
     <div class="stat"><span class="stat-label" data-t="stat.hp"></span><span class="hearts" id="hearts">3/3</span></div>
     <div class="stat"><span class="stat-label" data-t="stat.gold"></span><strong id="coinsTotal">0</strong></div>
     <div class="stat"><span class="stat-label" data-t="stat.turn"></span><strong id="turnCount">0</strong></div>
+    <!-- The gun (gun plan step 6), only with DEV -> Combat on gun (render.js renderHud). -->
+    <div class="stat" id="gunRoundsStat" hidden><span class="stat-label" data-t="stat.rounds"></span><strong id="gunRounds"></strong></div>
+    <div class="stat" id="gunTargetStat" hidden><span class="stat-label" data-t="stat.target"></span><strong id="gunTarget"></strong></div>
+    <div class="stat" id="gunAimStat" hidden><span class="stat-label" data-t="stat.aim"></span><strong id="gunAim"></strong></div>
     <div class="stat"><span class="stat-label" data-t="stat.room"></span><strong id="roomNum">0</strong><span id="roomOf">/<strong id="roomTotal">0</strong></span></div>
     <div class="stat stat-wide"><span class="stat-label" data-t="stat.time"></span><strong id="timer">0:00</strong></div>
     <!-- The boss light's progress, as an eye that opens (render.js renderLightEye). -->
@@ -1110,7 +1137,7 @@
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devCameraBtn" type="button" title="Testing only: in isometric, the camera glides after the player or stays locked to them" aria-pressed="true">Camera: glide (dev)</button>
-      <button class="dev-skip" id="devCombatBtn" type="button" aria-pressed="false" title="Testing only: classic combat, or the gun on the map (for now only the map's drawing; tap a minion to target it)">Combat: classic (dev)</button>
+      <button class="dev-skip" id="devCombatBtn" type="button" aria-pressed="false" title="Testing only: classic combat, or the gun on the map (minions are fought with RELOAD and FIRE instead of the battle screen)">Combat: classic (dev)</button>
       <button class="dev-skip" id="devShotBtn" type="button" hidden title="Testing only: fire at the gun&#39;s target; a landed shot opens the damage bar over the map (fills an empty chamber, spends no turn)">Test shot (dev)</button>
       <button class="dev-skip" id="devReloadBtn" type="button" hidden title="Testing only: the reload panel and its question over the map (spends no turn)">Test reload (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
@@ -1268,6 +1295,11 @@
       <button class="dpad-center" id="btnSkip" type="button" aria-label="Skip turn">.</button>
       <button class="dpad-e" id="btnE" type="button" aria-label="Move east">&gt;</button>
       <button class="dpad-s" id="btnS" type="button" aria-label="Move south">v</button>
+    </div>
+    <!-- The gun (gun plan step 6): main.js reloadGun / fireGun. -->
+    <div class="gun-actions" id="gunActions" hidden>
+      <button type="button" id="btnReload" data-t="gun.btn.reload"></button>
+      <button type="button" id="btnFire" data-t="gun.btn.fire"></button>
     </div>
     </div>
   </section>

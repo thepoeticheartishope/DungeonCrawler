@@ -319,6 +319,7 @@ export const TEXT = {
   'gun.block.chamberEmpty': 'The chamber is empty. Reload.', // draft
   'gun.block.chamberFull': 'The chamber is full.', // draft
   'gun.block.notShootable': 'The gun does nothing to that.', // draft
+  'gun.block.noTarget': 'Nothing in reach.', // draft. FIRE or T with nothing the gun can reach
   'gun.aimChance': '{chance}%', // over a target and on each tile the gun reaches: the chance a shot there lands
   'gun.miss': 'MISS', // floats up over a minion the shot missed
   // The gun's panels over the map (gunpanels.js).
@@ -334,6 +335,25 @@ export const TEXT = {
   'gun.bar.weak': 'weak 2', // draft
   'gun.reloaded': 'Loaded {rounds} {rounds|plural:round}.', // draft. A right reload answer
   'gun.jammed': 'Jammed. Nothing loads.', // draft. A wrong reload answer
+  // Gun combat on the map (gun plan step 6): the buttons by the d-pad, the
+  // HUD, and the room notes a shot or a strike adds up to.
+  'gun.btn.reload': 'RELOAD', // draft. Button by the d-pad (key R)
+  'gun.btn.fire': 'FIRE', // draft. Button by the d-pad (key F; T picks the next target)
+  'stat.rounds': 'ROUNDS', // draft. HUD: rounds in the chamber, # loaded and - empty
+  'stat.target': 'TARGET', // draft. HUD: the gun's target and its hp, # left and - lost
+  'stat.aim': 'AIM', // draft. HUD: the chance a shot at the target lands
+  'stat.noTarget': '-', // the HUD's target and aim with nothing targeted
+  'minionKind.SHARD': 'SHARD', // draft. A minion kind's name (config.js MINION_KINDS), in the HUD
+  'minionKind.HUSK': 'HUSK', // draft
+  'minionKind.STALKER': 'STALKER', // draft
+  'gun.missed': 'The shot goes wide.', // draft
+  'gun.grazed': 'A graze. It keeps coming.', // draft
+  'gun.hit': 'Hit.', // draft
+  'gun.weakPoint': 'Weak point.', // draft
+  'gun.limbLost': 'A limb comes away.', // draft
+  'gun.killed': 'It comes apart. {gold} {@term.gold}.', // draft. A kill and the gold it paid
+  'gun.struck': 'It strikes. -{cost} {@term.hp}.', // draft. A minion reached the player
+  'gun.hunterStaggered': 'The {@term.hunter} staggers.', // draft. A landed shot on the hunter
 };
 
 // Per-room overrides, keyed by room number (1 = the first room). List only
