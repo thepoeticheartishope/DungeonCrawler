@@ -316,6 +316,9 @@ export const TEXT = {
   'gun.block.outOfRange': 'Out of range.', // draft
   'gun.block.notInLight': 'Not in your light. Turn toward it.', // draft
   'gun.block.noLineOfSight': 'No line of sight.', // draft
+  'gun.block.chamberEmpty': 'The chamber is empty. Reload.', // draft
+  'gun.block.chamberFull': 'The chamber is full.', // draft
+  'gun.block.notShootable': 'The gun does nothing to that.', // draft
 };
 
 // Per-room overrides, keyed by room number (1 = the first room). List only

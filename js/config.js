@@ -267,20 +267,27 @@ export const BOSS_HP = 3;       // hits needed to defeat the boss
 // answer, so only the map's later steps read these numbers:
 //   hp         hits a minion of this kind takes before it falls
 //   moveEvery  it moves every this many turns (1 = every turn)
-//   weakWidth  the share of the damage bar that is its weak point
+//   weakWidth  half the width of its weak point on the damage bar, which
+//              runs 0 to 1 with the centre at 0.5 (0.06 = 12% of the bar)
 //   size       how big it is drawn, against a tile
 //   limbs      limbs a weak-point shot can cut off
-// Starting values from the reload-and-fire mockup, for Timothy to tune.
+//   gold       gold for killing it, before the darkness multiplier
+// Starting values from the reload-and-fire mockup, for Timothy to tune
+// (gold is new: tougher kinds pay more).
 export const MINION_KINDS = {
-  SHARD: { hp: 2, moveEvery: 1, weakWidth: 0.06, size: 0.85, limbs: 2 },
-  HUSK: { hp: 5, moveEvery: 2, weakWidth: 0.1, size: 1.15, limbs: 2 },
-  STALKER: { hp: 3, moveEvery: 1, weakWidth: 0.035, size: 1.0, limbs: 2 },
+  SHARD: { hp: 2, moveEvery: 1, weakWidth: 0.06, size: 0.85, limbs: 2, gold: 1 },
+  HUSK: { hp: 5, moveEvery: 2, weakWidth: 0.1, size: 1.15, limbs: 2, gold: 3 },
+  STALKER: { hp: 3, moveEvery: 1, weakWidth: 0.035, size: 1.0, limbs: 2, gold: 2 },
 };
 // The order kinds come in on a floor whose recipe names none (or too few).
 export const MINION_KIND_ORDER = ['SHARD', 'STALKER', 'HUSK'];
 // How many of its last tiles a minion remembers, newest last. A strike
 // knocks it back along them, the way it came (the mockup's KNOCKBACK).
 export const MINION_TRAIL_LENGTH = 3;
+// A minion that reaches the player strikes for MINION_STRIKE_COST
+// stability (DARK_MISS_COST in the darkness, like a miss) and is knocked
+// back along its trail, up to MINION_TRAIL_LENGTH tiles.
+export const MINION_STRIKE_COST = 1;
 // Minions are placed when a room loads (no summoning; how many is in the
 // floor recipe) and roam freely: they wander at random and only chase once
 // the player is within MINION_CHASE_RANGE walkable steps.
@@ -299,6 +306,20 @@ export const PLAYER_CONE_RANGE = 5;
 // Values from the reload-and-fire mockup.
 export const AIM_FALLOFF_PER_TILE = 0.15;
 export const AIM_MIN = 0.3;
+
+// The gun (gun combat plan, step 3; js/gun.js). The chamber holds
+// GUN_CHAMBER rounds and a run starts with GUN_START_ROUNDS; rounds carry
+// from floor to floor. A reload offers the next category with no, one or
+// two modifiers (from GUN_RELOAD_MODIFIERS; Gambler is left out, there is
+// no gold at stake) and loads GUN_RELOAD_ROUNDS[modifier count] rounds on
+// a right answer. A landed shot's damage bar runs 0 to 1: within
+// GUN_HIT_HALF of the centre is a hit (1), inside the minion kind's
+// weakWidth a weak point (2), anything else a graze (0).
+export const GUN_CHAMBER = 4;
+export const GUN_START_ROUNDS = 1;
+export const GUN_RELOAD_MODIFIERS = ['blind', 'flip', 'timer'];
+export const GUN_RELOAD_ROUNDS = [1, 2, 3];
+export const GUN_HIT_HALF = 0.22;
 
 // The boss gives off light that spreads through the floor at a steady
 // speed: one more walkable step every LIGHT_TURNS_PER_STEP turns. The run

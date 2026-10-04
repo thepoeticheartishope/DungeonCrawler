@@ -175,8 +175,9 @@ function answerTypeGroups(pool) {
 // at least `count` of them, otherwise categories — each split by answer
 // type where there are enough questions (categoryTypeGroups) when the pool
 // has at least `count` categories, else category + difficulty (small sets
-// with only a couple of categories).
-function fightGroups(pool, count) {
+// with only a couple of categories). The gun's reload rotates through
+// these too (gun.js).
+export function fightGroups(pool, count) {
   const byType = answerTypeGroups(pool);
   if (byType.length >= count) return byType;
   if (groupBy(pool, d => d.category).size >= count) return categoryTypeGroups(pool);
