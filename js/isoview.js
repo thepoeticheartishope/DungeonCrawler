@@ -19,12 +19,17 @@
 // chance a shot there lands, corner brackets mark what can be shot, a
 // dashed laser runs to the target, and showShot() plays a shot or a MISS.
 // isoTileAt() turns a tap on the map back into a tile.
+//
+// A minion the player has made out stands as its kind's text form
+// (textforms.js, gun plan step 4b) instead of a glyph; a killed one keeps
+// floating apart where it died until it has faded.
 
 import { state, key } from './state.js';
 import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE } from './config.js';
 import { FACING_VECTORS, canShoot, aimChance } from './sight.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
+import { drawTextForm, formBox, dyingForms } from './textforms.js';
 
 // How bright a lit tile is, by its steps from the player (0 = their own
 // tile): the light fades over the five steps they can see.
@@ -119,6 +124,8 @@ const MISS_PAST = 0.6;           // how far past the minion a missed shot goes, 
 const MISS_SIDE = 0.5;           // and how far to one side
 const MISS_TEXT_SIZE = 0.36;     // MISS's height, as a share of a tile's width
 const MISS_RISE = [1.15, 0.25];  // where MISS starts above its tile, then how far it floats up, in tile widths (slow: the calm rule)
+const WEAK_RING = 0.12;          // the ring on a text form's weak point while a landed shot waits, its radius in tile widths
+const WEAK_RING_LEVEL = 0.7;     // and its strength
 // Walls in front of the camera, cut away (Timothy chose this over see-through glass).
 const WALL_STUB = 0.22;          // a cut-away wall's stub, as a share of its height
 const WALL_HOLD_STEPS = 2;       // a lowered wall stays down while the player is this many steps away or nearer
@@ -233,6 +240,10 @@ export function drawIsoScene(ctx, canvasSize, shared) {
     if (thing.kind === 'paper' && thing.glyph !== null) return drawPaper(ctx, thing.at);
     if (thing.kind === 'player') drawFacing(ctx, thing.at);
     standing.push({ depth: thing.at.row + thing.at.col + 0.5, draw: () => drawStanding(ctx, thing) });
+  });
+  dyingForms(look.now).forEach(m => {
+    if (!onScreen(m.row, m.col)) return;
+    standing.push({ depth: m.row + m.col + 0.5, draw: () => drawForm(ctx, m, m) });
   });
   drawLightPool(ctx);
   standing.sort((a, b) => a.depth - b.depth).forEach(s => s.draw());
@@ -574,6 +585,8 @@ function thingBox(thing) {
     const b = diamond(row, col, BOX_INSET);
     return [b.L[0], b.T[1] - tw * BOX_HEIGHT, b.R[0], b.B[1]];
   }
+  const form = formOf(thing);
+  if (form) return formBox(form.minionKind, d.cx, d.cy, tw);
   const glyphSize = tw * GLYPH_CELL * MAP_GLYPH_SIZES[thing.look.size];
   const [x, y] = glyphPlace(thing);
   return [x - glyphSize * 0.3, y - glyphSize / 2, x + glyphSize * 0.3, d.cy + th * CONTACT_SHADOW];
@@ -1041,6 +1054,8 @@ function drawStanding(ctx, thing) {
     });
     return;
   }
+  const form = formOf(thing);
+  if (form) return drawForm(ctx, at, form);
   const [cx, cy] = centre(at.row, at.col);
   ctx.save();
   ctx.globalAlpha = thing.look.alpha === undefined ? 1 : thing.look.alpha;
@@ -1052,6 +1067,44 @@ function drawStanding(ctx, thing) {
   if (thing.kind === 'player') return drawStickMan(ctx, thing.at, cx, cy);
   const [x, y] = glyphPlace(thing);
   look.paintGlyph(ctx, tw * GLYPH_CELL, x, y, thing.glyph, thing.look);
+}
+
+// The minion a map thing shows as a text form: a minion with a kind that
+// the player has made out. A '?' stays a glyph (everything past three
+// tiles is a '?', enemies included), and so does the hunter, which has no kind.
+function formOf(thing) {
+  if (thing.kind !== 'minion' || thing.glyph === null) return null;
+  const m = minionOn(thing.tile);
+  return m && m.minionKind ? m : null;
+}
+
+// Draws minion `m` as its text form standing at `at` (its tile, or part
+// way through a slide), its limbs reaching for the player. While a landed
+// shot on it waits for the damage bar, its weak point gets a glowing ring.
+// Forms never stop moving, so frames go on (not under reduced motion).
+function drawForm(ctx, at, m) {
+  const [x, y] = centre(at.row, at.col);
+  if (!look.still) look.keepMoving();
+  const weak = drawTextForm(ctx, m, x, y, {
+    tw, toward: [originX, originY], now: look.now, still: look.still, colour: look.colours.text,
+    outline: (path, level) => outline(ctx, path, level),
+    aiming: state.battle.aim !== null && state.battle.aim.target === m,
+  });
+  if (!weak) return;
+  outline(ctx, () => {
+    ctx.beginPath();
+    ctx.arc(weak[0], weak[1], tw * WEAK_RING, 0, Math.PI * 2);
+  }, WEAK_RING_LEVEL);
+}
+
+// Strokes the path `path()` makes as a phosphor line at strength `level`.
+function outline(ctx, path, level) {
+  ctx.save();
+  ctx.lineWidth = EDGE_WIDTH * tw * 1.5;
+  strokeGlow(ctx, level, RIDGE_BLUR);
+  path();
+  glowStroke(ctx);
+  ctx.restore();
 }
 
 // The player as a stick man, feet at (fx, fy). It breathes while it

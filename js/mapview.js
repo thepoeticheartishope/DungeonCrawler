@@ -4,8 +4,8 @@
 // the player's bump, warps, pulses, glows, the mist's drift).
 //
 // main.js calls initMapView() once, requestMapDraw() after anything on
-// the map may have changed, slideOnMap() / bumpOnMap() / shotOnMap() from
-// their drawEvents cases, and onMapTap() to hear taps on the map. This file reads state and never changes it.
+// the map may have changed, slideOnMap() / bumpOnMap() / shotOnMap() and a
+// minion's hurtOnMap() / limbOffOnMap() / deathOnMap() from their drawEvents cases, and onMapTap() to hear taps on the map. This file reads state and never changes it.
 //
 // Everything is drawn into one canvas (the "phosphor"), so a later CRT
 // pass (curved glass, bloom) can read that canvas and draw on top of it.
@@ -19,6 +19,7 @@ import { canMakeOut, FACING_VECTORS } from './sight.js';
 import { glyphForCategory } from './quiz.js';
 import { t } from './text.js';
 import { drawIsoScene, showShot, isoTileAt } from './isoview.js';
+import { hurtForm, loseLimb, killForm } from './textforms.js';
 import { setTileArtColour } from './tileart.js';
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
@@ -167,6 +168,26 @@ export function shotOnMap(target, missed) {
   showShot(target, missed);
   requestMapDraw();
   setTimeout(requestMapDraw, MAP_ANIMATION_MS.gunMiss);
+}
+
+// A minion's text form (textforms.js) reacts to a landed shot: a soft
+// brightening and one small push.
+export function hurtOnMap(minion) {
+  hurtForm(minion);
+  requestMapDraw();
+}
+
+// A minion's text form lets the limb it just lost drift off and fade.
+export function limbOffOnMap(minion) {
+  loseLimb(minion);
+  requestMapDraw();
+}
+
+// A killed minion's text form floats apart where it stood (gone at once
+// under reduced motion).
+export function deathOnMap(minion) {
+  killForm(minion, reducedMotion.matches);
+  requestMapDraw();
 }
 
 // Calls `handler(tile)` with the tile under each tap or click on the map
