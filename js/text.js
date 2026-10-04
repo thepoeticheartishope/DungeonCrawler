@@ -353,6 +353,7 @@ export const TEXT = {
   'gun.limbLost': 'A limb comes away.', // draft
   'gun.killed': 'It comes apart. {gold} {@term.gold}.', // draft. A kill and the gold it paid
   'gun.struck': 'It strikes. -{cost} {@term.hp}.', // draft. A minion reached the player
+  'gun.hunterStruck': 'The {@term.hunter} strikes. -{cost} {@term.hp}.', // draft. The hunter reached the player (gun on)
   'gun.hunterStaggered': 'The {@term.hunter} staggers.', // draft. A landed shot on the hunter
 };
 
