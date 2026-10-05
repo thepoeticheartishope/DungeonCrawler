@@ -419,7 +419,9 @@ export const ISO_NARROW_MAP_WIDTH = 400;
 // The isometric map's width over its height. The diamond is half as tall
 // as it is wide, so five steps of sight only reach 1.25 tile widths up or
 // down: a square map would be mostly empty rows. Keep in step with
-// .map-canvas's aspect-ratio in index.html.
+// index.html, where the shape appears three times: .map-canvas's
+// aspect-ratio, and .map-fit's height and .grid-wrap's width (which
+// shrink the map to fit a short screen).
 export const ISO_MAP_SHAPE = 3 / 2;
 // The isometric camera (DEV -> Camera). It holds still while the player
 // walks inside a box round the middle of the map, ISO_CAMERA_BOX tile
