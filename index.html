@@ -65,6 +65,7 @@
   body {
     margin: 0;
     min-height: 100vh;
+    min-height: 100dvh;
     background: var(--stone-dark);
     color: var(--text);
     font-family: var(--font);
@@ -537,9 +538,49 @@
   .combat-status .pip-full { color: var(--torch-bright); }
   .combat-status .pip-empty { color: var(--muted); }
 
+  /* ---- The room screen always fits the screen, with no scrolling. On a
+     phone 100vh is the screen with the address bar hidden, so the page is
+     held to 100dvh (the screen as it is right now) and the map shrinks to
+     the height the header and controls leave it. ---- */
+  body:has(#roomScreen.show) {
+    height: 100vh;
+    height: 100dvh;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  body:has(#roomScreen.show) main {
+    display: flex;
+    flex-direction: column;
+    container-type: inline-size; /* for .map-fit's 100cqw */
+  }
+  #roomScreen.show {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+  /* A short screen (a small phone with both browser bars showing) trims
+     the chrome round the map before the map gets any smaller. */
+  @media (max-height: 640px) {
+    body:has(#roomScreen.show) { padding-top: 10px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+    body:has(#roomScreen.show) header { margin-bottom: 6px; }
+    body:has(#roomScreen.show) h1 { font-size: 28px; }
+    body:has(#roomScreen.show) .stats { margin-bottom: 10px; }
+    .map-fit { margin-bottom: 10px; }
+    .gun-actions button { min-height: 40px; }
+  }
+
   /* ---- Map ---- */
+  /* The space the map may take: its full 3:2 height when the screen has
+     room, less when it doesn't. The map keeps its shape inside it. */
+  .map-fit {
+    flex: 0 1 calc(100cqw * 2 / 3);
+    min-height: 100px;
+    margin-bottom: 14px;
+    container-type: size;
+  }
   .grid-wrap {
-    margin: 0 auto 14px;
+    width: min(100cqw, 100cqh * 3 / 2);
+    margin: 0 auto;
     position: relative;
   }
 
@@ -702,7 +743,17 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 20px;
+  }
+
+  /* Clips the turned d-pad's empty corners, which would otherwise poke
+     past the screen's edge and make a phone zoom out. The padding keeps
+     the button tips; the negative margin keeps the layout as it was. */
+  .dpad-clip {
+    flex: none;
+    padding: 12px;
+    margin: -12px;
+    overflow: hidden;
+    overflow: clip;
   }
 
   /* ---- D-pad ---- */
@@ -1282,6 +1333,7 @@
 
   <!-- Room screen -->
   <section class="screen" id="roomScreen">
+    <div class="map-fit">
     <div class="grid-wrap" id="mapWrap">
       <!-- The map (js/mapview.js). Glyphs come from text.js term.*.symbol. -->
       <canvas class="map-canvas" id="mapCanvas" aria-hidden="true"></canvas>
@@ -1313,18 +1365,21 @@
         </div>
       </div>
     </div>
+    </div>
 
     <!-- The room log (main.js showRoomNote) sits left of the d-pad, so the
          latest notes are read beside the thumb that walks. -->
     <div class="room-controls">
       <div class="feedback" role="log" aria-live="polite"><div id="roomFeedback"></div></div>
 
+    <div class="dpad-clip">
     <div class="dpad" id="dpad">
       <button class="dpad-n" id="btnN" type="button" aria-label="Move north">^</button>
       <button class="dpad-w" id="btnW" type="button" aria-label="Move west">&lt;</button>
       <button class="dpad-center" id="btnSkip" type="button" aria-label="Skip turn">.</button>
       <button class="dpad-e" id="btnE" type="button" aria-label="Move east">&gt;</button>
       <button class="dpad-s" id="btnS" type="button" aria-label="Move south">v</button>
+    </div>
     </div>
     <!-- The gun (gun plan step 6): main.js reloadGun / fireGun. -->
     <div class="gun-actions" id="gunActions" hidden>
