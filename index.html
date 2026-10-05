@@ -541,7 +541,10 @@
   /* ---- The room screen always fits the screen, with no scrolling. On a
      phone 100vh is the screen with the address bar hidden, so the page is
      held to 100dvh (the screen as it is right now) and the map shrinks to
-     the height the header and controls leave it. ---- */
+     the height the header and controls leave it. Anything new on the room
+     screen takes its height from the map, so the page still fits; keep
+     position: fixed things outside <main> (its container-type would pin
+     them to <main> instead of the screen). ---- */
   body:has(#roomScreen.show) {
     height: 100vh;
     height: 100dvh;
@@ -571,7 +574,8 @@
 
   /* ---- Map ---- */
   /* The space the map may take: its full 3:2 height when the screen has
-     room, less when it doesn't. The map keeps its shape inside it. */
+     room, less when it doesn't. The map keeps its shape inside it. The
+     3:2 here and in .grid-wrap must match ISO_MAP_SHAPE in config.js. */
   .map-fit {
     flex: 0 1 calc(100cqw * 2 / 3);
     min-height: 100px;
