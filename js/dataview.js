@@ -3,7 +3,7 @@
 // flag, question, answer, source — with a comment box per question.
 // Comments live in localStorage and export as plain text, so reviewing a
 // set doesn't mean reading its JSON. Viewing a set here never changes the
-// list the game plays; that stays with the start screen loader.
+// list the game plays; that stays with the set screen and workshop.
 
 import { state } from './state.js';
 import { escapeHtml } from './quiz.js';
@@ -48,8 +48,8 @@ function commentFor(entry) {
   return comments[entry.term] || '';
 }
 
-export function initDataView({ startScreen }) {
-  els.startScreen = startScreen;
+export function initDataView({ backScreen }) {
+  els.backScreen = backScreen;
   els.screen = document.getElementById('dataScreen');
   els.openBtn = document.getElementById('dataOpenBtn');
   els.closeBtn = document.getElementById('dataCloseBtn');
@@ -78,7 +78,7 @@ export function initDataView({ startScreen }) {
 }
 
 async function open() {
-  els.startScreen.classList.remove('show');
+  els.backScreen.classList.remove('show');
   els.screen.classList.add('show');
   document.body.classList.add('data-open');
   window.scrollTo(0, 0);
@@ -88,7 +88,7 @@ async function open() {
 
 function close() {
   els.screen.classList.remove('show');
-  els.startScreen.classList.add('show');
+  els.backScreen.classList.add('show');
   document.body.classList.remove('data-open');
   window.scrollTo(0, 0);
 }

@@ -5,7 +5,7 @@
 // Starts a static server for this repo, then drives the game in a real
 // browser via Playwright (imported from ~/Repo/codecraft-classroom/node_modules
 // — do NOT add Playwright or node_modules to this repo) through four runs,
-// all loading the built-in "Bible Quiz Bowl" set with Auto-win on:
+// all picking the built-in "Bible Quiz Bowl" set on the set screen, with Auto-win on:
 //
 //   1. Skip-room run: one manual step, then "Skip room (dev)" repeatedly to
 //      clear the floor, asserting the win or lose screen is reached.
@@ -86,33 +86,19 @@ function collectErrors(page) {
   return { consoleErrors, pageErrors };
 }
 
-// Loads the page fresh and picks the built-in "Bible Quiz Bowl" set, ready
-// for #startBtn. The loader panel is hidden behind a toggle, but the
-// select/button still work when driven directly.
+// Loads the page fresh, ready for #startBtn.
 async function loadPageAndSet(page, url) {
   await page.goto(url, { waitUntil: 'load' });
-
-  await page.waitForFunction(() => {
-    const sel = document.getElementById('builtinSetSelect');
-    return sel && [...sel.options].some((o) => o.value === 'bible-quiz-bowl');
-  }, { timeout: 10000 });
-
-  await page.evaluate(() => {
-    const sel = document.getElementById('builtinSetSelect');
-    sel.value = 'bible-quiz-bowl';
-    sel.dispatchEvent(new Event('change', { bubbles: true }));
-    document.getElementById('loadBuiltinBtn').click();
-  });
-
-  // fetchBundledSet is async; wait for it to actually finish.
-  await page.waitForFunction(() => {
-    const status = document.getElementById('loaderStatus');
-    return status && status.textContent.includes('Loaded "Bible Quiz Bowl"');
-  }, { timeout: 10000 });
+  await page.waitForSelector('#startBtn', { timeout: 10000 });
 }
 
+// Enter, then pick the built-in "Bible Quiz Bowl" on the set screen, which
+// starts the run.
 async function startGameAndWaitForRoom(page) {
   await page.click('#startBtn');
+  const quizBowl = '#pickScreen .set-option[data-set="builtin:bible-quiz-bowl"]';
+  await page.waitForSelector(quizBowl, { timeout: 10000 });
+  await page.click(quizBowl);
   // Start shows an intro glitch screen for a couple seconds before the
   // room screen appears.
   await page.waitForSelector('#roomScreen.show', { timeout: 10000 });

@@ -23,7 +23,8 @@ import {
 import { lightConsumed } from './light.js';
 import { stepPlayer } from './moves.js';
 import { settleAnswer } from './answers.js';
-import { initSetLoader } from './setloader.js';
+import { initSetLoader, showWorkshop } from './setloader.js';
+import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapTap, glyphOf } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload } from './gun.js';
@@ -114,13 +115,14 @@ initRender({
 initMapView(document.getElementById('mapCanvas'));
 onMapTap(tapMap);
 
-initDataView({ startScreen });
+initDataView({ backScreen: document.getElementById('workshopScreen') });
 initExchangeView({ buyItem, leaveExchange });
 initGunPanels({ pickReload, cancelReload: () => endReload(), stopBar: stopDamageBar });
 
 applyStaticText();
 
-initSetLoader();
+initSetLoader({ showSets: showSetPicker });
+initSetPicker({ startGame, openWorkshop: showWorkshop });
 initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter, devTestShot, devTestReload, endGunTests,
   gunCombatChanged, autoWinGun, battleScreen, wagerRow,
@@ -1186,7 +1188,6 @@ function endLose(reason) {
   showScreen(loseScreen);
 }
 
-document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn').addEventListener('click', startGame);
 document.getElementById('retryBtn').addEventListener('click', startGame);
 
