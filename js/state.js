@@ -28,9 +28,10 @@ export const state = {
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
     isoCameraGlide: true,   // dev toggle: the isometric camera glides after the player (false: locked to them)
     gunCombat: true,        // the gun on the map (gun plan; the default since step 9). DEV -> Combat switches back to classic (minions on the battle screen)
-    usingSample: true, // false once the person loads their own list
+    usingSample: true, // the workshop list is the built-in sample (it can't be saved as a set); false once a list is pasted or loaded there
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
     activeDictionary: null, // the active set's subject dictionary (lists/dictionaries/), or null (pasted, saved and sample sets)
+    workshopData: null,     // the list last loaded in the workshop (pasted, file or the sample), offered on the set screen; null until then
   },
 
   run: {

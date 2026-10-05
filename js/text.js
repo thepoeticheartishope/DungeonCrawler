@@ -268,7 +268,36 @@ export const TEXT = {
   'start.name.placeholder': 'Leave blank to stay nameless', // draft
   'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft
 
-  // ---- Question data viewer (start screen) ----
+  // ---- Set screen (after Enter: which questions this run asks) ----
+  'pick.title': 'QUERY.SET', // draft
+  'pick.prompt': 'What will the {@term.dungeon} ask you?', // draft
+  'pick.builtinGroup': 'Built-in', // draft
+  'pick.savedGroup': 'Your sets', // draft
+  'pick.workshopList': 'Workshop list', // draft — the list last loaded in the workshop, not saved
+  'pick.count': '{count} {count|plural:question}', // draft
+  'pick.last': 'last played', // draft
+  'pick.loading': 'Loading {name}…', // draft
+  'pick.failed': 'Could not load {name}. Try again.', // draft
+  'pick.empty': 'No sets found. Make one in the workshop.', // draft
+  'pick.back': 'Back', // draft
+  'pick.workshop': 'Make your own set', // draft
+
+  // ---- Workshop (set making, for authors; reached from the set screen) ----
+  'workshop.title': 'WORKSHOP',
+  'workshop.intro': 'Paste or load a list, then save it. Saved sets show on the set screen.',
+  'workshop.pasteLabel': 'Paste or load a list',
+  'workshop.formatHelp': 'Format help',
+  'workshop.back': 'Back to sets',
+  'workshop.loaded': 'Loaded {count} items. Pick "Workshop list" on the set screen to play it.',
+  'workshop.sample': 'Loaded the built-in multiple choice sample ({count} items) as the workshop list.',
+  'workshop.fileFailed': 'Could not read that file.',
+  'workshop.needName': 'Give this set a name first.',
+  'workshop.needList': 'Paste or load a list before saving.',
+  'workshop.saved': 'Saved "{name}". It now shows on the set screen.',
+  'workshop.noSaved': 'Nothing saved yet. Paste a list above and save it to reuse later.',
+  'workshop.delete': 'Delete',
+
+  // ---- Question data viewer (workshop) ----
   'data.open': 'View question data',
   'data.title': 'DATA.SYS',
   'data.close': 'Back',
