@@ -976,7 +976,7 @@ let lastWalkAt = -Infinity;
 
 // One arrow press (stepPlayer in moves.js). A step or a first look in a
 // box spends a turn; stairs load the next floor; a trapped box opens the
-// battle screen; a bump or a turn toward a wall only draws. With Real time
+// battle screen; a turn to a new direction or a bump only draws. With Real time
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
 function movePlayer(dRow, dCol) {
   if (state.run.turnLocked || state.run.runEnded) return;

@@ -13,10 +13,11 @@ export function goldReward(base) {
   return state.floor.darkness ? base * DARK_GOLD_MULTIPLIER : base;
 }
 
-// One arrow press. Facing updates (and the light cone with it) even on a
-// blocked move — the player can "turn to look" a direction without
-// spending a turn. Events: turned { facing }, blocked { kind, thing },
-// stepped { facing }, stairsReached, coinTaken { gold },
+// One arrow press. A press in a new direction only turns the player to
+// face it (and the light cone with it): no step, no bump, no turn spent,
+// so they can look behind them before walking that way. Only a press in
+// the direction already faced steps. Events: turned { facing } (alone),
+// blocked { kind, thing }, stepped { facing }, stairsReached, coinTaken { gold },
 // paperRead { paper, loot, story? }, roomEntered { theme }, exchangeOpened
 // (bumped THE UNFOLDING; main.js opens its screen) and the box events from
 // examineProp. A turn is spent only by `stepped` or `propSearched`.
@@ -25,9 +26,9 @@ export function stepPlayer(dRow, dCol) {
   const facing = dRow === -1 ? 'N' : dRow === 1 ? 'S' : dCol === 1 ? 'E' : 'W';
   if (state.floor.facing !== facing) {
     state.floor.facing = facing;
-    events.push({ type: 'turned', facing });
+    computeVisibility();
+    return [{ type: 'turned', facing }];
   }
-  computeVisibility();
 
   const newRow = state.floor.playerRow + dRow;
   const newCol = state.floor.playerCol + dCol;
