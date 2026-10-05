@@ -140,6 +140,7 @@ test('bumping THE UNFOLDING opens it and spends no turn', () => {
   // Stand the player just south of it, facing north, and bump.
   state.floor.playerRow = x.row + 1;
   state.floor.playerCol = x.col;
+  state.floor.facing = 'N';
   state.floor.wallSet.delete(key(x.row + 1, x.col));
   const events = stepPlayer(-1, 0);
   assert.ok(types(events).includes('exchangeOpened'));
