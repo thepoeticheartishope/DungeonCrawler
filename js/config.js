@@ -386,11 +386,12 @@ export const SENSE_NOTE_MS = 2600;
 // (gun combat plan, step 3; js/gun.js) spends 1 a shot. A reload offers
 // the next category with no, one or two modifiers (from
 // GUN_RELOAD_MODIFIERS; Gambler is left out, there is no gold at stake)
-// and gives RELOAD_ENERGY[modifier count] energy on a right answer.
+// and gives RELOAD_ENERGY[modifier count] energy on a right answer:
+// plain 2, one modifier 3, two fill it (Timothy, 2026-10-11: was 1 / 2 / 3).
 export const ENERGY_MAX = 4;
 export const ENERGY_START = 1;
 export const GUN_RELOAD_MODIFIERS = ['blind', 'flip', 'timer'];
-export const RELOAD_ENERGY = [1, 2, 3];
+export const RELOAD_ENERGY = [2, 3, ENERGY_MAX];
 // A landed shot's damage bar (Timothy, 2026-10-11): the bar holds zones
 // at new random spots every shot (gun.js damageZones): hit zones (1
 // damage) and weak points (2 and a limb), sized by the minion kind

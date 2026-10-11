@@ -100,6 +100,7 @@ test('reload offers the next category with no, one and two modifiers', () => {
   assert.deepEqual(category, reloadCategory());
   assert.deepEqual(offers.map(o => o.modifiers.length), [0, 1, 2]);
   assert.deepEqual(offers.map(o => o.energy), RELOAD_ENERGY);
+  assert.equal(offers[2].energy, ENERGY_MAX, 'two modifiers fill the energy');
   const all = offers.flatMap(o => o.modifiers);
   assert.ok(!all.includes('gambler'));
   assert.equal(new Set(all).size, 3, 'the three modifiers are all different');
@@ -119,6 +120,14 @@ test('a right reload gives the offer\'s energy, up to ENERGY_MAX, and counts as 
   assert.equal(state.run.energy, ENERGY_MAX);
   assert.equal(state.run.correctTotal, 1);
   assert.deepEqual(events[0], { type: 'reloaded', energy: 3, total: ENERGY_MAX });
+});
+
+test('a right two-modifier reload fills empty energy', () => {
+  resetFloor();
+  state.run.energy = 0;
+  state.run.rounds = [];
+  settleReload(true, reloadOffers().offers[2]);
+  assert.equal(state.run.energy, ENERGY_MAX);
 });
 
 test('a wrong reload jams: nothing loads, no heart is lost, the miss haunts', () => {

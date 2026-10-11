@@ -70,8 +70,8 @@ export function weaknessOf(minionKind) {
 
 // What a reload offers right now: null and why not ('energyFull'), or
 // the next category and three ways to answer it, plain to hardest:
-// [{ modifiers, energy, room }]. No modifier gives 1 energy, one gives 2,
-// two give 3 (RELOAD_ENERGY). `room` is how much of that fits under
+// [{ modifiers, energy, room }]. No modifier gives 2 energy, one gives 3,
+// two fill it (RELOAD_ENERGY). `room` is how much of that fits under
 // ENERGY_MAX, so the player can see when a hard reload would be wasted.
 // Gambler is never offered: a reload has no gold at stake.
 export function reloadOffers() {
