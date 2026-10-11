@@ -795,9 +795,7 @@ function drawEvents(events) {
       case 'blocked':
         bumpOnMap(state.floor.facing);
         cls = 'block-msg';
-        parts.push(e.kind === 'prop' ? t('room.' + e.thing.kind + '.done')
-          : e.kind === 'encounter' ? t('room.blocked.encounter', { category: categoryLabel(e.thing.category) })
-          : t('room.blocked.' + e.kind));
+        parts.push(e.kind === 'prop' ? t('room.' + e.thing.kind + '.done') : t('room.blocked.' + e.kind));
         break;
       // A step says nothing: the map already shows where the player went.
       case 'stepped':
@@ -809,6 +807,7 @@ function drawEvents(events) {
       case 'turned':
       case 'stairsReached':
       case 'boxSprung':
+      case 'itemReached':
       case 'ammoBoxFound':
       case 'propSearched':
         break;
@@ -1010,9 +1009,10 @@ function loseToLight() {
 let lastWalkAt = -Infinity;
 
 // One arrow press (stepPlayer in moves.js). A step or a first look in a
-// box spends a turn; stairs load the next floor; a trapped box opens the
-// battle screen; an ammo drum opens the reload panel (its answer is the
-// turn); a turn to a new direction or a bump only draws. With Real time
+// box spends a turn; stairs load the next floor; a trapped box, chest,
+// rune or encounter opens the battle screen; an ammo drum opens the
+// reload panel (its answer is the turn); a turn to a new direction or a
+// bump only draws. With Real time
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
 function movePlayer(dRow, dCol) {
   if (state.run.turnLocked || state.run.runEnded || mapPanelShown() === 'struggle') return;
@@ -1032,7 +1032,7 @@ function movePlayer(dRow, dCol) {
   } else {
     const note = drawEvents(events);
     if (note.text) showRoomNote(note.cls, note.text);
-    if (has('boxSprung')) syncBattleScreen();
+    if (has('boxSprung') || has('itemReached')) syncBattleScreen();
     if (has('exchangeOpened')) openExchange();
   }
   state.run.turnLocked = false;

@@ -19,8 +19,9 @@ export function goldReward(base) {
 // the direction already faced steps. Events: turned { facing } (alone),
 // blocked { kind, thing }, stepped { facing }, stairsReached, coinTaken { gold },
 // paperRead { paper, loot, story? }, roomEntered { theme }, exchangeOpened
-// (bumped THE UNFOLDING; main.js opens its screen) and the box events from
-// examineProp. A turn is spent only by `stepped` or `propSearched`.
+// (bumped THE UNFOLDING; main.js opens its screen), itemReached { thing }
+// (bumped a chest, rune or encounter; main.js opens the battle screen) and
+// the box events from examineProp. A turn is spent only by `stepped` or `propSearched`.
 export function stepPlayer(dRow, dCol) {
   const events = [];
   const facing = dRow === -1 ? 'N' : dRow === 1 ? 'S' : dCol === 1 ? 'E' : 'W';
@@ -42,6 +43,10 @@ export function stepPlayer(dRow, dCol) {
   // Looking into it costs no turn: a rest floor has no light to feed.
   if (block && block.kind === 'exchange') {
     events.push({ type: 'exchangeOpened' });
+    return events;
+  }
+  if (block && ['chest', 'rune', 'encounter'].includes(block.kind)) {
+    events.push(reachItem(block));
     return events;
   }
   if (block) {
@@ -89,6 +94,16 @@ function readPaper(paper) {
   const story = state.run.loreQueue.shift();
   if (story) return { type: 'paperRead', paper, loot: 'story', story };
   return { type: 'paperRead', paper, loot: paper.loot };
+}
+
+// Bumping a chest, rune or encounter selects it for the battle screen.
+// Standing next to one doesn't (combat.js findAdjacentEnemies), so the
+// player chooses when to take it on. No turn is spent: the answer is the
+// turn. Event: itemReached { thing }.
+function reachItem(block) {
+  const thing = block.thing || state.floor[block.kind];
+  state.battle.selectedTarget = thing;
+  return { type: 'itemReached', thing };
 }
 
 // Bumping a box examines it. The first look takes a turn (the light

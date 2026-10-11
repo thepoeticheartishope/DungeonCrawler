@@ -14,7 +14,9 @@ export function isAdjacentToPlayer(entity) {
 
 // Everything next to the player that opens the battle screen. With the
 // gun on (DEV -> Combat), minions and the hunter are fought on the map, so
-// they're left out; the boss and items still open it.
+// they're left out. Items (chest, rune, encounters) open it only when the
+// player walks into them (moves.js reachItem), so walking past one never
+// pulls the player into a question.
 export function findAdjacentEnemies() {
   const result = [];
   if (state.floor.boss && isAdjacentToPlayer(state.floor.boss)) result.push(state.floor.boss);
@@ -22,11 +24,6 @@ export function findAdjacentEnemies() {
     for (const m of state.floor.minions) {
       if (isAdjacentToPlayer(m)) result.push(m);
     }
-  }
-  if (state.floor.chest && isAdjacentToPlayer(state.floor.chest)) result.push(state.floor.chest);
-  if (state.floor.rune && isAdjacentToPlayer(state.floor.rune)) result.push(state.floor.rune);
-  for (const e of state.floor.encounters) {
-    if (isAdjacentToPlayer(e)) result.push(e);
   }
   // A trapped box only becomes something to answer once it's been
   // bumped (main.js examineProp); until then it looks like any other.
