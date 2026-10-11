@@ -6,7 +6,7 @@
 
 import { state, key } from './state.js';
 import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
-import { furnishFloor, rollProp, makePlacer, freeStanding } from './decor.js';
+import { furnishFloor, rollProp, makePlacer, freeStanding, placeAmmoBoxes } from './decor.js';
 import {
   BOSS_HP, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, ROOM_THEMES
 } from './config.js';
@@ -38,7 +38,7 @@ function pickCoinTile(walls, avoidList, allowedTiles) {
 function stepsFromStart() {
   const blocked = new Set(state.floor.wallSet);
   state.floor.pillarSet.forEach(k => blocked.add(k));
-  state.floor.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
+  state.floor.props.forEach(p => { if (p.kind !== 'paper') blocked.add(key(p.row, p.col)); });
   blocked.add(key(state.floor.boss.row, state.floor.boss.col));
   const dist = new Map([[key(state.floor.PLAYER_START.row, state.floor.PLAYER_START.col), 0]]);
   const queue = [state.floor.PLAYER_START];
@@ -210,6 +210,15 @@ export function buildFloor() {
 
   const minionTaken = takenTiles.slice();
   [state.floor.chest, state.floor.rune, ...state.floor.encounters].forEach(item => { if (item) minionTaken.push(item); });
+
+  // Ammo drums, the gun's only rounds (decor.js placeAmmoBoxes). Classic
+  // combat has no gun, so no drums.
+  if (state.settings.gunCombat) {
+    placeAmmoBoxes(layout, placer, minionTaken).forEach(p => {
+      state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
+      minionTaken.push(p);
+    });
+  }
   placeMinions(roomTiles, minionTaken, recipe.minions - beats.minionTiles.length, recipe);
 
   state.floor.darkness = false;

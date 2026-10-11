@@ -54,7 +54,7 @@ export function refreshTargetValidity() {
 // currently occupies this tile (papers lie flat, so they don't count).
 export function tileOccupied(row, col, excludeMinion) {
   if (state.floor.pillarSet.has(key(row, col))) return true;
-  if (state.floor.props.some(p => p.kind === 'box' && p.row === row && p.col === col)) return true;
+  if (state.floor.props.some(p => p.kind !== 'paper' && p.row === row && p.col === col)) return true;
   if (state.floor.boss && state.floor.boss.row === row && state.floor.boss.col === col) return true;
   if (state.floor.playerRow === row && state.floor.playerCol === col) return true;
   if (state.floor.chest && state.floor.chest.row === row && state.floor.chest.col === col) return true;
@@ -82,7 +82,7 @@ export function neighbors(r, c) {
 export function blockedTilesFor(minion) {
   const blocked = new Set(state.floor.wallSet);
   state.floor.pillarSet.forEach(k => blocked.add(k));
-  state.floor.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
+  state.floor.props.forEach(p => { if (p.kind !== 'paper') blocked.add(key(p.row, p.col)); });
   if (state.floor.boss) blocked.add(key(state.floor.boss.row, state.floor.boss.col));
   for (const other of state.floor.minions) {
     if (other === minion) continue;
@@ -119,7 +119,7 @@ export function bfsPath(start, target, walls) {
 function farthestFromPlayer() {
   const blocked = new Set(state.floor.wallSet);
   state.floor.pillarSet.forEach(k => blocked.add(k));
-  state.floor.props.forEach(p => { if (p.kind === 'box') blocked.add(key(p.row, p.col)); });
+  state.floor.props.forEach(p => { if (p.kind !== 'paper') blocked.add(key(p.row, p.col)); });
   const start = { row: state.floor.playerRow, col: state.floor.playerCol };
   const dist = new Map([[key(start.row, start.col), 0]]);
   const queue = [start];

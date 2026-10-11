@@ -46,6 +46,15 @@ const PILLAR_INSET = 0.24;     // a pillar is thinner than its tile, so it reads
 const PILLAR_HEIGHT = 1.15;    // as a share of a wall's height: a pillar stands above the walls
 const BOX_INSET = 0.3;
 const BOX_HEIGHT = 0.3;
+// The ammo drum (Timothy's pick from the ammo box mockup): round, so
+// nothing else on the map shares its shape. Three round ends show on its lid.
+const DRUM_RADIUS = 0.24;      // its footprint's radius, in tiles
+const DRUM_HEIGHT = 0.32;
+const DRUM_HOOPS = [0.25, 0.7]; // the bands round it, as shares of its height
+const DRUM_ENDS = [[-0.38, 0.1], [0.38, 0.1], [0, -0.42]]; // the round ends on the lid, as shares of the lid's ellipse
+const DRUM_END_SIZE = 0.22;     // a round end's size, as a share of the lid
+const DRUM_BREATH = [0.05, 0.12]; // its breathing glow's strength, faintest and fullest
+const DRUM_BREATH_REACH = 0.55; // how far the glow reaches, in tiles
 const GLYPH_CELL = 0.85;       // the tile size glyphs are sized for (MAP_GLYPH_SIZES)
 const GLYPH_RISE = 0.45;       // a glyph's middle sits this share of its height above the floor
 const CONTACT_SHADOW = 0.2;    // the dark ellipse a glyph stands on, as a share of the diamond
@@ -585,6 +594,10 @@ function thingBox(thing) {
     const b = diamond(row, col, BOX_INSET);
     return [b.L[0], b.T[1] - tw * BOX_HEIGHT, b.R[0], b.B[1]];
   }
+  if (isDrum(thing)) {
+    const rx = DRUM_RADIUS * tw / Math.SQRT2;
+    return [d.cx - rx, d.cy - tw * DRUM_HEIGHT - rx / 2, d.cx + rx, d.cy + rx / 2];
+  }
   const form = formOf(thing);
   if (form) return formBox(form.minionKind, d.cx, d.cy, tw);
   const glyphSize = tw * GLYPH_CELL * MAP_GLYPH_SIZES[thing.look.size];
@@ -623,6 +636,11 @@ function lyingFlat(thing) {
 
 function isBlock(thing) {
   return thing.kind === 'box' && thing.glyph !== null;
+}
+
+// An ammo drum the player has made out (drawn as a drum, not a glyph).
+function isDrum(thing) {
+  return thing.kind === 'ammo' && thing.glyph !== null;
 }
 
 // A wall block. Its top edges shared with a neighbouring wall of the same
@@ -1046,6 +1064,7 @@ function glyphPlace(thing) {
 // (the facing wedge on the floor says which way they face).
 function drawStanding(ctx, thing) {
   const { at } = thing;
+  if (isDrum(thing)) return drawAmmoDrum(ctx, thing);
   if (isBlock(thing)) {
     const level = floorLevel(at.row, at.col) * (searched(at) ? SEARCHED_LEVEL : 1);
     drawBlock(ctx, at.row, at.col, {
@@ -1067,6 +1086,73 @@ function drawStanding(ctx, thing) {
   if (thing.kind === 'player') return drawStickMan(ctx, thing.at, cx, cy);
   const [x, y] = glyphPlace(thing);
   look.paintGlyph(ctx, tw * GLYPH_CELL, x, y, thing.glyph, thing.look);
+}
+
+// An ammo drum: a round case with bands and three round ends on its lid,
+// lit like a box. Unused, a faint glow breathes round it on a slow cycle
+// (mapview.js gives `look.breath`, 0..1; it holds still under reduced
+// motion). Used, it is dimmer and its ends are dark: nothing left in it.
+function drawAmmoDrum(ctx, thing) {
+  const { at } = thing;
+  const spent = searched(at);
+  const level = Math.max(WALL_MIN_LEVEL, floorLevel(at.row, at.col) * (spent ? SEARCHED_LEVEL : 1)) *
+    (thing.look.alpha === undefined ? 1 : thing.look.alpha);
+  const [cx, cy] = centre(at.row, at.col);
+  const rx = DRUM_RADIUS * tw / Math.SQRT2;
+  const ry = rx / 2;
+  const top = cy - tw * DRUM_HEIGHT;
+  ctx.save();
+  if (thing.look.breath !== null && thing.look.breath !== undefined) {
+    look.keepMoving();
+    const a = DRUM_BREATH[0] + (DRUM_BREATH[1] - DRUM_BREATH[0]) * thing.look.breath;
+    const reach = tw * DRUM_BREATH_REACH;
+    const gy = cy - tw * DRUM_HEIGHT / 2;
+    const halo = ctx.createRadialGradient(cx, gy, 0, cx, gy, reach);
+    halo.addColorStop(0, glow(a * level));
+    halo.addColorStop(1, glow(0));
+    ctx.fillStyle = halo;
+    ctx.fillRect(cx - reach, gy - reach, reach * 2, reach * 2);
+  }
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx * 1.4, ry * 1.4, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  ctx.fill();
+  // The body: the near half of the bottom rim, up the sides, round the top.
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, Math.PI, 0, true);
+  ctx.lineTo(cx + rx, top);
+  ctx.ellipse(cx, top, rx, ry, 0, 0, Math.PI, false);
+  ctx.closePath();
+  const side = ctx.createLinearGradient(cx - rx, 0, cx + rx, 0);
+  side.addColorStop(0, SOUTH_FACE);
+  side.addColorStop(0.35, glow(0.2 * level));
+  side.addColorStop(1, EAST_FACE);
+  ctx.fillStyle = side;
+  ctx.fill();
+  ctx.lineWidth = EDGE_WIDTH * tw;
+  strokeGlow(ctx, 0.7 * level, FACE_BLUR * level);
+  glowStroke(ctx);
+  strokeGlow(ctx, 0.45 * level, 0);
+  DRUM_HOOPS.forEach(h => {
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - tw * DRUM_HEIGHT * h, rx, ry, 0, 0, Math.PI, false);
+    glowStroke(ctx);
+  });
+  ctx.beginPath();
+  ctx.ellipse(cx, top, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fillStyle = glow(0.26 * level);
+  ctx.fill();
+  strokeGlow(ctx, 0.8 * level, RIDGE_BLUR * level);
+  glowStroke(ctx);
+  DRUM_ENDS.forEach(([ex, ey]) => {
+    ctx.beginPath();
+    ctx.ellipse(cx + ex * rx, top + ey * ry, rx * DRUM_END_SIZE, ry * DRUM_END_SIZE, 0, 0, Math.PI * 2);
+    ctx.fillStyle = spent ? 'rgba(0, 0, 0, 0.6)' : glow(0.92 * level);
+    ctx.fill();
+    strokeGlow(ctx, (spent ? 0.35 : 0.95) * level, 0);
+    glowStroke(ctx);
+  });
+  ctx.restore();
 }
 
 // The minion a map thing shows as a text form: a minion with a kind that
