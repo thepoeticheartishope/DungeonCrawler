@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  GUN_CHAMBER, GUN_RELOAD_ROUNDS, GUN_HIT_HALF, MINION_KINDS, MINION_STRIKE_COST,
+  GUN_CHAMBER, GUN_RELOAD_ROUNDS, MINION_KINDS, DAMAGE_BAR_DEPTHS, DAMAGE_ZONE_GAP, MINION_STRIKE_COST,
   DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
 } from '../js/config.js';
@@ -24,7 +24,7 @@ import { whatBlocks } from '../js/passage.js';
 import { buildFloor } from '../js/floor.js';
 import {
   reloadCategory, reloadOffers, settleReload, pickTarget, refreshGunTarget, cycleTarget, fireBlock, fire, settleShot,
-  minionStrike, staggerHunter, settleStruggle,
+  minionStrike, staggerHunter, settleStruggle, damageZones,
 } from '../js/gun.js';
 
 const SET = [
@@ -198,13 +198,40 @@ test('a shot that misses spends the round and opens no damage bar', () => {
   assert.equal(state.battle.aim, null);
 });
 
-test('a shot that lands waits for the damage bar with the kind\'s weak point', () => {
+test('a shot that lands waits for the damage bar with zones sized by the kind', () => {
   resetFloor();
   const m = minionAt(-1, 0, 'HUSK');
   const events = withRandom(0.5, () => fire(m));
   assert.deepEqual(events.map(e => e.type), ['shotFired', 'aimStarted']);
   assert.equal(events[0].chance, 1);
-  assert.deepEqual(state.battle.aim, { target: m, hitHalf: GUN_HIT_HALF, weakWidth: MINION_KINDS.HUSK.weakWidth });
+  assert.equal(state.battle.aim.target, m);
+  const width = tier => state.battle.aim.zones.filter(z => z.tier === tier).map(z => +(z.to - z.from).toFixed(6));
+  assert.deepEqual(width('hit'), Array(DAMAGE_BAR_DEPTHS[0].hits).fill(MINION_KINDS.HUSK.hitWidth));
+  assert.deepEqual(width('weak'), Array(DAMAGE_BAR_DEPTHS[0].weaks).fill(MINION_KINDS.HUSK.weakWidth));
+  assert.deepEqual(width('penalty'), [], 'no penalty zones on the first depth');
+});
+
+test('damage zones: counts by depth, never touching, inside the bar, at new spots each shot', () => {
+  resetFloor();
+  const layouts = new Set();
+  DAMAGE_BAR_DEPTHS.forEach((counts, depth) => {
+    state.run.roomIndex = depth;
+    for (let i = 0; i < 50; i++) {
+      for (const kind of Object.keys(MINION_KINDS)) {
+        const zones = damageZones(kind);
+        const count = tier => zones.filter(z => z.tier === tier).length;
+        assert.deepEqual([count('hit'), count('weak'), count('penalty')], [counts.hits, counts.weaks, counts.penalties]);
+        assert.ok(zones[0].from >= DAMAGE_ZONE_GAP - 1e-9);
+        assert.ok(zones[zones.length - 1].to <= 1 - DAMAGE_ZONE_GAP + 1e-9);
+        zones.slice(1).forEach((z, j) => assert.ok(z.from - zones[j].to >= DAMAGE_ZONE_GAP - 1e-9));
+        layouts.add(zones.map(z => z.tier + z.from.toFixed(3)).join());
+      }
+    }
+  });
+  state.run.roomIndex = DAMAGE_BAR_DEPTHS.length + 2;
+  assert.equal(damageZones('SHARD').length, Object.values(DAMAGE_BAR_DEPTHS.at(-1)).reduce((a, b) => a + b), 'past the table, the last row');
+  state.run.roomIndex = 0;
+  assert.ok(layouts.size > 100, 'zones move from shot to shot');
 });
 
 test('a landed shot staggers the hunter where it stands', () => {
@@ -239,23 +266,47 @@ test('a minion the player can\'t see can\'t be picked', () => {
 
 // --- settleShot ---
 
-test('the damage bar: graze outside the hit zone, 1 inside it, 2 and a limb at the weak point', () => {
+// The middle of the waiting aim's first zone of `tier`.
+function zoneMiddle(tier) {
+  const zone = state.battle.aim.zones.find(z => z.tier === tier);
+  return (zone.from + zone.to) / 2;
+}
+
+test('the damage bar: graze outside the zones, 1 in a hit zone, 2 and a limb at a weak point', () => {
   resetFloor();
   const m = minionAt(-1, 0, 'HUSK');
   withRandom(0, () => fire(m));
-  assert.deepEqual(settleShot(0.5 + GUN_HIT_HALF + 0.01).map(e => e.type), ['shotGrazed']);
+  assert.deepEqual(settleShot(0.995).map(e => e.type), ['shotGrazed']);
   assert.equal(m.hpLeft, MINION_KINDS.HUSK.hp);
 
   state.run.ammo = 2;
   withRandom(0, () => fire(m));
-  const hit = settleShot(0.5 - GUN_HIT_HALF);
+  const hit = settleShot(zoneMiddle('hit'));
   assert.deepEqual(hit, [{ type: 'minionHurt', minion: m, damage: 1, hpLeft: 4, weakPoint: false }]);
 
   withRandom(0, () => fire(m));
-  const weak = settleShot(0.5);
+  const weak = settleShot(zoneMiddle('weak'));
   assert.deepEqual(weak.map(e => e.type), ['minionHurt', 'limbLost']);
   assert.equal(m.hpLeft, 2);
   assert.equal(m.limbs, MINION_KINDS.HUSK.limbs - 1);
+});
+
+test('the damage bar: a penalty zone backfires, no damage and one more round lost', () => {
+  resetFloor();
+  state.run.roomIndex = 1;
+  const m = minionAt(-1, 0, 'HUSK');
+  state.run.ammo = 3;
+  withRandom(0, () => fire(m));
+  const events = settleShot(zoneMiddle('penalty'));
+  assert.deepEqual(events, [{ type: 'shotBackfired', minion: m, roundsLost: 1 }]);
+  assert.equal(state.run.ammo, 1, 'the shot and the backfire');
+  assert.equal(m.hpLeft, MINION_KINDS.HUSK.hp);
+
+  state.run.ammo = 1;
+  withRandom(0, () => fire(m));
+  assert.equal(settleShot(zoneMiddle('penalty'))[0].roundsLost, 0, 'nothing left to lose');
+  assert.equal(state.run.ammo, 0);
+  state.run.roomIndex = 0;
 });
 
 test('a kill takes the minion off the floor and pays its gold, doubled in the darkness', () => {
@@ -265,7 +316,7 @@ test('a kill takes the minion off the floor and pays its gold, doubled in the da
   state.battle.selectedTarget = m;
   state.floor.gunTarget = m;
   withRandom(0, () => fire(m));
-  const events = settleShot(0.5);
+  const events = settleShot(zoneMiddle('weak'));
   const gold = MINION_KINDS.SHARD.gold * DARK_GOLD_MULTIPLIER;
   assert.deepEqual(events.slice(-2), [{ type: 'minionKilled', minion: m }, { type: 'goldGained', amount: gold, from: 'kill' }]);
   assert.equal(state.floor.minions.length, 0);
