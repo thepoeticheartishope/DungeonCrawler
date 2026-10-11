@@ -353,7 +353,7 @@ export const TEXT = {
   'gun.block.chamberFull': 'The chamber is full.', // draft
   'gun.block.notShootable': 'The gun does nothing to that.', // draft
   'gun.block.noTarget': 'Nothing in reach.', // draft. FIRE or T with nothing the gun can reach
-  'gun.aimChance': '{chance}%', // over a target and on each tile the gun reaches: the chance a shot there lands
+  'gun.aimChance': '{chance}%', // over the gun's target: the chance a shot there lands
   'gun.miss': 'MISS', // floats up over a minion the shot missed
   // The gun's panels over the map (gunpanels.js).
   'gun.reload.title': 'SELECT RELOAD: {category|upper}', // draft. Over the reload choices; {category} is the next category
