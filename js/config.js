@@ -630,6 +630,18 @@ export const VERDICT_MIN_DECOYS = 3;
 // Verdict's Timer is per claim, shorter than a question's: one call is
 // quick.
 export const VERDICT_TIMER_SECONDS = 7;
+// Crosswire: the answer and another one from the set cross on a shared
+// letter, like a tiny crossword: across and down, both typed. Both are
+// one word of CROSSWIRE_MIN_LETTERS to _MAX_LETTERS letters, and the
+// shared letter is never either word's first; it starts filled in, free
+// (Timothy, 2026-10-11). REVEAL fills a square: both words right pays
+// CROSSWIRE_TIERS[reveals] (the last one for more), one word right '1',
+// neither a miss.
+export const CROSSWIRE_MIN_LETTERS = 4;
+export const CROSSWIRE_MAX_LETTERS = 8;
+export const CROSSWIRE_TIERS = ['X', '2', '1'];
+// Crosswire's Timer is for the whole grid; time up checks what is typed.
+export const CROSSWIRE_TIMER_SECONDS = 60;
 
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.

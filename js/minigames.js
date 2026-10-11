@@ -20,6 +20,7 @@ import {
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
+  CROSSWIRE_MIN_LETTERS, CROSSWIRE_MAX_LETTERS, CROSSWIRE_TIERS,
   LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS,
 } from './config.js';
 import { numberQuestion, pickQuestion, shuffle, normalizeSpaces } from './quiz.js';
@@ -38,6 +39,8 @@ export const MINIGAME_MODIFIERS = {
   letterPool: ['blind', 'flip', 'timer', 'gambler'],
   codeBreak: ['blind', 'flip', 'timer', 'gambler'],
   verdict: ['blind', 'flip', 'timer', 'gambler'],
+  // No Flip: no fair version for a typed grid.
+  crosswire: ['blind', 'timer', 'gambler'],
 };
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
@@ -56,6 +59,7 @@ const FITS = {
   letterPool: q => Boolean(q.letterPool),
   codeBreak: q => codeBreakCode(q) !== null && !answerInStem(q),
   verdict: q => verdictFits(q) && verdictIndex().fitting.length >= VERDICT_BOSS_CLAIMS,
+  crosswire: q => crosswirePartners(q).length > 0,
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -560,4 +564,70 @@ export function verdictSetup(q, count = verdictClaimCount()) {
 export function verdictTier(wrong, count) {
   const tiers = count === VERDICT_BOSS_CLAIMS ? VERDICT_BOSS_TIERS : VERDICT_TIERS;
   return tiers[wrong] || null;
+}
+
+// ---- Crosswire: two answers cross on a shared letter ----
+
+// Question `q`'s answer as Crosswire letters (one word of letters only,
+// in capitals), or null when it can't be a word in the grid.
+function crosswireWord(q) {
+  const answer = String(q.meaning || '').trim();
+  if (!/^\p{L}+$/u.test(answer)) return null;
+  const word = [...answer.toUpperCase()];
+  return word.length >= CROSSWIRE_MIN_LETTERS && word.length <= CROSSWIRE_MAX_LETTERS ? word : null;
+}
+
+// The set's questions that can be a Crosswire word, worked out once per
+// set: each with its word and the letters it can cross on (all but its
+// first). Rebuilt when another set is loaded.
+let crosswireCache = { data: null, words: [] };
+
+// crosswireCache for state.settings.activeData.
+function crosswireWords() {
+  const data = state.settings.activeData || [];
+  if (crosswireCache.data === data) return crosswireCache.words;
+  const words = [];
+  data.forEach((q) => {
+    const word = crosswireWord(q);
+    if (word && !answerInStem(q)) words.push({ q, word, inner: new Set(word.slice(1)) });
+  });
+  crosswireCache = { data, words };
+  return words;
+}
+
+// The words question `q` can cross: another answer that shares a letter
+// with it, neither being its word's first letter. None when `q` can't be
+// a word itself.
+function crosswirePartners(q) {
+  const word = crosswireWord(q);
+  if (!word || answerInStem(q)) return [];
+  const own = word.join('');
+  const inner = word.slice(1);
+  return crosswireWords().filter(w => w.q !== q && w.word.join('') !== own && inner.some(letter => w.inner.has(letter)));
+}
+
+// A new grid for question `q` (one Crosswire can run): `across` is `q`,
+// `down` a partner, each { q, word }; they cross at `at`: letter
+// at.across of the across word is letter at.down of the down word.
+export function crosswireSetup(q) {
+  const partners = crosswirePartners(q);
+  const partner = partners[Math.floor(Math.random() * partners.length)];
+  const word = crosswireWord(q);
+  const crossings = [];
+  word.forEach((letter, i) => {
+    partner.word.forEach((other, j) => { if (i > 0 && j > 0 && letter === other) crossings.push({ across: i, down: j }); });
+  });
+  return {
+    across: { q, word },
+    down: { q: partner.q, word: partner.word },
+    at: crossings[Math.floor(Math.random() * crossings.length)],
+  };
+}
+
+// The tier for a checked grid: both words right pays CROSSWIRE_TIERS by
+// the squares revealed (more than it lists pay its last), one word '1',
+// neither null (a miss).
+export function crosswireTier(acrossRight, downRight, reveals) {
+  if (acrossRight && downRight) return CROSSWIRE_TIERS[Math.min(reveals, CROSSWIRE_TIERS.length - 1)];
+  return acrossRight || downRight ? '1' : null;
 }

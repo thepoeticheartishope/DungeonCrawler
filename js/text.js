@@ -244,6 +244,20 @@ export const TEXT = {
   'mg.verdict.scored.2': '{name|upper}: {given}.', // draft
   'mg.verdict.scored.1': '{name|upper}: {given}.', // draft
   'mg.verdict.scored.miss': '{name|upper}: {given}. Missed.', // draft
+  'mg.crosswire': 'Crosswire', // draft
+  'mg.crosswire.hint': 'Two answers cross. The shared letter is given.', // draft
+  'mg.crosswire.across': 'ACROSS ({n})', // draft. Clue label, n = letters
+  'mg.crosswire.down': 'DOWN ({n})', // draft
+  'mg.crosswire.cellAcross': 'Across, letter {n}', // draft. A grid square, for screen readers
+  'mg.crosswire.cellDown': 'Down, letter {n}', // draft
+  'mg.crosswire.cellShared': 'Shared letter {letter}', // draft
+  'mg.crosswire.check': 'Check', // draft
+  'mg.crosswire.reveal': 'Reveal', // draft
+  'mg.crosswire.reveals': 'Reveals: {n}. Each one costs a step.', // draft
+  'mg.crosswire.scored.X': '{name|upper}: both words, no help.', // draft
+  'mg.crosswire.scored.2': '{name|upper}: both words, one reveal.', // draft
+  'mg.crosswire.scored.1': '{name|upper}: {given}.', // draft
+  'mg.crosswire.scored.miss': '{name|upper}: neither word. It was {answer}.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
   'battle.blindQuestion': '????', // draft
