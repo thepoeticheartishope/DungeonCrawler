@@ -447,6 +447,8 @@ export const TEXT = {
   'gun.reload.cancel': 'CANCEL', // draft
   'gun.bar.prompt': 'PRESS SELECT', // draft. Over the damage bar
   'map.btn': 'MAP', // draft. The minimap button (M on a keyboard)
+  'ask.title.reload': 'RELOAD.SYS', // draft. The ask screen's title for a reload (its offers, then its question)
+  'ask.title.relay': 'RELAY.SYS', // draft. The ask screen's title for a relay's question
   'log.btn': 'LOG', // draft. The room log button (L on a keyboard): the whole log over the map
   'hud.more': 'Status: tap for more', // draft. The HUD's tooltip: a tap shows myelin, cycle and the goals' names
   'map.label': 'Map of what you have seen on this floor. Tap to close.', // draft. Read out by screen readers

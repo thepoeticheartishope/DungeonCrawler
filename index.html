@@ -659,29 +659,35 @@
     border: 1px solid var(--line);
   }
 
-  /* The gun's panels (js/gunpanels.js): reload choices, the question, the
-     damage bar. They start just below the map's middle, where the camera
-     keeps the player, so the player and what's coming stay visible; a
-     long one grows down over the d-pad and room log (both unused while
-     a panel is up) instead of up over the map. Above the edge glows. */
+  /* The damage bar and the Struggle dial (js/gunpanels.js): a strip on
+     the map's bottom edge, over the room log's place, so the minion and
+     everything round the player stay in view. Above the edge glows. */
   .map-panel {
     position: absolute;
-    left: 0;
-    right: 0;
-    top: 56%;
-    min-height: 44%;
+    left: 1px;
+    right: 1px;
+    bottom: 1px;
     z-index: 5;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 8px 12px 10px;
-    background: var(--stone-dark);
+    gap: 4px;
+    padding: 6px 10px 8px;
+    background: rgba(0, 0, 0, 0.85);
     border-top: 1px solid var(--line);
     text-align: left;
+    font-size: 18px;
   }
   .map-panel[hidden] { display: none; }
-  .map-panel .enemy-name { font-size: 22px; margin-bottom: 6px; }
-  .map-panel-cancel { align-self: flex-start; }
+
+  /* The ask screen (js/gunpanels.js): a reload's offers and question, or
+     a relay's, in place of the map and the controls, like the battle
+     screen. The HUD stays above it. */
+  .ask-screen[hidden] { display: none; }
+  .ask-screen { flex: 1 1 0; min-height: 0; overflow-y: auto; }
+  #roomScreen.asking .map-fit, #roomScreen.asking .room-controls { display: none; }
+  #reloadPanel[hidden], #askQuestionPanel[hidden] { display: none; }
+  #reloadPanel { display: flex; flex-direction: column; gap: 6px; }
+  .ask-cancel { align-self: flex-start; }
   .choice-option .reload-room { color: var(--muted); margin-left: 8px; }
 
   /* The damage bar: the marker sweeps across; where it stops sets the
@@ -690,7 +696,7 @@
      damageZones), each marked with what it does: 1, 2 or X. */
   .damage-bar {
     position: relative;
-    height: 32px;
+    height: 28px;
     border: 1px solid var(--muted);
   }
   .damage-zone {
@@ -725,7 +731,7 @@
     background: var(--torch-bright);
     box-shadow: 0 0 8px var(--torch-bright);
   }
-  .damage-legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 16px; text-transform: uppercase; }
+  .damage-legend { display: flex; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 14px; text-transform: uppercase; }
   .damage-legend[hidden], .damage-zone[hidden] { display: none; }
   /* The Struggle dial (gun.js settleStruggle): the same bar, its prompt in
      inverse video and a brighter frame, so it reads as danger at a glance.
@@ -1587,16 +1593,8 @@
       <!-- The minimap (js/minimapview.js): MAP or M lays it over the map. -->
       <canvas class="minimap" id="minimap" role="img" hidden></canvas>
 
-      <!-- The gun's panels (js/gunpanels.js): they slide up over the lower
-           part of the map, so what's coming stays in view. One at a time. -->
-      <div class="map-panel" id="reloadPanel" hidden>
-        <div class="term-line" id="reloadTitle"></div>
-        <div class="choice-list" id="reloadChoices"></div>
-        <button type="button" class="map-panel-cancel" id="reloadCancel" data-t="gun.reload.cancel"></button>
-      </div>
-      <div class="map-panel" id="mapQuestionPanel" hidden>
-        <div id="mapQuestionSlot"></div>
-      </div>
+      <!-- The damage bar and the Struggle dial (js/gunpanels.js): a strip
+           on the map's bottom edge, so the minion stays in view. -->
       <div class="map-panel" id="aimPanel" hidden>
         <div class="term-line" id="aimPrompt" data-t="gun.bar.prompt"></div>
         <div class="damage-bar" id="damageBar" role="img">
@@ -1608,6 +1606,23 @@
         <div class="damage-legend" id="damageLegend"></div>
       </div>
     </div>
+    </div>
+
+    <!-- The ask screen (js/gunpanels.js): a reload's offers and then its
+         question, or a relay's question, in place of the map and the
+         controls (the HUD stays). The real-time clock waits while it shows. -->
+    <div class="terminal ask-screen" id="askScreen" hidden>
+      <div class="rule"><span id="askTitle"></span></div>
+      <div class="terminal-body">
+        <div id="reloadPanel" hidden>
+          <div class="term-line" id="reloadTitle"></div>
+          <div class="choice-list" id="reloadChoices"></div>
+          <button type="button" class="ask-cancel" id="reloadCancel" data-t="gun.reload.cancel"></button>
+        </div>
+        <div id="askQuestionPanel" hidden>
+          <div id="askQuestionSlot"></div>
+        </div>
+      </div>
     </div>
 
     <!-- The d-pad, and beside it MAP, LOG and SELECT. -->
@@ -1660,7 +1675,7 @@
         </div>
 
         <!-- The question panel (js/questionview.js). It lives here, and
-             moves to the map's panel (#mapQuestionSlot) for a reload. -->
+             moves to the ask screen (#askQuestionSlot) for a reload or a relay. -->
         <div id="battleQuestionSlot">
         <div id="queryPanel">
           <img class="query-image" id="queryImage" alt="" hidden>
