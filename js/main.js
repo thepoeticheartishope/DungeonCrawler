@@ -37,6 +37,7 @@ import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
 import { mountQuestionPanel, setQuestion, retypeQuestion, clearModifier, applyModifier, placeWager } from './questionview.js';
+import { initMinimap, refreshMinimap } from './minimapview.js';
 
 const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
@@ -107,7 +108,6 @@ initRender({
   gunRounds: document.getElementById('gunRounds'),
   gunTarget: document.getElementById('gunTarget'),
   gunAim: document.getElementById('gunAim'),
-  gunActions: document.getElementById('gunActions'),
   clockStat: document.getElementById('clockStat'),
   clockFill: document.getElementById('clockFill'),
   btnSelect,
@@ -118,6 +118,7 @@ onMapTap(tapMap);
 initDataView({ backScreen: document.getElementById('workshopScreen') });
 initExchangeView({ buyItem, leaveExchange });
 initGunPanels({ pickReload, cancelReload: () => endReload(), stopBar: stopDamageBar, stopStruggle: stopStruggleBar });
+initMinimap();
 
 applyStaticText();
 
@@ -673,6 +674,7 @@ function drawFloor() {
   renderLightEye();
   renderTargeting();
   requestMapDraw();
+  refreshMinimap();
   syncBattleScreen(); // nothing's adjacent at spawn — makes sure we're back on the room screen
 
   setQuestion(pickQuestion(null));
@@ -1006,6 +1008,7 @@ function drawEvents(events) {
   renderLightEye();
   renderTargeting();
   requestMapDraw();
+  refreshMinimap();
   recordEvents(events);
   return { cls, text: parts.join(' ') };
 }

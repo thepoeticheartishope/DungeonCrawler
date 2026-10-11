@@ -362,6 +362,8 @@ export const TEXT = {
   'gun.reload.room': 'room for {room}', // draft. When fewer rounds fit in the chamber than the offer loads
   'gun.reload.cancel': 'CANCEL', // draft
   'gun.bar.prompt': 'PRESS SELECT', // draft. Over the damage bar
+  'map.btn': 'MAP', // draft. The minimap button (M on a keyboard)
+  'map.label': 'Map of what you have seen on this floor. Tap to close.', // draft. Read out by screen readers
   'gun.struggle.prompt': 'STRUGGLE: PRESS SELECT', // draft. Over the Struggle dial (no rounds, a minion reached the player)
   'gun.struggle.promptAgain': 'STRUGGLE {count}: PRESS SELECT', // draft. The same, for a later Struggle on this floor (faster, smaller zone)
   'gun.struggle.label': 'Struggle dial. Press SELECT, Space or F in the middle to push it back.', // draft. Read out by screen readers

@@ -163,7 +163,7 @@ export function renderClock(running) {
 // pressed. Part of renderHud, the one writer of the HUD.
 function renderGunHud() {
   const on = state.settings.gunCombat;
-  [els.gunRoundsStat, els.gunTargetStat, els.gunAimStat, els.gunActions].forEach(el => { el.hidden = !on; });
+  [els.gunRoundsStat, els.gunTargetStat, els.gunAimStat, els.btnSelect].forEach(el => { el.hidden = !on; });
   if (!on) return;
   const ammo = state.run.ammo;
   els.gunRounds.textContent = '#'.repeat(ammo) + '-'.repeat(Math.max(GUN_CHAMBER - ammo, 0));

@@ -556,6 +556,11 @@ export const MAP_ANIMATION_MS = {
   formLimb: 1400,    // a limb shot off drifting away and fading
   formDeath: 1800,   // a killed form's letters floating apart
 };
+// The minimap (minimapview.js): a tile is at most MINIMAP_MAX_UNIT CSS px
+// from its centre to its side point, and the plan keeps MINIMAP_PAD px
+// from the map's edge.
+export const MINIMAP_MAX_UNIT = 9;
+export const MINIMAP_PAD = 12;
 // The damage bar (gunpanels.js): ms for its marker to sweep from one end
 // to the other (then it comes back). Under reduced motion the marker
 // still has to move, since its timing is the shot, so it sweeps at half
