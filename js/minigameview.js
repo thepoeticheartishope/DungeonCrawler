@@ -10,10 +10,11 @@
 import { state } from './state.js';
 import {
   BLIND_BASE_MS, CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS, HIGHER_LOWER_BLIND_HINT_MS,
-  SLOW_SPELL_STEP_MS, SLOW_SPELL_BLIND_LETTER_MS, SLOW_SPELL_FLIP_SHARE,
+  SLOW_SPELL_STEP_MS, SLOW_SPELL_BLIND_LETTER_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier,
+  syllableSplitTray, syllableSplitTier,
 } from './minigames.js';
 import { escapeHtml, normalizeSpaces } from './quiz.js';
 import { t } from './text.js';
@@ -39,6 +40,7 @@ const BUILDERS = {
   closeEnough: buildCloseEnough,
   higherLower: buildHigherLower,
   slowSpell: buildSlowSpell,
+  syllableSplit: buildSyllableSplit,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -376,6 +378,72 @@ function buildSlowSpell() {
       cells.forEach((cell, i) => { if (word.order.indexOf(i) < filled) blank(cell); });
     },
     flip: () => { flip = Math.random() < 0.5 ? 'upside' : 'mirror'; },
+  };
+}
+
+// ---- Syllable Split: build the name from a tray of pieces ----
+// Pick the name's pieces in order; each lands in the next blank. A wrong
+// piece is struck out and costs a step down (SYLLABLE_SPLIT_TIERS); past
+// the last it is a miss. Pieces are shown in capitals, so the first
+// piece's capital doesn't give it away. Gambler locks the whole tray (a
+// fieldset). Blind: the tray's pieces go blank, the built part stays.
+// Flip: some pieces are drawn upside down or mirrored.
+function buildSyllableSplit() {
+  slot.classList.add('mg-split');
+  const { pieces, tray } = syllableSplitTray(state.battle.currentQuestion);
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.syllableSplit.hint');
+  const built = add(slot, 'div', 'mg-built');
+  const left = add(slot, 'div', 'term-line mg-left');
+  const lock = add(slot, 'fieldset', 'mg-tray');
+
+  const blanks = pieces.map(() => {
+    const cell = add(built, 'span', 'mg-piece-slot');
+    cell.textContent = '___';
+    return cell;
+  });
+  const buttons = tray.map(piece => {
+    const btn = add(lock, 'button', 'mg-piece');
+    btn.type = 'button';
+    add(btn, 'span').textContent = piece.toUpperCase();
+    btn.addEventListener('click', () => pick(btn, piece));
+    return btn;
+  });
+
+  // The next piece to find, and the wrong picks so far.
+  let next = 0;
+  let wrong = 0;
+  const showLeft = () => { left.textContent = t('mg.syllableSplit.left', { n: SYLLABLE_SPLIT_TIERS.length - 1 - wrong }); };
+  const given = () => pieces.slice(0, next).join('');
+  const pick = (btn, piece) => {
+    btn.disabled = true;
+    if (piece.toLowerCase() !== pieces[next].toLowerCase()) {
+      btn.classList.add('mg-struck');
+      wrong++;
+      showLeft();
+      if (!syllableSplitTier(wrong)) finish({ right: false, tier: null, given: given() || t('battle.noAnswer') });
+      return;
+    }
+    btn.classList.add('mg-used');
+    blanks[next].textContent = pieces[next].toUpperCase();
+    next++;
+    if (next === pieces.length) finish({ right: true, tier: syllableSplitTier(wrong), given: given() });
+  };
+  showLeft();
+
+  return {
+    lock,
+    focus: () => buttons[0].focus(),
+    finish: () => {
+      while (next < pieces.length) {
+        const btn = buttons.find(b => !b.disabled && b.textContent === pieces[next].toUpperCase());
+        pick(btn, pieces[next]);
+      }
+    },
+    blind: () => lock.classList.add('mod-blind'),
+    flip: () => {
+      const mode = Math.random() < 0.5 ? 'upside' : 'mirror';
+      buttons.forEach(btn => { if (Math.random() < SYLLABLE_SPLIT_FLIP_SHARE) btn.firstChild.classList.add('flip-' + mode); });
+    },
   };
 }
 

@@ -57,7 +57,10 @@ export function parseListInput(text) {
           answerType: answerType || undefined,
           draft: (item && item.draft === true) || undefined,
           fact: typeof (item && item.fact) === 'boolean' ? item.fact : undefined,
-          factNote: (item && typeof item.factNote === 'string' && item.factNote.trim()) || undefined
+          factNote: (item && typeof item.factNote === 'string' && item.factNote.trim()) || undefined,
+          // A name's pieces for Syllable Split ("Ne-bu-chad-nez-zar"), when
+          // its own split on the vowels is wrong (minigames.js).
+          syllables: (item && typeof item.syllables === 'string' && item.syllables.trim()) || undefined
         };
       })
       .filter(item => item.term && item.meaning);

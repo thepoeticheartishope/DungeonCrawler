@@ -1159,6 +1159,18 @@
   .mg-letter.flip-upside { transform: rotate(180deg); }
   .mg-letter.flip-mirror { transform: scaleX(-1); }
   .mg-options { display: flex; flex-direction: column; text-align: left; margin-top: 4px; }
+  /* Syllable Split: the name built so far, and the tray of pieces (a
+     fieldset, so Gambler can lock it whole). Blind blanks the tray's
+     pieces at once, no fade. */
+  .mg-built { font-size: 24px; color: var(--torch-bright); margin: 6px 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 8px; }
+  .mg-tray { border: none; padding: 0; margin: 6px 0 0; min-width: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .mg-piece { min-width: 64px; min-height: 44px; }
+  .mg-piece span { display: inline-block; }
+  .mg-piece span.flip-upside { transform: rotate(180deg); }
+  .mg-piece span.flip-mirror { transform: scaleX(-1); }
+  .mg-piece.mg-used { visibility: hidden; }
+  .mg-piece.mg-struck span { text-decoration: line-through; }
+  .mg-tray.mod-blind .mg-piece span { visibility: hidden; }
   /* Timer: the countdown line; bright for the last few seconds. */
   .mod-timer[hidden] { display: none; }
   .mod-timer.urgent { color: var(--torch-bright); text-shadow: var(--glow-strong); }

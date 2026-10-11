@@ -17,6 +17,7 @@ import {
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
   HIGHER_LOWER_TIERS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_DECOYS, SLOW_SPELL_X_SHOWN,
+  SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
 } from './config.js';
 import { numberQuestion, pickQuestion, shuffle, normalizeSpaces } from './quiz.js';
 
@@ -29,6 +30,7 @@ export const MINIGAME_MODIFIERS = {
   higherLower: ['blind', 'flip', 'timer', 'gambler'],
   // No Timer: waiting for letters is the game.
   slowSpell: ['blind', 'flip', 'gambler'],
+  syllableSplit: ['blind', 'flip', 'timer', 'gambler'],
 };
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
@@ -37,8 +39,18 @@ export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 const FITS = {
   closeEnough: q => closeEnoughAnswer(q) !== null,
   higherLower: q => higherLowerAnswer(q) !== null,
-  slowSpell: q => spellable(q.meaning) && slowSpellDecoys(q).length >= SLOW_SPELL_DECOYS,
+  slowSpell: q => spellable(q.meaning) && !answerInStem(q) && slowSpellDecoys(q).length >= SLOW_SPELL_DECOYS,
+  syllableSplit: q => {
+    const pieces = !answerInStem(q) && syllableSplitPieces(q);
+    return Boolean(pieces) && pieceDecoys(pieces).length >= SYLLABLE_SPLIT_DECOYS;
+  },
 };
+
+// Whether question `q`'s wording holds its own answer ("Spell
+// Bartimaeus."): a minigame that spells the answer out would be free.
+function answerInStem(q) {
+  return String(q.term || '').toLowerCase().includes(String(q.meaning || '').trim().toLowerCase());
+}
 
 // The minigames that can run question `q`.
 export function minigamesFor(q) {
@@ -260,4 +272,105 @@ export function slowSpellWord(q) {
 export function slowSpellTier(shown, total) {
   if (shown <= SLOW_SPELL_X_SHOWN) return 'X';
   return shown <= Math.floor(total / 2) ? '2' : '1';
+}
+
+// ---- Syllable Split: build a name from its pieces ----
+
+// Vowels a name splits on. Y is one too, except first or before a vowel.
+const VOWELS = 'aeiou';
+// Consonant pairs kept together, starting the next piece ("Ne-bu-chad").
+const DIGRAPHS = ['ch', 'sh', 'th', 'ph', 'wh', 'gh', 'ck'];
+// Consonant pairs that can start a piece ("A-bra-ham", not "Ab-ra-ham").
+const ONSETS = ['br', 'cr', 'dr', 'fr', 'gr', 'pr', 'tr', 'bl', 'cl', 'fl', 'gl', 'pl'];
+
+// Names already split. DEV -> Minigame checks every question of a set,
+// each against every name, so a split is worked out once.
+const splits = new Map();
+
+// `word` cut into rough syllables on its vowel groups: one consonant
+// between two goes with the next piece, two or more are split after the
+// first, keeping a digraph or a starting pair together; a silent final
+// "e" stays on the last piece. Rough on purpose: a question's own
+// `syllables` field fixes a bad split by hand.
+export function splitSyllables(word) {
+  if (!splits.has(word)) splits.set(word, cutSyllables(word));
+  return splits.get(word);
+}
+
+// splitSyllables' work, uncached.
+function cutSyllables(word) {
+  const w = word.toLowerCase();
+  const vowel = i => VOWELS.includes(w[i]) || (w[i] === 'y' && i > 0 && !VOWELS.includes(w[i + 1] || ''));
+  const groups = [];
+  for (let i = 0; i < w.length; i++) {
+    if (!vowel(i)) continue;
+    const start = i;
+    while (i + 1 < w.length && vowel(i + 1)) i++;
+    groups.push([start, i + 1]);
+  }
+  const last = groups[groups.length - 1];
+  if (groups.length > 1 && w.endsWith('e') && last[0] === w.length - 1 && last[0] - groups[groups.length - 2][1] === 1) groups.pop();
+  const cuts = [];
+  for (let g = 0; g < groups.length - 1; g++) {
+    const a = groups[g][1];
+    const b = groups[g + 1][0];
+    if (b - a <= 1) cuts.push(a);
+    else if (DIGRAPHS.includes(w.slice(b - 2, b)) || (b - a === 2 && ONSETS.includes(w.slice(a, b)))) cuts.push(b - 2);
+    else if (DIGRAPHS.includes(w.slice(a, a + 2))) cuts.push(a + 2);
+    else cuts.push(a + 1);
+  }
+  return [0, ...cuts].map((at, i) => word.slice(at, cuts[i] ?? word.length));
+}
+
+// Question `q`'s answer in pieces: its `syllables` field ("Ne-bu-chad" or
+// a list) when that spells the answer, else splitSyllables(), or null when
+// it can't run Syllable Split: not a name, not one word of letters, or
+// fewer than SYLLABLE_SPLIT_MIN_PIECES pieces.
+export function syllableSplitPieces(q) {
+  if (!q || q.answerType !== 'name') return null;
+  const answer = String(q.meaning || '').trim();
+  if (!/^\p{L}+$/u.test(answer)) return null;
+  const own = typeof q.syllables === 'string' ? q.syllables.split('-') : q.syllables;
+  const fits = Array.isArray(own) && own.join('').toLowerCase() === answer.toLowerCase();
+  const pieces = fits ? own.map(String) : splitSyllables(answer);
+  return pieces.length >= SYLLABLE_SPLIT_MIN_PIECES ? pieces : null;
+}
+
+// The pieces of the set's other one-word names of two pieces or more
+// (each spelling once), none of them a piece of `pieces`: the tray's decoys. Pieces
+// of every length are kept, so a decoy can sit in any place.
+function pieceDecoys(pieces) {
+  const own = new Set(pieces.map(p => p.toLowerCase()));
+  const answer = pieces.join('').toLowerCase();
+  const seen = new Set();
+  const decoys = [];
+  for (const d of state.settings.activeData) {
+    if (d.answerType !== 'name' || !/^\p{L}+$/u.test(String(d.meaning).trim())) continue;
+    if (d.meaning.trim().toLowerCase() === answer) continue;
+    const split = splitSyllables(d.meaning.trim());
+    // A name of one piece ("Noah") is a whole name, plainly no piece.
+    if (split.length < 2) continue;
+    for (const piece of split) {
+      const k = piece.toLowerCase();
+      if (own.has(k) || seen.has(k)) continue;
+      seen.add(k);
+      decoys.push(piece);
+    }
+  }
+  return decoys;
+}
+
+// A new tray for question `q` (one Syllable Split can run): the answer's
+// `pieces` in order, and `tray`, those pieces and SYLLABLE_SPLIT_DECOYS
+// decoys from other names, shuffled.
+export function syllableSplitTray(q) {
+  const pieces = syllableSplitPieces(q);
+  const decoys = shuffle(pieceDecoys(pieces)).slice(0, SYLLABLE_SPLIT_DECOYS);
+  return { pieces, tray: shuffle([...pieces, ...decoys]) };
+}
+
+// The tier for a name built with `wrong` wrong picks:
+// SYLLABLE_SPLIT_TIERS[wrong], or null (a miss) past the last.
+export function syllableSplitTier(wrong) {
+  return SYLLABLE_SPLIT_TIERS[wrong] || null;
 }
