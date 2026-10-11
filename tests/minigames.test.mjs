@@ -1,6 +1,7 @@
-// Unit tests for minigames.js (minigames plan step A): which questions a
+// Unit tests for minigames.js (minigames plan steps A-B): which questions a
 // minigame fits, the roll (chance, no repeats, DEV -> Minigame), the
-// modifiers a minigame keeps, Close Enough's dial and bands, and what a
+// modifiers a minigame keeps, Close Enough's dial and bands, Higher /
+// Lower's bar, hints and tiers, and what a
 // tier pays in the settle rules (gun.js, answers.js).
 //
 // Run: node --test tests/*.test.mjs
@@ -11,11 +12,11 @@ import assert from 'node:assert/strict';
 import { state } from '../js/state.js';
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS, ENERGY_MAX, RELOAD_ENERGY,
-  BOSS_HP, MINIGAME_TIER_PAY,
+  BOSS_HP, MINIGAME_TIER_PAY, HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
 } from '../js/config.js';
 import {
   MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, modifiersFor, rollMinigame, forcedQuestion, endMinigame,
-  closeEnoughDial, closeEnoughTier,
+  closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier,
 } from '../js/minigames.js';
 import { settleReload } from '../js/gun.js';
 import { settleAnswer } from '../js/answers.js';
@@ -58,9 +59,9 @@ test('every minigame supports at least two modifiers', () => {
 });
 
 test('Close Enough fits plain number answers only', () => {
-  assert.deepEqual(minigamesFor(NUMBER), ['closeEnough']);
-  assert.deepEqual(minigamesFor({ meaning: '1,500%', answerType: 'number' }), ['closeEnough']);
-  assert.deepEqual(minigamesFor({ meaning: '4 B.C.', answerType: 'number' }), ['closeEnough']);
+  assert.deepEqual(minigamesFor(NUMBER), ['closeEnough', 'higherLower']);
+  assert.deepEqual(minigamesFor({ meaning: '1,500%', answerType: 'number' }), ['closeEnough', 'higherLower']);
+  assert.deepEqual(minigamesFor({ meaning: '4 B.C.', answerType: 'number' }), ['closeEnough', 'higherLower']);
   assert.deepEqual(minigamesFor(WORD), []);
   assert.deepEqual(minigamesFor({ meaning: '7½', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '13 and 14', answerType: 'number' }), []);
@@ -75,6 +76,16 @@ test('modifiersFor keeps every offered modifier, or gives null', () => {
   assert.equal(modifiersFor('closeEnough', ['blind', 'nothing']), null);
 });
 
+test('Higher / Lower fits whole numbers that make a short enough bar', () => {
+  for (const meaning of ['1', '12', '37', '950', '12000', '600000']) {
+    assert.ok(minigamesFor({ meaning, answerType: 'number' }).includes('higherLower'), meaning);
+  }
+  for (const meaning of ['3.5', '1453', '912', '1906', '144000', '0']) {
+    assert.ok(!minigamesFor({ meaning, answerType: 'number' }).includes('higherLower'), meaning);
+  }
+  assert.ok(!minigamesFor(WORD).includes('higherLower'));
+});
+
 test('a fitting question runs as a minigame MINIGAME_CHANCE of the time', () => {
   reset();
   assert.equal(withRandom(MINIGAME_CHANCE - 0.01, () => rollMinigame(NUMBER, [])), 'closeEnough');
@@ -87,10 +98,13 @@ test('a fitting question runs as a minigame MINIGAME_CHANCE of the time', () => 
 
 test('the same minigame never runs twice in a row; a plain question clears it', () => {
   reset();
-  withRandom(0, () => rollMinigame(NUMBER, []));
-  assert.equal(withRandom(0, () => rollMinigame(NUMBER, [])), null, 'not twice in a row');
+  // A question only Close Enough fits.
+  const DECIMAL = { meaning: '3.5', answerType: 'number' };
+  withRandom(0, () => rollMinigame(DECIMAL, []));
+  assert.equal(withRandom(0, () => rollMinigame(DECIMAL, [])), null, 'not twice in a row');
   assert.equal(state.run.lastMinigame, null, 'that question was plain');
-  assert.equal(withRandom(0, () => rollMinigame(NUMBER, [])), 'closeEnough', 'so it can run again');
+  assert.equal(withRandom(0, () => rollMinigame(DECIMAL, [])), 'closeEnough', 'so it can run again');
+  assert.equal(withRandom(0, () => rollMinigame(NUMBER, [])), 'higherLower', 'another one fits after it');
 });
 
 test('an offer with a modifier the minigame lacks stays a plain question', () => {
@@ -152,6 +166,28 @@ test('Close Enough under 10: 1 off = 2, no tier 1', () => {
   assert.equal(closeEnoughTier(dial, 6), '2');
   assert.equal(closeEnoughTier(dial, 8), '2');
   assert.equal(closeEnoughTier(dial, 9), null);
+});
+
+test('the Higher / Lower bar lands on the answer, reaches past it, and has enough steps', () => {
+  for (const meaning of ['1', '4', '12', '37', '40', '950', '12000', '600000', '1,500%']) {
+    for (const r of [0, 0.5, 0.999]) {
+      const bar = withRandom(r, () => higherLowerBar({ meaning, answerType: 'number' }));
+      assert.equal(bar.answerAt * bar.step, bar.answer, meaning + ' lands on a step');
+      assert.ok(Number.isInteger(bar.answerAt) && Number.isInteger(bar.steps), meaning + ' whole steps');
+      assert.ok(bar.top >= Math.max(HIGHER_LOWER_MIN_TOP, bar.answer * HIGHER_LOWER_REACH_MIN), meaning + ' reaches past it');
+      assert.equal(bar.steps * bar.step, bar.top, meaning + ' top is a step');
+      assert.ok(bar.steps >= HIGHER_LOWER_MIN_STEPS && bar.steps <= 100, meaning + ' has ' + bar.steps + ' steps');
+    }
+  }
+  assert.equal(withRandom(0, () => higherLowerBar({ meaning: '40' })).step, 5, '0-50 in fives');
+});
+
+test('Higher / Lower hints and tiers: guess 1 = X, 2 = 2, 3 = 1, then a miss', () => {
+  const bar = { answer: 40, step: 5, answerAt: 8 };
+  assert.equal(higherLowerHint(bar, 8), 'hit');
+  assert.equal(higherLowerHint(bar, 3), 'higher');
+  assert.equal(higherLowerHint(bar, 9), 'lower');
+  assert.deepEqual([1, 2, 3, 4].map(higherLowerTier), ['X', '2', '1', null]);
 });
 
 test('a reload pays one less energy at tier 1 (at least 1) and one more at X', () => {

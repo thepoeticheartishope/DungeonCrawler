@@ -1144,8 +1144,14 @@
   .mg-close.mod-blind .mg-ends { visibility: hidden; }
   .mg-close.mod-blind .mg-reading::after { content: '????'; font-size: 28px; color: var(--muted); }
   /* Flip: the dial runs backwards, its top on the left. */
-  .mg-close.mg-flip .mg-dial { direction: rtl; }
-  .mg-close.mg-flip .mg-ends { flex-direction: row-reverse; }
+  .mg-flip .mg-dial { direction: rtl; }
+  .mg-flip .mg-ends { flex-direction: row-reverse; }
+  /* Higher / Lower: the hints so far; under Blind each goes after a
+     moment (at once, no fade). */
+  .mg-hints { min-height: 1.2em; }
+  .mg-said { color: var(--torch-bright); }
+  .mg-said.mg-gone { visibility: hidden; }
+  .mg-left { color: var(--muted); }
   /* Timer: the countdown line; bright for the last few seconds. */
   .mod-timer[hidden] { display: none; }
   .mod-timer.urgent { color: var(--torch-bright); text-shadow: var(--glow-strong); }

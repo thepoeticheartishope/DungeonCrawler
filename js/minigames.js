@@ -15,6 +15,8 @@ import { state } from './state.js';
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_REACH_MAX, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
+  HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
+  HIGHER_LOWER_TIERS,
 } from './config.js';
 import { numberQuestion, pickQuestion } from './quiz.js';
 
@@ -24,6 +26,7 @@ import { numberQuestion, pickQuestion } from './quiz.js';
 // reload offer or a hunter pair can be built from it.
 export const MINIGAME_MODIFIERS = {
   closeEnough: ['blind', 'flip', 'timer', 'gambler'],
+  higherLower: ['blind', 'flip', 'timer', 'gambler'],
 };
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
@@ -31,6 +34,7 @@ export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 // Whether each minigame can run a question.
 const FITS = {
   closeEnough: q => closeEnoughAnswer(q) !== null,
+  higherLower: q => higherLowerAnswer(q) !== null,
 };
 
 // The minigames that can run question `q`.
@@ -143,4 +147,50 @@ export function closeEnoughTier(dial, at) {
   if (off <= dial.answer * CLOSE_ENOUGH_BANDS[2] + slack) return '2';
   if (off <= dial.answer * CLOSE_ENOUGH_BANDS[1] + slack) return '1';
   return null;
+}
+
+// ---- Higher / Lower: find a number answer in a few guesses ----
+
+// The number Higher / Lower hunts for: a whole number Close Enough could
+// dial, no finer than HIGHER_LOWER_MAX_AT steps of its roundest step (40
+// is 4 tens, 37 is 37 ones; 1453 would be a bar of thousands), or null.
+function higherLowerAnswer(q) {
+  const n = closeEnoughAnswer(q);
+  if (!n || !Number.isInteger(n.value) || n.value / niceSteps(n.value)[0] > HIGHER_LOWER_MAX_AT) return null;
+  return n;
+}
+
+// The round steps (1, 2, 5, 10, 20, 50 ...) a whole number `n` is a whole
+// number of, largest first.
+function niceSteps(n) {
+  const steps = [];
+  for (let p = 1; p <= n; p *= 10) {
+    for (const s of [p, 2 * p, 5 * p]) if (s <= n && n % s === 0) steps.push(s);
+  }
+  return steps.reverse();
+}
+
+// A new bar for question `q` (one Higher / Lower can run): from 0 to `top`
+// in `steps` steps of `step`, the answer at step `answerAt`, and the
+// answer's `unit`. The same shape as Close Enough's dial. The step is the
+// largest round step that lands on the answer and still leaves at least
+// HIGHER_LOWER_MIN_STEPS steps.
+export function higherLowerBar(q) {
+  const { value, unit } = higherLowerAnswer(q);
+  const reach = HIGHER_LOWER_REACH_MIN + Math.random() * (HIGHER_LOWER_REACH_MAX - HIGHER_LOWER_REACH_MIN);
+  const top = Math.max(HIGHER_LOWER_MIN_TOP, roundUp(value * reach));
+  const step = niceSteps(value).find(s => top % s === 0 && top / s >= HIGHER_LOWER_MIN_STEPS) || 1;
+  return { answer: value, unit, top, step, steps: top / step, answerAt: value / step };
+}
+
+// What a guess at step `at` hears: 'hit', 'higher' or 'lower'.
+export function higherLowerHint(bar, at) {
+  if (at === bar.answerAt) return 'hit';
+  return at < bar.answerAt ? 'higher' : 'lower';
+}
+
+// The tier for a hit on guess `n` (1 = the first): HIGHER_LOWER_TIERS in
+// order, null past the last (a miss).
+export function higherLowerTier(n) {
+  return HIGHER_LOWER_TIERS[n - 1] || null;
 }

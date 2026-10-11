@@ -543,6 +543,22 @@ export const CLOSE_ENOUGH_SMALL = 10;
 export const CLOSE_ENOUGH_SMALL_OFF = 1;
 // Close Enough's tick marks along the dial (Blind leaves only these).
 export const CLOSE_ENOUGH_TICKS = 10;
+// Higher / Lower: a bar from 0 to the answer times a random reach between
+// HIGHER_LOWER_REACH_MIN and _MAX, rounded up to a round number, never
+// shorter than HIGHER_LOWER_MIN_TOP. It moves in the largest round step
+// (1, 2, 5, 10 ...) that lands on the answer and leaves at least
+// HIGHER_LOWER_MIN_STEPS steps. Answers more than HIGHER_LOWER_MAX_AT of
+// their roundest step (1453, 912) don't run it. A hit on guess n pays
+// HIGHER_LOWER_TIERS[n - 1]; one guess per tier.
+export const HIGHER_LOWER_REACH_MIN = 1.25;
+export const HIGHER_LOWER_REACH_MAX = 2.5;
+export const HIGHER_LOWER_MIN_TOP = 10;
+export const HIGHER_LOWER_MIN_STEPS = 10;
+export const HIGHER_LOWER_MAX_AT = 40;
+export const HIGHER_LOWER_TIERS = ['X', '2', '1'];
+// Higher / Lower's Blind: once it is on, each hint shows this long, then
+// goes (and the bar stops narrowing), so the hints must be remembered.
+export const HIGHER_LOWER_BLIND_HINT_MS = 2500;
 
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.

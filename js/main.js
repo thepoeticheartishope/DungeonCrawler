@@ -1071,7 +1071,7 @@ function drawEvents(events) {
         break;
       // A minigame ended (minigames.js endMinigame): how close it came.
       case 'minigameScored': {
-        const line = t('mg.scored.' + (e.tier || 'miss'), { name: t('mg.' + e.minigame), answer: e.answer });
+        const line = t('mg.' + e.minigame + '.scored.' + (e.tier || 'miss'), { name: t('mg.' + e.minigame), answer: e.answer });
         logLine(line, e.tier ? 'bright' : 'alert');
         parts.push(line);
         break;
