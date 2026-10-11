@@ -222,14 +222,16 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     if (hunter) events.push({ type: 'hunterWoke', hunter });
   }
   for (const m of state.floor.minions) {
+    // A slow kind's off turn comes first, so a rest (a stun) is only used
+    // up on a turn it would really have moved.
+    const stats = MINION_KINDS[m.minionKind];
+    if (gun && stats && state.run.turnCount % stats.moveEvery !== 0) continue;
     if (m.rest > 0) {
       m.rest--;
       continue;
     }
     // A strike took the last stability: the run is over, nothing else moves.
     if (state.run.hearts <= 0) break;
-    const stats = MINION_KINDS[m.minionKind];
-    if (gun && stats && state.run.turnCount % stats.moveEvery !== 0) continue;
     // A player inside a room held by a relay can't be reached from outside
     // it, not even from the doorway (bfsPath would let the last step in).
     const sheltered = keptOut(m).has(key(state.floor.playerRow, state.floor.playerCol));

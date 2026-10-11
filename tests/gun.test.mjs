@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  ENERGY_MAX, RELOAD_ENERGY, WEAKNESS_DAMAGE_SCALE, MINION_KINDS, DAMAGE_BAR_DEPTHS, DAMAGE_ZONE_GAP, MINION_STRIKE_COST,
+  ENERGY_MAX, RELOAD_ENERGY, WEAKNESS_DAMAGE_SCALE, MINION_KINDS, DAMAGE_BAR_DEPTHS, DAMAGE_ZONE_GAP, MINION_STRIKE_COST, MINION_STUN_MOVES,
   DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
 } from '../js/config.js';
@@ -291,6 +291,40 @@ test('the damage bar: graze outside the zones, 1 in a hit zone, 2 and a limb at 
   assert.deepEqual(weak.map(e => e.type), ['minionHurt', 'limbLost']);
   assert.equal(m.hpLeft, 2);
   assert.equal(m.limbs, MINION_KINDS.HUSK.limbs - 1);
+});
+
+test('a shot that does damage stuns the minion: it skips its next move, then comes on', () => {
+  resetFloor();
+  state.settings.gunCombat = true;
+  const m = minionAt(-1, 0, 'SHARD');
+  state.run.energy = 2;
+  withRandom(0, () => fire(m));
+  settleShot(zoneMiddle('hit'));
+  assert.equal(m.rest, MINION_STUN_MOVES);
+  assert.deepEqual(advanceMonsters().filter(e => e.minion === m), [], 'stunned: no strike');
+  assert.equal(state.run.hearts, MAX_HEARTS);
+  assert.equal(advanceMonsters()[0].type, 'minionStruck', 'then it strikes');
+});
+
+test('a graze does not stun', () => {
+  resetFloor();
+  const m = minionAt(-1, 0, 'SHARD');
+  withRandom(0, () => fire(m));
+  settleShot(0.995);
+  assert.ok(!(m.rest > 0));
+});
+
+test('a slow minion\'s stun is spent on a turn it would have moved', () => {
+  resetFloor();
+  state.settings.gunCombat = true;
+  const m = minionAt(-1, 0, 'HUSK');
+  m.rest = 1;
+  state.run.turnCount = 0; // the next turn (1) is an off turn for moveEvery 2
+  assert.deepEqual(advanceMonsters().filter(e => e.minion === m), []);
+  assert.equal(m.rest, 1, 'still stunned after its off turn');
+  assert.deepEqual(advanceMonsters().filter(e => e.minion === m), [], 'the stun takes its move');
+  assert.equal(m.rest, 0);
+  assert.equal(state.run.hearts, MAX_HEARTS);
 });
 
 test('the damage bar: a penalty zone backfires, no damage and one more round lost', () => {
