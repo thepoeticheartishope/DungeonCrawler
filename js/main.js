@@ -11,7 +11,7 @@ import { resetHaunts, pickHaunt } from './haunts.js';
 import {
   shuffle, pickQuestion, escapeHtml,
   normalizeSpaces, buildHint, poolFor, fightChoiceLabel,
-  buildCategoryChoices, categoryLabel
+  buildCategoryChoices, categoryLabel, buildChoices
 } from './quiz.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
@@ -22,6 +22,7 @@ import {
 } from './combat.js';
 import { lightConsumed } from './light.js';
 import { stepPlayer } from './moves.js';
+import { playIntro } from './introview.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
@@ -39,7 +40,6 @@ import { mountQuestionPanel, setQuestion, retypeQuestion, clearModifier, applyMo
 
 const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
-const glitchCode = document.getElementById('glitchCode');
 const revealToggle = document.getElementById('revealToggle');
 const realTimeToggle = document.getElementById('realTimeToggle');
 const playerNameInput = document.getElementById('playerName');
@@ -580,23 +580,24 @@ function leaveEncounter() {
   syncBattleScreen();
 }
 
-const INTRO_GLITCH_DURATION_MS = 2000;
-const GLITCH_CHARS = '01{}[]<>/\\;:=+*#$%&^~ABCDEF0123456789';
-
-// Fills the intro glitch screen's backdrop with a block of random
-// code-like garbage, tall enough that the CSS scroll animation (which
-// moves it by a third of its own height) never runs out of content mid-loop.
-function randomGlitchCode() {
-  const lines = [];
-  for (let i = 0; i < 90; i++) {
-    let line = '';
-    const len = 40 + Math.floor(Math.random() * 20);
-    for (let j = 0; j < len; j++) {
-      line += GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
-    }
-    lines.push(line);
-  }
-  return lines.join('\n');
+// What the intro shows: every question in the set, and one of them with a
+// wrong answer for the fake player to type. The wrong answer is another
+// question's answer of the same type (a name for a name), so it reads as a
+// believable mistake; a set without types falls back to its choices.
+// Drafts (answers longer than one word) are left out where the set has
+// others, so the typed answer stays short.
+function introScript() {
+  const pool = state.settings.activeData;
+  const settled = pool.filter(q => !q.draft);
+  const from = settled.length ? settled : pool;
+  const asked = from[Math.floor(Math.random() * from.length)];
+  const right = normalizeSpaces(asked.meaning).toLowerCase();
+  const isWrong = answer => normalizeSpaces(answer).toLowerCase() !== right;
+  const sameType = from.filter(q => q.answerType && q.answerType === asked.answerType && isWrong(q.meaning));
+  const wrong = sameType.length
+    ? sameType[Math.floor(Math.random() * sameType.length)].meaning
+    : buildChoices(asked).find(isWrong) || '';
+  return { questions: pool.map(q => q.term), attempt: { question: asked.term, answer: wrong } };
 }
 
 function startGame() {
@@ -629,17 +630,16 @@ function startGame() {
   mcOptionsEl.classList.toggle('show', state.settings.mcMode);
   renderHud();
 
-  // Room setup happens immediately (invisibly, behind the glitch screen) so
-  // there's no added real loading time — only a deliberate dramatic pause
-  // before the player actually sees the room. The elapsed-time clock starts
-  // once that pause ends, not before, so it isn't charged against the player.
+  // Room setup happens immediately (invisibly, behind the intro) so there's
+  // no added real loading time, only the intro itself. The elapsed-time
+  // clock starts once the intro ends or is skipped, so it isn't charged
+  // against the player.
   loadRoom('opening');
-  glitchCode.textContent = randomGlitchCode();
   showScreen(introGlitch);
-  setTimeout(() => {
+  playIntro(introScript(), () => {
     showScreen(roomScreen);
     startTimer();
-  }, INTRO_GLITCH_DURATION_MS);
+  });
 }
 
 // A new floor: make the new floor's data, then put it on the page.

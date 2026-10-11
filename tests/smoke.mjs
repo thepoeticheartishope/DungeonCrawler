@@ -99,7 +99,7 @@ async function startGameAndWaitForRoom(page) {
   const quizBowl = '#pickScreen .set-option[data-set="builtin:bible-quiz-bowl"]';
   await page.waitForSelector(quizBowl, { timeout: 10000 });
   await page.click(quizBowl);
-  // Start shows an intro glitch screen for a couple seconds before the
+  // Start shows the intro (introview.js, about 5 s) before the
   // room screen appears.
   await page.waitForSelector('#roomScreen.show', { timeout: 10000 });
 }
