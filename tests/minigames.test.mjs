@@ -15,11 +15,11 @@ import { state } from '../js/state.js';
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS, ENERGY_MAX, RELOAD_ENERGY,
   BOSS_HP, MINIGAME_TIER_PAY, HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
-  SLOW_SPELL_DECOYS, SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM,
+  SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM,
 } from '../js/config.js';
 import {
   MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, modifiersFor, rollMinigame, forcedQuestion, endMinigame,
-  closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier,
+  closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   splitSyllables, syllableSplitPieces, syllableSplitTray, syllableSplitTier,
   letterPoolSetup, letterPoolCheck, letterPoolTier,
 } from '../js/minigames.js';
@@ -68,7 +68,7 @@ test('Close Enough fits plain number answers only', () => {
   assert.deepEqual(minigamesFor(NUMBER), ['closeEnough', 'higherLower']);
   assert.deepEqual(minigamesFor({ meaning: '1,500%', answerType: 'number' }), ['closeEnough', 'higherLower']);
   assert.deepEqual(minigamesFor({ meaning: '4 B.C.', answerType: 'number' }), ['closeEnough', 'higherLower']);
-  assert.deepEqual(minigamesFor(WORD), []);
+  assert.deepEqual(minigamesFor(WORD), ['slowSpell'], 'a one-word name: only Slow Spell');
   assert.deepEqual(minigamesFor({ meaning: '7½', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '13 and 14', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '0', answerType: 'number' }), []);
@@ -99,7 +99,7 @@ test('a fitting question runs as a minigame MINIGAME_CHANCE of the time', () => 
   reset();
   assert.equal(withRandom(MINIGAME_CHANCE, () => rollMinigame(NUMBER, [])), null);
   assert.equal(state.battle.minigame, null);
-  assert.equal(withRandom(0, () => rollMinigame(WORD, [])), null, 'nothing fits a name');
+  assert.equal(withRandom(0, () => rollMinigame({ ...WORD, meaning: 'John Mark' }, [])), null, 'nothing fits a two-word name');
 });
 
 test('the same minigame never runs twice in a row; a plain question clears it', () => {
@@ -196,18 +196,16 @@ test('Higher / Lower hints and tiers: guess 1 = X, 2 = 2, 3 = 1, then a miss', (
   assert.deepEqual([1, 2, 3, 4].map(higherLowerTier), ['X', '2', '1', null]);
 });
 
-// Names for Slow Spell: Noah has three others of four letters (Adam twice),
-// and two of other lengths.
+// Names for Slow Spell.
 const NAMES = ['Noah', 'Adam', 'adam', 'Ruth', 'Saul', 'Moses', 'Eve']
   .map(meaning => ({ term: 'Who?', meaning, answerType: 'name' }));
 const BOOK = { term: 'Which book?', meaning: 'Ruth', answerType: 'book' };
 
-test('Slow Spell fits one-word answers with enough decoys of the same type and length', () => {
+test('Slow Spell fits one-word answers of 4 to 12 letters, no decoys needed (typed)', () => {
   reset();
-  state.settings.activeData = [...NAMES.slice(0, 4), BOOK];
-  assert.ok(!minigamesFor(NAMES[0]).includes('slowSpell'), 'Adam once, Ruth is a book: two decoys');
+  state.settings.activeData = [NAMES[0]];
+  assert.deepEqual(minigamesFor(NAMES[0]), ['slowSpell'], 'alone in the set: typed, so nothing to pick from');
   state.settings.activeData = [...NAMES, BOOK];
-  assert.deepEqual(minigamesFor(NAMES[0]), ['slowSpell']);
   assert.ok(!minigamesFor(NAMES[6]).includes('slowSpell'), 'Eve: too short');
   assert.deepEqual(minigamesFor({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }), [], 'two words');
   assert.ok(!minigamesFor(NUMBER).includes('slowSpell'), 'a number is no word');
@@ -215,7 +213,7 @@ test('Slow Spell fits one-word answers with enough decoys of the same type and l
   assert.ok(!MINIGAME_MODIFIERS.slowSpell.includes('timer'), 'no Timer: waiting is the game');
 });
 
-test('the Slow Spell word fills every letter but one, with options of its length', () => {
+test('the Slow Spell word fills every letter but one, and takes a typed answer', () => {
   reset();
   state.settings.activeData = [...NAMES, BOOK];
   const word = slowSpellWord(NAMES[0]);
@@ -223,8 +221,10 @@ test('the Slow Spell word fills every letter but one, with options of its length
   assert.deepEqual([...word.order].sort(), [0, 1, 2, 3]);
   assert.equal(word.total, 4);
   assert.equal(word.stopAt, 3);
-  assert.equal(word.choices.length, 1 + SLOW_SPELL_DECOYS);
-  assert.deepEqual([...word.choices].sort(), ['Adam', 'Noah', 'Ruth', 'Saul']);
+  assert.ok(slowSpellMatches(word, 'noah'), 'capitals don\'t count');
+  assert.ok(slowSpellMatches(word, '  Noah '), 'nor extra spaces');
+  assert.ok(!slowSpellMatches(word, 'Noa'));
+  assert.ok(!slowSpellMatches(word, 'Adam'));
   const dashed = slowSpellWord({ term: 'Who?', meaning: 'Abed-nego', answerType: 'name' });
   assert.equal(dashed.total, 8, 'the hyphen is no letter');
   assert.ok(!dashed.order.includes(4), 'and shows from the start');
@@ -252,7 +252,7 @@ test('names split on their vowels, keeping digraphs and starting pairs', () => {
 test('Syllable Split fits one-word names of 3+ pieces with enough decoys', () => {
   reset();
   state.settings.activeData = LONG;
-  assert.deepEqual(minigamesFor(LONG[0]), ['syllableSplit']);
+  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit']);
   assert.equal(syllableSplitPieces(LONG[4]), null, 'Noah: two pieces');
   assert.equal(syllableSplitPieces({ ...LONG[0], answerType: 'book' }), null, 'names only');
   assert.equal(syllableSplitPieces({ ...LONG[0], meaning: 'King Solomon' }), null, 'one word');
