@@ -266,6 +266,24 @@ export const EXCHANGE_ITEMS = [
   { id: 'slack', price: 3 },
 ];
 export const EXCHANGE_SLACK_TURNS = 20;
+// Floor goals (strategy plan step A): each danger depth rolls
+// GOALS_PER_FLOOR of these, shown in the HUD and paid in myelin (flat, not
+// doubled in the darkness) as the player goes down the stairs. Drafts; tune after play.
+//   noMiss      answer nothing wrong on the floor (questions and reloads)
+//   allPapers   read every paper (only with GOAL_PAPERS_MIN or more on the floor)
+//   swift       bring the boss down before the light is GOAL_SWIFT_SHARE of the way (the eye half open)
+//   noHunter    go down before the hunter wakes
+//   noStruggle  never caught with no energy (gun only)
+export const FLOOR_GOALS = [
+  { id: 'noMiss', pay: 2 },
+  { id: 'allPapers', pay: 1 },
+  { id: 'swift', pay: 2 },
+  { id: 'noHunter', pay: 2 },
+  { id: 'noStruggle', pay: 2 },
+];
+export const GOALS_PER_FLOOR = 2;
+export const GOAL_PAPERS_MIN = 2;
+export const GOAL_SWIFT_SHARE = 0.5;
 // The longest name the start screen takes, so it fits on one line in a paper.
 export const PLAYER_NAME_MAX_LENGTH = 20;
 export const ROOM_COUNT = 3;

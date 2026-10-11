@@ -14,6 +14,8 @@ import { FACING_VECTORS, shootBlock, aimChance } from './sight.js';
 import { categoryLabel } from './quiz.js';
 import { isoScreenShare, isoScreenOffset } from './isoview.js';
 import { clockReading } from './realclock.js';
+import { goalMark } from './goals.js';
+import { onStairs } from './moves.js';
 import { t } from './text.js';
 
 let els = {};
@@ -138,7 +140,17 @@ export function renderHud() {
   els.roomNumEl.textContent = state.run.resting ? t('stat.rest') : state.run.roomIndex + 1;
   els.roomOfEl.style.display = state.run.resting ? 'none' : '';
   els.roomTotalEl.textContent = state.run.order.length;
+  renderGoals();
   renderGunHud();
+}
+
+// The floor's goals (goals.js), each with a mark: [x] kept if the player
+// went down now, [-] lost, [ ] not there yet. Hidden on a floor with none.
+const GOAL_MARKS = { kept: '[x]', failed: '[-]', open: '[ ]' };
+function renderGoals() {
+  const goals = state.floor.goals;
+  els.goalsStat.hidden = !goals.length;
+  els.goalsText.textContent = goals.map(g => GOAL_MARKS[goalMark(g.id)] + ' ' + t('goal.' + g.id)).join('  ');
 }
 
 // The NEXT meter (Real time only): how long until the world next moves.
@@ -163,7 +175,10 @@ export function renderClock(running) {
 // pressed. Part of renderHud, the one writer of the HUD.
 function renderGunHud() {
   const on = state.settings.gunCombat;
-  [els.energyStat, els.gunTargetStat, els.gunAimStat, els.btnSelect].forEach(el => { el.hidden = !on; });
+  [els.energyStat, els.gunTargetStat, els.gunAimStat].forEach(el => { el.hidden = !on; });
+  // SELECT also takes the stairs, so it shows there with the gun off too.
+  els.btnSelect.hidden = !on && !onStairs();
+  els.btnSelect.disabled = state.run.runEnded;
   if (!on) return;
   const energy = state.run.energy;
   els.energyCount.textContent = '#'.repeat(energy) + '-'.repeat(Math.max(ENERGY_MAX - energy, 0));
