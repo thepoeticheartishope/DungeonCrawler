@@ -4,11 +4,18 @@
 // the modifiers it carries; Timer and Gambler stay the question panel's,
 // Blind and Flip are each minigame's own version. A finished minigame
 // reports { right, tier, given } (scored by the rules in minigames.js) to
-// the callback it was shown with. Calm rule: nothing moves on its own,
+// the callback it was shown with. Calm rule: nothing moves on its own but
+// Slow Spell's letters, one every couple of seconds, appearing at once;
 // nothing flashes; Blind takes text away once, after a pause.
 import { state } from './state.js';
-import { BLIND_BASE_MS, CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS, HIGHER_LOWER_BLIND_HINT_MS } from './config.js';
-import { closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier } from './minigames.js';
+import {
+  BLIND_BASE_MS, CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS, HIGHER_LOWER_BLIND_HINT_MS,
+  SLOW_SPELL_STEP_MS, SLOW_SPELL_BLIND_LETTER_MS, SLOW_SPELL_FLIP_SHARE,
+} from './config.js';
+import {
+  closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier,
+} from './minigames.js';
+import { escapeHtml, normalizeSpaces } from './quiz.js';
 import { t } from './text.js';
 
 const slot = document.getElementById('minigameSlot');
@@ -18,8 +25,11 @@ const slot = document.getElementById('minigameSlot');
 // when none shows. View-only, so not in state.
 let shown = null;
 let blindTimer = null;
-// Timers that take a Blind Higher / Lower's hints away.
+// Timers that take a Blind Higher / Lower's hints or Slow Spell's letters
+// away.
 let hintTimers = [];
+// Slow Spell's clock, filling in its letters.
+let letterClock = null;
 
 // Builders, one per minigame: each fills `slot` and returns the parts the
 // shared code needs: `lock` (its answer button), `finish()` (DEV ->
@@ -28,6 +38,7 @@ let hintTimers = [];
 const BUILDERS = {
   closeEnough: buildCloseEnough,
   higherLower: buildHigherLower,
+  slowSpell: buildSlowSpell,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -48,6 +59,8 @@ export function hideMinigame() {
   blindTimer = null;
   hintTimers.forEach(clearTimeout);
   hintTimers = [];
+  clearInterval(letterClock);
+  letterClock = null;
   shown = null;
   slot.hidden = true;
   slot.innerHTML = '';
@@ -265,6 +278,104 @@ function buildHigherLower() {
       fit();
     },
     flip: () => slot.classList.add('mg-flip'),
+  };
+}
+
+// ---- Slow Spell: the answer fills in letter by letter; name it early ----
+// A letter fills in every SLOW_SPELL_STEP_MS until one blank is left (the
+// clock waits while Gambler locks it). I KNOW IT stops the letters and
+// shows four options of the same length; the letters shown then set the
+// tier. Blind: from then on each letter shows for a moment and goes blank
+// again. Flip: some letters are drawn upside down or mirrored.
+function buildSlowSpell() {
+  slot.classList.add('mg-spell');
+  const word = slowSpellWord(state.battle.currentQuestion);
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.slowSpell.hint');
+  const blanks = add(slot, 'div', 'mg-blanks');
+  const count = add(slot, 'div', 'term-line mg-left');
+  const lock = add(slot, 'button', 'mg-lock');
+  const options = add(slot, 'div', 'mg-options');
+
+  lock.type = 'button';
+  lock.textContent = t('mg.slowSpell.know');
+  blanks.setAttribute('aria-label', t('mg.slowSpell'));
+  const cells = word.chars.map(c => {
+    const cell = add(blanks, 'span', 'mg-letter');
+    cell.textContent = /\p{L}/u.test(c) ? '_' : c;
+    return cell;
+  });
+
+  // Letters filled in so far, Blind and Flip (its look, or null), and the
+  // tier once I KNOW IT is pressed.
+  let filled = 0;
+  let blind = false;
+  let flip = null;
+  let tier = null;
+
+  const showCount = () => { count.textContent = t('mg.slowSpell.shown', { n: filled, total: word.total }); };
+  // Puts a letter's place back to a blank (Blind).
+  const blank = (cell) => {
+    cell.textContent = '_';
+    cell.className = 'mg-letter';
+  };
+  const fillNext = () => {
+    if (lock.disabled) return;
+    const cell = cells[word.order[filled]];
+    cell.textContent = word.chars[word.order[filled]];
+    if (flip && Math.random() < SLOW_SPELL_FLIP_SHARE) cell.classList.add('flip-' + flip);
+    filled++;
+    showCount();
+    if (blind) hintTimers.push(setTimeout(() => blank(cell), SLOW_SPELL_BLIND_LETTER_MS));
+    if (filled >= word.stopAt) know();
+  };
+  const pick = (choice) => {
+    const right = normalizeSpaces(choice).toLowerCase() === normalizeSpaces(word.chars.join('')).toLowerCase();
+    finish({ right, tier: right ? tier : null, given: choice });
+  };
+  // I KNOW IT (or one blank left): the letters stop and the options show.
+  const know = () => {
+    if (tier) return;
+    clearInterval(letterClock);
+    letterClock = null;
+    tier = slowSpellTier(filled, word.total);
+    lock.hidden = true;
+    const letters = ['A', 'B', 'C', 'D'];
+    word.choices.forEach((choice, i) => {
+      const btn = add(options, 'button', 'mc-option');
+      btn.type = 'button';
+      btn.innerHTML = '<span class="letter">' + letters[i] + '</span><span class="opt-text">' + escapeHtml(choice) + '</span>';
+      btn.addEventListener('click', () => pick(choice));
+    });
+    options.querySelector('button').focus();
+  };
+  lock.addEventListener('click', know);
+  // The options keep their keys: 1-4 or A-D pick one (not a fight choice).
+  // On the options, not the slot: the slot outlives this minigame.
+  options.addEventListener('keydown', (e) => {
+    if (e.key.length !== 1) return;
+    const i = '1234'.includes(e.key) ? Number(e.key) - 1 : 'abcd'.indexOf(e.key.toLowerCase());
+    if (i < 0 || !word.choices[i]) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!shown.done) pick(word.choices[i]);
+  });
+  letterClock = setInterval(fillNext, SLOW_SPELL_STEP_MS);
+  showCount();
+
+  return {
+    lock,
+    focus: () => lock.focus(),
+    finish: () => {
+      filled = 0;
+      tier = null;
+      know();
+      pick(word.chars.join(''));
+    },
+    blind: () => {
+      blind = true;
+      cells.forEach((cell, i) => { if (word.order.indexOf(i) < filled) blank(cell); });
+    },
+    flip: () => { flip = Math.random() < 0.5 ? 'upside' : 'mirror'; },
   };
 }
 

@@ -1152,6 +1152,13 @@
   .mg-said { color: var(--torch-bright); }
   .mg-said.mg-gone { visibility: hidden; }
   .mg-left { color: var(--muted); }
+  /* Slow Spell: the answer's blanks, filling in; the options under them
+     once I KNOW IT is pressed. Letters appear at once, no fade. */
+  .mg-blanks { font-size: 28px; color: var(--torch-bright); margin: 6px 0; white-space: nowrap; }
+  .mg-letter { display: inline-block; min-width: .9em; text-align: center; }
+  .mg-letter.flip-upside { transform: rotate(180deg); }
+  .mg-letter.flip-mirror { transform: scaleX(-1); }
+  .mg-options { display: flex; flex-direction: column; text-align: left; margin-top: 4px; }
   /* Timer: the countdown line; bright for the last few seconds. */
   .mod-timer[hidden] { display: none; }
   .mod-timer.urgent { color: var(--torch-bright); text-shadow: var(--glow-strong); }

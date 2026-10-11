@@ -1,7 +1,8 @@
-// Unit tests for minigames.js (minigames plan steps A-B): which questions a
+// Unit tests for minigames.js (minigames plan steps A-C): which questions a
 // minigame fits, the roll (chance, no repeats, DEV -> Minigame), the
 // modifiers a minigame keeps, Close Enough's dial and bands, Higher /
-// Lower's bar, hints and tiers, and what a
+// Lower's bar, hints and tiers, Slow Spell's fit, spelling and tiers, and
+// what a
 // tier pays in the settle rules (gun.js, answers.js).
 //
 // Run: node --test tests/*.test.mjs
@@ -13,10 +14,11 @@ import { state } from '../js/state.js';
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS, ENERGY_MAX, RELOAD_ENERGY,
   BOSS_HP, MINIGAME_TIER_PAY, HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
+  SLOW_SPELL_DECOYS,
 } from '../js/config.js';
 import {
   MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, modifiersFor, rollMinigame, forcedQuestion, endMinigame,
-  closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier,
+  closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier,
 } from '../js/minigames.js';
 import { settleReload } from '../js/gun.js';
 import { settleAnswer } from '../js/answers.js';
@@ -188,6 +190,44 @@ test('Higher / Lower hints and tiers: guess 1 = X, 2 = 2, 3 = 1, then a miss', (
   assert.equal(higherLowerHint(bar, 3), 'higher');
   assert.equal(higherLowerHint(bar, 9), 'lower');
   assert.deepEqual([1, 2, 3, 4].map(higherLowerTier), ['X', '2', '1', null]);
+});
+
+// Names for Slow Spell: Noah has three others of four letters (Adam twice),
+// and two of other lengths.
+const NAMES = ['Noah', 'Adam', 'adam', 'Ruth', 'Saul', 'Moses', 'Eve']
+  .map(meaning => ({ term: 'Who?', meaning, answerType: 'name' }));
+const BOOK = { term: 'Which book?', meaning: 'Ruth', answerType: 'book' };
+
+test('Slow Spell fits one-word answers with enough decoys of the same type and length', () => {
+  reset();
+  state.settings.activeData = [...NAMES.slice(0, 4), BOOK];
+  assert.ok(!minigamesFor(NAMES[0]).includes('slowSpell'), 'Adam once, Ruth is a book: two decoys');
+  state.settings.activeData = [...NAMES, BOOK];
+  assert.deepEqual(minigamesFor(NAMES[0]), ['slowSpell']);
+  assert.ok(!minigamesFor(NAMES[6]).includes('slowSpell'), 'Eve: too short');
+  assert.deepEqual(minigamesFor({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }), [], 'two words');
+  assert.ok(!minigamesFor(NUMBER).includes('slowSpell'), 'a number is no word');
+  assert.ok(!MINIGAME_MODIFIERS.slowSpell.includes('timer'), 'no Timer: waiting is the game');
+});
+
+test('the Slow Spell word fills every letter but one, with options of its length', () => {
+  reset();
+  state.settings.activeData = [...NAMES, BOOK];
+  const word = slowSpellWord(NAMES[0]);
+  assert.deepEqual(word.chars, ['N', 'o', 'a', 'h']);
+  assert.deepEqual([...word.order].sort(), [0, 1, 2, 3]);
+  assert.equal(word.total, 4);
+  assert.equal(word.stopAt, 3);
+  assert.equal(word.choices.length, 1 + SLOW_SPELL_DECOYS);
+  assert.deepEqual([...word.choices].sort(), ['Adam', 'Noah', 'Ruth', 'Saul']);
+  const dashed = slowSpellWord({ term: 'Who?', meaning: 'Abed-nego', answerType: 'name' });
+  assert.equal(dashed.total, 8, 'the hyphen is no letter');
+  assert.ok(!dashed.order.includes(4), 'and shows from the start');
+});
+
+test('Slow Spell tiers: 0-1 letters = X, up to half = 2, more = 1', () => {
+  assert.deepEqual([0, 1, 2, 3, 4, 5].map(n => slowSpellTier(n, 8)), ['X', 'X', '2', '2', '2', '1']);
+  assert.deepEqual([1, 2, 3].map(n => slowSpellTier(n, 4)), ['X', '2', '1']);
 });
 
 test('a reload pays one less energy at tier 1 (at least 1) and one more at X', () => {

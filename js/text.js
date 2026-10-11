@@ -196,6 +196,14 @@ export const TEXT = {
   'mg.higherLower.scored.2': '{name|upper}: second guess.', // draft
   'mg.higherLower.scored.1': '{name|upper}: last guess.', // draft
   'mg.higherLower.scored.miss': '{name|upper}: out of guesses. It was {answer}.', // draft
+  'mg.slowSpell': 'Slow Spell', // draft
+  'mg.slowSpell.hint': 'Name it before the letters do. Fewer letters, bigger hit.', // draft
+  'mg.slowSpell.know': 'I know it', // draft
+  'mg.slowSpell.shown': 'Letters shown: {n} of {total}', // draft
+  'mg.slowSpell.scored.X': '{name|upper}: named it early.', // draft
+  'mg.slowSpell.scored.2': '{name|upper}: named it.', // draft
+  'mg.slowSpell.scored.1': '{name|upper}: named it late.', // draft
+  'mg.slowSpell.scored.miss': '{name|upper}: wrong name. It was {answer}.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
   'log.timeout': 'TIME EXPIRED.',
