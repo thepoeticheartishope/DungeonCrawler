@@ -38,7 +38,7 @@ export function onStairs() {
 // blocked { kind, thing }, stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
 // paperRead { paper, loot, story? }, roomEntered { theme }, exchangeOpened
 // (bumped THE UNFOLDING; main.js opens its screen), itemReached { thing }
-// (bumped a chest, rune or encounter; main.js opens the battle screen) and
+// (bumped the chest; main.js opens the battle screen) and
 // the box events from examineProp. A turn is spent only by `stepped` or `propSearched`.
 export function stepPlayer(dRow, dCol) {
   const events = [];
@@ -64,7 +64,7 @@ export function stepPlayer(dRow, dCol) {
     events.push({ type: 'exchangeOpened' });
     return events;
   }
-  if (block && ['chest', 'rune', 'encounter'].includes(block.kind)) {
+  if (block && block.kind === 'chest') {
     events.push(reachItem(block));
     return events;
   }
@@ -116,12 +116,12 @@ function readPaper(paper) {
   return { type: 'paperRead', paper, loot: paper.loot };
 }
 
-// Bumping a chest, rune or encounter selects it for the battle screen.
+// Bumping the chest selects it for the battle screen.
 // Standing next to one doesn't (combat.js findAdjacentEnemies), so the
 // player chooses when to take it on. No turn is spent: the answer is the
 // turn. Event: itemReached { thing }.
 function reachItem(block) {
-  const thing = block.thing || state.floor[block.kind];
+  const thing = state.floor.chest;
   state.battle.selectedTarget = thing;
   return { type: 'itemReached', thing };
 }

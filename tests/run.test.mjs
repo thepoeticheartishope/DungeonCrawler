@@ -72,8 +72,6 @@ test('a rest floor holds nothing dangerous, even after a depth in the darkness',
       assert.equal(f.darkness, false);
       assert.equal(f.darkTurns, 0);
       assert.equal(f.chest, null);
-      assert.equal(f.rune, null);
-      assert.equal(f.encounters.length, 0);
       assert.equal(f.beats.length, 0);
       assert.equal(f.bossLitSet.size, 0);
       assert.equal(f.pillarSet.size, 0);

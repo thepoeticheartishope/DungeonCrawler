@@ -122,9 +122,7 @@ export function buildFloor() {
   state.floor.relayTurnsWon = 0;
   state.floor.exchange = null; // THE UNFOLDING lives on rest floors only
   state.floor.darkTurns = 0;
-  state.floor.encounters = [];
   state.floor.props = [];
-  state.floor.runeHint = null;
   state.floor.lastChoiceType = null;
 
   const layout = generateDungeonLayout(state.floor.GRID_SIZE, state.floor.CHAMBER_TARGET, recipe.loops,
@@ -156,7 +154,7 @@ export function buildFloor() {
   // Coin and the room's one special item only ever land in an actual room
   // tile, never a hallway — a hallway is one tile wide, so an object
   // sitting in one would force answering it (with a wrong-answer trap, for
-  // a chest/rune/encounter) just to get past. No fallback to non-room
+  // a chest) just to get past. No fallback to non-room
   // tiles: if a room is too packed to fit one, it simply doesn't spawn.
   // The special item is solid, so it goes down on the same rules as the
   // furniture (never in a doorway, never cutting the floor in two).
@@ -182,45 +180,19 @@ export function buildFloor() {
 
   if (state.floor.coin) takenTiles.push(state.floor.coin);
 
-  // Exactly one special interactive extra per room — a chest, a rune, or a
-  // single category encounter, picked at random from whichever are
-  // eligible. Never more than one at once, so the room's one bonus/gamble
-  // stays meaningful instead of being buried among several.
+  // One special interactive extra per floor: the chest. Never more than
+  // one, so the floor's one bonus/gamble stays meaningful instead of being
+  // buried among several.
   state.floor.chest = null;
-  state.floor.rune = null;
-
-  const byCategory = new Map();
-  state.settings.activeData.forEach(item => {
-    if (!item.category) return;
-    if (!byCategory.has(item.category)) byCategory.set(item.category, []);
-    byCategory.get(item.category).push(item);
-  });
 
   const specialCandidates = [...freeRoomTiles]
     .map(k => { const [row, col] = k.split(',').map(Number); return { row, col }; })
     .filter(p => !takenTiles.some(q => q.row === p.row && q.col === p.col));
   const specialTile = beats.specialTile || placer.pick(specialCandidates);
-  if (specialTile) {
-    const candidates = [
-      { type: 'chest' },
-      { type: 'rune' },
-      ...Array.from(byCategory.keys()).map(category => ({ type: 'encounter', category })),
-    ];
-    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-    if (chosen.type === 'chest') {
-      state.floor.chest = { row: specialTile.row, col: specialTile.col, kind: 'chest' };
-    } else if (chosen.type === 'rune') {
-      state.floor.rune = { row: specialTile.row, col: specialTile.col, kind: 'rune' };
-    } else {
-      state.floor.encounters.push({
-        row: specialTile.row, col: specialTile.col, kind: 'encounter',
-        category: chosen.category, pool: byCategory.get(chosen.category),
-      });
-    }
-  }
+  if (specialTile) state.floor.chest = { row: specialTile.row, col: specialTile.col, kind: 'chest' };
 
   const minionTaken = takenTiles.slice();
-  [state.floor.chest, state.floor.rune, ...state.floor.encounters].forEach(item => { if (item) minionTaken.push(item); });
+  if (state.floor.chest) minionTaken.push(state.floor.chest);
 
   // Energy cells, the only energy (decor.js placeEnergyCells). Classic
   // combat has no gun, so no cells.
@@ -269,10 +241,7 @@ function clearDanger() {
   f.goals = [];
   f.darkness = false;
   f.darkTurns = 0;
-  f.encounters = [];
   f.chest = null;
-  f.rune = null;
-  f.runeHint = null;
   f.lastChoiceType = null;
   f.beats = [];
   f.bossLitSet = new Set();

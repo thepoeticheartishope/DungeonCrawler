@@ -179,9 +179,7 @@ function floorSummary() {
     minions: f.minions.map(m => where(m) + (m.minionKind ? ' ' + m.minionKind + ' hp ' + m.hpLeft : '')),
     gunTarget: where(f.gunTarget),
     props: f.props.length,
-    encounters: f.encounters.length,
     chest: where(f.chest),
-    rune: where(f.rune),
     stairs: f.stairs && f.stairs.row + ',' + f.stairs.col,
     lastChoiceType: f.lastChoiceType,
     sets: {

@@ -2,7 +2,7 @@
 // selection, and multiple-choice option building. No DOM access here.
 
 import { state } from './state.js';
-import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, ENCOUNTER_GLYPHS, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE, CHOICE_TYPES, NO_REPEAT_CHOICE_TYPES, NUMBER_NEAR_POOL, STEM_CUES } from './config.js';
+import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE, CHOICE_TYPES, NO_REPEAT_CHOICE_TYPES, NUMBER_NEAR_POOL, STEM_CUES } from './config.js';
 import { t } from './text.js';
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
@@ -99,13 +99,6 @@ export function pickQuestion(exclude, pool) {
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-// Which pool a question should be drawn from for the given target: an
-// encounter's own category pool, or the full active list for anything else
-// (boss, minion, chest, rune, or no target at all).
-export function poolFor(target) {
-  return target && target.kind === 'encounter' ? target.pool : state.settings.activeData;
-}
-
 function groupBy(pool, keyFn) {
   const groups = new Map();
   pool.forEach(item => {
@@ -191,40 +184,23 @@ export function fightGroups(pool, count) {
   });
 }
 
-// The questions of `pool` a fight can actually offer as a choice (a rune
-// hints at one of these, so its hint can't land on a question no choice
-// holds). Falls back to the whole pool when no group forms at all.
-export function fightChoosable(pool, count) {
-  const groups = fightGroups(pool, count);
-  return groups.length ? groups.flatMap(g => g.pool) : pool;
-}
-
-// The label of the fight choice that holds `item` ("Names"), or null.
-export function fightChoiceLabel(item, pool, count) {
-  const g = fightGroups(pool, count).find(g => g.pool.includes(item));
-  return g ? g.label : null;
-}
-
 // The battle screen's category choices for one turn: up to `count` groups
 // of `pool` (fightGroups), each { label, category, pool }. One group per
-// category is taken first so the choices stay as varied as possible. If
-// `mustInclude` is in the pool, its group is always one of the choices (a
-// rune's hint stays usable). A NO_REPEAT_CHOICE_TYPES type the player
-// picked last turn (`lastChoiceType`) sits this turn out, unless it holds
-// the hint or dropping it would leave fewer than `count` choices. Returns
+// category is taken first so the choices stay as varied as possible. A
+// NO_REPEAT_CHOICE_TYPES type the player picked last turn
+// (`lastChoiceType`) sits this turn out, unless dropping it would leave
+// fewer than `count` choices. Returns
 // fewer than 2 choices when the pool can't offer a real choice (e.g. a
 // pasted list with no categories) — the caller skips the choice step then.
-export function buildCategoryChoices(pool, count, mustInclude, lastChoiceType) {
+export function buildCategoryChoices(pool, count, lastChoiceType) {
   let groups = fightGroups(pool, count);
-  const required = mustInclude && groups.find(g => g.pool.includes(mustInclude));
   if (lastChoiceType && NO_REPEAT_CHOICE_TYPES.includes(lastChoiceType)) {
-    const rested = groups.filter(g => g.choiceType !== lastChoiceType || g === required);
+    const rested = groups.filter(g => g.choiceType !== lastChoiceType);
     if (rested.length >= count) groups = rested;
   }
 
   const all = shuffle(groups);
   const picked = [];
-  if (required) picked.push(required);
   for (const g of all) {
     if (picked.length >= count) break;
     if (!picked.includes(g) && !picked.some(p => p.category === g.category)) picked.push(g);
@@ -234,20 +210,6 @@ export function buildCategoryChoices(pool, count, mustInclude, lastChoiceType) {
     if (!picked.includes(g)) picked.push(g);
   }
   return shuffle(picked);
-}
-
-// Deterministic glyph for a category name, so the same category always
-// renders the same encounter icon. Uses djb2 (a standard string hash with
-// decent bit dispersion) rather than a plain char-code sum — a sum collides
-// constantly for short, similar-length names (e.g. "Hardware" and
-// "Networking" land on the same bucket), which defeats the point when a
-// room can show a few categories side by side.
-export function glyphForCategory(category) {
-  let hash = 5381;
-  for (let i = 0; i < category.length; i++) {
-    hash = ((hash * 33) ^ category.charCodeAt(i)) >>> 0;
-  }
-  return ENCOUNTER_GLYPHS[hash % ENCOUNTER_GLYPHS.length];
 }
 
 // Bundled-set images are authored as plain relative paths (e.g.
@@ -532,12 +494,4 @@ export function buildChoices(item) {
     opts = [item.meaning, ...distractors];
   }
   return shuffle(opts).slice(0, 4);
-}
-
-// Builds a short clue from a question's meaning: first letter, word
-// count, and character count — enough to help without giving it away.
-export function buildHint(q) {
-  const meaning = q.meaning.trim();
-  const words = meaning.split(/\s+/);
-  return t('hint.shape', { first: words[0], words: words.length, chars: meaning.length });
 }

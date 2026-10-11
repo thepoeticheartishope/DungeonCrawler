@@ -50,8 +50,6 @@ function resetFloor(size = 21) {
   state.floor.hunter = null;
   state.floor.minions = [];
   state.floor.chest = null;
-  state.floor.rune = null;
-  state.floor.encounters = [];
   state.floor.props = [];
   state.floor.coin = null;
   state.floor.stairs = null;
@@ -315,19 +313,14 @@ test('open floor does not block; the edge, walls and pillars do', () => {
 test('actors block and report what they are', () => {
   resetFloor(11);
   const minion = { row: 3, col: 3 };
-  const encounter = { row: 4, col: 4 };
   state.floor.boss = { row: 1, col: 5 };
   state.floor.hunter = { row: 2, col: 5 };
   state.floor.minions = [minion];
   state.floor.chest = { row: 6, col: 6 };
-  state.floor.rune = { row: 7, col: 7 };
-  state.floor.encounters = [encounter];
   assert.equal(whatBlocks(1, 5).kind, 'boss');
   assert.equal(whatBlocks(2, 5).kind, 'hunter');
   assert.equal(whatBlocks(3, 3).thing, minion);
-  assert.equal(whatBlocks(4, 4).thing, encounter);
   assert.equal(whatBlocks(6, 6).kind, 'chest');
-  assert.equal(whatBlocks(7, 7).kind, 'rune');
 });
 
 test('boxes block but papers lie flat', () => {
@@ -554,7 +547,6 @@ function resetAnswer(target) {
   state.run.attempts = 1;
   state.run.correctTotal = 0;
   state.run.extraSpaceCount = 0;
-  state.floor.runeHint = null;
   state.battle.currentQuestion = { term: 'Who built the ark?', meaning: 'Noah', difficulty: 'easy' };
   state.battle.selectedTarget = target;
 }
@@ -660,8 +652,6 @@ test('standing next to an item does not select it; walking into it does', () => 
   resetFloor();
   const r = state.floor.playerRow, c = state.floor.playerCol;
   state.floor.chest = { kind: 'chest', row: r - 1, col: c };
-  state.floor.rune = { kind: 'rune', row: r, col: c + 1 };
-  state.floor.encounters = [{ kind: 'encounter', row: r + 1, col: c, category: 'x' }];
   refreshTargetValidity();
   assert.equal(state.battle.selectedTarget, null);
 
@@ -670,9 +660,4 @@ test('standing next to an item does not select it; walking into it does', () => 
   assert.equal(state.battle.selectedTarget, state.floor.chest);
   assert.equal(state.floor.playerRow, r);
   assert.equal(state.run.turnCount, 0);
-
-  state.battle.selectedTarget = null;
-  stepPlayer(1, 0); // turns south
-  stepPlayer(1, 0);
-  assert.equal(state.battle.selectedTarget, state.floor.encounters[0]);
 });

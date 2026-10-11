@@ -10,8 +10,8 @@ import { rollModifier, rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
 import {
   shuffle, pickQuestion, escapeHtml,
-  normalizeSpaces, buildHint, poolFor, fightChoiceLabel,
-  buildCategoryChoices, categoryLabel, buildChoices
+  normalizeSpaces,
+  buildCategoryChoices, buildChoices
 } from './quiz.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
@@ -376,15 +376,13 @@ function stopStruggleBar(barPosition) {
 }
 
 function nextQuestion() {
-  setQuestion(pickQuestion(state.battle.currentQuestion, poolFor(state.battle.selectedTarget)));
+  setQuestion(pickQuestion(state.battle.currentQuestion));
 }
 
-// If the current target changed (a fresh click, or an auto-pick after a
-// move/turn) and the showing question isn't from that target's pool — e.g.
-// it's a leftover boss/global question but an encounter is now targeted, or
-// vice versa — reroll it from the right pool. A no-op the rest of the time.
+// If the showing question isn't from the set being played (a leftover
+// from an earlier set), reroll it from the set. A no-op the rest of the time.
 function syncQuestionForTarget() {
-  const pool = poolFor(state.battle.selectedTarget);
+  const pool = state.settings.activeData;
   if (!pool.includes(state.battle.currentQuestion)) {
     setQuestion(pickQuestion(state.battle.currentQuestion, pool));
   }
@@ -494,11 +492,11 @@ function clearLog() {
 }
 
 // Opening lines for a new encounter: what it is and what's at stake.
-// Wording is per target kind (boss / minion / chest / rune / encounter)
+// Wording is per target kind (boss / minion / hunter / chest / box)
 // under log.start.* and log.rules.* in text.js.
 function logEncounterStart(target) {
   clearLog();
-  const vars = { queries: BOSS_HP, category: target.category ? categoryLabel(target.category) : '' };
+  const vars = { queries: BOSS_HP };
   logLine(t('log.start.' + target.kind, vars), 'bright');
   logLine(t('log.rules.' + target.kind, vars), 'sys');
 }
@@ -518,9 +516,7 @@ function renderCategoryChoices() {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'choice-option';
-    const hinted = state.floor.runeHint && choice.pool.includes(state.floor.runeHint);
     btn.innerHTML = '<span class="letter">[' + (i + 1) + ']</span><span class="choice-label"></span>' +
-      (hinted ? '<span class="choice-hint" title="' + escapeHtml(t('battle.runeHintMark')) + '">◊</span>' : '') +
       choice.modifiers.map(mod =>
         '<span class="mod-tag" title="' + escapeHtml(t('mod.' + mod) + ': ' + t('mod.' + mod + '.tip', { max: maxWager(), secs: TIMER_SECONDS })) + '">' +
           escapeHtml(t('mod.' + mod + '.tag')) + '</span>').join('');
@@ -532,14 +528,14 @@ function renderCategoryChoices() {
 
 // Sets up one turn of whatever's on the battle screen. A boss or minion
 // fight opens with a choice of query categories (the player picks what
-// kind of question they face); chests, runes and category encounters are
+// kind of question they face); the chest and trapped boxes are
 // puzzles, not fights, and go straight to their question — as does any
 // fight whose pool can't offer at least two distinct choices.
 function startBattleTurn() {
   const target = state.battle.selectedTarget;
   const isFight = target.kind === 'boss' || target.kind === 'minion' || target.kind === 'hunter';
   state.battle.categoryChoices = isFight
-    ? buildCategoryChoices(poolFor(target), BATTLE_CHOICE_COUNT, state.floor.runeHint, state.floor.lastChoiceType)
+    ? buildCategoryChoices(state.settings.activeData, BATTLE_CHOICE_COUNT, state.floor.lastChoiceType)
     : [];
   const modifiers = rollCategoryModifiers(target, state.battle.categoryChoices.length);
   // Each choice's modifiers as a list: none, one, or the hunter's pair.
@@ -551,19 +547,14 @@ function startBattleTurn() {
   } else {
     state.battle.battlePhase = 'answering';
     // A fight may bring back a missed question (js/haunts.js).
-    const haunt = isFight && !state.floor.runeHint ? pickHaunt(poolFor(target), state.battle.currentQuestion) : null;
-    // No choice to route the rune's hint through, so ask it directly if
-    // this target's pool holds it.
-    if (state.floor.runeHint && poolFor(target).includes(state.floor.runeHint)) {
-      setQuestion(state.floor.runeHint);
-      state.floor.runeHint = null;
-    } else if (haunt) {
+    const haunt = isFight ? pickHaunt(state.settings.activeData, state.battle.currentQuestion) : null;
+    if (haunt) {
       logLine(t('log.haunt.returns'), 'alert');
       setQuestion(haunt);
     } else {
       syncQuestionForTarget();
     }
-    const forced = forcedQuestion(state.battle.currentQuestion, poolFor(target));
+    const forced = forcedQuestion(state.battle.currentQuestion, state.settings.activeData);
     if (forced !== state.battle.currentQuestion) setQuestion(forced);
     // The question was very likely set well before this moment, off-screen
     // (loadRoom() sets one at room load), so re-type it fresh every time a
@@ -582,24 +573,14 @@ function chooseCategory(i) {
   if (state.run.turnLocked || state.battle.battlePhase !== 'choosing') return;
   const choice = state.battle.categoryChoices[i];
   if (!choice) return;
-  let q;
-  let haunt = null;
-  // The rune's hint is asked as it is, never swapped for a Letter Pool.
-  let group = choice;
-  if (state.floor.runeHint && choice.pool.includes(state.floor.runeHint)) {
-    group = null;
-    q = state.floor.runeHint;
-    state.floor.runeHint = null;
-  } else {
-    // A missed question from this category may come back instead.
-    haunt = pickHaunt(choice.pool, state.battle.currentQuestion);
-    q = haunt || pickQuestion(state.battle.currentQuestion, choice.pool);
-  }
+  // A missed question from this category may come back instead.
+  const haunt = pickHaunt(choice.pool, state.battle.currentQuestion);
+  const q = haunt || pickQuestion(state.battle.currentQuestion, choice.pool);
   logLine(t('log.vector', { n: i + 1, label: choice.label }), 'sys');
   if (haunt) logLine(t('log.haunt.returns'), 'alert');
   state.floor.lastChoiceType = choice.choiceType || null;
   state.battle.battlePhase = 'answering';
-  askQuestion(q, choice.modifiers, choice.pool, group);
+  askQuestion(q, choice.modifiers, choice.pool, choice);
   showBattlePhase();
   if (!state.settings.mcMode) answerInput.focus();
 }
@@ -1062,14 +1043,12 @@ function drawEvents(events) {
         break;
       case 'targetSpent':
         if (!e.right) {
-          logLine(t('log.' + e.target.kind + '.trapped', { category: e.category ? categoryLabel(e.category) : '' }));
+          logLine(t('log.' + e.target.kind + '.trapped'));
         }
         break;
       case 'goldGained':
         if (e.from === 'kill') { parts.push(t('gun.killed', { gold: e.amount })); break; }
-        logLine(e.from === 'encounter'
-          ? t('log.encounter.mastered', { category: e.category ? categoryLabel(e.category) : '', gold: e.amount })
-          : t(e.from === 'chest' ? 'log.chest.opened' : 'log.box.gold', { gold: e.amount }), 'bright');
+        logLine(t(e.from === 'chest' ? 'log.chest.opened' : 'log.box.gold', { gold: e.amount }), 'bright');
         break;
       // The gun (gun plan): room notes, and the map's effects. A landed
       // shot flies once the damage bar stops.
@@ -1144,14 +1123,6 @@ function drawEvents(events) {
         cls = 'warn-msg';
         parts.push(t('gun.struggle.lost'));
         break;
-      case 'runeDecoded': {
-        const hint = buildHint(e.question);
-        const choiceLabel = fightChoiceLabel(e.question, state.settings.activeData, BATTLE_CHOICE_COUNT);
-        logLine(choiceLabel
-          ? t('log.rune.decoded', { category: choiceLabel, hint })
-          : t('log.rune.decodedUncategorized', { hint }), 'bright');
-        break;
-      }
     }
   }
   renderHud();
@@ -1181,8 +1152,8 @@ function loseToLight() {
 let lastWalkAt = -Infinity;
 
 // One arrow press (stepPlayer in moves.js). A step or a first look in a
-// box spends a turn; a step onto the stairs only asks (goDown takes them); a trapped box, chest,
-// rune or encounter opens the battle screen; an energy cell opens the
+// box spends a turn; a step onto the stairs only asks (goDown takes them); a trapped box or the
+// chest opens the battle screen; an energy cell opens the
 // reload panel (its answer is the turn); a turn to a new direction or a
 // bump only draws. With Real time
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).

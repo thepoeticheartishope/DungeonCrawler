@@ -102,15 +102,12 @@ export const state = {
     struggles: 0,          // Struggles started on this floor; each one makes the next dial harder (gun.js struggleDial)
     bossLitSet: new Set(), // tiles the boss light currently reaches
     lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
-    runeHint: null,        // question a rune just hinted at — always offered as a choice until asked
     coin: null,            // { row, col } or null once collected
     beats: [],             // [{ kind, row, col, at }] the recipe's beats and where they landed, `at` = step of the walk to the boss (beats.js)
     stairs: null,          // { row, col } — sits inside the boss chamber, past the boss
     chest: null,           // { row, col, el, kind: 'chest' } or null once opened/trapped
-    rune: null,            // { row, col, el, kind: 'rune' } or null once read/trapped
     exchange: null,        // THE UNFOLDING on a rest floor: { row, col, kind: 'exchange' }, or null on a depth
     exchangeBought: new Set(), // once-per-rest items (exchange.js) already bought on this floor
-    encounters: [],        // [{ row, col, kind: 'encounter', category, pool }], per-room, up to 3
     // Furniture and themes (decor.js). Reset as each floor loads.
     pillarSet: new Set(),     // pillar tiles: solid, and they block the player's light
     props: [],                // papers and boxes: [{ row, col, kind, theme, loot, gold, trapped, identified, searched, sprung }]

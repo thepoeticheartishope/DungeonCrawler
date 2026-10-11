@@ -27,8 +27,6 @@ function resetFloor() {
   f.hunter = null;
   f.props = [];
   f.chest = null;
-  f.rune = null;
-  f.encounters = [];
   f.coin = null;
   f.stairs = null;
   f.darkness = false;

@@ -4,9 +4,8 @@
 // ---- Sample data. Replaced at runtime if the player loads their own list. ----
 // Each entry needs a "term" and its "meaning".
 // "category", "difficulty" and "answerType" are optional. When present,
-// category groups entries into a world-placed vocab encounter (see
-// main.js loadRoom), difficulty ("easy"/"medium"/"hard") scales that
-// encounter's coin reward, and answerType groups entries for multiple-
+// category (with difficulty, "easy"/"medium"/"hard") groups entries into
+// a fight's query choices (see quiz.js fightGroups), and answerType groups entries for multiple-
 // choice distractor selection (see quiz.js buildChoices) so wrong answers
 // share the same rough "shape" as the correct one (a name isn't offered
 // as a wrong answer next to a date, etc).
@@ -48,15 +47,10 @@ export const MC_SAMPLE_DATA = [
   }
 ];
 
-// The boss, minion, chest, rune, coin and stairs symbols are wording, not
+// The boss, minion, chest, coin and stairs symbols are wording, not
 // config: they're the term.*.symbol lines in text.js, so they can be
 // renamed alongside their names (and overridden per room).
 
-// Symbols for category-tagged vocab encounters. glyphForCategory() in
-// quiz.js picks one deterministically from a category's name, so the same
-// category always renders the same symbol. They must stay distinct from the
-// term.*.symbol glyphs in text.js and from the player's arrows (^ v < >) --
-// '^' used to be here and read as the player facing north.
 // Each answerType (the subtype tagged in the JSON) belongs to one top-level
 // answer "shape". buildChoices falls back to the same shape when a subtype
 // has too few wrong answers, so a creature is padded with other nouns, not
@@ -107,13 +101,6 @@ export const STEM_CUES = [
   { cue: /^where\b/i, types: ['location'] }
 ];
 
-export const ENCOUNTER_GLYPHS = ['!', '%', '&', '*', '+', '~', '≈', '='];
-
-
-// Coins awarded for correctly answering a vocab encounter, by the
-// question's own difficulty tier. Falls back to "medium" if a question is
-// missing or has an invalid difficulty.
-export const DIFFICULTY_COIN_REWARD = { easy: 1, medium: 2, hard: 3 };
 
 // How many query categories a boss/minion fight offers to choose from each
 // turn (see quiz.js buildCategoryChoices).
@@ -124,7 +111,7 @@ export const BATTLE_CHOICE_COUNT = 3;
 // Creatures share "Things" with objects (too few to stand alone); the
 // person subtypes (relation, group, role, related) are all "Names"; types
 // missing here (adjective, verb, CompTIA's term) are never a choice of
-// their own — they're still asked by chests, runes and encounters, and
+// their own — they're still asked by chests and boxes, and
 // still used as wrong answers. A type is only offered with at least
 // TYPE_CHOICE_MIN questions; a set with fewer than BATTLE_CHOICE_COUNT
 // such types falls back to category choices (below).
@@ -632,7 +619,7 @@ export const MAP_MAX_PIXEL_RATIO = 2;
 // the player, minions and the coin smaller.
 export const MAP_GLYPH_SIZES = {
   player: 0.84, boss: 1.03, minion: 0.71, hunter: 0.9, coin: 0.65,
-  stairs: 0.71, chest: 0.77, rune: 0.77, encounter: 0.77, prop: 0.77, exchange: 0.9,
+  stairs: 0.71, chest: 0.77, prop: 0.77, exchange: 0.9,
 };
 // The isometric map (js/isoview.js, DEV -> View). How many tile widths
 // fit across the map: fewer means bigger tiles. The camera stands on the
@@ -676,7 +663,7 @@ export const MAP_ANIMATION_MS = {
   exchangeWarp: 7000, // the same warp, slow: THE UNFOLDING never quite settles into one shape
   glitchBar: 6500,  // how often a minion's signal drops out
   coinBob: 1400,    // the coin lifting and settling
-  glow: 1800,       // the rune's and the stairs' glow
+  glow: 1800,       // the stairs' and THE UNFOLDING's glow
   cellBreath: 4000, // an unused energy cell's faint glow swelling and fading (Timothy: eerie, keep it)
   mist: 14000,      // the boss mist's slow drift, there and back
   target: 1100,     // the box round the thing being fought
