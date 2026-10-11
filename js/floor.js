@@ -110,6 +110,7 @@ export function buildFloor() {
   state.floor.hunter = null;
   state.floor.gunTarget = null;
   state.battle.struggle = null; // a Struggle never carries over to a new floor
+  state.floor.struggles = 0;    // and the dial is back to its easiest
   state.floor.exchange = null; // THE UNFOLDING lives on rest floors only
   state.floor.darkTurns = 0;
   state.floor.encounters = [];
@@ -244,6 +245,7 @@ function clearDanger() {
   f.hunter = null;
   f.gunTarget = null;
   state.battle.struggle = null;
+  f.struggles = 0;
   f.darkness = false;
   f.darkTurns = 0;
   f.encounters = [];

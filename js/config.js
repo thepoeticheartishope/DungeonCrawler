@@ -382,10 +382,19 @@ export const AMMO_BOX_ROOM_CHANCE = 0.35;
 // motion); SELECT inside STRUGGLE_HIT_HALF of the centre pushes it back
 // STRUGGLE_PUSHBACK tiles with no damage to it, anything else and it
 // strikes as usual. Drafts for Timothy to tune.
+// Each Struggle after the first on the same floor is harder (Timothy:
+// relying on it shouldn't stay easy): the dial sweeps
+// STRUGGLE_SPEEDUP_MS faster and its zone is STRUGGLE_SHRINK narrower,
+// never past STRUGGLE_MIN_SWEEP_MS and STRUGGLE_MIN_HIT_HALF. A new floor
+// starts again from the first.
 export const STRUGGLE_SWEEP_MS = 500;
 export const STRUGGLE_SLOW_SWEEP_MS = 1000;
 export const STRUGGLE_HIT_HALF = 0.22;
 export const STRUGGLE_PUSHBACK = 3;
+export const STRUGGLE_SPEEDUP_MS = 50;
+export const STRUGGLE_SHRINK = 0.03;
+export const STRUGGLE_MIN_SWEEP_MS = 300;
+export const STRUGGLE_MIN_HIT_HALF = 0.1;
 export const AMMO_BOXES_MIN = 3;
 
 // The boss gives off light that spreads through the floor at a steady

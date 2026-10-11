@@ -6,7 +6,7 @@ import { state, key } from './state.js';
 import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS } from './config.js';
 import { advanceLight } from './light.js';
 import { computeVisibility } from './sight.js';
-import { minionStrike } from './gun.js';
+import { minionStrike, struggleDial } from './gun.js';
 
 export function isAdjacentToPlayer(entity) {
   return Math.abs(entity.row - state.floor.playerRow) + Math.abs(entity.col - state.floor.playerCol) === 1;
@@ -196,7 +196,8 @@ function wanderStep(m) {
 // instead, the hunter's too (gun.js minionStrike: minionStruck,
 // knockedBack, signalLost). With the chamber empty, the first one to reach
 // the player this turn starts a Struggle instead ({ type: 'struggleStarted',
-// minion }, settled by gun.js settleStruggle), unless `canStruggle` is
+// minion, hitHalf, sweepMs, count }: gun.js struggleDial, harder each time
+// on a floor; settled by gun.js settleStruggle), unless `canStruggle` is
 // false (a reload question already open over the map, in real time):
 // then it strikes as usual. Last, { type: 'presenceSensed', minion } for
 // each unseen one about to get next to the player (senseUnseen).
@@ -235,8 +236,8 @@ export function advanceMonsters({ canStruggle = true } = {}) {
 
       const struggles = canStruggle && state.run.ammo <= 0 && !state.battle.struggle;
       if (isPlayerTile && gun && struggles) {
-        state.battle.struggle = { minion: m };
-        events.push({ type: 'struggleStarted', minion: m });
+        state.battle.struggle = { minion: m, ...struggleDial() };
+        events.push({ type: 'struggleStarted', ...state.battle.struggle });
       } else if (isPlayerTile && gun) {
         events.push(...minionStrike(m));
       } else if (isPlayerTile) {

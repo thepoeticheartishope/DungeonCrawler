@@ -123,13 +123,17 @@ export function showDamageBar(aim) {
 }
 
 // Opens the Struggle dial on the same bar: one zone, `hitHalf` either side
-// of the centre, no weak point, and a much faster sweep. A minion has
-// reached the player with the chamber empty (gun.js settleStruggle).
-export function showStruggleBar(hitHalf) {
+// of the centre, no weak point, and a much faster sweep, `sweepMs` end to
+// end (gun.js struggleDial; slowed by the same share as the first dial
+// under reduced motion). `count` above 1 shows in the prompt, so the
+// player sees why this one is harder. A minion has reached the player
+// with the chamber empty (gun.js settleStruggle).
+export function showStruggleBar({ hitHalf, sweepMs, count }) {
   els.weak.hidden = true;
   els.legend.hidden = true;
-  els.prompt.textContent = t('gun.struggle.prompt');
-  startBar('struggle', hitHalf, reducedMotion.matches ? STRUGGLE_SLOW_SWEEP_MS : STRUGGLE_SWEEP_MS);
+  els.prompt.textContent = count > 1 ? t('gun.struggle.promptAgain', { count }) : t('gun.struggle.prompt');
+  const slow = STRUGGLE_SLOW_SWEEP_MS / STRUGGLE_SWEEP_MS;
+  startBar('struggle', hitHalf, reducedMotion.matches ? sweepMs * slow : sweepMs);
 }
 
 // Shows the bar for `mode` with its hit zone and starts the marker
