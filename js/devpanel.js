@@ -35,7 +35,7 @@ export function initDevPanel({
   // step every AUTO_WIN_STEP_MS so the log stays readable. Walking stays
   // manual, so the boss light, minions and darkness behave as usual. With
   // the gun on, an open reload is answered right and the damage bar stops
-  // on the weak point (main.js autoWinGun); RELOAD and FIRE stay manual.
+  // on the weak point (main.js autoWinGun); SELECT and the ammo drums stay manual.
   const AUTO_WIN_STEP_MS = 300;
   let autoWinTimer = null;
 
@@ -76,7 +76,7 @@ export function initDevPanel({
 
   // Dev tool (gun plan): the gun on the map (the default since step 9), or
   // classic combat. With the gun, minions don't open the battle screen: they
-  // strike when they reach the player, and are fought with RELOAD and FIRE
+  // strike when they reach the player, and are fought with SELECT
   // (main.js), each a turn. It also shows Test shot and Test reload, which spend no turn.
   // Turning it off drops the target and any shot waiting for the damage bar,
   // and closes a gun panel left open over the map.

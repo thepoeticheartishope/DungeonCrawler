@@ -361,8 +361,8 @@ export const TEXT = {
   'gun.reload.offer': 'LOAD {rounds} {rounds|plural:ROUND}', // draft
   'gun.reload.room': 'room for {room}', // draft. When fewer rounds fit in the chamber than the offer loads
   'gun.reload.cancel': 'CANCEL', // draft
-  'gun.bar.prompt': 'TAP TO FIRE', // draft. Over the damage bar
-  'gun.bar.label': 'Damage bar. Tap, or press Space or F, to fire.', // draft. Read out by screen readers
+  'gun.bar.prompt': 'PRESS SELECT', // draft. Over the damage bar
+  'gun.bar.label': 'Damage bar. Press SELECT, Space or F to fire.', // draft. Read out by screen readers
   'gun.bar.graze': 'graze 0', // draft. The damage bar's legend, left to right: graze, hit, weak point, hit, graze
   'gun.bar.hit': 'hit 1', // draft
   'gun.bar.weak': 'weak 2', // draft
@@ -370,8 +370,7 @@ export const TEXT = {
   'gun.jammed': 'Jammed. Nothing loads.', // draft. A wrong reload answer
   // Gun combat on the map (gun plan step 6): the buttons by the d-pad, the
   // HUD, and the room notes a shot or a strike adds up to.
-  'gun.btn.reload': 'RELOAD', // draft. Button by the d-pad (key R)
-  'gun.btn.fire': 'FIRE', // draft. Button by the d-pad (key F; T picks the next target)
+  'gun.btn.select': 'SELECT', // draft. The gun's one button, by the d-pad (key F): fires at the target, or stops the damage bar
   'stat.rounds': 'ROUNDS', // draft. HUD: rounds in the chamber, # loaded and - empty
   'stat.target': 'TARGET', // draft. HUD: the gun's target and its hp, # left and - lost
   'stat.aim': 'AIM', // draft. HUD: the chance a shot at the target lands

@@ -17,10 +17,10 @@
 //      engages and the battle screen appears, then lets Auto-win settle the
 //      fight, asserting an ACCEPTED. line appeared in the encounter log and
 //      the game is back on the room screen afterward (classic combat).
-//   3. Gun run (the default combat), wanders as run 2 does, pressing
-//      R to reload and F to fire (Auto-win answers the reload and stops the
-//      damage bar on the weak point) until a reload loaded rounds and a
-//      shot killed a minion.
+//   3. Gun run (the default combat), wanders as run 2 does, bumping an
+//      ammo drum to reload and pressing F (SELECT) to fire (Auto-win answers
+//      the reload and stops the damage bar on the weak point) until a
+//      reload loaded rounds and a shot killed a minion.
 //   4. Real-time run: Real time on (start screen), gun combat (the default),
 //      Auto-win off. With the DEV panel open the clock holds still; closed,
 //      the world takes turns with no input; the player's own steps don't
@@ -299,11 +299,33 @@ async function installGunWatchers(page) {
 
 const GUN_MAX_STEPS = 500;
 
+// Puts the player on the open tile south of an unused ammo drum, facing
+// it, and bumps it (ArrowUp), which opens the reload panel: rounds come
+// only from drums. Walking there would take a pathfinder; the bump is what
+// is being checked. Returns false if no drum could be reached that way.
+async function bumpAmmoDrum(page) {
+  const placed = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { whatBlocks } = await import('./js/passage.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const f = state.floor;
+    const drum = f.props.find(p => p.kind === 'ammo' && !p.searched && !whatBlocks(p.row + 1, p.col));
+    if (!drum) return false;
+    f.playerRow = drum.row + 1;
+    f.playerCol = drum.col;
+    f.facing = 'N';
+    computeVisibility();
+    return true;
+  });
+  if (placed) await page.keyboard.press('ArrowUp');
+  return placed;
+}
+
 // One attempt: a fresh run with the gun (the default) and Auto-win on (it
 // answers reloads right and stops the damage bar on the weak point). Wander
-// as the battle run does; press F whenever the HUD shows an aim %, and R
-// every few steps while the chamber isn't full, until a reload loaded and
-// a shot killed a minion.
+// as the battle run does; press F (SELECT) whenever the HUD shows an aim %,
+// and bump an ammo drum every few steps while the chamber isn't full,
+// until a reload loaded and a shot killed a minion.
 async function attemptGun(page, url) {
   await loadPageAndSet(page, url);
   await startGameAndWaitForRoom(page);
@@ -320,8 +342,8 @@ async function attemptGun(page, url) {
       inRoom: document.getElementById('roomScreen').classList.contains('show'),
       lost: document.getElementById('loseScreen').classList.contains('show'),
       panel: ['reloadPanel', 'mapQuestionPanel', 'aimPanel'].some(id => !document.getElementById(id).hidden),
-      canFire: !document.getElementById('btnFire').disabled && document.getElementById('gunAim').textContent.includes('%'),
-      canReload: !document.getElementById('btnReload').disabled,
+      canFire: !document.getElementById('btnSelect').disabled && document.getElementById('gunAim').textContent.includes('%'),
+      canReload: !document.getElementById('gunRounds').textContent.endsWith('#'),
     }));
     if (status.reloaded && status.killed && status.inRoom && !status.panel) return true;
     if (status.lost) return false;
@@ -333,8 +355,8 @@ async function attemptGun(page, url) {
     }
     if (status.canFire) {
       await page.keyboard.press('f');
-    } else if (status.canReload && i % 6 === 5) {
-      await page.keyboard.press('r');
+    } else if (status.canReload && i % 6 === 5 && await bumpAmmoDrum(page)) {
+      await page.waitForTimeout(100);
     } else {
       const blocked = await page.evaluate(
         () => document.getElementById('roomFeedback').innerHTML.includes('block-msg')
@@ -422,7 +444,8 @@ async function checkRealTime(page, url) {
   }
   if (visited.size > 2) return `${visited.size - 1} steps taken inside REALTIME_WALK_MS`;
 
-  await page.keyboard.press('r');
+  await page.waitForTimeout(300);
+  if (!await bumpAmmoDrum(page)) return 'no ammo drum to reload from';
   await page.waitForSelector('#reloadPanel:not([hidden])', { timeout: 2000 });
   await page.keyboard.press('1');
   await page.waitForSelector('#mapQuestionPanel:not([hidden])', { timeout: 2000 });
