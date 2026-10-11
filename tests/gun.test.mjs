@@ -10,10 +10,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { state } from '../js/state.js';
+import { state, key } from '../js/state.js';
 import {
   GUN_CHAMBER, GUN_RELOAD_ROUNDS, GUN_HIT_HALF, MINION_KINDS, MINION_STRIKE_COST,
-  DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS,
+  DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
 } from '../js/config.js';
 import { computeVisibility } from '../js/sight.js';
 import { spawnMinion, advanceMonsters, findAdjacentEnemies } from '../js/combat.js';
@@ -22,7 +22,7 @@ import { stepPlayer } from '../js/moves.js';
 import { whatBlocks } from '../js/passage.js';
 import {
   reloadCategory, reloadOffers, settleReload, pickTarget, refreshGunTarget, cycleTarget, fireBlock, fire, settleShot,
-  minionStrike, staggerHunter,
+  minionStrike, staggerHunter, settleStruggle,
 } from '../js/gun.js';
 
 const SET = [
@@ -67,6 +67,7 @@ function resetFloor(size = 21) {
   state.battle.selectedTarget = null;
   state.floor.gunTarget = null;
   state.battle.aim = null;
+  state.battle.struggle = null;
   state.battle.currentQuestion = SET[0];
   resetHaunts();
   computeVisibility();
@@ -417,6 +418,68 @@ test('with the gun on, a slow kind moves only every moveEvery turns', () => {
   }
   assert.equal(MINION_KINDS.HUSK.moveEvery, 2);
   assert.deepEqual(moves, [false, true, false, true]);
+});
+
+// A minion one step north of the player, the gun on, the chamber empty, on
+// a turn every kind moves.
+function struggleSetUp() {
+  resetFloor();
+  state.settings.gunCombat = true;
+  state.run.turnCount = 0;
+  state.run.ammo = 0;
+  return minionAt(-1, 0);
+}
+
+test('with no rounds, a minion that reaches the player starts a Struggle instead of striking', () => {
+  const m = struggleSetUp();
+  const events = advanceMonsters();
+  assert.deepEqual(events.map(e => e.type), ['struggleStarted']);
+  assert.equal(state.run.hearts, MAX_HEARTS, 'nothing is lost until the dial stops');
+  assert.equal(state.battle.struggle.minion, m);
+});
+
+test('with a reload open over the map, a minion strikes even with no rounds', () => {
+  struggleSetUp();
+  assert.equal(advanceMonsters({ canStruggle: false })[0].type, 'minionStruck');
+  assert.equal(state.battle.struggle, null);
+});
+
+test('a Struggle won pushes the minion STRUGGLE_PUSHBACK tiles straight away, with no damage', () => {
+  const m = struggleSetUp();
+  const hp = m.hpLeft;
+  advanceMonsters();
+  const before = m.row;
+  const events = settleStruggle(0.5);
+  assert.deepEqual(events.map(e => e.type), ['struggleWon', 'knockedBack']);
+  assert.equal(m.row, before - STRUGGLE_PUSHBACK);
+  assert.equal(m.col, state.floor.playerCol);
+  assert.equal(m.hpLeft, hp);
+  assert.equal(state.run.hearts, MAX_HEARTS);
+  assert.equal(state.battle.struggle, null);
+});
+
+test('a Struggle push stops at a wall', () => {
+  const m = struggleSetUp();
+  advanceMonsters();
+  state.floor.wallSet.add(key(m.row - 2, m.col));
+  settleStruggle(0.5);
+  assert.equal(m.row, state.floor.playerRow - 2, 'one tile back, then the wall');
+});
+
+test('a Struggle lost outside the zone is a strike', () => {
+  struggleSetUp();
+  advanceMonsters();
+  const events = settleStruggle(0.5 + STRUGGLE_HIT_HALF + 0.05);
+  assert.deepEqual(events.slice(0, 2).map(e => e.type), ['struggleLost', 'minionStruck']);
+  assert.equal(state.run.hearts, MAX_HEARTS - MINION_STRIKE_COST);
+});
+
+test('only the first minion to reach an empty-handed player struggles; others strike', () => {
+  struggleSetUp();
+  minionAt(0, 1);
+  const types = advanceMonsters().map(e => e.type);
+  assert.equal(types.filter(t => t === 'struggleStarted').length, 1);
+  assert.ok(types.includes('minionStruck'));
 });
 
 test('in classic combat a minion that reaches the player engages, as before', () => {

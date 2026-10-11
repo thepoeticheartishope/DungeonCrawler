@@ -11,7 +11,7 @@
 import { state, key } from './state.js';
 import {
   BATTLE_CHOICE_COUNT, GUN_CHAMBER, GUN_RELOAD_MODIFIERS, GUN_RELOAD_ROUNDS, GUN_HIT_HALF,
-  MINION_KINDS, MINION_STRIKE_COST, DARK_MISS_COST, HUNTER_REST_TURNS,
+  MINION_KINDS, MINION_STRIKE_COST, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
 } from './config.js';
 import { fightGroups, shuffle } from './quiz.js';
 import { recordHauntAnswer } from './haunts.js';
@@ -223,6 +223,49 @@ export function minionStrike(m) {
   }
   if (state.run.hearts <= 0) events.push({ type: 'signalLost' });
   return events;
+}
+
+// The Struggle dial stopped at `barPosition` (0 to 1, centre 0.5) for the
+// minion waiting in state.battle.struggle. Inside STRUGGLE_HIT_HALF of the
+// centre the player shoves it away: STRUGGLE_PUSHBACK tiles, no damage to
+// either. Anything else and it strikes, as it would have with rounds.
+// Events: struggleWon { minion } then knockedBack { minion, from } if it
+// had room to go; or struggleLost { minion } then minionStrike's events.
+export function settleStruggle(barPosition) {
+  const struggle = state.battle.struggle;
+  if (!struggle) return [];
+  state.battle.struggle = null;
+  const m = struggle.minion;
+  if (!state.floor.minions.includes(m)) return [];
+  if (Math.abs(barPosition - 0.5) > STRUGGLE_HIT_HALF) return [{ type: 'struggleLost', minion: m }, ...minionStrike(m)];
+  const events = [{ type: 'struggleWon', minion: m }];
+  const from = { row: m.row, col: m.col };
+  if (pushBack(m, STRUGGLE_PUSHBACK)) events.push({ type: 'knockedBack', minion: m, from });
+  return events;
+}
+
+// Shoves `m` up to `tiles` tiles straight away from the player, stopping
+// at the first wall or occupied tile. If it can't go that way at all, it
+// goes back along its trail like a strike's knockback. Its trail is spent
+// either way. Returns whether it moved.
+function pushBack(m, tiles) {
+  const dRow = Math.sign(m.row - state.floor.playerRow);
+  const dCol = Math.sign(m.col - state.floor.playerCol);
+  const size = state.floor.GRID_SIZE;
+  const open = (row, col) => row >= 0 && col >= 0 && row < size && col < size &&
+    !state.floor.wallSet.has(key(row, col)) && !tileOccupied(row, col, m);
+  const start = { row: m.row, col: m.col };
+  for (let i = 0; i < tiles && open(m.row + dRow, m.col + dCol); i++) {
+    m.row += dRow;
+    m.col += dCol;
+  }
+  const back = m.trail[0];
+  m.trail = [];
+  if (m.row !== start.row || m.col !== start.col) return true;
+  if (!back || !open(back.row, back.col)) return false;
+  m.row = back.row;
+  m.col = back.col;
+  return true;
 }
 
 // A landed shot can't hurt the hunter, but it stops it where it stands

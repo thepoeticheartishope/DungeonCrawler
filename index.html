@@ -669,6 +669,12 @@
     box-shadow: 0 0 8px var(--torch-bright);
   }
   .damage-legend { display: flex; justify-content: space-between; color: var(--muted); font-size: 16px; text-transform: uppercase; }
+  .damage-legend[hidden], .damage-zone[hidden] { display: none; }
+  /* The Struggle dial (gun.js settleStruggle): the same bar, its prompt in
+     inverse video and a brighter frame, so it reads as danger at a glance.
+     Nothing flashes: the speed of the marker is the pressure. */
+  .map-panel.struggle .term-line { background: var(--torch-bright); color: var(--ink); padding: 0 6px; width: fit-content; }
+  .map-panel.struggle .damage-bar { border-color: var(--torch-bright); }
 
   /* Edge glows toward an off-screen boss. Opacity is set per edge by
      render.js renderLightHint, over the map; they never catch clicks. */
@@ -1397,13 +1403,13 @@
         <div id="mapQuestionSlot"></div>
       </div>
       <div class="map-panel" id="aimPanel" hidden>
-        <div class="term-line" data-t="gun.bar.prompt"></div>
+        <div class="term-line" id="aimPrompt" data-t="gun.bar.prompt"></div>
         <div class="damage-bar" id="damageBar" role="img">
           <div class="damage-zone damage-hit" id="damageHit"></div>
           <div class="damage-zone damage-weak" id="damageWeak"></div>
           <div class="damage-marker" id="damageMarker"></div>
         </div>
-        <div class="damage-legend">
+        <div class="damage-legend" id="damageLegend">
           <span data-t="gun.bar.graze"></span><span data-t="gun.bar.hit"></span><span data-t="gun.bar.weak"></span><span data-t="gun.bar.hit"></span><span data-t="gun.bar.graze"></span>
         </div>
       </div>

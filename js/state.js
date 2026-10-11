@@ -115,5 +115,6 @@ export const state = {
     battlePhase: 'answering', // 'choosing' (pick a category) | 'answering' (question showing) | 'ended' (settled, awaiting continue)
     categoryChoices: [],   // [{ label, pool }] offered while battlePhase is 'choosing'
     aim: null,             // a gun shot that landed and waits for the damage bar: { target, hitHalf, weakWidth } (gun.js)
+    struggle: null,        // a minion (or the hunter) that reached the player with no rounds, waiting on the Struggle dial: { minion } (gun.js)
   },
 };
