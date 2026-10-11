@@ -4,7 +4,7 @@
 // Lower's bar, hints and tiers, Slow Spell's fit, spelling and tiers,
 // Syllable Split's splitter, fit, tray and tiers, Letter Pool's roll,
 // tray, checks, tiers and no haunts, Code Break's fit, marks and tiers,
-// and what a
+// Verdict's fit, claims, tiers and haunts, and what a
 // tier pays in the settle rules (gun.js, answers.js).
 //
 // Run: node --test tests/*.test.mjs
@@ -16,13 +16,14 @@ import { state } from '../js/state.js';
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS, ENERGY_MAX, RELOAD_ENERGY,
   BOSS_HP, MINIGAME_TIER_PAY, HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
-  SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM, CODE_BREAK_TIERS,
+  SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM, CODE_BREAK_TIERS, VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS,
 } from '../js/config.js';
 import {
   MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, modifiersFor, rollMinigame, forcedQuestion, endMinigame,
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   splitSyllables, syllableSplitPieces, syllableSplitTray, syllableSplitTier,
   letterPoolSetup, letterPoolCheck, letterPoolTier, codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier,
+  verdictSetup, verdictTier, verdictClaimCount,
 } from '../js/minigames.js';
 import { recordHauntAnswer } from '../js/haunts.js';
 import { settleReload } from '../js/gun.js';
@@ -209,7 +210,7 @@ test('Slow Spell fits one-word answers of 4 to 12 letters, no decoys needed (typ
   assert.deepEqual(minigamesFor(NAMES[0]), ['slowSpell', 'codeBreak'], 'alone in the set: typed, so nothing to pick from');
   state.settings.activeData = [...NAMES, BOOK];
   assert.ok(!minigamesFor(NAMES[6]).includes('slowSpell'), 'Eve: too short');
-  assert.deepEqual(minigamesFor({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }), [], 'two words');
+  assert.ok(!minigamesFor({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }).includes('slowSpell'), 'two words');
   assert.ok(!minigamesFor(NUMBER).includes('slowSpell'), 'a number is no word');
   assert.ok(!minigamesFor({ ...NAMES[0], term: 'Spell Noah.' }).includes('slowSpell'), 'the stem gives it away');
   assert.ok(!MINIGAME_MODIFIERS.slowSpell.includes('timer'), 'no Timer: waiting is the game');
@@ -254,7 +255,7 @@ test('names split on their vowels, keeping digraphs and starting pairs', () => {
 test('Syllable Split fits one-word names of 3+ pieces with enough decoys', () => {
   reset();
   state.settings.activeData = LONG;
-  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak']);
+  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak', 'verdict']);
   assert.equal(syllableSplitPieces(LONG[4]), null, 'Noah: two pieces');
   assert.equal(syllableSplitPieces({ ...LONG[0], answerType: 'book' }), null, 'names only');
   assert.equal(syllableSplitPieces({ ...LONG[0], meaning: 'King Solomon' }), null, 'one word');
@@ -435,4 +436,75 @@ test('Code Break tiers: guess 1 = X, 2 = 2, 3 = 1, then out of guesses', () => {
   assert.equal(codeBreakTier(2), '2');
   assert.equal(codeBreakTier(3), '1');
   assert.equal(codeBreakTier(4), null);
+});
+
+// A small set for Verdict: five names, two books, one number.
+const VERDICT_SET = [
+  { term: 'Who built the ark?', meaning: 'Noah', answerType: 'name' },
+  { term: 'Who led Israel out of Egypt?', meaning: 'Moses', answerType: 'name' },
+  { term: 'Who killed Goliath?', meaning: 'David', answerType: 'name' },
+  { term: 'Who was swallowed by a fish?', meaning: 'Jonah', answerType: 'name' },
+  { term: 'Who was the first man?', meaning: 'Adam', answerType: 'name' },
+  { term: 'Which book comes first?', meaning: 'Genesis', answerType: 'book' },
+  { term: 'Which book comes last?', meaning: 'Revelation', answerType: 'book' },
+  { term: 'How many days did it rain?', meaning: '40', answerType: 'number' },
+];
+
+test('Verdict fits a question with enough other answers of its type, and enough claims in the set', () => {
+  reset();
+  state.settings.activeData = VERDICT_SET;
+  assert.ok(minigamesFor(VERDICT_SET[0]).includes('verdict'), 'four other names');
+  assert.ok(!minigamesFor(VERDICT_SET[5]).includes('verdict'), 'one other book');
+  assert.ok(!minigamesFor({ ...VERDICT_SET[0], term: 'Did Noah build the ark?' }).includes('verdict'), 'the stem holds the answer');
+  assert.ok(!minigamesFor({ ...VERDICT_SET[0], image: 'ark.svg' }).includes('verdict'), 'claims show words only');
+  state.settings.activeData = VERDICT_SET.slice(0, 4);
+  assert.ok(!minigamesFor(VERDICT_SET[0]).includes('verdict'), 'too few names for a decoy each');
+});
+
+test('Verdict claims hold the question asked, and a false one shows another answer of its type', () => {
+  reset();
+  state.settings.activeData = VERDICT_SET;
+  const q = VERDICT_SET[1];
+  const claims = withRandom(0, () => verdictSetup(q, 3));
+  assert.equal(claims.length, 3);
+  assert.ok(claims.some(c => c.q === q), 'the question showing is one of them');
+  for (const c of claims) {
+    assert.equal(c.truth, false);
+    assert.notEqual(c.shown, c.q.meaning);
+    assert.ok(VERDICT_SET.some(o => o.meaning === c.shown && o.answerType === c.q.answerType), 'same type');
+  }
+  const honest = withRandom(0.99, () => verdictSetup(q, 3));
+  assert.ok(honest.every(c => c.truth && c.shown === c.q.meaning));
+});
+
+test('Verdict asks 5 claims against the boss only, 3 anywhere else', () => {
+  reset();
+  state.battle.selectedTarget = null;
+  assert.equal(verdictClaimCount(), VERDICT_CLAIMS);
+  state.battle.selectedTarget = { kind: 'minion' };
+  assert.equal(verdictClaimCount(), VERDICT_CLAIMS);
+  state.battle.selectedTarget = { kind: 'boss' };
+  assert.equal(verdictClaimCount(), VERDICT_BOSS_CLAIMS);
+  state.battle.selectedTarget = null;
+});
+
+test('Verdict tiers: 3 claims pay X or 1; the boss\'s 5 pay X, 2 or 1', () => {
+  assert.equal(verdictTier(0, 3), 'X');
+  assert.equal(verdictTier(1, 3), '1', 'a coin flip gets 2 of 3 half the time');
+  assert.equal(verdictTier(2, 3), null);
+  assert.equal(verdictTier(0, 5), 'X');
+  assert.equal(verdictTier(1, 5), '2');
+  assert.equal(verdictTier(2, 5), '1');
+  assert.equal(verdictTier(3, 5), null);
+});
+
+test('claims called wrong become haunts; the question showing is left to the settle rule', () => {
+  reset();
+  state.settings.activeData = VERDICT_SET;
+  state.battle.minigame = 'verdict';
+  state.battle.currentQuestion = VERDICT_SET[0];
+  endMinigame({ right: true, tier: '1', given: '2 of 3 right', missed: [VERDICT_SET[0], VERDICT_SET[2]] });
+  assert.ok(state.run.haunts.has(VERDICT_SET[2]), 'another claim called wrong');
+  assert.ok(!state.run.haunts.has(VERDICT_SET[0]), 'the settle rule records this one');
+  assert.equal(state.battle.minigame, null);
 });

@@ -231,6 +231,19 @@ export const TEXT = {
   'mg.codeBreak.scored.2': '{name|upper}: cracked on the second guess.', // draft
   'mg.codeBreak.scored.1': '{name|upper}: cracked on the last guess.', // draft
   'mg.codeBreak.scored.miss': '{name|upper}: still locked. It was {answer}.', // draft
+  'mg.verdict': 'Verdict', // draft
+  'mg.verdict.hint': 'True or false? {n} claims.', // draft
+  'mg.verdict.claim': 'Claim {i} of {n}', // draft
+  'mg.verdict.true': 'True', // draft
+  'mg.verdict.false': 'False', // draft
+  'mg.verdict.wasTrue': 'It was true: {answer}.', // draft. A true claim called false
+  'mg.verdict.wasFalse': 'It was false: {answer}, not {shown}.', // draft. A false claim called true
+  'mg.verdict.timeUp': 'Time. {line}', // draft. A claim not called in time
+  'mg.verdict.given': '{n} of {total} right', // draft
+  'mg.verdict.scored.X': '{name|upper}: every call right.', // draft
+  'mg.verdict.scored.2': '{name|upper}: {given}.', // draft
+  'mg.verdict.scored.1': '{name|upper}: {given}.', // draft
+  'mg.verdict.scored.miss': '{name|upper}: {given}. Missed.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
   'battle.blindQuestion': '????', // draft

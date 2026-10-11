@@ -7,7 +7,7 @@
 //   timer    a few seconds to answer, or it counts as a miss
 
 import { state } from './state.js';
-import { MODIFIER_CHANCE, MODIFIER_DARK_BONUS, FLIP_MAX_ANSWERS, HUNTER_MODIFIER_PAIRS } from './config.js';
+import { MODIFIER_CHANCE, MODIFIER_DARK_BONUS, FLIP_MAX_ANSWERS, HUNTER_MODIFIER_PAIRS, BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS } from './config.js';
 import { shuffle } from './quiz.js';
 
 export const MODIFIERS = ['blind', 'gambler', 'flip', 'timer'];
@@ -53,6 +53,14 @@ export function rollCategoryModifiers(target, count) {
   if (!target || target.kind !== 'boss') return Array.from({ length: count }, () => rollModifier(target));
   const eligible = shuffle(eligibleModifiers());
   return Array.from({ length: count }, (_, i) => eligible[i % eligible.length]);
+}
+
+// Blind: how long a question worded `text` shows before it goes blank,
+// longer for more words (capped). The question panel and minigames that
+// ask their own questions (Verdict) share it.
+export function blindReadMs(text) {
+  const words = String(text || '').trim().split(/\s+/).length;
+  return Math.min(BLIND_MAX_MS, BLIND_BASE_MS + BLIND_MS_PER_WORD * words);
 }
 
 // For Flip: which answer slots to flip (1..FLIP_MAX_ANSWERS of them, never

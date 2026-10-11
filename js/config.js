@@ -613,6 +613,23 @@ export const LETTER_POOL_FLIP_SHARE = 0.4;
 export const CODE_BREAK_MIN_CHARS = 2;
 export const CODE_BREAK_MAX_CHARS = 9;
 export const CODE_BREAK_TIERS = ['X', '2', '1'];
+// Verdict: VERDICT_CLAIMS claims in a row, each a question with an answer
+// filled in: the real one, or VERDICT_FALSE_SHARE of the time another
+// answer of the same answerType. The question asked is one of them; the
+// rest come from the set. A boss asks VERDICT_BOSS_CLAIMS, and only a
+// boss (Timothy, 2026-10-11). Wrong calls pay VERDICT_TIERS[wrong] (or
+// VERDICT_BOSS_TIERS), past the end a miss: with three claims 2 of 3 pays
+// only 1, since calling at random gets 2 of 3 half the time. A question
+// fits with VERDICT_MIN_DECOYS other answers of its type in the set.
+export const VERDICT_CLAIMS = 3;
+export const VERDICT_BOSS_CLAIMS = 5;
+export const VERDICT_TIERS = ['X', '1'];
+export const VERDICT_BOSS_TIERS = ['X', '2', '1'];
+export const VERDICT_FALSE_SHARE = 0.5;
+export const VERDICT_MIN_DECOYS = 3;
+// Verdict's Timer is per claim, shorter than a question's: one call is
+// quick.
+export const VERDICT_TIMER_SECONDS = 7;
 
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.

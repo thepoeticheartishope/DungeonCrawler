@@ -8,11 +8,11 @@
 // in place of its options. Sets state.battle.currentQuestion /
 // currentChoices / wager.
 import { state } from './state.js';
-import { BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS } from './config.js';
-import { rollFlip, maxWager } from './modifiers.js';
+import { TIMER_SECONDS } from './config.js';
+import { rollFlip, maxWager, blindReadMs } from './modifiers.js';
 import { escapeHtml, buildChoices, resolveImageSrc } from './quiz.js';
 import { t } from './text.js';
-import { showMinigame, hideMinigame, applyMinigameModifier, lockMinigame, minigameSeconds, minigameTimeUp } from './minigameview.js';
+import { showMinigame, hideMinigame, applyMinigameModifier, lockMinigame, minigameSeconds, minigameTimeUp, minigameAsks } from './minigameview.js';
 
 const queryPanel = document.getElementById('queryPanel');
 const enemyName = document.getElementById('enemyName');
@@ -88,6 +88,9 @@ function typeText(el, text, targetDurationMs = 450) {
 // asked once that category is picked, and is cleared by the next question.
 let blindTimer = null;
 let countdownTimer = null;
+// Whether the Timer is on for the question showing, even between two
+// clocks (a Verdict claim timed out and the next one starts its own).
+let timerOn = false;
 
 // Ends whatever modifier the last question carried: timers, the wager,
 // the hidden question.
@@ -97,6 +100,7 @@ export function clearModifier() {
   if (enemyName.classList.contains('mod-blind')) showQuestionAgain();
   clearInterval(countdownTimer);
   countdownTimer = null;
+  timerOn = false;
   modTimerEl.hidden = true;
   modTimerEl.classList.remove('urgent');
   state.battle.wager = 0;
@@ -109,16 +113,13 @@ export function clearModifier() {
 export function applyModifier(modifier) {
   handlers.log(t('log.modifier', { name: t('mod.' + modifier) }), 'sys');
   const buttons = [...mcOptionsEl.querySelectorAll('.mc-option')];
-  // A minigame has its own Flip (minigameview.js). Blind is the same for
-  // every question and minigame: it takes the question away, not the
-  // answers.
-  if (state.battle.minigame && modifier === 'flip') {
+  // A minigame has its own Flip (minigameview.js). Blind takes the
+  // question away, not the answers: this panel's question, or the ones a
+  // minigame asks itself (Verdict's claims).
+  if (state.battle.minigame && (modifier === 'flip' || (modifier === 'blind' && minigameAsks()))) {
     applyMinigameModifier(modifier);
   } else if (modifier === 'blind') {
-    // Longer questions stay readable for longer.
-    const words = state.battle.currentQuestion.term.trim().split(/\s+/).length;
-    const ms = Math.min(BLIND_MAX_MS, BLIND_BASE_MS + BLIND_MS_PER_WORD * words);
-    blindTimer = setTimeout(hideQuestion, ms);
+    blindTimer = setTimeout(hideQuestion, blindReadMs(state.battle.currentQuestion.term));
   } else if (modifier === 'flip') {
     const { slots, mode } = rollFlip(buttons.length);
     buttons.forEach((b, i) => { if (slots.has(i)) b.querySelector('.opt-text').classList.add('flip-' + mode); });
@@ -137,6 +138,7 @@ export function applyModifier(modifier) {
     }
     wagerRow.hidden = false;
   } else if (modifier === 'timer') {
+    timerOn = true;
     startCountdown();
   }
 }
@@ -185,10 +187,11 @@ function startCountdown() {
   }, 1000);
 }
 
-// A minigame of several tries (Higher / Lower) started a new one: the
-// Timer, if it is on, starts over, so each try gets the full clock.
+// A minigame of several tries (Higher / Lower, Verdict's claims) started
+// a new one: the Timer, if it is on, starts over, so each try gets the
+// full clock.
 function restartCountdown() {
-  if (!countdownTimer) return;
+  if (!timerOn) return;
   clearInterval(countdownTimer);
   startCountdown();
 }
@@ -231,6 +234,7 @@ export function setMinigame(id) {
   state.battle.minigame = id || null;
   queryPanel.classList.toggle('minigame-on', Boolean(id));
   if (!id) {
+    queryPanel.classList.remove('minigame-asks');
     hideMinigame();
     return;
   }
@@ -238,6 +242,8 @@ export function setMinigame(id) {
   state.battle.currentChoices = [];
   mcOptionsEl.innerHTML = '';
   showMinigame(id, result => handlers.onResult(result), restartCountdown);
+  // A minigame that shows its own questions (Verdict) hides this one.
+  queryPanel.classList.toggle('minigame-asks', minigameAsks());
 }
 
 // Types the question now showing again. A question is often set well

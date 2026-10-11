@@ -19,9 +19,11 @@ import {
   PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
+  VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
   LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS,
 } from './config.js';
 import { numberQuestion, pickQuestion, shuffle, normalizeSpaces } from './quiz.js';
+import { recordHauntAnswer } from './haunts.js';
 
 // The modifiers each minigame supports (the plan's compatibility table).
 // A minigame only ever carries modifiers from its own list, so none is
@@ -35,6 +37,7 @@ export const MINIGAME_MODIFIERS = {
   syllableSplit: ['blind', 'flip', 'timer', 'gambler'],
   letterPool: ['blind', 'flip', 'timer', 'gambler'],
   codeBreak: ['blind', 'flip', 'timer', 'gambler'],
+  verdict: ['blind', 'flip', 'timer', 'gambler'],
 };
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
@@ -52,6 +55,7 @@ const FITS = {
   // question (letterPoolQuestion in main.js) fits it.
   letterPool: q => Boolean(q.letterPool),
   codeBreak: q => codeBreakCode(q) !== null && !answerInStem(q),
+  verdict: q => verdictFits(q) && verdictIndex().fitting.length >= VERDICT_BOSS_CLAIMS,
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -117,12 +121,20 @@ export function forcedQuestion(q, pool) {
 }
 
 // The minigame showing has ended with `result`. Clears
-// state.battle.minigame.
-// Events: minigameScored { minigame, tier, given, answer }.
+// state.battle.minigame. A minigame that asked more questions than the
+// one showing (Verdict) lists the ones missed in `result.missed`: each
+// becomes a haunt like any missed question. The one showing is left to
+// the settle rule, which records it by the result as a whole.
+// Events: minigameScored { minigame, tier, given, answer }, then
+// hauntLingers for each missed one that was a haunt already.
 export function endMinigame(result) {
   const minigame = state.battle.minigame;
   state.battle.minigame = null;
-  return [{ type: 'minigameScored', minigame, tier: result.tier, given: result.given, answer: state.battle.currentQuestion.meaning }];
+  const events = [{ type: 'minigameScored', minigame, tier: result.tier, given: result.given, answer: state.battle.currentQuestion.meaning }];
+  (result.missed || []).forEach((q) => {
+    if (q !== state.battle.currentQuestion && recordHauntAnswer(q, false) === 'lingers') events.push({ type: 'hauntLingers' });
+  });
+  return events;
 }
 
 // ---- Close Enough: set a dial to a number answer ----
@@ -482,4 +494,70 @@ export function codeBreakMarks(setup, typed) {
 // The tier for cracking the code on guess `n` (1-based): CODE_BREAK_TIERS.
 export function codeBreakTier(n) {
   return CODE_BREAK_TIERS[n - 1] || null;
+}
+
+// ---- Verdict: call claims TRUE or FALSE ----
+
+// What Verdict needs from the set loaded, worked out once per set: the
+// answers of each answerType (each spelling once), and the questions it
+// fits. Rebuilt when another set is loaded.
+let verdictCache = { data: null, byType: null, fitting: null };
+
+// verdictCache for state.settings.activeData.
+function verdictIndex() {
+  const data = state.settings.activeData || [];
+  if (verdictCache.data === data) return verdictCache;
+  const byType = new Map();
+  data.forEach((q) => {
+    if (!q.answerType) return;
+    const answers = byType.get(q.answerType) || new Map();
+    answers.set(normalizeSpaces(q.meaning).toLowerCase(), q.meaning);
+    byType.set(q.answerType, answers);
+  });
+  // Cached before the fit check, which reads the answers back from it.
+  verdictCache = { data, byType, fitting: [] };
+  verdictCache.fitting = data.filter(verdictFits);
+  return verdictCache;
+}
+
+// The other answers of question `q`'s answerType in the set: what a false
+// claim can show.
+function verdictDecoys(q) {
+  const answers = verdictIndex().byType.get(q.answerType);
+  if (!answers) return [];
+  const own = normalizeSpaces(q.meaning).toLowerCase();
+  return [...answers].filter(([key]) => key !== own).map(([, answer]) => answer);
+}
+
+// Whether question `q` can be a claim: it has an answerType with
+// VERDICT_MIN_DECOYS other answers, no image (a claim shows words only),
+// and its wording doesn't hold its answer (a true claim would be free).
+function verdictFits(q) {
+  return Boolean(q.answerType) && !q.image && !q.letterPool && !answerInStem(q) && verdictDecoys(q).length >= VERDICT_MIN_DECOYS;
+}
+
+// How many claims the Verdict showing asks: VERDICT_BOSS_CLAIMS against
+// the boss, and only there; VERDICT_CLAIMS anywhere else.
+export function verdictClaimCount() {
+  const target = state.battle.selectedTarget;
+  return target && target.kind === 'boss' ? VERDICT_BOSS_CLAIMS : VERDICT_CLAIMS;
+}
+
+// New claims for question `q` (one Verdict can run): `count` of them in a
+// random order, `q` among them, the rest other questions it fits. Each is
+// { q, shown, truth }: the answer shown, and whether it is the real one.
+export function verdictSetup(q, count = verdictClaimCount()) {
+  const others = shuffle(verdictIndex().fitting.filter(o => o !== q)).slice(0, count - 1);
+  return shuffle([q, ...others]).map((claim) => {
+    if (Math.random() >= VERDICT_FALSE_SHARE) return { q: claim, shown: claim.meaning, truth: true };
+    const decoys = verdictDecoys(claim);
+    return { q: claim, shown: decoys[Math.floor(Math.random() * decoys.length)], truth: false };
+  });
+}
+
+// The tier for `wrong` wrong calls out of `count` claims: VERDICT_TIERS,
+// or VERDICT_BOSS_TIERS for the boss's longer run; past the end, null.
+export function verdictTier(wrong, count) {
+  const tiers = count === VERDICT_BOSS_CLAIMS ? VERDICT_BOSS_TIERS : VERDICT_TIERS;
+  return tiers[wrong] || null;
 }

@@ -12,13 +12,14 @@ import { state } from './state.js';
 import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
-  LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS,
+  LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS, VERDICT_TIMER_SECONDS,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   syllableSplitTray, syllableSplitTier, letterPoolCheck, letterPoolTier,
-  codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier,
+  codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier, verdictSetup, verdictTier,
 } from './minigames.js';
+import { blindReadMs } from './modifiers.js';
 import { normalizeSpaces } from './quiz.js';
 import { t } from './text.js';
 
@@ -28,13 +29,16 @@ const slot = document.getElementById('minigameSlot');
 // its own drawing needs (Close Enough: the dial and its elements). Null
 // when none shows. View-only, so not in state.
 let shown = null;
+// Verdict's Blind timer, taking the claim's question away once read.
+let claimTimer = null;
 // Slow Spell's clock, filling in its letters.
 let letterClock = null;
 
 // Builders, one per minigame: each fills `slot` and returns the parts the
 // shared code needs: `lock` (its answer button), `finish()` (DEV ->
 // Auto-win: plays it out perfectly), `flip()` (its version of Flip), and
-// if it differs, `seconds` (the Timer's clock) and `timeUp()` (the Timer ran out: score
+// if it differs, `asks` (it shows its own questions, so the panel's is
+// hidden and Blind is its own: `blind()`), `seconds` (the Timer's clock) and `timeUp()` (the Timer ran out: score
 // what was done, instead of a miss).
 const BUILDERS = {
   closeEnough: buildCloseEnough,
@@ -43,6 +47,7 @@ const BUILDERS = {
   syllableSplit: buildSyllableSplit,
   letterPool: buildLetterPool,
   codeBreak: buildCodeBreak,
+  verdict: buildVerdict,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -59,6 +64,8 @@ export function showMinigame(id, report, again = () => {}) {
 
 // Takes the minigame away (a new question is set).
 export function hideMinigame() {
+  clearTimeout(claimTimer);
+  claimTimer = null;
   clearInterval(letterClock);
   letterClock = null;
   shown = null;
@@ -67,9 +74,18 @@ export function hideMinigame() {
   slot.className = 'minigame';
 }
 
-// Puts the minigame's own Flip on it.
+// Puts the minigame's own Flip on it, or Blind on one that asks its own
+// questions (minigameAsks).
 export function applyMinigameModifier(modifier) {
-  if (shown && modifier === 'flip') shown.flip();
+  if (!shown) return;
+  if (modifier === 'flip') shown.flip();
+  else if (modifier === 'blind' && shown.blind) shown.blind();
+}
+
+// Whether the minigame showing asks its own questions (Verdict), so the
+// question panel hides its own and leaves Blind to it.
+export function minigameAsks() {
+  return Boolean(shown && shown.asks);
 }
 
 // The Timer's seconds for the minigame showing, or null for the usual.
@@ -635,6 +651,114 @@ function buildCodeBreak() {
     focus: () => input.focus(),
     finish: () => guess(setup.code.join('')),
     flip: () => { flip = Math.random() < 0.5 ? 'upside' : 'mirror'; },
+  };
+}
+
+// ---- Verdict: call each claim TRUE or FALSE ----
+// One claim at a time: its question (in place of the panel's, which is
+// hidden) and an answer filled in. TRUE / FALSE (or the T / F keys)
+// calls it; a wrong call says the real answer and stays listed below.
+// After the last claim the wrong calls set the tier (verdictTier); the
+// claims called wrong go back as `missed`, to come back as haunts. Each
+// claim calls again() (the Timer is per claim, VERDICT_TIMER_SECONDS;
+// running out calls it wrong and moves on). Gambler locks the buttons (a
+// fieldset). Blind: each claim's question goes after its reading time,
+// the answer stays. Flip: TRUE and FALSE may swap sides each claim.
+function buildVerdict() {
+  slot.classList.add('mg-verdict');
+  const claims = verdictSetup(state.battle.currentQuestion);
+  const count = claims.length;
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.verdict.hint', { n: count });
+  const tally = add(slot, 'div', 'mg-tally');
+  const marks = claims.map(() => add(tally, 'span', 'mg-code-cell'));
+  const which = add(slot, 'div', 'term-line mg-left');
+  const stem = add(slot, 'div', 'enemy-name mg-claim-q');
+  const shownLine = add(slot, 'div', 'mg-reading mg-claim-a');
+  const lock = add(slot, 'fieldset', 'mg-tray mg-tf');
+  const yes = add(lock, 'button', 'mg-lock');
+  const no = add(lock, 'button', 'mg-lock');
+  const notes = add(slot, 'div', 'mg-found mg-verdict-notes');
+
+  yes.type = no.type = 'button';
+  yes.textContent = t('mg.verdict.true');
+  no.textContent = t('mg.verdict.false');
+  notes.setAttribute('aria-live', 'polite');
+
+  // The claim showing, the calls so far, and whether Blind and Flip are on.
+  let at = 0;
+  let wrong = 0;
+  let blind = false;
+  let flip = false;
+  let over = false;
+  const missed = [];
+  const showClaim = () => {
+    const claim = claims[at];
+    marks[at].classList.add('mg-tally-now');
+    which.textContent = t('mg.verdict.claim', { i: at + 1, n: count });
+    stem.textContent = claim.q.term;
+    stem.classList.remove('mod-blind');
+    shownLine.textContent = '→ ' + claim.shown.toUpperCase();
+    if (flip && Math.random() < 0.5) lock.insertBefore(no, yes);
+    else lock.insertBefore(yes, no);
+    clearTimeout(claimTimer);
+    if (blind) claimTimer = setTimeout(hideClaim, blindReadMs(claim.q.term));
+  };
+  const hideClaim = () => {
+    stem.textContent = t('battle.blindQuestion');
+    stem.classList.add('mod-blind');
+  };
+  // Calls the claim showing: true, false, or null (time ran out).
+  const call = (said) => {
+    if (over) return;
+    const claim = claims[at];
+    const right = said === claim.truth;
+    marks[at].classList.remove('mg-tally-now');
+    marks[at].classList.add(right ? 'mg-code-hit' : 'mg-code-miss');
+    marks[at].textContent = right ? '+' : 'x';
+    if (!right) {
+      wrong++;
+      missed.push(claim.q);
+      const line = claim.truth
+        ? t('mg.verdict.wasTrue', { answer: claim.q.meaning.toUpperCase() })
+        : t('mg.verdict.wasFalse', { answer: claim.q.meaning.toUpperCase(), shown: claim.shown.toUpperCase() });
+      add(notes, 'div', 'term-line').textContent = said === null ? t('mg.verdict.timeUp', { line }) : line;
+    }
+    at++;
+    if (at < count) {
+      showClaim();
+      shown.again();
+      return;
+    }
+    over = true;
+    clearTimeout(claimTimer);
+    const tier = verdictTier(wrong, count);
+    finish({ right: tier !== null, tier, given: t('mg.verdict.given', { n: count - wrong, total: count }), missed });
+  };
+  yes.addEventListener('click', () => call(true));
+  no.addEventListener('click', () => call(false));
+  // T / F call it too. On the buttons, not the slot: the slot outlives
+  // this minigame. F is kept from the map's key (it fires).
+  lock.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    if (key !== 't' && key !== 'f') return;
+    e.preventDefault();
+    e.stopPropagation();
+    call(key === 't');
+  });
+  showClaim();
+
+  return {
+    lock,
+    asks: true,
+    focus: () => yes.focus(),
+    seconds: VERDICT_TIMER_SECONDS,
+    timeUp: () => call(null),
+    finish: () => { while (!over) call(claims[at].truth); },
+    blind: () => {
+      blind = true;
+      claimTimer = setTimeout(hideClaim, blindReadMs(claims[at].q.term));
+    },
+    flip: () => { flip = true; },
   };
 }
 
