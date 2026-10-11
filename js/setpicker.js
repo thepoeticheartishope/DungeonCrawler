@@ -103,33 +103,56 @@ function renderList(builtins) {
   (lastBtn || pickList.querySelector('.set-option')).focus({ preventScroll: true });
 }
 
+// The set picked last ('builtin:<id>', 'saved:<name>', 'workshop'), or ''.
+// Minigame practice (practice.js) starts on it.
+export function lastSetValue() {
+  return readLastSet();
+}
+
+// Every set there is to pick, as [{ value, name }]: built-in first, then
+// the workshop list and saved sets. For minigame practice's set switch.
+export async function setChoices() {
+  const builtins = await fetchManifest();
+  const own = listSavedSets().map(s => ({ value: 'saved:' + s.name, name: s.name }));
+  if (state.settings.workshopData) own.unshift({ value: 'workshop', name: t('pick.workshopList') });
+  return [...builtins.map(s => ({ value: 'builtin:' + s.id, name: s.name })), ...own];
+}
+
+// Fetches set `value` and its subject dictionary (built-in sets only):
+// { data, dictionary }, or null if it can't be had. `builtins` is the
+// manifest, fetched again when not given.
+export async function fetchSet(value, builtins = null) {
+  if (value === 'workshop') return state.settings.workshopData ? { data: state.settings.workshopData, dictionary: null } : null;
+  if (value.startsWith('saved:')) {
+    const data = loadSavedSet(value.slice('saved:'.length));
+    return data && data.length ? { data, dictionary: null } : null;
+  }
+  if (!value.startsWith('builtin:')) return null;
+  const chosen = (builtins || await fetchManifest()).find(s => s.id === value.slice('builtin:'.length));
+  if (!chosen) return null;
+  const [data, dictionary] = await Promise.all([fetchBundledSet(chosen.file), fetchDictionary(chosen.subject)]);
+  return data && data.length ? { data, dictionary } : null;
+}
+
 // Loads the picked set into state.settings and starts the run. A built-in
 // set is fetched first (with its subject dictionary); if that fails the
 // player stays here and can try again.
 async function pick(value, builtins) {
   if (picking) return;
-  let data = null;
-  let dictionary = null;
-  if (value === 'workshop') {
-    data = state.settings.workshopData;
-  } else if (value.startsWith('saved:')) {
-    data = loadSavedSet(value.slice('saved:'.length));
-  } else if (value.startsWith('builtin:')) {
-    const chosen = builtins.find(s => s.id === value.slice('builtin:'.length));
-    if (!chosen) return;
+  const chosen = value.startsWith('builtin:') && builtins.find(s => s.id === value.slice('builtin:'.length));
+  if (chosen) {
     picking = true;
     pickStatus.innerHTML = '<span class="loader-ok">' + escapeHtml(t('pick.loading', { name: chosen.name })) + '</span>';
-    [data, dictionary] = await Promise.all([fetchBundledSet(chosen.file), fetchDictionary(chosen.subject)]);
-    picking = false;
-    if (!data) {
-      pickStatus.innerHTML = '<span class="loader-error">' + escapeHtml(t('pick.failed', { name: chosen.name })) + '</span>';
-      return;
-    }
   }
-  if (!data || !data.length) return;
+  const set = await fetchSet(value, builtins);
+  picking = false;
+  if (!set) {
+    if (chosen) pickStatus.innerHTML = '<span class="loader-error">' + escapeHtml(t('pick.failed', { name: chosen.name })) + '</span>';
+    return;
+  }
 
-  state.settings.activeData = data;
-  state.settings.activeDictionary = dictionary;
+  state.settings.activeData = set.data;
+  state.settings.activeDictionary = set.dictionary;
   writeLastSet(value);
   // startGame's showScreen only knows the game screens, so leave this one first.
   pickScreen.classList.remove('show');

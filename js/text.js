@@ -354,6 +354,23 @@ export const TEXT = {
   'pick.back': 'Back', // draft
   'pick.workshop': 'Make your own set', // draft
 
+  // Minigame practice (js/practice.js): five taps on the title on the start
+  // screen. Play any minigame on its own, no points.
+  'practice.title': 'PRACTICE.SYS', // draft
+  'practice.prompt': 'Play a minigame on its own. Nothing is scored.', // draft
+  'practice.set': 'Questions from', // draft
+  'practice.mods': 'Modifiers', // draft
+  'practice.play': 'Play', // draft
+  'practice.again': 'Again', // draft
+  'practice.menu': 'Menu', // draft
+  'practice.back': 'Back', // draft
+  'practice.loading': 'Loading the set...', // draft
+  'practice.loadFailed': 'That set would not load. Try another.', // draft
+  'practice.noSets': 'No sets to play from.', // draft
+  'practice.nothingFits': 'Nothing in this set fits {game}. Try another set.', // draft
+  'practice.tier': 'Tier {tier}.', // draft. A right answer: 1, 2 or X
+  'practice.miss': 'Missed. It was {answer}.', // draft
+
   // ---- Workshop (set making, for authors; reached from the set screen) ----
   'workshop.title': 'WORKSHOP',
   'workshop.intro': 'Paste or load a list, then save it. Saved sets show on the set screen.',

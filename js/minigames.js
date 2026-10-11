@@ -401,7 +401,7 @@ function poolWords(group) {
 
 // Whether category `group` can run as a Letter Pool: it has a label to
 // name it by and at least LETTER_POOL_FORM + 1 answers to hide.
-function letterPoolFits(group) {
+export function letterPoolFits(group) {
   return Boolean(group && group.label && group.pool) && poolWords(group).length > LETTER_POOL_FORM;
 }
 
