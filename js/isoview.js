@@ -25,7 +25,7 @@
 // floating apart where it died until it has faded.
 
 import { state, key } from './state.js';
-import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE } from './config.js';
+import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS } from './config.js';
 import { FACING_VECTORS, canShoot, aimChance } from './sight.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
@@ -118,13 +118,12 @@ const GUN_RAISE = 0.08;          // how far the gun lifts while a landed shot wa
 const GUN_KICK = 0.08;           // how far it kicks back on a shot
 const GUN_LINE = 1.2;            // its line, as a share of the stick man's
 const REACH_FILL = [0.03, 0.12]; // a reached tile's fill strength: plus this much more at 100% aim
-const AIM_TEXT = [0.25, 0.4];    // a tile's aim % strength: plus this much more at 100% aim
-const AIM_TEXT_SIZE = 0.2;       // its height, as a share of a tile's width
 const BRACKET_ARM = 0.12;        // a corner bracket's arms, as a share of a tile's width
 const BRACKET_HALF = 0.32;       // the narrowest a bracket box is, half its width as a share of a tile's
 const BRACKET_LEVEL = [0.4, 0.95]; // a shootable thing's brackets, then the target's
 const BRACKET_PULSE = 0.025;     // how far the target's brackets breathe out, as a share of a tile's width
 const BRACKET_TEXT_SIZE = 0.26;  // the target's aim % over its brackets, as a share of a tile's width
+const BRACKET_HP_GAP = 0.1;      // the target's hp (# left, - lost) sits this far over its brackets, as a share of a tile's height
 const LASER_LEVEL = [0.45, 0.8]; // the laser's strength, then while a landed shot waits
 const LASER_DASH = [0.06, 0.1];  // its dash and gap, in tile widths
 const SHOT_RISE = 0.3;           // where a shot ends above its tile, as a share of a tile's width
@@ -258,7 +257,6 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   standing.sort((a, b) => a.depth - b.depth).forEach(s => s.draw());
   noteTapBoxes();
   if (gun) {
-    drawAimNumbers(ctx, tiles);
     drawBrackets(ctx);
     drawLaser(ctx);
     drawShot(ctx);
@@ -1362,25 +1360,6 @@ function drawReach(ctx, tiles) {
   });
 }
 
-// The aim % on each tile the gun reaches with nothing standing on it
-// (a minion, a box, an item: only flat things like papers let it show),
-// drawn after the walls so a wall in front doesn't hide it.
-function drawAimNumbers(ctx, tiles) {
-  const taken = new Set(look.things.filter(thing => !lyingFlat(thing)).map(thing => key(thing.tile.row, thing.tile.col)));
-  ctx.save();
-  ctx.font = Math.round(tw * AIM_TEXT_SIZE) + 'px VT323, monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  tiles.forEach(({ row, col }) => {
-    if (!inReach(row, col) || taken.has(key(row, col))) return;
-    const chance = aimChance({ row, col });
-    const [x, y] = centre(row, col);
-    ctx.fillStyle = glow(AIM_TEXT[0] + AIM_TEXT[1] * chance);
-    ctx.fillText(t('gun.aimChance', { chance: Math.round(chance * 100) }), x, y);
-  });
-  ctx.restore();
-}
-
 // The minion (or hunter) on a tile, if any.
 function minionOn(tile) {
   return state.floor.minions.find(m => m.row === tile.row && m.col === tile.col);
@@ -1418,8 +1397,10 @@ function noteTapBoxes() {
 }
 
 // Corner brackets round everything the gun can shoot right now, faint,
-// and round the target, bright and slowly breathing, with its aim % over
-// it. A target that can't be shot keeps bright brackets but no aim %.
+// and round the target, bright and slowly breathing, with its hp over it
+// and its aim % over that. The floor tiles show no % of their own: only
+// the target's matters, and a number on every tile distracted. A target
+// that can't be shot keeps bright brackets and hp but no aim %.
 function drawBrackets(ctx) {
   const target = liveTarget();
   shownMinions().forEach(thing => {
@@ -1448,15 +1429,29 @@ function drawBrackets(ctx) {
       ctx.lineTo(x, y + sy * arm);
     });
     glowStroke(ctx);
-    if (chosen && shootable) {
+    if (chosen) {
       ctx.fillStyle = glow(level);
       ctx.font = Math.round(tw * BRACKET_TEXT_SIZE) + 'px VT323, monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
-      ctx.fillText(t('gun.aimChance', { chance: Math.round(aimChance(m) * 100) }), (l + r) / 2, top - breathe - th * 0.1);
+      let y = top - breathe - th * BRACKET_HP_GAP;
+      const hp = hpPips(m);
+      if (hp) {
+        ctx.fillText(hp, (l + r) / 2, y);
+        y -= tw * BRACKET_TEXT_SIZE;
+      }
+      if (shootable) ctx.fillText(t('gun.aimChance', { chance: Math.round(aimChance(m) * 100) }), (l + r) / 2, y);
     }
     ctx.restore();
   });
+}
+
+// A minion's hp as # left and - lost, as the HUD shows it. The hunter
+// has no hp, so it gets none ('').
+function hpPips(m) {
+  if (m.kind === 'hunter' || !MINION_KINDS[m.minionKind]) return '';
+  const hp = MINION_KINDS[m.minionKind].hp;
+  return '#'.repeat(m.hpLeft) + '-'.repeat(Math.max(hp - m.hpLeft, 0));
 }
 
 // The dashed laser from the gun's muzzle to the target, while it can be
