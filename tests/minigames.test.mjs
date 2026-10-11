@@ -1,8 +1,8 @@
-// Unit tests for minigames.js (minigames plan steps A-C): which questions a
+// Unit tests for minigames.js (minigames plan steps A-D): which questions a
 // minigame fits, the roll (chance, no repeats, DEV -> Minigame), the
 // modifiers a minigame keeps, Close Enough's dial and bands, Higher /
-// Lower's bar, hints and tiers, Slow Spell's fit, spelling and tiers, and
-// what a
+// Lower's bar, hints and tiers, Slow Spell's fit, spelling and tiers,
+// Syllable Split's splitter, fit, tray and tiers, and what a
 // tier pays in the settle rules (gun.js, answers.js).
 //
 // Run: node --test tests/*.test.mjs
@@ -14,11 +14,12 @@ import { state } from '../js/state.js';
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS, ENERGY_MAX, RELOAD_ENERGY,
   BOSS_HP, MINIGAME_TIER_PAY, HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
-  SLOW_SPELL_DECOYS,
+  SLOW_SPELL_DECOYS, SYLLABLE_SPLIT_DECOYS,
 } from '../js/config.js';
 import {
   MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, modifiersFor, rollMinigame, forcedQuestion, endMinigame,
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier,
+  splitSyllables, syllableSplitPieces, syllableSplitTray, syllableSplitTier,
 } from '../js/minigames.js';
 import { settleReload } from '../js/gun.js';
 import { settleAnswer } from '../js/answers.js';
@@ -207,6 +208,7 @@ test('Slow Spell fits one-word answers with enough decoys of the same type and l
   assert.ok(!minigamesFor(NAMES[6]).includes('slowSpell'), 'Eve: too short');
   assert.deepEqual(minigamesFor({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }), [], 'two words');
   assert.ok(!minigamesFor(NUMBER).includes('slowSpell'), 'a number is no word');
+  assert.ok(!minigamesFor({ ...NAMES[0], term: 'Spell Noah.' }).includes('slowSpell'), 'the stem gives it away');
   assert.ok(!MINIGAME_MODIFIERS.slowSpell.includes('timer'), 'no Timer: waiting is the game');
 });
 
@@ -228,6 +230,55 @@ test('the Slow Spell word fills every letter but one, with options of its length
 test('Slow Spell tiers: 0-1 letters = X, up to half = 2, more = 1', () => {
   assert.deepEqual([0, 1, 2, 3, 4, 5].map(n => slowSpellTier(n, 8)), ['X', 'X', '2', '2', '2', '1']);
   assert.deepEqual([1, 2, 3].map(n => slowSpellTier(n, 4)), ['X', '2', '1']);
+});
+
+// Long names for Syllable Split, and a short one whose pieces are decoys.
+const LONG = ['Solomon', 'Benjamin', 'Jonathan', 'Abraham', 'Noah']
+  .map(meaning => ({ term: 'Who?', meaning, answerType: 'name' }));
+
+test('names split on their vowels, keeping digraphs and starting pairs', () => {
+  const split = w => splitSyllables(w).join('-');
+  assert.equal(split('Nebuchadnezzar'), 'Ne-bu-chad-nez-zar');
+  assert.equal(split('Mephibosheth'), 'Me-phi-bo-sheth');
+  assert.equal(split('Ishbosheth'), 'Ish-bo-sheth');
+  assert.equal(split('Abraham'), 'A-bra-ham');
+  assert.equal(split('Constantine'), 'Con-stan-tine', 'a silent e stays on');
+  assert.equal(split('Eve'), 'Eve');
+});
+
+test('Syllable Split fits one-word names of 3+ pieces with enough decoys', () => {
+  reset();
+  state.settings.activeData = LONG;
+  assert.deepEqual(minigamesFor(LONG[0]), ['syllableSplit']);
+  assert.equal(syllableSplitPieces(LONG[4]), null, 'Noah: two pieces');
+  assert.equal(syllableSplitPieces({ ...LONG[0], answerType: 'book' }), null, 'names only');
+  assert.equal(syllableSplitPieces({ ...LONG[0], meaning: 'King Solomon' }), null, 'one word');
+  assert.deepEqual(minigamesFor({ ...LONG[0], term: 'Spell Solomon.' }), [], 'the stem gives it away');
+  state.settings.activeData = [...LONG.slice(0, 2), LONG[4]];
+  assert.ok(!minigamesFor(LONG[0]).includes('syllableSplit'), 'Benjamin gives 3 decoys; Noah, one piece, none');
+});
+
+test('a question\'s own syllables field fixes a bad split, if it spells the answer', () => {
+  const q = { term: 'Who?', meaning: 'Talebearer', answerType: 'name' };
+  assert.deepEqual(syllableSplitPieces(q), ['Ta', 'le', 'bea', 'rer']);
+  assert.deepEqual(syllableSplitPieces({ ...q, syllables: 'Tale-bear-er' }), ['Tale', 'bear', 'er']);
+  assert.deepEqual(syllableSplitPieces({ ...q, syllables: ['Tale', 'bear', 'er'] }), ['Tale', 'bear', 'er']);
+  assert.deepEqual(syllableSplitPieces({ ...q, syllables: 'Tale-bear' }), ['Ta', 'le', 'bea', 'rer'], 'not the answer: ignored');
+});
+
+test('the tray holds the name\'s pieces and decoys from other names', () => {
+  reset();
+  state.settings.activeData = LONG;
+  const { pieces, tray } = syllableSplitTray(LONG[0]);
+  assert.deepEqual(pieces, ['So', 'lo', 'mon']);
+  assert.equal(tray.length, pieces.length + SYLLABLE_SPLIT_DECOYS);
+  for (const p of pieces) assert.ok(tray.includes(p));
+  const decoys = tray.filter(p => !pieces.includes(p));
+  assert.ok(decoys.every(p => !['so', 'lo', 'mon'].includes(p.toLowerCase())), 'no decoy matches a piece');
+});
+
+test('Syllable Split tiers: clean = 2, one wrong piece = 1, two = a miss', () => {
+  assert.deepEqual([0, 1, 2].map(syllableSplitTier), ['2', '1', null]);
 });
 
 test('a reload pays one less energy at tier 1 (at least 1) and one more at X', () => {

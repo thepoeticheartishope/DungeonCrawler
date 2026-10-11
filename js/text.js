@@ -204,6 +204,12 @@ export const TEXT = {
   'mg.slowSpell.scored.2': '{name|upper}: named it.', // draft
   'mg.slowSpell.scored.1': '{name|upper}: named it late.', // draft
   'mg.slowSpell.scored.miss': '{name|upper}: wrong name. It was {answer}.', // draft
+  'mg.syllableSplit': 'Syllable Split', // draft
+  'mg.syllableSplit.hint': 'Build the name, piece by piece, in order.', // draft
+  'mg.syllableSplit.left': 'Wrong pieces allowed: {n}', // draft
+  'mg.syllableSplit.scored.2': '{name|upper}: clean build.', // draft
+  'mg.syllableSplit.scored.1': '{name|upper}: built, with a slip.', // draft
+  'mg.syllableSplit.scored.miss': '{name|upper}: broken. It was {answer}.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
   'log.timeout': 'TIME EXPIRED.',

@@ -573,6 +573,18 @@ export const SLOW_SPELL_X_SHOWN = 1;
 export const SLOW_SPELL_BLIND_LETTER_MS = 1500;
 // Slow Spell's Flip: the share of letters drawn upside down or mirrored.
 export const SLOW_SPELL_FLIP_SHARE = 0.5;
+// Syllable Split: a one-word name of at least SYLLABLE_SPLIT_MIN_PIECES
+// pieces (minigames.js splits it on its vowels, or a question's own
+// `syllables` field, "Ne-bu-chad-nez-zar"), picked in order from a tray
+// that also holds SYLLABLE_SPLIT_DECOYS pieces of other names in the set.
+// Wrong picks so far pay SYLLABLE_SPLIT_TIERS[wrong] (none = 2, one = 1);
+// past the last one it is a miss.
+export const SYLLABLE_SPLIT_MIN_PIECES = 3;
+export const SYLLABLE_SPLIT_DECOYS = 4;
+export const SYLLABLE_SPLIT_TIERS = ['2', '1'];
+// Syllable Split's Flip: the share of tray pieces drawn upside down or
+// mirrored.
+export const SYLLABLE_SPLIT_FLIP_SHARE = 0.4;
 
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.
