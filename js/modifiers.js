@@ -1,7 +1,7 @@
 // Question modifiers: which one (if any) a fight's query category carries.
 // No DOM access here — main.js shows the tag and applies the effect.
 //
-//   blind    answers vanish after a few seconds
+//   blind    the question vanishes after a few seconds
 //   gambler  a wager of gold must be placed before answering
 //   flip     some answers are upside down or mirrored
 //   timer    a few seconds to answer, or it counts as a miss

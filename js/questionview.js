@@ -90,16 +90,16 @@ let blindTimer = null;
 let countdownTimer = null;
 
 // Ends whatever modifier the last question carried: timers, the wager,
-// the hidden answers.
+// the hidden question.
 export function clearModifier() {
   clearTimeout(blindTimer);
   blindTimer = null;
+  if (enemyName.classList.contains('mod-blind')) showQuestionAgain();
   clearInterval(countdownTimer);
   countdownTimer = null;
   modTimerEl.hidden = true;
   modTimerEl.classList.remove('urgent');
   state.battle.wager = 0;
-  mcOptionsEl.classList.remove('mod-blind');
   wagerRow.hidden = true;
   wagerButtons.innerHTML = '';
 }
@@ -109,14 +109,16 @@ export function clearModifier() {
 export function applyModifier(modifier) {
   handlers.log(t('log.modifier', { name: t('mod.' + modifier) }), 'sys');
   const buttons = [...mcOptionsEl.querySelectorAll('.mc-option')];
-  // A minigame has its own Blind and Flip (minigameview.js).
-  if (state.battle.minigame && (modifier === 'blind' || modifier === 'flip')) {
+  // A minigame has its own Flip (minigameview.js). Blind is the same for
+  // every question and minigame: it takes the question away, not the
+  // answers.
+  if (state.battle.minigame && modifier === 'flip') {
     applyMinigameModifier(modifier);
   } else if (modifier === 'blind') {
-    // Longer answers stay readable for longer.
-    const words = state.battle.currentChoices.reduce((n, opt) => n + opt.trim().split(/\s+/).length, 0);
+    // Longer questions stay readable for longer.
+    const words = state.battle.currentQuestion.term.trim().split(/\s+/).length;
     const ms = Math.min(BLIND_MAX_MS, BLIND_BASE_MS + BLIND_MS_PER_WORD * words);
-    blindTimer = setTimeout(() => mcOptionsEl.classList.add('mod-blind'), ms);
+    blindTimer = setTimeout(hideQuestion, ms);
   } else if (modifier === 'flip') {
     const { slots, mode } = rollFlip(buttons.length);
     buttons.forEach((b, i) => { if (slots.has(i)) b.querySelector('.opt-text').classList.add('flip-' + mode); });
@@ -137,6 +139,25 @@ export function applyModifier(modifier) {
   } else if (modifier === 'timer') {
     startCountdown();
   }
+}
+
+// Blind: the question goes blank once it has been read, so it must be
+// remembered (Timothy, 2026-10-11: taking the answers away was too hard).
+// Its height is held, so the answers below don't jump up.
+function hideQuestion() {
+  const timer = typewriterTimers.get(enemyName);
+  if (timer) clearInterval(timer);
+  typewriterTimers.delete(enemyName);
+  enemyName.style.minHeight = enemyName.offsetHeight + 'px';
+  enemyName.textContent = t('battle.blindQuestion');
+  enemyName.classList.add('mod-blind');
+}
+
+// Puts the question back once Blind is over (the next question clears it).
+function showQuestionAgain() {
+  enemyName.classList.remove('mod-blind');
+  enemyName.style.minHeight = '';
+  enemyName.textContent = state.battle.currentQuestion ? state.battle.currentQuestion.term : '';
 }
 
 // Timer modifier: TIMER_SECONDS to answer (a minigame may take longer).
