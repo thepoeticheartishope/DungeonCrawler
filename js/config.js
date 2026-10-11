@@ -510,6 +510,40 @@ export const FLIP_MAX_ANSWERS = 3;
 // running out counts as a miss.
 export const TIMER_SECONDS = 10;
 
+// Minigames (minigames plan, ideas/minigames-plan.md): each time a question
+// is asked there is a MINIGAME_CHANCE it runs as a minigame instead, if
+// the question fits one (minigames.js rollMinigame). Never the same
+// minigame twice in a row.
+export const MINIGAME_CHANCE = 0.25;
+// What a minigame's tier pays, beside a plain right answer (which counts
+// as tier '2'): `energy` added to a reload's energy (never below 1, never
+// past ENERGY_MAX), `bossDamage` HP off the boss, `goldScale` times the
+// gold from a chest, box or category challenge. A relay and a minion
+// fight pay any tier as a plain right answer. Tier 1 is a weak hit, X a
+// perfect one.
+export const MINIGAME_TIER_PAY = {
+  1: { energy: -1, bossDamage: 1, goldScale: 1 },
+  2: { energy: 0, bossDamage: 1, goldScale: 1 },
+  X: { energy: 1, bossDamage: 2, goldScale: 2 },
+};
+// Close Enough: a dial from 0 to the answer times a random reach between
+// CLOSE_ENOUGH_REACH_MIN and _MAX (so the answer isn't always in the
+// middle), rounded up to a round number, and never shorter than
+// CLOSE_ENOUGH_MIN_TOP. The dial moves in the largest power-of-ten step
+// that still lands on the answer and gives at least CLOSE_ENOUGH_MIN_STEPS
+// steps (but never under 1 for a whole-number answer). Bands: exact = X, within CLOSE_ENOUGH_BANDS[2] of the answer = 2,
+// within CLOSE_ENOUGH_BANDS[1] = 1. Answers under CLOSE_ENOUGH_SMALL use
+// CLOSE_ENOUGH_SMALL_OFF instead: that far off = 2, no tier 1.
+export const CLOSE_ENOUGH_REACH_MIN = 1.25;
+export const CLOSE_ENOUGH_REACH_MAX = 4;
+export const CLOSE_ENOUGH_MIN_TOP = 10;
+export const CLOSE_ENOUGH_MIN_STEPS = 100;
+export const CLOSE_ENOUGH_BANDS = { 2: 0.10, 1: 0.25 };
+export const CLOSE_ENOUGH_SMALL = 10;
+export const CLOSE_ENOUGH_SMALL_OFF = 1;
+// Close Enough's tick marks along the dial (Blind leaves only these).
+export const CLOSE_ENOUGH_TICKS = 10;
+
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.
 export const REST_GRID = 15;

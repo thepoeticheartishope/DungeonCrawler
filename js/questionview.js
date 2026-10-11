@@ -4,12 +4,15 @@
 // where it is needed: the battle screen (main.js) or the panel over the
 // map (gunpanels.js). Whoever mounts it passes the handlers that decide
 // what an answer means, so the battle screen and a reload share the same
-// drawing. Sets state.battle.currentQuestion / currentChoices / wager.
+// drawing. A question may run as a minigame (setMinigame, minigameview.js)
+// in place of its options. Sets state.battle.currentQuestion /
+// currentChoices / wager.
 import { state } from './state.js';
 import { BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS } from './config.js';
 import { rollFlip, maxWager } from './modifiers.js';
 import { escapeHtml, buildChoices, resolveImageSrc } from './quiz.js';
 import { t } from './text.js';
+import { showMinigame, hideMinigame, applyMinigameModifier, lockMinigame } from './minigameview.js';
 
 const queryPanel = document.getElementById('queryPanel');
 const enemyName = document.getElementById('enemyName');
@@ -24,9 +27,10 @@ const modTimerEl = document.getElementById('modTimer');
 
 // What the current host does with the panel's input: onChoice(option) for
 // a tapped option, onTyped(raw) for a typed answer, onTimeout() when the
-// Timer runs out on the question still showing, log(text, kind) for the
-// modifier and wager lines.
-let handlers = { onChoice() {}, onTyped() {}, onTimeout() {}, log() {} };
+// Timer runs out on the question still showing, onResult(result) when a
+// minigame ends ({ right, tier, given }, minigames.js), log(text, kind) for
+// the modifier and wager lines.
+let handlers = { onChoice() {}, onTyped() {}, onTimeout() {}, onResult() {}, log() {} };
 
 // Moves the question panel into `host` and hands its input to `next`
 // (see `handlers`), shown. Mounting where it already is just swaps the
@@ -105,7 +109,10 @@ export function clearModifier() {
 export function applyModifier(modifier) {
   handlers.log(t('log.modifier', { name: t('mod.' + modifier) }), 'sys');
   const buttons = [...mcOptionsEl.querySelectorAll('.mc-option')];
-  if (modifier === 'blind') {
+  // A minigame has its own Blind and Flip (minigameview.js).
+  if (state.battle.minigame && (modifier === 'blind' || modifier === 'flip')) {
+    applyMinigameModifier(modifier);
+  } else if (modifier === 'blind') {
     // Longer answers stay readable for longer.
     const words = state.battle.currentChoices.reduce((n, opt) => n + opt.trim().split(/\s+/).length, 0);
     const ms = Math.min(BLIND_MAX_MS, BLIND_BASE_MS + BLIND_MS_PER_WORD * words);
@@ -116,6 +123,7 @@ export function applyModifier(modifier) {
   } else if (modifier === 'gambler') {
     // Answers stay locked until a wager of 1..maxWager() is placed.
     buttons.forEach(b => { b.disabled = true; });
+    lockMinigame(true);
     wagerButtons.innerHTML = '';
     for (let n = 1; n <= maxWager(); n++) {
       const btn = document.createElement('button');
@@ -162,11 +170,13 @@ export function placeWager(n) {
   wagerRow.hidden = true;
   handlers.log(t('log.wager', { n }), 'sys');
   mcOptionsEl.querySelectorAll('.mc-option').forEach(b => { b.disabled = false; });
+  lockMinigame(false);
 }
 
 // Sets the active question, and (in MC mode) its answer choices.
 export function setQuestion(q) {
   clearModifier();
+  setMinigame(null);
   state.battle.currentQuestion = q;
   typeText(enemyName, q.term);
   answerInput.value = '';
@@ -182,6 +192,22 @@ export function setQuestion(q) {
     state.battle.currentChoices = buildChoices(q);
     renderChoices();
   }
+}
+
+// Runs the question showing as minigame `id` (minigames.js rollMinigame
+// picked it), in place of its options and typed answer; its result goes
+// to the host's onResult. Null puts the options back.
+export function setMinigame(id) {
+  queryPanel.classList.toggle('minigame-on', Boolean(id));
+  if (!id) {
+    state.battle.minigame = null;
+    hideMinigame();
+    return;
+  }
+  // No options to pick while it shows, so a number key can't answer one.
+  state.battle.currentChoices = [];
+  mcOptionsEl.innerHTML = '';
+  showMinigame(id, result => handlers.onResult(result));
 }
 
 // Types the question now showing again. A question is often set well

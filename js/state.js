@@ -28,6 +28,7 @@ export const state = {
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
     isoCameraGlide: true,   // dev toggle: the isometric camera glides after the player (false: locked to them)
     turnBeforeStep: TURN_BEFORE_STEP, // a press in a new direction only turns (true) or turns and steps (false); DEV -> Turn flips it
+    minigame: 'roll',       // DEV -> Minigame: 'roll' (minigames roll as usual), 'off' (never), or a minigame id (always, when it fits)
     gunCombat: true,        // the gun on the map (gun plan; the default since step 9). DEV -> Combat switches back to classic (minions on the battle screen)
     usingSample: true, // the workshop list is the built-in sample (it can't be saved as a set); false once a list is pasted or loaded there
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
@@ -59,6 +60,7 @@ export const state = {
     coinsTotal: 0,
     energy: ENERGY_START, // energy held (0 to ENERGY_MAX, js/gun.js): the gun spends 1 a shot; carried from floor to floor
     reloadIndex: 0,        // reloads settled this run; picks the next category in the reload rotation (gun.js)
+    lastMinigame: null,    // the minigame the last question ran as, or null if it was a plain question (minigames.js: never the same twice in a row)
     turnLocked: false,
     runEnded: false,       // the light consumed the floor; no more moves this run
   },
@@ -120,6 +122,7 @@ export const state = {
 
   battle: {
     currentChoices: [],
+    minigame: null,        // the minigame the current question runs as (minigames.js rollMinigame), or null for a plain question
     wager: 0,              // gold staked on the current question (Gambler modifier), 0 if none
     currentQuestion: null, // { term, meaning } — reshuffles after every attempt
     selectedTarget: null,  // boss, or one of the minions

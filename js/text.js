@@ -175,6 +175,17 @@ export const TEXT = {
   'mod.timer': 'Timer',
   'mod.timer.tag': 'Timer',
   'mod.timer.tip': 'answer within {secs} seconds, or it counts as a miss.', // draft
+  // Minigames (js/minigames.js, js/minigameview.js): a question run as a
+  // small game. mg.scored.* is the line once it ends, by tier.
+  'mg.closeEnough': 'Close Enough', // draft
+  'mg.closeEnough.hint': 'Set the dial to the answer.', // draft
+  'mg.closeEnough.lock': 'Lock', // draft
+  'mg.closeEnough.less': 'Less', // draft
+  'mg.closeEnough.more': 'More', // draft
+  'mg.scored.X': '{name|upper}: exact.', // draft
+  'mg.scored.2': '{name|upper}: close. It was {answer}.', // draft
+  'mg.scored.1': '{name|upper}: near. It was {answer}.', // draft
+  'mg.scored.miss': '{name|upper}: too far.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
   'log.timeout': 'TIME EXPIRED.',
