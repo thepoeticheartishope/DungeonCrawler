@@ -11,7 +11,7 @@
 
 import { key } from './state.js';
 import {
-  ROOM_THEMES, PILLARS_PER_ROOM, PAPER_LORE_CHANCE, PAPERS_PER_ROOM, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD,
+  ROOM_THEMES, PILLARS_PER_ROOM, ROOM_PILLARS, PAPER_LORE_CHANCE, PAPERS_PER_ROOM, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD,
 } from './config.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -215,7 +215,7 @@ export function furnishFloor(layout, gridSize, floorIndex) {
     let papers = 0;
     const roomFull = () => papers >= PAPERS_PER_ROOM;
 
-    if (Math.random() < cfg.pillarChance) placePillars(chamber, placer, pillars);
+    if (ROOM_PILLARS && Math.random() < cfg.pillarChance) placePillars(chamber, placer, pillars);
 
     // The drawing's '?' spots always get something: a box, once the room
     // has its papers.

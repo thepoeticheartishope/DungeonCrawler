@@ -23,6 +23,8 @@
 // boss room only appear where a recipe puts them.
 // No DOM access here — dungeon.js places these on the grid.
 
+import { ROOM_INNER_WALLS } from './config.js';
+
 export const ROOM_TEMPLATES = [
   { rows: [
     '###########',
@@ -106,6 +108,35 @@ export const ROOM_TEMPLATES = [
 
 const isFloorChar = (ch) => ch === '.' || ch === '?' || ch === '+';
 
+// Turns every wall piece that doesn't touch the drawing's outer wall into
+// floor, so nothing stands free in the middle of a room to block the view
+// (ROOM_INNER_WALLS). A wall counts as touching when it joins the edge
+// through other wall pieces, side by side: a dividing wall stays, a block
+// in the middle goes.
+function openInnerWalls(rows) {
+  const h = rows.length;
+  const w = rows[0].length;
+  const kept = new Set();
+  const queue = [];
+  for (let r = 0; r < h; r++) {
+    for (let c = 0; c < w; c++) {
+      const edge = r === 0 || r === h - 1 || c === 0 || c === w - 1;
+      if (edge && rows[r][c] === '#') { kept.add(r + ',' + c); queue.push([r, c]); }
+    }
+  }
+  while (queue.length) {
+    const [cr, cc] = queue.shift();
+    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nr = cr + dr, nc = cc + dc;
+      if (nr < 0 || nr >= h || nc < 0 || nc >= w) continue;
+      if (rows[nr][nc] !== '#' || kept.has(nr + ',' + nc)) continue;
+      kept.add(nr + ',' + nc);
+      queue.push([nr, nc]);
+    }
+  }
+  return rows.map((line, r) => [...line].map((ch, c) => (ch === '#' && !kept.has(r + ',' + c) ? '.' : ch)).join(''));
+}
+
 function rotate(rows) {
   const h = rows.length;
   const w = rows[0].length;
@@ -150,8 +181,10 @@ export function namedTemplate(name) {
 
 // Reads a drawing into room-local coordinates: the floor (the largest
 // connected patch of it), its doors out with the tile just outside each,
-// its '?' spots, and its inner '+' doorways.
+// its '?' spots, and its inner '+' doorways. Inner wall pieces are opened
+// up first unless ROOM_INNER_WALLS keeps them.
 export function parseTemplate(rows) {
+  if (!ROOM_INNER_WALLS) rows = openInnerWalls(rows);
   const h = rows.length;
   const w = rows[0].length;
   const seen = new Set();

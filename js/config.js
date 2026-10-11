@@ -217,6 +217,16 @@ export const TILE_ART_LOOKS = 4;
 // Pillars block walking and the player's light; the boss light spreads
 // past them. A room with pillars gets a mirrored set of one of these sizes.
 export const PILLARS_PER_ROOM = [2, 4];
+// Whether rooms get pillars at all. Off for now (Timothy, 2026-10-10): a
+// random pillar in a room blocks the view and gets in the way. A proper
+// rule for structures in rooms comes later. Turn on to bring them back.
+export const ROOM_PILLARS = false;
+// Whether a wall piece drawn inside a room (one that doesn't touch the
+// room's outer wall, like a block in the middle) is kept. Off for now, for
+// the same reason as ROOM_PILLARS: those pieces block sight, and when the
+// map cuts them down to stubs they look like chests. Off, they are floor.
+// Dividing walls that run from the outer wall stay either way.
+export const ROOM_INNER_WALLS = false;
 // Papers lie flat: anyone can walk over them, and stepping onto one reads
 // it (lore or nothing). Boxes are solid (not to light); bump one to
 // examine it (a turn passes). A box is like the chest:
