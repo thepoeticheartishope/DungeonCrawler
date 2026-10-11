@@ -22,7 +22,7 @@ import {
   initBossLight, advanceLight, extinguishLight, lightCoverage, lightProgress, lightConsumed,
 } from '../js/light.js';
 import { whatBlocks } from '../js/passage.js';
-import { advanceMonsters, spawnMinion } from '../js/combat.js';
+import { advanceMonsters, spawnMinion, refreshTargetValidity } from '../js/combat.js';
 import { stepPlayer, goldReward } from '../js/moves.js';
 import { settleAnswer } from '../js/answers.js';
 import { resetHaunts } from '../js/haunts.js';
@@ -615,4 +615,27 @@ test('a missed question lingers when missed again and is silenced when answered 
   state.battle.selectedTarget = spawnMinion({ row: 0, col: 0 });
   assert.ok(types(settleAnswer(true, false, 'Noah')).includes('hauntSilenced'));
   assert.equal(state.run.hauntsSilenced, 1);
+});
+
+// --- moves.js / combat.js: items open only when bumped ---
+
+test('standing next to an item does not select it; walking into it does', () => {
+  resetFloor();
+  const r = state.floor.playerRow, c = state.floor.playerCol;
+  state.floor.chest = { kind: 'chest', row: r - 1, col: c };
+  state.floor.rune = { kind: 'rune', row: r, col: c + 1 };
+  state.floor.encounters = [{ kind: 'encounter', row: r + 1, col: c, category: 'x' }];
+  refreshTargetValidity();
+  assert.equal(state.battle.selectedTarget, null);
+
+  const events = stepPlayer(-1, 0);
+  assert.deepEqual(events.map(e => e.type), ['itemReached']);
+  assert.equal(state.battle.selectedTarget, state.floor.chest);
+  assert.equal(state.floor.playerRow, r);
+  assert.equal(state.run.turnCount, 0);
+
+  state.battle.selectedTarget = null;
+  stepPlayer(1, 0); // turns south
+  stepPlayer(1, 0);
+  assert.equal(state.battle.selectedTarget, state.floor.encounters[0]);
 });

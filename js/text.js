@@ -199,9 +199,6 @@ export const TEXT = {
   'room.blocked.minion': 'A {@term.minion} is in the way.', // draft
   'room.blocked.hunter': 'The {@term.hunter} is right there.', // draft
   'room.hunter.wakes': ['Something else wakes. It knows where you are.', 'An {@term.hunter} stirs, far off, and turns toward you.'], // draft
-  'room.blocked.chest': 'Something is sealed here. Reach for it from beside it.', // draft
-  'room.blocked.rune': 'An {@term.rune} hums here. Reach for it from beside it.', // draft
-  'room.blocked.encounter': 'A {category} {@term.encounter} is forming here. Reach for it from beside it.', // draft
   'room.blocked.pillar': ['A pillar. Cold, and older than you.', 'Stone. It does not think.'], // draft
 
   // Reading papers (step onto one) and examining boxes (bump into one; a turn passes).
