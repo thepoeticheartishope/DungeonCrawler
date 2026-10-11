@@ -76,11 +76,22 @@ export const ANSWER_TYPE_GROUPS = {
   object: 'noun',
   theology: 'noun',
   term: 'noun',
+  // CompTIA (Networking pilot, 2026-10-11): what a short answer names.
+  protocol: 'noun',    // "DHCP", "SSH"
+  device: 'noun',      // "Switch", "ONT"
+  tool: 'noun',        // "Crimper", "Toner probe"
+  networkType: 'noun', // "PAN", "WAN"
+  record: 'noun',      // a DNS record type: "AAAA", "MX"
+  port: 'number',      // a port number: "443" (a label, not an amount: PORT_LIKE_TYPES)
   adjective: 'adjective',
   verb: 'verb',
   number: 'number',
   verse: 'reference'
 };
+// Number answers that name something rather than count it (a port). Their
+// wrong options are still the nearest numbers, but Close Enough and
+// Higher / Lower never run them: 444 is not nearly 443.
+export const PORT_LIKE_TYPES = ['port'];
 
 // The answer types a question's stem allows, read from its first words
 // ("Who…?" asks for a person, "How many…?" for a number). First match wins.
@@ -127,7 +138,13 @@ export const CHOICE_TYPES = {
   number: 'number',
   theology: 'theology',
   object: 'object',
-  creature: 'object'
+  creature: 'object',
+  port: 'port',
+  protocol: 'protocol',
+  device: 'device',
+  tool: 'tool',
+  networkType: 'networkType',
+  record: 'record'
 };
 // Choice types that aren't offered on the turn right after the player
 // picked them (when enough other choices remain), so the biggest, most

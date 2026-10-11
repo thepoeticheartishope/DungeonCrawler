@@ -2,8 +2,8 @@
   {
     "id": "comptia-aplus",
     "subject": "comptia-aplus",
-    "name": "CompTIA A+ Sample",
-    "description": "Hardware and networking acronyms (CPU, RAID, DNS, VPN, and more).",
+    "name": "CompTIA A+ Networking",
+    "description": "40 short-answer questions from A+ Core 1 (220-1201) Networking: ports, protocols, devices, tools, network types and DNS records.",
     "file": "comptia-aplus.json"
   },
   {
