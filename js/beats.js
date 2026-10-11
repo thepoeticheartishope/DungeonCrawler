@@ -15,7 +15,7 @@ const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 // The beat kinds a recipe may list. Papers and boxes are extra furniture,
 // a minion is one of the floor's own minions, and the special is the
-// floor's one chest / rune / encounter.
+// floor's chest.
 export const BEAT_KINDS = ['paper', 'box', 'minion', 'special'];
 
 // Solid beats stand one tile beside the walk, where the player sees them

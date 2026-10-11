@@ -1,24 +1,23 @@
 // Settling an answer on the battle screen: hearts, haunts, the Gambler
 // wager, then what the answer does to the target (boss HP, a cleared
-// minion, a repelled hunter, a spent chest / rune / encounter / box).
+// minion, a repelled hunter, a spent chest / box).
 // Changes state and returns an events list in the order things happened
 // (one per encounter log line); main.js drawEvents() draws it and picks
 // the wording. No DOM access here.
 
 import { state } from './state.js';
-import { BOSS_HP, DARK_MISS_COST, DIFFICULTY_COIN_REWARD, BATTLE_CHOICE_COUNT, MINIGAME_TIER_PAY } from './config.js';
+import { BOSS_HP, DARK_MISS_COST, MINIGAME_TIER_PAY } from './config.js';
 import { recordHauntAnswer } from './haunts.js';
 import { extinguishLight } from './light.js';
 import { computeVisibility } from './sight.js';
 import { repelHunter } from './combat.js';
 import { goldReward, openBox } from './moves.js';
-import { pickQuestion, fightChoosable } from './quiz.js';
 
 // One answer to the current question against state.battle.selectedTarget. The
 // caller has already checked adjacency and counted the attempt; `given`
 // is the player's answer, echoed back as answerGiven.
 //
-// One answer settles a minion, chest, rune, category challenge or box,
+// One answer settles a minion, the chest or a box,
 // right or wrong: it's cleared or spent. Only a boss fight goes on past an
 // answer, until its HP runs out. A miss costs 1 heart (DARK_MISS_COST in
 // the darkness); at 0 hearts the events end with signalLost.
@@ -90,8 +89,7 @@ function resolveBossAnswer(isCorrect, pay) {
 }
 
 // Everything but the boss is settled by a single answer. Success pays out
-// (gold for a chest, category challenge or trapped box, a hint for a
-// rune); a miss has already cost its heart. Either way the target is
+// (gold for a chest or trapped box); a miss has already cost its heart. Either way the target is
 // cleared or spent. Gold is scaled by the tier's `goldScale`.
 function resolveOneShot(target, isCorrect, q, pay) {
   // The hunter can't be cleared, only thrown off the trail for a while.
@@ -104,14 +102,12 @@ function resolveOneShot(target, isCorrect, q, pay) {
     return [{ type: 'minionCleared', minion: target, right: isCorrect }];
   }
 
-  const events = [{ type: 'targetSpent', target, right: isCorrect, category: target.category }];
+  const events = [{ type: 'targetSpent', target, right: isCorrect }];
   if (target.kind === 'box') {
     // A trapped box stays on the map (it's furniture), just spent.
     target.sprung = false;
     target.searched = true;
   } else if (target.kind === 'chest') state.floor.chest = null;
-  else if (target.kind === 'rune') state.floor.rune = null;
-  else if (target.kind === 'encounter') state.floor.encounters = state.floor.encounters.filter(e => e !== target);
   if (!isCorrect) return events;
 
   if (target.kind === 'box') {
@@ -123,16 +119,6 @@ function resolveOneShot(target, isCorrect, q, pay) {
     const gold = goldReward(2) * pay.goldScale;
     state.run.coinsTotal += gold;
     events.push({ type: 'goldGained', amount: gold, from: 'chest' });
-  } else if (target.kind === 'encounter') {
-    const gold = goldReward(DIFFICULTY_COIN_REWARD[q.difficulty] || DIFFICULTY_COIN_REWARD.medium) * pay.goldScale;
-    state.run.coinsTotal += gold;
-    events.push({ type: 'goldGained', amount: gold, from: 'encounter', category: target.category });
-  } else {
-    // The hinted question stays in reserve until it's asked: the next
-    // fight always offers its category (marked ◊), so the hint can't be
-    // spent on a question the player never chooses.
-    state.floor.runeHint = pickQuestion(q, fightChoosable(state.settings.activeData, BATTLE_CHOICE_COUNT));
-    events.push({ type: 'runeDecoded', question: state.floor.runeHint });
   }
   return events;
 }

@@ -1257,7 +1257,6 @@
   .choice-option:hover:not(:disabled) .letter,
   .choice-option:focus-visible:not(:disabled) .letter { color: var(--stone-dark); }
   .choice-option .choice-label { flex: 1; }
-  .choice-option .choice-hint { color: var(--torch-bright); margin-left: 8px; }
   /* THE UNFOLDING's items: price on the right, why one isn't offered below it. */
   .choice-option .exchange-price { color: var(--torch-bright); margin-left: 8px; }
   .choice-option .exchange-why { display: block; color: var(--muted); text-transform: none; }
@@ -1657,7 +1656,7 @@
   </section>
 
   <!-- Battle screen: shown whenever the player is adjacent to something
-       engageable (boss, minion, chest, rune, or vocab encounter). The room
+       engageable (boss, chest, or a trapped box). The room
        behind it is frozen — nothing moves until this is resolved. -->
   <section class="screen" id="battleScreen">
     <div class="terminal">

@@ -35,7 +35,7 @@ function eachFloor(check) {
 }
 
 function specials(f) {
-  return [f.chest, f.rune, ...f.encounters].filter(Boolean);
+  return [f.chest].filter(Boolean);
 }
 
 test('grid size and minion count follow the depth', () => {
@@ -67,7 +67,7 @@ test('with the gun on, a floor has at least ENERGY_CELLS_MIN energy cells, all i
   state.settings.gunCombat = true;
 });
 
-test('at most one special item: a chest, a rune or one encounter', () => {
+test('at most one special item: the chest', () => {
   eachFloor(f => assert.ok(specials(f).length <= 1));
 });
 
@@ -120,13 +120,11 @@ test('a new floor forgets the old one', () => {
   state.floor.hunter = { row: 1, col: 1 };
   state.floor.darkness = true;
   state.floor.darkTurns = 7;
-  state.floor.runeHint = 'x';
   state.floor.exploredSet.add('1,1');
   const f = build(1);
   assert.equal(f.hunter, null);
   assert.equal(f.darkness, false);
   assert.equal(f.darkTurns, 0);
-  assert.equal(f.runeHint, null);
   assert.ok(!f.exploredSet.has('1,1') || f.visibleSet.has('1,1'));
 });
 

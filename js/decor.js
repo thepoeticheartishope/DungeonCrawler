@@ -3,7 +3,7 @@
 // floor, on the layout from dungeon.js. No DOM access here — mapview.js
 // draws the map pieces.
 //
-// Anything solid (pillars, boxes, and later the chest/rune) is only put
+// Anything solid (pillars, boxes, and later the chest) is only put
 // down where it keeps every open tile reachable and leaves something to
 // stand beside it, so furniture can never wall off a door, a corridor, or
 // the stairs. Papers are placed on the same rules (so they stay out of
@@ -215,7 +215,7 @@ export function rollProp(kind, theme, floorIndex) {
 //   themes: one ROOM_THEMES key per chamber (same order as layout.chambers)
 //   pillars: Set of tile keys
 //   props: [{ row, col, kind: 'paper'|'box', theme, loot, gold, trapped }]
-//   placer: for main.js to put the chest/rune down on the same rules
+//   placer: for main.js to put the chest down on the same rules
 export function furnishFloor(layout, gridSize, floorIndex) {
   const placer = makePlacer(layout, gridSize);
   const themeKeys = Object.keys(ROOM_THEMES);

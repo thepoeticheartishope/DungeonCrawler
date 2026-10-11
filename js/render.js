@@ -11,7 +11,6 @@ import { BOSS_HP, ENERGY_MAX, MINION_KINDS, SENSE_NOTE_MS } from './config.js';
 import { lightProgress } from './light.js';
 import { whatBlocks } from './passage.js';
 import { FACING_VECTORS } from './sight.js';
-import { categoryLabel } from './quiz.js';
 import { isoScreenShare, isoScreenOffset } from './isoview.js';
 import { clockReading } from './realclock.js';
 import { goalMark } from './goals.js';
@@ -207,7 +206,7 @@ function gunTargetName(target) {
 
 // HP pips for whichever target is currently engaged on the battle screen.
 // Only shown for a multi-hit fight — the boss, under the current constants
-// (a minion's fight still settles in one answer, and chest/rune/encounters
+// (a minion's fight still settles in one answer, and the chest and boxes
 // have no hp at all).
 // Gating on `target.kind === 'boss'` rather than `target.hp > 1` matters:
 // hp is exactly 1 right before the boss's final, most dramatic hit, and the
@@ -231,11 +230,11 @@ export function renderCombatStatus() {
 export function renderTargeting() {
   const target = state.battle.selectedTarget;
   els.targetLabelEl.textContent = target
-    ? t('target.' + target.kind, { category: target.category ? categoryLabel(target.category) : '' })
+    ? t('target.' + target.kind)
     : t('target.none');
 
   const isObject = state.battle.selectedTarget &&
-    ['chest', 'rune', 'encounter', 'box'].includes(state.battle.selectedTarget.kind);
+    ['chest', 'box'].includes(state.battle.selectedTarget.kind);
   els.attackBtn.textContent = t(isObject ? 'battle.attempt' : 'battle.attack');
 }
 

@@ -15,8 +15,8 @@ export function isAdjacentToPlayer(entity) {
 
 // Everything next to the player that opens the battle screen. With the
 // gun on (DEV -> Combat), minions and the hunter are fought on the map, so
-// they're left out. Items (chest, rune, encounters) open it only when the
-// player walks into them (moves.js reachItem), so walking past one never
+// they're left out. The chest opens it only when the
+// player walks into it (moves.js reachItem), so walking past it never
 // pulls the player into a question.
 export function findAdjacentEnemies() {
   const result = [];
@@ -56,8 +56,6 @@ export function tileOccupied(row, col, excludeMinion) {
   if (state.floor.boss && state.floor.boss.row === row && state.floor.boss.col === col) return true;
   if (state.floor.playerRow === row && state.floor.playerCol === col) return true;
   if (state.floor.chest && state.floor.chest.row === row && state.floor.chest.col === col) return true;
-  if (state.floor.rune && state.floor.rune.row === row && state.floor.rune.col === col) return true;
-  if (state.floor.encounters.some(e => e.row === row && e.col === col)) return true;
   for (const m of state.floor.minions) {
     if (m === excludeMinion) continue;
     if (m.row === row && m.col === col) return true;
@@ -74,9 +72,9 @@ export function neighbors(r, c) {
 // current tile, from one minion's point of view — so it paths around them instead of computing the same
 // blocked step every turn. Minions are placed outside the boss chamber
 // (loadRoom) and the boss holds its one doorway, so they never end up
-// inside it. Items (chest, rune, encounters) don't block a chase — a
-// monster paths straight through rather than getting stuck when one sits
-// in a one-wide corridor; items are only obstacles to the player.
+// inside it. The chest doesn't block a chase — a monster paths straight
+// through rather than getting stuck when it sits in a one-wide corridor;
+// it's only an obstacle to the player.
 export function blockedTilesFor(minion) {
   const blocked = new Set(state.floor.wallSet);
   keptOut(minion).forEach(k => blocked.add(k));
@@ -180,7 +178,7 @@ export function spawnMinion(spot, minionKind = 'SHARD') {
 
 // A random free neighbouring floor tile for a wandering minion, or null if
 // it's boxed in this turn. Unlike a chase, wandering never steps onto an
-// item, so an idle minion doesn't sit on top of a chest or rune.
+// item, so an idle minion doesn't sit on top of the chest.
 function wanderStep(m) {
   const out = keptOut(m);
   const options = neighbors(m.row, m.col)

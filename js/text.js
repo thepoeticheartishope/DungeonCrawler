@@ -43,9 +43,6 @@ export const TEXT = {
   'term.hunter.symbol': 'Ø', // draft
   'term.chest': 'TRAPPED THOUGHT',
   'term.chest.symbol': '[]',
-  'term.rune': 'AXON',
-  'term.rune.symbol': '§',
-  'term.encounter': 'SYNAPSE',
   'term.hp': 'STABILITY',
   'term.gold': 'MYELIN',
   'term.gold.symbol': '.',
@@ -92,10 +89,6 @@ export const TEXT = {
   'log.rules.chest': 'WE ALL SEEK TO BE FREE.',
   'log.start.box': 'ENCOUNTER: SEALED {@term.box}', // draft
   'log.rules.box': 'IT OPENS ONLY FOR THE RIGHT ANSWER.', // draft
-  'log.start.rune': 'ENCOUNTER: {@term.rune.symbol}',
-  'log.rules.rune': 'THE {@term.rune} OFFERS A SIGNAL.', // draft (was: NEURON FUSION OFFER A SYNAPSE.)
-  'log.start.encounter': '{@term.encounter} FORMING: {category|upper}', // draft (start and rules both said FUSION UNDERWAY)
-  'log.rules.encounter': 'FUSION UNDERWAY.',
 
   // ---- Encounter log: each answer ----
   'log.vector': '{@term.vector} {n}: {label|upper}',
@@ -119,19 +112,12 @@ export const TEXT = {
   'log.chest.trapped': 'IT DOES NOT WANT YOU TO ASCEND.',
   'log.box.gold': 'IT OPENS. +{gold} {@term.gold}.', // draft
   'log.box.trapped': 'THE LID SNAPS SHUT. WHATEVER WAS INSIDE IS GONE.', // draft
-  'log.rune.decoded': 'SIGNAL CARRIED: A {category|upper} {@term.query}, {hint}', // draft (was: SYNAPSE FUSED — the rune is the AXON now)
-  'log.rune.decodedUncategorized': 'SIGNAL CARRIED: {hint}', // draft
-  'log.rune.trapped': 'IT DOES NOT WANT YOU TO ASCEND.',
-  'log.encounter.mastered': 'NEW {@term.encounter} FORMED: {category|upper}. +{gold} {@term.gold}.',
-  'log.encounter.trapped': 'THE {category|upper} THOUGHT REJECTS YOU.',
 
   // Haunts: a missed question coming back in a later fight (js/haunts.js).
   'log.haunt.returns': ['A FAMILIAR DOUBT.', 'YOU HAVE HEARD THIS BEFORE.', 'IT REMEMBERS YOU GOT THIS WRONG.'], // draft
   'log.haunt.silenced': ['YOU REMEMBER NOW. IT GOES QUIET.', 'THE DOUBT HAS NOTHING LEFT TO SAY.'], // draft
   'log.haunt.lingers': 'IT WILL BE BACK.', // draft
 
-  // The axon's clue about its hinted answer ({hint} in log.rune.decoded).
-  'hint.shape': 'starts with "{first}" · {words} {words|plural:word}, {chars} characters',
 
   // ---- Battle screen labels ----
   'battle.title': 'ENCOUNTER.SYS',
@@ -141,7 +127,6 @@ export const TEXT = {
   'battle.attack': 'Transmit', // draft
   'battle.attempt': 'Transmit', // draft
   'battle.continue': 'CONTINUE',
-  'battle.runeHintMark': 'The {@term.rune}’s signal is in here', // draft
   'battle.wager': 'WAGER:',
 
   // ---- Answer types, as shown in a fight's query choices ("OT · Names") ----
@@ -238,8 +223,6 @@ export const TEXT = {
   'target.hunter': 'Target: {@term.hunter}',
   'target.chest': 'Target: {@term.chest}',
   'target.box': 'Target: {@term.box}',
-  'target.rune': 'Target: {@term.rune}',
-  'target.encounter': 'Target: {category} {@term.encounter}',
 
   // ---- Room (map) screen ----
   'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)

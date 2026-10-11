@@ -16,7 +16,6 @@ import {
   MAP_ANIMATION_MS,
 } from './config.js';
 import { canMakeOut, FACING_VECTORS } from './sight.js';
-import { glyphForCategory } from './quiz.js';
 import { t } from './text.js';
 import { drawIsoScene, showShot, isoTileAt } from './isoview.js';
 import { hurtForm, loseLimb, killForm } from './textforms.js';
@@ -111,10 +110,9 @@ export function initMapView(canvasEl) {
 }
 
 // The glyph a map thing shows once it's made out, from its term.*.symbol
-// line in text.js (so a room's AREAS overrides can change it); an
-// encounter shows its category's glyph. The battle screen shows the same.
+// line in text.js (so a room's AREAS overrides can change it). The battle
+// screen shows the same.
 export function glyphOf(thing) {
-  if (thing.kind === 'encounter') return glyphForCategory(thing.category);
   return t('term.' + thing.kind + '.symbol');
 }
 
@@ -380,11 +378,6 @@ function mapThings() {
   if (f.chest && isLit(f.chest.row, f.chest.col)) {
     add('chest', f.chest, glyphOrUnknown(f.chest, glyphOf(f.chest)), { size: 'chest' });
   }
-  if (f.rune && isLit(f.rune.row, f.rune.col)) {
-    add('rune', f.rune, glyphOrUnknown(f.rune, glyphOf(f.rune)), {
-      size: 'rune', glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
-    });
-  }
   // THE UNFOLDING warps like the boss, slower: a shape the eye keeps losing.
   if (f.exchange && isLit(f.exchange.row, f.exchange.col)) {
     add('exchange', f.exchange, glyphOrUnknown(f.exchange, glyphOf(f.exchange)), {
@@ -401,10 +394,6 @@ function mapThings() {
   });
   add('player', shownAt(PLAYER, f.playerRow, f.playerCol), t('term.player.symbol'), { size: 'player' },
     { row: f.playerRow, col: f.playerCol });
-  f.encounters.forEach(e => {
-    if (!isLit(e.row, e.col)) return;
-    add('encounter', e, glyphOrUnknown(e, glyphOf(e)), { size: 'encounter' });
-  });
   f.minions.forEach(m => {
     if (!isLit(m.row, m.col)) return;
     const hunter = m.kind === 'hunter';
