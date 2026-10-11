@@ -11,7 +11,7 @@
 
 import { key } from './state.js';
 import {
-  ROOM_THEMES, PILLARS_PER_ROOM, ROOM_PILLARS, PAPER_LORE_CHANCE, PAPERS_PER_ROOM, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD,
+  ROOM_THEMES, PILLARS_PER_ROOM, ROOM_PILLARS, AMMO_BOX_ROOM_CHANCE, AMMO_BOXES_MIN, PAPER_LORE_CHANCE, PAPERS_PER_ROOM, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD,
 } from './config.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -175,6 +175,29 @@ function placePillars(chamber, placer, pillars) {
       }
     }
   }
+}
+
+// The floor's ammo drums: each room gets one at AMMO_BOX_ROOM_CHANCE, then
+// rooms without one are topped up until there are AMMO_BOXES_MIN (fewer
+// only if the rooms are too full to take more). Rounds come only from
+// these, so a floor always has a few to find. Solid, on the furniture's
+// rules (never in a hallway or doorway, never cutting the floor in two),
+// and never on a `taken` tile (the coin, a beat's minion, the special item).
+// Returns [{ row, col, kind: 'ammo' }].
+export function placeAmmoBoxes(layout, placer, taken) {
+  const free = (cells) => cells.filter(p => !taken.some(q => q.row === p.row && q.col === p.col));
+  const boxes = [];
+  const placeIn = (chamber) => {
+    const spot = placer.pick(free(chamber.floorCells), true);
+    if (spot) boxes.push({ ...spot, kind: 'ammo' });
+    return Boolean(spot);
+  };
+  const without = layout.chambers.filter(chamber => !(Math.random() < AMMO_BOX_ROOM_CHANCE && placeIn(chamber)));
+  for (const chamber of shuffle(without)) {
+    if (boxes.length >= AMMO_BOXES_MIN) break;
+    placeIn(chamber);
+  }
+  return boxes;
 }
 
 // Rolls what a paper or box holds: a paper is lore or junk, a box is
