@@ -2,7 +2,7 @@ import { state, key } from './state.js';
 import { buildFloor, buildRestFloor } from './floor.js';
 import { nextFloor } from './run.js';
 import {
-  MAX_HEARTS, ROOM_COUNT, BOSS_HP, GUN_START_ROUNDS, GUN_CHAMBER, STRUGGLE_HIT_HALF,
+  MAX_HEARTS, ROOM_COUNT, BOSS_HP, GUN_START_ROUNDS, GUN_CHAMBER,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, REALTIME_POLL_MS, REALTIME_WALK_MS
 } from './config.js';
@@ -969,7 +969,7 @@ function drawEvents(events) {
       case 'struggleStarted':
         cls = 'warn-msg';
         parts.push(t('gun.struggle.start'));
-        showStruggleBar(STRUGGLE_HIT_HALF);
+        showStruggleBar(e);
         break;
       case 'struggleWon':
         parts.push(t('gun.struggle.won'));

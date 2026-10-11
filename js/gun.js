@@ -12,6 +12,7 @@ import { state, key } from './state.js';
 import {
   BATTLE_CHOICE_COUNT, GUN_CHAMBER, GUN_RELOAD_MODIFIERS, GUN_RELOAD_ROUNDS, GUN_HIT_HALF,
   MINION_KINDS, MINION_STRIKE_COST, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
+  STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
 } from './config.js';
 import { fightGroups, shuffle } from './quiz.js';
 import { recordHauntAnswer } from './haunts.js';
@@ -225,10 +226,25 @@ export function minionStrike(m) {
   return events;
 }
 
+// The Struggle dial for the floor's next Struggle: { hitHalf, sweepMs,
+// count }, count being which Struggle on this floor it is (1 for the
+// first). Each one after the first sweeps STRUGGLE_SPEEDUP_MS faster with
+// a zone STRUGGLE_SHRINK narrower, down to STRUGGLE_MIN_SWEEP_MS and
+// STRUGGLE_MIN_HIT_HALF, so leaning on it gets harder. Counts the Struggle
+// (state.floor.struggles); a new floor resets it (floor.js).
+export function struggleDial() {
+  const before = state.floor.struggles++;
+  return {
+    hitHalf: Math.max(STRUGGLE_MIN_HIT_HALF, STRUGGLE_HIT_HALF - before * STRUGGLE_SHRINK),
+    sweepMs: Math.max(STRUGGLE_MIN_SWEEP_MS, STRUGGLE_SWEEP_MS - before * STRUGGLE_SPEEDUP_MS),
+    count: before + 1,
+  };
+}
+
 // The Struggle dial stopped at `barPosition` (0 to 1, centre 0.5) for the
-// minion waiting in state.battle.struggle. Inside STRUGGLE_HIT_HALF of the
-// centre the player shoves it away: STRUGGLE_PUSHBACK tiles, no damage to
-// either. Anything else and it strikes, as it would have with rounds.
+// minion waiting in state.battle.struggle. Inside the dial's hitHalf
+// (struggleDial) of the centre the player shoves it away:
+// STRUGGLE_PUSHBACK tiles, no damage to either. Anything else and it strikes, as it would have with rounds.
 // Events: struggleWon { minion } then knockedBack { minion, from } if it
 // had room to go; or struggleLost { minion } then minionStrike's events.
 export function settleStruggle(barPosition) {
@@ -237,7 +253,7 @@ export function settleStruggle(barPosition) {
   state.battle.struggle = null;
   const m = struggle.minion;
   if (!state.floor.minions.includes(m)) return [];
-  if (Math.abs(barPosition - 0.5) > STRUGGLE_HIT_HALF) return [{ type: 'struggleLost', minion: m }, ...minionStrike(m)];
+  if (Math.abs(barPosition - 0.5) > struggle.hitHalf) return [{ type: 'struggleLost', minion: m }, ...minionStrike(m)];
   const events = [{ type: 'struggleWon', minion: m }];
   const from = { row: m.row, col: m.col };
   if (pushBack(m, STRUGGLE_PUSHBACK)) events.push({ type: 'knockedBack', minion: m, from });

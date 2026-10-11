@@ -14,12 +14,14 @@ import { state, key } from '../js/state.js';
 import {
   GUN_CHAMBER, GUN_RELOAD_ROUNDS, GUN_HIT_HALF, MINION_KINDS, MINION_STRIKE_COST,
   DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
+  STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
 } from '../js/config.js';
 import { computeVisibility } from '../js/sight.js';
 import { spawnMinion, advanceMonsters, findAdjacentEnemies } from '../js/combat.js';
 import { resetHaunts } from '../js/haunts.js';
 import { stepPlayer } from '../js/moves.js';
 import { whatBlocks } from '../js/passage.js';
+import { buildFloor } from '../js/floor.js';
 import {
   reloadCategory, reloadOffers, settleReload, pickTarget, refreshGunTarget, cycleTarget, fireBlock, fire, settleShot,
   minionStrike, staggerHunter, settleStruggle,
@@ -68,6 +70,7 @@ function resetFloor(size = 21) {
   state.floor.gunTarget = null;
   state.battle.aim = null;
   state.battle.struggle = null;
+  state.floor.struggles = 0;
   state.battle.currentQuestion = SET[0];
   resetHaunts();
   computeVisibility();
@@ -472,6 +475,40 @@ test('a Struggle lost outside the zone is a strike', () => {
   const events = settleStruggle(0.5 + STRUGGLE_HIT_HALF + 0.05);
   assert.deepEqual(events.slice(0, 2).map(e => e.type), ['struggleLost', 'minionStruck']);
   assert.equal(state.run.hearts, MAX_HEARTS - MINION_STRIKE_COST);
+});
+
+test('each Struggle on a floor is faster with a smaller zone, down to the floor values', () => {
+  const dials = [];
+  for (let i = 0; i < 10; i++) {
+    struggleSetUp();
+    state.floor.struggles = i;
+    advanceMonsters();
+    dials.push(state.battle.struggle);
+  }
+  assert.deepEqual(dials.slice(0, 2).map(d => d.count), [1, 2]);
+  assert.equal(dials[0].hitHalf, STRUGGLE_HIT_HALF);
+  assert.equal(dials[0].sweepMs, STRUGGLE_SWEEP_MS);
+  assert.ok(Math.abs(dials[1].hitHalf - (STRUGGLE_HIT_HALF - STRUGGLE_SHRINK)) < 1e-9);
+  assert.equal(dials[1].sweepMs, STRUGGLE_SWEEP_MS - STRUGGLE_SPEEDUP_MS);
+  assert.equal(dials[9].hitHalf, STRUGGLE_MIN_HIT_HALF);
+  assert.equal(dials[9].sweepMs, STRUGGLE_MIN_SWEEP_MS);
+});
+
+test('a later Struggle is lost where the first would have been won', () => {
+  struggleSetUp();
+  state.floor.struggles = 3;
+  advanceMonsters();
+  const events = settleStruggle(0.5 + STRUGGLE_HIT_HALF - 0.01);
+  assert.equal(events[0].type, 'struggleLost');
+});
+
+test('a new floor resets the Struggle count', () => {
+  struggleSetUp();
+  advanceMonsters();
+  advanceMonsters();
+  assert.ok(state.floor.struggles > 0);
+  buildFloor();
+  assert.equal(state.floor.struggles, 0);
 });
 
 test('only the first minion to reach an empty-handed player struggles; others strike', () => {

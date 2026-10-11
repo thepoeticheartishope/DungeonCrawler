@@ -87,6 +87,7 @@ export const state = {
     darkTurns: 0,          // turns since the boss fell (the hunter wakes at HUNTER_SPAWN_DELAY)
     hunter: null,          // the hunter, once awake — also in state.floor.minions, with kind 'hunter'
     gunTarget: null,       // the minion (or hunter) the gun is aimed at, picked by a tap on the map (gun.js pickTarget), or null
+    struggles: 0,          // Struggles started on this floor; each one makes the next dial harder (gun.js struggleDial)
     bossLitSet: new Set(), // tiles the boss light currently reaches
     lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
     runeHint: null,        // question a rune just hinted at — always offered as a choice until asked
@@ -116,6 +117,6 @@ export const state = {
     battlePhase: 'answering', // 'choosing' (pick a category) | 'answering' (question showing) | 'ended' (settled, awaiting continue)
     categoryChoices: [],   // [{ label, pool }] offered while battlePhase is 'choosing'
     aim: null,             // a gun shot that landed and waits for the damage bar: { target, hitHalf, weakWidth } (gun.js)
-    struggle: null,        // a minion (or the hunter) that reached the player with no rounds, waiting on the Struggle dial: { minion } (gun.js)
+    struggle: null,        // a minion (or the hunter) that reached the player with no rounds, waiting on the Struggle dial: { minion, hitHalf, sweepMs, count } (gun.js struggleDial)
   },
 };

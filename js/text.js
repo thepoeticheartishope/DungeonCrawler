@@ -363,6 +363,7 @@ export const TEXT = {
   'gun.reload.cancel': 'CANCEL', // draft
   'gun.bar.prompt': 'PRESS SELECT', // draft. Over the damage bar
   'gun.struggle.prompt': 'STRUGGLE: PRESS SELECT', // draft. Over the Struggle dial (no rounds, a minion reached the player)
+  'gun.struggle.promptAgain': 'STRUGGLE {count}: PRESS SELECT', // draft. The same, for a later Struggle on this floor (faster, smaller zone)
   'gun.struggle.label': 'Struggle dial. Press SELECT, Space or F in the middle to push it back.', // draft. Read out by screen readers
   'gun.struggle.start': 'Empty. It is on you.', // draft. A minion reached the player with no rounds
   'gun.struggle.won': 'You shove it away.', // draft. The Struggle dial stopped in the zone
