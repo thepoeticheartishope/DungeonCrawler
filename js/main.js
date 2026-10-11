@@ -31,7 +31,7 @@ import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapTap, glyphOf } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
-import { initGunPanels, showReloadPanel, showQuestionOnMap, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
+import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad } from './dpad.js';
@@ -245,49 +245,49 @@ function stopDamageBar(barPosition) {
   state.run.turnLocked = false;
 }
 
-// DEV -> Test reload: the real reload through the panels over the map,
+// DEV -> Test reload: the real reload through the ask screen,
 // without spending a turn, like Test shot.
 function devTestReload() {
   if (!gunReady()) return;
   openReload(true);
 }
 
-// What the question panel's input means over the map, for the reload
-// that's open (set by pickReload; DEV -> Auto-win answers through it).
-let mapAnswers = null;
+// What the question panel's input means on the ask screen, for the
+// reload or relay that's open (set by pickReload; DEV -> Auto-win answers through it).
+let askAnswers = null;
 
 // A reload offer was picked: its question (or a minigame), with its
-// modifiers, over the map. Any answer (or the Timer running out) settles
+// modifiers, on the ask screen. Any answer (or the Timer running out) settles
 // the reload; a minigame's tier changes the energy.
 function pickReload(offer, category) {
   const box = reloadBox;
   const settle = (isCorrect, tier, scored = []) => endReload(() => [...scored, ...settleReload(isCorrect, offer, box, tier)]);
-  mapAnswers = {
+  askAnswers = {
     onChoice: choice => settle(matchesAnswer(choice)),
     onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
     onTimeout: () => settle(false),
     onResult: result => settle(result.right, result.tier || '2', endMinigame(result)),
     log: text => showRoomNote('', text),
   };
-  showQuestionOnMap(mapAnswers);
+  showQuestionScreen(askAnswers, 'reload');
   askQuestion(pickQuestion(state.battle.currentQuestion, category.pool), offer.modifiers, category.pool, category);
 }
 
-// A relay was bumped (moves.js relayFound): its question over the map,
+// A relay was bumped (moves.js relayFound): its question on the ask screen,
 // like a reload's, with no offers to pick and no modifiers. Any answer
 // (relays.js settleRelay) is the turn.
 function openRelay(relay) {
   gunTest = false;
   state.run.turnLocked = true;
   const settle = (isCorrect, scored = []) => endReload(() => [...scored, ...settleRelay(isCorrect, relay)]);
-  mapAnswers = {
+  askAnswers = {
     onChoice: choice => settle(matchesAnswer(choice)),
     onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
     onTimeout: () => settle(false),
     onResult: result => settle(result.right, endMinigame(result)),
     log: text => showRoomNote('', text),
   };
-  showQuestionOnMap(mapAnswers);
+  showQuestionScreen(askAnswers, 'relay');
   askQuestion(pickQuestion(state.battle.currentQuestion), []);
 }
 
@@ -329,7 +329,7 @@ function endReload(settle) {
   clearModifier();
   closeMapPanels();
   mountBattleQuestion();
-  mapAnswers = null;
+  askAnswers = null;
   reloadBox = null;
   state.battle.struggle = null;
   if (settle) finishGunAction(settle());
@@ -354,8 +354,8 @@ function gunCombatChanged() {
 function autoWinGun() {
   const shown = mapPanelShown();
   if (shown === 'reload') pickReload(reloadOffers().offers[0], reloadCategory());
-  else if (shown === 'question' && mapAnswers && state.battle.minigame) playMinigameOut();
-  else if (shown === 'question' && mapAnswers) mapAnswers.onChoice(state.battle.currentQuestion.meaning);
+  else if (shown === 'question' && askAnswers && state.battle.minigame) playMinigameOut();
+  else if (shown === 'question' && askAnswers) askAnswers.onChoice(state.battle.currentQuestion.meaning);
   else if (shown === 'aim') stopDamageBar(bestSpot(state.battle.aim));
   else if (shown === 'struggle') stopStruggleBar(0.5);
 }
@@ -878,28 +878,27 @@ function applyTurnOutcome(events, worldMoves = !state.settings.realTime) {
     setTimeout(endLose, 900);
     return;
   }
-  // A reload's question may be open over the map while the clock moves
-  // the world: it stays as it is.
+  // A reload or relay open on the ask screen keeps its question as it is.
   if (!mapPanelShown()) syncQuestionForTarget();
   syncBattleScreen();
   showRoomNote(note.cls, note.text);
 }
 
-// The run ended while a reload was open over the map (with Real time on,
-// the clock can take the last stability or the last light mid-question):
-// the panels close so nothing is answered on a lost run.
+// The run ended while a gun panel was open (a minion's strike after a
+// Struggle, say): the panels close so nothing is answered on a lost run.
 function closeReloadOnRunEnd() {
   if (mapPanelShown()) endReload();
 }
 
 // Whether the real-time clock may run: Real time on, a run going, the
-// room screen up with nothing paused over it. It keeps running while a
-// reload is picked and answered over the map (that's the pressure); it
-// stops for the damage bar (the shot's timing is the player's), the battle
-// screen, THE UNFOLDING, the DEV panel, the end screens and a hidden tab.
+// room screen up with nothing paused over it. It stops for the ask screen
+// (a reload or a relay: Timothy chose a screen of its own over the
+// pressure of a clock running under the question), the damage bar (the
+// shot's timing is the player's), the battle screen, THE UNFOLDING, the
+// DEV panel, the end screens and a hidden tab.
 function clockMayRun() {
   return state.settings.realTime && !state.run.runEnded && !document.hidden &&
-    roomScreen.classList.contains('show') && mapPanelShown() !== 'aim' && mapPanelShown() !== 'struggle' &&
+    roomScreen.classList.contains('show') && !mapPanelShown() &&
     !devPanel.classList.contains('show');
 }
 
@@ -1320,7 +1319,7 @@ const battleAnswers = {
 };
 
 // Puts the question panel back on the battle screen (it may have been
-// over the map for a reload).
+// on the ask screen for a reload or a relay).
 function mountBattleQuestion() {
   mountQuestionPanel(battleQuestionSlot, battleAnswers);
 }
@@ -1355,7 +1354,7 @@ initDpad({
 // Arrow-key support on desktop, ignored while typing in the answer box.
 // With the gun on: F is SELECT (fires), T picks the next target, . waits.
 // On the stairs, Enter goes down (so does SELECT).
-// Letter and number keys answer a question shown over the map, unless the
+// Letter and number keys answer a question on the ask screen, unless the
 // gun panels already used the key (picking a reload with 1-3, or F / Space
 // stopping the damage bar).
 document.addEventListener('keydown', (e) => {

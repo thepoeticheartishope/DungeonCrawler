@@ -156,7 +156,9 @@ function readColours() {
 
 // Whether the room screen is up (the minimap's key works only there).
 function onRoomScreen() {
-  return document.getElementById('roomScreen').classList.contains('show');
+  const room = document.getElementById('roomScreen');
+  // Not while the ask screen (a reload or relay) has the map's place.
+  return room.classList.contains('show') && !room.classList.contains('asking');
 }
 
 // Whether a text box has the keyboard (M is then a letter, not the map).

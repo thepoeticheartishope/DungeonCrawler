@@ -1,7 +1,9 @@
-// The gun's panels over the map (gun plan step 5): the reload choices,
-// the question (the one question panel from questionview.js, moved here),
-// and the damage bar. Each slides up over the lower part of the map, so
-// the player can still see what's coming; one shows at a time. main.js
+// The gun's panels (gun plan step 5): the reload choices and the question
+// (the one question panel from questionview.js, moved here) on the ask
+// screen, which takes the map's and the controls' place, like the battle
+// screen (a relay's question shows there too); and the damage bar (or
+// the Struggle dial) as a strip on the map's bottom edge, so the minion
+// stays in view. One shows at a time. main.js
 // opens them and passes in the actions they call (pickReload,
 // cancelReload, stopBar, stopStruggle), like exchangeview.js. What a reload offers is
 // gun.js reloadOffers(); what a stopped bar does is gun.js settleShot()
@@ -34,8 +36,11 @@ export function initGunPanels({ pickReload, cancelReload, stopBar, stopStruggle 
   els.reloadTitle = document.getElementById('reloadTitle');
   els.reloadChoices = document.getElementById('reloadChoices');
   els.reloadCancel = document.getElementById('reloadCancel');
-  els.question = document.getElementById('mapQuestionPanel');
-  els.questionSlot = document.getElementById('mapQuestionSlot');
+  els.room = document.getElementById('roomScreen');
+  els.ask = document.getElementById('askScreen');
+  els.askTitle = document.getElementById('askTitle');
+  els.question = document.getElementById('askQuestionPanel');
+  els.questionSlot = document.getElementById('askQuestionSlot');
   els.aim = document.getElementById('aimPanel');
   els.bar = document.getElementById('damageBar');
   els.hit = document.getElementById('damageHit');
@@ -60,8 +65,9 @@ export function initGunPanels({ pickReload, cancelReload, stopBar, stopStruggle 
   });
 }
 
-// Which panel is over the map: 'reload', 'question', 'aim' (the damage
-// bar), 'struggle' (the same bar as the Struggle dial), or null.
+// Which panel shows: 'reload' or 'question' (on the ask screen), 'aim'
+// (the damage bar over the map), 'struggle' (the same bar as the
+// Struggle dial), or null.
 export function mapPanelShown() {
   if (!els.reload) return null;
   if (!els.reload.hidden) return 'reload';
@@ -70,15 +76,20 @@ export function mapPanelShown() {
   return null;
 }
 
-// Shows only `panel` (or none).
+// Shows only `panel` (or none). The reload choices and the question take
+// the ask screen in place of the map and the controls.
 function showOnly(panel) {
   [els.reload, els.question, els.aim].forEach(p => { p.hidden = p !== panel; });
+  const asking = panel === els.reload || panel === els.question;
+  els.ask.hidden = !asking;
+  els.room.classList.toggle('asking', asking);
 }
 
 // The reload choices from gun.js reloadOffers(): the category the reload
 // asks from, then each offer, plain to hardest, with its modifier tags and,
 // when less fits than it gives, how much does.
 export function showReloadPanel({ category, offers }) {
+  els.askTitle.textContent = t('ask.title.reload');
   els.reloadTitle.textContent = category && category.label
     ? t('gun.reload.title', { category: category.label })
     : t('gun.reload.titlePlain');
@@ -100,10 +111,12 @@ export function showReloadPanel({ category, offers }) {
   if (els.reloadChoices.firstChild) els.reloadChoices.firstChild.focus();
 }
 
-// Moves the question panel over the map and shows it. `answers` are the
-// question panel's handlers (questionview.js mountQuestionPanel): what a
-// right or wrong answer does here.
-export function showQuestionOnMap(answers) {
+// Moves the question panel to the ask screen and shows it, titled for
+// `kind` ('reload' or 'relay'). `answers` are the question panel's
+// handlers (questionview.js mountQuestionPanel): what a right or wrong
+// answer does here.
+export function showQuestionScreen(answers, kind) {
+  els.askTitle.textContent = t('ask.title.' + kind);
   mountQuestionPanel(els.questionSlot, answers);
   showOnly(els.question);
 }

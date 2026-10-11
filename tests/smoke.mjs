@@ -25,8 +25,8 @@
 //      Auto-win off. With the DEV panel open the clock holds still; closed,
 //      the world takes turns with no input; the player's own steps don't
 //      add turns, and arrows pressed faster than REALTIME_WALK_MS take one
-//      step at most; the NEXT meter shows; and the clock keeps running
-//      while a reload question is open over the map. Then the option is still checked after a reload
+//      step at most; the NEXT meter shows; and the clock waits while a
+//      reload question is open on the ask screen. Then the option is still checked after a reload
 //      of the page (it's remembered).
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
@@ -345,7 +345,7 @@ async function attemptGun(page, url) {
       killed: window.__smokeKilled === true,
       inRoom: document.getElementById('roomScreen').classList.contains('show'),
       lost: document.getElementById('loseScreen').classList.contains('show'),
-      panel: ['reloadPanel', 'mapQuestionPanel', 'aimPanel'].some(id => !document.getElementById(id).hidden),
+      panel: ['reloadPanel', 'askQuestionPanel', 'aimPanel'].some(id => !document.getElementById(id).hidden),
       canFire: !document.getElementById('btnSelect').disabled && window.__smokeCanFire(),
       canReload: !document.getElementById('energyCount').textContent.endsWith('#'),
     }));
@@ -452,11 +452,10 @@ async function checkRealTime(page, url) {
   if (!await bumpEnergyCell(page)) return 'no energy cell to reload from';
   await page.waitForSelector('#reloadPanel:not([hidden])', { timeout: 2000 });
   await page.keyboard.press('1');
-  await page.waitForSelector('#mapQuestionPanel:not([hidden])', { timeout: 2000 });
+  await page.waitForSelector('#askQuestionPanel:not([hidden])', { timeout: 2000 });
   const beforeQuestion = await turnsShown(page);
   await page.waitForTimeout(step * 1.5);
-  const lost = await page.evaluate(() => document.getElementById('loseScreen').classList.contains('show'));
-  if (!lost && await turnsShown(page) === beforeQuestion) return 'the clock stopped while a reload question was open';
+  if (await turnsShown(page) !== beforeQuestion) return 'the clock ran while a reload question was open';
 
   await page.goto(url, { waitUntil: 'load' });
   if (!await page.isChecked('#realTimeToggle')) return 'the Real time option was not remembered';
@@ -474,7 +473,7 @@ async function runRealTime(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'the clock moved the world, paused for the DEV panel and ran through a reload question', consoleErrors, pageErrors };
+  return { ok: true, detail: 'the clock moved the world and waited for the DEV panel and a reload question', consoleErrors, pageErrors };
 }
 
 // ---- Main ----
