@@ -42,8 +42,11 @@ export function pickHaunt(pool, exclude) {
 
 // Records an answer to `q`. Returns 'silenced' when a haunt was answered
 // right, 'lingers' when a haunt was missed again, 'new' for a first miss,
-// or null when nothing changed (a right answer that wasn't a haunt).
+// or null when nothing changed (a right answer that wasn't a haunt, or
+// a Letter Pool).
 export function recordHauntAnswer(q, isCorrect) {
+  // A Letter Pool ran a category, not one question: nothing comes back.
+  if (q.letterPool) return null;
   const wasHaunt = state.run.haunts.has(q);
   if (isCorrect) {
     if (!wasHaunt) return null;

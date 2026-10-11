@@ -210,6 +210,21 @@ export const TEXT = {
   'mg.syllableSplit.scored.2': '{name|upper}: clean build.', // draft
   'mg.syllableSplit.scored.1': '{name|upper}: built, with a slip.', // draft
   'mg.syllableSplit.scored.miss': '{name|upper}: broken. It was {answer}.', // draft
+  'mg.letterPool': 'Letter Pool', // draft
+  'mg.letterPool.term': '{label|upper}: FORM {n}.', // draft
+  'mg.letterPool.hint': 'Spell answers from the letters. Use any letter again.', // draft
+  'mg.letterPool.back': 'Take a letter off', // draft
+  'mg.letterPool.enter': 'Enter', // draft
+  'mg.letterPool.done': 'Done', // draft
+  'mg.letterPool.count': 'Formed: {n} of {form}. Hidden found: {hidden} of {of}.', // draft
+  'mg.letterPool.said.hidden': '{word}: HIDDEN. FORMED.', // draft
+  'mg.letterPool.said.valid': '{word}: FORMED.', // draft
+  'mg.letterPool.said.again': '{word}: ALREADY FORMED.', // draft
+  'mg.letterPool.said.unknown': '{word}: NOT IN {label|upper}.', // draft
+  'mg.letterPool.scored.X': '{name|upper}: every hidden answer found.', // draft
+  'mg.letterPool.scored.2': '{name|upper}: formed {given}.', // draft
+  'mg.letterPool.scored.1': '{name|upper}: formed {given}. Short.', // draft
+  'mg.letterPool.scored.miss': '{name|upper}: too few. Hidden: {answer}.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
   'log.timeout': 'TIME EXPIRED.',

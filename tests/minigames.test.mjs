@@ -1,8 +1,9 @@
-// Unit tests for minigames.js (minigames plan steps A-D): which questions a
+// Unit tests for minigames.js (minigames plan steps A-E): which questions a
 // minigame fits, the roll (chance, no repeats, DEV -> Minigame), the
 // modifiers a minigame keeps, Close Enough's dial and bands, Higher /
 // Lower's bar, hints and tiers, Slow Spell's fit, spelling and tiers,
-// Syllable Split's splitter, fit, tray and tiers, and what a
+// Syllable Split's splitter, fit, tray and tiers, Letter Pool's roll,
+// tray, checks, tiers and no haunts, and what a
 // tier pays in the settle rules (gun.js, answers.js).
 //
 // Run: node --test tests/*.test.mjs
@@ -14,13 +15,15 @@ import { state } from '../js/state.js';
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS, ENERGY_MAX, RELOAD_ENERGY,
   BOSS_HP, MINIGAME_TIER_PAY, HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
-  SLOW_SPELL_DECOYS, SYLLABLE_SPLIT_DECOYS,
+  SLOW_SPELL_DECOYS, SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM,
 } from '../js/config.js';
 import {
   MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, modifiersFor, rollMinigame, forcedQuestion, endMinigame,
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier,
   splitSyllables, syllableSplitPieces, syllableSplitTray, syllableSplitTier,
+  letterPoolSetup, letterPoolCheck, letterPoolTier,
 } from '../js/minigames.js';
+import { recordHauntAnswer } from '../js/haunts.js';
 import { settleReload } from '../js/gun.js';
 import { settleAnswer } from '../js/answers.js';
 import { resetHaunts } from '../js/haunts.js';
@@ -279,6 +282,66 @@ test('the tray holds the name\'s pieces and decoys from other names', () => {
 
 test('Syllable Split tiers: clean = 2, one wrong piece = 1, two = a miss', () => {
   assert.deepEqual([0, 1, 2].map(syllableSplitTier), ['2', '1', null]);
+});
+
+// A category of books for Letter Pool: five short one-word answers, and
+// two it never counts (two words, too long).
+const BOOKS = {
+  label: 'Books',
+  pool: ['Acts', 'Ruth', 'Mark', 'Job', 'Amos', 'Song of Solomon', 'Deuteronomy']
+    .map(meaning => ({ term: 'Which book?', meaning, answerType: 'book' })),
+};
+
+test('Letter Pool rolls only on a category the player picked, with a label and enough answers', () => {
+  reset();
+  // A word question nothing else fits.
+  const q = BOOKS.pool[5];
+  assert.equal(withRandom(0, () => rollMinigame(q, [], BOOKS)), 'letterPool');
+  assert.equal(withRandom(0, () => rollMinigame(q, [], BOOKS)), null, 'not twice in a row');
+  assert.equal(withRandom(0, () => rollMinigame(q, [], null)), null, 'no category');
+  assert.equal(withRandom(0, () => rollMinigame(q, [], { ...BOOKS, label: null })), null, 'no label');
+  assert.equal(withRandom(0, () => rollMinigame(q, [], { ...BOOKS, pool: BOOKS.pool.slice(0, 3) })), null, 'too few answers');
+  state.settings.minigame = 'letterPool';
+  assert.equal(withRandom(0.99, () => rollMinigame(q, [], BOOKS)), 'letterPool', 'DEV forces it');
+});
+
+test('the Letter Pool tray holds the hidden answers\' letters, each once', () => {
+  reset();
+  const pool = letterPoolSetup(BOOKS);
+  assert.equal(pool.label, 'Books');
+  assert.equal(pool.hidden.length, LETTER_POOL_FORM + 1);
+  assert.equal(new Set(pool.tiles).size, pool.tiles.length, 'each letter once');
+  for (const w of pool.hidden) assert.ok([...w].every(c => pool.tiles.includes(c)), w);
+  for (const w of pool.words) assert.ok([...w].every(c => pool.tiles.includes(c)), 'every word is spellable: ' + w);
+  assert.ok(pool.hidden.every(w => pool.words.includes(w)));
+  assert.ok(!pool.words.includes('DEUTERONOMY') && !pool.words.includes('SONG OF SOLOMON'), 'too long, two words');
+});
+
+test('Letter Pool checks a word against the hidden ones and the category', () => {
+  const pool = { hidden: ['ACTS', 'RUTH'], words: ['ACTS', 'RUTH', 'CAT'], tiles: [] };
+  assert.equal(letterPoolCheck(pool, 'acts'), 'hidden');
+  assert.equal(letterPoolCheck(pool, 'CAT'), 'valid');
+  assert.equal(letterPoolCheck(pool, 'CHART'), 'unknown');
+});
+
+test('Letter Pool tiers: every hidden one = X, the count = 2, LETTER_POOL_WEAK = 1', () => {
+  const pool = { hidden: ['A', 'B', 'C', 'D'] };
+  assert.equal(letterPoolTier(pool, 4, 4), 'X');
+  assert.equal(letterPoolTier(pool, 5, 3), '2');
+  assert.equal(letterPoolTier(pool, 3, 0), '2');
+  assert.equal(letterPoolTier(pool, 2, 2), '1');
+  assert.equal(letterPoolTier(pool, 1, 1), null);
+});
+
+test('a missed Letter Pool is no haunt', () => {
+  reset();
+  const q = { term: 'BOOKS: FORM 3.', meaning: 'Acts, Ruth', letterPool: { hidden: [] } };
+  assert.equal(recordHauntAnswer(q, false), null);
+  assert.equal(state.run.haunts.size, 0);
+  state.battle.currentQuestion = q;
+  const events = settleReload(false, { modifiers: [], energy: RELOAD_ENERGY[0] });
+  assert.deepEqual(events.map(e => e.type), ['jammed']);
+  assert.equal(events[0].expected, 'Acts, Ruth');
 });
 
 test('a reload pays one less energy at tier 1 (at least 1) and one more at X', () => {

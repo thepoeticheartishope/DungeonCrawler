@@ -1171,6 +1171,19 @@
   .mg-piece.mg-used { visibility: hidden; }
   .mg-piece.mg-struck span { text-decoration: line-through; }
   .mg-tray.mod-blind .mg-piece span { visibility: hidden; }
+  /* Letter Pool: the word being spelled, the tray of letter tiles (in the
+     same fieldset as its keys, so Gambler locks it whole), and the
+     answers formed; hidden ones brighter. Blind blanks the tiles. */
+  .mg-tiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .mg-tile { min-width: 44px; min-height: 44px; font-size: 20px; }
+  .mg-tile span { display: inline-block; }
+  .mg-tile span.flip-upside { transform: rotate(180deg); }
+  .mg-tile span.flip-mirror { transform: scaleX(-1); }
+  .mg-tray.mod-blind .mg-tile span { visibility: hidden; }
+  .mg-pool-keys { display: flex; justify-content: center; gap: 8px; width: 100%; margin-top: 6px; }
+  .mg-pool-keys .mg-lock { margin-top: 0; }
+  .mg-found { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; color: var(--muted); }
+  .mg-found .mg-hidden { color: var(--torch-bright); }
   /* Timer: the countdown line; bright for the last few seconds. */
   .mod-timer[hidden] { display: none; }
   .mod-timer.urgent { color: var(--torch-bright); text-shadow: var(--glow-strong); }

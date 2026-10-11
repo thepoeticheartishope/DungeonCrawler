@@ -12,7 +12,7 @@ import { BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS, TIMER_SECONDS } from '.
 import { rollFlip, maxWager } from './modifiers.js';
 import { escapeHtml, buildChoices, resolveImageSrc } from './quiz.js';
 import { t } from './text.js';
-import { showMinigame, hideMinigame, applyMinigameModifier, lockMinigame } from './minigameview.js';
+import { showMinigame, hideMinigame, applyMinigameModifier, lockMinigame, minigameSeconds, minigameTimeUp } from './minigameview.js';
 
 const queryPanel = document.getElementById('queryPanel');
 const enemyName = document.getElementById('enemyName');
@@ -139,10 +139,11 @@ export function applyModifier(modifier) {
   }
 }
 
-// Timer modifier: TIMER_SECONDS to answer. Running out counts as a miss,
-// through the same path as a wrong answer.
+// Timer modifier: TIMER_SECONDS to answer (a minigame may take longer).
+// Running out counts as a miss, through the same path as a wrong answer,
+// unless the minigame scores what was done by then (Letter Pool).
 function startCountdown() {
-  let left = TIMER_SECONDS;
+  let left = minigameSeconds() || TIMER_SECONDS;
   const q = state.battle.currentQuestion;
   const show = () => {
     modTimerEl.textContent = t('battle.timer', { s: left });
@@ -158,7 +159,7 @@ function startCountdown() {
     countdownTimer = null;
     // Only if that same question is still showing; the host checks it is
     // still waiting on an answer.
-    if (state.battle.currentQuestion !== q) return;
+    if (state.battle.currentQuestion !== q || minigameTimeUp()) return;
     handlers.onTimeout();
   }, 1000);
 }
@@ -206,9 +207,9 @@ export function setQuestion(q) {
 // picked it), in place of its options and typed answer; its result goes
 // to the host's onResult. Null puts the options back.
 export function setMinigame(id) {
+  state.battle.minigame = id || null;
   queryPanel.classList.toggle('minigame-on', Boolean(id));
   if (!id) {
-    state.battle.minigame = null;
     hideMinigame();
     return;
   }
