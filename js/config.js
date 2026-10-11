@@ -490,7 +490,7 @@ export const HUNTER_SPAWN_DELAY = 4;
 export const HUNTER_REST_TURNS = 8;
 export const HUNTER_REST_AFTER_MISS = 3;
 // Gambler is left out: a wager on top of a two-heart miss is too harsh,
-// and Blind would hide the answers while the wager is being placed.
+// and Blind could hide the question while the wager is being placed.
 export const HUNTER_MODIFIER_PAIRS = [['blind', 'flip'], ['blind', 'timer'], ['flip', 'timer']];
 
 // Question modifiers: each query category offered at the start of a minion
@@ -501,8 +501,9 @@ export const HUNTER_MODIFIER_PAIRS = [['blind', 'flip'], ['blind', 'timer'], ['f
 // only a mild penalty — no reward for taking it on.
 export const MODIFIER_CHANCE = [0.10, 0.20, 0.30]; // index = room
 export const MODIFIER_DARK_BONUS = 0.20;
-// Blind Pick: answers show for BLIND_BASE_MS plus BLIND_MS_PER_WORD for
-// every word across all of them (capped), then their text disappears.
+// Blind Pick: the question shows for BLIND_BASE_MS plus BLIND_MS_PER_WORD
+// for each of its words (capped), then it goes blank; the answers stay
+// (Timothy, 2026-10-11: hiding the answers was too hard). Minigames too.
 export const BLIND_BASE_MS = 2750;
 export const BLIND_MS_PER_WORD = 250;
 export const BLIND_MAX_MS = 8000;
@@ -547,7 +548,7 @@ export const CLOSE_ENOUGH_MIN_STEPS = 100;
 export const CLOSE_ENOUGH_BANDS = { 2: 0.10, 1: 0.25 };
 export const CLOSE_ENOUGH_SMALL = 10;
 export const CLOSE_ENOUGH_SMALL_OFF = 1;
-// Close Enough's tick marks along the dial (Blind leaves only these).
+// Close Enough's tick marks along the dial.
 export const CLOSE_ENOUGH_TICKS = 10;
 // Higher / Lower: a bar from 0 to the answer times a random reach between
 // HIGHER_LOWER_REACH_MIN and _MAX, rounded up to a round number, never
@@ -562,9 +563,6 @@ export const HIGHER_LOWER_MIN_TOP = 10;
 export const HIGHER_LOWER_MIN_STEPS = 10;
 export const HIGHER_LOWER_MAX_AT = 40;
 export const HIGHER_LOWER_TIERS = ['X', '2', '1'];
-// Higher / Lower's Blind: once it is on, each hint shows this long, then
-// goes (and the bar stops narrowing), so the hints must be remembered.
-export const HIGHER_LOWER_BLIND_HINT_MS = 2500;
 // Slow Spell: the answer's letters fill in, in a random order, one every
 // SLOW_SPELL_STEP_MS (a slow clock, not world turns), until one blank is
 // left; I KNOW IT stops them and the answer is typed (Timothy,
@@ -575,9 +573,6 @@ export const SLOW_SPELL_STEP_MS = 2000;
 export const SLOW_SPELL_MIN_LETTERS = 4;
 export const SLOW_SPELL_MAX_LETTERS = 12;
 export const SLOW_SPELL_X_SHOWN = 1;
-// Slow Spell's Blind: once it is on, each letter shows this long, then
-// goes blank again, so the letters must be remembered.
-export const SLOW_SPELL_BLIND_LETTER_MS = 1500;
 // Slow Spell's Flip: the share of letters drawn upside down or mirrored.
 export const SLOW_SPELL_FLIP_SHARE = 0.5;
 // Syllable Split: a one-word name of at least SYLLABLE_SPLIT_MIN_PIECES
@@ -606,9 +601,6 @@ export const LETTER_POOL_MAX_LETTERS = 8;
 // Letter Pool's Timer is longer than a question's: a hunt takes a while.
 // Time up scores what was formed; it isn't a miss.
 export const LETTER_POOL_TIMER_SECONDS = 45;
-// Letter Pool's Blind: the tray's letters go blank after this long, so
-// the rest is spelled from memory (typed, or tapped where they were).
-export const LETTER_POOL_BLIND_MS = 6000;
 // Letter Pool's Flip: the share of tiles drawn upside down or mirrored.
 export const LETTER_POOL_FLIP_SHARE = 0.4;
 

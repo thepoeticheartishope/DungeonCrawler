@@ -156,7 +156,7 @@ export const TEXT = {
   // single letters B / $ / F / T), shown in capitals by the .mod-tag style.
   'mod.blind': 'Blind Pick',
   'mod.blind.tag': 'Blind',
-  'mod.blind.tip': 'the answers vanish after a few seconds.', // draft
+  'mod.blind.tip': 'the question vanishes after a few seconds.', // draft
   'mod.gambler': 'Gambler',
   'mod.gambler.tag': 'Gamble',
   'mod.gambler.tip': 'wager up to {max} {@term.gold} before answering. Right wins it, wrong loses it.', // draft
@@ -220,6 +220,7 @@ export const TEXT = {
   'mg.letterPool.scored.miss': '{name|upper}: too few. Hidden: {answer}.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
+  'battle.blindQuestion': '????', // draft
   'log.timeout': 'TIME EXPIRED.',
   'log.modifier': 'MODIFIER: {name|upper}.',
   'log.wager': 'WAGER: {n} {@term.gold}.',

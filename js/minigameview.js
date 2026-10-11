@@ -1,17 +1,18 @@
 // Draws the minigame a question runs as (minigames plan), in the question
 // panel's #minigameSlot, under the question in place of the answer
 // options. questionview.js shows and hides it (setMinigame) and passes on
-// the modifiers it carries; Timer and Gambler stay the question panel's,
-// Blind and Flip are each minigame's own version. A finished minigame
+// the modifiers it carries; Blind, Timer and Gambler stay the question
+// panel's (Blind hides the question), Flip is each minigame's own version.
+// A finished minigame
 // reports { right, tier, given } (scored by the rules in minigames.js) to
 // the callback it was shown with. Calm rule: nothing moves on its own but
 // Slow Spell's letters, one every couple of seconds, appearing at once;
-// nothing flashes; Blind takes text away once, after a pause.
+// nothing flashes.
 import { state } from './state.js';
 import {
-  BLIND_BASE_MS, CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS, HIGHER_LOWER_BLIND_HINT_MS,
-  SLOW_SPELL_STEP_MS, SLOW_SPELL_BLIND_LETTER_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
-  LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_BLIND_MS, LETTER_POOL_FLIP_SHARE,
+  CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
+  SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
+  LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
@@ -26,18 +27,13 @@ const slot = document.getElementById('minigameSlot');
 // its own drawing needs (Close Enough: the dial and its elements). Null
 // when none shows. View-only, so not in state.
 let shown = null;
-let blindTimer = null;
-// Timers that take a Blind Higher / Lower's hints or Slow Spell's letters
-// away.
-let hintTimers = [];
 // Slow Spell's clock, filling in its letters.
 let letterClock = null;
 
 // Builders, one per minigame: each fills `slot` and returns the parts the
 // shared code needs: `lock` (its answer button), `finish()` (DEV ->
-// Auto-win: plays it out perfectly), `blind()` and `flip()` (its versions
-// of those modifiers), and if it differs, `blindMs` (when Blind starts),
-// `seconds` (the Timer's clock) and `timeUp()` (the Timer ran out: score
+// Auto-win: plays it out perfectly), `flip()` (its version of Flip), and
+// if it differs, `seconds` (the Timer's clock) and `timeUp()` (the Timer ran out: score
 // what was done, instead of a miss).
 const BUILDERS = {
   closeEnough: buildCloseEnough,
@@ -61,10 +57,6 @@ export function showMinigame(id, report, again = () => {}) {
 
 // Takes the minigame away (a new question is set).
 export function hideMinigame() {
-  clearTimeout(blindTimer);
-  blindTimer = null;
-  hintTimers.forEach(clearTimeout);
-  hintTimers = [];
   clearInterval(letterClock);
   letterClock = null;
   shown = null;
@@ -73,11 +65,9 @@ export function hideMinigame() {
   slot.className = 'minigame';
 }
 
-// Puts the minigame's own Blind or Flip on it.
+// Puts the minigame's own Flip on it.
 export function applyMinigameModifier(modifier) {
-  if (!shown) return;
-  if (modifier === 'blind') blindTimer = setTimeout(() => shown && shown.blind(), shown.blindMs || BLIND_BASE_MS);
-  else if (modifier === 'flip') shown.flip();
+  if (shown && modifier === 'flip') shown.flip();
 }
 
 // The Timer's seconds for the minigame showing, or null for the usual.
@@ -121,7 +111,6 @@ function add(parent, tag, className) {
 }
 
 // ---- Close Enough: a dial from 0 past the answer; LOCK sets it ----
-// Blind hides the reading and the end numbers, leaving the tick marks.
 // Flip runs the dial backwards (its top on the left).
 function buildCloseEnough() {
   slot.classList.add('mg-close');
@@ -186,16 +175,13 @@ function buildCloseEnough() {
       show();
       settle();
     },
-    blind: () => slot.classList.add('mod-blind'),
     flip: () => slot.classList.add('mg-flip'),
   };
 }
 
 // ---- Higher / Lower: guess on a bar; HIGHER / LOWER narrows it ----
 // A miss on a guess says HIGHER or LOWER and the bar narrows to what is
-// left. Blind: from then on each hint shows for a moment and goes, and the
-// bar stays whole, so the hints must be remembered. Flip runs the bar
-// backwards.
+// left. Flip runs the bar backwards.
 function buildHigherLower() {
   slot.classList.add('mg-higher');
   const bar = higherLowerBar(state.battle.currentQuestion);
@@ -225,17 +211,16 @@ function buildHigherLower() {
   input.setAttribute('aria-label', t('mg.higherLower'));
   hints.setAttribute('aria-live', 'polite');
 
-  // The steps still open (lo..hi), and whether Blind is on.
+  // The steps still open (lo..hi).
   let lo = 0;
   let hi = bar.steps;
-  let blind = false;
   let guesses = 0;
 
   const at = () => Number(input.value);
   const show = () => { reading.textContent = formatDial(bar, at()); };
-  // The bar spans lo..hi, or all of it under Blind.
+  // The bar spans what is still open.
   const fit = () => {
-    const [a, b] = blind ? [0, bar.steps] : [lo, hi];
+    const [a, b] = [lo, hi];
     input.min = String(a);
     input.max = String(b);
     input.value = String(Math.min(b, Math.max(a, at())));
@@ -264,7 +249,6 @@ function buildHigherLower() {
       finish({ right: false, tier: null, given: formatDial(bar, g) });
       return;
     }
-    if (blind) hintTimers.push(setTimeout(() => line.classList.add('mg-gone'), HIGHER_LOWER_BLIND_HINT_MS));
     fit();
     shown.again();
   };
@@ -291,11 +275,6 @@ function buildHigherLower() {
       guesses = 0;
       guess();
     },
-    blind: () => {
-      blind = true;
-      hints.querySelectorAll('.mg-said').forEach(el => el.classList.add('mg-gone'));
-      fit();
-    },
     flip: () => slot.classList.add('mg-flip'),
   };
 }
@@ -303,8 +282,8 @@ function buildHigherLower() {
 // ---- Slow Spell: the answer fills in letter by letter; name it early ----
 // A letter fills in every SLOW_SPELL_STEP_MS until one blank is left (the
 // clock waits while Gambler locks it). I KNOW IT stops the letters, the
-// letters shown then set the tier, and the answer is typed (one try). Blind: from then on each letter shows for a moment and goes blank
-// again. Flip: some letters are drawn upside down or mirrored.
+// letters shown then set the tier, and the answer is typed (one try).
+// Flip: some letters are drawn upside down or mirrored.
 function buildSlowSpell() {
   slot.classList.add('mg-spell');
   const word = slowSpellWord(state.battle.currentQuestion);
@@ -336,19 +315,13 @@ function buildSlowSpell() {
     return cell;
   });
 
-  // Letters filled in so far, Blind and Flip (its look, or null), and the
-  // tier once I KNOW IT is pressed.
+  // Letters filled in so far, Flip (its look, or null), and the tier once
+  // I KNOW IT is pressed.
   let filled = 0;
-  let blind = false;
   let flip = null;
   let tier = null;
 
   const showCount = () => { count.textContent = t('mg.slowSpell.shown', { n: filled, total: word.total }); };
-  // Puts a letter's place back to a blank (Blind).
-  const blank = (cell) => {
-    cell.textContent = '_';
-    cell.className = 'mg-letter';
-  };
   const fillNext = () => {
     if (lock.disabled) return;
     const cell = cells[word.order[filled]];
@@ -356,7 +329,6 @@ function buildSlowSpell() {
     if (flip && Math.random() < SLOW_SPELL_FLIP_SHARE) cell.classList.add('flip-' + flip);
     filled++;
     showCount();
-    if (blind) hintTimers.push(setTimeout(() => blank(cell), SLOW_SPELL_BLIND_LETTER_MS));
     if (filled >= word.stopAt) know();
   };
   // One try: a right spelling scores the tier set when the letters
@@ -397,10 +369,6 @@ function buildSlowSpell() {
       know();
       answer(word.chars.join(''));
     },
-    blind: () => {
-      blind = true;
-      cells.forEach((cell, i) => { if (word.order.indexOf(i) < filled) blank(cell); });
-    },
     flip: () => { flip = Math.random() < 0.5 ? 'upside' : 'mirror'; },
   };
 }
@@ -410,8 +378,7 @@ function buildSlowSpell() {
 // piece is struck out and costs a step down (SYLLABLE_SPLIT_TIERS); past
 // the last it is a miss. Pieces are shown in capitals, so the first
 // piece's capital doesn't give it away. Gambler locks the whole tray (a
-// fieldset). Blind: the tray's pieces go blank, the built part stays.
-// Flip: some pieces are drawn upside down or mirrored.
+// fieldset). Flip: some pieces are drawn upside down or mirrored.
 function buildSyllableSplit() {
   slot.classList.add('mg-split');
   const { pieces, tray } = syllableSplitTray(state.battle.currentQuestion);
@@ -463,7 +430,6 @@ function buildSyllableSplit() {
         pick(btn, pieces[next]);
       }
     },
-    blind: () => lock.classList.add('mod-blind'),
     flip: () => {
       const mode = Math.random() < 0.5 ? 'upside' : 'mirror';
       buttons.forEach(btn => { if (Math.random() < SYLLABLE_SPLIT_FLIP_SHARE) btn.firstChild.classList.add('flip-' + mode); });
@@ -477,8 +443,7 @@ function buildSyllableSplit() {
 // category is formed (a hidden one is marked), anything else is said so.
 // Letters are used again freely. DONE ends it and scores what was formed;
 // finding every hidden answer ends it at X. Gambler locks the whole tray
-// (a fieldset). Blind: the tiles go blank after LETTER_POOL_BLIND_MS.
-// Flip: some tiles are drawn upside down or mirrored. Timer: a longer
+// (a fieldset). Flip: some tiles are drawn upside down or mirrored. Timer: a longer
 // clock, and time up scores what was formed.
 function buildLetterPool() {
   slot.classList.add('mg-pool');
@@ -562,7 +527,6 @@ function buildLetterPool() {
   return {
     lock,
     focus: () => buttons[0].focus(),
-    blindMs: LETTER_POOL_BLIND_MS,
     seconds: LETTER_POOL_TIMER_SECONDS,
     timeUp: score,
     finish: () => {
@@ -571,7 +535,6 @@ function buildLetterPool() {
         check();
       });
     },
-    blind: () => lock.classList.add('mod-blind'),
     flip: () => {
       const mode = Math.random() < 0.5 ? 'upside' : 'mirror';
       buttons.forEach(btn => { if (Math.random() < LETTER_POOL_FLIP_SHARE) btn.firstChild.classList.add('flip-' + mode); });
