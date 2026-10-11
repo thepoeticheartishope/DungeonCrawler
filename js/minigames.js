@@ -18,6 +18,7 @@ import {
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
   HIGHER_LOWER_TIERS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_DECOYS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
+  LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS,
 } from './config.js';
 import { numberQuestion, pickQuestion, shuffle, normalizeSpaces } from './quiz.js';
 
@@ -31,6 +32,7 @@ export const MINIGAME_MODIFIERS = {
   // No Timer: waiting for letters is the game.
   slowSpell: ['blind', 'flip', 'gambler'],
   syllableSplit: ['blind', 'flip', 'timer', 'gambler'],
+  letterPool: ['blind', 'flip', 'timer', 'gambler'],
 };
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
@@ -44,6 +46,9 @@ const FITS = {
     const pieces = !answerInStem(q) && syllableSplitPieces(q);
     return Boolean(pieces) && pieceDecoys(pieces).length >= SYLLABLE_SPLIT_DECOYS;
   },
+  // Letter Pool runs a category, not a question: only its own stand-in
+  // question (letterPoolQuestion in main.js) fits it.
+  letterPool: q => Boolean(q.letterPool),
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -73,18 +78,23 @@ export function modifiersFor(minigame, offered) {
 // clears it, so "last" means the question before). DEV -> Minigame can
 // turn them off or force one (state.settings.minigame). Sets
 // state.battle.minigame to the one picked, or null, and returns it.
-export function rollMinigame(q, offered) {
-  const picked = pickMinigame(q, offered);
+// `group` is the category `q` was picked from ({ label, pool }), when the
+// player picked one (a reload, a fight's choice): Letter Pool can run it
+// in place of the question, one more minigame in the same roll. Picked,
+// the caller asks letterPoolSetup(group) instead of `q`.
+export function rollMinigame(q, offered, group = null) {
+  const picked = pickMinigame(q, offered, group);
   state.battle.minigame = picked;
   state.run.lastMinigame = picked;
   return picked;
 }
 
 // rollMinigame's choice, without recording it.
-function pickMinigame(q, offered) {
+function pickMinigame(q, offered, group) {
   const mode = state.settings.minigame;
   if (mode === 'off') return null;
-  const fits = minigamesFor(q).filter(id => modifiersFor(id, offered));
+  const ids = letterPoolFits(group) ? [...minigamesFor(q), 'letterPool'] : minigamesFor(q);
+  const fits = ids.filter(id => modifiersFor(id, offered));
   if (mode !== 'roll') return fits.includes(mode) ? mode : null;
   const fresh = fits.filter(id => id !== state.run.lastMinigame);
   if (!fresh.length || Math.random() >= MINIGAME_CHANCE) return null;
@@ -373,4 +383,61 @@ export function syllableSplitTray(q) {
 // SYLLABLE_SPLIT_TIERS[wrong], or null (a miss) past the last.
 export function syllableSplitTier(wrong) {
   return SYLLABLE_SPLIT_TIERS[wrong] || null;
+}
+
+// ---- Letter Pool: spell a category's answers from a tray of letters ----
+
+// The answers Letter Pool counts in category `group`: one word of
+// LETTER_POOL_MIN_LETTERS to _MAX_LETTERS letters, each spelling once,
+// in capitals.
+function poolWords(group) {
+  const words = new Set();
+  for (const d of group.pool) {
+    const word = String(d.meaning || '').trim().toUpperCase();
+    if (/^\p{L}+$/u.test(word) && word.length >= LETTER_POOL_MIN_LETTERS && word.length <= LETTER_POOL_MAX_LETTERS) words.add(word);
+  }
+  return [...words];
+}
+
+// Whether category `group` can run as a Letter Pool: it has a label to
+// name it by and at least LETTER_POOL_FORM + 1 answers to hide.
+function letterPoolFits(group) {
+  return Boolean(group && group.label && group.pool) && poolWords(group).length > LETTER_POOL_FORM;
+}
+
+// A new Letter Pool for category `group`: `hidden`, LETTER_POOL_FORM + 1
+// of its answers, picked to share letters (each next one adds the fewest
+// new ones), so the tray stays small; `tiles`, their letters, each once,
+// shuffled; `words`, every answer of the category the tiles can spell
+// (the hidden ones among them); `label`, the category's name.
+export function letterPoolSetup(group) {
+  const left = shuffle(poolWords(group));
+  const hidden = [left.pop()];
+  const letters = new Set(hidden[0]);
+  while (hidden.length <= LETTER_POOL_FORM) {
+    const newLetters = w => [...new Set(w)].filter(c => !letters.has(c)).length;
+    const best = left.reduce((a, b) => (newLetters(b) < newLetters(a) ? b : a));
+    left.splice(left.indexOf(best), 1);
+    hidden.push(best);
+    for (const c of best) letters.add(c);
+  }
+  const words = poolWords(group).filter(w => [...w].every(c => letters.has(c)));
+  return { label: group.label, hidden, tiles: shuffle([...letters]), words };
+}
+
+// What a word spelled in `pool` is: 'hidden' (one of the hidden answers),
+// 'valid' (another answer of the category), or 'unknown'.
+export function letterPoolCheck(pool, word) {
+  const w = word.toUpperCase();
+  if (pool.hidden.includes(w)) return 'hidden';
+  return pool.words.includes(w) ? 'valid' : 'unknown';
+}
+
+// The tier for `formed` answers spelled, `hiddenFound` of them hidden:
+// 'X' with every hidden one, '2' at LETTER_POOL_FORM, '1' at
+// LETTER_POOL_WEAK, else null (a miss).
+export function letterPoolTier(pool, formed, hiddenFound) {
+  if (hiddenFound >= pool.hidden.length) return 'X';
+  if (formed >= LETTER_POOL_FORM) return '2';
+  return formed >= LETTER_POOL_WEAK ? '1' : null;
 }

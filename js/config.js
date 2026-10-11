@@ -585,6 +585,25 @@ export const SYLLABLE_SPLIT_TIERS = ['2', '1'];
 // Syllable Split's Flip: the share of tray pieces drawn upside down or
 // mirrored.
 export const SYLLABLE_SPLIT_FLIP_SHARE = 0.4;
+// Letter Pool: runs a whole category pick (a reload, or a fight's category
+// choice), not one question. Its tray is the letters of LETTER_POOL_FORM
+// + 1 hidden answers of the category, each letter once and usable again.
+// Any one-word answer of the category of LETTER_POOL_MIN_LETTERS to
+// _MAX_LETTERS letters spelled from the tray counts. Tier: every hidden
+// one found = X (it ends there), LETTER_POOL_FORM formed = 2,
+// LETTER_POOL_WEAK = 1, fewer = a miss.
+export const LETTER_POOL_FORM = 3;
+export const LETTER_POOL_WEAK = 2;
+export const LETTER_POOL_MIN_LETTERS = 3;
+export const LETTER_POOL_MAX_LETTERS = 8;
+// Letter Pool's Timer is longer than a question's: a hunt takes a while.
+// Time up scores what was formed; it isn't a miss.
+export const LETTER_POOL_TIMER_SECONDS = 45;
+// Letter Pool's Blind: the tray's letters go blank after this long, so
+// the rest is spelled from memory (typed, or tapped where they were).
+export const LETTER_POOL_BLIND_MS = 6000;
+// Letter Pool's Flip: the share of tiles drawn upside down or mirrored.
+export const LETTER_POOL_FLIP_SHARE = 0.4;
 
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.

@@ -4,7 +4,7 @@ import { nextFloor } from './run.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, ENERGY_START, ENERGY_MAX,
   BATTLE_CHOICE_COUNT,
-  TIMER_SECONDS, ROOM_LOG_LINES, REALTIME_POLL_MS, REALTIME_WALK_MS
+  TIMER_SECONDS, ROOM_LOG_LINES, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM
 } from './config.js';
 import { rollModifier, rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -39,7 +39,7 @@ import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
 import { mountQuestionPanel, setQuestion, setMinigame, retypeQuestion, clearModifier, applyModifier, placeWager } from './questionview.js';
-import { rollMinigame, forcedQuestion, endMinigame } from './minigames.js';
+import { rollMinigame, forcedQuestion, endMinigame, letterPoolSetup } from './minigames.js';
 import { playMinigameOut } from './minigameview.js';
 import { initMinimap, refreshMinimap } from './minimapview.js';
 
@@ -267,7 +267,7 @@ function pickReload(offer, category) {
     log: text => showRoomNote('', text),
   };
   showQuestionOnMap(mapAnswers);
-  askQuestion(pickQuestion(state.battle.currentQuestion, category.pool), offer.modifiers, category.pool);
+  askQuestion(pickQuestion(state.battle.currentQuestion, category.pool), offer.modifiers, category.pool, category);
 }
 
 // A relay was bumped (moves.js relayFound): its question over the map,
@@ -292,18 +292,32 @@ function openRelay(relay) {
 // (dressQuestion). Wherever a question is asked goes through here or
 // dressQuestion, so any of them can roll a minigame. `pool` is where `q`
 // came from, for DEV -> Minigame forcing one (minigames.js forcedQuestion).
-function askQuestion(q, modifiers, pool) {
+// `group` is the category the player picked it from, if any, which a
+// Letter Pool can run instead.
+function askQuestion(q, modifiers, pool, group = null) {
   setQuestion(forcedQuestion(q, pool));
-  dressQuestion(modifiers);
+  dressQuestion(modifiers, group);
 }
 
 // Rolls whether the question showing runs as a minigame (minigames.js
 // rollMinigame: only one that can carry all of `modifiers`), then puts
-// the modifiers on it.
-function dressQuestion(modifiers) {
+// the modifiers on it. A Letter Pool swaps the question for its stand-in.
+function dressQuestion(modifiers, group = null) {
   const list = modifiers.filter(Boolean);
-  setMinigame(rollMinigame(state.battle.currentQuestion, list));
+  const minigame = rollMinigame(state.battle.currentQuestion, list, group);
+  if (minigame === 'letterPool') setQuestion(letterPoolQuestion(group));
+  setMinigame(minigame);
   list.forEach(applyModifier);
+}
+
+// A Letter Pool's stand-in for a question (minigames.js letterPoolSetup):
+// it asks for the category's answers ("BOOKS: FORM 3"), and its answer is
+// the hidden ones, for the log on a miss. It never comes back as a haunt
+// (haunts.js).
+function letterPoolQuestion(group) {
+  const pool = letterPoolSetup(group);
+  const meaning = pool.hidden.map(w => w[0] + w.slice(1).toLowerCase()).join(', ');
+  return { term: t('mg.letterPool.term', { label: group.label, n: LETTER_POOL_FORM }), meaning, letterPool: pool };
 }
 
 // Closes the gun's panels, hands the question panel back to the battle
@@ -567,7 +581,10 @@ function chooseCategory(i) {
   if (!choice) return;
   let q;
   let haunt = null;
+  // The rune's hint is asked as it is, never swapped for a Letter Pool.
+  let group = choice;
   if (state.floor.runeHint && choice.pool.includes(state.floor.runeHint)) {
+    group = null;
     q = state.floor.runeHint;
     state.floor.runeHint = null;
   } else {
@@ -579,7 +596,7 @@ function chooseCategory(i) {
   if (haunt) logLine(t('log.haunt.returns'), 'alert');
   state.floor.lastChoiceType = choice.choiceType || null;
   state.battle.battlePhase = 'answering';
-  askQuestion(q, choice.modifiers, choice.pool);
+  askQuestion(q, choice.modifiers, choice.pool, group);
   showBattlePhase();
   if (!state.settings.mcMode) answerInput.focus();
 }
@@ -1065,7 +1082,7 @@ function drawEvents(events) {
         break;
       // A minigame ended (minigames.js endMinigame): how close it came.
       case 'minigameScored': {
-        const line = t('mg.' + e.minigame + '.scored.' + (e.tier || 'miss'), { name: t('mg.' + e.minigame), answer: e.answer });
+        const line = t('mg.' + e.minigame + '.scored.' + (e.tier || 'miss'), { name: t('mg.' + e.minigame), answer: e.answer, given: e.given });
         logLine(line, e.tier ? 'bright' : 'alert');
         parts.push(line);
         break;

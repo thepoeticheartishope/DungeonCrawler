@@ -11,10 +11,11 @@ import { state } from './state.js';
 import {
   BLIND_BASE_MS, CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS, HIGHER_LOWER_BLIND_HINT_MS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_BLIND_LETTER_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
+  LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_BLIND_MS, LETTER_POOL_FLIP_SHARE,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier,
-  syllableSplitTray, syllableSplitTier,
+  syllableSplitTray, syllableSplitTier, letterPoolCheck, letterPoolTier,
 } from './minigames.js';
 import { escapeHtml, normalizeSpaces } from './quiz.js';
 import { t } from './text.js';
@@ -35,12 +36,15 @@ let letterClock = null;
 // Builders, one per minigame: each fills `slot` and returns the parts the
 // shared code needs: `lock` (its answer button), `finish()` (DEV ->
 // Auto-win: plays it out perfectly), `blind()` and `flip()` (its versions
-// of those modifiers).
+// of those modifiers), and if it differs, `blindMs` (when Blind starts),
+// `seconds` (the Timer's clock) and `timeUp()` (the Timer ran out: score
+// what was done, instead of a miss).
 const BUILDERS = {
   closeEnough: buildCloseEnough,
   higherLower: buildHigherLower,
   slowSpell: buildSlowSpell,
   syllableSplit: buildSyllableSplit,
+  letterPool: buildLetterPool,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -72,8 +76,21 @@ export function hideMinigame() {
 // Puts the minigame's own Blind or Flip on it.
 export function applyMinigameModifier(modifier) {
   if (!shown) return;
-  if (modifier === 'blind') blindTimer = setTimeout(() => shown && shown.blind(), BLIND_BASE_MS);
+  if (modifier === 'blind') blindTimer = setTimeout(() => shown && shown.blind(), shown.blindMs || BLIND_BASE_MS);
   else if (modifier === 'flip') shown.flip();
+}
+
+// The Timer's seconds for the minigame showing, or null for the usual.
+export function minigameSeconds() {
+  return (shown && shown.seconds) || null;
+}
+
+// The Timer ran out. True when the minigame showing scored itself (a
+// Letter Pool scores what was formed); false leaves it a miss.
+export function minigameTimeUp() {
+  if (!shown || !shown.timeUp || shown.done) return false;
+  shown.timeUp();
+  return true;
 }
 
 // Gambler: the minigame can't be answered until a wager is placed.
@@ -443,6 +460,114 @@ function buildSyllableSplit() {
     flip: () => {
       const mode = Math.random() < 0.5 ? 'upside' : 'mirror';
       buttons.forEach(btn => { if (Math.random() < SYLLABLE_SPLIT_FLIP_SHARE) btn.firstChild.classList.add('flip-' + mode); });
+    },
+  };
+}
+
+// ---- Letter Pool: spell the category's answers from a tray ----
+// The stand-in question names the category and the count to form. Tap
+// tiles (or type) to spell, ENTER checks the word: an answer of the
+// category is formed (a hidden one is marked), anything else is said so.
+// Letters are used again freely. DONE ends it and scores what was formed;
+// finding every hidden answer ends it at X. Gambler locks the whole tray
+// (a fieldset). Blind: the tiles go blank after LETTER_POOL_BLIND_MS.
+// Flip: some tiles are drawn upside down or mirrored. Timer: a longer
+// clock, and time up scores what was formed.
+function buildLetterPool() {
+  slot.classList.add('mg-pool');
+  const pool = state.battle.currentQuestion.letterPool;
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.letterPool.hint');
+  const reading = add(slot, 'div', 'mg-reading');
+  const lock = add(slot, 'fieldset', 'mg-tray');
+  const tiles = add(lock, 'div', 'mg-tiles');
+  const keys = add(lock, 'div', 'mg-pool-keys');
+  const back = add(keys, 'button', 'mg-nudge');
+  const enter = add(keys, 'button', 'mg-lock');
+  const done = add(keys, 'button', 'mg-lock');
+  const said = add(slot, 'div', 'term-line mg-said');
+  const count = add(slot, 'div', 'term-line mg-left');
+  const list = add(slot, 'div', 'mg-found');
+
+  back.type = enter.type = done.type = 'button';
+  back.textContent = '<';
+  back.setAttribute('aria-label', t('mg.letterPool.back'));
+  enter.textContent = t('mg.letterPool.enter');
+  done.textContent = t('mg.letterPool.done');
+  said.setAttribute('aria-live', 'polite');
+  const buttons = pool.tiles.map(letter => {
+    const btn = add(tiles, 'button', 'mg-tile');
+    btn.type = 'button';
+    add(btn, 'span').textContent = letter;
+    btn.addEventListener('click', () => type(letter));
+    return btn;
+  });
+
+  // The word being spelled, and the answers formed so far.
+  let word = '';
+  const formed = [];
+  const hiddenFound = () => formed.filter(w => pool.hidden.includes(w)).length;
+  const show = () => { reading.textContent = word || ' '; };
+  const showCount = () => {
+    count.textContent = t('mg.letterPool.count', { n: formed.length, form: LETTER_POOL_FORM, hidden: hiddenFound(), of: pool.hidden.length });
+  };
+  const type = (letter) => {
+    if (word.length >= 12) return;
+    word += letter;
+    show();
+  };
+  const score = () => {
+    const tier = letterPoolTier(pool, formed.length, hiddenFound());
+    const given = formed.map(w => w[0] + w.slice(1).toLowerCase()).join(', ') || t('battle.noAnswer');
+    finish({ right: tier !== null, tier, given });
+  };
+  const check = () => {
+    if (!word) return;
+    const kind = formed.includes(word) ? 'again' : letterPoolCheck(pool, word);
+    said.textContent = t('mg.letterPool.said.' + kind, { word, label: pool.label });
+    if (kind === 'hidden' || kind === 'valid') {
+      formed.push(word);
+      const line = add(list, 'span', kind === 'hidden' ? 'mg-hidden' : '');
+      line.textContent = word;
+      showCount();
+    }
+    word = '';
+    show();
+    if (hiddenFound() === pool.hidden.length) score();
+  };
+  back.addEventListener('click', () => { word = word.slice(0, -1); show(); });
+  enter.addEventListener('click', check);
+  done.addEventListener('click', score);
+  // Typing spells too: a tray letter adds it, Backspace takes one off,
+  // Enter checks. On the tray, not the slot: the slot outlives this
+  // minigame. Letters are kept from the map's keys (M is the minimap).
+  lock.addEventListener('keydown', (e) => {
+    const letter = e.key.length === 1 ? e.key.toUpperCase() : '';
+    if (pool.tiles.includes(letter)) type(letter);
+    else if (e.key === 'Backspace') back.click();
+    else if (e.key === 'Enter') check();
+    else if (!/^\p{L}$/u.test(letter)) return;
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  show();
+  showCount();
+
+  return {
+    lock,
+    focus: () => buttons[0].focus(),
+    blindMs: LETTER_POOL_BLIND_MS,
+    seconds: LETTER_POOL_TIMER_SECONDS,
+    timeUp: score,
+    finish: () => {
+      pool.hidden.filter(w => !formed.includes(w)).forEach((w) => {
+        word = w;
+        check();
+      });
+    },
+    blind: () => lock.classList.add('mod-blind'),
+    flip: () => {
+      const mode = Math.random() < 0.5 ? 'upside' : 'mirror';
+      buttons.forEach(btn => { if (Math.random() < LETTER_POOL_FLIP_SHARE) btn.firstChild.classList.add('flip-' + mode); });
     },
   };
 }
