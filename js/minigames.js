@@ -16,7 +16,7 @@ import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_REACH_MAX, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
-  HIGHER_LOWER_TIERS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
+  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS,
 } from './config.js';
@@ -126,8 +126,10 @@ export function endMinigame(result) {
 
 // The number Close Enough sets the dial to: a number question's answer
 // above 0, with no unit or a plain one ("%", "B.C."), or null. "7½" and
-// "13 and 14" don't fit a dial.
+// "13 and 14" don't fit a dial, and nor does a port (PORT_LIKE_TYPES): it
+// names a service, so a near miss is no nearer to right.
 function closeEnoughAnswer(q) {
+  if (PORT_LIKE_TYPES.includes(q.answerType)) return null;
   const n = numberQuestion(q);
   if (!n || n.value <= 0 || !/^[a-z%. ]*$/.test(n.unit)) return null;
   return n;

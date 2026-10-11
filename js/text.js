@@ -144,6 +144,12 @@ export const TEXT = {
   'type.creature': 'Creatures',
   'type.adjective': 'Descriptions',
   'type.verb': 'Actions',
+  'type.port': 'Ports', // draft. CompTIA
+  'type.protocol': 'Protocols', // draft
+  'type.device': 'Devices', // draft
+  'type.tool': 'Tools', // draft
+  'type.networkType': 'Network types', // draft
+  'type.record': 'DNS records', // draft
 
   // ---- Question modifiers: name, the tag beside a category, its tooltip ----
   // Tags are one whole word (Timothy: players didn't understand the old

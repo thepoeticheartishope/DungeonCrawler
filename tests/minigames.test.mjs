@@ -73,6 +73,7 @@ test('Close Enough fits plain number answers only', () => {
   assert.deepEqual(minigamesFor({ meaning: '13 and 14', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '0', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '1 Corinthians', answerType: 'book' }), []);
+  assert.deepEqual(minigamesFor({ meaning: '443', answerType: 'port' }), [], 'a port is a label, not an amount');
 });
 
 test('modifiersFor keeps every offered modifier, or gives null', () => {
