@@ -70,8 +70,8 @@ export function weaknessOf(minionKind) {
 
 // What a reload offers right now: null and why not ('energyFull'), or
 // the next category and three ways to answer it, plain to hardest:
-// [{ modifiers, energy, room }]. No modifier gives 1 energy, one gives 2,
-// two give 3 (RELOAD_ENERGY). `room` is how much of that fits under
+// [{ modifiers, energy, room }]. No modifier gives 2 energy, one gives 3,
+// two fill it (RELOAD_ENERGY). `room` is how much of that fits under
 // ENERGY_MAX, so the player can see when a hard reload would be wasted.
 // Gambler is never offered: a reload has no gold at stake.
 export function reloadOffers() {
@@ -93,7 +93,8 @@ export function reloadOffers() {
 // A reload from an energy cell (`box`) uses the cell up, right or wrong, so
 // every cell is one question. A minigame's `tier` changes the energy by
 // its MINIGAME_TIER_PAY `energy` (tier 1 one less, never below 1; X one
-// more); a plain question is '2'.
+// more), except an offer that fills the energy (two modifiers), which
+// fills it at any tier (Timothy); a plain question is '2'.
 // Events: reloaded { energy, total } or jammed { expected, source }, then
 // hauntSilenced / hauntLingers.
 export function settleReload(isCorrect, offer, box = null, tier = '2') {
@@ -101,7 +102,7 @@ export function settleReload(isCorrect, offer, box = null, tier = '2') {
   const q = state.battle.currentQuestion;
   const events = [];
   if (isCorrect) {
-    const earned = Math.max(1, offer.energy + MINIGAME_TIER_PAY[tier].energy);
+    const earned = offer.energy >= ENERGY_MAX ? ENERGY_MAX : Math.max(1, offer.energy + MINIGAME_TIER_PAY[tier].energy);
     const energy = Math.min(earned, ENERGY_MAX - state.run.energy);
     addRounds(energy, reloadCategory().label);
     state.run.correctTotal++;
