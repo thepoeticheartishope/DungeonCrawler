@@ -2,7 +2,7 @@ import { state, key } from './state.js';
 import { buildFloor, buildRestFloor } from './floor.js';
 import { nextFloor } from './run.js';
 import {
-  MAX_HEARTS, ROOM_COUNT, BOSS_HP, GUN_START_ROUNDS, GUN_CHAMBER,
+  MAX_HEARTS, ROOM_COUNT, BOSS_HP, GUN_START_ROUNDS, GUN_CHAMBER, STRUGGLE_HIT_HALF,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, REALTIME_POLL_MS, REALTIME_WALK_MS
 } from './config.js';
@@ -27,8 +27,8 @@ import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapTap, glyphOf } from './mapview.js';
-import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload } from './gun.js';
-import { initGunPanels, showReloadPanel, showQuestionOnMap, showDamageBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
+import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle } from './gun.js';
+import { initGunPanels, showReloadPanel, showQuestionOnMap, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad } from './dpad.js';
@@ -116,7 +116,7 @@ onMapTap(tapMap);
 
 initDataView({ backScreen: document.getElementById('workshopScreen') });
 initExchangeView({ buyItem, leaveExchange });
-initGunPanels({ pickReload, cancelReload: () => endReload(), stopBar: stopDamageBar });
+initGunPanels({ pickReload, cancelReload: () => endReload(), stopBar: stopDamageBar, stopStruggle: stopStruggleBar });
 
 applyStaticText();
 
@@ -160,7 +160,8 @@ function finishGunAction(events) {
 // in one place, so the thumb stays put and the eyes stay on the marker.
 // Rounds come only from ammo drums: there is no reloading at will.
 function pressSelect() {
-  if (mapPanelShown() === 'aim') { stopBarSweep(); return; }
+  const shown = mapPanelShown();
+  if (shown === 'aim' || shown === 'struggle') { stopBarSweep(); return; }
   fireGun();
 }
 
@@ -266,6 +267,7 @@ function endReload(settle) {
   mountBattleQuestion();
   mapAnswers = null;
   reloadBox = null;
+  state.battle.struggle = null;
   if (settle) finishGunAction(settle());
   state.run.turnLocked = false;
 }
@@ -290,6 +292,15 @@ function autoWinGun() {
   if (shown === 'reload') pickReload(reloadOffers().offers[0], reloadCategory());
   else if (shown === 'question' && mapAnswers) mapAnswers.onChoice(state.battle.currentQuestion.meaning);
   else if (shown === 'aim') stopDamageBar(0.5);
+  else if (shown === 'struggle') stopStruggleBar(0.5);
+}
+
+// The Struggle dial stopped at `barPosition` (gun.js settleStruggle): the
+// minion is shoved away or strikes. The world's turn that brought it here
+// already happened, so this only draws and checks the run.
+function stopStruggleBar(barPosition) {
+  closeMapPanels();
+  applyTurnOutcome(settleStruggle(barPosition), false);
 }
 
 function nextQuestion() {
@@ -719,7 +730,7 @@ function showRoomNote(cls, text) {
 // player's own actions don't move the world (`worldMoves` false): the clock
 // does (clockTick), so here only the targets catch up with the player.
 function applyTurnOutcome(events, worldMoves = !state.settings.realTime) {
-  const turn = worldMoves ? events.concat(advanceMonsters()) : events;
+  const turn = worldMoves ? events.concat(advanceMonsters({ canStruggle: !mapPanelShown() })) : events;
   if (!worldMoves) refreshTargetValidity();
   if (state.settings.gunCombat) turn.push(...refreshGunTarget());
   const note = drawEvents(turn);
@@ -757,7 +768,7 @@ function closeReloadOnRunEnd() {
 // screen, THE UNFOLDING, the DEV panel, the end screens and a hidden tab.
 function clockMayRun() {
   return state.settings.realTime && !state.run.runEnded && !document.hidden &&
-    roomScreen.classList.contains('show') && mapPanelShown() !== 'aim' &&
+    roomScreen.classList.contains('show') && mapPanelShown() !== 'aim' && mapPanelShown() !== 'struggle' &&
     !devPanel.classList.contains('show');
 }
 
@@ -948,6 +959,21 @@ function drawEvents(events) {
         cls = 'block-msg';
         parts.push(t('gun.jammed'));
         break;
+      // No rounds and a minion on the player: the Struggle dial opens over
+      // the map. Moving, waiting and the real-time clock all hold until
+      // SELECT stops it (stopStruggleBar).
+      case 'struggleStarted':
+        cls = 'warn-msg';
+        parts.push(t('gun.struggle.start'));
+        showStruggleBar(STRUGGLE_HIT_HALF);
+        break;
+      case 'struggleWon':
+        parts.push(t('gun.struggle.won'));
+        break;
+      case 'struggleLost':
+        cls = 'warn-msg';
+        parts.push(t('gun.struggle.lost'));
+        break;
       case 'runeDecoded': {
         const hint = buildHint(e.question);
         const choiceLabel = fightChoiceLabel(e.question, state.settings.activeData, BATTLE_CHOICE_COUNT);
@@ -989,7 +1015,7 @@ let lastWalkAt = -Infinity;
 // turn); a turn to a new direction or a bump only draws. With Real time
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
 function movePlayer(dRow, dCol) {
-  if (state.run.turnLocked || state.run.runEnded) return;
+  if (state.run.turnLocked || state.run.runEnded || mapPanelShown() === 'struggle') return;
   if (state.settings.realTime && performance.now() - lastWalkAt < REALTIME_WALK_MS) return;
   state.run.turnLocked = true;
   const events = stepPlayer(dRow, dCol);
@@ -1035,7 +1061,7 @@ function leaveExchange() {
 }
 
 function skipTurn() {
-  if (state.run.turnLocked || state.run.runEnded) return;
+  if (state.run.turnLocked || state.run.runEnded || mapPanelShown() === 'struggle') return;
   state.run.turnLocked = true;
   applyTurnOutcome([{ type: 'waited' }]);
   state.run.turnLocked = false;

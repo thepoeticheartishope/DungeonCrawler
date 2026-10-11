@@ -197,8 +197,12 @@ function wanderStep(m) {
 // minion, from } (from = the tile it left, so the map can slide it) and
 // { type: 'minionEngaged', minion }; with the gun on, a minion's strike
 // instead, the hunter's too (gun.js minionStrike: minionStruck,
-// knockedBack, signalLost).
-export function advanceMonsters() {
+// knockedBack, signalLost). With the chamber empty, the first one to reach
+// the player this turn starts a Struggle instead ({ type: 'struggleStarted',
+// minion }, settled by gun.js settleStruggle), unless `canStruggle` is
+// false (a reload question already open over the map, in real time):
+// then it strikes as usual.
+export function advanceMonsters({ canStruggle = true } = {}) {
   state.run.turnCount++;
   advanceLight();
 
@@ -231,7 +235,11 @@ export function advanceMonsters() {
     if (next) {
       const isPlayerTile = next.row === state.floor.playerRow && next.col === state.floor.playerCol;
 
-      if (isPlayerTile && gun) {
+      const struggles = canStruggle && state.run.ammo <= 0 && !state.battle.struggle;
+      if (isPlayerTile && gun && struggles) {
+        state.battle.struggle = { minion: m };
+        events.push({ type: 'struggleStarted', minion: m });
+      } else if (isPlayerTile && gun) {
         events.push(...minionStrike(m));
       } else if (isPlayerTile) {
         // Engage from where it stands, never occupying the player's tile.

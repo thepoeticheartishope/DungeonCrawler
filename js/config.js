@@ -336,6 +336,16 @@ export const GUN_HIT_HALF = 0.22;
 // reload panel; any answer uses it up. Only placed with the gun on.
 // Drafts for Timothy to tune.
 export const AMMO_BOX_ROOM_CHANCE = 0.35;
+// Struggle (Timothy's design): a minion or the hunter that reaches the
+// player while the chamber is empty doesn't just strike. A dial sweeps
+// fast, STRUGGLE_SWEEP_MS end to end (STRUGGLE_SLOW_SWEEP_MS under reduced
+// motion); SELECT inside STRUGGLE_HIT_HALF of the centre pushes it back
+// STRUGGLE_PUSHBACK tiles with no damage to it, anything else and it
+// strikes as usual. Drafts for Timothy to tune.
+export const STRUGGLE_SWEEP_MS = 500;
+export const STRUGGLE_SLOW_SWEEP_MS = 1000;
+export const STRUGGLE_HIT_HALF = 0.22;
+export const STRUGGLE_PUSHBACK = 3;
 export const AMMO_BOXES_MIN = 3;
 
 // The boss gives off light that spreads through the floor at a steady

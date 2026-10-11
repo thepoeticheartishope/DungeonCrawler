@@ -362,6 +362,11 @@ export const TEXT = {
   'gun.reload.room': 'room for {room}', // draft. When fewer rounds fit in the chamber than the offer loads
   'gun.reload.cancel': 'CANCEL', // draft
   'gun.bar.prompt': 'PRESS SELECT', // draft. Over the damage bar
+  'gun.struggle.prompt': 'STRUGGLE: PRESS SELECT', // draft. Over the Struggle dial (no rounds, a minion reached the player)
+  'gun.struggle.label': 'Struggle dial. Press SELECT, Space or F in the middle to push it back.', // draft. Read out by screen readers
+  'gun.struggle.start': 'Empty. It is on you.', // draft. A minion reached the player with no rounds
+  'gun.struggle.won': 'You shove it away.', // draft. The Struggle dial stopped in the zone
+  'gun.struggle.lost': 'It gets through.', // draft. The Struggle dial missed; the strike line follows
   'gun.bar.label': 'Damage bar. Press SELECT, Space or F to fire.', // draft. Read out by screen readers
   'gun.bar.graze': 'graze 0', // draft. The damage bar's legend, left to right: graze, hit, weak point, hit, graze
   'gun.bar.hit': 'hit 1', // draft
