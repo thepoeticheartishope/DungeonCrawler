@@ -1,16 +1,20 @@
 // The intro before the first floor: the chosen set's questions (never the
-// answers) print down a terminal one line at a time, in random order, then
-// the call "REWRITE FALSE BELIEFS." (the bosses are false beliefs) and the
-// game starts. main.js startGame calls playIntro; any key or tap skips it.
+// answers) print down a terminal one line at a time, in random order. Then
+// one question is answered by a fake player, slowly, and wrong: REJECTED.
+// The screen fades to "LEARN AND REWRITE FALSE BELIEFS." and the game
+// starts. The beat is Timothy's: the player is afraid of getting it wrong,
+// but they will get it right (the bosses are false beliefs). main.js
+// startGame calls playIntro; any key or tap skips it.
 //
 // The glitch is in the typing's rhythm, never in flashing or scrambling
 // (Timothy's motion rule): a line stalls partway, drops a few letters that
 // fill in a moment later, prints dimmer, or breaks off and starts again.
-// Under reduced motion a screen of questions shows at once, holds, and goes.
+// Under reduced motion the whole screen shows at once, holds, and goes.
 
 import {
-  INTRO_DURATION_MS, INTRO_CALL_AT_MS, INTRO_STILL_MS, INTRO_TICK_MS, INTRO_CHARS_PER_TICK,
+  INTRO_ASK_AT_MS, INTRO_STILL_MS, INTRO_TICK_MS, INTRO_CHARS_PER_TICK,
   INTRO_GLITCH_CHANCE, INTRO_STALL_MS, INTRO_GAP_FILL_MS, INTRO_LINES_STILL,
+  INTRO_HESITATE_MS, INTRO_ANSWER_CHAR_MS, INTRO_ANSWER_MAX_MS, INTRO_VERDICT_MS, INTRO_FADE_AFTER_MS, INTRO_FADE_MS, INTRO_CALL_HOLD_MS,
 } from './config.js';
 import { t } from './text.js';
 
@@ -24,13 +28,16 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let timer = null;
 let finish = null;
 
-// Plays the intro over `questions` (the set's question texts), then calls
-// `done` once: after INTRO_DURATION_MS, or straight away on a skip.
-export function playIntro(questions, done) {
+// Plays the intro, then calls `done` once: after the call has shown for
+// INTRO_CALL_HOLD_MS, or straight away on a skip. `questions` are the
+// set's question texts; `attempt` is { question, answer }, the one the
+// fake player answers wrong.
+export function playIntro({ questions, attempt }, done) {
   log.textContent = '';
+  log.classList.remove('fading');
   call.textContent = t('intro.call');
   call.classList.remove('show');
-  const lines = shuffled(questions.filter(Boolean).map(q => String(q).replace(/\s+/g, ' ').trim()));
+  const lines = shuffled(questions.filter(Boolean).map(oneLine)).filter(q => q !== oneLine(attempt.question));
   finish = () => {
     clearTimeout(timer);
     timer = null;
@@ -39,13 +46,47 @@ export function playIntro(questions, done) {
   };
   if (reducedMotion.matches) {
     lines.slice(0, INTRO_LINES_STILL).forEach(text => addLine(text));
+    addLine(oneLine(attempt.question));
+    addLine(attempt.answer, 'intro-answer');
+    addLine(t('intro.rejected'), 'intro-verdict');
+    log.classList.add('fading');
     call.classList.add('show');
     timer = setTimeout(finish, INTRO_STILL_MS);
     return;
   }
-  const start = performance.now();
-  typeLines(lines, start);
-  timer = setTimeout(finish, INTRO_DURATION_MS);
+  typeLines(lines, performance.now(), () => askAndMiss(attempt));
+}
+
+// The fake player's try: the question types out, a pause, the answer goes
+// in slowly a letter at a time, then REJECTED. A moment later everything
+// fades and the call shows.
+function askAndMiss(attempt) {
+  typeOne(oneLine(attempt.question), () => {
+    const line = addLine('', 'intro-answer');
+    // A long answer types faster, so the try never takes more than INTRO_ANSWER_MAX_MS.
+    const keyMs = Math.min(INTRO_ANSWER_CHAR_MS, INTRO_ANSWER_MAX_MS / Math.max(1, attempt.answer.length));
+    let typed = 0;
+    const key = () => {
+      if (!finish) return;
+      typed++;
+      line.textContent = attempt.answer.slice(0, typed);
+      if (typed < attempt.answer.length) { timer = setTimeout(key, keyMs); return; }
+      timer = setTimeout(rejected, INTRO_VERDICT_MS);
+    };
+    timer = setTimeout(key, INTRO_HESITATE_MS);
+  }, null, false);
+}
+
+// REJECTED. (the word a miss shows in the game), then the fade to the call.
+function rejected() {
+  addLine(t('intro.rejected'), 'intro-verdict');
+  timer = setTimeout(() => {
+    log.classList.add('fading');
+    timer = setTimeout(() => {
+      call.classList.add('show');
+      timer = setTimeout(finish, INTRO_CALL_HOLD_MS);
+    }, INTRO_FADE_MS);
+  }, INTRO_FADE_AFTER_MS);
 }
 
 // Ends the intro now (a key or a tap). The key is used up, so the room
@@ -58,17 +99,15 @@ function skipIntro(e) {
 document.addEventListener('keydown', skipIntro);
 screen.addEventListener('click', skipIntro);
 
-// Types question after question until INTRO_CALL_AT_MS, cutting off
-// whatever line is half typed then, and shows the call.
-function typeLines(lines, start) {
+// Types question after question until INTRO_ASK_AT_MS, cutting off
+// whatever line is half typed then, and calls `then`.
+function typeLines(lines, start, then) {
+  const deadline = start + INTRO_ASK_AT_MS;
   let index = 0;
   const next = () => {
     if (!finish) return;
-    if (performance.now() - start >= INTRO_CALL_AT_MS || index >= lines.length) {
-      call.classList.add('show');
-      return;
-    }
-    typeOne(lines[index++], next, start);
+    if (performance.now() >= deadline || index >= lines.length) { then(); return; }
+    typeOne(lines[index++], next, deadline);
   };
   next();
 }
@@ -77,12 +116,14 @@ function typeLines(lines, start) {
 // INTRO_GLITCH_CHANCE): `stall` pauses partway, `gaps` leaves a few letters
 // blank and fills them in INTRO_GAP_FILL_MS later, `dim` prints it fainter,
 // `restart` breaks off partway and types the line again from the start.
-// Calls `then` when the line is done.
-function typeOne(text, then, start) {
-  const glitch = Math.random() < INTRO_GLITCH_CHANCE
+// Calls `then` when the line is done, or when `deadline` (a
+// performance.now() time, or null for none) cuts it off. `glitches` false
+// types it clean.
+function typeOne(text, then, deadline, glitches = true) {
+  const glitch = glitches && Math.random() < INTRO_GLITCH_CHANCE
     ? ['stall', 'gaps', 'dim', 'restart'][Math.floor(Math.random() * 4)]
     : null;
-  const line = addLine('', glitch === 'dim');
+  const line = addLine('', glitch === 'dim' ? 'intro-dim' : '');
   const breakAt = Math.floor(text.length * (0.3 + Math.random() * 0.4));
   const gaps = glitch === 'gaps' ? gapSpots(text) : new Set();
   const shown = [...text].map((ch, i) => (gaps.has(i) ? ' ' : ch)).join('');
@@ -90,9 +131,9 @@ function typeOne(text, then, start) {
   let stalled = false;
   const tick = () => {
     if (!finish) return;
-    if (performance.now() - start >= INTRO_CALL_AT_MS) { then(); return; }
+    if (deadline && performance.now() >= deadline) { then(); return; }
     if (glitch === 'restart' && typed >= breakAt) {
-      typeOne(text, then, start);
+      typeOne(text, then, deadline);
       return;
     }
     if (glitch === 'stall' && !stalled && typed >= breakAt) {
@@ -119,10 +160,16 @@ function gapSpots(text) {
   return new Set(shuffled(letters).slice(0, count));
 }
 
-// A new line at the bottom of the log; old lines rise and leave the top.
-function addLine(text, dim = false) {
+// A question as one line of text.
+function oneLine(text) {
+  return String(text).replace(/\s+/g, ' ').trim();
+}
+
+// A new line at the bottom of the log, with an extra class if given
+// (intro-dim, intro-answer, intro-verdict); old lines rise and leave the top.
+function addLine(text, cls = '') {
   const line = document.createElement('div');
-  line.className = dim ? 'intro-line intro-dim' : 'intro-line';
+  line.className = cls ? 'intro-line ' + cls : 'intro-line';
   line.textContent = text;
   log.appendChild(line);
   return line;

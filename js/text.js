@@ -263,7 +263,8 @@ export const TEXT = {
   'story.nameless': 'stranger', // draft — {name} in a story line when the start screen's name was left blank
 
   // ---- Intro, start and end screens ----
-  'intro.call': 'REWRITE FALSE BELIEFS.', // Timothy: ties to the bosses
+  'intro.call': 'LEARN AND REWRITE FALSE BELIEFS.', // Timothy: ties to the bosses; shows after the fake player's miss fades
+  'intro.rejected': 'REJECTED.', // the fake player's miss, in the word a miss shows in the game (log.rejected)
   'intro.skip': 'Any key or tap to skip', // draft
   'start.enter': 'Enter the {@term.dungeon}', // draft
   'start.name.label': 'Your name', // draft

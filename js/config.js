@@ -305,21 +305,31 @@ export const MINION_CHASE_RANGE = 4;
 export const MINION_MIN_START_DISTANCE = 6; // walkable steps from the player's start
 
 // The intro before the first floor (introview.js): the set's questions type
-// out INTRO_CHARS_PER_TICK letters every INTRO_TICK_MS until INTRO_CALL_AT_MS,
-// then "REWRITE FALSE BELIEFS." shows and the game starts at INTRO_DURATION_MS
-// (Timothy: 5 s). Each line has an INTRO_GLITCH_CHANCE of one glitch: a
-// stall of INTRO_STALL_MS, missing letters filled in INTRO_GAP_FILL_MS later,
-// a dim line, or a restart. Under reduced motion INTRO_LINES_STILL lines show
-// at once and hold INTRO_STILL_MS.
-export const INTRO_DURATION_MS = 5000;
-export const INTRO_CALL_AT_MS = 3800;
+// out INTRO_CHARS_PER_TICK letters every INTRO_TICK_MS until INTRO_ASK_AT_MS.
+// Each line has an INTRO_GLITCH_CHANCE of one glitch: a stall of
+// INTRO_STALL_MS, missing letters filled in INTRO_GAP_FILL_MS later, a dim
+// line, or a restart. Then the fake player's try: one more question, a
+// pause of INTRO_HESITATE_MS, a wrong answer typed a letter every
+// INTRO_ANSWER_CHAR_MS, REJECTED. after INTRO_VERDICT_MS, the fade
+// (INTRO_FADE_MS, starting INTRO_FADE_AFTER_MS later) and the call, held
+// INTRO_CALL_HOLD_MS. About 8 s in all; any key or tap skips. Under reduced
+// motion INTRO_LINES_STILL lines, the try and the call show at once and
+// hold INTRO_STILL_MS.
+export const INTRO_ASK_AT_MS = 2600;
+export const INTRO_HESITATE_MS = 600;
+export const INTRO_ANSWER_CHAR_MS = 110;
+export const INTRO_ANSWER_MAX_MS = 1400; // a long answer types faster so it never takes longer than this
+export const INTRO_VERDICT_MS = 450;
+export const INTRO_FADE_AFTER_MS = 900;
+export const INTRO_FADE_MS = 1200;
+export const INTRO_CALL_HOLD_MS = 1800;
 export const INTRO_TICK_MS = 16;
 export const INTRO_CHARS_PER_TICK = 3;
 export const INTRO_GLITCH_CHANCE = 0.35;
 export const INTRO_STALL_MS = 280;
 export const INTRO_GAP_FILL_MS = 450;
-export const INTRO_LINES_STILL = 14;
-export const INTRO_STILL_MS = 2500;
+export const INTRO_LINES_STILL = 12;
+export const INTRO_STILL_MS = 3500;
 
 // The player's own light: every tile within PLAYER_LIGHT_RADIUS steps, plus
 // tiles up to PLAYER_CONE_RANGE steps inside the cone they're facing.

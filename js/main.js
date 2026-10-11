@@ -11,7 +11,7 @@ import { resetHaunts, pickHaunt } from './haunts.js';
 import {
   shuffle, pickQuestion, escapeHtml,
   normalizeSpaces, buildHint, poolFor, fightChoiceLabel,
-  buildCategoryChoices, categoryLabel
+  buildCategoryChoices, categoryLabel, buildChoices
 } from './quiz.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
@@ -580,6 +580,26 @@ function leaveEncounter() {
   syncBattleScreen();
 }
 
+// What the intro shows: every question in the set, and one of them with a
+// wrong answer for the fake player to type. The wrong answer is another
+// question's answer of the same type (a name for a name), so it reads as a
+// believable mistake; a set without types falls back to its choices.
+// Drafts (answers longer than one word) are left out where the set has
+// others, so the typed answer stays short.
+function introScript() {
+  const pool = state.settings.activeData;
+  const settled = pool.filter(q => !q.draft);
+  const from = settled.length ? settled : pool;
+  const asked = from[Math.floor(Math.random() * from.length)];
+  const right = normalizeSpaces(asked.meaning).toLowerCase();
+  const isWrong = answer => normalizeSpaces(answer).toLowerCase() !== right;
+  const sameType = from.filter(q => q.answerType && q.answerType === asked.answerType && isWrong(q.meaning));
+  const wrong = sameType.length
+    ? sameType[Math.floor(Math.random() * sameType.length)].meaning
+    : buildChoices(asked).find(isWrong) || '';
+  return { questions: pool.map(q => q.term), attempt: { question: asked.term, answer: wrong } };
+}
+
 function startGame() {
   state.run.order = shuffle(state.settings.activeData).slice(0, Math.min(ROOM_COUNT, state.settings.activeData.length));
   state.run.roomIndex = 0;
@@ -616,7 +636,7 @@ function startGame() {
   // against the player.
   loadRoom('opening');
   showScreen(introGlitch);
-  playIntro(state.settings.activeData.map(q => q.term), () => {
+  playIntro(introScript(), () => {
     showScreen(roomScreen);
     startTimer();
   });

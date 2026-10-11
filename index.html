@@ -168,9 +168,19 @@
   .intro-line { flex-shrink: 0; min-height: 1.35em; padding-left: 1.1em; text-indent: -1.1em; }
   .intro-line::before { content: '> '; opacity: 0.5; }
   .intro-dim { opacity: 0.45; }
+  /* The fake player's answer: their own input, brighter, with a steady
+     (never blinking) cursor while it's typed; then the miss. */
+  .intro-answer { color: var(--text); padding-left: 2.2em; }
+  .intro-answer::before { content: ''; }
+  .intro-answer::after { content: '_'; opacity: 0.6; }
+  .intro-verdict { padding-left: 2.2em; color: var(--muted); }
+  .intro-verdict::before { content: ''; }
+  /* Everything typed fades away before the call. */
+  .intro-log { transition: opacity 1.2s ease; }
+  .intro-log.fading { opacity: 0; }
   .intro-call {
     position: absolute;
-    top: 72%;
+    top: 50%;
     left: 50%;
     width: 90%;
     max-width: 460px;
@@ -196,7 +206,9 @@
     color: var(--muted);
   }
   @media (prefers-reduced-motion: reduce) {
-    .intro-call { transition: none; }
+    .intro-call, .intro-log { transition: none; }
+    .intro-log.fading { opacity: 0.25; }
+    .intro-call { top: 72%; }
   }
   @keyframes glitchShift1 {
     0%, 100% { transform: translate(2px, 0); clip-path: inset(0 0 65% 0); opacity: 0.6; }
