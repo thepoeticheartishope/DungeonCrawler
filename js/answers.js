@@ -37,6 +37,7 @@ export function settleAnswer(isCorrect, hadExtraSpace, given) {
   } else {
     const cost = state.floor.darkness ? DARK_MISS_COST : 1;
     state.run.hearts -= cost;
+    state.floor.misses++;
     events.push({ type: 'rejected', cost, expected: q.meaning, source: q.source });
   }
   const haunt = recordHauntAnswer(q, isCorrect);

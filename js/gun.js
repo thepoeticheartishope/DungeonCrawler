@@ -68,6 +68,7 @@ export function settleReload(isCorrect, offer, box = null) {
     state.run.correctTotal++;
     events.push({ type: 'reloaded', energy, total: state.run.energy });
   } else {
+    state.floor.misses++;
     events.push({ type: 'jammed', expected: q.meaning, source: q.source });
   }
   const haunt = recordHauntAnswer(q, isCorrect);

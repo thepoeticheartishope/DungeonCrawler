@@ -16,6 +16,7 @@ import { computeVisibility } from './sight.js';
 import { spawnMinion } from './combat.js';
 import { initBossLight } from './light.js';
 import { placeBeats } from './beats.js';
+import { rollGoals } from './goals.js';
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
 function pickCoinTile(walls, avoidList, allowedTiles) {
@@ -111,6 +112,7 @@ export function buildFloor() {
   state.floor.gunTarget = null;
   state.battle.struggle = null; // a Struggle never carries over to a new floor
   state.floor.struggles = 0;    // and the dial is back to its easiest
+  state.floor.misses = 0;
   state.floor.exchange = null; // THE UNFOLDING lives on rest floors only
   state.floor.darkTurns = 0;
   state.floor.encounters = [];
@@ -225,6 +227,7 @@ export function buildFloor() {
 
   state.floor.darkness = false;
   initBossLight();
+  rollGoals();
   state.floor.visibleSet = new Set();
   state.floor.exploredSet = new Set();
   computeVisibility();
@@ -246,6 +249,8 @@ function clearDanger() {
   f.gunTarget = null;
   state.battle.struggle = null;
   f.struggles = 0;
+  f.misses = 0;
+  f.goals = [];
   f.darkness = false;
   f.darkTurns = 0;
   f.encounters = [];

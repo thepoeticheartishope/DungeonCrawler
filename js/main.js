@@ -21,7 +21,8 @@ import {
   isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
 } from './combat.js';
 import { lightConsumed } from './light.js';
-import { stepPlayer } from './moves.js';
+import { stepPlayer, onStairs } from './moves.js';
+import { scoreGoals } from './goals.js';
 import { playIntro } from './introview.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader, showWorkshop } from './setloader.js';
@@ -109,6 +110,8 @@ initRender({
   gunTarget: document.getElementById('gunTarget'),
   gunAim: document.getElementById('gunAim'),
   clockStat: document.getElementById('clockStat'),
+  goalsStat: document.getElementById('goalsStat'),
+  goalsText: document.getElementById('goalsText'),
   clockFill: document.getElementById('clockFill'),
   btnSelect,
 });
@@ -161,9 +164,11 @@ function finishGunAction(events) {
 // sweeps, it stops the bar; otherwise it fires at the target. One button
 // in one place, so the thumb stays put and the eyes stay on the marker.
 // Energy comes only from energy cells: there is no reloading at will.
+// Standing on the stairs, SELECT goes down instead of firing.
 function pressSelect() {
   const shown = mapPanelShown();
   if (shown === 'aim' || shown === 'struggle') { stopBarSweep(); return; }
+  if (!shown && onStairs()) { goDown(); return; }
   fireGun();
 }
 
@@ -686,17 +691,33 @@ function drawFloor() {
   if (startChamber !== undefined) {
     showRoomNote('move-msg', t('theme.' + state.floor.chamberThemes[startChamber] + '.enter'));
   }
+  if (state.floor.goals.length) {
+    showRoomNote('move-msg', t('room.goals.new', { goals: state.floor.goals.map(g => t('goal.' + g.id)).join(' / ') }));
+  }
   answerInput.value = '';
   setControlsEnabled(true);
   answerInput.focus();
 }
 
-// Shared by the stairs (reaching them mid-move) and the dev skip button.
+// Shared by the stairs (goDown) and the dev skip button.
 // run.js decides what comes next: a depth, a rest floor, or the win.
 function advanceRoom() {
   const next = nextFloor();
   if (next.kind === 'win') endWin();
   else loadRoom(next.kind === 'rest' ? next.rest : null);
+}
+
+// Going down the stairs, once the player says so (SELECT or Enter while
+// standing on them): the floor's goals are scored, then the next floor
+// loads and the goals' lines open its room log, so they aren't wiped with
+// the old one. Costs no turn.
+function goDown() {
+  if (state.run.turnLocked || state.run.runEnded || mapPanelShown() || !onStairs()) return;
+  const scored = scoreGoals();
+  advanceRoom();
+  if (!roomScreen.classList.contains('show')) return;
+  const note = drawEvents(scored);
+  if (note.text) showRoomNote(note.cls, note.text);
 }
 
 function setControlsEnabled(enabled) {
@@ -818,8 +839,16 @@ function drawEvents(events) {
       case 'presenceSensed':
         showSensed();
         break;
-      case 'turned':
       case 'stairsReached':
+        parts.push(t('room.stairs.ask'));
+        break;
+      case 'goalMet':
+        parts.push(t('room.goal.met', { goal: t('goal.' + e.id), gold: e.gold }));
+        break;
+      case 'goalMissed':
+        parts.push(t('room.goal.missed', { goal: t('goal.' + e.id) }));
+        break;
+      case 'turned':
       case 'boxSprung':
       case 'itemReached':
       case 'cellFound':
@@ -1029,7 +1058,7 @@ function loseToLight() {
 let lastWalkAt = -Infinity;
 
 // One arrow press (stepPlayer in moves.js). A step or a first look in a
-// box spends a turn; stairs load the next floor; a trapped box, chest,
+// box spends a turn; a step onto the stairs only asks (goDown takes them); a trapped box, chest,
 // rune or encounter opens the battle screen; an energy cell opens the
 // reload panel (its answer is the turn); a turn to a new direction or a
 // bump only draws. With Real time
@@ -1041,12 +1070,6 @@ function movePlayer(dRow, dCol) {
   const events = stepPlayer(dRow, dCol);
   const has = (type) => events.some(e => e.type === type);
   if (has('stepped')) lastWalkAt = performance.now();
-  if (has('stairsReached')) {
-    drawEvents(events);
-    state.run.turnLocked = false;
-    advanceRoom();
-    return;
-  }
   if (has('stepped') || has('propSearched')) {
     applyTurnOutcome(events);
   } else {
@@ -1192,6 +1215,7 @@ initDpad({
 
 // Arrow-key support on desktop, ignored while typing in the answer box.
 // With the gun on: F is SELECT (fires), T picks the next target, . waits.
+// On the stairs, Enter goes down (so does SELECT).
 // Letter and number keys answer a question shown over the map, unless the
 // gun panels already used the key (picking a reload with 1-3, or F / Space
 // stopping the damage bar).
@@ -1202,6 +1226,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'ArrowDown') { e.preventDefault(); movePlayer(1, 0); }
   else if (e.key === 'ArrowLeft') { e.preventDefault(); movePlayer(0, -1); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(0, 1); }
+  else if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
   else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); pressSelect(); }
   else if (gunReady() && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
   else if (gunReady() && e.key === '.') { e.preventDefault(); skipTurn(); }

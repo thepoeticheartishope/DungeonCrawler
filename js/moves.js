@@ -13,6 +13,14 @@ export function goldReward(base) {
   return state.floor.darkness ? base * DARK_GOLD_MULTIPLIER : base;
 }
 
+// True while the player stands on the stairs. Stepping onto them only
+// asks (stairsReached); main.js goes down when the player says so, so
+// nobody leaves a floor by accident.
+export function onStairs() {
+  const f = state.floor;
+  return !!f.stairs && f.playerRow === f.stairs.row && f.playerCol === f.stairs.col;
+}
+
 // One arrow press. A press in a new direction turns the player to face it
 // (and the light cone with it), then goes on to step that way in the same
 // press. With state.settings.turnBeforeStep on, it only turns: no step, no
@@ -63,7 +71,7 @@ export function stepPlayer(dRow, dCol) {
   computeVisibility();
   events.push({ type: 'stepped', facing });
 
-  if (state.floor.stairs && state.floor.playerRow === state.floor.stairs.row && state.floor.playerCol === state.floor.stairs.col) {
+  if (onStairs()) {
     events.push({ type: 'stairsReached' });
     return events;
   }

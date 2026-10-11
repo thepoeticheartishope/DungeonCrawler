@@ -210,6 +210,18 @@ export const TEXT = {
   'room.box.done': 'It is empty now.', // draft
   'room.cell.done': 'The cell is spent.', // draft. Bumping a used energy cell
 
+  // Stairs and floor goals (strategy plan step A). Stepping onto the stairs
+  // only asks; SELECT or Enter goes down. All drafts for Timothy.
+  'room.stairs.ask': 'Stairs lead down. SELECT or ENTER to descend. Step away to stay.', // draft
+  'room.goals.new': 'Asked of you here: {goals}.', // draft. Room log on arrival
+  'room.goal.met': '{goal}: kept. +{gold} {@term.gold}.', // draft. Scored on the way down
+  'room.goal.missed': '{goal}: not kept.', // draft
+  'goal.noMiss': 'NO MISSES', // draft. Nothing answered wrong on the floor
+  'goal.allPapers': 'ALL PAPERS', // draft. Every paper on the floor read
+  'goal.swift': 'SWIFT', // draft. The boss down before the eye is half open
+  'goal.noHunter': 'BEFORE THE HUNTER', // draft. Gone down before the hunter wakes
+  'goal.noStruggle': 'NO STRUGGLE', // draft. Never caught with no energy
+
   // ---- THE UNFOLDING's screen (js/exchangeview.js), on every rest floor.
   // It never speaks: every line describes it, in the narrator's voice.
   // All drafts for Timothy.
@@ -387,6 +399,7 @@ export const TEXT = {
   'stat.target': 'TARGET', // draft. HUD: the gun's target and its hp, # left and - lost
   'stat.aim': 'AIM', // draft. HUD: the chance a shot at the target lands
   'stat.noTarget': '-', // the HUD's target and aim with nothing targeted
+  'stat.goals': 'GOALS', // draft. HUD: the floor's goals, [x] kept / [-] lost / [ ] not yet
   'stat.clock': 'NEXT', // draft. HUD, Real time only: a meter that reaches its end as the dark next moves
   'minionKind.SHARD': 'SHARD', // draft. A minion kind's name (config.js MINION_KINDS), in the HUD
   'minionKind.HUSK': 'HUSK', // draft
