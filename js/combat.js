@@ -7,6 +7,7 @@ import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, HUNTER_SPAWN_DEL
 import { advanceLight } from './light.js';
 import { computeVisibility } from './sight.js';
 import { minionStrike, struggleDial } from './gun.js';
+import { keptOut } from './relays.js';
 
 export function isAdjacentToPlayer(entity) {
   return Math.abs(entity.row - state.floor.playerRow) + Math.abs(entity.col - state.floor.playerCol) === 1;
@@ -78,6 +79,7 @@ export function neighbors(r, c) {
 // in a one-wide corridor; items are only obstacles to the player.
 export function blockedTilesFor(minion) {
   const blocked = new Set(state.floor.wallSet);
+  keptOut(minion).forEach(k => blocked.add(k));
   state.floor.pillarSet.forEach(k => blocked.add(k));
   state.floor.props.forEach(p => { if (p.kind !== 'paper') blocked.add(key(p.row, p.col)); });
   if (state.floor.boss) blocked.add(key(state.floor.boss.row, state.floor.boss.col));
@@ -180,8 +182,9 @@ export function spawnMinion(spot, minionKind = 'SHARD') {
 // it's boxed in this turn. Unlike a chase, wandering never steps onto an
 // item, so an idle minion doesn't sit on top of a chest or rune.
 function wanderStep(m) {
+  const out = keptOut(m);
   const options = neighbors(m.row, m.col)
-    .filter(([r, c]) => !state.floor.wallSet.has(key(r, c)) && !tileOccupied(r, c, m));
+    .filter(([r, c]) => !state.floor.wallSet.has(key(r, c)) && !out.has(key(r, c)) && !tileOccupied(r, c, m));
   if (options.length === 0) return null;
   const [row, col] = options[Math.floor(Math.random() * options.length)];
   return { row, col };
@@ -227,7 +230,10 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     if (state.run.hearts <= 0) break;
     const stats = MINION_KINDS[m.minionKind];
     if (gun && stats && state.run.turnCount % stats.moveEvery !== 0) continue;
-    const path = bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blockedTilesFor(m));
+    // A player inside a room held by a relay can't be reached from outside
+    // it, not even from the doorway (bfsPath would let the last step in).
+    const sheltered = keptOut(m).has(key(state.floor.playerRow, state.floor.playerCol));
+    const path = sheltered ? null : bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blockedTilesFor(m));
     // In the darkness after the boss falls, every minion hunts, from anywhere.
     const chasing = path && (state.floor.darkness || path.length - 1 <= MINION_CHASE_RANGE);
     const next = chasing ? path[1] : wanderStep(m);

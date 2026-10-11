@@ -80,11 +80,17 @@ function currentRadius() {
   return Math.max(1, Math.floor(state.floor.lightTurns / LIGHT_TURNS_PER_STEP));
 }
 
-function updateBossLit() {
-  state.floor.bossLitSet = new Set();
-  if (!state.floor.boss) return;
+// Rebuilds the lit tiles from the radius. A room held by a relay
+// (relays.js) stays dark however far the light has spread. Exported for
+// relays.js, which moves the light's turns.
+export function updateBossLit() {
+  const f = state.floor;
+  f.bossLitSet = new Set();
+  if (!f.boss) return;
   const r = currentRadius();
-  state.floor.bossDist.forEach((d, k) => { if (d <= r) state.floor.bossLitSet.add(k); });
+  f.bossDist.forEach((d, k) => {
+    if (d <= r && !f.heldChambers.has(f.chamberAt.get(k))) f.bossLitSet.add(k);
+  });
 }
 
 // One turn passes. The light only spreads while the boss is alive.

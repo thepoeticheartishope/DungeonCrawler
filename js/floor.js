@@ -17,6 +17,7 @@ import { spawnMinion } from './combat.js';
 import { initBossLight } from './light.js';
 import { placeBeats } from './beats.js';
 import { rollGoals } from './goals.js';
+import { placeRelays } from './relays.js';
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
 function pickCoinTile(walls, avoidList, allowedTiles) {
@@ -113,6 +114,8 @@ export function buildFloor() {
   state.battle.struggle = null; // a Struggle never carries over to a new floor
   state.floor.struggles = 0;    // and the dial is back to its easiest
   state.floor.misses = 0;
+  state.floor.heldChambers = new Set();
+  state.floor.relayTurnsWon = 0;
   state.floor.exchange = null; // THE UNFOLDING lives on rest floors only
   state.floor.darkTurns = 0;
   state.floor.encounters = [];
@@ -223,6 +226,11 @@ export function buildFloor() {
       minionTaken.push(p);
     });
   }
+  // Relays (relays.js), with either kind of combat.
+  placeRelays(layout, placer, minionTaken).forEach(p => {
+    state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
+    minionTaken.push(p);
+  });
   placeMinions(roomTiles, minionTaken, recipe.minions - beats.minionTiles.length, recipe);
 
   state.floor.darkness = false;
@@ -250,6 +258,8 @@ function clearDanger() {
   state.battle.struggle = null;
   f.struggles = 0;
   f.misses = 0;
+  f.heldChambers = new Set();
+  f.relayTurnsWon = 0;
   f.goals = [];
   f.darkness = false;
   f.darkTurns = 0;

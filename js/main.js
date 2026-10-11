@@ -23,6 +23,7 @@ import {
 import { lightConsumed } from './light.js';
 import { stepPlayer, onStairs } from './moves.js';
 import { scoreGoals } from './goals.js';
+import { settleRelay } from './relays.js';
 import { playIntro } from './introview.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader, showWorkshop } from './setloader.js';
@@ -264,6 +265,23 @@ function pickReload(offer, category) {
   showQuestionOnMap(mapAnswers);
   setQuestion(pickQuestion(state.battle.currentQuestion, category.pool));
   offer.modifiers.forEach(applyModifier);
+}
+
+// A relay was bumped (moves.js relayFound): its question over the map,
+// like a reload's, with no offers to pick and no modifiers. Any answer
+// (relays.js settleRelay) is the turn.
+function openRelay(relay) {
+  gunTest = false;
+  state.run.turnLocked = true;
+  const settle = (isCorrect) => endReload(() => settleRelay(isCorrect, relay));
+  mapAnswers = {
+    onChoice: choice => settle(matchesAnswer(choice)),
+    onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
+    onTimeout: () => settle(false),
+    log: text => showRoomNote('', text),
+  };
+  showQuestionOnMap(mapAnswers);
+  setQuestion(pickQuestion(state.battle.currentQuestion));
 }
 
 // Closes the gun's panels, hands the question panel back to the battle
@@ -852,6 +870,17 @@ function drawEvents(events) {
       case 'boxSprung':
       case 'itemReached':
       case 'cellFound':
+        break;
+      case 'relayFound':
+        parts.push(t('room.relay.found'));
+        break;
+      case 'relayHeld':
+        parts.push(t(e.turns ? 'room.relay.held' : 'room.relay.heldDark', { turns: e.turns }));
+        break;
+      case 'relaySparked':
+        cls = 'block-msg';
+        parts.push(t(e.turns ? 'room.relay.sparked' : 'room.relay.sparkedDark', { turns: e.turns }));
+        break;
       case 'propSearched':
         break;
       case 'exchangeOpened':
@@ -1081,6 +1110,8 @@ function movePlayer(dRow, dCol) {
   state.run.turnLocked = false;
   const cell = events.find(e => e.type === 'cellFound');
   if (cell) openReload(false, cell.prop);
+  const relay = events.find(e => e.type === 'relayFound');
+  if (relay) openRelay(relay.prop);
 }
 
 // THE UNFOLDING's screen (exchangeview.js), opened by bumping it on a rest

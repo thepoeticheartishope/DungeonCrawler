@@ -282,6 +282,16 @@ export const FLOOR_GOALS = [
   { id: 'noStruggle', pay: 2 },
 ];
 export const GOALS_PER_FLOOR = 2;
+// Relays (strategy plan step B, relays.js): RELAYS_PER_FLOOR [min, max] per
+// danger depth, never in the boss's or the start room. A right answer holds
+// the room and takes RELAY_TURNS_BACK turns off the light (LIGHT_TURNS_PER_STEP
+// turns = one step of its spread), up to RELAY_TURNS_CAP a floor, fewer than
+// the walk to a relay usually costs, so relays slow the light but can't stop
+// it. A wrong answer gives the light RELAY_WRONG_TURNS. Drafts; tune after play.
+export const RELAYS_PER_FLOOR = [1, 2];
+export const RELAY_TURNS_BACK = 6;
+export const RELAY_TURNS_CAP = 10;
+export const RELAY_WRONG_TURNS = 4;
 export const GOAL_PAPERS_MIN = 2;
 export const GOAL_SWIFT_SHARE = 0.5;
 // The longest name the start screen takes, so it fits on one line in a paper.

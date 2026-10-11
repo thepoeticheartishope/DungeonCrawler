@@ -62,6 +62,8 @@ export const TEXT = {
   'term.exchange.symbol': '8', // a loop folded over itself
   'term.box.symbol': '&',
   'term.cell': 'ENERGY CELL', // draft
+  'term.relay': 'RELAY', // draft
+  'term.relay.symbol': '¥', // draft. A mast with two arms
   'term.cell.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
   // The player's glyph (the isometric map draws a stick man in its place).
   'term.player.symbol': '@',
@@ -209,6 +211,15 @@ export const TEXT = {
   'room.box.junk': ['Empty.', 'Dust, and a smell like old rain.', 'A broken lens. Useless.', 'Rags. Nothing more.'], // draft
   'room.box.done': 'It is empty now.', // draft
   'room.cell.done': 'The cell is spent.', // draft. Bumping a used energy cell
+  // Relays (strategy plan step B, relays.js). Bump one: a question over the
+  // map. Right holds the room (no boss light, nothing from outside comes in)
+  // and takes {turns} turns off the light. All drafts for Timothy.
+  'room.relay.found': 'A dead {@term.relay}. It hums when you come close.', // draft
+  'room.relay.held': 'The {@term.relay} wakes. This room is yours now, and the light falls back.', // draft
+  'room.relay.heldDark': 'The {@term.relay} wakes. This room is yours now.', // draft. Boss already down: no light to push back
+  'room.relay.sparked': 'The {@term.relay} sparks and dies. The light surges.', // draft
+  'room.relay.sparkedDark': 'The {@term.relay} sparks and dies.', // draft
+  'room.relay.done': 'The {@term.relay} is spent.', // draft. Bumping a used relay
 
   // Stairs and floor goals (strategy plan step A). Stepping onto the stairs
   // only asks; SELECT or Enter goes down. All drafts for Timothy.
