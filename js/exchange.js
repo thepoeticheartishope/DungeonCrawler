@@ -33,6 +33,8 @@ function whyNot(id) {
   if (id === 'maxStability' && state.run.maxHearts >= MAX_HEARTS_CAP) return 'atCap';
   // The epilogue is the last floor: there's no next depth to give turns to.
   if (id === 'slack' && state.run.roomIndex >= state.run.order.length) return 'noDepth';
+  // Only a between-rest's second stairs are hidden, and only until scouted.
+  if (id === 'scout' && !(state.floor.stairsAlt && state.floor.stairsAlt.hidden)) return 'noHidden';
   return null;
 }
 
@@ -41,6 +43,7 @@ function whyNot(id) {
 //   cannotAfford { item, price }  not enough myelin; nothing changes
 //   itemBought { item, price }    myelin spent and the item applied
 //   hauntSilenced { question }    after itemBought, for 'silence'
+//   stairsScouted { path }        after itemBought, for 'scout'
 // Myelin goes down here; renderHud() (after drawEvents) shows it.
 export function buy(id) {
   const offer = offers().find(o => o.id === id);
@@ -56,5 +59,9 @@ export function buy(id) {
   else if (id === 'maxStability') state.run.maxHearts++;
   else if (id === 'slack') state.run.bonusSlack += EXCHANGE_SLACK_TURNS;
   else if (id === 'silence') events.push({ type: 'hauntSilenced', question: silenceOldestHaunt() });
+  else if (id === 'scout') {
+    state.floor.stairsAlt.hidden = false;
+    events.push({ type: 'stairsScouted', path: state.floor.stairsAlt.path });
+  }
   return events;
 }

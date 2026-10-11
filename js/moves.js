@@ -13,12 +13,19 @@ export function goldReward(base) {
   return state.floor.darkness ? base * DARK_GOLD_MULTIPLIER : base;
 }
 
-// True while the player stands on the stairs. Stepping onto them only
-// asks (stairsReached); main.js goes down when the player says so, so
-// nobody leaves a floor by accident.
-export function onStairs() {
+// The stairs the player stands on (a between-rest has two: `stairs` and
+// `stairsAlt`), or null. Stepping onto them only asks (stairsReached);
+// main.js goes down when the player says so, so nobody leaves a floor by
+// accident.
+export function stairsHere() {
   const f = state.floor;
-  return !!f.stairs && f.playerRow === f.stairs.row && f.playerCol === f.stairs.col;
+  const here = s => s && f.playerRow === s.row && f.playerCol === s.col;
+  return [f.stairs, f.stairsAlt].find(here) || null;
+}
+
+// True while the player stands on stairs.
+export function onStairs() {
+  return !!stairsHere();
 }
 
 // One arrow press. A press in a new direction turns the player to face it
@@ -28,7 +35,7 @@ export function onStairs() {
 // off by default because combat.js senseUnseen warns ("I see you.") before
 // anything unseen gets next to them. Events: turned { facing } (alone when
 // turning first, else before the rest),
-// blocked { kind, thing }, stepped { facing }, stairsReached, coinTaken { gold },
+// blocked { kind, thing }, stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
 // paperRead { paper, loot, story? }, roomEntered { theme }, exchangeOpened
 // (bumped THE UNFOLDING; main.js opens its screen), itemReached { thing }
 // (bumped a chest, rune or encounter; main.js opens the battle screen) and
@@ -71,8 +78,9 @@ export function stepPlayer(dRow, dCol) {
   computeVisibility();
   events.push({ type: 'stepped', facing });
 
-  if (onStairs()) {
-    events.push({ type: 'stairsReached' });
+  const stairs = stairsHere();
+  if (stairs) {
+    events.push({ type: 'stairsReached', path: stairs.path || null, hidden: !!stairs.hidden });
     return events;
   }
 

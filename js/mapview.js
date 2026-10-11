@@ -392,12 +392,13 @@ function mapThings() {
       glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
     });
   }
-  // The stairs are never lost in the fog: they're the way out.
-  if (f.stairs) {
-    add('stairs', f.stairs, t('term.exit.symbol'), {
+  // The stairs are never lost in the fog: they're the way out (both of
+  // them on a between-rest).
+  [f.stairs, f.stairsAlt].filter(Boolean).forEach(s => {
+    add('stairs', s, t('term.exit.symbol'), {
       size: 'stairs', colour: colours.bright, glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
     });
-  }
+  });
   add('player', shownAt(PLAYER, f.playerRow, f.playerCol), t('term.player.symbol'), { size: 'player' },
     { row: f.playerRow, col: f.playerCol });
   f.encounters.forEach(e => {

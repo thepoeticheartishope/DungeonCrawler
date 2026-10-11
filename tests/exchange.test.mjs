@@ -37,7 +37,7 @@ function atRest(gold = 100) {
 
 test('every item has wording, and every reason it can give does too', () => {
   EXCHANGE_ITEMS.forEach(item => assert.ok('exchange.item.' + item.id in TEXT, item.id));
-  ['bought', 'noHaunts', 'fullStability', 'atCap', 'noDepth'].forEach(r => assert.ok('exchange.why.' + r in TEXT, r));
+  ['bought', 'noHaunts', 'fullStability', 'atCap', 'noDepth', 'noHidden'].forEach(r => assert.ok('exchange.why.' + r in TEXT, r));
 });
 
 test('buying spends myelin and heals one stability, up to the max', () => {

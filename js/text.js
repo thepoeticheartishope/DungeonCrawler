@@ -224,6 +224,15 @@ export const TEXT = {
   // Stairs and floor goals (strategy plan step A). Stepping onto the stairs
   // only asks; SELECT or Enter goes down. All drafts for Timothy.
   'room.stairs.ask': 'Stairs lead down. SELECT or ENTER to descend. Step away to stay.', // draft
+  // Two ways down from a between-rest (strategy plan step C): floors.js
+  // FLOOR_PATHS. All drafts for Timothy.
+  'room.stairs.two': 'Two ways lead down.', // draft. Room log on arriving at a between-rest
+  'room.stairs.path': 'These stairs lead to {path}.', // draft
+  'room.stairs.hidden': 'Where these stairs lead is hidden. Something here could show you.', // draft
+  'room.path.taken': 'You chose {path}.', // draft. Room log on arriving at the depth
+  'path.crowded': 'MORE OF THEM, MORE TIME', // draft. Two more minions, the light slower
+  'path.hurried': 'FEWER OF THEM, LESS TIME', // draft. One minion fewer, the light faster
+  'path.stalked': 'STALKERS WHERE SHARDS WERE', // draft. Every SHARD a STALKER, the light as usual
   'room.goals.new': 'Asked of you here: {goals}.', // draft. Room log on arrival
   'room.goal.met': '{goal}: kept. +{gold} {@term.gold}.', // draft. Scored on the way down
   'room.goal.missed': '{goal}: not kept.', // draft
@@ -244,6 +253,9 @@ export const TEXT = {
   'exchange.item.heal': '+1 {@term.hp}', // draft
   'exchange.item.maxStability': '+1 max {@term.hp}', // draft — does not heal
   'exchange.item.slack': 'More time on the next {@term.room}', // draft
+  'exchange.item.scout': 'See where the other stairs lead', // draft (strategy plan step C)
+  'exchange.why.noHidden': 'Nothing here is hidden from you.', // draft
+  'exchange.scouted': 'You see it now. The other stairs lead to {path}.', // draft
   'exchange.why.bought': 'Already taken here.', // draft
   'exchange.why.noHaunts': 'No doubts to silence.', // draft
   'exchange.why.fullStability': '{@term.hp} is full.', // draft

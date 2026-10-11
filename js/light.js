@@ -40,7 +40,7 @@ export function initBossLight() {
   state.floor.bossDist = stepsFrom(state.floor.boss.row, state.floor.boss.col);
   state.floor.floorCount = state.floor.bossDist.size;
   const walk = state.floor.bossDist.get(key(state.floor.playerRow, state.floor.playerCol)) || 0;
-  const turns = floorBudget(floorRecipe(state.run.roomIndex), walk) + state.run.bonusSlack;
+  const turns = floorBudget(floorRecipe(state.run.roomIndex, state.floor.path), walk) + state.run.bonusSlack;
   state.run.bonusSlack = 0;
   state.floor.lightFullRadius = Math.max(1, Math.ceil(turns / LIGHT_TURNS_PER_STEP));
   state.floor.lightTurnBudget = state.floor.lightFullRadius * LIGHT_TURNS_PER_STEP;
