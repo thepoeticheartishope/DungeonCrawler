@@ -409,8 +409,7 @@ export const TEXT = {
   'gun.block.energyFull': 'Energy is full.', // draft
   'gun.block.notShootable': 'The gun does nothing to that.', // draft
   'gun.block.noTarget': 'Nothing in reach.', // draft. FIRE or T with nothing the gun can reach
-  'gun.aimChance': '{chance}%', // over the gun's target: the chance a shot there lands
-  'gun.miss': 'MISS', // floats up over a minion the shot missed
+  'gun.miss': 'MISS', // floats up over a minion when a shot backfires
   // The gun's panels over the map (gunpanels.js).
   'gun.reload.title': 'SELECT RELOAD: {category|upper}', // draft. Over the reload choices; {category} is the next category
   'gun.reload.titlePlain': 'SELECT RELOAD', // draft. The same, for a set with no categories
@@ -441,14 +440,12 @@ export const TEXT = {
   'gun.btn.select': 'SELECT', // draft. The gun's one button, by the d-pad (key F): fires at the target, or stops the damage bar
   'stat.energy': 'ENERGY', // draft. HUD: energy held, # each and - for room left
   'stat.target': 'TARGET', // draft. HUD: the gun's target and its hp, # left and - lost
-  'stat.aim': 'AIM', // draft. HUD: the chance a shot at the target lands
-  'stat.noTarget': '-', // the HUD's target and aim with nothing targeted
+  'stat.noTarget': '-', // the HUD's target with nothing targeted
   'stat.goals': 'GOALS', // draft. HUD: the floor's goals, [x] kept / [-] lost / [ ] not yet
   'stat.clock': 'NEXT', // draft. HUD, Real time only: a meter that reaches its end as the dark next moves
   'minionKind.SHARD': 'SHARD', // draft. A minion kind's name (config.js MINION_KINDS), in the HUD
   'minionKind.HUSK': 'HUSK', // draft
   'minionKind.STALKER': 'STALKER', // draft
-  'gun.missed': 'The shot goes wide.', // draft
   'gun.grazed': 'A graze. It keeps coming.', // draft
   'gun.backfired': 'Backfire. 1 energy lost.', // draft. The damage bar stopped on a penalty zone
   'gun.backfiredEmpty': 'Backfire.', // draft. The same, with no energy left to lose

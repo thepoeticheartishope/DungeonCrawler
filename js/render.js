@@ -10,7 +10,7 @@ import { state } from './state.js';
 import { BOSS_HP, ENERGY_MAX, MINION_KINDS, SENSE_NOTE_MS } from './config.js';
 import { lightProgress } from './light.js';
 import { whatBlocks } from './passage.js';
-import { FACING_VECTORS, shootBlock, aimChance } from './sight.js';
+import { FACING_VECTORS } from './sight.js';
 import { categoryLabel } from './quiz.js';
 import { isoScreenShare, isoScreenOffset } from './isoview.js';
 import { clockReading } from './realclock.js';
@@ -170,12 +170,11 @@ export function renderClock(running) {
 }
 
 // The gun's part of the HUD (gun plan step 6), shown only with DEV ->
-// Combat on gun: energy held, the target and its hp, the aim %
-// (or '-' when the target can't be shot), and whether SELECT can be
-// pressed. Part of renderHud, the one writer of the HUD.
+// Combat on gun: energy held, the target and its hp, and whether SELECT
+// can be pressed. Part of renderHud, the one writer of the HUD.
 function renderGunHud() {
   const on = state.settings.gunCombat;
-  [els.energyStat, els.gunTargetStat, els.gunAimStat].forEach(el => { el.hidden = !on; });
+  [els.energyStat, els.gunTargetStat].forEach(el => { el.hidden = !on; });
   // SELECT also takes the stairs, so it shows there with the gun off too.
   els.btnSelect.hidden = !on && !onStairs();
   els.btnSelect.disabled = state.run.runEnded;
@@ -187,9 +186,6 @@ function renderGunHud() {
   const held = Array.from({ length: energy }, (_, i) => (weak && state.run.rounds[i] === weak ? '*' : '#')).join('');
   els.energyCount.textContent = held + '-'.repeat(Math.max(ENERGY_MAX - energy, 0));
   els.gunTarget.textContent = target ? gunTargetName(target) : t('stat.noTarget');
-  els.gunAim.textContent = target && !shootBlock(target)
-    ? t('gun.aimChance', { chance: Math.round(aimChance(target) * 100) })
-    : t('stat.noTarget');
   // SELECT stays pressable with no energy: it says so, and it must
   // still stop a damage bar opened by the last shot.
   els.btnSelect.disabled = state.run.runEnded;

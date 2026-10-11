@@ -15,8 +15,8 @@
 //
 // With DEV -> Combat on gun (state.settings.gunCombat) it also draws the
 // gun (gun plan step 4a): the stick man holds it (raised while a landed
-// shot waits for the damage bar), the tiles it reaches are lit by the
-// chance a shot there lands, corner brackets mark what can be shot, a
+// shot waits for the damage bar), the tiles it reaches are lit faintly,
+// corner brackets mark what can be shot, a
 // dashed laser runs to the target, and showShot() plays a shot or a MISS.
 // isoTileAt() turns a tap on the map back into a tile.
 //
@@ -26,7 +26,7 @@
 
 import { state, key } from './state.js';
 import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS } from './config.js';
-import { FACING_VECTORS, canShoot, aimChance } from './sight.js';
+import { FACING_VECTORS, canShoot } from './sight.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
 import { drawTextForm, formBox, dyingForms } from './textforms.js';
@@ -117,12 +117,12 @@ const GUN_GRIP = 0.09;           // the grip, hanging under the gun hand
 const GUN_RAISE = 0.08;          // how far the gun lifts while a landed shot waits for the damage bar
 const GUN_KICK = 0.08;           // how far it kicks back on a shot
 const GUN_LINE = 1.2;            // its line, as a share of the stick man's
-const REACH_FILL = [0.03, 0.12]; // a reached tile's fill strength: plus this much more at 100% aim
+const REACH_FILL = 0.15;         // a reached tile's fill strength
 const BRACKET_ARM = 0.12;        // a corner bracket's arms, as a share of a tile's width
 const BRACKET_HALF = 0.32;       // the narrowest a bracket box is, half its width as a share of a tile's
 const BRACKET_LEVEL = [0.4, 0.95]; // a shootable thing's brackets, then the target's
 const BRACKET_PULSE = 0.025;     // how far the target's brackets breathe out, as a share of a tile's width
-const BRACKET_TEXT_SIZE = 0.26;  // the target's aim % over its brackets, as a share of a tile's width
+const BRACKET_TEXT_SIZE = 0.26;  // the target's hp over its brackets, as a share of a tile's width
 const BRACKET_HP_GAP = 0.1;      // the target's hp (# left, - lost) sits this far over its brackets, as a share of a tile's height
 const LASER_LEVEL = [0.45, 0.8]; // the laser's strength, then while a landed shot waits
 const LASER_DASH = [0.06, 0.1];  // its dash and gap, in tile widths
@@ -1348,14 +1348,13 @@ function inReach(row, col) {
   return canShoot({ row, col });
 }
 
-// The tiles the gun reaches, lit faintly over the floor by the chance a
-// shot there lands, so the drop in aim shows as the area fading out.
+// The tiles the gun reaches, lit faintly over the floor.
 function drawReach(ctx, tiles) {
   tiles.forEach(({ row, col }) => {
     if (!inReach(row, col)) return;
     const d = diamond(row, col, 0.04);
     poly(ctx, [d.T, d.R, d.B, d.L]);
-    ctx.fillStyle = glow(REACH_FILL[0] + REACH_FILL[1] * aimChance({ row, col }));
+    ctx.fillStyle = glow(REACH_FILL);
     ctx.fill();
   });
 }
@@ -1397,10 +1396,8 @@ function noteTapBoxes() {
 }
 
 // Corner brackets round everything the gun can shoot right now, faint,
-// and round the target, bright and slowly breathing, with its hp over it
-// and its aim % over that. The floor tiles show no % of their own: only
-// the target's matters, and a number on every tile distracted. A target
-// that can't be shot keeps bright brackets and hp but no aim %.
+// and round the target, bright and slowly breathing, with its hp over it.
+// A shot that can be taken always lands, so there is no aim % to show.
 function drawBrackets(ctx) {
   const target = liveTarget();
   shownMinions().forEach(thing => {
@@ -1434,13 +1431,8 @@ function drawBrackets(ctx) {
       ctx.font = Math.round(tw * BRACKET_TEXT_SIZE) + 'px VT323, monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
-      let y = top - breathe - th * BRACKET_HP_GAP;
       const hp = hpPips(m);
-      if (hp) {
-        ctx.fillText(hp, (l + r) / 2, y);
-        y -= tw * BRACKET_TEXT_SIZE;
-      }
-      if (shootable) ctx.fillText(t('gun.aimChance', { chance: Math.round(aimChance(m) * 100) }), (l + r) / 2, y);
+      if (hp) ctx.fillText(hp, (l + r) / 2, top - breathe - th * BRACKET_HP_GAP);
     }
     ctx.restore();
   });

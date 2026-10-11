@@ -18,7 +18,7 @@ import {
 } from './config.js';
 import { fightGroups, shuffle } from './quiz.js';
 import { recordHauntAnswer } from './haunts.js';
-import { shootBlock, canShoot, aimChance } from './sight.js';
+import { shootBlock, canShoot } from './sight.js';
 import { goldReward } from './moves.js';
 import { tileOccupied } from './combat.js';
 
@@ -135,13 +135,18 @@ export function pickTarget(tile) {
 }
 
 // What the gun can fire at right now: seen minions and the hunter that
-// sight.js canShoot allows, best aim first (so the nearest comes first).
+// sight.js canShoot allows, nearest first.
 function shootable() {
   const f = state.floor;
   return f.minions
     .filter(m => !state.settings.fogEnabled || f.visibleSet.has(key(m.row, m.col)))
     .filter(canShoot)
-    .sort((a, b) => aimChance(b) - aimChance(a));
+    .sort((a, b) => distanceTo(a) - distanceTo(b));
+}
+
+// Straight-line distance from the player to `thing`, in tiles.
+function distanceTo(thing) {
+  return Math.hypot(thing.row - state.floor.playerRow, thing.col - state.floor.playerCol);
 }
 
 // Keeps the gun's target up to date after a turn: a target that died,
@@ -184,13 +189,12 @@ export function fireBlock(target) {
 }
 
 // Fires at `target`, for 1 energy: a round from the group the target is
-// weak to when one is held, so the player never wastes a match. The aim
-// chance (sight.js aimChance) decides whether it lands. A miss is the end
-// of it. A landed shot on a minion waits for the damage bar
+// weak to when one is held, so the player never wastes a match. A shot
+// that can be taken always lands. On a minion it waits for the damage bar
 // (state.battle.aim; settleShot finishes it); one on the hunter staggers
 // it, since it can't be hurt. A blocked shot spends nothing.
-// Events: fireBlocked { target, reason }, or shotFired { target, chance }
-// then shotMissed { target }, aimStarted { target, zones, matched } or
+// Events: fireBlocked { target, reason }, or shotFired { target } then
+// aimStarted { target, zones, matched } or
 // hunterStaggered { hunter }; a landed shot on a minion whose kind's
 // weakness wasn't known yet adds weaknessFound { minionKind, label }.
 export function fire(target) {
@@ -198,12 +202,7 @@ export function fire(target) {
   if (reason) return [{ type: 'fireBlocked', target, reason }];
   const weak = weaknessOf(target.minionKind);
   const round = spendRound(weak);
-  const chance = aimChance(target);
-  const events = [{ type: 'shotFired', target, chance }];
-  if (Math.random() >= chance) {
-    events.push({ type: 'shotMissed', target });
-    return events;
-  }
+  const events = [{ type: 'shotFired', target }];
   if (target.kind === 'hunter') {
     events.push(...staggerHunter(target));
     return events;

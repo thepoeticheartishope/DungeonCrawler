@@ -283,6 +283,10 @@ async function runBattle(browser, url) {
 async function installGunWatchers(page) {
   await page.evaluate(async () => {
     const { t } = await import('./js/text.js');
+    const { state } = await import('./js/state.js');
+    const { canShoot } = await import('./js/sight.js');
+    // Whether the gun has a target it can shoot (the HUD no longer shows an aim %).
+    window.__smokeCanFire = () => Boolean(state.floor.gunTarget && canShoot(state.floor.gunTarget));
     const lead = (k, vars) => t(k, vars).split('@@')[0];
     const reloaded = lead('gun.reloaded', { energy: '@@' });
     const killed = lead('gun.killed', { gold: '@@' });
@@ -323,7 +327,7 @@ async function bumpEnergyCell(page) {
 
 // One attempt: a fresh run with the gun (the default) and Auto-win on (it
 // answers reloads right and stops the damage bar on the weak point). Wander
-// as the battle run does; press F (SELECT) whenever the HUD shows an aim %,
+// as the battle run does; press F (SELECT) whenever the target can be shot,
 // and bump an energy cell every few steps while energy isn't full,
 // until a reload loaded and a shot killed a minion.
 async function attemptGun(page, url) {
@@ -342,7 +346,7 @@ async function attemptGun(page, url) {
       inRoom: document.getElementById('roomScreen').classList.contains('show'),
       lost: document.getElementById('loseScreen').classList.contains('show'),
       panel: ['reloadPanel', 'mapQuestionPanel', 'aimPanel'].some(id => !document.getElementById(id).hidden),
-      canFire: !document.getElementById('btnSelect').disabled && document.getElementById('gunAim').textContent.includes('%'),
+      canFire: !document.getElementById('btnSelect').disabled && window.__smokeCanFire(),
       canReload: !document.getElementById('energyCount').textContent.endsWith('#'),
     }));
     if (status.reloaded && status.killed && status.inRoom && !status.panel) return true;

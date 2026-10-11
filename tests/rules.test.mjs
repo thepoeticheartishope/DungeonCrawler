@@ -15,9 +15,8 @@ import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE,
   LIGHT_TURNS_PER_STEP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, DARK_GOLD_MULTIPLIER,
   MAX_HEARTS, DARK_MISS_COST, BOSS_HP, MINION_KINDS, MINION_TRAIL_LENGTH,
-  AIM_FALLOFF_PER_TILE, AIM_MIN,
 } from '../js/config.js';
-import { computeVisibility, canMakeOut, shootBlock, canShoot, aimChance } from '../js/sight.js';
+import { computeVisibility, canMakeOut, shootBlock, canShoot } from '../js/sight.js';
 import {
   initBossLight, advanceLight, extinguishLight, lightCoverage, lightProgress, lightConsumed,
 } from '../js/light.js';
@@ -196,7 +195,7 @@ test('a paper once made out stays identified after the player walks off', () => 
   assert.ok(near.identified);
 });
 
-// --- sight.js: shootBlock / canShoot / aimChance ---
+// --- sight.js: shootBlock / canShoot ---
 
 // A thing relative to the player.
 function at(dr, dc) {
@@ -246,15 +245,6 @@ test('a pillar in the line blocks the shot', () => {
   assert.ok(canShoot(at(-1, 0)), 'the pillar tile itself can be shot at');
 });
 
-test('aim is 100% next to the player and falls off with distance', () => {
-  resetFloor();
-  assert.equal(aimChance(at(-1, 0)), 1);
-  assert.equal(aimChance(at(0, -1)), 1);
-  assert.ok(Math.abs(aimChance(at(-3, 0)) - (1 - 2 * AIM_FALLOFF_PER_TILE)) < 1e-9);
-  const diagonal = aimChance(at(-1, 1));
-  assert.ok(diagonal < 1 && diagonal > 1 - AIM_FALLOFF_PER_TILE, 'a diagonal counts as about 1.4 tiles');
-  assert.equal(aimChance(at(-20, 0)), AIM_MIN, 'never below the minimum');
-});
 
 // --- light.js ---
 
