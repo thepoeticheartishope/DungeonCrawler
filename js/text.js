@@ -184,6 +184,8 @@ export const TEXT = {
   'mg.slowSpell': 'Slow Spell', // draft
   'mg.slowSpell.hint': 'Name it before the letters do. Fewer letters, bigger hit.', // draft
   'mg.slowSpell.know': 'I know it', // draft
+  'mg.slowSpell.typePlaceholder': 'type the answer', // draft. Slow Spell's answer box, after I know it
+  'mg.slowSpell.enter': 'Enter', // draft
   'mg.slowSpell.shown': 'Letters shown: {n} of {total}', // draft
   'mg.slowSpell.scored.X': '{name|upper}: named it early.', // draft
   'mg.slowSpell.scored.2': '{name|upper}: named it.', // draft

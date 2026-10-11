@@ -550,15 +550,13 @@ export const HIGHER_LOWER_TIERS = ['X', '2', '1'];
 export const HIGHER_LOWER_BLIND_HINT_MS = 2500;
 // Slow Spell: the answer's letters fill in, in a random order, one every
 // SLOW_SPELL_STEP_MS (a slow clock, not world turns), until one blank is
-// left; I KNOW IT stops them and shows the options. It runs one-word
-// answers of SLOW_SPELL_MIN_LETTERS to _MAX_LETTERS letters that have at
-// least SLOW_SPELL_DECOYS other answers of the same type and length in the
-// set, so the blanks don't give the answer away among the options. Tier:
+// left; I KNOW IT stops them and the answer is typed (Timothy,
+// 2026-10-11: it was four options, which gave it away). It runs one-word
+// answers of SLOW_SPELL_MIN_LETTERS to _MAX_LETTERS letters. Tier:
 // at most SLOW_SPELL_X_SHOWN letters shown = X, at most half = 2, more = 1.
 export const SLOW_SPELL_STEP_MS = 2000;
 export const SLOW_SPELL_MIN_LETTERS = 4;
 export const SLOW_SPELL_MAX_LETTERS = 12;
-export const SLOW_SPELL_DECOYS = 3;
 export const SLOW_SPELL_X_SHOWN = 1;
 // Slow Spell's Blind: once it is on, each letter shows this long, then
 // goes blank again, so the letters must be remembered.

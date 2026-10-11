@@ -16,7 +16,7 @@ import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_REACH_MAX, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
-  HIGHER_LOWER_TIERS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_DECOYS, SLOW_SPELL_X_SHOWN,
+  HIGHER_LOWER_TIERS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS,
 } from './config.js';
@@ -41,7 +41,7 @@ export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 const FITS = {
   closeEnough: q => closeEnoughAnswer(q) !== null,
   higherLower: q => higherLowerAnswer(q) !== null,
-  slowSpell: q => spellable(q.meaning) && !answerInStem(q) && slowSpellDecoys(q).length >= SLOW_SPELL_DECOYS,
+  slowSpell: q => spellable(q.meaning) && !answerInStem(q),
   syllableSplit: q => {
     const pieces = !answerInStem(q) && syllableSplitPieces(q);
     return Boolean(pieces) && pieceDecoys(pieces).length >= SYLLABLE_SPLIT_DECOYS;
@@ -239,46 +239,32 @@ function spellable(answer) {
   return ONE_WORD.test(word) && n >= SLOW_SPELL_MIN_LETTERS && n <= SLOW_SPELL_MAX_LETTERS;
 }
 
-// The wrong options Slow Spell can offer for `q`: the set's other one-word
-// answers of the same type with as many letters, each spelling once. The
-// blanks show the length, so a decoy of another length would be no
-// decoy at all.
-function slowSpellDecoys(q) {
-  const key = s => normalizeSpaces(s).toLowerCase();
-  const n = letterCount(q.meaning);
-  const seen = new Set([key(q.meaning)]);
-  const decoys = [];
-  for (const d of state.settings.activeData) {
-    if (d.answerType !== q.answerType || !spellable(d.meaning) || letterCount(d.meaning) !== n) continue;
-    if (seen.has(key(d.meaning))) continue;
-    seen.add(key(d.meaning));
-    decoys.push(d.meaning.trim());
-  }
-  return decoys;
-}
-
 // A new spelling for question `q` (one Slow Spell can run): its `chars`,
 // the letter places in the order they fill in (`order`, a hyphen or
 // apostrophe shows from the start), the letter count (`total`), how many
-// fill in before the options open on their own (`stopAt`: all but one,
-// so the answer is never simply read off), and the `choices` once I KNOW
-// IT is pressed: the answer and SLOW_SPELL_DECOYS decoys of its length.
+// fill in before the letters stop on their own (`stopAt`: all but one,
+// so the answer is never simply read off). The answer is typed, not
+// picked (Timothy, 2026-10-11: options gave it away).
 export function slowSpellWord(q) {
   const chars = [...q.meaning.trim()];
   const places = chars.map((c, i) => i).filter(i => /\p{L}/u.test(chars[i]));
-  const decoys = shuffle(slowSpellDecoys(q)).slice(0, SLOW_SPELL_DECOYS);
   return {
     chars,
     order: shuffle(places),
     total: places.length,
     stopAt: places.length - 1,
-    choices: shuffle([q.meaning.trim(), ...decoys]),
   };
 }
 
-// The tier for an answer picked with `shown` of `total` letters filled
+// Whether `typed` spells Slow Spell's answer `word`: case and extra spaces
+// don't count, the same as a typed answer anywhere in the game.
+export function slowSpellMatches(word, typed) {
+  return normalizeSpaces(typed).toLowerCase() === normalizeSpaces(word.chars.join('')).toLowerCase();
+}
+
+// The tier for an answer given with `shown` of `total` letters filled
 // in: 'X' for at most SLOW_SPELL_X_SHOWN, '2' for at most half, else '1'.
-// A wrong pick is a miss whatever was shown.
+// A wrong answer is a miss whatever was shown.
 export function slowSpellTier(shown, total) {
   if (shown <= SLOW_SPELL_X_SHOWN) return 'X';
   return shown <= Math.floor(total / 2) ? '2' : '1';

@@ -14,10 +14,10 @@ import {
   LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_BLIND_MS, LETTER_POOL_FLIP_SHARE,
 } from './config.js';
 import {
-  closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier,
+  closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   syllableSplitTray, syllableSplitTier, letterPoolCheck, letterPoolTier,
 } from './minigames.js';
-import { escapeHtml, normalizeSpaces } from './quiz.js';
+import { normalizeSpaces } from './quiz.js';
 import { t } from './text.js';
 
 const slot = document.getElementById('minigameSlot');
@@ -302,9 +302,8 @@ function buildHigherLower() {
 
 // ---- Slow Spell: the answer fills in letter by letter; name it early ----
 // A letter fills in every SLOW_SPELL_STEP_MS until one blank is left (the
-// clock waits while Gambler locks it). I KNOW IT stops the letters and
-// shows four options of the same length; the letters shown then set the
-// tier. Blind: from then on each letter shows for a moment and goes blank
+// clock waits while Gambler locks it). I KNOW IT stops the letters, the
+// letters shown then set the tier, and the answer is typed (one try). Blind: from then on each letter shows for a moment and goes blank
 // again. Flip: some letters are drawn upside down or mirrored.
 function buildSlowSpell() {
   slot.classList.add('mg-spell');
@@ -313,7 +312,20 @@ function buildSlowSpell() {
   const blanks = add(slot, 'div', 'mg-blanks');
   const count = add(slot, 'div', 'term-line mg-left');
   const lock = add(slot, 'button', 'mg-lock');
-  const options = add(slot, 'div', 'mg-options');
+  // The typed answer, shown once I KNOW IT stops the letters.
+  const form = add(slot, 'form', 'term-input-row mg-type');
+  const input = add(form, 'input');
+  const enter = add(form, 'button');
+  form.hidden = true;
+  input.type = 'text';
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+  input.setAttribute('autocapitalize', 'off');
+  input.setAttribute('autocorrect', 'off');
+  input.placeholder = t('mg.slowSpell.typePlaceholder');
+  input.setAttribute('aria-label', t('mg.slowSpell.typePlaceholder'));
+  enter.type = 'submit';
+  enter.textContent = t('mg.slowSpell.enter');
 
   lock.type = 'button';
   lock.textContent = t('mg.slowSpell.know');
@@ -347,37 +359,32 @@ function buildSlowSpell() {
     if (blind) hintTimers.push(setTimeout(() => blank(cell), SLOW_SPELL_BLIND_LETTER_MS));
     if (filled >= word.stopAt) know();
   };
-  const pick = (choice) => {
-    const right = normalizeSpaces(choice).toLowerCase() === normalizeSpaces(word.chars.join('')).toLowerCase();
-    finish({ right, tier: right ? tier : null, given: choice });
+  // One try: a right spelling scores the tier set when the letters
+  // stopped, anything else is a miss. An empty answer is no answer yet.
+  const answer = (typed) => {
+    if (!normalizeSpaces(typed)) return;
+    const right = slowSpellMatches(word, typed);
+    finish({ right, tier: right ? tier : null, given: normalizeSpaces(typed) });
   };
-  // I KNOW IT (or one blank left): the letters stop and the options show.
+  // I KNOW IT (or one blank left): the letters stop, the tier is set, and
+  // the answer is typed.
   const know = () => {
     if (tier) return;
     clearInterval(letterClock);
     letterClock = null;
     tier = slowSpellTier(filled, word.total);
     lock.hidden = true;
-    const letters = ['A', 'B', 'C', 'D'];
-    word.choices.forEach((choice, i) => {
-      const btn = add(options, 'button', 'mc-option');
-      btn.type = 'button';
-      btn.innerHTML = '<span class="letter">' + letters[i] + '</span><span class="opt-text">' + escapeHtml(choice) + '</span>';
-      btn.addEventListener('click', () => pick(choice));
-    });
-    options.querySelector('button').focus();
+    form.hidden = false;
+    input.focus();
   };
   lock.addEventListener('click', know);
-  // The options keep their keys: 1-4 or A-D pick one (not a fight choice).
-  // On the options, not the slot: the slot outlives this minigame.
-  options.addEventListener('keydown', (e) => {
-    if (e.key.length !== 1) return;
-    const i = '1234'.includes(e.key) ? Number(e.key) - 1 : 'abcd'.indexOf(e.key.toLowerCase());
-    if (i < 0 || !word.choices[i]) return;
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    if (!shown.done) pick(word.choices[i]);
+    answer(input.value);
   });
+  // Typed letters are the answer's, not the game's keys (F fires, L opens
+  // the log, A-D pick an option on the ask screen).
+  input.addEventListener('keydown', e => e.stopPropagation());
   letterClock = setInterval(fillNext, SLOW_SPELL_STEP_MS);
   showCount();
 
@@ -388,7 +395,7 @@ function buildSlowSpell() {
       filled = 0;
       tier = null;
       know();
-      pick(word.chars.join(''));
+      answer(word.chars.join(''));
     },
     blind: () => {
       blind = true;
