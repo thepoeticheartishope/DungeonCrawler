@@ -146,36 +146,34 @@
   .screen { display: none; text-align: left; }
   .screen.show { display: block; }
 
-  /* ---- Intro glitch screen: a one-time "you are needed" boot moment
-     before Room 1, breaking out of <main>'s centered column to cover the
-     whole viewport. Kept achromatic (no red/cyan channel-split) and with
-     small, slow-ish jitter rather than a full-screen strobe, so it reads
-     as "glitchy" without being a photosensitivity risk. ---- */
-  #introGlitch { position: fixed; inset: 0; z-index: 10000; background: #000; overflow: hidden; }
+  /* ---- Intro (js/introview.js): the chosen set's questions print down a
+     terminal, then the call. Full viewport, out of <main>'s column. The
+     glitch is in the typing's rhythm (stalls, gaps, dim lines, restarts),
+     never flashing or scrambling. ---- */
+  #introGlitch { position: fixed; inset: 0; z-index: 10000; background: #000; overflow: hidden; cursor: pointer; }
   #introGlitch.show { display: block; }
-
-  .glitch-code {
+  .intro-log {
     position: absolute;
-    inset: -50% 0 -50% 0;
-    margin: 0;
+    inset: 0 0 34% 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: hidden;
+    padding: 0 18px;
     font-family: var(--font);
     font-size: 18px;
-    line-height: 1.4;
-    color: rgba(var(--glow-rgb), 0.3);
-    white-space: pre;
-    animation: codeScroll 1.4s linear infinite;
+    line-height: 1.35;
+    color: rgba(var(--glow-rgb), 0.7);
   }
-  @keyframes codeScroll {
-    from { transform: translateY(0); }
-    to { transform: translateY(33%); }
-  }
-
-  .glitch-text {
+  .intro-line { flex-shrink: 0; min-height: 1.35em; padding-left: 1.1em; text-indent: -1.1em; }
+  .intro-line::before { content: '> '; opacity: 0.5; }
+  .intro-dim { opacity: 0.45; }
+  .intro-call {
     position: absolute;
-    top: 50%;
+    top: 72%;
     left: 50%;
     width: 90%;
-    max-width: 420px;
+    max-width: 460px;
     transform: translate(-50%, -50%);
     font-family: var(--font);
     font-size: 32px;
@@ -183,18 +181,23 @@
     color: var(--torch-bright);
     text-align: center;
     text-shadow: var(--glow-strong);
+    opacity: 0;
+    transition: opacity 0.6s ease;
   }
-  .glitch-text::before,
-  .glitch-text::after {
-    content: attr(data-text);
+  .intro-call.show { opacity: 1; }
+  .intro-skip {
     position: absolute;
-    top: 0;
+    bottom: 16px;
     left: 0;
-    width: 100%;
-    color: var(--text);
+    right: 0;
+    text-align: center;
+    font-family: var(--font);
+    font-size: 16px;
+    color: var(--muted);
   }
-  .glitch-text::before { animation: glitchShift1 0.4s steps(2, end) infinite; }
-  .glitch-text::after { animation: glitchShift2 0.35s steps(2, end) infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .intro-call { transition: none; }
+  }
   @keyframes glitchShift1 {
     0%, 100% { transform: translate(2px, 0); clip-path: inset(0 0 65% 0); opacity: 0.6; }
     50% { transform: translate(-2px, 1px); clip-path: inset(45% 0 15% 0); opacity: 0.4; }
@@ -1237,11 +1240,12 @@
 </style>
 </head>
 <body>
-<!-- One-time "mission call" boot moment before Room 1. Full-viewport
-     (position: fixed), independent of <main>'s centered column. -->
+<!-- The intro before the first floor (js/introview.js): the set's
+     questions print down a terminal, then the call. Any key or tap skips. -->
 <div class="screen" id="introGlitch">
-  <pre class="glitch-code" id="glitchCode"></pre>
-  <div class="glitch-text" data-t="intro.call" data-text=""></div>
+  <div class="intro-log" id="introLog" aria-hidden="true"></div>
+  <div class="intro-call" id="introCall" role="status"></div>
+  <div class="intro-skip" data-t="intro.skip"></div>
 </div>
 <main>
   <header>

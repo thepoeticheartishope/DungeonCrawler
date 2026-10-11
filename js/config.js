@@ -304,6 +304,23 @@ export const MINION_STRIKE_COST = 1;
 export const MINION_CHASE_RANGE = 4;
 export const MINION_MIN_START_DISTANCE = 6; // walkable steps from the player's start
 
+// The intro before the first floor (introview.js): the set's questions type
+// out INTRO_CHARS_PER_TICK letters every INTRO_TICK_MS until INTRO_CALL_AT_MS,
+// then "REWRITE FALSE BELIEFS." shows and the game starts at INTRO_DURATION_MS
+// (Timothy: 5 s). Each line has an INTRO_GLITCH_CHANCE of one glitch: a
+// stall of INTRO_STALL_MS, missing letters filled in INTRO_GAP_FILL_MS later,
+// a dim line, or a restart. Under reduced motion INTRO_LINES_STILL lines show
+// at once and hold INTRO_STILL_MS.
+export const INTRO_DURATION_MS = 5000;
+export const INTRO_CALL_AT_MS = 3800;
+export const INTRO_TICK_MS = 16;
+export const INTRO_CHARS_PER_TICK = 3;
+export const INTRO_GLITCH_CHANCE = 0.35;
+export const INTRO_STALL_MS = 280;
+export const INTRO_GAP_FILL_MS = 450;
+export const INTRO_LINES_STILL = 14;
+export const INTRO_STILL_MS = 2500;
+
 // The player's own light: every tile within PLAYER_LIGHT_RADIUS steps, plus
 // tiles up to PLAYER_CONE_RANGE steps inside the cone they're facing.
 export const PLAYER_LIGHT_RADIUS = 1;

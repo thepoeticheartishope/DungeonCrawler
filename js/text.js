@@ -263,7 +263,8 @@ export const TEXT = {
   'story.nameless': 'stranger', // draft — {name} in a story line when the start screen's name was left blank
 
   // ---- Intro, start and end screens ----
-  'intro.call': 'YOU ARE NEEDED. ASCEND.',
+  'intro.call': 'REWRITE FALSE BELIEFS.', // Timothy: ties to the bosses
+  'intro.skip': 'Any key or tap to skip', // draft
   'start.enter': 'Enter the {@term.dungeon}', // draft
   'start.name.label': 'Your name', // draft
   'start.name.placeholder': 'Leave blank to stay nameless', // draft
