@@ -176,16 +176,26 @@ export const TEXT = {
   'mod.timer.tag': 'Timer',
   'mod.timer.tip': 'answer within {secs} seconds, or it counts as a miss.', // draft
   // Minigames (js/minigames.js, js/minigameview.js): a question run as a
-  // small game. mg.scored.* is the line once it ends, by tier.
+  // small game. mg.<minigame>.scored.* is the line once it ends, by tier.
   'mg.closeEnough': 'Close Enough', // draft
   'mg.closeEnough.hint': 'Set the dial to the answer.', // draft
   'mg.closeEnough.lock': 'Lock', // draft
   'mg.closeEnough.less': 'Less', // draft
   'mg.closeEnough.more': 'More', // draft
-  'mg.scored.X': '{name|upper}: exact.', // draft
-  'mg.scored.2': '{name|upper}: close. It was {answer}.', // draft
-  'mg.scored.1': '{name|upper}: near. It was {answer}.', // draft
-  'mg.scored.miss': '{name|upper}: too far.', // draft
+  'mg.closeEnough.scored.X': '{name|upper}: exact.', // draft
+  'mg.closeEnough.scored.2': '{name|upper}: close. It was {answer}.', // draft
+  'mg.closeEnough.scored.1': '{name|upper}: near. It was {answer}.', // draft
+  'mg.closeEnough.scored.miss': '{name|upper}: too far.', // draft
+  'mg.higherLower': 'Higher / Lower', // draft
+  'mg.higherLower.hint': 'Find the number in {n} guesses.', // draft
+  'mg.higherLower.guess': 'Guess', // draft
+  'mg.higherLower.left': 'Guesses left: {n}', // draft
+  'mg.higherLower.higher': '{n}: HIGHER.', // draft
+  'mg.higherLower.lower': '{n}: LOWER.', // draft
+  'mg.higherLower.scored.X': '{name|upper}: first guess.', // draft
+  'mg.higherLower.scored.2': '{name|upper}: second guess.', // draft
+  'mg.higherLower.scored.1': '{name|upper}: last guess.', // draft
+  'mg.higherLower.scored.miss': '{name|upper}: out of guesses. It was {answer}.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
   'log.timeout': 'TIME EXPIRED.',

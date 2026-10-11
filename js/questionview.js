@@ -163,6 +163,14 @@ function startCountdown() {
   }, 1000);
 }
 
+// A minigame of several tries (Higher / Lower) started a new one: the
+// Timer, if it is on, starts over, so each try gets the full clock.
+function restartCountdown() {
+  if (!countdownTimer) return;
+  clearInterval(countdownTimer);
+  startCountdown();
+}
+
 // Gambler: the player bet `n`, so the answers unlock.
 export function placeWager(n) {
   if (state.battle.wager || wagerRow.hidden) return;
@@ -207,7 +215,7 @@ export function setMinigame(id) {
   // No options to pick while it shows, so a number key can't answer one.
   state.battle.currentChoices = [];
   mcOptionsEl.innerHTML = '';
-  showMinigame(id, result => handlers.onResult(result));
+  showMinigame(id, result => handlers.onResult(result), restartCountdown);
 }
 
 // Types the question now showing again. A question is often set well
