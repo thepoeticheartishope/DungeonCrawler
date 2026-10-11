@@ -433,6 +433,10 @@ export const TEXT = {
   'gun.backfiredEmpty': 'Backfire.', // draft. The same, with no energy left to lose
   'gun.hit': 'Hit.', // draft
   'gun.weakPoint': 'Weak point.', // draft
+  // Category weaknesses (strategy plan step D): {group} is a reload group's label.
+  'gun.matched': 'The round was made for it: {damage} damage.', // draft. A round from the group the minion is weak to
+  'gun.weakFound': 'The {kind} flinches. It is weak to {group}.', // draft. First landed shot on a kind
+  'stat.weakUnknown': '?', // draft. HUD target: a minion kind whose weakness isn't found yet
   'gun.limbLost': 'A limb comes away.', // draft
   'gun.killed': 'It comes apart. {gold} {@term.gold}.', // draft. A kill and the gold it paid
   'gun.struck': 'It strikes. -{cost} {@term.hp}.', // draft. A minion reached the player

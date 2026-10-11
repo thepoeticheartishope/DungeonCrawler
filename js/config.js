@@ -284,6 +284,10 @@ export const FLOOR_GOALS = [
   { id: 'noStruggle', pay: 2 },
 ];
 export const GOALS_PER_FLOOR = 2;
+// Category weaknesses (strategy plan step D, gun.js): each minion kind is
+// weak to one reload group, rolled per run. A round loaded from that group
+// does WEAKNESS_DAMAGE_SCALE times the damage bar's damage to it.
+export const WEAKNESS_DAMAGE_SCALE = 2;
 // Relays (strategy plan step B, relays.js): RELAYS_PER_FLOOR [min, max] per
 // danger depth, never in the boss's or the start room. A right answer holds
 // the room and takes RELAY_TURNS_BACK turns off the light (LIGHT_TURNS_PER_STEP
