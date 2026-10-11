@@ -28,6 +28,7 @@ import { playIntro } from './introview.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
+import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapTap, glyphOf } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
@@ -131,6 +132,7 @@ applyStaticText();
 
 initSetLoader({ showSets: showSetPicker });
 initSetPicker({ startGame, openWorkshop: showWorkshop });
+initPractice({ letterPoolQuestion, mountBattleQuestion });
 initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
   gunCombatChanged, autoWinGun, battleScreen, wagerRow,

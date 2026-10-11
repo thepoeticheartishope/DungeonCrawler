@@ -721,3 +721,15 @@ export const REALTIME_POLL_MS = 100;
 // four a second), so holding an arrow can't outrun the clock. An arrow
 // pressed sooner is ignored; the gun isn't held back.
 export const REALTIME_WALK_MS = 250;
+
+// Minigame practice (Timothy, 2026-10-11; js/practice.js): PRACTICE_TAPS
+// taps on the title on the start screen, each within PRACTICE_TAP_MS of
+// the last, open a hidden screen to play any minigame on its own, no
+// points. PRACTICE_MODIFIERS are the ones it offers; Gambler is left out
+// (with no points there is nothing to wager).
+export const PRACTICE_TAPS = 5;
+export const PRACTICE_TAP_MS = 800;
+export const PRACTICE_MODIFIERS = ['blind', 'flip', 'timer'];
+// The set practice starts on when none has been played yet: Bible Quiz
+// Bowl has questions for every minigame.
+export const PRACTICE_DEFAULT_SET = 'builtin:bible-quiz-bowl';

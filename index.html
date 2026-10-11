@@ -299,6 +299,15 @@
   .set-option .set-name { color: var(--torch-bright); text-transform: uppercase; }
   .set-option .set-name::before { content: '> '; color: var(--muted); }
   .set-option .set-last { color: var(--muted); text-transform: none; font-size: 16px; }
+  /* Minigame practice (js/practice.js). The title takes taps without
+     zooming or selecting text; the chosen minigame shows in inverse. */
+  header h1 { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+  .practice-set { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin: 8px 0; }
+  .practice-set select { font: inherit; background: var(--stone-light); color: var(--torch-bright); border: 1px solid var(--line); padding: 2px 4px; }
+  .practice-games .set-option[aria-pressed="true"] { background: var(--torch-bright); }
+  .practice-games .set-option[aria-pressed="true"] .set-name,
+  .practice-games .set-option[aria-pressed="true"] .set-name::before { color: var(--ink); }
+  .practice-result { margin-top: 10px; min-height: 1.2em; }
   .set-option .set-meta { color: var(--muted); font-size: 16px; line-height: 1.25; padding-left: 1.2em; }
   .set-option:hover .set-name, .set-option:focus-visible .set-name,
   .set-option:hover .set-name::before, .set-option:focus-visible .set-name::before,
@@ -1483,6 +1492,40 @@
         <div class="pick-footer">
           <button type="button" class="ghost small" id="pickBackBtn" data-t="pick.back"></button>
           <button type="button" class="ghost small pick-workshop" id="workshopOpenBtn" data-t="pick.workshop"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Minigame practice (js/practice.js): hidden, five quick taps on the
+       title on the start screen. Pick a minigame, its modifiers and the
+       set, and play it on its own, with no points. -->
+  <section class="screen" id="practiceScreen">
+    <div class="terminal">
+      <div class="rule"><span data-t="practice.title"></span></div>
+      <div class="terminal-body">
+        <div id="practiceMenu">
+          <div class="term-line" data-t="practice.prompt"></div>
+          <label class="practice-set">
+            <span data-t="practice.set"></span>
+            <select id="practiceSet"></select>
+          </label>
+          <div class="set-list practice-games" id="practiceGames" role="group"></div>
+          <div class="loader-section-label" data-t="practice.mods"></div>
+          <div class="practice-mods" id="practiceMods"></div>
+          <div class="loader-status" id="practiceStatus" aria-live="polite"></div>
+          <div class="pick-footer">
+            <button type="button" class="ghost small" id="practiceBackBtn" data-t="practice.back"></button>
+            <button type="button" id="practicePlayBtn" data-t="practice.play"></button>
+          </div>
+        </div>
+        <div id="practicePlay" hidden>
+          <div id="practiceSlot"></div>
+          <div class="term-line practice-result" id="practiceResult" aria-live="polite"></div>
+          <div class="pick-footer" id="practiceResultButtons" hidden>
+            <button type="button" class="ghost small" id="practiceMenuBtn" data-t="practice.menu"></button>
+            <button type="button" id="practiceAgainBtn" data-t="practice.again"></button>
+          </div>
         </div>
       </div>
     </div>
