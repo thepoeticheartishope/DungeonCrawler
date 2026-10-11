@@ -330,6 +330,13 @@ export const GUN_START_ROUNDS = 1;
 export const GUN_RELOAD_MODIFIERS = ['blind', 'flip', 'timer'];
 export const GUN_RELOAD_ROUNDS = [1, 2, 3];
 export const GUN_HIT_HALF = 0.22;
+// Ammo boxes (a drum on the map; decor.js placeAmmoBoxes): each room of a
+// floor gets one at this chance, then rooms without one are topped up
+// until the floor has at least AMMO_BOXES_MIN. Bumping one opens the
+// reload panel; any answer uses it up. Only placed with the gun on.
+// Drafts for Timothy to tune.
+export const AMMO_BOX_ROOM_CHANCE = 0.35;
+export const AMMO_BOXES_MIN = 3;
 
 // The boss gives off light that spreads through the floor at a steady
 // speed: one more walkable step every LIGHT_TURNS_PER_STEP turns. The run
@@ -459,6 +466,7 @@ export const MAP_ANIMATION_MS = {
   glitchBar: 6500,  // how often a minion's signal drops out
   coinBob: 1400,    // the coin lifting and settling
   glow: 1800,       // the rune's and the stairs' glow
+  ammoBreath: 4000, // an unused ammo drum's faint glow swelling and fading (Timothy: eerie, keep it)
   mist: 14000,      // the boss mist's slow drift, there and back
   target: 1100,     // the box round the thing being fought
   playerBreath: 2600, // the stick man's chest rising and falling (isometric)

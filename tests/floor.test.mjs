@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  BOSS_HP, MINION_KINDS, MINION_KIND_ORDER, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP, PAPERS_PER_ROOM,
+  BOSS_HP, MINION_KINDS, MINION_KIND_ORDER, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP, PAPERS_PER_ROOM, AMMO_BOXES_MIN,
 } from '../js/config.js';
 import { buildFloor } from '../js/floor.js';
 import { BEAT_KINDS } from '../js/beats.js';
@@ -53,6 +53,18 @@ test('player starts on PLAYER_START facing north; boss has full HP', () => {
     assert.equal(f.boss.hp, BOSS_HP);
     assert.ok(f.stairs);
   });
+});
+
+test('with the gun on, a floor has at least AMMO_BOXES_MIN ammo drums, all in rooms; classic has none', () => {
+  state.settings.gunCombat = true;
+  eachFloor(f => {
+    const drums = f.props.filter(p => p.kind === 'ammo');
+    assert.ok(drums.length >= AMMO_BOXES_MIN, 'only ' + drums.length + ' drums');
+    drums.forEach(d => assert.ok(f.chamberAt.has(key(d.row, d.col)), 'drum outside a room'));
+  });
+  state.settings.gunCombat = false;
+  eachFloor(f => assert.equal(f.props.filter(p => p.kind === 'ammo').length, 0));
+  state.settings.gunCombat = true;
 });
 
 test('at most one special item: a chest, a rune or one encounter', () => {

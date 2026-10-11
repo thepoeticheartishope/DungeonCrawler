@@ -52,9 +52,12 @@ export function reloadOffers() {
 // toward state.run.correctTotal; wrong jams: nothing loads, and no heart
 // is lost (the turn spent is the cost). A timed-out question is a wrong
 // answer. Either way the haunt is recorded and the rotation moves on.
+// A reload from an ammo drum (`box`) uses the drum up, right or wrong, so
+// every drum is one question.
 // Events: reloaded { rounds, ammo } or jammed { expected, source }, then
 // hauntSilenced / hauntLingers.
-export function settleReload(isCorrect, offer) {
+export function settleReload(isCorrect, offer, box = null) {
+  if (box) box.searched = true;
   const q = state.battle.currentQuestion;
   const events = [];
   if (isCorrect) {

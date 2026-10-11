@@ -61,6 +61,8 @@ export const TEXT = {
   'term.exchange': 'THE UNFOLDING', // Timothy's name; code name exchange (js/exchange.js)
   'term.exchange.symbol': '8', // a loop folded over itself
   'term.box.symbol': '&',
+  'term.ammo': 'AMMO DRUM', // draft
+  'term.ammo.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
   // The player's glyph (the isometric map draws a stick man in its place).
   'term.player.symbol': '@',
   // What anything further than REVEAL_DISTANCE (config.js) shows as.
@@ -208,6 +210,7 @@ export const TEXT = {
   'room.box.gold': 'Inside: {gold} {@term.gold}.', // draft
   'room.box.junk': ['Empty.', 'Dust, and a smell like old rain.', 'A broken lens. Useless.', 'Rags. Nothing more.'], // draft
   'room.box.done': 'It is empty now.', // draft
+  'room.ammo.done': 'The drum is empty.', // draft. Bumping a used ammo drum
 
   // ---- THE UNFOLDING's screen (js/exchangeview.js), on every rest floor.
   // It never speaks: every line describes it, in the narrator's voice.

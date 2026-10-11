@@ -196,11 +196,17 @@ function reloadGun() {
   openReload(false);
 }
 
-// Opens the reload panel, or says why not (a full chamber).
-function openReload(test) {
+// The ammo drum the open reload panel came from (bumped on the map), or
+// null for the RELOAD button and DEV -> Test reload.
+let reloadBox = null;
+
+// Opens the reload panel, or says why not (a full chamber: a bumped drum
+// then stays as it is, for later).
+function openReload(test, box = null) {
   const offered = reloadOffers();
   if (offered.block) { showRoomNote('block-msg', t('gun.block.' + offered.block)); return; }
   gunTest = test;
+  reloadBox = box;
   state.run.turnLocked = true;
   showReloadPanel(offered);
 }
@@ -241,7 +247,8 @@ let mapAnswers = null;
 // A reload offer was picked: its question, with its modifiers, over the
 // map. Any answer (or the Timer running out) settles the reload.
 function pickReload(offer, category) {
-  const settle = (isCorrect) => endReload(() => settleReload(isCorrect, offer));
+  const box = reloadBox;
+  const settle = (isCorrect) => endReload(() => settleReload(isCorrect, offer, box));
   mapAnswers = {
     onChoice: choice => settle(matchesAnswer(choice)),
     onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
@@ -260,6 +267,7 @@ function endReload(settle) {
   closeMapPanels();
   mountBattleQuestion();
   mapAnswers = null;
+  reloadBox = null;
   if (settle) finishGunAction(settle());
   state.run.turnLocked = false;
 }
@@ -792,6 +800,7 @@ function drawEvents(events) {
       case 'turned':
       case 'stairsReached':
       case 'boxSprung':
+      case 'ammoBoxFound':
       case 'propSearched':
         break;
       case 'exchangeOpened':
@@ -978,7 +987,8 @@ let lastWalkAt = -Infinity;
 
 // One arrow press (stepPlayer in moves.js). A step or a first look in a
 // box spends a turn; stairs load the next floor; a trapped box opens the
-// battle screen; a turn to a new direction or a bump only draws. With Real time
+// battle screen; an ammo drum opens the reload panel (its answer is the
+// turn); a turn to a new direction or a bump only draws. With Real time
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
 function movePlayer(dRow, dCol) {
   if (state.run.turnLocked || state.run.runEnded) return;
@@ -1002,6 +1012,8 @@ function movePlayer(dRow, dCol) {
     if (has('exchangeOpened')) openExchange();
   }
   state.run.turnLocked = false;
+  const drum = events.find(e => e.type === 'ammoBoxFound');
+  if (drum) openReload(false, drum.prop);
 }
 
 // THE UNFOLDING's screen (exchangeview.js), opened by bumping it on a rest

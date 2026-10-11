@@ -18,6 +18,8 @@ import {
 import { computeVisibility } from '../js/sight.js';
 import { spawnMinion, advanceMonsters, findAdjacentEnemies } from '../js/combat.js';
 import { resetHaunts } from '../js/haunts.js';
+import { stepPlayer } from '../js/moves.js';
+import { whatBlocks } from '../js/passage.js';
 import {
   reloadCategory, reloadOffers, settleReload, pickTarget, refreshGunTarget, cycleTarget, fireBlock, fire, settleShot,
   minionStrike, staggerHunter,
@@ -122,6 +124,30 @@ test('a wrong reload jams: nothing loads, no heart is lost, the miss haunts', ()
   assert.equal(events[0].type, 'jammed');
   assert.equal(events[0].expected, 'Noah');
   assert.ok(state.run.haunts.has(SET[0]));
+});
+
+test('a reload from an ammo drum uses the drum up, right or wrong', () => {
+  resetFloor();
+  const right = { row: 1, col: 1, kind: 'ammo', searched: false };
+  const wrong = { row: 2, col: 2, kind: 'ammo', searched: false };
+  settleReload(true, { modifiers: [], rounds: 1 }, right);
+  settleReload(false, { modifiers: [], rounds: 1 }, wrong);
+  assert.ok(right.searched);
+  assert.ok(wrong.searched);
+});
+
+test('an ammo drum is solid; bumping it finds it without a turn, and a used one is just blocked', () => {
+  resetFloor();
+  const r = state.floor.playerRow - 1;
+  const c = state.floor.playerCol;
+  const drum = { row: r, col: c, kind: 'ammo', identified: false, searched: false, sprung: false };
+  state.floor.props.push(drum);
+  assert.equal(whatBlocks(r, c).kind, 'prop');
+  assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['ammoBoxFound']);
+  assert.ok(drum.identified);
+  assert.ok(!drum.searched, 'the drum is used only once a reload answer settles');
+  drum.searched = true;
+  assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['blocked']);
 });
 
 test('the reload category comes round in order, one step per settled reload', () => {

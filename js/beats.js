@@ -30,7 +30,7 @@ function solidTiles() {
   const f = state.floor;
   const solid = new Set(f.wallSet);
   f.pillarSet.forEach(k => solid.add(k));
-  f.props.forEach(p => { if (p.kind === 'box') solid.add(key(p.row, p.col)); });
+  f.props.forEach(p => { if (p.kind !== 'paper') solid.add(key(p.row, p.col)); });
   return solid;
 }
 
