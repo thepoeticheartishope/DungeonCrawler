@@ -18,6 +18,7 @@ import {
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
   PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
+  CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS,
 } from './config.js';
 import { numberQuestion, pickQuestion, shuffle, normalizeSpaces } from './quiz.js';
@@ -33,6 +34,7 @@ export const MINIGAME_MODIFIERS = {
   slowSpell: ['blind', 'flip', 'gambler'],
   syllableSplit: ['blind', 'flip', 'timer', 'gambler'],
   letterPool: ['blind', 'flip', 'timer', 'gambler'],
+  codeBreak: ['blind', 'flip', 'timer', 'gambler'],
 };
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
@@ -49,6 +51,7 @@ const FITS = {
   // Letter Pool runs a category, not a question: only its own stand-in
   // question (letterPoolQuestion in main.js) fits it.
   letterPool: q => Boolean(q.letterPool),
+  codeBreak: q => codeBreakCode(q) !== null && !answerInStem(q),
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -428,4 +431,55 @@ export function letterPoolTier(pool, formed, hiddenFound) {
   if (hiddenFound >= pool.hidden.length) return 'X';
   if (formed >= LETTER_POOL_FORM) return '2';
   return formed >= LETTER_POOL_WEAK ? '1' : null;
+}
+
+// ---- Code Break: crack the answer as a code, marked after each guess ----
+
+// The code Code Break hides for question `q`: its answer's characters
+// (codeChars), or null when it doesn't fit: not one word, the wrong
+// length, or a number answer (Close Enough and Higher / Lower do those).
+function codeBreakCode(q) {
+  if (q.answerType === 'number') return null;
+  const answer = String(q.meaning || '').trim();
+  if (!/^[\p{L}\p{N}][\p{L}\p{N}'-]*$/u.test(answer)) return null;
+  const code = codeChars(answer);
+  return code.length >= CODE_BREAK_MIN_CHARS && code.length <= CODE_BREAK_MAX_CHARS ? code : null;
+}
+
+// `text` as code characters: its letters and digits, in capitals, so
+// case, spaces and a hyphen never count ("wi-fi" is WIFI).
+export function codeChars(text) {
+  return [...String(text || '').toUpperCase().replace(/[^\p{L}\p{N}]/gu, '')];
+}
+
+// A new code for question `q` (one Code Break can run): its characters,
+// and whether it is all digits (a port: the view offers a number pad).
+export function codeBreakSetup(q) {
+  const code = codeBreakCode(q);
+  return { code, digits: code.every(c => /\p{N}/u.test(c)) };
+}
+
+// The marks for guess `typed` against `setup`'s code, one per character:
+// 'hit' (right place), 'near' (in the code, elsewhere) or 'miss'. A
+// character only counts as often as the code holds it, right places
+// first, so guessing AAAA against AXAY marks hit, miss, hit, miss. Null
+// when the guess isn't the code's length (not a guess).
+export function codeBreakMarks(setup, typed) {
+  const guess = codeChars(typed);
+  const { code } = setup;
+  if (guess.length !== code.length) return null;
+  const marks = guess.map((c, i) => (c === code[i] ? 'hit' : 'miss'));
+  const spare = {};
+  code.forEach((c, i) => { if (marks[i] !== 'hit') spare[c] = (spare[c] || 0) + 1; });
+  guess.forEach((c, i) => {
+    if (marks[i] === 'hit' || !spare[c]) return;
+    marks[i] = 'near';
+    spare[c]--;
+  });
+  return marks;
+}
+
+// The tier for cracking the code on guess `n` (1-based): CODE_BREAK_TIERS.
+export function codeBreakTier(n) {
+  return CODE_BREAK_TIERS[n - 1] || null;
 }

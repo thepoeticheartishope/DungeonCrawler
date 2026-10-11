@@ -603,6 +603,16 @@ export const LETTER_POOL_MAX_LETTERS = 8;
 export const LETTER_POOL_TIMER_SECONDS = 45;
 // Letter Pool's Flip: the share of tiles drawn upside down or mirrored.
 export const LETTER_POOL_FLIP_SHARE = 0.4;
+// Code Break: the answer is a locked code of its letters and digits,
+// CODE_BREAK_MIN_CHARS to _MAX_CHARS long (one word; a hyphen or
+// apostrophe is dropped). Not a number answer: the dials do those
+// better, but a port is a code. Each guess of the code's length marks
+// every character: right place, elsewhere in the code, or not in it.
+// Cracked on guess n pays CODE_BREAK_TIERS[n - 1]; one guess per tier
+// (Timothy, 2026-10-11: three guesses).
+export const CODE_BREAK_MIN_CHARS = 2;
+export const CODE_BREAK_MAX_CHARS = 9;
+export const CODE_BREAK_TIERS = ['X', '2', '1'];
 
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.
