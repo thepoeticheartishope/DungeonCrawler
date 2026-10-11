@@ -159,19 +159,19 @@ export const TEXT = {
   'type.verb': 'Actions',
 
   // ---- Question modifiers: name, the tag beside a category, its tooltip ----
-  // Tags must be in the VT323 font and stay distinct from the category
-  // encounter glyphs (! % & * + ~ = ≈) and the map symbols.
+  // Tags are one whole word (Timothy: players didn't understand the old
+  // single letters B / $ / F / T), shown in capitals by the .mod-tag style.
   'mod.blind': 'Blind Pick',
-  'mod.blind.tag': 'B',
+  'mod.blind.tag': 'Blind',
   'mod.blind.tip': 'the answers vanish after a few seconds.', // draft
   'mod.gambler': 'Gambler',
-  'mod.gambler.tag': '$',
+  'mod.gambler.tag': 'Gamble',
   'mod.gambler.tip': 'wager up to {max} {@term.gold} before answering. Right wins it, wrong loses it.', // draft
   'mod.flip': 'Flip',
-  'mod.flip.tag': 'F',
+  'mod.flip.tag': 'Flip',
   'mod.flip.tip': 'some answers are turned upside down or mirrored.', // draft
   'mod.timer': 'Timer',
-  'mod.timer.tag': 'T',
+  'mod.timer.tag': 'Timer',
   'mod.timer.tip': 'answer within {secs} seconds, or it counts as a miss.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
