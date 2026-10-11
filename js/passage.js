@@ -8,7 +8,7 @@ import { state, key } from './state.js';
 // null if (row, col) is open, otherwise { kind, thing }: kind is 'wall'
 // (also the grid's edge), 'pillar', 'boss', 'hunter', 'minion', 'chest',
 // 'rune', 'encounter', 'exchange' (THE UNFOLDING on a rest floor; a bump
-// opens its screen) or 'prop' (a box or an ammo drum, which a bump
+// opens its screen) or 'prop' (a box or an energy cell, which a bump
 // examines — papers lie flat and never block); thing is the
 // minion/encounter/prop itself where there is one.
 export function whatBlocks(row, col) {

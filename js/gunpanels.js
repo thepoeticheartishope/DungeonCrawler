@@ -77,7 +77,7 @@ function showOnly(panel) {
 
 // The reload choices from gun.js reloadOffers(): the category the reload
 // asks from, then each offer, plain to hardest, with its modifier tags and,
-// when fewer rounds fit than it loads, how many do.
+// when less fits than it gives, how much does.
 export function showReloadPanel({ category, offers }) {
   els.reloadTitle.textContent = category && category.label
     ? t('gun.reload.title', { category: category.label })
@@ -88,11 +88,11 @@ export function showReloadPanel({ category, offers }) {
     btn.type = 'button';
     btn.className = 'choice-option';
     btn.innerHTML = '<span class="letter">[' + (i + 1) + ']</span>' +
-      '<span class="choice-label">' + escapeHtml(t('gun.reload.offer', { rounds: offer.rounds })) + '</span>' +
+      '<span class="choice-label">' + escapeHtml(t('gun.reload.offer', { energy: offer.energy })) + '</span>' +
       offer.modifiers.map(mod =>
         '<span class="mod-tag" title="' + escapeHtml(t('mod.' + mod) + ': ' + t('mod.' + mod + '.tip', { max: maxWager(), secs: TIMER_SECONDS })) + '">' +
           escapeHtml(t('mod.' + mod + '.tag')) + '</span>').join('') +
-      (offer.room < offer.rounds ? '<span class="reload-room">' + escapeHtml(t('gun.reload.room', { room: offer.room })) + '</span>' : '');
+      (offer.room < offer.energy ? '<span class="reload-room">' + escapeHtml(t('gun.reload.room', { room: offer.room })) + '</span>' : '');
     btn.addEventListener('click', () => actions.pickReload(offer, category));
     els.reloadChoices.appendChild(btn);
   });
@@ -145,7 +145,7 @@ function clearZones() {
 // end (gun.js struggleDial; slowed by the same share as the first dial
 // under reduced motion). `count` above 1 shows in the prompt, so the
 // player sees why this one is harder. A minion has reached the player
-// with the chamber empty (gun.js settleStruggle).
+// with no energy left (gun.js settleStruggle).
 export function showStruggleBar({ hitHalf, sweepMs, count }) {
   clearZones();
   els.hit.hidden = false;

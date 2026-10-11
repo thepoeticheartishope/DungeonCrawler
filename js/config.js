@@ -358,21 +358,22 @@ export const SENSE_NOTE_MS = 2600;
 export const AIM_FALLOFF_PER_TILE = 0.15;
 export const AIM_MIN = 0.3;
 
-// The gun (gun combat plan, step 3; js/gun.js). The chamber holds
-// GUN_CHAMBER rounds and a run starts with GUN_START_ROUNDS; rounds carry
-// from floor to floor. A reload offers the next category with no, one or
-// two modifiers (from GUN_RELOAD_MODIFIERS; Gambler is left out, there is
-// no gold at stake) and loads GUN_RELOAD_ROUNDS[modifier count] rounds on
-// a right answer.
-export const GUN_CHAMBER = 4;
-export const GUN_START_ROUNDS = 1;
+// Energy (Timothy, 2026-10-11: was ammo; energy so later weapons and
+// abilities can draw on it too). The player holds up to ENERGY_MAX and a
+// run starts with ENERGY_START; it carries from floor to floor. The gun
+// (gun combat plan, step 3; js/gun.js) spends 1 a shot. A reload offers
+// the next category with no, one or two modifiers (from
+// GUN_RELOAD_MODIFIERS; Gambler is left out, there is no gold at stake)
+// and gives RELOAD_ENERGY[modifier count] energy on a right answer.
+export const ENERGY_MAX = 4;
+export const ENERGY_START = 1;
 export const GUN_RELOAD_MODIFIERS = ['blind', 'flip', 'timer'];
-export const GUN_RELOAD_ROUNDS = [1, 2, 3];
+export const RELOAD_ENERGY = [1, 2, 3];
 // A landed shot's damage bar (Timothy, 2026-10-11): the bar holds zones
 // at new random spots every shot (gun.js damageZones): hit zones (1
 // damage) and weak points (2 and a limb), sized by the minion kind
 // (MINION_KINDS hitWidth / weakWidth), and from depth 2 penalty zones
-// (DAMAGE_PENALTY_WIDTH wide; stopping on one loses one more round).
+// (DAMAGE_PENALTY_WIDTH wide; stopping on one loses 1 more energy).
 // Anywhere else grazes for 0. DAMAGE_BAR_DEPTHS says how many of each per
 // danger depth (the last row carries on past the table). Zones keep
 // DAMAGE_ZONE_GAP from each other and from the bar's ends. Drafts for
@@ -384,14 +385,14 @@ export const DAMAGE_BAR_DEPTHS = [
 ];
 export const DAMAGE_PENALTY_WIDTH = 0.08;
 export const DAMAGE_ZONE_GAP = 0.04;
-// Ammo boxes (a drum on the map; decor.js placeAmmoBoxes): each room of a
-// floor gets one at this chance, then rooms without one are topped up
-// until the floor has at least AMMO_BOXES_MIN. Bumping one opens the
+// Energy cells (drawn as a drum on the map; decor.js placeEnergyCells):
+// each room of a floor gets one at this chance, then rooms without one are topped up
+// until the floor has at least ENERGY_CELLS_MIN. Bumping one opens the
 // reload panel; any answer uses it up. Only placed with the gun on.
 // Drafts for Timothy to tune.
-export const AMMO_BOX_ROOM_CHANCE = 0.35;
+export const ENERGY_CELL_ROOM_CHANCE = 0.35;
 // Struggle (Timothy's design): a minion or the hunter that reaches the
-// player while the chamber is empty doesn't just strike. A dial sweeps
+// player while they have no energy doesn't just strike. A dial sweeps
 // fast, STRUGGLE_SWEEP_MS end to end (STRUGGLE_SLOW_SWEEP_MS under reduced
 // motion); SELECT inside STRUGGLE_HIT_HALF of the centre pushes it back
 // STRUGGLE_PUSHBACK tiles with no damage to it, anything else and it
@@ -409,7 +410,7 @@ export const STRUGGLE_SPEEDUP_MS = 50;
 export const STRUGGLE_SHRINK = 0.03;
 export const STRUGGLE_MIN_SWEEP_MS = 300;
 export const STRUGGLE_MIN_HIT_HALF = 0.1;
-export const AMMO_BOXES_MIN = 3;
+export const ENERGY_CELLS_MIN = 3;
 
 // The boss gives off light that spreads through the floor at a steady
 // speed: one more walkable step every LIGHT_TURNS_PER_STEP turns. The run
@@ -539,7 +540,7 @@ export const MAP_ANIMATION_MS = {
   glitchBar: 6500,  // how often a minion's signal drops out
   coinBob: 1400,    // the coin lifting and settling
   glow: 1800,       // the rune's and the stairs' glow
-  ammoBreath: 4000, // an unused ammo drum's faint glow swelling and fading (Timothy: eerie, keep it)
+  cellBreath: 4000, // an unused energy cell's faint glow swelling and fading (Timothy: eerie, keep it)
   mist: 14000,      // the boss mist's slow drift, there and back
   target: 1100,     // the box round the thing being fought
   playerBreath: 2600, // the stick man's chest rising and falling (isometric)

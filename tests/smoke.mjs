@@ -18,9 +18,9 @@
 //      fight, asserting an ACCEPTED. line appeared in the encounter log and
 //      the game is back on the room screen afterward (classic combat).
 //   3. Gun run (the default combat), wanders as run 2 does, bumping an
-//      ammo drum to reload and pressing F (SELECT) to fire (Auto-win answers
+//      energy cell to reload and pressing F (SELECT) to fire (Auto-win answers
 //      the reload and stops the damage bar on the weak point) until a
-//      reload loaded rounds and a shot killed a minion.
+//      reload gave energy and a shot killed a minion.
 //   4. Real-time run: Real time on (start screen), gun combat (the default),
 //      Auto-win off. With the DEV panel open the clock holds still; closed,
 //      the world takes turns with no input; the player's own steps don't
@@ -277,14 +277,14 @@ async function runBattle(browser, url) {
 // ---- Run 3: gun ----
 
 // Installs page-side watchers (test-only) that record whether a reload
-// loaded rounds and whether a shot killed a minion, by the start of their
+// gave energy and whether a shot killed a minion, by the start of their
 // room notes (js/text.js 'gun.reloaded' / 'gun.killed', read from the page
 // so a reworded line doesn't break the test).
 async function installGunWatchers(page) {
   await page.evaluate(async () => {
     const { t } = await import('./js/text.js');
     const lead = (k, vars) => t(k, vars).split('@@')[0];
-    const reloaded = lead('gun.reloaded', { rounds: '@@' });
+    const reloaded = lead('gun.reloaded', { energy: '@@' });
     const killed = lead('gun.killed', { gold: '@@' });
     window.__smokeReloaded = false;
     window.__smokeKilled = false;
@@ -299,17 +299,17 @@ async function installGunWatchers(page) {
 
 const GUN_MAX_STEPS = 500;
 
-// Puts the player on the open tile south of an unused ammo drum, facing
-// it, and bumps it (ArrowUp), which opens the reload panel: rounds come
+// Puts the player on the open tile south of an unused energy cell, facing
+// it, and bumps it (ArrowUp), which opens the reload panel: energy comes
 // only from drums. Walking there would take a pathfinder; the bump is what
 // is being checked. Returns false if no drum could be reached that way.
-async function bumpAmmoDrum(page) {
+async function bumpEnergyCell(page) {
   const placed = await page.evaluate(async () => {
     const { state } = await import('./js/state.js');
     const { whatBlocks } = await import('./js/passage.js');
     const { computeVisibility } = await import('./js/sight.js');
     const f = state.floor;
-    const drum = f.props.find(p => p.kind === 'ammo' && !p.searched && !whatBlocks(p.row + 1, p.col));
+    const drum = f.props.find(p => p.kind === 'cell' && !p.searched && !whatBlocks(p.row + 1, p.col));
     if (!drum) return false;
     f.playerRow = drum.row + 1;
     f.playerCol = drum.col;
@@ -324,7 +324,7 @@ async function bumpAmmoDrum(page) {
 // One attempt: a fresh run with the gun (the default) and Auto-win on (it
 // answers reloads right and stops the damage bar on the weak point). Wander
 // as the battle run does; press F (SELECT) whenever the HUD shows an aim %,
-// and bump an ammo drum every few steps while the chamber isn't full,
+// and bump an energy cell every few steps while energy isn't full,
 // until a reload loaded and a shot killed a minion.
 async function attemptGun(page, url) {
   await loadPageAndSet(page, url);
@@ -343,7 +343,7 @@ async function attemptGun(page, url) {
       lost: document.getElementById('loseScreen').classList.contains('show'),
       panel: ['reloadPanel', 'mapQuestionPanel', 'aimPanel'].some(id => !document.getElementById(id).hidden),
       canFire: !document.getElementById('btnSelect').disabled && document.getElementById('gunAim').textContent.includes('%'),
-      canReload: !document.getElementById('gunRounds').textContent.endsWith('#'),
+      canReload: !document.getElementById('energyCount').textContent.endsWith('#'),
     }));
     if (status.reloaded && status.killed && status.inRoom && !status.panel) return true;
     if (status.lost) return false;
@@ -355,7 +355,7 @@ async function attemptGun(page, url) {
     }
     if (status.canFire) {
       await page.keyboard.press('f');
-    } else if (status.canReload && i % 6 === 5 && await bumpAmmoDrum(page)) {
+    } else if (status.canReload && i % 6 === 5 && await bumpEnergyCell(page)) {
       await page.waitForTimeout(100);
     } else {
       const blocked = await page.evaluate(
@@ -445,7 +445,7 @@ async function checkRealTime(page, url) {
   if (visited.size > 2) return `${visited.size - 1} steps taken inside REALTIME_WALK_MS`;
 
   await page.waitForTimeout(300);
-  if (!await bumpAmmoDrum(page)) return 'no ammo drum to reload from';
+  if (!await bumpEnergyCell(page)) return 'no energy cell to reload from';
   await page.waitForSelector('#reloadPanel:not([hidden])', { timeout: 2000 });
   await page.keyboard.press('1');
   await page.waitForSelector('#mapQuestionPanel:not([hidden])', { timeout: 2000 });

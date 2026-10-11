@@ -6,7 +6,7 @@
 
 import { state, key } from './state.js';
 import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
-import { furnishFloor, rollProp, makePlacer, freeStanding, placeAmmoBoxes } from './decor.js';
+import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
 import {
   BOSS_HP, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, ROOM_THEMES
 } from './config.js';
@@ -213,10 +213,10 @@ export function buildFloor() {
   const minionTaken = takenTiles.slice();
   [state.floor.chest, state.floor.rune, ...state.floor.encounters].forEach(item => { if (item) minionTaken.push(item); });
 
-  // Ammo drums, the gun's only rounds (decor.js placeAmmoBoxes). Classic
-  // combat has no gun, so no drums.
+  // Energy cells, the only energy (decor.js placeEnergyCells). Classic
+  // combat has no gun, so no cells.
   if (state.settings.gunCombat) {
-    placeAmmoBoxes(layout, placer, minionTaken).forEach(p => {
+    placeEnergyCells(layout, placer, minionTaken).forEach(p => {
       state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
       minionTaken.push(p);
     });
