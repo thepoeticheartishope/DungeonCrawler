@@ -93,7 +93,8 @@ export function reloadOffers() {
 // A reload from an energy cell (`box`) uses the cell up, right or wrong, so
 // every cell is one question. A minigame's `tier` changes the energy by
 // its MINIGAME_TIER_PAY `energy` (tier 1 one less, never below 1; X one
-// more); a plain question is '2'.
+// more), except an offer that fills the energy (two modifiers), which
+// fills it at any tier (Timothy); a plain question is '2'.
 // Events: reloaded { energy, total } or jammed { expected, source }, then
 // hauntSilenced / hauntLingers.
 export function settleReload(isCorrect, offer, box = null, tier = '2') {
@@ -101,7 +102,7 @@ export function settleReload(isCorrect, offer, box = null, tier = '2') {
   const q = state.battle.currentQuestion;
   const events = [];
   if (isCorrect) {
-    const earned = Math.max(1, offer.energy + MINIGAME_TIER_PAY[tier].energy);
+    const earned = offer.energy >= ENERGY_MAX ? ENERGY_MAX : Math.max(1, offer.energy + MINIGAME_TIER_PAY[tier].energy);
     const energy = Math.min(earned, ENERGY_MAX - state.run.energy);
     addRounds(energy, reloadCategory().label);
     state.run.correctTotal++;

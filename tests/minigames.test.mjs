@@ -344,7 +344,7 @@ test('a missed Letter Pool is no haunt', () => {
   assert.equal(events[0].expected, 'Acts, Ruth');
 });
 
-test('a reload pays one less energy at tier 1 (at least 1) and one more at X', () => {
+test('a reload pays one less energy at tier 1 (at least 1) and one more at X, but two modifiers always fill it', () => {
   const offer = (n) => ({ modifiers: [], energy: RELOAD_ENERGY[n] });
   reset();
   settleReload(true, offer(1), null, '1');
@@ -363,6 +363,11 @@ test('a reload pays one less energy at tier 1 (at least 1) and one more at X', (
   reset();
   settleReload(true, offer(1));
   assert.equal(state.run.energy, RELOAD_ENERGY[1], 'a plain question is tier 2');
+  reset();
+  state.run.energy = 0;
+  state.run.rounds = [];
+  settleReload(true, offer(2), null, '1');
+  assert.equal(state.run.energy, ENERGY_MAX, 'two modifiers fill it even at tier 1');
 });
 
 test('X takes two HP off the boss; a plain answer one', () => {
