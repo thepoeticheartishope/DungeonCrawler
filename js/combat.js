@@ -3,7 +3,7 @@
 // that change what's on the map return what changed, and main.js draws it.
 
 import { state, key } from './state.js';
-import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS } from './config.js';
+import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS } from './config.js';
 import { advanceLight } from './light.js';
 import { computeVisibility } from './sight.js';
 import { minionStrike } from './gun.js';
@@ -198,7 +198,8 @@ function wanderStep(m) {
 // the player this turn starts a Struggle instead ({ type: 'struggleStarted',
 // minion }, settled by gun.js settleStruggle), unless `canStruggle` is
 // false (a reload question already open over the map, in real time):
-// then it strikes as usual.
+// then it strikes as usual. Last, { type: 'presenceSensed', minion } for
+// each unseen one about to get next to the player (senseUnseen).
 export function advanceMonsters({ canStruggle = true } = {}) {
   state.run.turnCount++;
   advanceLight();
@@ -256,5 +257,32 @@ export function advanceMonsters({ canStruggle = true } = {}) {
 
   computeVisibility();
   refreshTargetValidity();
+  if (state.run.hearts > 0) events.push(...senseUnseen());
+  return events;
+}
+
+// The warning that lets a press turn and step at once: a minion or the
+// hunter the player can't see, SENSE_STEPS walkable steps away and due to
+// move next turn, will be right beside them after that move. Each one
+// warns once per approach (`sensed`), and again only after it has been
+// seen or has drifted off. Returns { type: 'presenceSensed', minion } per
+// warning; main.js shows "I see you." once however many there are.
+function senseUnseen() {
+  const gun = state.settings.gunCombat;
+  const player = { row: state.floor.playerRow, col: state.floor.playerCol };
+  const events = [];
+  for (const m of state.floor.minions) {
+    const path = bfsPath({ row: m.row, col: m.col }, player, blockedTilesFor(m));
+    const close = path && path.length - 1 <= SENSE_STEPS;
+    if (!close || state.floor.visibleSet.has(key(m.row, m.col))) {
+      m.sensed = false;
+      continue;
+    }
+    if (m.sensed || m.rest > 0) continue;
+    const stats = MINION_KINDS[m.minionKind];
+    if (gun && stats && (state.run.turnCount + 1) % stats.moveEvery !== 0) continue;
+    m.sensed = true;
+    events.push({ type: 'presenceSensed', minion: m });
+  }
   return events;
 }

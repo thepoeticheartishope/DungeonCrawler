@@ -39,6 +39,7 @@ function resetFloor(size = 21) {
   state.floor.facing = 'N';
   state.settings.fogEnabled = true;
   state.settings.gunCombat = false;
+  state.settings.turnBeforeStep = false;
   state.floor.darkness = false;
   state.floor.wallSet = new Set();
   state.floor.pillarSet = new Set();
@@ -445,8 +446,9 @@ test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the 
 
 // --- moves.js: stepPlayer ---
 
-test('a press in a new direction only turns: no step, no turn spent', () => {
+test('turning first: a press in a new direction only turns, no step, no turn spent', () => {
   resetFloor();
+  state.settings.turnBeforeStep = true;
   const [r, c] = [state.floor.playerRow, state.floor.playerCol];
   const events = stepPlayer(1, 0);
   assert.deepEqual(events.map(e => e.type), ['turned']);
@@ -458,8 +460,9 @@ test('a press in a new direction only turns: no step, no turn spent', () => {
   assert.deepEqual([state.floor.playerRow, state.floor.playerCol], [r + 1, c]);
 });
 
-test('turning toward a wall changes facing; the next press there is blocked', () => {
+test('turning first toward a wall changes facing; the next press there is blocked', () => {
   resetFloor();
+  state.settings.turnBeforeStep = true;
   const [r, c] = [state.floor.playerRow, state.floor.playerCol];
   state.floor.wallSet.add(key(r, c + 1));
   assert.deepEqual(stepPlayer(0, 1).map(e => e.type), ['turned']);
@@ -468,6 +471,50 @@ test('turning toward a wall changes facing; the next press there is blocked', ()
   assert.deepEqual(events.map(e => e.type), ['blocked']);
   assert.equal(events[0].kind, 'wall');
   assert.deepEqual([state.floor.playerRow, state.floor.playerCol], [r, c]);
+});
+
+test('by default a press in a new direction turns and steps at once', () => {
+  resetFloor();
+  const [r, c] = [state.floor.playerRow, state.floor.playerCol];
+  assert.deepEqual(stepPlayer(1, 0).map(e => e.type), ['turned', 'stepped']);
+  assert.equal(state.floor.facing, 'S');
+  assert.deepEqual([state.floor.playerRow, state.floor.playerCol], [r + 1, c]);
+  // Toward a wall it turns and bumps in the same press.
+  state.floor.wallSet.add(key(r + 1, c + 1));
+  assert.deepEqual(stepPlayer(0, 1).map(e => e.type), ['turned', 'blocked']);
+  assert.equal(state.floor.facing, 'E');
+});
+
+// --- combat.js: senseUnseen ("I see you.") ---
+
+// A minion that will be beside the player after its next move: two steps
+// straight behind them (south, while they face north), out of their light.
+function minionBehind() {
+  resetFloor();
+  computeVisibility();
+  return spawnMinion({ row: state.floor.playerRow + 3, col: state.floor.playerCol });
+}
+
+test('an unseen minion about to reach the player warns once per approach', () => {
+  const m = minionBehind();
+  // Its move this turn brings it to two steps away: next move, beside them.
+  assert.deepEqual(ofType(advanceMonsters(), 'presenceSensed', 'minion'), [m]);
+  assert.equal(Math.abs(m.row - state.floor.playerRow), 2);
+  // It doesn't warn again while it keeps coming.
+  state.floor.playerRow -= 1;
+  computeVisibility();
+  assert.deepEqual(ofType(advanceMonsters(), 'presenceSensed', 'minion'), []);
+});
+
+test('no warning for a minion the player can already see, or one resting', () => {
+  const m = minionBehind();
+  state.floor.facing = 'S';
+  computeVisibility();
+  assert.deepEqual(ofType(advanceMonsters(), 'presenceSensed', 'minion'), []);
+  const r = minionBehind();
+  r.rest = 3;
+  r.row -= 1;
+  assert.deepEqual(ofType(advanceMonsters(), 'presenceSensed', 'minion'), []);
 });
 
 test('the coin pays goldReward(1), doubled in the darkness', () => {

@@ -309,6 +309,19 @@ export const MINION_MIN_START_DISTANCE = 6; // walkable steps from the player's 
 export const PLAYER_LIGHT_RADIUS = 1;
 export const PLAYER_CONE_RANGE = 5;
 
+// Turning (moves.js stepPlayer). With TURN_BEFORE_STEP on, a press in a new
+// direction only turns the player, so they look before they walk. Off, a
+// press turns and steps at once, and the warning below covers what looking
+// first used to: nothing reaches the player from the dark unannounced.
+// DEV -> Turn switches it in play (state.settings.turnBeforeStep).
+export const TURN_BEFORE_STEP = false;
+// The warning (combat.js senseUnseen, "I see you."): a minion or the hunter
+// the player can't see, SENSE_STEPS walkable steps away and due to move next
+// turn, so its next move puts it right beside them. Once per approach.
+export const SENSE_STEPS = 2;
+// How long "I see you." stays on the map before it fades (render.js showSensed).
+export const SENSE_NOTE_MS = 2600;
+
 // Shooting (gun combat plan, step 2; sight.js canShoot / aimChance). A
 // minion can be shot when it is in the player's own light with a clear line
 // to it. Aim is 100% next to the player and drops AIM_FALLOFF_PER_TILE per
