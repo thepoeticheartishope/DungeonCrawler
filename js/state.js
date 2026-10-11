@@ -88,6 +88,8 @@ export const state = {
     hunter: null,          // the hunter, once awake — also in state.floor.minions, with kind 'hunter'
     gunTarget: null,       // the minion (or hunter) the gun is aimed at, picked by a tap on the map (gun.js pickTarget), or null
     goals: [],             // this floor's side goals: [{ id, pay }] from FLOOR_GOALS (goals.js rollGoals); none on a rest floor
+    heldChambers: new Set(), // rooms held by a relay (relays.js): no boss light, no minion from outside
+    relayTurnsWon: 0,      // light turns relays have taken back on this floor (capped at RELAY_TURNS_CAP)
     misses: 0,             // wrong answers on this floor, questions and reloads (the noMiss goal)
     struggles: 0,          // Struggles started on this floor; each one makes the next dial harder (gun.js struggleDial)
     bossLitSet: new Set(), // tiles the boss light currently reaches
