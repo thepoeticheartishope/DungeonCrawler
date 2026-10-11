@@ -15,7 +15,7 @@ import {
 } from './quiz.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
-  formatTime, startTimer, stopTimer, renderLightEye, renderClock
+  formatTime, startTimer, stopTimer, renderLightEye, renderClock, showSensed
 } from './render.js';
 import {
   isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
@@ -100,6 +100,7 @@ initRender({
   startScreen, introGlitch, roomScreen, battleScreen, exchangeScreen, winScreen, loseScreen,
   heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightEyeEl, lightHintEls, dpadButtons,
+  senseNote: document.getElementById('senseNote'),
   gunRoundsStat: document.getElementById('gunRoundsStat'),
   gunTargetStat: document.getElementById('gunTargetStat'),
   gunAimStat: document.getElementById('gunAimStat'),
@@ -803,6 +804,10 @@ function drawEvents(events) {
         break;
       case 'waited':
         parts.push(t('room.wait'));
+        break;
+      // On the map itself, not in the room log: a whisper, not a report.
+      case 'presenceSensed':
+        showSensed();
         break;
       case 'turned':
       case 'stairsReached':

@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA, GUN_START_ROUNDS } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, GUN_START_ROUNDS, TURN_BEFORE_STEP } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -27,6 +27,7 @@ export const state = {
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
     isoCameraGlide: true,   // dev toggle: the isometric camera glides after the player (false: locked to them)
+    turnBeforeStep: TURN_BEFORE_STEP, // a press in a new direction only turns (true) or turns and steps (false); DEV -> Turn flips it
     gunCombat: true,        // the gun on the map (gun plan; the default since step 9). DEV -> Combat switches back to classic (minions on the battle screen)
     usingSample: true, // the workshop list is the built-in sample (it can't be saved as a set); false once a list is pasted or loaded there
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play

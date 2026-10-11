@@ -7,7 +7,7 @@
 // of each one threading them through as parameters.
 
 import { state } from './state.js';
-import { BOSS_HP, GUN_CHAMBER, MINION_KINDS } from './config.js';
+import { BOSS_HP, GUN_CHAMBER, MINION_KINDS, SENSE_NOTE_MS } from './config.js';
 import { lightProgress } from './light.js';
 import { whatBlocks } from './passage.js';
 import { FACING_VECTORS, shootBlock, aimChance } from './sight.js';
@@ -21,6 +21,18 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 export function initRender(elements) {
   els = elements;
+}
+
+// When "I see you." fades (view-only timing, so a module var, not state).
+let senseFadeTimer = null;
+
+// Shows "I see you." over the map for SENSE_NOTE_MS, then lets it fade.
+// A new warning while it shows just keeps it up longer: no flash.
+export function showSensed() {
+  els.senseNote.textContent = t('room.sensed');
+  els.senseNote.classList.add('show');
+  clearTimeout(senseFadeTimer);
+  senseFadeTimer = setTimeout(() => els.senseNote.classList.remove('show'), SENSE_NOTE_MS);
 }
 
 export function showScreen(el) {

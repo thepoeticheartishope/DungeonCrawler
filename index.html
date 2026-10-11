@@ -694,6 +694,29 @@
   .light-hint-w { left: 0; background: linear-gradient(to right, rgba(var(--hint-rgb), 0.28), transparent); }
   .light-hint-e { right: 0; background: linear-gradient(to left, rgba(var(--hint-rgb), 0.28), transparent); }
 
+  /* "I see you." (render.js showSensed): faint text near the top of the map,
+     over the dark rather than the player. It fades in and out slowly, never
+     flickers; under reduced motion it just appears and goes. */
+  .sense-note {
+    position: absolute;
+    top: 9%;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 24px;
+    letter-spacing: 0.08em;
+    color: rgba(var(--glow-rgb), 0.55);
+    text-shadow: 0 0 6px rgba(var(--glow-rgb), 0.35);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.6s ease;
+    z-index: 3;
+  }
+  .sense-note.show { opacity: 1; transition: opacity 0.9s ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .sense-note, .sense-note.show { transition: none; }
+  }
+
   /* The NEXT meter in the status bar (Real time only, render.js
      renderClock): an ink outline whose fill edge glides between the clock's
      polls (REALTIME_POLL_MS, 100 ms), dim while the clock is paused. Under
@@ -1239,6 +1262,7 @@
     <button type="button" class="dev-skip stat-wide" id="devToggleBtn" title="Testing tools">DEV</button>
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
+      <button class="dev-skip" id="devTurnBtn" type="button" aria-pressed="false" title="Testing only: a press in a new direction turns and steps (warned by I see you.), or only turns so you look first">Turn: and step (dev)</button>
       <button class="dev-skip" id="devCameraBtn" type="button" title="Testing only: in isometric, the camera glides after the player or stays locked to them" aria-pressed="true">Camera: glide (dev)</button>
       <button class="dev-skip" id="devCombatBtn" type="button" aria-pressed="true" title="Testing only: the gun on the map (the default: minions are fought with SELECT, rounds come from ammo drums), or classic combat (minions on the battle screen)">Combat: gun (dev)</button>
       <button class="dev-skip" id="devShotBtn" type="button" title="Testing only: fire at the gun&#39;s target; a landed shot opens the damage bar over the map (fills an empty chamber, spends no turn)">Test shot (dev)</button>
@@ -1391,6 +1415,8 @@
       <div class="light-hint light-hint-s" id="lightHintS" aria-hidden="true"></div>
       <div class="light-hint light-hint-e" id="lightHintE" aria-hidden="true"></div>
       <div class="light-hint light-hint-w" id="lightHintW" aria-hidden="true"></div>
+      <!-- "I see you.": something unseen is about to be beside the player (render.js showSensed). -->
+      <div class="sense-note" id="senseNote" role="status" aria-live="polite"></div>
 
       <!-- The gun's panels (js/gunpanels.js): they slide up over the lower
            part of the map, so what's coming stays in view. One at a time. -->

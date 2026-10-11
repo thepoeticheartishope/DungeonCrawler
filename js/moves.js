@@ -13,10 +13,13 @@ export function goldReward(base) {
   return state.floor.darkness ? base * DARK_GOLD_MULTIPLIER : base;
 }
 
-// One arrow press. A press in a new direction only turns the player to
-// face it (and the light cone with it): no step, no bump, no turn spent,
-// so they can look behind them before walking that way. Only a press in
-// the direction already faced steps. Events: turned { facing } (alone),
+// One arrow press. A press in a new direction turns the player to face it
+// (and the light cone with it), then goes on to step that way in the same
+// press. With state.settings.turnBeforeStep on, it only turns: no step, no
+// bump, no turn spent, so they can look behind them first. Turning first is
+// off by default because combat.js senseUnseen warns ("I see you.") before
+// anything unseen gets next to them. Events: turned { facing } (alone when
+// turning first, else before the rest),
 // blocked { kind, thing }, stepped { facing }, stairsReached, coinTaken { gold },
 // paperRead { paper, loot, story? }, roomEntered { theme }, exchangeOpened
 // (bumped THE UNFOLDING; main.js opens its screen), itemReached { thing }
@@ -28,7 +31,8 @@ export function stepPlayer(dRow, dCol) {
   if (state.floor.facing !== facing) {
     state.floor.facing = facing;
     computeVisibility();
-    return [{ type: 'turned', facing }];
+    events.push({ type: 'turned', facing });
+    if (state.settings.turnBeforeStep) return events;
   }
 
   const newRow = state.floor.playerRow + dRow;

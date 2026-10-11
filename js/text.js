@@ -190,6 +190,7 @@ export const TEXT = {
   'target.encounter': 'Target: {category} {@term.encounter}',
 
   // ---- Room (map) screen ----
+  'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft
   'room.engage': 'Something fires in the dark.', // draft
