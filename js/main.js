@@ -108,10 +108,8 @@ initRender({
   senseNote: document.getElementById('senseNote'),
   energyStat: document.getElementById('energyStat'),
   gunTargetStat: document.getElementById('gunTargetStat'),
-  gunAimStat: document.getElementById('gunAimStat'),
   energyCount: document.getElementById('energyCount'),
   gunTarget: document.getElementById('gunTarget'),
-  gunAim: document.getElementById('gunAim'),
   clockStat: document.getElementById('clockStat'),
   goalsStat: document.getElementById('goalsStat'),
   goalsText: document.getElementById('goalsText'),
@@ -1027,10 +1025,6 @@ function drawEvents(events) {
       case 'fireBlocked':
         cls = 'block-msg';
         parts.push(t('gun.block.' + e.reason));
-        break;
-      case 'shotMissed':
-        shotOnMap(e.target, true);
-        parts.push(t('gun.missed'));
         break;
       case 'shotGrazed':
         shotOnMap(e.minion, false);

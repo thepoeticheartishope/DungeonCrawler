@@ -192,13 +192,13 @@ test('fire is blocked with no energy, at the boss, or out of the light', () => {
   assert.equal(state.run.energy, 1, 'a blocked shot spends nothing');
 });
 
-test('a shot that misses spends the round and opens no damage bar', () => {
+test('a shot that can be taken always lands, however far', () => {
   resetFloor();
   const m = minionAt(-4, 0);
   const events = withRandom(0.99, () => fire(m));
-  assert.deepEqual(events.map(e => e.type), ['shotFired', 'shotMissed']);
+  assert.deepEqual(events.map(e => e.type), ['shotFired', 'aimStarted']);
   assert.equal(state.run.energy, 0);
-  assert.equal(state.battle.aim, null);
+  assert.equal(state.battle.aim.target, m);
 });
 
 test('a shot that lands waits for the damage bar with zones sized by the kind', () => {
@@ -206,7 +206,6 @@ test('a shot that lands waits for the damage bar with zones sized by the kind', 
   const m = minionAt(-1, 0, 'HUSK');
   const events = withRandom(0.5, () => fire(m));
   assert.deepEqual(events.map(e => e.type), ['shotFired', 'aimStarted']);
-  assert.equal(events[0].chance, 1);
   assert.equal(state.battle.aim.target, m);
   const width = tier => state.battle.aim.zones.filter(z => z.tier === tier).map(z => +(z.to - z.from).toFixed(6));
   assert.deepEqual(width('hit'), Array(DAMAGE_BAR_DEPTHS[0].hits).fill(MINION_KINDS.HUSK.hitWidth));

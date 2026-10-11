@@ -384,13 +384,10 @@ export const SENSE_STEPS = 2;
 // How long "I see you." stays on the map before it fades (render.js showSensed).
 export const SENSE_NOTE_MS = 2600;
 
-// Shooting (gun combat plan, step 2; sight.js canShoot / aimChance). A
-// minion can be shot when it is in the player's own light with a clear line
-// to it. Aim is 100% next to the player and drops AIM_FALLOFF_PER_TILE per
-// tile of straight-line distance past the first, never below AIM_MIN.
-// Values from the reload-and-fire mockup.
-export const AIM_FALLOFF_PER_TILE = 0.15;
-export const AIM_MIN = 0.3;
+// Shooting (gun combat plan, step 2; sight.js canShoot): a minion can be
+// shot when it is in the player's own light with a clear line to it. A shot
+// that can be taken always lands (Timothy, 2026-10-11: the old hit chance by
+// distance felt unfair beside the damage bar, which is the skill part).
 
 // Energy (Timothy, 2026-10-11: was ammo; energy so later weapons and
 // abilities can draw on it too). The player holds up to ENERGY_MAX and a

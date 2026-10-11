@@ -5,7 +5,7 @@
 
 import { state, key } from './state.js';
 import {
-  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, AIM_FALLOFF_PER_TILE, AIM_MIN,
+  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE,
 } from './config.js';
 
 // Facing vectors for the cone test below.
@@ -117,12 +117,4 @@ export function shootBlock(thing) {
 
 export function canShoot(thing) {
   return shootBlock(thing) === null;
-}
-
-// The chance a shot at `thing` lands: 1 next to the player (diagonals
-// included), less by AIM_FALLOFF_PER_TILE per tile of straight-line
-// distance past the first, never below AIM_MIN. It doesn't check canShoot.
-export function aimChance(thing) {
-  const distance = Math.hypot(thing.row - state.floor.playerRow, thing.col - state.floor.playerCol);
-  return Math.min(1, Math.max(AIM_MIN, 1 - (distance - 1) * AIM_FALLOFF_PER_TILE));
 }
