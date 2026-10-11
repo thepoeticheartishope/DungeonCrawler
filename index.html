@@ -1052,9 +1052,12 @@
   .mc-option .letter { color: var(--torch-bright); font-weight: 700; margin-right: 8px; }
 
   /* ---- Question modifiers ---- */
-  /* The tag beside a category choice: one small inverse-video character. */
+  /* The tag beside a category choice: one small inverse-video word. */
   .mod-tag {
     display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
     margin-left: 8px;
     padding: 0 4px;
     font-size: 16px;
