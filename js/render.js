@@ -147,8 +147,8 @@ export function renderClock(running) {
 
 // The gun's part of the HUD (gun plan step 6), shown only with DEV ->
 // Combat on gun: rounds in the chamber, the target and its hp, the aim %
-// (or '-' when the target can't be shot), and whether RELOAD and FIRE
-// can be pressed. Part of renderHud, the one writer of the HUD.
+// (or '-' when the target can't be shot), and whether SELECT can be
+// pressed. Part of renderHud, the one writer of the HUD.
 function renderGunHud() {
   const on = state.settings.gunCombat;
   [els.gunRoundsStat, els.gunTargetStat, els.gunAimStat, els.gunActions].forEach(el => { el.hidden = !on; });
@@ -160,8 +160,9 @@ function renderGunHud() {
   els.gunAim.textContent = target && !shootBlock(target)
     ? t('gun.aimChance', { chance: Math.round(aimChance(target) * 100) })
     : t('stat.noTarget');
-  els.btnReload.disabled = state.run.runEnded || ammo >= GUN_CHAMBER;
-  els.btnFire.disabled = state.run.runEnded || ammo <= 0;
+  // SELECT stays pressable with an empty chamber: it says so, and it
+  // must still stop a damage bar opened by the last round.
+  els.btnSelect.disabled = state.run.runEnded;
 }
 
 // The HUD's name for the gun's target: a minion's kind and its hp (# left,

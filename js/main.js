@@ -28,7 +28,7 @@ import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapTap, glyphOf } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload } from './gun.js';
-import { initGunPanels, showReloadPanel, showQuestionOnMap, showDamageBar, closeMapPanels, mapPanelShown } from './gunpanels.js';
+import { initGunPanels, showReloadPanel, showQuestionOnMap, showDamageBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad } from './dpad.js';
@@ -94,8 +94,7 @@ const dpadButtons = {
   W: document.getElementById('btnW'),
   Skip: document.getElementById('btnSkip')
 };
-const btnReload = document.getElementById('btnReload');
-const btnFire = document.getElementById('btnFire');
+const btnSelect = document.getElementById('btnSelect');
 
 initRender({
   startScreen, introGlitch, roomScreen, battleScreen, exchangeScreen, winScreen, loseScreen,
@@ -110,7 +109,7 @@ initRender({
   gunActions: document.getElementById('gunActions'),
   clockStat: document.getElementById('clockStat'),
   clockFill: document.getElementById('clockFill'),
-  btnReload, btnFire,
+  btnSelect,
 });
 initMapView(document.getElementById('mapCanvas'));
 onMapTap(tapMap);
@@ -129,12 +128,10 @@ initDevPanel({
 });
 
 // A tap on the map. With the gun on (DEV -> Combat), it picks the gun's
-// target: the minion on that tile, or none. Costs no turn. Tapping the
-// target again fires at it.
+// target: the minion on that tile, or none. Costs no turn. Only SELECT
+// fires (Timothy: tap, then SELECT), so a tap can never shoot by accident.
 function tapMap(tile) {
   if (!gunReady()) return;
-  const target = state.floor.gunTarget;
-  if (target && target.row === tile.row && target.col === tile.col) { fireGun(); return; }
   drawEvents(pickTarget(tile));
 }
 
@@ -158,7 +155,16 @@ function finishGunAction(events) {
   if (note.text) showRoomNote(note.cls, note.text);
 }
 
-// FIRE (button, F, or tapping the target again): shoots the gun's target
+// SELECT (button or F), the gun's one button: while the damage bar
+// sweeps, it stops the bar; otherwise it fires at the target. One button
+// in one place, so the thumb stays put and the eyes stay on the marker.
+// Rounds come only from ammo drums: there is no reloading at will.
+function pressSelect() {
+  if (mapPanelShown() === 'aim') { stopBarSweep(); return; }
+  fireGun();
+}
+
+// Fires (SELECT with no bar showing): shoots the gun's target
 // (gun.js fire). A blocked shot only says why and costs nothing; a miss,
 // or a landed shot on the hunter, is the turn; a landed shot on a minion
 // opens the damage bar first, and the turn is spent when it stops.
@@ -186,14 +192,6 @@ function nextGunTarget() {
   if (!gunReady()) return;
   const note = drawEvents(cycleTarget());
   if (note.text) showRoomNote(note.cls, note.text);
-}
-
-// RELOAD (button or R): the reload panel over the map (gun.js
-// reloadOffers). Picking an offer asks its question; the answer is the
-// turn. Cancelling costs nothing.
-function reloadGun() {
-  if (!gunReady()) return;
-  openReload(false);
 }
 
 // The ammo drum the open reload panel came from (bumped on the map), or
@@ -684,9 +682,9 @@ function setControlsEnabled(enabled) {
   answerInput.disabled = !enabled;
   attackBtn.disabled = !enabled;
   Object.values(dpadButtons).forEach(b => b.disabled = !enabled);
-  // RELOAD and FIRE also depend on the chamber, which renderHud knows.
+  // SELECT also depends on the run, which renderHud knows.
   if (enabled) renderHud();
-  else { btnReload.disabled = true; btnFire.disabled = true; }
+  else btnSelect.disabled = true;
   mcOptionsEl.querySelectorAll('button').forEach(b => b.disabled = !enabled);
   choiceListEl.querySelectorAll('button').forEach(b => b.disabled = !enabled);
   continueBtn.disabled = !enabled;
@@ -1121,8 +1119,7 @@ function mountBattleQuestion() {
 mountBattleQuestion();
 
 continueBtn.addEventListener('click', leaveEncounter);
-btnReload.addEventListener('click', reloadGun);
-btnFire.addEventListener('click', fireGun);
+btnSelect.addEventListener('click', pressSelect);
 
 initDpad({
   buttons: dpadButtons, movePlayer, skipTurn,
@@ -1130,7 +1127,7 @@ initDpad({
 });
 
 // Arrow-key support on desktop, ignored while typing in the answer box.
-// With the gun on: R reloads, F fires, T picks the next target, . waits.
+// With the gun on: F is SELECT (fires), T picks the next target, . waits.
 // Letter and number keys answer a question shown over the map, unless the
 // gun panels already used the key (picking a reload with 1-3, or F / Space
 // stopping the damage bar).
@@ -1141,8 +1138,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'ArrowDown') { e.preventDefault(); movePlayer(1, 0); }
   else if (e.key === 'ArrowLeft') { e.preventDefault(); movePlayer(0, -1); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(0, 1); }
-  else if (gunReady() && (e.key === 'r' || e.key === 'R')) { e.preventDefault(); reloadGun(); }
-  else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); fireGun(); }
+  else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); pressSelect(); }
   else if (gunReady() && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
   else if (gunReady() && e.key === '.') { e.preventDefault(); skipTurn(); }
   else if (mapPanelShown() === 'question' && state.settings.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {

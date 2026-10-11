@@ -651,10 +651,7 @@
     position: relative;
     height: 32px;
     border: 1px solid var(--muted);
-    cursor: crosshair;
-    touch-action: manipulation;
   }
-  .damage-bar:focus-visible { outline: 1px solid var(--torch-bright); }
   .damage-zone { position: absolute; top: 0; bottom: 0; }
   .damage-hit {
     background: rgba(var(--glow-rgb), 0.12);
@@ -1237,7 +1234,7 @@
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devCameraBtn" type="button" title="Testing only: in isometric, the camera glides after the player or stays locked to them" aria-pressed="true">Camera: glide (dev)</button>
-      <button class="dev-skip" id="devCombatBtn" type="button" aria-pressed="true" title="Testing only: the gun on the map (the default: minions are fought with RELOAD and FIRE), or classic combat (minions on the battle screen)">Combat: gun (dev)</button>
+      <button class="dev-skip" id="devCombatBtn" type="button" aria-pressed="true" title="Testing only: the gun on the map (the default: minions are fought with SELECT, rounds come from ammo drums), or classic combat (minions on the battle screen)">Combat: gun (dev)</button>
       <button class="dev-skip" id="devShotBtn" type="button" title="Testing only: fire at the gun&#39;s target; a landed shot opens the damage bar over the map (fills an empty chamber, spends no turn)">Test shot (dev)</button>
       <button class="dev-skip" id="devReloadBtn" type="button" title="Testing only: the reload panel and its question over the map (spends no turn)">Test reload (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
@@ -1401,7 +1398,7 @@
       </div>
       <div class="map-panel" id="aimPanel" hidden>
         <div class="term-line" data-t="gun.bar.prompt"></div>
-        <div class="damage-bar" id="damageBar" role="button" tabindex="0">
+        <div class="damage-bar" id="damageBar" role="img">
           <div class="damage-zone damage-hit" id="damageHit"></div>
           <div class="damage-zone damage-weak" id="damageWeak"></div>
           <div class="damage-marker" id="damageMarker"></div>
@@ -1427,10 +1424,9 @@
       <button class="dpad-s" id="btnS" type="button" aria-label="Move south">v</button>
     </div>
     </div>
-    <!-- The gun (gun plan step 6): main.js reloadGun / fireGun. -->
+    <!-- The gun's one button: main.js pressSelect (fire, or stop the damage bar). -->
     <div class="gun-actions" id="gunActions" hidden>
-      <button type="button" id="btnReload" data-t="gun.btn.reload"></button>
-      <button type="button" id="btnFire" data-t="gun.btn.fire"></button>
+      <button type="button" id="btnSelect" data-t="gun.btn.select"></button>
     </div>
     </div>
   </section>

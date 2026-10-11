@@ -21,8 +21,10 @@ let sweep = null;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 // Looks up the panels and hooks up their buttons and keys: 1-3 pick a
-// reload, Escape cancels it; Space or F stops the damage bar (as does a
-// tap on it). Call once, from main.js.
+// reload, Escape cancels it; Space or F stops the damage bar, as does the
+// SELECT button (main.js, via stopBarSweep). A tap on the bar does
+// nothing: a finger landing somewhere new each time stopped it unevenly
+// and hid the marker. Call once, from main.js.
 export function initGunPanels({ pickReload, cancelReload, stopBar }) {
   actions = { pickReload, cancelReload, stopBar };
   els.reload = document.getElementById('reloadPanel');
@@ -39,7 +41,6 @@ export function initGunPanels({ pickReload, cancelReload, stopBar }) {
 
   els.bar.setAttribute('aria-label', t('gun.bar.label'));
   els.reloadCancel.addEventListener('click', () => actions.cancelReload());
-  els.bar.addEventListener('pointerdown', (e) => { e.preventDefault(); stopSweep(); });
   document.addEventListener('keydown', (e) => {
     const shown = mapPanelShown();
     if (shown === 'aim' && (e.key === ' ' || e.key === 'f' || e.key === 'F')) {
@@ -131,6 +132,11 @@ function moveMarker(now) {
   sweep.x = u < 1 ? u : 2 - u;
   els.marker.style.left = sweep.x * 100 + '%';
   sweep.frame = requestAnimationFrame(moveMarker);
+}
+
+// SELECT pressed while the damage bar sweeps: stops it, as Space or F do.
+export function stopBarSweep() {
+  stopSweep();
 }
 
 // The player stopped the bar: the marker holds where it stopped, and the
