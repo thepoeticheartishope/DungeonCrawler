@@ -1155,7 +1155,6 @@
   }
   .choice-option:hover .mod-tag,
   .choice-option:focus-visible .mod-tag { color: var(--text); background: var(--ink); }
-  /* Blind Pick: once time's up the answer text is gone; letters remain. */
   /* Flip: selected answers turned upside down or mirrored. */
   .opt-text.flip-upside, .opt-text.flip-mirror { display: inline-block; }
   .opt-text.flip-upside { transform: rotate(180deg); }
@@ -1174,12 +1173,10 @@
   .mg-ticks span { width: 1px; height: 8px; background: var(--muted); }
   .mg-ends { font-size: 16px; color: var(--muted); }
   .mg-lock { margin-top: 8px; }
-  /* Blind: the reading and end numbers go, the tick marks stay. */
   /* Flip: the dial runs backwards, its top on the left. */
   .mg-flip .mg-dial { direction: rtl; }
   .mg-flip .mg-ends { flex-direction: row-reverse; }
-  /* Higher / Lower: the hints so far; under Blind each goes after a
-     moment (at once, no fade). */
+  /* Higher / Lower: the hints so far. */
   .mg-hints { min-height: 1.2em; }
   .mg-said { color: var(--torch-bright); }
   .mg-left { color: var(--muted); }
@@ -1191,8 +1188,7 @@
   .mg-letter.flip-mirror { transform: scaleX(-1); }
   .mg-type { margin-top: 8px; }
   /* Syllable Split: the name built so far, and the tray of pieces (a
-     fieldset, so Gambler can lock it whole). Blind blanks the tray's
-     pieces at once, no fade. */
+     fieldset, so Gambler can lock it whole). */
   .mg-built { font-size: 24px; color: var(--torch-bright); margin: 6px 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 8px; }
   .mg-tray { border: none; padding: 0; margin: 6px 0 0; min-width: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
   .mg-piece { min-width: 64px; min-height: 44px; }
@@ -1203,7 +1199,7 @@
   .mg-piece.mg-struck span { text-decoration: line-through; }
   /* Letter Pool: the word being spelled, the tray of letter tiles (in the
      same fieldset as its keys, so Gambler locks it whole), and the
-     answers formed; hidden ones brighter. Blind blanks the tiles. */
+     answers formed; hidden ones brighter. */
   .mg-tiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
   .mg-tile { min-width: 44px; min-height: 44px; font-size: 20px; }
   .mg-tile span { display: inline-block; }
@@ -1213,6 +1209,21 @@
   .mg-pool-keys .mg-lock { margin-top: 0; }
   .mg-found { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; color: var(--muted); }
   .mg-found .mg-hidden { color: var(--torch-bright); }
+  /* Code Break: a row per guess, a box per character. Right place is
+     inverse, elsewhere a dashed box, not in it dim; shape, not colour,
+     tells them apart. A key above the rows shows all three. */
+  .mg-code-key { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; font-size: 16px; color: var(--muted); margin: 4px 0; }
+  .mg-code-key > span { display: inline-flex; align-items: center; gap: 6px; }
+  .mg-code-key .mg-code-cell { width: 1.3em; height: 1.4em; font-size: 16px; }
+  .mg-code-rows { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 6px 0; }
+  .mg-code-row { display: flex; gap: 4px; }
+  .mg-code-cell { display: inline-grid; place-items: center; width: 1.3em; height: 1.5em; font-size: 24px; border: 1px solid var(--line); color: var(--muted); }
+  .mg-code-cell.mg-code-hit { background: var(--torch-bright); color: var(--ink); border-color: var(--torch-bright); }
+  .mg-code-cell.mg-code-near { color: var(--torch-bright); border: 2px dashed var(--torch-bright); }
+  .mg-code-cell.mg-code-miss { color: var(--muted); border-color: transparent; }
+  .mg-code-cell.flip-upside { transform: rotate(180deg); }
+  .mg-code-cell.flip-mirror { transform: scaleX(-1); }
+  .mg-code-form { border: none; padding: 0; margin: 0; min-width: 0; }
   /* Timer: the countdown line; bright for the last few seconds. */
   .mod-timer[hidden] { display: none; }
   .mod-timer.urgent { color: var(--torch-bright); text-shadow: var(--glow-strong); }

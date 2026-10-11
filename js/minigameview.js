@@ -12,11 +12,12 @@ import { state } from './state.js';
 import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
-  LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE,
+  LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   syllableSplitTray, syllableSplitTier, letterPoolCheck, letterPoolTier,
+  codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier,
 } from './minigames.js';
 import { normalizeSpaces } from './quiz.js';
 import { t } from './text.js';
@@ -41,6 +42,7 @@ const BUILDERS = {
   slowSpell: buildSlowSpell,
   syllableSplit: buildSyllableSplit,
   letterPool: buildLetterPool,
+  codeBreak: buildCodeBreak,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -539,6 +541,100 @@ function buildLetterPool() {
       const mode = Math.random() < 0.5 ? 'upside' : 'mirror';
       buttons.forEach(btn => { if (Math.random() < LETTER_POOL_FLIP_SHARE) btn.firstChild.classList.add('flip-' + mode); });
     },
+  };
+}
+
+// ---- Code Break: guess the answer as a code; each guess is marked ----
+// The code shows as a row of blanks per guess. A guess of the code's
+// length (typed; Enter or TRY) fills the next row and marks each
+// character: right place (inverse), elsewhere in the code (dashed box) or
+// not in it (dim). A guess of another length isn't one. Cracked on guess
+// n pays CODE_BREAK_TIERS[n - 1]; out of rows is a miss. Each guess calls
+// again() (the Timer is per guess). Gambler locks the form (a fieldset).
+// Flip: the guesses before the newest are drawn upside down or mirrored,
+// each character in its place.
+function buildCodeBreak() {
+  slot.classList.add('mg-code');
+  const setup = codeBreakSetup(state.battle.currentQuestion);
+  const size = setup.code.length;
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.codeBreak.hint', { n: CODE_BREAK_TIERS.length });
+  const legend = add(slot, 'div', 'mg-code-key');
+  ['hit', 'near', 'miss'].forEach((mark) => {
+    const item = add(legend, 'span');
+    add(item, 'span', 'mg-code-cell mg-code-' + mark).textContent = 'A';
+    add(item, 'span').textContent = t('mg.codeBreak.mark.' + mark);
+  });
+  const board = add(slot, 'div', 'mg-code-rows');
+  const rows = CODE_BREAK_TIERS.map(() => {
+    const row = add(board, 'div', 'mg-code-row');
+    for (let i = 0; i < size; i++) add(row, 'span', 'mg-code-cell').textContent = '_';
+    return row;
+  });
+  const said = add(slot, 'div', 'term-line mg-said');
+  const left = add(slot, 'div', 'term-line mg-left');
+  const lock = add(slot, 'fieldset', 'mg-code-form');
+  const form = add(lock, 'form', 'term-input-row mg-type');
+  const input = add(form, 'input');
+  const enter = add(form, 'button');
+
+  input.type = 'text';
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+  input.maxLength = size;
+  input.setAttribute('autocapitalize', 'characters');
+  input.setAttribute('autocorrect', 'off');
+  if (setup.digits) input.inputMode = 'numeric';
+  input.placeholder = t('mg.codeBreak.placeholder', { n: size });
+  input.setAttribute('aria-label', t('mg.codeBreak.placeholder', { n: size }));
+  enter.type = 'submit';
+  enter.textContent = t('mg.codeBreak.try');
+  said.setAttribute('aria-live', 'polite');
+
+  // Guesses made, and Flip's look (or null).
+  let guesses = 0;
+  let flip = null;
+  const showLeft = () => { left.textContent = t('mg.codeBreak.left', { n: CODE_BREAK_TIERS.length - guesses }); };
+  const guess = (typed) => {
+    const marks = codeBreakMarks(setup, typed);
+    if (!marks) {
+      said.textContent = t('mg.codeBreak.length', { n: size });
+      return;
+    }
+    const chars = codeChars(typed);
+    const row = rows[guesses];
+    [...row.children].forEach((cell, i) => {
+      cell.textContent = chars[i];
+      cell.className = 'mg-code-cell mg-code-' + marks[i];
+    });
+    row.setAttribute('aria-label', chars.map((c, i) => c + ' ' + t('mg.codeBreak.mark.' + marks[i])).join(', '));
+    guesses++;
+    input.value = '';
+    said.textContent = '';
+    if (flip) rows.slice(0, guesses - 1).forEach(r => [...r.children].forEach(cell => cell.classList.add('flip-' + flip)));
+    if (marks.every(m => m === 'hit')) {
+      finish({ right: true, tier: codeBreakTier(guesses), given: chars.join('') });
+      return;
+    }
+    if (guesses >= CODE_BREAK_TIERS.length) {
+      finish({ right: false, tier: null, given: chars.join('') });
+      return;
+    }
+    showLeft();
+    shown.again();
+  };
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (normalizeSpaces(input.value)) guess(input.value);
+  });
+  // Typed characters are the guess's, not the game's keys.
+  input.addEventListener('keydown', e => e.stopPropagation());
+  showLeft();
+
+  return {
+    lock,
+    focus: () => input.focus(),
+    finish: () => guess(setup.code.join('')),
+    flip: () => { flip = Math.random() < 0.5 ? 'upside' : 'mirror'; },
   };
 }
 

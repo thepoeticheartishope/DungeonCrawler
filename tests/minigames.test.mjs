@@ -3,7 +3,8 @@
 // modifiers a minigame keeps, Close Enough's dial and bands, Higher /
 // Lower's bar, hints and tiers, Slow Spell's fit, spelling and tiers,
 // Syllable Split's splitter, fit, tray and tiers, Letter Pool's roll,
-// tray, checks, tiers and no haunts, and what a
+// tray, checks, tiers and no haunts, Code Break's fit, marks and tiers,
+// and what a
 // tier pays in the settle rules (gun.js, answers.js).
 //
 // Run: node --test tests/*.test.mjs
@@ -15,13 +16,13 @@ import { state } from '../js/state.js';
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS, ENERGY_MAX, RELOAD_ENERGY,
   BOSS_HP, MINIGAME_TIER_PAY, HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
-  SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM,
+  SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM, CODE_BREAK_TIERS,
 } from '../js/config.js';
 import {
   MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, modifiersFor, rollMinigame, forcedQuestion, endMinigame,
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   splitSyllables, syllableSplitPieces, syllableSplitTray, syllableSplitTier,
-  letterPoolSetup, letterPoolCheck, letterPoolTier,
+  letterPoolSetup, letterPoolCheck, letterPoolTier, codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier,
 } from '../js/minigames.js';
 import { recordHauntAnswer } from '../js/haunts.js';
 import { settleReload } from '../js/gun.js';
@@ -68,12 +69,12 @@ test('Close Enough fits plain number answers only', () => {
   assert.deepEqual(minigamesFor(NUMBER), ['closeEnough', 'higherLower']);
   assert.deepEqual(minigamesFor({ meaning: '1,500%', answerType: 'number' }), ['closeEnough', 'higherLower']);
   assert.deepEqual(minigamesFor({ meaning: '4 B.C.', answerType: 'number' }), ['closeEnough', 'higherLower']);
-  assert.deepEqual(minigamesFor(WORD), ['slowSpell'], 'a one-word name: only Slow Spell');
+  assert.deepEqual(minigamesFor(WORD), ['slowSpell', 'codeBreak'], 'a one-word name: no dial');
   assert.deepEqual(minigamesFor({ meaning: '7½', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '13 and 14', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '0', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '1 Corinthians', answerType: 'book' }), []);
-  assert.deepEqual(minigamesFor({ meaning: '443', answerType: 'port' }), [], 'a port is a label, not an amount');
+  assert.deepEqual(minigamesFor({ meaning: '443', answerType: 'port' }), ['codeBreak'], 'a port is a label, not an amount');
 });
 
 test('modifiersFor keeps every offered modifier, or gives null', () => {
@@ -205,7 +206,7 @@ const BOOK = { term: 'Which book?', meaning: 'Ruth', answerType: 'book' };
 test('Slow Spell fits one-word answers of 4 to 12 letters, no decoys needed (typed)', () => {
   reset();
   state.settings.activeData = [NAMES[0]];
-  assert.deepEqual(minigamesFor(NAMES[0]), ['slowSpell'], 'alone in the set: typed, so nothing to pick from');
+  assert.deepEqual(minigamesFor(NAMES[0]), ['slowSpell', 'codeBreak'], 'alone in the set: typed, so nothing to pick from');
   state.settings.activeData = [...NAMES, BOOK];
   assert.ok(!minigamesFor(NAMES[6]).includes('slowSpell'), 'Eve: too short');
   assert.deepEqual(minigamesFor({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }), [], 'two words');
@@ -253,7 +254,7 @@ test('names split on their vowels, keeping digraphs and starting pairs', () => {
 test('Syllable Split fits one-word names of 3+ pieces with enough decoys', () => {
   reset();
   state.settings.activeData = LONG;
-  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit']);
+  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak']);
   assert.equal(syllableSplitPieces(LONG[4]), null, 'Noah: two pieces');
   assert.equal(syllableSplitPieces({ ...LONG[0], answerType: 'book' }), null, 'names only');
   assert.equal(syllableSplitPieces({ ...LONG[0], meaning: 'King Solomon' }), null, 'one word');
@@ -395,4 +396,43 @@ test('X doubles a chest\'s gold', () => {
   state.battle.selectedTarget = state.floor.chest;
   settleAnswer(true, false, '40', 'X');
   assert.equal(state.run.coinsTotal, plain * MINIGAME_TIER_PAY.X.goldScale);
+});
+
+test('Code Break fits one-word answers of 2-9 letters or digits, not number answers', () => {
+  const fits = q => minigamesFor({ term: 'Which one?', ...q }).includes('codeBreak');
+  assert.ok(fits({ meaning: 'MX', answerType: 'record' }));
+  assert.ok(fits({ meaning: '3389', answerType: 'port' }));
+  assert.ok(fits({ meaning: 'Wi-Fi', answerType: 'networkType' }), 'a hyphen is dropped');
+  assert.ok(fits({ meaning: 'Barnabas', answerType: 'name' }));
+  assert.ok(!fits({ meaning: 'A', answerType: 'record' }), 'too short');
+  assert.ok(!fits({ meaning: 'Mephibosheth', answerType: 'name' }), 'too long');
+  assert.ok(!fits({ meaning: 'Patch panel', answerType: 'device' }), 'two words');
+  assert.ok(!fits({ meaning: '40', answerType: 'number' }), 'the dials take numbers');
+  assert.ok(!minigamesFor({ term: 'Spell Noah.', meaning: 'Noah', answerType: 'name' }).includes('codeBreak'), 'not when the question holds it');
+});
+
+test('a Code Break code is the answer in capitals; a port gets the number pad', () => {
+  assert.deepEqual(codeBreakSetup({ meaning: 'Wi-Fi' }).code, ['W', 'I', 'F', 'I']);
+  assert.equal(codeBreakSetup({ meaning: 'Wi-Fi' }).digits, false);
+  assert.equal(codeBreakSetup({ meaning: '443', answerType: 'port' }).digits, true);
+  assert.deepEqual(codeChars(' a-a a '), ['A', 'A', 'A']);
+});
+
+test('Code Break marks right places first, and each character only as often as the code has it', () => {
+  const code = codeBreakSetup({ meaning: '443', answerType: 'port' });
+  assert.deepEqual(codeBreakMarks(code, '443'), ['hit', 'hit', 'hit']);
+  assert.deepEqual(codeBreakMarks(code, '143'), ['miss', 'hit', 'hit']);
+  assert.deepEqual(codeBreakMarks(code, '344'), ['near', 'hit', 'near']);
+  assert.deepEqual(codeBreakMarks(code, '444'), ['hit', 'hit', 'miss'], 'only two 4s to find');
+  assert.deepEqual(codeBreakMarks(codeBreakSetup({ meaning: 'AXAY' }), 'aaaa'), ['hit', 'miss', 'hit', 'miss']);
+  assert.deepEqual(codeBreakMarks(codeBreakSetup({ meaning: 'Noah' }), 'hano'), ['near', 'near', 'near', 'near']);
+  assert.equal(codeBreakMarks(code, '44'), null, 'the wrong length is not a guess');
+});
+
+test('Code Break tiers: guess 1 = X, 2 = 2, 3 = 1, then out of guesses', () => {
+  assert.equal(CODE_BREAK_TIERS.length, 3);
+  assert.equal(codeBreakTier(1), 'X');
+  assert.equal(codeBreakTier(2), '2');
+  assert.equal(codeBreakTier(3), '1');
+  assert.equal(codeBreakTier(4), null);
 });

@@ -218,6 +218,19 @@ export const TEXT = {
   'mg.letterPool.scored.2': '{name|upper}: formed {given}.', // draft
   'mg.letterPool.scored.1': '{name|upper}: formed {given}. Short.', // draft
   'mg.letterPool.scored.miss': '{name|upper}: too few. Hidden: {answer}.', // draft
+  'mg.codeBreak': 'Code Break', // draft
+  'mg.codeBreak.hint': 'Crack the code in {n} guesses.', // draft
+  'mg.codeBreak.placeholder': '{n} characters', // draft. Code Break's guess box
+  'mg.codeBreak.try': 'Try', // draft
+  'mg.codeBreak.left': 'Guesses left: {n}', // draft
+  'mg.codeBreak.length': 'The code is {n} characters.', // draft
+  'mg.codeBreak.mark.hit': 'right place', // draft
+  'mg.codeBreak.mark.near': 'elsewhere', // draft
+  'mg.codeBreak.mark.miss': 'not in it', // draft
+  'mg.codeBreak.scored.X': '{name|upper}: cracked on the first guess.', // draft
+  'mg.codeBreak.scored.2': '{name|upper}: cracked on the second guess.', // draft
+  'mg.codeBreak.scored.1': '{name|upper}: cracked on the last guess.', // draft
+  'mg.codeBreak.scored.miss': '{name|upper}: still locked. It was {answer}.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
   'battle.blindQuestion': '????', // draft
