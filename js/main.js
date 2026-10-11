@@ -21,7 +21,7 @@ import {
   isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
 } from './combat.js';
 import { lightConsumed } from './light.js';
-import { stepPlayer, onStairs } from './moves.js';
+import { stepPlayer, onStairs, stairsHere } from './moves.js';
 import { scoreGoals } from './goals.js';
 import { settleRelay } from './relays.js';
 import { playIntro } from './introview.js';
@@ -642,6 +642,7 @@ function startGame() {
   state.run.hearts = MAX_HEARTS;
   state.run.maxHearts = MAX_HEARTS;
   state.run.bonusSlack = 0;
+  state.run.nextPath = null;
   state.run.turnCount = 0;
   state.run.coinsTotal = 0;
   state.run.energy = ENERGY_START;
@@ -709,6 +710,8 @@ function drawFloor() {
   if (startChamber !== undefined) {
     showRoomNote('move-msg', t('theme.' + state.floor.chamberThemes[startChamber] + '.enter'));
   }
+  if (state.floor.stairsAlt) showRoomNote('move-msg', t('room.stairs.two'));
+  if (state.floor.path) showRoomNote('move-msg', t('room.path.taken', { path: t('path.' + state.floor.path) }));
   if (state.floor.goals.length) {
     showRoomNote('move-msg', t('room.goals.new', { goals: state.floor.goals.map(g => t('goal.' + g.id)).join(' / ') }));
   }
@@ -732,6 +735,7 @@ function advanceRoom() {
 function goDown() {
   if (state.run.turnLocked || state.run.runEnded || mapPanelShown() || !onStairs()) return;
   const scored = scoreGoals();
+  state.run.nextPath = stairsHere().path || null;
   advanceRoom();
   if (!roomScreen.classList.contains('show')) return;
   const note = drawEvents(scored);
@@ -858,7 +862,12 @@ function drawEvents(events) {
         showSensed();
         break;
       case 'stairsReached':
+        if (e.hidden) parts.push(t('room.stairs.hidden'));
+        else if (e.path) parts.push(t('room.stairs.path', { path: t('path.' + e.path) }));
         parts.push(t('room.stairs.ask'));
+        break;
+      case 'stairsScouted':
+        parts.push(t('exchange.scouted', { path: t('path.' + e.path) }));
         break;
       case 'goalMet':
         parts.push(t('room.goal.met', { goal: t('goal.' + e.id), gold: e.gold }));

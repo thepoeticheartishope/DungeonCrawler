@@ -8,9 +8,9 @@ import { state, key } from './state.js';
 import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
 import {
-  BOSS_HP, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, ROOM_THEMES
+  BOSS_HP, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
 } from './config.js';
-import { floorRecipe, REST_RECIPES, restLore } from './floors.js';
+import { floorRecipe, pickPaths, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './quiz.js';
 import { computeVisibility } from './sight.js';
 import { spawnMinion } from './combat.js';
@@ -101,7 +101,11 @@ function makeSpaceForPaper(paper) {
 // and camera that follow from them. No page access.
 export function buildFloor() {
   state.run.floorsEntered++;
-  const recipe = floorRecipe(state.run.roomIndex);
+  // The way down the player chose at the last rest's stairs, if any.
+  state.floor.path = state.run.nextPath;
+  state.run.nextPath = null;
+  state.floor.stairsAlt = null;
+  const recipe = floorRecipe(state.run.roomIndex, state.floor.path);
   state.floor.GRID_SIZE = recipe.grid;
   state.floor.CHAMBER_TARGET = recipe.rooms;
   // The floor's story joins the end of the run's queue, behind any lines
@@ -258,6 +262,8 @@ function clearDanger() {
   state.battle.struggle = null;
   f.struggles = 0;
   f.misses = 0;
+  f.path = null;
+  f.stairsAlt = null;
   f.heldChambers = new Set();
   f.relayTurnsWon = 0;
   f.goals = [];
@@ -279,15 +285,30 @@ function clearDanger() {
   f.lightLossShare = 0;
 }
 
+// A rest room's second stairs: a room tile off the doorways and off
+// `avoid`, at least REST_STAIRS_APART steps (straight-line) from the first
+// stairs and the start, so the two ways down read as two choices. Null if
+// the room has no such tile.
+function pickSecondStairs(layout, avoid) {
+  const doors = doorTiles(layout);
+  const apart = (p, q) => Math.abs(p.row - q.row) + Math.abs(p.col - q.col) >= REST_STAIRS_APART;
+  const tiles = [...layout.roomTiles].filter(k => !doors.has(k)).map(k => {
+    const [row, col] = k.split(',').map(Number);
+    return { row, col };
+  }).filter(p => !avoid.some(q => q.row === p.row && q.col === p.col) && apart(p, layout.stairs) && apart(p, layout.start));
+  return tiles.length ? tiles[Math.floor(Math.random() * tiles.length)] : null;
+}
+
 // Where THE UNFOLDING stands on a rest floor: a room tile out in the open
 // (floor on all eight sides) if there is one, so it reads as something
 // standing in the room rather than furniture against a wall. makePlacer
 // keeps it off the doorway, the start and the stairs, and away from
-// anything that would cut the room in two. Never on a paper. Null only if
+// anything that would cut the room in two. Never on a paper or the second
+// stairs (`avoid`). Null only if
 // no tile at all can hold it.
-function placeExchange(layout, papers) {
+function placeExchange(layout, avoid) {
   const placer = makePlacer(layout, REST_GRID);
-  const onPaper = p => papers.some(paper => paper.row === p.row && paper.col === p.col);
+  const onPaper = p => avoid.some(q => q.row === p.row && q.col === p.col);
   const tiles = [...layout.roomTiles].map(k => {
     const [row, col] = k.split(',').map(Number);
     return { row, col };
@@ -349,9 +370,19 @@ export function buildRestFloor(kind) {
   }));
 
   f.stairs = { row: layout.stairs.row, col: layout.stairs.col };
-  f.exchange = placeExchange(layout, f.props);
+  // A between-rest has two ways down (strategy plan step C): its own
+  // stairs show where they lead, the second's way is hidden until scouted
+  // at THE UNFOLDING.
+  if (kind === 'between') {
+    const [shown, hidden] = pickPaths();
+    f.stairs.path = shown;
+    const alt = pickSecondStairs(layout, [f.PLAYER_START, f.stairs, ...f.props]);
+    if (alt) f.stairsAlt = { ...alt, path: hidden, hidden: true };
+    else f.stairs.path = null;
+  }
+  f.exchange = placeExchange(layout, [...f.props, ...(f.stairsAlt ? [f.stairsAlt] : [])]);
   f.exchangeBought = new Set();
-  const avoid = [f.PLAYER_START, f.stairs, ...f.props, ...(f.exchange ? [f.exchange] : [])];
+  const avoid = [f.PLAYER_START, f.stairs, ...f.props, ...(f.exchange ? [f.exchange] : []), ...(f.stairsAlt ? [f.stairsAlt] : [])];
   const coinTile = pickCoinTile(f.wallSet, avoid, layout.roomTiles);
   f.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
 

@@ -259,11 +259,13 @@ export const MAX_HEARTS_CAP = 5;
 //   heal          +1 stability (not offered at max)
 //   maxStability  +1 max stability, does not heal; once per rest, up to MAX_HEARTS_CAP
 //   slack         EXCHANGE_SLACK_TURNS more turns on the next depth; once per rest, not on the epilogue
+//   scout         shows where a between-rest's hidden stairs lead (strategy plan step C); only while hidden
 export const EXCHANGE_ITEMS = [
   { id: 'silence', price: 2 },
   { id: 'heal', price: 4 },
   { id: 'maxStability', price: 10 },
   { id: 'slack', price: 3 },
+  { id: 'scout', price: 3 },
 ];
 export const EXCHANGE_SLACK_TURNS = 20;
 // Floor goals (strategy plan step A): each danger depth rolls
@@ -507,6 +509,9 @@ export const TIMER_SECONDS = 10;
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.
 export const REST_GRID = 15;
+// A between-rest's two stairs (strategy plan step C) stand at least this
+// many steps apart, and as far from the start.
+export const REST_STAIRS_APART = 4;
 
 // The map (js/mapview.js). Phosphor afterglow: each frame keeps
 // (1 - AFTERGLOW_FADE) of the last frame's light, measured at 60 frames a

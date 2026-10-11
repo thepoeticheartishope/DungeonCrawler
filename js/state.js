@@ -50,6 +50,7 @@ export const state = {
     seconds: 0,
     hearts: MAX_HEARTS,
     maxHearts: MAX_HEARTS, // max stability; THE UNFOLDING can raise it (js/exchange.js)
+    nextPath: null,        // the way down chosen at a between-rest's stairs (floors.js FLOOR_PATHS), for the next depth; buildFloor takes it
     bonusSlack: 0,         // turns bought at THE UNFOLDING for the next depth's light budget (light.js initBossLight spends it)
     turnCount: 0,
     coinsTotal: 0,
@@ -90,6 +91,8 @@ export const state = {
     goals: [],             // this floor's side goals: [{ id, pay }] from FLOOR_GOALS (goals.js rollGoals); none on a rest floor
     heldChambers: new Set(), // rooms held by a relay (relays.js): no boss light, no minion from outside
     relayTurnsWon: 0,      // light turns relays have taken back on this floor (capped at RELAY_TURNS_CAP)
+    path: null,            // the way down the player took to this depth (floors.js FLOOR_PATHS), or null
+    stairsAlt: null,       // a between-rest's second stairs: { row, col, path, hidden } (hidden until scouted); null elsewhere
     misses: 0,             // wrong answers on this floor, questions and reloads (the noMiss goal)
     struggles: 0,          // Struggles started on this floor; each one makes the next dial harder (gun.js struggleDial)
     bossLitSet: new Set(), // tiles the boss light currently reaches

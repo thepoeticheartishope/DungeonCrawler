@@ -89,8 +89,41 @@ export function restLore(kind, roomIndex) {
   return lore[roomIndex - 1] || [];
 }
 
+// The ways down from a between-rest (strategy plan step C): it has two
+// sets of stairs, each leading to the next depth changed one way. Timothy:
+// they differ in the minions and in how fast the light comes. Drafts.
+//   minions     added to (or taken from) the recipe's count, at least 1
+//   addKinds    kinds of the added minions, after the recipe's own
+//   swapKinds   { from: to }: those kinds become another
+//   slackScale  the recipe's slack times this: above 1 the light is slower
+export const FLOOR_PATHS = {
+  crowded: { minions: 2, addKinds: ['SHARD', 'SHARD'], slackScale: 1.25 },
+  hurried: { minions: -1, slackScale: 0.75 },
+  stalked: { swapKinds: { SHARD: 'STALKER' }, slackScale: 1 },
+};
+
 // The recipe for the floor at this index (0 = the first floor). Past the
-// last recipe the last one repeats, so a longer run never runs out.
-export function floorRecipe(floorIndex) {
-  return FLOOR_RECIPES[Math.min(floorIndex, FLOOR_RECIPES.length - 1)];
+// last recipe the last one repeats, so a longer run never runs out. With
+// a `path` (a FLOOR_PATHS name, the stairs taken down), the recipe is
+// changed that way; the table itself never changes.
+export function floorRecipe(floorIndex, path = null) {
+  const recipe = FLOOR_RECIPES[Math.min(floorIndex, FLOOR_RECIPES.length - 1)];
+  const way = path && FLOOR_PATHS[path];
+  if (!way) return recipe;
+  const swap = way.swapKinds || {};
+  const kinds = (recipe.minionKinds || []).map(k => swap[k] || k);
+  const minions = Math.max(1, recipe.minions + (way.minions || 0));
+  return {
+    ...recipe,
+    minions,
+    minionKinds: [...kinds, ...(way.addKinds || [])].slice(0, minions),
+    slack: recipe.slack && recipe.slack.map(n => Math.round(n * way.slackScale)),
+  };
+}
+
+// Two different ways down, at random, for a between-rest's two stairs.
+export function pickPaths() {
+  const names = Object.keys(FLOOR_PATHS);
+  const first = names.splice(Math.floor(Math.random() * names.length), 1)[0];
+  return [first, names[Math.floor(Math.random() * names.length)]];
 }
