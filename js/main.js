@@ -1119,7 +1119,25 @@ function mountBattleQuestion() {
 mountBattleQuestion();
 
 continueBtn.addEventListener('click', leaveEncounter);
-btnSelect.addEventListener('click', pressSelect);
+// SELECT acts the moment a finger or mouse goes down, not on the click
+// that comes when it lifts: a tap is held for about a tenth of a second,
+// and on release the damage bar's marker had already moved on (Timothy
+// felt the lag). The click a press ends with is skipped; a click with no
+// pointer behind it (Enter or Space on the focused button) still counts,
+// the same way the d-pad does it.
+let selectPressed = false;
+btnSelect.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0 || btnSelect.disabled) return;
+  e.preventDefault();
+  selectPressed = true;
+  pressSelect();
+});
+btnSelect.addEventListener('click', () => {
+  if (selectPressed) { selectPressed = false; return; }
+  pressSelect();
+});
+btnSelect.addEventListener('keydown', () => { selectPressed = false; });
+btnSelect.addEventListener('contextmenu', (e) => e.preventDefault());
 
 initDpad({
   buttons: dpadButtons, movePlayer, skipTurn,
