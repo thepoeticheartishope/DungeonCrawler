@@ -12,7 +12,7 @@ import { state, key } from './state.js';
 import {
   BATTLE_CHOICE_COUNT, ENERGY_MAX, GUN_RELOAD_MODIFIERS, RELOAD_ENERGY, WEAKNESS_DAMAGE_SCALE, MINION_KIND_ORDER,
   DAMAGE_BAR_DEPTHS, DAMAGE_PENALTY_WIDTH, DAMAGE_ZONE_GAP,
-  MINION_KINDS, MINION_STRIKE_COST, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
+  MINION_KINDS, MINION_STRIKE_COST, MINION_STUN_MOVES, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
   MINIGAME_TIER_PAY,
 } from './config.js';
@@ -250,7 +250,8 @@ export function damageZones(minionKind) {
 // left. Anywhere else grazes for 0. A round from the group the minion is
 // weak to (aim.matched) does WEAKNESS_DAMAGE_SCALE times the damage. A
 // minion with no hp left dies and pays its kind's gold (goldReward, so it
-// doubles in the darkness).
+// doubles in the darkness). Any damage stuns it for MINION_STUN_MOVES of
+// its moves (m.rest), so a minion one step away can't walk straight in.
 // Events: shotGrazed { minion }, shotBackfired { minion, energyLost }, or
 // minionHurt { minion, damage, hpLeft, weakPoint, matched } and maybe limbLost
 // { minion, limbsLeft }; then, on a kill, minionKilled { minion } and
@@ -272,6 +273,7 @@ export function settleShot(barPosition) {
 
   const damage = aim.matched ? base * WEAKNESS_DAMAGE_SCALE : base;
   m.hpLeft = Math.max(0, m.hpLeft - damage);
+  m.rest = Math.max(m.rest || 0, MINION_STUN_MOVES);
   const events = [{ type: 'minionHurt', minion: m, damage, hpLeft: m.hpLeft, weakPoint, matched: aim.matched }];
   if (weakPoint && m.limbs > 0) {
     m.limbs--;

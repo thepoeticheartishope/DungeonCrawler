@@ -333,6 +333,10 @@ export const MINION_TRAIL_LENGTH = 3;
 // stability (DARK_MISS_COST in the darkness, like a miss) and is knocked
 // back along its trail, up to MINION_TRAIL_LENGTH tiles.
 export const MINION_STRIKE_COST = 1;
+// A shot that does damage stuns the minion: it skips its next
+// MINION_STUN_MOVES moves, so it can't walk into the player straight after
+// (Timothy). A graze or a backfire doesn't stun.
+export const MINION_STUN_MOVES = 1;
 // Minions are placed when a room loads (no summoning; how many is in the
 // floor recipe) and roam freely: they wander at random and only chase once
 // the player is within MINION_CHASE_RANGE walkable steps.

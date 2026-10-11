@@ -1091,6 +1091,7 @@ function drawEvents(events) {
         hurtOnMap(e.minion);
         parts.push(t(e.weakPoint ? 'gun.weakPoint' : 'gun.hit'));
         if (e.matched) parts.push(t('gun.matched', { damage: e.damage }));
+        if (e.hpLeft > 0) parts.push(t('gun.stunned'));
         break;
       case 'weaknessFound':
         parts.push(t('gun.weakFound', { kind: t('minionKind.' + e.minionKind), group: e.label }));
