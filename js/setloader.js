@@ -12,6 +12,8 @@ import { t } from './text.js';
 
 const revealToggle = document.getElementById('revealToggle');
 const realTimeToggle = document.getElementById('realTimeToggle');
+const dpadRightToggle = document.getElementById('dpadRightToggle');
+const roomControls = document.querySelector('.room-controls');
 const playerNameInput = document.getElementById('playerName');
 const workshopScreen = document.getElementById('workshopScreen');
 const workshopBackBtn = document.getElementById('workshopBackBtn');
@@ -27,7 +29,7 @@ const savedSetsList = document.getElementById('savedSetsList');
 // Wires the start screen options and the workshop. `showSets` returns to
 // the set screen (setpicker.js), which lists what the workshop made.
 export function initSetLoader({ showSets }) {
-  // ---- Remember the reveal and real-time toggles and the player's name across sessions ----
+  // ---- Remember the reveal, real-time and swap-sides toggles and the player's name across sessions ----
   // localStorage access is wrapped in try/catch — private browsing or disabled
   // storage should degrade to "just use the checkbox defaults" rather than
   // break the start screen.
@@ -47,6 +49,7 @@ export function initSetLoader({ showSets }) {
       localStorage.setItem(OPTION_STORAGE_KEY, JSON.stringify({
         revealOnWrong: revealToggle.checked,
         realTime: realTimeToggle.checked,
+        dpadRight: dpadRightToggle.checked,
         playerName: playerNameInput.value,
       }));
     } catch (e) {
@@ -54,14 +57,24 @@ export function initSetLoader({ showSets }) {
     }
   }
 
+  // Puts the d-pad on the side the swap-sides toggle asks for: right
+  // (MAP, LOG and SELECT on the left) for a player who moves with the
+  // other hand. Only the layout changes, so it lives here, not in state.
+  function placeDpad() {
+    roomControls.classList.toggle('dpad-right', dpadRightToggle.checked);
+  }
+
   const savedOptions = loadSavedOptions();
   if (typeof savedOptions.revealOnWrong === 'boolean') revealToggle.checked = savedOptions.revealOnWrong;
   if (typeof savedOptions.realTime === 'boolean') realTimeToggle.checked = savedOptions.realTime;
+  if (typeof savedOptions.dpadRight === 'boolean') dpadRightToggle.checked = savedOptions.dpadRight;
+  placeDpad();
   playerNameInput.maxLength = PLAYER_NAME_MAX_LENGTH;
   if (typeof savedOptions.playerName === 'string') playerNameInput.value = savedOptions.playerName.slice(0, PLAYER_NAME_MAX_LENGTH);
 
   revealToggle.addEventListener('change', saveOptions);
   realTimeToggle.addEventListener('change', saveOptions);
+  dpadRightToggle.addEventListener('change', () => { placeDpad(); saveOptions(); });
   playerNameInput.addEventListener('input', saveOptions);
 
   // ---- Workshop ----

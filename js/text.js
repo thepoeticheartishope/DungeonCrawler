@@ -354,6 +354,7 @@ export const TEXT = {
   'start.enter': 'Enter the {@term.dungeon}', // draft
   'start.name.label': 'Your name', // draft
   'start.name.placeholder': 'Leave blank to stay nameless', // draft
+  'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
   'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft
 
   // ---- Set screen (after Enter: which questions this run asks) ----

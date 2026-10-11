@@ -858,6 +858,9 @@
     justify-content: center;
     gap: 28px;
   }
+  /* Swap sides (start screen, js/setloader.js): the d-pad on the right,
+     MAP, LOG and SELECT on the left. */
+  .room-controls.dpad-right { flex-direction: row-reverse; }
 
   /* Clips the turned d-pad's empty corners, which would otherwise poke
      past the screen's edge and make a phone zoom out. The padding keeps
@@ -1458,6 +1461,11 @@
     <label class="option-toggle">
       <input type="checkbox" id="realTimeToggle">
       <span data-t="start.realTime"></span>
+    </label>
+
+    <label class="option-toggle">
+      <input type="checkbox" id="dpadRightToggle">
+      <span data-t="start.dpadRight"></span>
     </label>
 
     <button id="startBtn" data-t="start.enter"></button>
