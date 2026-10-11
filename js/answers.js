@@ -6,7 +6,7 @@
 // the wording. No DOM access here.
 
 import { state } from './state.js';
-import { BOSS_HP, DARK_MISS_COST, DIFFICULTY_COIN_REWARD, BATTLE_CHOICE_COUNT } from './config.js';
+import { BOSS_HP, DARK_MISS_COST, DIFFICULTY_COIN_REWARD, BATTLE_CHOICE_COUNT, MINIGAME_TIER_PAY } from './config.js';
 import { recordHauntAnswer } from './haunts.js';
 import { extinguishLight } from './light.js';
 import { computeVisibility } from './sight.js';
@@ -22,7 +22,10 @@ import { pickQuestion, fightChoosable } from './quiz.js';
 // right or wrong: it's cleared or spent. Only a boss fight goes on past an
 // answer, until its HP runs out. A miss costs 1 heart (DARK_MISS_COST in
 // the darkness); at 0 hearts the events end with signalLost.
-export function settleAnswer(isCorrect, hadExtraSpace, given) {
+// `tier` is a minigame's tier for a right answer ('1', '2' or 'X',
+// MINIGAME_TIER_PAY); a plain question is '2'. X takes more off a boss
+// and pays more gold; a minion or the hunter is settled the same by any.
+export function settleAnswer(isCorrect, hadExtraSpace, given, tier = '2') {
   const target = state.battle.selectedTarget;
   const q = state.battle.currentQuestion;
   const events = [{ type: 'answerGiven', given }];
@@ -50,7 +53,8 @@ export function settleAnswer(isCorrect, hadExtraSpace, given) {
     events.push({ type: 'signalLost' });
     return events;
   }
-  events.push(...(target.kind === 'boss' ? resolveBossAnswer(isCorrect) : resolveOneShot(target, isCorrect, q)));
+  const pay = MINIGAME_TIER_PAY[tier];
+  events.push(...(target.kind === 'boss' ? resolveBossAnswer(isCorrect, pay) : resolveOneShot(target, isCorrect, q, pay)));
   return events;
 }
 
@@ -65,12 +69,13 @@ function settleWager(isCorrect) {
 }
 
 // Boss fights are the one encounter that outlasts an answer: a correct one
-// takes 1 HP off the boss (bossHit), a miss doesn't (bossHeld), and either
-// way the caller goes back to the category choice until the boss is
-// cleared (bossDefeated, then darknessFell).
-function resolveBossAnswer(isCorrect) {
+// takes the tier's `bossDamage` HP off the boss (1 for a plain answer;
+// bossHit), a miss doesn't (bossHeld), and either way the caller goes back
+// to the category choice until the boss is cleared (bossDefeated, then
+// darknessFell).
+function resolveBossAnswer(isCorrect, pay) {
   if (!isCorrect) return [{ type: 'bossHeld' }];
-  state.floor.boss.hp--;
+  state.floor.boss.hp = Math.max(0, state.floor.boss.hp - pay.bossDamage);
   if (state.floor.boss.hp > 0) return [{ type: 'bossHit', hp: state.floor.boss.hp, max: BOSS_HP }];
   const boss = state.floor.boss;
   state.floor.boss = null; // clears the doorway it was blocking
@@ -87,8 +92,8 @@ function resolveBossAnswer(isCorrect) {
 // Everything but the boss is settled by a single answer. Success pays out
 // (gold for a chest, category challenge or trapped box, a hint for a
 // rune); a miss has already cost its heart. Either way the target is
-// cleared or spent.
-function resolveOneShot(target, isCorrect, q) {
+// cleared or spent. Gold is scaled by the tier's `goldScale`.
+function resolveOneShot(target, isCorrect, q, pay) {
   // The hunter can't be cleared, only thrown off the trail for a while.
   if (target.kind === 'hunter') {
     repelHunter(target, isCorrect);
@@ -110,13 +115,16 @@ function resolveOneShot(target, isCorrect, q) {
   if (!isCorrect) return events;
 
   if (target.kind === 'box') {
-    events.push({ type: 'goldGained', amount: openBox(target), from: 'box' });
+    const gold = openBox(target);
+    const bonus = gold * (pay.goldScale - 1);
+    state.run.coinsTotal += bonus;
+    events.push({ type: 'goldGained', amount: gold + bonus, from: 'box' });
   } else if (target.kind === 'chest') {
-    const gold = goldReward(2);
+    const gold = goldReward(2) * pay.goldScale;
     state.run.coinsTotal += gold;
     events.push({ type: 'goldGained', amount: gold, from: 'chest' });
   } else if (target.kind === 'encounter') {
-    const gold = goldReward(DIFFICULTY_COIN_REWARD[q.difficulty] || DIFFICULTY_COIN_REWARD.medium);
+    const gold = goldReward(DIFFICULTY_COIN_REWARD[q.difficulty] || DIFFICULTY_COIN_REWARD.medium) * pay.goldScale;
     state.run.coinsTotal += gold;
     events.push({ type: 'goldGained', amount: gold, from: 'encounter', category: target.category });
   } else {

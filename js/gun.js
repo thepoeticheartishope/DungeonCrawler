@@ -14,6 +14,7 @@ import {
   DAMAGE_BAR_DEPTHS, DAMAGE_PENALTY_WIDTH, DAMAGE_ZONE_GAP,
   MINION_KINDS, MINION_STRIKE_COST, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
+  MINIGAME_TIER_PAY,
 } from './config.js';
 import { fightGroups, shuffle } from './quiz.js';
 import { recordHauntAnswer } from './haunts.js';
@@ -90,15 +91,18 @@ export function reloadOffers() {
 // is lost (the turn spent is the cost). A timed-out question is a wrong
 // answer. Either way the haunt is recorded and the rotation moves on.
 // A reload from an energy cell (`box`) uses the cell up, right or wrong, so
-// every cell is one question.
+// every cell is one question. A minigame's `tier` changes the energy by
+// its MINIGAME_TIER_PAY `energy` (tier 1 one less, never below 1; X one
+// more); a plain question is '2'.
 // Events: reloaded { energy, total } or jammed { expected, source }, then
 // hauntSilenced / hauntLingers.
-export function settleReload(isCorrect, offer, box = null) {
+export function settleReload(isCorrect, offer, box = null, tier = '2') {
   if (box) box.searched = true;
   const q = state.battle.currentQuestion;
   const events = [];
   if (isCorrect) {
-    const energy = Math.min(offer.energy, ENERGY_MAX - state.run.energy);
+    const earned = Math.max(1, offer.energy + MINIGAME_TIER_PAY[tier].energy);
+    const energy = Math.min(earned, ENERGY_MAX - state.run.energy);
     addRounds(energy, reloadCategory().label);
     state.run.correctTotal++;
     events.push({ type: 'reloaded', energy, total: state.run.energy });

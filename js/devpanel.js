@@ -1,8 +1,9 @@
-// DEV panel in the status bar: Skip room, Auto-win, Fog, Turn, Camera and Combat
+// DEV panel in the status bar: Skip room, Auto-win, Fog, Turn, Minigame, Camera and Combat
 // toggles, a test shot and a test reload, for testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw } from './mapview.js';
 import { renderRoomHints } from './render.js';
+import { MINIGAMES } from './minigames.js';
 
 const devToggleBtn = document.getElementById('devToggleBtn');
 const devPanel = document.getElementById('devPanel');
@@ -11,12 +12,13 @@ const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devTurnBtn = document.getElementById('devTurnBtn');
 const devCameraBtn = document.getElementById('devCameraBtn');
+const devMinigameBtn = document.getElementById('devMinigameBtn');
 const devCombatBtn = document.getElementById('devCombatBtn');
 const devShotBtn = document.getElementById('devShotBtn');
 const devReloadBtn = document.getElementById('devReloadBtn');
 
 export function initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter, devTestShot, devTestReload, endGunTests,
+  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
   gunCombatChanged, autoWinGun,
   battleScreen, wagerRow,
 }) {
@@ -32,7 +34,8 @@ export function initDevPanel({
   });
 
   // Dev tool: while on, every encounter plays itself out — the first query
-  // category is picked, the correct answer given, and CONTINUE pressed — one
+  // category is picked, the correct answer given (a minigame is played out
+  // at X), and CONTINUE pressed — one
   // step every AUTO_WIN_STEP_MS so the log stays readable. Walking stays
   // manual, so the boss light, minions and darkness behave as usual. With
   // the gun on, an open reload is answered right and the damage bar stops
@@ -45,6 +48,7 @@ export function initDevPanel({
     if (!battleScreen.classList.contains('show') || state.run.turnLocked || state.run.runEnded) return;
     if (state.battle.battlePhase === 'choosing') chooseCategory(0);
     else if (!wagerRow.hidden) placeWager(1);
+    else if (state.battle.battlePhase === 'answering' && state.battle.selectedTarget && state.battle.minigame) playMinigameOut();
     else if (state.battle.battlePhase === 'answering' && state.battle.selectedTarget) attemptAnswerMC(state.battle.currentQuestion.meaning);
     else if (state.battle.battlePhase === 'ended') leaveEncounter();
   }
@@ -71,6 +75,16 @@ export function initDevPanel({
     state.settings.turnBeforeStep = !state.settings.turnBeforeStep;
     devTurnBtn.textContent = state.settings.turnBeforeStep ? 'Turn: look first (dev)' : 'Turn: and step (dev)';
     devTurnBtn.setAttribute('aria-pressed', String(state.settings.turnBeforeStep));
+  });
+
+  // Dev tool: minigames roll as usual, never, or (one minigame picked)
+  // always when the question fits it; forcing one also swaps in a question
+  // it fits (minigames.js forcedQuestion), so it can be tried anywhere.
+  const MINIGAME_MODES = ['roll', 'off', ...MINIGAMES];
+  devMinigameBtn.addEventListener('click', () => {
+    const next = MINIGAME_MODES[(MINIGAME_MODES.indexOf(state.settings.minigame) + 1) % MINIGAME_MODES.length];
+    state.settings.minigame = next;
+    devMinigameBtn.textContent = 'Minigame: ' + next + ' (dev)';
   });
 
   // Dev tool: the isometric camera glides after the player, or stays locked

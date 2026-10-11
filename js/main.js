@@ -38,7 +38,9 @@ import { initDpad } from './dpad.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
-import { mountQuestionPanel, setQuestion, retypeQuestion, clearModifier, applyModifier, placeWager } from './questionview.js';
+import { mountQuestionPanel, setQuestion, setMinigame, retypeQuestion, clearModifier, applyModifier, placeWager } from './questionview.js';
+import { rollMinigame, forcedQuestion, endMinigame } from './minigames.js';
+import { playMinigameOut } from './minigameview.js';
 import { initMinimap, refreshMinimap } from './minimapview.js';
 
 const startScreen = document.getElementById('startScreen');
@@ -129,7 +131,7 @@ applyStaticText();
 initSetLoader({ showSets: showSetPicker });
 initSetPicker({ startGame, openWorkshop: showWorkshop });
 initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, leaveEncounter, devTestShot, devTestReload, endGunTests,
+  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
   gunCombatChanged, autoWinGun, battleScreen, wagerRow,
 });
 
@@ -253,20 +255,21 @@ function devTestReload() {
 // that's open (set by pickReload; DEV -> Auto-win answers through it).
 let mapAnswers = null;
 
-// A reload offer was picked: its question, with its modifiers, over the
-// map. Any answer (or the Timer running out) settles the reload.
+// A reload offer was picked: its question (or a minigame), with its
+// modifiers, over the map. Any answer (or the Timer running out) settles
+// the reload; a minigame's tier changes the energy.
 function pickReload(offer, category) {
   const box = reloadBox;
-  const settle = (isCorrect) => endReload(() => settleReload(isCorrect, offer, box));
+  const settle = (isCorrect, tier, scored = []) => endReload(() => [...scored, ...settleReload(isCorrect, offer, box, tier)]);
   mapAnswers = {
     onChoice: choice => settle(matchesAnswer(choice)),
     onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
     onTimeout: () => settle(false),
+    onResult: result => settle(result.right, result.tier || '2', endMinigame(result)),
     log: text => showRoomNote('', text),
   };
   showQuestionOnMap(mapAnswers);
-  setQuestion(pickQuestion(state.battle.currentQuestion, category.pool));
-  offer.modifiers.forEach(applyModifier);
+  askQuestion(pickQuestion(state.battle.currentQuestion, category.pool), offer.modifiers, category.pool);
 }
 
 // A relay was bumped (moves.js relayFound): its question over the map,
@@ -275,15 +278,34 @@ function pickReload(offer, category) {
 function openRelay(relay) {
   gunTest = false;
   state.run.turnLocked = true;
-  const settle = (isCorrect) => endReload(() => settleRelay(isCorrect, relay));
+  const settle = (isCorrect, scored = []) => endReload(() => [...scored, ...settleRelay(isCorrect, relay)]);
   mapAnswers = {
     onChoice: choice => settle(matchesAnswer(choice)),
     onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
     onTimeout: () => settle(false),
+    onResult: result => settle(result.right, endMinigame(result)),
     log: text => showRoomNote('', text),
   };
   showQuestionOnMap(mapAnswers);
-  setQuestion(pickQuestion(state.battle.currentQuestion));
+  askQuestion(pickQuestion(state.battle.currentQuestion), []);
+}
+
+// Sets question `q` and puts `modifiers` on it; it may run as a minigame
+// (dressQuestion). Wherever a question is asked goes through here or
+// dressQuestion, so any of them can roll a minigame. `pool` is where `q`
+// came from, for DEV -> Minigame forcing one (minigames.js forcedQuestion).
+function askQuestion(q, modifiers, pool) {
+  setQuestion(forcedQuestion(q, pool));
+  dressQuestion(modifiers);
+}
+
+// Rolls whether the question showing runs as a minigame (minigames.js
+// rollMinigame: only one that can carry all of `modifiers`), then puts
+// the modifiers on it.
+function dressQuestion(modifiers) {
+  const list = modifiers.filter(Boolean);
+  setMinigame(rollMinigame(state.battle.currentQuestion, list));
+  list.forEach(applyModifier);
 }
 
 // Closes the gun's panels, hands the question panel back to the battle
@@ -312,11 +334,12 @@ function gunCombatChanged() {
 }
 
 // DEV -> Auto-win, with a gun panel open: picks the first reload, answers
-// its question right, and stops the damage bar on the weak point.
-// Walking, reloading and firing stay the player's.
+// its question right (a minigame at X), and stops the damage bar on the
+// weak point. Walking, reloading and firing stay the player's.
 function autoWinGun() {
   const shown = mapPanelShown();
   if (shown === 'reload') pickReload(reloadOffers().offers[0], reloadCategory());
+  else if (shown === 'question' && mapAnswers && state.battle.minigame) playMinigameOut();
   else if (shown === 'question' && mapAnswers) mapAnswers.onChoice(state.battle.currentQuestion.meaning);
   else if (shown === 'aim') stopDamageBar(bestSpot(state.battle.aim));
   else if (shown === 'struggle') stopStruggleBar(0.5);
@@ -525,16 +548,16 @@ function startBattleTurn() {
     } else {
       syncQuestionForTarget();
     }
+    const forced = forcedQuestion(state.battle.currentQuestion, poolFor(target));
+    if (forced !== state.battle.currentQuestion) setQuestion(forced);
     // The question was very likely set well before this moment, off-screen
     // (loadRoom() sets one at room load), so re-type it fresh every time a
     // turn starts rather than letting the effect be skipped.
     retypeQuestion();
     // A boss question always carries a modifier, even with no category
-    // choice to show it on.
-    if (target.kind === 'boss') {
-      clearModifier();
-      applyModifier(rollModifier(target));
-    }
+    // choice to show it on. Any question may run as a minigame.
+    clearModifier();
+    dressQuestion(target.kind === 'boss' ? [rollModifier(target)] : []);
     if (!state.settings.mcMode) answerInput.focus();
   }
   showBattlePhase();
@@ -558,8 +581,7 @@ function chooseCategory(i) {
   if (haunt) logLine(t('log.haunt.returns'), 'alert');
   state.floor.lastChoiceType = choice.choiceType || null;
   state.battle.battlePhase = 'answering';
-  setQuestion(q);
-  choice.modifiers.forEach(applyModifier);
+  askQuestion(q, choice.modifiers, choice.pool);
   showBattlePhase();
   if (!state.settings.mcMode) answerInput.focus();
 }
@@ -651,6 +673,7 @@ function startGame() {
   state.run.rounds = [];
   addRounds(ENERGY_START);
   state.run.reloadIndex = 0;
+  state.run.lastMinigame = null;
   rollWeaknesses();
   state.run.loreQueue = [];
   resetHaunts();
@@ -1046,6 +1069,13 @@ function drawEvents(events) {
       case 'knockedBack':
         slideOnMap(e.minion, e.from);
         break;
+      // A minigame ended (minigames.js endMinigame): how close it came.
+      case 'minigameScored': {
+        const line = t('mg.scored.' + (e.tier || 'miss'), { name: t('mg.' + e.minigame), answer: e.answer });
+        logLine(line, e.tier ? 'bright' : 'alert');
+        parts.push(line);
+        break;
+      }
       case 'reloaded':
         parts.push(t('gun.reloaded', { energy: e.energy }));
         break;
@@ -1164,9 +1194,10 @@ function skipTurn() {
 // and counted the attempt. `given` is the player's answer, echoed to the log.
 // settleAnswer (answers.js) changes state; this draws its events and picks
 // what comes next: the run ends at 0 hearts, a boss fight goes on to its
-// next question, anything else is settled.
-function applyAnswerResult(isCorrect, hadExtraSpace, given) {
-  const events = settleAnswer(isCorrect, hadExtraSpace, given);
+// next question, anything else is settled. A minigame passes its `tier`
+// and the events that scored it (`scored`), drawn first.
+function applyAnswerResult(isCorrect, hadExtraSpace, given, tier = '2', scored = []) {
+  const events = [...scored, ...settleAnswer(isCorrect, hadExtraSpace, given, tier)];
   const has = (type) => events.some(e => e.type === type);
   drawEvents(events);
   flashBattleResult(isCorrect);
@@ -1208,6 +1239,19 @@ function attemptAnswerMC(choice) {
   applyAnswerResult(matchesAnswer(choice), false, choice);
 }
 
+// A minigame on the battle screen ended (minigameview.js): settled like an
+// answer, at its tier.
+function attemptMinigame(result) {
+  if (state.run.turnLocked || state.battle.battlePhase !== 'answering') return;
+  if (!state.battle.selectedTarget || !isAdjacentToPlayer(state.battle.selectedTarget)) {
+    logLine(t('log.outOfRange'), 'sys');
+    return;
+  }
+  state.run.turnLocked = true;
+  state.run.attempts++;
+  applyAnswerResult(result.right, false, result.given, result.tier || '2', endMinigame(result));
+}
+
 // Whether `given` is the current question's answer, ignoring case and
 // extra spaces.
 function matchesAnswer(given) {
@@ -1226,7 +1270,7 @@ function answerTimedOut() {
 
 // What the question panel's input means on the battle screen.
 const battleAnswers = {
-  onChoice: attemptAnswerMC, onTyped: attemptAnswer, onTimeout: answerTimedOut, log: logLine,
+  onChoice: attemptAnswerMC, onTyped: attemptAnswer, onTimeout: answerTimedOut, onResult: attemptMinigame, log: logLine,
 };
 
 // Puts the question panel back on the battle screen (it may have been

@@ -363,7 +363,7 @@ export function numericAnswer(s) {
 // (a pasted list), or its answer is a bare number whatever its type. A
 // typed non-number answer with words after the number ("1 Corinthians",
 // a book) is not.
-function numberQuestion(item) {
+export function numberQuestion(item) {
   const n = numericAnswer(item.meaning);
   if (!n) return null;
   if (ANSWER_TYPE_GROUPS[item.answerType] === 'number' || !item.answerType || !n.unit) return n;

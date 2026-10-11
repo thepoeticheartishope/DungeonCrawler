@@ -1125,6 +1125,27 @@
   .opt-text.flip-upside, .opt-text.flip-mirror { display: inline-block; }
   .opt-text.flip-upside { transform: rotate(180deg); }
   .opt-text.flip-mirror { transform: scaleX(-1); }
+  /* ---- Minigames (js/minigameview.js): in place of the options ---- */
+  #queryPanel.minigame-on .mc-options, #queryPanel.minigame-on #answerForm { display: none !important; }
+  .minigame[hidden] { display: none; }
+  .minigame { margin-top: 4px; text-align: center; }
+  .mg-hint { color: var(--muted); }
+  .mg-reading { font-size: 28px; color: var(--torch-bright); min-height: 1.3em; }
+  .mg-dial-row { display: flex; align-items: flex-start; gap: 4px; }
+  .mg-nudge { flex: none; min-width: 44px; }
+  .mg-track { flex: 1; min-width: 0; }
+  .mg-dial { width: 100%; margin: 10px 0 0; accent-color: var(--torch-bright); }
+  .mg-ticks, .mg-ends { display: flex; justify-content: space-between; padding: 0 8px; }
+  .mg-ticks span { width: 1px; height: 8px; background: var(--muted); }
+  .mg-ends { font-size: 16px; color: var(--muted); }
+  .mg-lock { margin-top: 8px; }
+  /* Blind: the reading and end numbers go, the tick marks stay. */
+  .mg-close.mod-blind .mg-reading { font-size: 0; }
+  .mg-close.mod-blind .mg-ends { visibility: hidden; }
+  .mg-close.mod-blind .mg-reading::after { content: '????'; font-size: 28px; color: var(--muted); }
+  /* Flip: the dial runs backwards, its top on the left. */
+  .mg-close.mg-flip .mg-dial { direction: rtl; }
+  .mg-close.mg-flip .mg-ends { flex-direction: row-reverse; }
   /* Timer: the countdown line; bright for the last few seconds. */
   .mod-timer[hidden] { display: none; }
   .mod-timer.urgent { color: var(--torch-bright); text-shadow: var(--glow-strong); }
@@ -1318,6 +1339,7 @@
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devTurnBtn" type="button" aria-pressed="false" title="Testing only: a press in a new direction turns and steps (warned by I see you.), or only turns so you look first">Turn: and step (dev)</button>
+      <button class="dev-skip" id="devMinigameBtn" type="button" title="Testing only: minigames roll as usual, never, or always (one picked), swapping in a question it fits">Minigame: roll (dev)</button>
       <button class="dev-skip" id="devCameraBtn" type="button" title="Testing only: in isometric, the camera glides after the player or stays locked to them" aria-pressed="true">Camera: glide (dev)</button>
       <button class="dev-skip" id="devCombatBtn" type="button" aria-pressed="true" title="Testing only: the gun on the map (the default: minions are fought with SELECT, energy comes from energy cells), or classic combat (minions on the battle screen)">Combat: gun (dev)</button>
       <button class="dev-skip" id="devShotBtn" type="button" title="Testing only: fire at the gun&#39;s target; a landed shot opens the damage bar over the map (fills empty energy, spends no turn)">Test shot (dev)</button>
@@ -1568,6 +1590,8 @@
             <span class="wager-buttons" id="wagerButtons"></span>
           </div>
           <div class="mc-options" id="mcOptions"></div>
+          <!-- A minigame in place of the options (js/minigameview.js). -->
+          <div class="minigame" id="minigameSlot" hidden></div>
         </div>
         </div>
 
