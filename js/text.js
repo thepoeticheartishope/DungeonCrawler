@@ -61,8 +61,8 @@ export const TEXT = {
   'term.exchange': 'THE UNFOLDING', // Timothy's name; code name exchange (js/exchange.js)
   'term.exchange.symbol': '8', // a loop folded over itself
   'term.box.symbol': '&',
-  'term.ammo': 'AMMO DRUM', // draft
-  'term.ammo.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
+  'term.cell': 'ENERGY CELL', // draft
+  'term.cell.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
   // The player's glyph (the isometric map draws a stick man in its place).
   'term.player.symbol': '@',
   // What anything further than REVEAL_DISTANCE (config.js) shows as.
@@ -208,7 +208,7 @@ export const TEXT = {
   'room.box.gold': 'Inside: {gold} {@term.gold}.', // draft
   'room.box.junk': ['Empty.', 'Dust, and a smell like old rain.', 'A broken lens. Useless.', 'Rags. Nothing more.'], // draft
   'room.box.done': 'It is empty now.', // draft
-  'room.ammo.done': 'The drum is empty.', // draft. Bumping a used ammo drum
+  'room.cell.done': 'The cell is spent.', // draft. Bumping a used energy cell
 
   // ---- THE UNFOLDING's screen (js/exchangeview.js), on every rest floor.
   // It never speaks: every line describes it, in the narrator's voice.
@@ -349,8 +349,8 @@ export const TEXT = {
   'gun.block.outOfRange': 'Out of range.', // draft
   'gun.block.notInLight': 'Not in your light. Turn toward it.', // draft
   'gun.block.noLineOfSight': 'No line of sight.', // draft
-  'gun.block.chamberEmpty': 'The chamber is empty. Reload.', // draft
-  'gun.block.chamberFull': 'The chamber is full.', // draft
+  'gun.block.noEnergy': 'No energy. Find a cell.', // draft
+  'gun.block.energyFull': 'Energy is full.', // draft
   'gun.block.notShootable': 'The gun does nothing to that.', // draft
   'gun.block.noTarget': 'Nothing in reach.', // draft. FIRE or T with nothing the gun can reach
   'gun.aimChance': '{chance}%', // over the gun's target: the chance a shot there lands
@@ -358,16 +358,16 @@ export const TEXT = {
   // The gun's panels over the map (gunpanels.js).
   'gun.reload.title': 'SELECT RELOAD: {category|upper}', // draft. Over the reload choices; {category} is the next category
   'gun.reload.titlePlain': 'SELECT RELOAD', // draft. The same, for a set with no categories
-  'gun.reload.offer': 'LOAD {rounds} {rounds|plural:ROUND}', // draft
-  'gun.reload.room': 'room for {room}', // draft. When fewer rounds fit in the chamber than the offer loads
+  'gun.reload.offer': '+{energy} ENERGY', // draft
+  'gun.reload.room': 'room for {room}', // draft. When less energy fits under the most you can hold than the offer gives
   'gun.reload.cancel': 'CANCEL', // draft
   'gun.bar.prompt': 'PRESS SELECT', // draft. Over the damage bar
   'map.btn': 'MAP', // draft. The minimap button (M on a keyboard)
   'map.label': 'Map of what you have seen on this floor. Tap to close.', // draft. Read out by screen readers
-  'gun.struggle.prompt': 'STRUGGLE: PRESS SELECT', // draft. Over the Struggle dial (no rounds, a minion reached the player)
+  'gun.struggle.prompt': 'STRUGGLE: PRESS SELECT', // draft. Over the Struggle dial (no energy, a minion reached the player)
   'gun.struggle.promptAgain': 'STRUGGLE {count}: PRESS SELECT', // draft. The same, for a later Struggle on this floor (faster, smaller zone)
   'gun.struggle.label': 'Struggle dial. Press SELECT, Space or F in the middle to push it back.', // draft. Read out by screen readers
-  'gun.struggle.start': 'Empty. It is on you.', // draft. A minion reached the player with no rounds
+  'gun.struggle.start': 'Empty. It is on you.', // draft. A minion reached the player with no energy
   'gun.struggle.won': 'You shove it away.', // draft. The Struggle dial stopped in the zone
   'gun.struggle.lost': 'It gets through.', // draft. The Struggle dial missed; the strike line follows
   'gun.bar.label': 'Damage bar. Press SELECT, Space or F to fire.', // draft. Read out by screen readers
@@ -376,14 +376,14 @@ export const TEXT = {
   'gun.bar.zone.penalty': 'X', // draft. Marked on a penalty zone
   'gun.bar.key.hit': '1 = hit', // draft. The damage bar's key, one entry per kind of zone on the bar
   'gun.bar.key.weak': '2 = weak point', // draft
-  'gun.bar.key.penalty': 'X = lose a round', // draft
+  'gun.bar.key.penalty': 'X = lose 1 energy', // draft
   'gun.bar.key.graze': 'else graze', // draft
-  'gun.reloaded': 'Loaded {rounds} {rounds|plural:round}.', // draft. A right reload answer
-  'gun.jammed': 'Jammed. Nothing loads.', // draft. A wrong reload answer
+  'gun.reloaded': '+{energy} energy.', // draft. A right reload answer
+  'gun.jammed': 'The cell fizzles. No energy.', // draft. A wrong reload answer
   // Gun combat on the map (gun plan step 6): the buttons by the d-pad, the
   // HUD, and the room notes a shot or a strike adds up to.
   'gun.btn.select': 'SELECT', // draft. The gun's one button, by the d-pad (key F): fires at the target, or stops the damage bar
-  'stat.rounds': 'ROUNDS', // draft. HUD: rounds in the chamber, # loaded and - empty
+  'stat.energy': 'ENERGY', // draft. HUD: energy held, # each and - for room left
   'stat.target': 'TARGET', // draft. HUD: the gun's target and its hp, # left and - lost
   'stat.aim': 'AIM', // draft. HUD: the chance a shot at the target lands
   'stat.noTarget': '-', // the HUD's target and aim with nothing targeted
@@ -393,8 +393,8 @@ export const TEXT = {
   'minionKind.STALKER': 'STALKER', // draft
   'gun.missed': 'The shot goes wide.', // draft
   'gun.grazed': 'A graze. It keeps coming.', // draft
-  'gun.backfired': 'Backfire. A round is lost.', // draft. The damage bar stopped on a penalty zone
-  'gun.backfiredEmpty': 'Backfire.', // draft. The same, with no round left to lose
+  'gun.backfired': 'Backfire. 1 energy lost.', // draft. The damage bar stopped on a penalty zone
+  'gun.backfiredEmpty': 'Backfire.', // draft. The same, with no energy left to lose
   'gun.hit': 'Hit.', // draft
   'gun.weakPoint': 'Weak point.', // draft
   'gun.limbLost': 'A limb comes away.', // draft

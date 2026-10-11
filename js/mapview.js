@@ -366,8 +366,8 @@ function mapThings() {
     const under = thing => thing.row === p.row && thing.col === p.col;
     if (p.kind === 'paper' && (under({ row: f.playerRow, col: f.playerCol }) || f.minions.some(under))) return;
     const known = !state.settings.fogEnabled || p.identified || canMakeOut(p.row, p.col);
-    // An unused ammo drum breathes a faint glow (isoview.js drawAmmoDrum).
-    const breath = p.kind === 'ammo' && !p.searched && !remembered ? pulse(MAP_ANIMATION_MS.ammoBreath, phaseOf(p) * MAP_ANIMATION_MS.ammoBreath) : null;
+    // An unused energy cell breathes a faint glow (isoview.js drawEnergyCell).
+    const breath = p.kind === 'cell' && !p.searched && !remembered ? pulse(MAP_ANIMATION_MS.cellBreath, phaseOf(p) * MAP_ANIMATION_MS.cellBreath) : null;
     add(p.kind, p, known ? glyphOf(p) : null, {
       size: 'prop', colour: p.searched ? colours.muted : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1, breath,
     });

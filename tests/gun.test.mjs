@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  GUN_CHAMBER, GUN_RELOAD_ROUNDS, MINION_KINDS, DAMAGE_BAR_DEPTHS, DAMAGE_ZONE_GAP, MINION_STRIKE_COST,
+  ENERGY_MAX, RELOAD_ENERGY, MINION_KINDS, DAMAGE_BAR_DEPTHS, DAMAGE_ZONE_GAP, MINION_STRIKE_COST,
   DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
 } from '../js/config.js';
@@ -64,7 +64,7 @@ function resetFloor(size = 21) {
   state.run.coinsTotal = 0;
   state.run.correctTotal = 0;
   state.run.hearts = MAX_HEARTS;
-  state.run.ammo = 1;
+  state.run.energy = 1;
   state.run.reloadIndex = 0;
   state.battle.selectedTarget = null;
   state.floor.gunTarget = null;
@@ -98,56 +98,56 @@ test('reload offers the next category with no, one and two modifiers', () => {
   assert.equal(block, null);
   assert.deepEqual(category, reloadCategory());
   assert.deepEqual(offers.map(o => o.modifiers.length), [0, 1, 2]);
-  assert.deepEqual(offers.map(o => o.rounds), GUN_RELOAD_ROUNDS);
+  assert.deepEqual(offers.map(o => o.energy), RELOAD_ENERGY);
   const all = offers.flatMap(o => o.modifiers);
   assert.ok(!all.includes('gambler'));
   assert.equal(new Set(all).size, 3, 'the three modifiers are all different');
 });
 
-test('reload offers say how many rounds still fit, and none when the chamber is full', () => {
+test('reload offers say how much energy still fits, and none when energy is full', () => {
   resetFloor();
-  state.run.ammo = GUN_CHAMBER - 1;
+  state.run.energy = ENERGY_MAX - 1;
   assert.deepEqual(reloadOffers().offers.map(o => o.room), [1, 1, 1]);
-  state.run.ammo = GUN_CHAMBER;
-  assert.equal(reloadOffers().block, 'chamberFull');
+  state.run.energy = ENERGY_MAX;
+  assert.equal(reloadOffers().block, 'energyFull');
 });
 
-test('a right reload loads the offer\'s rounds, up to the chamber, and counts as right', () => {
+test('a right reload gives the offer\'s energy, up to ENERGY_MAX, and counts as right', () => {
   resetFloor();
-  const events = settleReload(true, { modifiers: ['blind', 'flip'], rounds: 3 });
-  assert.equal(state.run.ammo, GUN_CHAMBER);
+  const events = settleReload(true, { modifiers: ['blind', 'flip'], energy: 3 });
+  assert.equal(state.run.energy, ENERGY_MAX);
   assert.equal(state.run.correctTotal, 1);
-  assert.deepEqual(events[0], { type: 'reloaded', rounds: 3, ammo: GUN_CHAMBER });
+  assert.deepEqual(events[0], { type: 'reloaded', energy: 3, total: ENERGY_MAX });
 });
 
 test('a wrong reload jams: nothing loads, no heart is lost, the miss haunts', () => {
   resetFloor();
-  const events = settleReload(false, { modifiers: [], rounds: 1 });
-  assert.equal(state.run.ammo, 1);
+  const events = settleReload(false, { modifiers: [], energy: 1 });
+  assert.equal(state.run.energy, 1);
   assert.equal(state.run.hearts, MAX_HEARTS);
   assert.equal(events[0].type, 'jammed');
   assert.equal(events[0].expected, 'Noah');
   assert.ok(state.run.haunts.has(SET[0]));
 });
 
-test('a reload from an ammo drum uses the drum up, right or wrong', () => {
+test('a reload from an energy cell uses the drum up, right or wrong', () => {
   resetFloor();
-  const right = { row: 1, col: 1, kind: 'ammo', searched: false };
-  const wrong = { row: 2, col: 2, kind: 'ammo', searched: false };
-  settleReload(true, { modifiers: [], rounds: 1 }, right);
-  settleReload(false, { modifiers: [], rounds: 1 }, wrong);
+  const right = { row: 1, col: 1, kind: 'cell', searched: false };
+  const wrong = { row: 2, col: 2, kind: 'cell', searched: false };
+  settleReload(true, { modifiers: [], energy: 1 }, right);
+  settleReload(false, { modifiers: [], energy: 1 }, wrong);
   assert.ok(right.searched);
   assert.ok(wrong.searched);
 });
 
-test('an ammo drum is solid; bumping it finds it without a turn, and a used one is just blocked', () => {
+test('an energy cell is solid; bumping it finds it without a turn, and a used one is just blocked', () => {
   resetFloor();
   const r = state.floor.playerRow - 1;
   const c = state.floor.playerCol;
-  const drum = { row: r, col: c, kind: 'ammo', identified: false, searched: false, sprung: false };
+  const drum = { row: r, col: c, kind: 'cell', identified: false, searched: false, sprung: false };
   state.floor.props.push(drum);
   assert.equal(whatBlocks(r, c).kind, 'prop');
-  assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['ammoBoxFound']);
+  assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['cellFound']);
   assert.ok(drum.identified);
   assert.ok(!drum.searched, 'the drum is used only once a reload answer settles');
   drum.searched = true;
@@ -157,11 +157,11 @@ test('an ammo drum is solid; bumping it finds it without a turn, and a used one 
 test('the reload category comes round in order, one step per settled reload', () => {
   resetFloor();
   const first = reloadCategory();
-  settleReload(true, { modifiers: [], rounds: 1 });
+  settleReload(true, { modifiers: [], energy: 1 });
   const second = reloadCategory();
   assert.notEqual(second.category, first.category);
-  settleReload(false, { modifiers: [], rounds: 1 });
-  settleReload(false, { modifiers: [], rounds: 1 });
+  settleReload(false, { modifiers: [], energy: 1 });
+  settleReload(false, { modifiers: [], energy: 1 });
   assert.equal(reloadCategory().category, first.category, 'three categories, so the fourth reload is the first again');
 });
 
@@ -175,18 +175,18 @@ test('a set with no categories reloads from the whole set', () => {
 
 // --- fire ---
 
-test('fire is blocked with an empty chamber, at the boss, or out of the light', () => {
+test('fire is blocked with no energy, at the boss, or out of the light', () => {
   resetFloor();
   const m = minionAt(-2, 0);
-  state.run.ammo = 0;
-  assert.equal(fireBlock(m), 'chamberEmpty');
-  state.run.ammo = 1;
+  state.run.energy = 0;
+  assert.equal(fireBlock(m), 'noEnergy');
+  state.run.energy = 1;
   assert.equal(fireBlock({ kind: 'boss', row: m.row, col: m.col + 1 }), 'notShootable');
   const behind = minionAt(3, 0);
   assert.equal(fireBlock(behind), 'notInLight');
   const events = fire(behind);
   assert.deepEqual(events, [{ type: 'fireBlocked', target: behind, reason: 'notInLight' }]);
-  assert.equal(state.run.ammo, 1, 'a blocked shot spends nothing');
+  assert.equal(state.run.energy, 1, 'a blocked shot spends nothing');
 });
 
 test('a shot that misses spends the round and opens no damage bar', () => {
@@ -194,7 +194,7 @@ test('a shot that misses spends the round and opens no damage bar', () => {
   const m = minionAt(-4, 0);
   const events = withRandom(0.99, () => fire(m));
   assert.deepEqual(events.map(e => e.type), ['shotFired', 'shotMissed']);
-  assert.equal(state.run.ammo, 0);
+  assert.equal(state.run.energy, 0);
   assert.equal(state.battle.aim, null);
 });
 
@@ -279,7 +279,7 @@ test('the damage bar: graze outside the zones, 1 in a hit zone, 2 and a limb at 
   assert.deepEqual(settleShot(0.995).map(e => e.type), ['shotGrazed']);
   assert.equal(m.hpLeft, MINION_KINDS.HUSK.hp);
 
-  state.run.ammo = 2;
+  state.run.energy = 2;
   withRandom(0, () => fire(m));
   const hit = settleShot(zoneMiddle('hit'));
   assert.deepEqual(hit, [{ type: 'minionHurt', minion: m, damage: 1, hpLeft: 4, weakPoint: false }]);
@@ -295,17 +295,17 @@ test('the damage bar: a penalty zone backfires, no damage and one more round los
   resetFloor();
   state.run.roomIndex = 1;
   const m = minionAt(-1, 0, 'HUSK');
-  state.run.ammo = 3;
+  state.run.energy = 3;
   withRandom(0, () => fire(m));
   const events = settleShot(zoneMiddle('penalty'));
-  assert.deepEqual(events, [{ type: 'shotBackfired', minion: m, roundsLost: 1 }]);
-  assert.equal(state.run.ammo, 1, 'the shot and the backfire');
+  assert.deepEqual(events, [{ type: 'shotBackfired', minion: m, energyLost: 1 }]);
+  assert.equal(state.run.energy, 1, 'the shot and the backfire');
   assert.equal(m.hpLeft, MINION_KINDS.HUSK.hp);
 
-  state.run.ammo = 1;
+  state.run.energy = 1;
   withRandom(0, () => fire(m));
-  assert.equal(settleShot(zoneMiddle('penalty'))[0].roundsLost, 0, 'nothing left to lose');
-  assert.equal(state.run.ammo, 0);
+  assert.equal(settleShot(zoneMiddle('penalty'))[0].energyLost, 0, 'nothing left to lose');
+  assert.equal(state.run.energy, 0);
   state.run.roomIndex = 0;
 });
 
@@ -474,17 +474,17 @@ test('with the gun on, a slow kind moves only every moveEvery turns', () => {
   assert.deepEqual(moves, [false, true, false, true]);
 });
 
-// A minion one step north of the player, the gun on, the chamber empty, on
+// A minion one step north of the player, the gun on, no energy, on
 // a turn every kind moves.
 function struggleSetUp() {
   resetFloor();
   state.settings.gunCombat = true;
   state.run.turnCount = 0;
-  state.run.ammo = 0;
+  state.run.energy = 0;
   return minionAt(-1, 0);
 }
 
-test('with no rounds, a minion that reaches the player starts a Struggle instead of striking', () => {
+test('with no energy, a minion that reaches the player starts a Struggle instead of striking', () => {
   const m = struggleSetUp();
   const events = advanceMonsters();
   assert.deepEqual(events.map(e => e.type), ['struggleStarted']);
@@ -492,7 +492,7 @@ test('with no rounds, a minion that reaches the player starts a Struggle instead
   assert.equal(state.battle.struggle.minion, m);
 });
 
-test('with a reload open over the map, a minion strikes even with no rounds', () => {
+test('with a reload open over the map, a minion strikes even with no energy', () => {
   struggleSetUp();
   assert.equal(advanceMonsters({ canStruggle: false })[0].type, 'minionStruck');
   assert.equal(state.battle.struggle, null);

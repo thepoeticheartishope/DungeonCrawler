@@ -114,15 +114,15 @@ function reachItem(block) {
 // spreads, minions move); after that there's nothing left in it, and a
 // bump is just `blocked`. A trapped box works like the chest instead:
 // bumping it selects it for the battle screen, with a question guarding
-// its loot (settled in answers.js settleAnswer). Bumping an ammo drum
+// its loot (settled in answers.js settleAnswer). Bumping an energy cell
 // takes no turn here: main.js opens the reload panel for it, and the
-// answer is the turn (gun.js settleReload uses the drum up).
-// Events: blocked, boxSprung, ammoBoxFound { prop }, or propSearched then
+// answer is the turn (gun.js settleReload uses the cell up).
+// Events: blocked, boxSprung, cellFound { prop }, or propSearched then
 // boxOpened.
 function examineProp(prop) {
   if (prop.searched) return [{ type: 'blocked', kind: 'prop', thing: prop }];
   prop.identified = true;
-  if (prop.kind === 'ammo') return [{ type: 'ammoBoxFound', prop }];
+  if (prop.kind === 'cell') return [{ type: 'cellFound', prop }];
   if (prop.kind === 'box' && prop.trapped) {
     prop.sprung = true;
     state.battle.selectedTarget = prop;

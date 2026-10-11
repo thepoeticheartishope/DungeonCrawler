@@ -7,7 +7,7 @@
 // of each one threading them through as parameters.
 
 import { state } from './state.js';
-import { BOSS_HP, GUN_CHAMBER, MINION_KINDS, SENSE_NOTE_MS } from './config.js';
+import { BOSS_HP, ENERGY_MAX, MINION_KINDS, SENSE_NOTE_MS } from './config.js';
 import { lightProgress } from './light.js';
 import { whatBlocks } from './passage.js';
 import { FACING_VECTORS, shootBlock, aimChance } from './sight.js';
@@ -158,22 +158,22 @@ export function renderClock(running) {
 }
 
 // The gun's part of the HUD (gun plan step 6), shown only with DEV ->
-// Combat on gun: rounds in the chamber, the target and its hp, the aim %
+// Combat on gun: energy held, the target and its hp, the aim %
 // (or '-' when the target can't be shot), and whether SELECT can be
 // pressed. Part of renderHud, the one writer of the HUD.
 function renderGunHud() {
   const on = state.settings.gunCombat;
-  [els.gunRoundsStat, els.gunTargetStat, els.gunAimStat, els.btnSelect].forEach(el => { el.hidden = !on; });
+  [els.energyStat, els.gunTargetStat, els.gunAimStat, els.btnSelect].forEach(el => { el.hidden = !on; });
   if (!on) return;
-  const ammo = state.run.ammo;
-  els.gunRounds.textContent = '#'.repeat(ammo) + '-'.repeat(Math.max(GUN_CHAMBER - ammo, 0));
+  const energy = state.run.energy;
+  els.energyCount.textContent = '#'.repeat(energy) + '-'.repeat(Math.max(ENERGY_MAX - energy, 0));
   const target = state.floor.gunTarget;
   els.gunTarget.textContent = target ? gunTargetName(target) : t('stat.noTarget');
   els.gunAim.textContent = target && !shootBlock(target)
     ? t('gun.aimChance', { chance: Math.round(aimChance(target) * 100) })
     : t('stat.noTarget');
-  // SELECT stays pressable with an empty chamber: it says so, and it
-  // must still stop a damage bar opened by the last round.
+  // SELECT stays pressable with no energy: it says so, and it must
+  // still stop a damage bar opened by the last shot.
   els.btnSelect.disabled = state.run.runEnded;
 }
 

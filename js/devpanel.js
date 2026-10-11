@@ -36,7 +36,7 @@ export function initDevPanel({
   // step every AUTO_WIN_STEP_MS so the log stays readable. Walking stays
   // manual, so the boss light, minions and darkness behave as usual. With
   // the gun on, an open reload is answered right and the damage bar stops
-  // on the weak point (main.js autoWinGun); SELECT and the ammo drums stay manual.
+  // on the weak point (main.js autoWinGun); SELECT and the energy cells stay manual.
   const AUTO_WIN_STEP_MS = 300;
   let autoWinTimer = null;
 

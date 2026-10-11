@@ -46,7 +46,7 @@ const PILLAR_INSET = 0.24;     // a pillar is thinner than its tile, so it reads
 const PILLAR_HEIGHT = 1.15;    // as a share of a wall's height: a pillar stands above the walls
 const BOX_INSET = 0.3;
 const BOX_HEIGHT = 0.3;
-// The ammo drum (Timothy's pick from the ammo box mockup): round, so
+// The energy cell (Timothy's pick from the ammo box mockup): round, so
 // nothing else on the map shares its shape. Three round ends show on its lid.
 const DRUM_RADIUS = 0.24;      // its footprint's radius, in tiles
 const DRUM_HEIGHT = 0.32;
@@ -636,9 +636,9 @@ function isBlock(thing) {
   return thing.kind === 'box' && thing.glyph !== null;
 }
 
-// An ammo drum the player has made out (drawn as a drum, not a glyph).
+// An energy cell the player has made out (drawn as a drum, not a glyph).
 function isDrum(thing) {
-  return thing.kind === 'ammo' && thing.glyph !== null;
+  return thing.kind === 'cell' && thing.glyph !== null;
 }
 
 // A wall block. Its top edges shared with a neighbouring wall of the same
@@ -1062,7 +1062,7 @@ function glyphPlace(thing) {
 // (the facing wedge on the floor says which way they face).
 function drawStanding(ctx, thing) {
   const { at } = thing;
-  if (isDrum(thing)) return drawAmmoDrum(ctx, thing);
+  if (isDrum(thing)) return drawEnergyCell(ctx, thing);
   if (isBlock(thing)) {
     const level = floorLevel(at.row, at.col) * (searched(at) ? SEARCHED_LEVEL : 1);
     drawBlock(ctx, at.row, at.col, {
@@ -1086,11 +1086,11 @@ function drawStanding(ctx, thing) {
   look.paintGlyph(ctx, tw * GLYPH_CELL, x, y, thing.glyph, thing.look);
 }
 
-// An ammo drum: a round case with bands and three round ends on its lid,
+// An energy cell: a round case with bands and three round ends on its lid,
 // lit like a box. Unused, a faint glow breathes round it on a slow cycle
 // (mapview.js gives `look.breath`, 0..1; it holds still under reduced
 // motion). Used, it is dimmer and its ends are dark: nothing left in it.
-function drawAmmoDrum(ctx, thing) {
+function drawEnergyCell(ctx, thing) {
   const { at } = thing;
   const spent = searched(at);
   const level = Math.max(WALL_MIN_LEVEL, floorLevel(at.row, at.col) * (spent ? SEARCHED_LEVEL : 1)) *

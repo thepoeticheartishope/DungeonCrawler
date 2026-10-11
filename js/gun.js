@@ -10,7 +10,7 @@
 
 import { state, key } from './state.js';
 import {
-  BATTLE_CHOICE_COUNT, GUN_CHAMBER, GUN_RELOAD_MODIFIERS, GUN_RELOAD_ROUNDS,
+  BATTLE_CHOICE_COUNT, ENERGY_MAX, GUN_RELOAD_MODIFIERS, RELOAD_ENERGY,
   DAMAGE_BAR_DEPTHS, DAMAGE_PENALTY_WIDTH, DAMAGE_ZONE_GAP,
   MINION_KINDS, MINION_STRIKE_COST, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
@@ -32,41 +32,41 @@ export function reloadCategory() {
   return groups[state.run.reloadIndex % groups.length];
 }
 
-// What a reload offers right now: null and why not ('chamberFull'), or
+// What a reload offers right now: null and why not ('energyFull'), or
 // the next category and three ways to answer it, plain to hardest:
-// [{ modifiers, rounds, room }]. No modifier loads 1 round, one loads 2,
-// two load 3 (GUN_RELOAD_ROUNDS). `room` is how many of those fit in the
-// chamber, so the player can see when a hard reload would be wasted.
+// [{ modifiers, energy, room }]. No modifier gives 1 energy, one gives 2,
+// two give 3 (RELOAD_ENERGY). `room` is how much of that fits under
+// ENERGY_MAX, so the player can see when a hard reload would be wasted.
 // Gambler is never offered: a reload has no gold at stake.
 export function reloadOffers() {
-  const room = GUN_CHAMBER - state.run.ammo;
-  if (room <= 0) return { block: 'chamberFull', category: null, offers: [] };
+  const room = ENERGY_MAX - state.run.energy;
+  if (room <= 0) return { block: 'energyFull', category: null, offers: [] };
   const [one, ...pair] = shuffle(GUN_RELOAD_MODIFIERS);
   const offers = [[], [one], pair.slice(0, 2)].map(modifiers => {
-    const rounds = GUN_RELOAD_ROUNDS[modifiers.length];
-    return { modifiers, rounds, room: Math.min(rounds, room) };
+    const energy = RELOAD_ENERGY[modifiers.length];
+    return { modifiers, energy, room: Math.min(energy, room) };
   });
   return { block: null, category: reloadCategory(), offers };
 }
 
 // The answer to a reload question (state.battle.currentQuestion) asked
-// with `offer`. Right loads the offer's rounds (as many as fit) and counts
-// toward state.run.correctTotal; wrong jams: nothing loads, and no heart
+// with `offer`. Right gives the offer's energy (as much as fits) and counts
+// toward state.run.correctTotal; wrong jams: no energy, and no heart
 // is lost (the turn spent is the cost). A timed-out question is a wrong
 // answer. Either way the haunt is recorded and the rotation moves on.
-// A reload from an ammo drum (`box`) uses the drum up, right or wrong, so
-// every drum is one question.
-// Events: reloaded { rounds, ammo } or jammed { expected, source }, then
+// A reload from an energy cell (`box`) uses the cell up, right or wrong, so
+// every cell is one question.
+// Events: reloaded { energy, total } or jammed { expected, source }, then
 // hauntSilenced / hauntLingers.
 export function settleReload(isCorrect, offer, box = null) {
   if (box) box.searched = true;
   const q = state.battle.currentQuestion;
   const events = [];
   if (isCorrect) {
-    const rounds = Math.min(offer.rounds, GUN_CHAMBER - state.run.ammo);
-    state.run.ammo += rounds;
+    const energy = Math.min(offer.energy, ENERGY_MAX - state.run.energy);
+    state.run.energy += energy;
     state.run.correctTotal++;
-    events.push({ type: 'reloaded', rounds, ammo: state.run.ammo });
+    events.push({ type: 'reloaded', energy, total: state.run.energy });
   } else {
     events.push({ type: 'jammed', expected: q.meaning, source: q.source });
   }
@@ -132,18 +132,18 @@ export function cycleTarget() {
   return [{ type: 'targetPicked', target }];
 }
 
-// Why `target` can't be fired at right now, or null if it can: an empty
-// chamber ('chamberEmpty'), no target ('noTarget'), something that isn't
+// Why `target` can't be fired at right now, or null if it can: no energy
+// ('noEnergy'), no target ('noTarget'), something that isn't
 // a minion or the hunter ('notShootable': the boss and items stay on the
 // battle screen), or a sight.js shootBlock reason.
 export function fireBlock(target) {
-  if (state.run.ammo <= 0) return 'chamberEmpty';
+  if (state.run.energy <= 0) return 'noEnergy';
   if (!target) return 'noTarget';
   if (target.kind !== 'minion' && target.kind !== 'hunter') return 'notShootable';
   return shootBlock(target);
 }
 
-// Fires one round at `target`. The aim chance (sight.js aimChance) decides
+// Fires at `target`, for 1 energy. The aim chance (sight.js aimChance) decides
 // whether it lands. A miss is the end of it. A landed shot on a minion
 // waits for the damage bar (state.battle.aim; settleShot finishes it); one
 // on the hunter staggers it, since it can't be hurt. A blocked shot spends
@@ -154,7 +154,7 @@ export function fireBlock(target) {
 export function fire(target) {
   const reason = fireBlock(target);
   if (reason) return [{ type: 'fireBlocked', target, reason }];
-  state.run.ammo--;
+  state.run.energy--;
   const chance = aimChance(target);
   const events = [{ type: 'shotFired', target, chance }];
   if (Math.random() >= chance) {
@@ -199,10 +199,10 @@ export function damageZones(minionKind) {
 // The player stopped the damage bar at `barPosition` (0 to 1) for the
 // shot in state.battle.aim. Inside a weak point: 2 damage and a limb comes
 // off, if any are left. Inside a hit zone: 1. Inside a penalty zone the
-// shot backfires: no damage, and one more round is lost, if the chamber
-// has one. Anywhere else grazes for 0. A minion with no hp left dies and
+// shot backfires: no damage, and 1 more energy is lost, if there is any
+// left. Anywhere else grazes for 0. A minion with no hp left dies and
 // pays its kind's gold (goldReward, so it doubles in the darkness).
-// Events: shotGrazed { minion }, shotBackfired { minion, roundsLost }, or
+// Events: shotGrazed { minion }, shotBackfired { minion, energyLost }, or
 // minionHurt { minion, damage, hpLeft, weakPoint } and maybe limbLost
 // { minion, limbsLeft }; then, on a kill, minionKilled { minion } and
 // goldGained { amount, from: 'kill' }.
@@ -213,9 +213,9 @@ export function settleShot(barPosition) {
   const m = aim.target;
   const zone = aim.zones.find(z => barPosition >= z.from && barPosition <= z.to);
   if (zone && zone.tier === 'penalty') {
-    const roundsLost = Math.min(1, state.run.ammo);
-    state.run.ammo -= roundsLost;
-    return [{ type: 'shotBackfired', minion: m, roundsLost }];
+    const energyLost = Math.min(1, state.run.energy);
+    state.run.energy -= energyLost;
+    return [{ type: 'shotBackfired', minion: m, energyLost }];
   }
   const damage = !zone ? 0 : zone.tier === 'weak' ? 2 : 1;
   if (damage === 0) return [{ type: 'shotGrazed', minion: m }];
@@ -278,7 +278,8 @@ export function struggleDial() {
 // The Struggle dial stopped at `barPosition` (0 to 1, centre 0.5) for the
 // minion waiting in state.battle.struggle. Inside the dial's hitHalf
 // (struggleDial) of the centre the player shoves it away:
-// STRUGGLE_PUSHBACK tiles, no damage to either. Anything else and it strikes, as it would have with rounds.
+// STRUGGLE_PUSHBACK tiles, no damage to either. Anything else and it
+// strikes, as it would have with energy left.
 // Events: struggleWon { minion } then knockedBack { minion, from } if it
 // had room to go; or struggleLost { minion } then minionStrike's events.
 export function settleStruggle(barPosition) {

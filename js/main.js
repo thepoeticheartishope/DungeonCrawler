@@ -2,7 +2,7 @@ import { state, key } from './state.js';
 import { buildFloor, buildRestFloor } from './floor.js';
 import { nextFloor } from './run.js';
 import {
-  MAX_HEARTS, ROOM_COUNT, BOSS_HP, GUN_START_ROUNDS, GUN_CHAMBER,
+  MAX_HEARTS, ROOM_COUNT, BOSS_HP, ENERGY_START, ENERGY_MAX,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, REALTIME_POLL_MS, REALTIME_WALK_MS
 } from './config.js';
@@ -102,10 +102,10 @@ initRender({
   heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightEyeEl, lightHintEls, dpadButtons,
   senseNote: document.getElementById('senseNote'),
-  gunRoundsStat: document.getElementById('gunRoundsStat'),
+  energyStat: document.getElementById('energyStat'),
   gunTargetStat: document.getElementById('gunTargetStat'),
   gunAimStat: document.getElementById('gunAimStat'),
-  gunRounds: document.getElementById('gunRounds'),
+  energyCount: document.getElementById('energyCount'),
   gunTarget: document.getElementById('gunTarget'),
   gunAim: document.getElementById('gunAim'),
   clockStat: document.getElementById('clockStat'),
@@ -160,7 +160,7 @@ function finishGunAction(events) {
 // SELECT (button or F), the gun's one button: while the damage bar
 // sweeps, it stops the bar; otherwise it fires at the target. One button
 // in one place, so the thumb stays put and the eyes stay on the marker.
-// Rounds come only from ammo drums: there is no reloading at will.
+// Energy comes only from energy cells: there is no reloading at will.
 function pressSelect() {
   const shown = mapPanelShown();
   if (shown === 'aim' || shown === 'struggle') { stopBarSweep(); return; }
@@ -197,11 +197,11 @@ function nextGunTarget() {
   if (note.text) showRoomNote(note.cls, note.text);
 }
 
-// The ammo drum the open reload panel came from (bumped on the map), or
+// The energy cell the open reload panel came from (bumped on the map), or
 // null for the RELOAD button and DEV -> Test reload.
 let reloadBox = null;
 
-// Opens the reload panel, or says why not (a full chamber: a bumped drum
+// Opens the reload panel, or says why not (full energy: a bumped cell
 // then stays as it is, for later).
 function openReload(test, box = null) {
   const offered = reloadOffers();
@@ -214,10 +214,10 @@ function openReload(test, box = null) {
 
 // DEV -> Test shot: fires at the gun's target through the real rules
 // (gun.js), without spending a turn: minions don't move and the light
-// doesn't spread. Fills an empty chamber first.
+// doesn't spread. Fills empty energy first.
 function devTestShot() {
   if (!gunReady()) return;
-  if (state.run.ammo <= 0) state.run.ammo = GUN_CHAMBER;
+  if (state.run.energy <= 0) state.run.energy = ENERGY_MAX;
   const target = state.floor.minions.includes(state.floor.gunTarget) ? state.floor.gunTarget : null;
   const note = drawEvents(fire(target));
   if (note.text) showRoomNote(note.cls, note.text);
@@ -621,7 +621,7 @@ function startGame() {
   state.run.bonusSlack = 0;
   state.run.turnCount = 0;
   state.run.coinsTotal = 0;
-  state.run.ammo = GUN_START_ROUNDS;
+  state.run.energy = ENERGY_START;
   state.run.reloadIndex = 0;
   state.run.loreQueue = [];
   resetHaunts();
@@ -822,7 +822,7 @@ function drawEvents(events) {
       case 'stairsReached':
       case 'boxSprung':
       case 'itemReached':
-      case 'ammoBoxFound':
+      case 'cellFound':
       case 'propSearched':
         break;
       case 'exchangeOpened':
@@ -944,7 +944,7 @@ function drawEvents(events) {
       case 'shotBackfired':
         cls = 'warn-msg';
         shotOnMap(e.minion, true);
-        parts.push(t(e.roundsLost ? 'gun.backfired' : 'gun.backfiredEmpty'));
+        parts.push(t(e.energyLost ? 'gun.backfired' : 'gun.backfiredEmpty'));
         break;
       case 'minionHurt':
         shotOnMap(e.minion, false);
@@ -971,13 +971,13 @@ function drawEvents(events) {
         slideOnMap(e.minion, e.from);
         break;
       case 'reloaded':
-        parts.push(t('gun.reloaded', { rounds: e.rounds }));
+        parts.push(t('gun.reloaded', { energy: e.energy }));
         break;
       case 'jammed':
         cls = 'block-msg';
         parts.push(t('gun.jammed'));
         break;
-      // No rounds and a minion on the player: the Struggle dial opens over
+      // No energy and a minion on the player: the Struggle dial opens over
       // the map. Moving, waiting and the real-time clock all hold until
       // SELECT stops it (stopStruggleBar).
       case 'struggleStarted':
@@ -1030,7 +1030,7 @@ let lastWalkAt = -Infinity;
 
 // One arrow press (stepPlayer in moves.js). A step or a first look in a
 // box spends a turn; stairs load the next floor; a trapped box, chest,
-// rune or encounter opens the battle screen; an ammo drum opens the
+// rune or encounter opens the battle screen; an energy cell opens the
 // reload panel (its answer is the turn); a turn to a new direction or a
 // bump only draws. With Real time
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
@@ -1056,8 +1056,8 @@ function movePlayer(dRow, dCol) {
     if (has('exchangeOpened')) openExchange();
   }
   state.run.turnLocked = false;
-  const drum = events.find(e => e.type === 'ammoBoxFound');
-  if (drum) openReload(false, drum.prop);
+  const cell = events.find(e => e.type === 'cellFound');
+  if (cell) openReload(false, cell.prop);
 }
 
 // THE UNFOLDING's screen (exchangeview.js), opened by bumping it on a rest

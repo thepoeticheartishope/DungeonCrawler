@@ -1305,7 +1305,7 @@
     <!-- Real time only (gun plan step 8): when the world next moves (render.js renderClock). -->
     <div class="stat" id="clockStat" hidden><span class="stat-label" data-t="stat.clock"></span><span class="clock-meter"><span class="clock-fill" id="clockFill"></span></span></div>
     <!-- The gun (gun plan step 6), only with DEV -> Combat on gun (render.js renderHud). -->
-    <div class="stat" id="gunRoundsStat" hidden><span class="stat-label" data-t="stat.rounds"></span><strong id="gunRounds"></strong></div>
+    <div class="stat" id="energyStat" hidden><span class="stat-label" data-t="stat.energy"></span><strong id="energyCount"></strong></div>
     <div class="stat" id="gunTargetStat" hidden><span class="stat-label" data-t="stat.target"></span><strong id="gunTarget"></strong></div>
     <div class="stat" id="gunAimStat" hidden><span class="stat-label" data-t="stat.aim"></span><strong id="gunAim"></strong></div>
     <div class="stat"><span class="stat-label" data-t="stat.room"></span><strong id="roomNum">0</strong><span id="roomOf">/<strong id="roomTotal">0</strong></span></div>
@@ -1317,8 +1317,8 @@
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devTurnBtn" type="button" aria-pressed="false" title="Testing only: a press in a new direction turns and steps (warned by I see you.), or only turns so you look first">Turn: and step (dev)</button>
       <button class="dev-skip" id="devCameraBtn" type="button" title="Testing only: in isometric, the camera glides after the player or stays locked to them" aria-pressed="true">Camera: glide (dev)</button>
-      <button class="dev-skip" id="devCombatBtn" type="button" aria-pressed="true" title="Testing only: the gun on the map (the default: minions are fought with SELECT, rounds come from ammo drums), or classic combat (minions on the battle screen)">Combat: gun (dev)</button>
-      <button class="dev-skip" id="devShotBtn" type="button" title="Testing only: fire at the gun&#39;s target; a landed shot opens the damage bar over the map (fills an empty chamber, spends no turn)">Test shot (dev)</button>
+      <button class="dev-skip" id="devCombatBtn" type="button" aria-pressed="true" title="Testing only: the gun on the map (the default: minions are fought with SELECT, energy comes from energy cells), or classic combat (minions on the battle screen)">Combat: gun (dev)</button>
+      <button class="dev-skip" id="devShotBtn" type="button" title="Testing only: fire at the gun&#39;s target; a landed shot opens the damage bar over the map (fills empty energy, spends no turn)">Test shot (dev)</button>
       <button class="dev-skip" id="devReloadBtn" type="button" title="Testing only: the reload panel and its question over the map (spends no turn)">Test reload (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
       <button class="dev-skip" id="devAutoWinBtn" type="button" aria-pressed="false" title="Testing only: every encounter plays itself out with correct answers">Auto-win: OFF (dev)</button>

@@ -194,7 +194,7 @@ function wanderStep(m) {
 // minion, from } (from = the tile it left, so the map can slide it) and
 // { type: 'minionEngaged', minion }; with the gun on, a minion's strike
 // instead, the hunter's too (gun.js minionStrike: minionStruck,
-// knockedBack, signalLost). With the chamber empty, the first one to reach
+// knockedBack, signalLost). With no energy left, the first one to reach
 // the player this turn starts a Struggle instead ({ type: 'struggleStarted',
 // minion, hitHalf, sweepMs, count }: gun.js struggleDial, harder each time
 // on a floor; settled by gun.js settleStruggle), unless `canStruggle` is
@@ -234,7 +234,7 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     if (next) {
       const isPlayerTile = next.row === state.floor.playerRow && next.col === state.floor.playerCol;
 
-      const struggles = canStruggle && state.run.ammo <= 0 && !state.battle.struggle;
+      const struggles = canStruggle && state.run.energy <= 0 && !state.battle.struggle;
       if (isPlayerTile && gun && struggles) {
         state.battle.struggle = { minion: m, ...struggleDial() };
         events.push({ type: 'struggleStarted', ...state.battle.struggle });
