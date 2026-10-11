@@ -556,6 +556,23 @@ export const HIGHER_LOWER_TIERS = ['X', '2', '1'];
 // Higher / Lower's Blind: once it is on, each hint shows this long, then
 // goes (and the bar stops narrowing), so the hints must be remembered.
 export const HIGHER_LOWER_BLIND_HINT_MS = 2500;
+// Slow Spell: the answer's letters fill in, in a random order, one every
+// SLOW_SPELL_STEP_MS (a slow clock, not world turns), until one blank is
+// left; I KNOW IT stops them and shows the options. It runs one-word
+// answers of SLOW_SPELL_MIN_LETTERS to _MAX_LETTERS letters that have at
+// least SLOW_SPELL_DECOYS other answers of the same type and length in the
+// set, so the blanks don't give the answer away among the options. Tier:
+// at most SLOW_SPELL_X_SHOWN letters shown = X, at most half = 2, more = 1.
+export const SLOW_SPELL_STEP_MS = 2000;
+export const SLOW_SPELL_MIN_LETTERS = 4;
+export const SLOW_SPELL_MAX_LETTERS = 12;
+export const SLOW_SPELL_DECOYS = 3;
+export const SLOW_SPELL_X_SHOWN = 1;
+// Slow Spell's Blind: once it is on, each letter shows this long, then
+// goes blank again, so the letters must be remembered.
+export const SLOW_SPELL_BLIND_LETTER_MS = 1500;
+// Slow Spell's Flip: the share of letters drawn upside down or mirrored.
+export const SLOW_SPELL_FLIP_SHARE = 0.5;
 
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.
