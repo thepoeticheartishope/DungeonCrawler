@@ -21,15 +21,16 @@ import {
   isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
 } from './combat.js';
 import { lightConsumed } from './light.js';
-import { stepPlayer, onStairs } from './moves.js';
+import { stepPlayer, onStairs, stairsHere } from './moves.js';
 import { scoreGoals } from './goals.js';
+import { settleRelay } from './relays.js';
 import { playIntro } from './introview.js';
 import { settleAnswer } from './answers.js';
 import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapTap, glyphOf } from './mapview.js';
-import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle } from './gun.js';
+import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionOnMap, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
@@ -187,7 +188,9 @@ function fireGun() {
   gunTest = false;
   state.run.turnLocked = true;
   if (state.battle.aim) {
-    drawEvents(events);
+    // The only line a landed shot can have yet: a weakness just found.
+    const note = drawEvents(events);
+    if (note.text) showRoomNote(note.cls, note.text);
     showDamageBar(state.battle.aim);
     return;
   }
@@ -222,7 +225,7 @@ function openReload(test, box = null) {
 // doesn't spread. Fills empty energy first.
 function devTestShot() {
   if (!gunReady()) return;
-  if (state.run.energy <= 0) state.run.energy = ENERGY_MAX;
+  if (state.run.energy <= 0) addRounds(ENERGY_MAX);
   const target = state.floor.minions.includes(state.floor.gunTarget) ? state.floor.gunTarget : null;
   const note = drawEvents(fire(target));
   if (note.text) showRoomNote(note.cls, note.text);
@@ -264,6 +267,23 @@ function pickReload(offer, category) {
   showQuestionOnMap(mapAnswers);
   setQuestion(pickQuestion(state.battle.currentQuestion, category.pool));
   offer.modifiers.forEach(applyModifier);
+}
+
+// A relay was bumped (moves.js relayFound): its question over the map,
+// like a reload's, with no offers to pick and no modifiers. Any answer
+// (relays.js settleRelay) is the turn.
+function openRelay(relay) {
+  gunTest = false;
+  state.run.turnLocked = true;
+  const settle = (isCorrect) => endReload(() => settleRelay(isCorrect, relay));
+  mapAnswers = {
+    onChoice: choice => settle(matchesAnswer(choice)),
+    onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
+    onTimeout: () => settle(false),
+    log: text => showRoomNote('', text),
+  };
+  showQuestionOnMap(mapAnswers);
+  setQuestion(pickQuestion(state.battle.currentQuestion));
 }
 
 // Closes the gun's panels, hands the question panel back to the battle
@@ -624,10 +644,14 @@ function startGame() {
   state.run.hearts = MAX_HEARTS;
   state.run.maxHearts = MAX_HEARTS;
   state.run.bonusSlack = 0;
+  state.run.nextPath = null;
   state.run.turnCount = 0;
   state.run.coinsTotal = 0;
-  state.run.energy = ENERGY_START;
+  state.run.energy = 0;
+  state.run.rounds = [];
+  addRounds(ENERGY_START);
   state.run.reloadIndex = 0;
+  rollWeaknesses();
   state.run.loreQueue = [];
   resetHaunts();
   state.settings.revealOnWrong = revealToggle.checked;
@@ -691,6 +715,8 @@ function drawFloor() {
   if (startChamber !== undefined) {
     showRoomNote('move-msg', t('theme.' + state.floor.chamberThemes[startChamber] + '.enter'));
   }
+  if (state.floor.stairsAlt) showRoomNote('move-msg', t('room.stairs.two'));
+  if (state.floor.path) showRoomNote('move-msg', t('room.path.taken', { path: t('path.' + state.floor.path) }));
   if (state.floor.goals.length) {
     showRoomNote('move-msg', t('room.goals.new', { goals: state.floor.goals.map(g => t('goal.' + g.id)).join(' / ') }));
   }
@@ -714,6 +740,7 @@ function advanceRoom() {
 function goDown() {
   if (state.run.turnLocked || state.run.runEnded || mapPanelShown() || !onStairs()) return;
   const scored = scoreGoals();
+  state.run.nextPath = stairsHere().path || null;
   advanceRoom();
   if (!roomScreen.classList.contains('show')) return;
   const note = drawEvents(scored);
@@ -840,7 +867,12 @@ function drawEvents(events) {
         showSensed();
         break;
       case 'stairsReached':
+        if (e.hidden) parts.push(t('room.stairs.hidden'));
+        else if (e.path) parts.push(t('room.stairs.path', { path: t('path.' + e.path) }));
         parts.push(t('room.stairs.ask'));
+        break;
+      case 'stairsScouted':
+        parts.push(t('exchange.scouted', { path: t('path.' + e.path) }));
         break;
       case 'goalMet':
         parts.push(t('room.goal.met', { goal: t('goal.' + e.id), gold: e.gold }));
@@ -852,6 +884,17 @@ function drawEvents(events) {
       case 'boxSprung':
       case 'itemReached':
       case 'cellFound':
+        break;
+      case 'relayFound':
+        parts.push(t('room.relay.found'));
+        break;
+      case 'relayHeld':
+        parts.push(t(e.turns ? 'room.relay.held' : 'room.relay.heldDark', { turns: e.turns }));
+        break;
+      case 'relaySparked':
+        cls = 'block-msg';
+        parts.push(t(e.turns ? 'room.relay.sparked' : 'room.relay.sparkedDark', { turns: e.turns }));
+        break;
       case 'propSearched':
         break;
       case 'exchangeOpened':
@@ -979,6 +1022,10 @@ function drawEvents(events) {
         shotOnMap(e.minion, false);
         hurtOnMap(e.minion);
         parts.push(t(e.weakPoint ? 'gun.weakPoint' : 'gun.hit'));
+        if (e.matched) parts.push(t('gun.matched', { damage: e.damage }));
+        break;
+      case 'weaknessFound':
+        parts.push(t('gun.weakFound', { kind: t('minionKind.' + e.minionKind), group: e.label }));
         break;
       case 'limbLost':
         limbOffOnMap(e.minion);
@@ -1081,6 +1128,8 @@ function movePlayer(dRow, dCol) {
   state.run.turnLocked = false;
   const cell = events.find(e => e.type === 'cellFound');
   if (cell) openReload(false, cell.prop);
+  const relay = events.find(e => e.type === 'relayFound');
+  if (relay) openRelay(relay.prop);
 }
 
 // THE UNFOLDING's screen (exchangeview.js), opened by bumping it on a rest

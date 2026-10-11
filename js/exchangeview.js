@@ -13,7 +13,7 @@ const els = {};
 let actions = {};
 
 // Looks up the screen's elements and hooks up its buttons and keys:
-// 1-4 buy the matching item, Escape looks away. Call once, from main.js.
+// 1-9 buy the matching item, Escape looks away. Call once, from main.js.
 export function initExchangeView({ buyItem, leaveExchange }) {
   actions = { buyItem, leaveExchange };
   els.screen = document.getElementById('exchangeScreen');
@@ -26,7 +26,7 @@ export function initExchangeView({ buyItem, leaveExchange }) {
   document.addEventListener('keydown', (e) => {
     if (!els.screen.classList.contains('show')) return;
     if (e.key === 'Escape') { e.preventDefault(); actions.leaveExchange(); return; }
-    const btn = els.items.children[['1', '2', '3', '4'].indexOf(e.key)];
+    const btn = els.items.children['123456789'.indexOf(e.key)];
     if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
   });
 }

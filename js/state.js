@@ -50,6 +50,10 @@ export const state = {
     seconds: 0,
     hearts: MAX_HEARTS,
     maxHearts: MAX_HEARTS, // max stability; THE UNFOLDING can raise it (js/exchange.js)
+    rounds: [],            // the group label each held round of energy was loaded from (gun.js), oldest first; null for a plain round (the start's, a DEV fill). Kept to state.run.energy's length by gun.js
+    weakTo: {},            // minion kind -> the reload group label it's weak to, rolled per run (gun.js rollWeaknesses); empty for a set with no groups
+    weakKnown: new Set(),  // minion kinds whose weakness the player has found (a shot landed on one)
+    nextPath: null,        // the way down chosen at a between-rest's stairs (floors.js FLOOR_PATHS), for the next depth; buildFloor takes it
     bonusSlack: 0,         // turns bought at THE UNFOLDING for the next depth's light budget (light.js initBossLight spends it)
     turnCount: 0,
     coinsTotal: 0,
@@ -88,6 +92,10 @@ export const state = {
     hunter: null,          // the hunter, once awake — also in state.floor.minions, with kind 'hunter'
     gunTarget: null,       // the minion (or hunter) the gun is aimed at, picked by a tap on the map (gun.js pickTarget), or null
     goals: [],             // this floor's side goals: [{ id, pay }] from FLOOR_GOALS (goals.js rollGoals); none on a rest floor
+    heldChambers: new Set(), // rooms held by a relay (relays.js): no boss light, no minion from outside
+    relayTurnsWon: 0,      // light turns relays have taken back on this floor (capped at RELAY_TURNS_CAP)
+    path: null,            // the way down the player took to this depth (floors.js FLOOR_PATHS), or null
+    stairsAlt: null,       // a between-rest's second stairs: { row, col, path, hidden } (hidden until scouted); null elsewhere
     misses: 0,             // wrong answers on this floor, questions and reloads (the noMiss goal)
     struggles: 0,          // Struggles started on this floor; each one makes the next dial harder (gun.js struggleDial)
     bossLitSet: new Set(), // tiles the boss light currently reaches
@@ -118,7 +126,7 @@ export const state = {
     battleTarget: null,    // whichever target the battle screen last set up a turn for
     battlePhase: 'answering', // 'choosing' (pick a category) | 'answering' (question showing) | 'ended' (settled, awaiting continue)
     categoryChoices: [],   // [{ label, pool }] offered while battlePhase is 'choosing'
-    aim: null,             // a gun shot that landed and waits for the damage bar: { target, zones: [{ tier, from, to }] } (gun.js damageZones)
+    aim: null,             // a gun shot that landed and waits for the damage bar: { target, zones: [{ tier, from, to }], matched } (gun.js damageZones; matched: the round was from the group the target is weak to)
     struggle: null,        // a minion (or the hunter) that reached the player with no energy, waiting on the Struggle dial: { minion, hitHalf, sweepMs, count } (gun.js struggleDial)
   },
 };

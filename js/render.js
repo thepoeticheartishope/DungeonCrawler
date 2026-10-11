@@ -181,8 +181,11 @@ function renderGunHud() {
   els.btnSelect.disabled = state.run.runEnded;
   if (!on) return;
   const energy = state.run.energy;
-  els.energyCount.textContent = '#'.repeat(energy) + '-'.repeat(Math.max(ENERGY_MAX - energy, 0));
   const target = state.floor.gunTarget;
+  // A round that matches the target's known weakness shows as *.
+  const weak = target && state.run.weakKnown.has(target.minionKind) ? state.run.weakTo[target.minionKind] : null;
+  const held = Array.from({ length: energy }, (_, i) => (weak && state.run.rounds[i] === weak ? '*' : '#')).join('');
+  els.energyCount.textContent = held + '-'.repeat(Math.max(ENERGY_MAX - energy, 0));
   els.gunTarget.textContent = target ? gunTargetName(target) : t('stat.noTarget');
   els.gunAim.textContent = target && !shootBlock(target)
     ? t('gun.aimChance', { chance: Math.round(aimChance(target) * 100) })
@@ -192,12 +195,16 @@ function renderGunHud() {
   els.btnSelect.disabled = state.run.runEnded;
 }
 
-// The HUD's name for the gun's target: a minion's kind and its hp (# left,
-// - lost), or the hunter, which has no hp.
+// The HUD's name for the gun's target: a minion's kind, its hp (# left,
+// - lost) and its weakness (strategy plan step D: the reload group, or ?
+// until a shot has landed on that kind), or the hunter, which has no hp.
 function gunTargetName(target) {
   if (target.kind === 'hunter') return t('term.hunter');
   const hp = MINION_KINDS[target.minionKind].hp;
-  return t('minionKind.' + target.minionKind) + ' ' + '#'.repeat(target.hpLeft) + '-'.repeat(hp - target.hpLeft);
+  const name = t('minionKind.' + target.minionKind) + ' ' + '#'.repeat(target.hpLeft) + '-'.repeat(hp - target.hpLeft);
+  const weak = state.run.weakTo[target.minionKind];
+  if (!weak) return name;
+  return name + ' /' + (state.run.weakKnown.has(target.minionKind) ? weak : t('stat.weakUnknown'));
 }
 
 // HP pips for whichever target is currently engaged on the battle screen.

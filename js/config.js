@@ -259,11 +259,13 @@ export const MAX_HEARTS_CAP = 5;
 //   heal          +1 stability (not offered at max)
 //   maxStability  +1 max stability, does not heal; once per rest, up to MAX_HEARTS_CAP
 //   slack         EXCHANGE_SLACK_TURNS more turns on the next depth; once per rest, not on the epilogue
+//   scout         shows where a between-rest's hidden stairs lead (strategy plan step C); only while hidden
 export const EXCHANGE_ITEMS = [
   { id: 'silence', price: 2 },
   { id: 'heal', price: 4 },
   { id: 'maxStability', price: 10 },
   { id: 'slack', price: 3 },
+  { id: 'scout', price: 3 },
 ];
 export const EXCHANGE_SLACK_TURNS = 20;
 // Floor goals (strategy plan step A): each danger depth rolls
@@ -282,6 +284,20 @@ export const FLOOR_GOALS = [
   { id: 'noStruggle', pay: 2 },
 ];
 export const GOALS_PER_FLOOR = 2;
+// Category weaknesses (strategy plan step D, gun.js): each minion kind is
+// weak to one reload group, rolled per run. A round loaded from that group
+// does WEAKNESS_DAMAGE_SCALE times the damage bar's damage to it.
+export const WEAKNESS_DAMAGE_SCALE = 2;
+// Relays (strategy plan step B, relays.js): RELAYS_PER_FLOOR [min, max] per
+// danger depth, never in the boss's or the start room. A right answer holds
+// the room and takes RELAY_TURNS_BACK turns off the light (LIGHT_TURNS_PER_STEP
+// turns = one step of its spread), up to RELAY_TURNS_CAP a floor, fewer than
+// the walk to a relay usually costs, so relays slow the light but can't stop
+// it. A wrong answer gives the light RELAY_WRONG_TURNS. Drafts; tune after play.
+export const RELAYS_PER_FLOOR = [1, 2];
+export const RELAY_TURNS_BACK = 6;
+export const RELAY_TURNS_CAP = 10;
+export const RELAY_WRONG_TURNS = 4;
 export const GOAL_PAPERS_MIN = 2;
 export const GOAL_SWIFT_SHARE = 0.5;
 // The longest name the start screen takes, so it fits on one line in a paper.
@@ -497,6 +513,9 @@ export const TIMER_SECONDS = 10;
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.
 export const REST_GRID = 15;
+// A between-rest's two stairs (strategy plan step C) stand at least this
+// many steps apart, and as far from the start.
+export const REST_STAIRS_APART = 4;
 
 // The map (js/mapview.js). Phosphor afterglow: each frame keeps
 // (1 - AFTERGLOW_FADE) of the last frame's light, measured at 60 frames a

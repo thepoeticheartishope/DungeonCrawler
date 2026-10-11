@@ -62,6 +62,8 @@ export const TEXT = {
   'term.exchange.symbol': '8', // a loop folded over itself
   'term.box.symbol': '&',
   'term.cell': 'ENERGY CELL', // draft
+  'term.relay': 'RELAY', // draft
+  'term.relay.symbol': '¥', // draft. A mast with two arms
   'term.cell.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
   // The player's glyph (the isometric map draws a stick man in its place).
   'term.player.symbol': '@',
@@ -209,10 +211,28 @@ export const TEXT = {
   'room.box.junk': ['Empty.', 'Dust, and a smell like old rain.', 'A broken lens. Useless.', 'Rags. Nothing more.'], // draft
   'room.box.done': 'It is empty now.', // draft
   'room.cell.done': 'The cell is spent.', // draft. Bumping a used energy cell
+  // Relays (strategy plan step B, relays.js). Bump one: a question over the
+  // map. Right holds the room (no boss light, nothing from outside comes in)
+  // and takes {turns} turns off the light. All drafts for Timothy.
+  'room.relay.found': 'A dead {@term.relay}. It hums when you come close.', // draft
+  'room.relay.held': 'The {@term.relay} wakes. This room is yours now, and the light falls back.', // draft
+  'room.relay.heldDark': 'The {@term.relay} wakes. This room is yours now.', // draft. Boss already down: no light to push back
+  'room.relay.sparked': 'The {@term.relay} sparks and dies. The light surges.', // draft
+  'room.relay.sparkedDark': 'The {@term.relay} sparks and dies.', // draft
+  'room.relay.done': 'The {@term.relay} is spent.', // draft. Bumping a used relay
 
   // Stairs and floor goals (strategy plan step A). Stepping onto the stairs
   // only asks; SELECT or Enter goes down. All drafts for Timothy.
   'room.stairs.ask': 'Stairs lead down. SELECT or ENTER to descend. Step away to stay.', // draft
+  // Two ways down from a between-rest (strategy plan step C): floors.js
+  // FLOOR_PATHS. All drafts for Timothy.
+  'room.stairs.two': 'Two ways lead down.', // draft. Room log on arriving at a between-rest
+  'room.stairs.path': 'These stairs lead to {path}.', // draft
+  'room.stairs.hidden': 'Where these stairs lead is hidden. Something here could show you.', // draft
+  'room.path.taken': 'You chose {path}.', // draft. Room log on arriving at the depth
+  'path.crowded': 'MORE OF THEM, MORE TIME', // draft. Two more minions, the light slower
+  'path.hurried': 'FEWER OF THEM, LESS TIME', // draft. One minion fewer, the light faster
+  'path.stalked': 'STALKERS WHERE SHARDS WERE', // draft. Every SHARD a STALKER, the light as usual
   'room.goals.new': 'Asked of you here: {goals}.', // draft. Room log on arrival
   'room.goal.met': '{goal}: kept. +{gold} {@term.gold}.', // draft. Scored on the way down
   'room.goal.missed': '{goal}: not kept.', // draft
@@ -233,6 +253,9 @@ export const TEXT = {
   'exchange.item.heal': '+1 {@term.hp}', // draft
   'exchange.item.maxStability': '+1 max {@term.hp}', // draft — does not heal
   'exchange.item.slack': 'More time on the next {@term.room}', // draft
+  'exchange.item.scout': 'See where the other stairs lead', // draft (strategy plan step C)
+  'exchange.why.noHidden': 'Nothing here is hidden from you.', // draft
+  'exchange.scouted': 'You see it now. The other stairs lead to {path}.', // draft
   'exchange.why.bought': 'Already taken here.', // draft
   'exchange.why.noHaunts': 'No doubts to silence.', // draft
   'exchange.why.fullStability': '{@term.hp} is full.', // draft
@@ -410,6 +433,10 @@ export const TEXT = {
   'gun.backfiredEmpty': 'Backfire.', // draft. The same, with no energy left to lose
   'gun.hit': 'Hit.', // draft
   'gun.weakPoint': 'Weak point.', // draft
+  // Category weaknesses (strategy plan step D): {group} is a reload group's label.
+  'gun.matched': 'The round was made for it: {damage} damage.', // draft. A round from the group the minion is weak to
+  'gun.weakFound': 'The {kind} flinches. It is weak to {group}.', // draft. First landed shot on a kind
+  'stat.weakUnknown': '?', // draft. HUD target: a minion kind whose weakness isn't found yet
   'gun.limbLost': 'A limb comes away.', // draft
   'gun.killed': 'It comes apart. {gold} {@term.gold}.', // draft. A kill and the gold it paid
   'gun.struck': 'It strikes. -{cost} {@term.hp}.', // draft. A minion reached the player

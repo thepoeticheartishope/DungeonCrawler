@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  ENERGY_MAX, RELOAD_ENERGY, MINION_KINDS, DAMAGE_BAR_DEPTHS, DAMAGE_ZONE_GAP, MINION_STRIKE_COST,
+  ENERGY_MAX, RELOAD_ENERGY, WEAKNESS_DAMAGE_SCALE, MINION_KINDS, DAMAGE_BAR_DEPTHS, DAMAGE_ZONE_GAP, MINION_STRIKE_COST,
   DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
 } from '../js/config.js';
@@ -24,7 +24,7 @@ import { whatBlocks } from '../js/passage.js';
 import { buildFloor } from '../js/floor.js';
 import {
   reloadCategory, reloadOffers, settleReload, pickTarget, refreshGunTarget, cycleTarget, fireBlock, fire, settleShot,
-  minionStrike, staggerHunter, settleStruggle, damageZones,
+  minionStrike, staggerHunter, settleStruggle, damageZones, rollWeaknesses, addRounds, weaknessOf,
 } from '../js/gun.js';
 
 const SET = [
@@ -65,6 +65,9 @@ function resetFloor(size = 21) {
   state.run.correctTotal = 0;
   state.run.hearts = MAX_HEARTS;
   state.run.energy = 1;
+  state.run.rounds = [null];
+  state.run.weakTo = {};
+  state.run.weakKnown = new Set();
   state.run.reloadIndex = 0;
   state.battle.selectedTarget = null;
   state.floor.gunTarget = null;
@@ -282,7 +285,7 @@ test('the damage bar: graze outside the zones, 1 in a hit zone, 2 and a limb at 
   state.run.energy = 2;
   withRandom(0, () => fire(m));
   const hit = settleShot(zoneMiddle('hit'));
-  assert.deepEqual(hit, [{ type: 'minionHurt', minion: m, damage: 1, hpLeft: 4, weakPoint: false }]);
+  assert.deepEqual(hit, [{ type: 'minionHurt', minion: m, damage: 1, hpLeft: 4, weakPoint: false, matched: false }]);
 
   withRandom(0, () => fire(m));
   const weak = settleShot(zoneMiddle('weak'));
@@ -576,4 +579,50 @@ test('in classic combat a minion that reaches the player engages, as before', ()
   assert.deepEqual(advanceMonsters().map(e => e.type), ['minionEngaged']);
   assert.equal(state.battle.selectedTarget, m);
   assert.equal(state.run.hearts, MAX_HEARTS);
+});
+
+// --- Category weaknesses (strategy plan step D) ---
+
+test('each minion kind is weak to one of the set\'s reload groups', () => {
+  state.settings.activeData = SET;
+  rollWeaknesses();
+  const labels = ['SHARD', 'STALKER', 'HUSK'].map(weaknessOf);
+  labels.forEach(l => assert.ok(l, 'every kind has one'));
+  assert.equal(new Set(labels).size, 3, 'three groups, three different weaknesses');
+  assert.equal(state.run.weakKnown.size, 0, 'none known yet');
+});
+
+test('a reload\'s rounds keep its group; firing spends a matching round first', () => {
+  resetFloor();
+  state.settings.activeData = SET;
+  state.run.energy = 0;
+  state.run.rounds = [];
+  const group = reloadCategory().label;
+  settleReload(true, { energy: 2 });
+  assert.deepEqual(state.run.rounds, [group, group]);
+  addRounds(1, 'other');
+  const m = minionAt(-1, 0, 'HUSK');
+  state.run.weakTo = { HUSK: 'other' };
+  withRandom(0, () => fire(m));
+  assert.deepEqual(state.run.rounds, [group, group], 'the matching round went first');
+  assert.equal(state.run.energy, 2);
+  assert.ok(state.battle.aim.matched);
+});
+
+test('a matched round multiplies the damage, and a landed shot reveals the weakness once', () => {
+  resetFloor();
+  const m = minionAt(-1, 0, 'HUSK');
+  state.run.weakTo = { HUSK: 'OT' };
+  state.run.rounds = ['OT'];
+  const fired = withRandom(0, () => fire(m));
+  assert.deepEqual(fired.filter(e => e.type === 'weaknessFound'), [{ type: 'weaknessFound', minionKind: 'HUSK', label: 'OT' }]);
+  const hurt = settleShot(zoneMiddle('hit'));
+  assert.equal(hurt[0].damage, WEAKNESS_DAMAGE_SCALE);
+  assert.ok(hurt[0].matched);
+
+  state.run.energy = 1;
+  state.run.rounds = ['NT'];
+  const again = withRandom(0, () => fire(m));
+  assert.ok(!again.some(e => e.type === 'weaknessFound'), 'already known');
+  assert.equal(settleShot(zoneMiddle('hit'))[0].damage, 1, 'a round from another group does plain damage');
 });

@@ -10,7 +10,7 @@
 
 import { state, key } from './state.js';
 import {
-  BATTLE_CHOICE_COUNT, ENERGY_MAX, GUN_RELOAD_MODIFIERS, RELOAD_ENERGY,
+  BATTLE_CHOICE_COUNT, ENERGY_MAX, GUN_RELOAD_MODIFIERS, RELOAD_ENERGY, WEAKNESS_DAMAGE_SCALE, MINION_KIND_ORDER,
   DAMAGE_BAR_DEPTHS, DAMAGE_PENALTY_WIDTH, DAMAGE_ZONE_GAP,
   MINION_KINDS, MINION_STRIKE_COST, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
@@ -30,6 +30,41 @@ export function reloadCategory() {
   const groups = fightGroups(pool, BATTLE_CHOICE_COUNT);
   if (!groups.length) return { label: null, category: null, pool };
   return groups[state.run.reloadIndex % groups.length];
+}
+
+// Rolls the run's weaknesses (strategy plan step D): each minion kind is
+// weak to one of the set's reload groups, shuffled, round and round when
+// there are fewer groups than kinds. A set with no groups has none.
+// Nothing is known yet. Called by main.js startGame.
+export function rollWeaknesses() {
+  const groups = shuffle(fightGroups(state.settings.activeData, BATTLE_CHOICE_COUNT).filter(g => g.label));
+  state.run.weakTo = {};
+  state.run.weakKnown = new Set();
+  if (!groups.length) return;
+  MINION_KIND_ORDER.forEach((kind, i) => { state.run.weakTo[kind] = groups[i % groups.length].label; });
+}
+
+// Adds `count` rounds loaded from the group `label` (null: plain rounds).
+// The one place energy goes up, so the rounds' labels keep in step.
+export function addRounds(count, label = null) {
+  state.run.energy += count;
+  state.run.rounds.push(...Array(count).fill(label));
+}
+
+// Spends one round and returns the group it came from (null if plain):
+// one from `prefer` if any is held, else the oldest. The one place energy
+// goes down, so the rounds' labels keep in step.
+function spendRound(prefer = null) {
+  state.run.energy--;
+  const rounds = state.run.rounds;
+  const at = prefer ? rounds.indexOf(prefer) : -1;
+  const [label] = rounds.splice(at === -1 ? 0 : at, 1);
+  return label === undefined ? null : label;
+}
+
+// The group label `minionKind` is weak to, or null.
+export function weaknessOf(minionKind) {
+  return (minionKind && state.run.weakTo[minionKind]) || null;
 }
 
 // What a reload offers right now: null and why not ('energyFull'), or
@@ -64,7 +99,7 @@ export function settleReload(isCorrect, offer, box = null) {
   const events = [];
   if (isCorrect) {
     const energy = Math.min(offer.energy, ENERGY_MAX - state.run.energy);
-    state.run.energy += energy;
+    addRounds(energy, reloadCategory().label);
     state.run.correctTotal++;
     events.push({ type: 'reloaded', energy, total: state.run.energy });
   } else {
@@ -144,18 +179,21 @@ export function fireBlock(target) {
   return shootBlock(target);
 }
 
-// Fires at `target`, for 1 energy. The aim chance (sight.js aimChance) decides
-// whether it lands. A miss is the end of it. A landed shot on a minion
-// waits for the damage bar (state.battle.aim; settleShot finishes it); one
-// on the hunter staggers it, since it can't be hurt. A blocked shot spends
-// nothing.
+// Fires at `target`, for 1 energy: a round from the group the target is
+// weak to when one is held, so the player never wastes a match. The aim
+// chance (sight.js aimChance) decides whether it lands. A miss is the end
+// of it. A landed shot on a minion waits for the damage bar
+// (state.battle.aim; settleShot finishes it); one on the hunter staggers
+// it, since it can't be hurt. A blocked shot spends nothing.
 // Events: fireBlocked { target, reason }, or shotFired { target, chance }
-// then shotMissed { target }, aimStarted { target, zones } or
-// hunterStaggered { hunter }.
+// then shotMissed { target }, aimStarted { target, zones, matched } or
+// hunterStaggered { hunter }; a landed shot on a minion whose kind's
+// weakness wasn't known yet adds weaknessFound { minionKind, label }.
 export function fire(target) {
   const reason = fireBlock(target);
   if (reason) return [{ type: 'fireBlocked', target, reason }];
-  state.run.energy--;
+  const weak = weaknessOf(target.minionKind);
+  const round = spendRound(weak);
   const chance = aimChance(target);
   const events = [{ type: 'shotFired', target, chance }];
   if (Math.random() >= chance) {
@@ -166,8 +204,13 @@ export function fire(target) {
     events.push(...staggerHunter(target));
     return events;
   }
-  state.battle.aim = { target, zones: damageZones(target.minionKind) };
+  state.battle.aim = { target, zones: damageZones(target.minionKind), matched: !!weak && round === weak };
   events.push({ type: 'aimStarted', ...state.battle.aim });
+  // Timothy: a landed shot shows the kind's weakness, for the rest of the run.
+  if (weak && !state.run.weakKnown.has(target.minionKind)) {
+    state.run.weakKnown.add(target.minionKind);
+    events.push({ type: 'weaknessFound', minionKind: target.minionKind, label: weak });
+  }
   return events;
 }
 
@@ -201,10 +244,12 @@ export function damageZones(minionKind) {
 // shot in state.battle.aim. Inside a weak point: 2 damage and a limb comes
 // off, if any are left. Inside a hit zone: 1. Inside a penalty zone the
 // shot backfires: no damage, and 1 more energy is lost, if there is any
-// left. Anywhere else grazes for 0. A minion with no hp left dies and
-// pays its kind's gold (goldReward, so it doubles in the darkness).
+// left. Anywhere else grazes for 0. A round from the group the minion is
+// weak to (aim.matched) does WEAKNESS_DAMAGE_SCALE times the damage. A
+// minion with no hp left dies and pays its kind's gold (goldReward, so it
+// doubles in the darkness).
 // Events: shotGrazed { minion }, shotBackfired { minion, energyLost }, or
-// minionHurt { minion, damage, hpLeft, weakPoint } and maybe limbLost
+// minionHurt { minion, damage, hpLeft, weakPoint, matched } and maybe limbLost
 // { minion, limbsLeft }; then, on a kill, minionKilled { minion } and
 // goldGained { amount, from: 'kill' }.
 export function settleShot(barPosition) {
@@ -215,15 +260,17 @@ export function settleShot(barPosition) {
   const zone = aim.zones.find(z => barPosition >= z.from && barPosition <= z.to);
   if (zone && zone.tier === 'penalty') {
     const energyLost = Math.min(1, state.run.energy);
-    state.run.energy -= energyLost;
+    if (energyLost) spendRound();
     return [{ type: 'shotBackfired', minion: m, energyLost }];
   }
-  const damage = !zone ? 0 : zone.tier === 'weak' ? 2 : 1;
-  if (damage === 0) return [{ type: 'shotGrazed', minion: m }];
+  const weakPoint = !!zone && zone.tier === 'weak';
+  const base = !zone ? 0 : weakPoint ? 2 : 1;
+  if (base === 0) return [{ type: 'shotGrazed', minion: m }];
 
+  const damage = aim.matched ? base * WEAKNESS_DAMAGE_SCALE : base;
   m.hpLeft = Math.max(0, m.hpLeft - damage);
-  const events = [{ type: 'minionHurt', minion: m, damage, hpLeft: m.hpLeft, weakPoint: damage === 2 }];
-  if (damage === 2 && m.limbs > 0) {
+  const events = [{ type: 'minionHurt', minion: m, damage, hpLeft: m.hpLeft, weakPoint, matched: aim.matched }];
+  if (weakPoint && m.limbs > 0) {
     m.limbs--;
     events.push({ type: 'limbLost', minion: m, limbsLeft: m.limbs });
   }
