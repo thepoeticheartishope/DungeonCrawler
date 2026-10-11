@@ -876,10 +876,12 @@
     touch-action: manipulation;
   }
   /* On a phone a third column squeezes the room log to a word a line, so
-     the buttons go in a row of their own between the map and the log. */
+     the buttons go in a row of their own under the log and d-pad. Not
+     between the map and the log: the damage bar opens at the map's
+     bottom edge, and SELECT right under it was easy to hit by mistake. */
   @media (max-width: 480px) {
     .room-controls { flex-wrap: wrap; }
-    .gun-actions { order: -1; flex-direction: row; width: 100%; }
+    .gun-actions { order: 1; flex-direction: row; width: 100%; margin-top: 14px; }
     .gun-actions button { flex: 1; }
   }
 
