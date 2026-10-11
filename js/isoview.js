@@ -25,7 +25,7 @@
 // floating apart where it died until it has faded.
 
 import { state, key } from './state.js';
-import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS } from './config.js';
+import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS } from './config.js';
 import { FACING_VECTORS, canShoot } from './sight.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
@@ -167,6 +167,7 @@ let originY = 0;
 let width = 0;      // the canvas's width and height, in pixels
 let height = 0;
 let across = ISO_TILES_ACROSS; // tile widths across the map this frame (fewer on a narrow map)
+let shape = ISO_MAP_SHAPE_MAX; // the map's width over its height this frame (it fills the screen's room)
 let look = null;    // what mapview.js passed in
 let frontWalls = new Set(); // walls between the camera and something in sight, this frame
 // How far each wall in view is cut down, 0 (full height) to 1 (a stub),
@@ -208,6 +209,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   height = canvasSize.height;
   across = isoTilesAcross(canvasSize.pageWidth);
   pageScale = canvasSize.pageWidth ? width / canvasSize.pageWidth : 1;
+  shape = height ? Math.min(ISO_MAP_SHAPE_MAX, Math.max(ISO_MAP_SHAPE_MIN, width / height)) : ISO_MAP_SHAPE_MAX;
   tw = width / across;
   th = tw / 2;
   wallH = tw * ISO_WALL_HEIGHT;
@@ -297,7 +299,7 @@ export function isoScreenOffset(dr, dc) {
 export function isoScreenShare(row, col) {
   const mid = camera || { row: state.floor.playerRow, col: state.floor.playerCol };
   const { x, y } = isoScreenOffset(row - mid.row, col - mid.col);
-  return { x: 0.5 + x / across, y: CAMERA_Y + y * ISO_MAP_SHAPE / across };
+  return { x: 0.5 + x / across, y: CAMERA_Y + y * shape / across };
 }
 
 // Moves the camera for this frame. It rests while the player is inside
@@ -1528,6 +1530,6 @@ export function isoTileAt(px, py) {
   const hit = tapBoxes.find(({ box }) => x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3]);
   if (hit) return { row: hit.tile.row, col: hit.tile.col };
   const sx = (x / width - 0.5) * across;
-  const sy = (y / height - CAMERA_Y) * across / ISO_MAP_SHAPE;
+  const sy = (y / height - CAMERA_Y) * across / shape;
   return { row: Math.round(camera.row + 2 * sy - sx), col: Math.round(camera.col + sx + 2 * sy) };
 }

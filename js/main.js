@@ -4,7 +4,7 @@ import { nextFloor } from './run.js';
 import {
   MAX_HEARTS, ROOM_COUNT, BOSS_HP, ENERGY_START, ENERGY_MAX,
   BATTLE_CHOICE_COUNT,
-  TIMER_SECONDS, ROOM_LOG_LINES, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM
+  TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM
 } from './config.js';
 import { rollModifier, rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -79,6 +79,8 @@ const encounterLogEl = document.getElementById('encounterLog');
 const endPanel = document.getElementById('endPanel');
 const continueBtn = document.getElementById('continueBtn');
 const roomFeedback = document.getElementById('roomFeedback');
+const roomLogEl = document.getElementById('roomLog');
+const btnLog = document.getElementById('btnLog');
 const devPanel = document.getElementById('devPanel');
 
 const winStats = document.getElementById('winStats');
@@ -113,6 +115,7 @@ initRender({
   clockStat: document.getElementById('clockStat'),
   goalsStat: document.getElementById('goalsStat'),
   goalsText: document.getElementById('goalsText'),
+  goalNames: document.getElementById('goalNames'),
   clockFill: document.getElementById('clockFill'),
   btnSelect,
 });
@@ -817,7 +820,39 @@ function showRoomNote(cls, text) {
     while (roomFeedback.children.length > ROOM_LOG_LINES) roomFeedback.firstChild.remove();
   }
   [...roomFeedback.children].forEach((line, i, all) => line.classList.toggle('note-old', i < all.length - 1));
+  // Over the map the newest notes stand out, then dim so the map reads.
+  roomLogEl.classList.remove('log-dim');
+  clearTimeout(roomLogDimTimer);
+  roomLogDimTimer = setTimeout(() => roomLogEl.classList.add('log-dim'), ROOM_LOG_DIM_MS);
 }
+
+// The timer that dims the room log's newest notes. View-only, so not in
+// state.
+let roomLogDimTimer = null;
+
+// LOG (or L): the whole room log over the map, or back to the newest
+// notes on its bottom edge. A tap on the open log closes it too.
+function toggleRoomLog(open = !roomLogEl.classList.contains('open')) {
+  roomLogEl.classList.toggle('open', open);
+  btnLog.setAttribute('aria-pressed', String(open));
+  if (open) roomLogEl.classList.remove('log-dim');
+}
+btnLog.addEventListener('click', () => toggleRoomLog());
+roomLogEl.addEventListener('click', () => toggleRoomLog(false));
+
+// The HUD: a tap (or Enter / Space on it) shows the rest of it, myelin,
+// cycle and the goals' names, and hides it again.
+function toggleHud() {
+  const full = statsEl.classList.toggle('full');
+  statsEl.setAttribute('aria-expanded', String(full));
+}
+statsEl.addEventListener('click', toggleHud);
+statsEl.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  e.stopPropagation();
+  toggleHud();
+});
 
 // A spent turn: the player's events plus the monsters' turn, drawn once,
 // then the room note from all of them (or the run ends in the light, or,
@@ -1334,6 +1369,8 @@ document.addEventListener('keydown', (e) => {
   else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); pressSelect(); }
   else if (gunReady() && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
   else if (gunReady() && e.key === '.') { e.preventDefault(); skipTurn(); }
+  else if ((e.key === 'l' || e.key === 'L') && !mapPanelShown()) { e.preventDefault(); toggleRoomLog(); }
+  else if (e.key === 'Escape' && roomLogEl.classList.contains('open')) { e.preventDefault(); toggleRoomLog(false); }
   else if (mapPanelShown() === 'question' && state.settings.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {
     const idxMap = { 1: 0, a: 0, 2: 1, b: 1, 3: 2, c: 2, 4: 3, d: 3 };
     const idx = idxMap[e.key.toLowerCase()];

@@ -639,13 +639,14 @@ export const ISO_TILES_ACROSS = 9;
 // holds the player's five steps of sight (2.5 tile widths each way).
 export const ISO_TILES_ACROSS_NARROW = 7;
 export const ISO_NARROW_MAP_WIDTH = 400;
-// The isometric map's width over its height. The diamond is half as tall
-// as it is wide, so five steps of sight only reach 1.25 tile widths up or
-// down: a square map would be mostly empty rows. Keep in step with
-// index.html, where the shape appears three times: .map-canvas's
-// aspect-ratio, and .map-fit's height and .grid-wrap's width (which
-// shrink the map to fit a short screen).
-export const ISO_MAP_SHAPE = 3 / 2;
+// The isometric map's width over its height: it takes all the height the
+// HUD and the controls leave, so its shape follows the screen, from
+// ISO_MAP_SHAPE_MAX (wide, a desktop) to ISO_MAP_SHAPE_MIN (tall, a phone).
+// Tiles are sized by the width (ISO_TILES_ACROSS), so a taller map shows
+// more rows, never smaller tiles. Keep in step with index.html's .grid-wrap
+// (3 / 2 and 5 / 3 there).
+export const ISO_MAP_SHAPE_MAX = 3 / 2;
+export const ISO_MAP_SHAPE_MIN = 3 / 5;
 // The isometric camera (DEV -> Camera). It holds still while the player
 // walks inside a box round the middle of the map, ISO_CAMERA_BOX tile
 // widths each way from the middle (x across, y down), and glides after
@@ -711,8 +712,12 @@ export const FORM_TELL_STEPS = 2;
 // The repeat is a little slower than the iso step slide, so each step reads.
 export const DPAD_HOLD_DELAY_MS = 300;
 export const DPAD_HOLD_REPEAT_MS = 170;
-// The room log left of the d-pad keeps this many notes, newest at the bottom.
-export const ROOM_LOG_LINES = 5;
+// The room log keeps this many notes, newest at the bottom: all of them
+// show when LOG opens it over the map; otherwise only the newest two sit on
+// the map's bottom edge (index.html .feedback, nth-last-child(-n+2)), and
+// dim ROOM_LOG_DIM_MS after the last one came.
+export const ROOM_LOG_LINES = 20;
+export const ROOM_LOG_DIM_MS = 6000;
 
 // Real time (start screen option, gun plan step 8): the world (minions,
 // the hunter, the boss's light) takes its turn every REALTIME_STEP_MS

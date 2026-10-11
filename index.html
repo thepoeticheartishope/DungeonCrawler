@@ -136,6 +136,16 @@
     margin-bottom: 16px;
   }
   .stats.show { display: flex; }
+  /* Two short lines while playing; a tap shows the rest (main.js
+     toggleHud). Smaller than the body text, so the map gets the room. */
+  .stats { font-size: 20px; cursor: pointer; margin-bottom: 8px; }
+  @media (max-width: 480px) { .stats { font-size: 17px; gap: 0 12px; } }
+  .stats .stat-more { display: none; }
+  .stats.full .stat-more { display: flex; }
+  .stat-full-line { flex-basis: 100%; }
+  .stats:focus-visible { outline: 2px solid var(--torch-bright); outline-offset: 2px; }
+  /* No title while playing: the HUD says where you are. */
+  body:has(#statsBar.show) header { display: none; }
 
   .stat { display: flex; gap: 6px; }
   .stat-label { opacity: 0.7; }
@@ -534,27 +544,37 @@
   button.ghost { color: var(--text); }
 
   /* ---- Room screen ---- */
-  /* Dev buttons sit inside the inverse status line, so they're drawn in
-     its ink colour and invert back to phosphor-on-dark when hovered. */
+  /* DEV (only with ?dev): a small tag in the bottom corner, its panel over
+     the screen, so testing never pushes the game down. */
+  .dev-dock[hidden] { display: none; }
+  .dev-dock {
+    position: fixed;
+    bottom: 4px;
+    left: 4px;
+    z-index: 9000;
+    font-size: 16px;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
   .dev-skip {
     padding: 0 4px;
     min-height: 0;
-    color: inherit;
     text-shadow: none;
   }
-  #devToggleBtn { margin-left: auto; }
   .dev-skip[hidden] { display: none; }
-  .stats .dev-skip:hover:not(:disabled), .stats .dev-skip:focus-visible:not(:disabled) {
-    background: var(--ink);
-    color: var(--text);
-    box-shadow: none;
-  }
-
+  #devToggleBtn { opacity: 0.7; }
   .dev-panel {
     display: none;
-    flex-basis: 100%;
     flex-wrap: wrap;
-    gap: 0 6px;
+    gap: 4px 6px;
+    width: min(92vw, 460px);
+    max-height: 80vh;
+    overflow: auto;
+    margin-bottom: 4px;
+    padding: 6px;
+    background: var(--stone-dark);
+    border: 1px solid var(--line);
   }
   .dev-panel.show { display: flex; }
   /* DEV Inspect: live state and the last events (devpanel.js). */
@@ -583,12 +603,16 @@
   body:has(#roomScreen.show) {
     height: 100vh;
     height: 100dvh;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding: 8px 8px max(10px, env(safe-area-inset-bottom));
+    /* The turned d-pad's clip box pokes a little past its row. */
+    overflow: hidden;
   }
+  /* Wider than the other screens: the map takes what the screen has. */
   body:has(#roomScreen.show) main {
     display: flex;
     flex-direction: column;
-    container-type: inline-size; /* for .map-fit's 100cqw */
+    max-width: 960px;
+    container-type: inline-size;
   }
   #roomScreen.show {
     display: flex;
@@ -599,27 +623,28 @@
   /* A short screen (a small phone with both browser bars showing) trims
      the chrome round the map before the map gets any smaller. */
   @media (max-height: 640px) {
-    body:has(#roomScreen.show) { padding-top: 10px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
-    body:has(#roomScreen.show) header { margin-bottom: 6px; }
-    body:has(#roomScreen.show) h1 { font-size: 28px; }
-    body:has(#roomScreen.show) .stats { margin-bottom: 10px; }
-    .map-fit { margin-bottom: 10px; }
+    .stats { font-size: 18px; margin-bottom: 6px; }
+    .map-fit { margin-bottom: 8px; }
     .room-buttons button { min-height: 40px; }
   }
 
   /* ---- Map ---- */
-  /* The space the map may take: its full 3:2 height when the screen has
-     room, less when it doesn't. The map keeps its shape inside it. The
-     3:2 here and in .grid-wrap must match ISO_MAP_SHAPE in config.js. */
+  /* The map takes all the height the HUD and the controls leave. Its
+     shape follows (isoview.js reads it each frame), from 3:2 wide at most
+     (a desktop) to 3:5 tall (a phone), centred in what is left over.
+     The two limits must match ISO_MAP_SHAPE_MAX / _MIN in config.js. */
   .map-fit {
-    flex: 0 1 calc(100cqw * 2 / 3);
-    min-height: 100px;
-    margin-bottom: 14px;
+    flex: 1 1 0;
+    min-height: 120px;
+    margin-bottom: 10px;
     container-type: size;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .grid-wrap {
     width: min(100cqw, 100cqh * 3 / 2);
-    margin: 0 auto;
+    height: min(100cqh, 100cqw * 5 / 3);
     position: relative;
   }
 
@@ -630,7 +655,7 @@
   .map-canvas {
     display: block;
     width: 100%;
-    aspect-ratio: 3 / 2;
+    height: 100%;
     border: 1px solid var(--line);
   }
 
@@ -820,11 +845,12 @@
     92% { transform: translateX(1px); }
   }
 
-  /* ---- Room log + d-pad, side by side under the map ---- */
+  /* ---- The d-pad and its buttons, one row under the map ---- */
   .room-controls {
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    gap: 28px;
   }
 
   /* Clips the turned d-pad's empty corners, which would otherwise poke
@@ -877,8 +903,9 @@
   .dpad button.move-blocked { opacity: 0.3; }
   .dpad button.move-examine { background: var(--torch-bright); color: var(--ink); }
 
-  /* ---- The buttons right of the d-pad: SELECT (the gun's one button,
-     only with the gun on) above MAP (the minimap). ---- */
+  /* ---- The buttons right of the d-pad: MAP, LOG, then SELECT (the
+     gun's one button, only with the gun on) lowest, furthest from the
+     damage bar over the map. ---- */
   .room-buttons {
     display: flex;
     flex-direction: column;
@@ -887,20 +914,10 @@
   }
   .stat[hidden], .room-buttons button[hidden] { display: none; }
   .room-buttons button {
-    min-width: 76px;
-    min-height: 48px;
+    min-width: 96px;
+    min-height: 44px;
     padding: 0 8px;
     touch-action: manipulation;
-  }
-  /* On a phone a third column squeezes the room log to a word a line, so
-     the buttons go in a row of their own under the log and d-pad, MAP
-     small beside a wide SELECT. Not between the map and the log: the
-     damage bar opens at the map's bottom edge, and SELECT right under it
-     was easy to hit by mistake. */
-  @media (max-width: 480px) {
-    .room-controls { flex-wrap: wrap; }
-    .room-buttons { order: 1; flex-direction: row-reverse; width: 100%; margin-top: 14px; }
-    #btnSelect { flex: 1; }
   }
 
   /* The minimap (js/minimapview.js): over the whole map, under the gun's
@@ -1253,25 +1270,47 @@
     .eye.eye-near { animation: none; }
   }
 
-  /* The room log: the last few notes as a small terminal stream, as tall
-     as the d-pad. Older notes dim, like the encounter transcript. Reversed
-     so the browser keeps it scrolled to the newest note, even after the
-     view changes its width; the notes keep their order inside #roomFeedback. */
+  /* The room log, on the map's bottom edge: only the newest two notes
+     (ROOM_LOG_LINES in config.js), over a shade so they read on the map,
+     dimming after ROOM_LOG_DIM_MS (a slow fade; none under reduced
+     motion). Taps go through it to the map. LOG opens all of it over the
+     map, scrolled to the newest. Reversed so the browser keeps the newest
+     in view; the notes keep their order inside #roomFeedback. Hidden
+     while a gun panel or the minimap is over the map. */
   .feedback {
-    flex: 1;
-    min-width: 0;
-    height: 152px;
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    bottom: 1px;
+    z-index: 3;
+    max-height: 45%;
     overflow-y: auto;
     scrollbar-width: none;
     display: flex;
     flex-direction: column-reverse;
-    border-left: 1px solid var(--line);
-    padding-left: 8px;
-    font-size: 16px;
+    padding: 18px 10px 6px;
+    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.8) 16px);
+    font-size: 15px;
     line-height: 1.2;
     text-align: left;
     overflow-wrap: anywhere;
+    pointer-events: none;
+    transition: opacity 1.2s ease;
   }
+  .feedback:not(.open) .room-note:not(:nth-last-child(-n+2)) { display: none; }
+  .feedback.log-dim:not(.open) { opacity: 0.4; }
+  .feedback:has(#roomFeedback:empty) { display: none; }
+  .feedback.open {
+    top: 1px;
+    max-height: none;
+    padding-top: 10px;
+    background: var(--stone-dark);
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  #mapWrap:has(.map-panel:not([hidden])) .feedback,
+  #mapWrap:has(.minimap:not([hidden])) .feedback { display: none; }
+  @media (prefers-reduced-motion: reduce) { .feedback { transition: none; } }
   .feedback::-webkit-scrollbar { display: none; }
   .feedback .room-note { margin-top: 4px; }
   .feedback .room-note.note-old { opacity: 0.55; }
@@ -1352,27 +1391,11 @@
   <div class="intro-call" id="introCall" role="status"></div>
   <div class="intro-skip" data-t="intro.skip"></div>
 </div>
-<main>
-  <header>
-    <h1>Noesis Protocol</h1>
-  </header>
-
-  <div class="stats" id="statsBar">
-    <div class="stat"><span class="stat-label" data-t="stat.hp"></span><span class="hearts" id="hearts">3/3</span></div>
-    <div class="stat"><span class="stat-label" data-t="stat.gold"></span><strong id="coinsTotal">0</strong></div>
-    <div class="stat"><span class="stat-label" data-t="stat.turn"></span><strong id="turnCount">0</strong></div>
-    <!-- Real time only (gun plan step 8): when the world next moves (render.js renderClock). -->
-    <div class="stat" id="clockStat" hidden><span class="stat-label" data-t="stat.clock"></span><span class="clock-meter"><span class="clock-fill" id="clockFill"></span></span></div>
-    <!-- The gun (gun plan step 6), only with DEV -> Combat on gun (render.js renderHud). -->
-    <div class="stat" id="energyStat" hidden><span class="stat-label" data-t="stat.energy"></span><strong id="energyCount"></strong></div>
-    <div class="stat" id="gunTargetStat" hidden><span class="stat-label" data-t="stat.target"></span><strong id="gunTarget"></strong></div>
-    <!-- The floor's goals (strategy plan step A; render.js renderGoals), hidden on a floor with none. -->
-    <div class="stat stat-wide" id="goalsStat" hidden><span class="stat-label" data-t="stat.goals"></span><strong id="goalsText"></strong></div>
-    <div class="stat"><span class="stat-label" data-t="stat.room"></span><strong id="roomNum">0</strong><span id="roomOf">/<strong id="roomTotal">0</strong></span></div>
-    <div class="stat stat-wide"><span class="stat-label" data-t="stat.time"></span><strong id="timer">0:00</strong></div>
-    <!-- The boss light's progress, as an eye that opens (render.js renderLightEye). -->
-    <div class="stat"><span class="eye" id="lightEye" role="img"><span class="eye-iris"></span></span></div>
-    <button type="button" class="dev-skip stat-wide" id="devToggleBtn" title="Testing tools">DEV</button>
+<!-- DEV (js/devpanel.js): only with ?dev on the address. A small tag in
+     the corner; its panel lies over the screen instead of pushing the game
+     down. Outside <main>, so position: fixed is the screen's. -->
+<div class="dev-dock" id="devDock" hidden>
+    <button type="button" class="dev-skip" id="devToggleBtn" title="Testing tools" aria-expanded="false">DEV</button>
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devTurnBtn" type="button" aria-pressed="false" title="Testing only: a press in a new direction turns and steps (warned by I see you.), or only turns so you look first">Turn: and step (dev)</button>
@@ -1386,6 +1409,32 @@
       <button class="dev-skip" id="devInspectBtn" type="button" aria-pressed="false" title="Testing only: show live game state and the last events">Inspect: OFF (dev)</button>
       <pre class="dev-inspect" id="devInspectOut" hidden></pre>
     </div>
+</div>
+<main>
+  <header>
+    <h1>Noesis Protocol</h1>
+  </header>
+
+  <!-- The HUD: two short lines while playing (stability, energy, target,
+       depth, goals as marks, the light's eye). A tap or Enter on it shows
+       the rest: time, myelin, cycle and the goals' names (main.js toggleHud). -->
+  <div class="stats" id="statsBar" role="button" tabindex="0" aria-expanded="false" data-t-title="hud.more">
+    <div class="stat"><span class="stat-label" data-t="stat.hp"></span><span class="hearts" id="hearts">3/3</span></div>
+    <!-- The gun (gun plan step 6), only with DEV -> Combat on gun (render.js renderHud). -->
+    <div class="stat" id="energyStat" hidden><span class="stat-label" data-t="stat.energy"></span><strong id="energyCount"></strong></div>
+    <div class="stat" id="gunTargetStat" hidden><span class="stat-label" data-t="stat.target"></span><strong id="gunTarget"></strong></div>
+    <!-- Real time only (gun plan step 8): when the world next moves (render.js renderClock). -->
+    <div class="stat" id="clockStat" hidden><span class="stat-label" data-t="stat.clock"></span><span class="clock-meter"><span class="clock-fill" id="clockFill"></span></span></div>
+    <div class="stat"><span class="stat-label" data-t="stat.room"></span><strong id="roomNum">0</strong><span id="roomOf">/<strong id="roomTotal">0</strong></span></div>
+    <!-- The floor's goals (strategy plan step A; render.js renderGoals), hidden on a floor with none:
+         marks only, the names with the rest of the HUD. -->
+    <div class="stat" id="goalsStat" hidden><span class="stat-label" data-t="stat.goals"></span><strong id="goalsText"></strong></div>
+    <!-- The boss light's progress, as an eye that opens (render.js renderLightEye). -->
+    <div class="stat"><span class="eye" id="lightEye" role="img"><span class="eye-iris"></span></span></div>
+    <div class="stat stat-more"><span class="stat-label" data-t="stat.time"></span><strong id="timer">0:00</strong></div>
+    <div class="stat stat-more"><span class="stat-label" data-t="stat.gold"></span><strong id="coinsTotal">0</strong></div>
+    <div class="stat stat-more"><span class="stat-label" data-t="stat.turn"></span><strong id="turnCount">0</strong></div>
+    <div class="stat stat-more stat-full-line" id="goalNames"></div>
   </div>
 
   <!-- Start screen -->
@@ -1531,6 +1580,10 @@
       <div class="light-hint light-hint-w" id="lightHintW" aria-hidden="true"></div>
       <!-- "I see you.": something unseen is about to be beside the player (render.js showSensed). -->
       <div class="sense-note" id="senseNote" role="status" aria-live="polite"></div>
+      <!-- The room log (main.js showRoomNote) on the map's bottom edge: the
+           newest notes, dimming after a while. LOG (or L) opens all of it
+           over the map (main.js toggleRoomLog). -->
+      <div class="feedback" id="roomLog" role="log" aria-live="polite"><div id="roomFeedback"></div></div>
       <!-- The minimap (js/minimapview.js): MAP or M lays it over the map. -->
       <canvas class="minimap" id="minimap" role="img" hidden></canvas>
 
@@ -1557,10 +1610,8 @@
     </div>
     </div>
 
-    <!-- The room log (main.js showRoomNote) sits left of the d-pad, so the
-         latest notes are read beside the thumb that walks. -->
+    <!-- The d-pad, and beside it MAP, LOG and SELECT. -->
     <div class="room-controls">
-      <div class="feedback" role="log" aria-live="polite"><div id="roomFeedback"></div></div>
 
     <div class="dpad-clip">
     <div class="dpad" id="dpad">
@@ -1571,11 +1622,13 @@
       <button class="dpad-s" id="btnS" type="button" aria-label="Move south">v</button>
     </div>
     </div>
-    <!-- The gun's one button (main.js pressSelect: fire, or stop the damage
-         bar; only with the gun on) and MAP (js/minimapview.js). -->
+    <!-- MAP (js/minimapview.js), LOG (the whole room log) and the gun's one
+         button (main.js pressSelect: fire, or stop the damage bar; only with
+         the gun on), lowest, away from the damage bar over the map. -->
     <div class="room-buttons">
-      <button type="button" id="btnSelect" data-t="gun.btn.select" hidden></button>
       <button type="button" id="btnMinimap" data-t="map.btn" aria-pressed="false"></button>
+      <button type="button" id="btnLog" data-t="log.btn" aria-pressed="false"></button>
+      <button type="button" id="btnSelect" data-t="gun.btn.select" hidden></button>
     </div>
     </div>
   </section>

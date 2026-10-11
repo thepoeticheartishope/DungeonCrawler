@@ -1,10 +1,12 @@
-// DEV panel in the status bar: Skip room, Auto-win, Fog, Turn, Minigame, Camera and Combat
+// DEV panel (only with ?dev on the address: a small tag in the corner, its
+// panel over the screen): Skip room, Auto-win, Fog, Turn, Minigame, Camera and Combat
 // toggles, a test shot and a test reload, for testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw } from './mapview.js';
 import { renderRoomHints } from './render.js';
 import { MINIGAMES } from './minigames.js';
 
+const devDock = document.getElementById('devDock');
 const devToggleBtn = document.getElementById('devToggleBtn');
 const devPanel = document.getElementById('devPanel');
 const devSkipBtn = document.getElementById('devSkipBtn');
@@ -22,8 +24,12 @@ export function initDevPanel({
   gunCombatChanged, autoWinGun,
   battleScreen, wagerRow,
 }) {
+  // Players never see DEV: it shows only when the address has ?dev
+  // (index.html?dev), for testing.
+  devDock.hidden = !new URLSearchParams(location.search).has('dev');
   devToggleBtn.addEventListener('click', () => {
-    devPanel.classList.toggle('show');
+    const open = devPanel.classList.toggle('show');
+    devToggleBtn.setAttribute('aria-expanded', String(open));
   });
 
   // Dev tool: jump to the next room instantly, skipping combat, for

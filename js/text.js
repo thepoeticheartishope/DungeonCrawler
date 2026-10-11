@@ -447,6 +447,8 @@ export const TEXT = {
   'gun.reload.cancel': 'CANCEL', // draft
   'gun.bar.prompt': 'PRESS SELECT', // draft. Over the damage bar
   'map.btn': 'MAP', // draft. The minimap button (M on a keyboard)
+  'log.btn': 'LOG', // draft. The room log button (L on a keyboard): the whole log over the map
+  'hud.more': 'Status: tap for more', // draft. The HUD's tooltip: a tap shows myelin, cycle and the goals' names
   'map.label': 'Map of what you have seen on this floor. Tap to close.', // draft. Read out by screen readers
   'gun.struggle.prompt': 'STRUGGLE: PRESS SELECT', // draft. Over the Struggle dial (no energy, a minion reached the player)
   'gun.struggle.promptAgain': 'STRUGGLE {count}: PRESS SELECT', // draft. The same, for a later Struggle on this floor (faster, smaller zone)
@@ -565,7 +567,8 @@ export function t(key, vars = {}, depth = 0) {
 }
 
 // Fills every element marked data-t="key" in index.html from TEXT, plus
-// data-t-placeholder="key" for input placeholders. Elements that mirror
+// data-t-placeholder="key" for input placeholders and data-t-title="key"
+// for tooltips (also the element's spoken name). Elements that mirror
 // their text into data-text (the glitch effects draw from it) get that
 // updated too. Re-run after setTextArea so area overrides reach them.
 export function applyStaticText(root = document) {
@@ -576,5 +579,9 @@ export function applyStaticText(root = document) {
   });
   root.querySelectorAll('[data-t-placeholder]').forEach((el) => {
     el.placeholder = t(el.dataset.tPlaceholder);
+  });
+  root.querySelectorAll('[data-t-title]').forEach((el) => {
+    el.title = t(el.dataset.tTitle);
+    el.setAttribute('aria-label', el.title);
   });
 }
