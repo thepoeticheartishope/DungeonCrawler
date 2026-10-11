@@ -13,11 +13,13 @@ import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
   LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS, VERDICT_TIMER_SECONDS,
+  CROSSWIRE_TIMER_SECONDS,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   syllableSplitTray, syllableSplitTier, letterPoolCheck, letterPoolTier,
   codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier, verdictSetup, verdictTier,
+  crosswireSetup, crosswireTier,
 } from './minigames.js';
 import { blindReadMs } from './modifiers.js';
 import { normalizeSpaces } from './quiz.js';
@@ -29,7 +31,8 @@ const slot = document.getElementById('minigameSlot');
 // its own drawing needs (Close Enough: the dial and its elements). Null
 // when none shows. View-only, so not in state.
 let shown = null;
-// Verdict's Blind timer, taking the claim's question away once read.
+// Verdict's and Crosswire's Blind timer, taking their own questions
+// away once read.
 let claimTimer = null;
 // Slow Spell's clock, filling in its letters.
 let letterClock = null;
@@ -48,6 +51,7 @@ const BUILDERS = {
   letterPool: buildLetterPool,
   codeBreak: buildCodeBreak,
   verdict: buildVerdict,
+  crosswire: buildCrosswire,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -760,6 +764,174 @@ function buildVerdict() {
     },
     flip: () => { flip = true; },
   };
+}
+
+// ---- Crosswire: type two answers that cross on a shared letter ----
+// The clues (each answer's question, in place of the panel's, which is
+// hidden) and a grid: the across word on one row, the down word in one
+// column, the shared square filled in and locked. Typing moves along the
+// word last chosen (the shared square is skipped), Backspace steps back,
+// Enter checks. REVEAL fills a square and costs a step (crosswireTier).
+// CHECK (one try) marks every square, shows the right letters, and
+// scores; a word left wrong goes back as `missed` (a haunt). Gambler
+// locks the grid (a fieldset). Timer: CROSSWIRE_TIMER_SECONDS for the
+// grid, time up checks it. Blind: the clues go after their reading time.
+// No Flip.
+function buildCrosswire() {
+  slot.classList.add('mg-cross');
+  const { across, down, at } = crosswireSetup(state.battle.currentQuestion);
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.crosswire.hint');
+  const clues = add(slot, 'div', 'mg-clues');
+  const clueTexts = [['across', across], ['down', down]].map(([dir, entry]) => {
+    const line = add(clues, 'div', 'mg-clue');
+    add(line, 'span', 'mg-clue-dir').textContent = t('mg.crosswire.' + dir, { n: entry.word.length });
+    const text = add(line, 'span', 'mg-clue-q');
+    text.textContent = entry.q.term;
+    return text;
+  });
+  const lock = add(slot, 'fieldset', 'mg-cross-form');
+  const grid = add(lock, 'div', 'mg-grid');
+  const keys = add(lock, 'div', 'mg-pool-keys');
+  const reveal = add(keys, 'button', 'mg-lock');
+  const check = add(keys, 'button', 'mg-lock');
+  const left = add(slot, 'div', 'term-line mg-left');
+
+  reveal.type = check.type = 'button';
+  reveal.textContent = t('mg.crosswire.reveal');
+  check.textContent = t('mg.crosswire.check');
+  grid.style.gridTemplateColumns = 'repeat(' + across.word.length + ', auto)';
+
+  // The squares: the across word is row at.down, the down word column
+  // at.across. Each knows its letter and which words it is in.
+  const acrossCells = [];
+  const downCells = [];
+  for (let r = 0; r < down.word.length; r++) {
+    for (let c = 0; c < across.word.length; c++) {
+      const inAcross = r === at.down;
+      const inDown = c === at.across;
+      if (!inAcross && !inDown) {
+        add(grid, 'span');
+        continue;
+      }
+      const input = add(grid, 'input', 'mg-cell');
+      const cell = { input, want: inAcross ? across.word[c] : down.word[r], inAcross, inDown, locked: false };
+      input.type = 'text';
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+      input.maxLength = 1;
+      input.setAttribute('autocapitalize', 'characters');
+      input.setAttribute('autocorrect', 'off');
+      input.setAttribute('aria-label', inAcross && inDown
+        ? t('mg.crosswire.cellShared', { letter: cell.want })
+        : t(inAcross ? 'mg.crosswire.cellAcross' : 'mg.crosswire.cellDown', { n: (inAcross ? c : r) + 1 }));
+      if (inAcross && inDown) lockCell(cell, 'mg-cell-given');
+      if (inAcross) acrossCells[c] = cell;
+      if (inDown) downCells[r] = cell;
+    }
+  }
+  const cells = [...new Set([...acrossCells, ...downCells])];
+
+  // The word typing moves along, the squares revealed, and whether it is
+  // checked.
+  let dir = 'across';
+  let reveals = 0;
+  let over = false;
+  const line = () => (dir === 'across' ? acrossCells : downCells);
+  // Focuses the next open square along the word, `step` 1 or -1; with
+  // `clear`, empties it (Backspace).
+  const move = (cell, step, clear = false) => {
+    const word = line();
+    for (let i = word.indexOf(cell) + step; i >= 0 && i < word.length; i += step) {
+      if (word[i].locked) continue;
+      word[i].input.focus();
+      if (clear) word[i].input.value = '';
+      return;
+    }
+  };
+  cells.forEach((cell) => {
+    const { input } = cell;
+    input.addEventListener('focus', () => {
+      if (!(cell.inAcross && cell.inDown)) dir = cell.inAcross ? 'across' : 'down';
+      input.select();
+    });
+    input.addEventListener('input', () => {
+      const letters = input.value.toUpperCase().match(/\p{L}/gu);
+      input.value = letters ? letters[letters.length - 1] : '';
+      if (input.value) move(cell, 1);
+    });
+    // Typed letters are the grid's, not the game's keys.
+    input.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        settle();
+      } else if (e.key === 'Backspace' && !input.value) {
+        e.preventDefault();
+        move(cell, -1, true);
+      }
+    });
+  });
+  const typed = word => word.map(cell => cell.input.value || '_').join('');
+  const right = word => word.every(cell => cell.input.value === cell.want);
+  const settle = () => {
+    if (over) return;
+    over = true;
+    clearTimeout(claimTimer);
+    clueTexts.forEach((text, i) => {
+      text.textContent = [across, down][i].q.term;
+      text.classList.remove('mod-blind');
+    });
+    const acrossRight = right(acrossCells);
+    const downRight = right(downCells);
+    const given = typed(acrossCells) + ' / ' + typed(downCells);
+    cells.forEach((cell) => {
+      if (cell.locked) return;
+      cell.input.classList.add(cell.input.value === cell.want ? 'mg-cell-good' : 'mg-cell-bad');
+      cell.input.value = cell.want;
+    });
+    const missed = [];
+    if (!acrossRight) missed.push(across.q);
+    if (!downRight) missed.push(down.q);
+    const tier = crosswireTier(acrossRight, downRight, reveals);
+    finish({ right: tier !== null, tier, given, missed });
+  };
+  reveal.addEventListener('click', () => {
+    const open = cells.filter(cell => !cell.locked && cell.input.value !== cell.want);
+    if (!open.length) return;
+    const cell = open[Math.floor(Math.random() * open.length)];
+    cell.input.value = cell.want;
+    lockCell(cell, 'mg-cell-shown');
+    reveals++;
+    left.textContent = t('mg.crosswire.reveals', { n: reveals });
+  });
+  check.addEventListener('click', settle);
+  const hideClues = () => clueTexts.forEach((text) => {
+    text.textContent = t('battle.blindQuestion');
+    text.classList.add('mod-blind');
+  });
+
+  return {
+    lock,
+    asks: true,
+    focus: () => acrossCells.find(cell => !cell.locked).input.focus(),
+    seconds: CROSSWIRE_TIMER_SECONDS,
+    timeUp: settle,
+    finish: () => {
+      cells.forEach((cell) => { cell.input.value = cell.want; });
+      settle();
+    },
+    blind: () => { claimTimer = setTimeout(hideClues, blindReadMs(across.q.term + ' ' + down.q.term)); },
+  };
+}
+
+// A Crosswire square that can't be typed in any more: the shared letter
+// (given) or one REVEAL filled in. Typing skips it.
+function lockCell(cell, className) {
+  cell.input.value = cell.want;
+  cell.input.readOnly = true;
+  cell.input.tabIndex = -1;
+  cell.input.classList.add(className);
+  cell.locked = true;
 }
 
 // Dial step `at` as the player reads it: thousands separated, as many

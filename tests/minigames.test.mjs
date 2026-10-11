@@ -4,7 +4,8 @@
 // Lower's bar, hints and tiers, Slow Spell's fit, spelling and tiers,
 // Syllable Split's splitter, fit, tray and tiers, Letter Pool's roll,
 // tray, checks, tiers and no haunts, Code Break's fit, marks and tiers,
-// Verdict's fit, claims, tiers and haunts, and what a
+// Verdict's fit, claims, tiers and haunts, Crosswire's fit, grid and
+// tiers, and what a
 // tier pays in the settle rules (gun.js, answers.js).
 //
 // Run: node --test tests/*.test.mjs
@@ -23,7 +24,7 @@ import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   splitSyllables, syllableSplitPieces, syllableSplitTray, syllableSplitTier,
   letterPoolSetup, letterPoolCheck, letterPoolTier, codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier,
-  verdictSetup, verdictTier, verdictClaimCount,
+  verdictSetup, verdictTier, verdictClaimCount, crosswireSetup, crosswireTier,
 } from '../js/minigames.js';
 import { recordHauntAnswer } from '../js/haunts.js';
 import { settleReload } from '../js/gun.js';
@@ -255,7 +256,7 @@ test('names split on their vowels, keeping digraphs and starting pairs', () => {
 test('Syllable Split fits one-word names of 3+ pieces with enough decoys', () => {
   reset();
   state.settings.activeData = LONG;
-  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak', 'verdict']);
+  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak', 'verdict', 'crosswire']);
   assert.equal(syllableSplitPieces(LONG[4]), null, 'Noah: two pieces');
   assert.equal(syllableSplitPieces({ ...LONG[0], answerType: 'book' }), null, 'names only');
   assert.equal(syllableSplitPieces({ ...LONG[0], meaning: 'King Solomon' }), null, 'one word');
@@ -507,4 +508,44 @@ test('claims called wrong become haunts; the question showing is left to the set
   assert.ok(state.run.haunts.has(VERDICT_SET[2]), 'another claim called wrong');
   assert.ok(!state.run.haunts.has(VERDICT_SET[0]), 'the settle rule records this one');
   assert.equal(state.battle.minigame, null);
+});
+
+test('Crosswire fits a one-word answer of 4-8 letters that crosses another, past both first letters', () => {
+  reset();
+  state.settings.activeData = VERDICT_SET;
+  const fits = q => minigamesFor(q).includes('crosswire');
+  assert.ok(fits(VERDICT_SET[1]), 'Moses crosses Jonah on its O');
+  assert.ok(!fits(VERDICT_SET[7]), '40 is no word');
+  assert.ok(!fits({ term: 'Who?', meaning: 'Eve', answerType: 'name' }), 'too short');
+  assert.ok(!fits({ term: 'Who?', meaning: 'Methuselah', answerType: 'name' }), 'too long');
+  assert.ok(!fits({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }), 'two words');
+  assert.ok(!fits({ term: 'Did Moses lead them?', meaning: 'Moses', answerType: 'name' }), 'the question holds it');
+  state.settings.activeData = [VERDICT_SET[0], { term: 'Who?', meaning: 'Noah', answerType: 'name' }];
+  assert.ok(!fits(VERDICT_SET[0]), 'the same answer twice is no crossing');
+  state.settings.activeData = [{ term: 'Who?', meaning: 'Abel', answerType: 'name' }, { term: 'Who?', meaning: 'Amos', answerType: 'name' }];
+  assert.ok(!fits(state.settings.activeData[0]), 'they share only a first letter');
+  assert.ok(!MINIGAME_MODIFIERS.crosswire.includes('flip'), 'no Flip');
+});
+
+test('the Crosswire grid crosses on a letter both words hold, never a first letter', () => {
+  reset();
+  state.settings.activeData = VERDICT_SET;
+  for (let n = 0; n < 20; n++) {
+    const { across, down, at } = crosswireSetup(VERDICT_SET[1]);
+    assert.equal(across.q, VERDICT_SET[1]);
+    assert.notEqual(down.q, VERDICT_SET[1]);
+    assert.deepEqual(across.word, ['M', 'O', 'S', 'E', 'S']);
+    assert.ok(at.across > 0 && at.down > 0);
+    assert.equal(across.word[at.across], down.word[at.down]);
+  }
+});
+
+test('Crosswire tiers: both words with 0 / 1 / 2+ reveals = X / 2 / 1, one word = 1, none = a miss', () => {
+  assert.equal(crosswireTier(true, true, 0), 'X');
+  assert.equal(crosswireTier(true, true, 1), '2');
+  assert.equal(crosswireTier(true, true, 2), '1');
+  assert.equal(crosswireTier(true, true, 5), '1');
+  assert.equal(crosswireTier(true, false, 0), '1');
+  assert.equal(crosswireTier(false, true, 0), '1');
+  assert.equal(crosswireTier(false, false, 0), null);
 });
