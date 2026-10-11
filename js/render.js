@@ -150,7 +150,9 @@ const GOAL_MARKS = { kept: '[x]', failed: '[-]', open: '[ ]' };
 function renderGoals() {
   const goals = state.floor.goals;
   els.goalsStat.hidden = !goals.length;
-  els.goalsText.textContent = goals.map(g => GOAL_MARKS[goalMark(g.id)] + ' ' + t('goal.' + g.id)).join('  ');
+  // Marks on the HUD's short line; names with the rest of it (a tap).
+  els.goalsText.textContent = goals.map(g => GOAL_MARKS[goalMark(g.id)]).join('');
+  els.goalNames.textContent = goals.map(g => GOAL_MARKS[goalMark(g.id)] + ' ' + t('goal.' + g.id)).join('  ');
 }
 
 // The NEXT meter (Real time only): how long until the world next moves.

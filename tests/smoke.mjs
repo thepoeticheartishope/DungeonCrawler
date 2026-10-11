@@ -493,7 +493,8 @@ async function main() {
   process.on('exit', cleanup);
 
   try {
-    const url = `http://127.0.0.1:${port}/`;
+    // ?dev: the DEV tools these runs use are hidden without it.
+    const url = `http://127.0.0.1:${port}/?dev`;
     await waitForServer(url);
 
     const browser = await chromium.launch();
