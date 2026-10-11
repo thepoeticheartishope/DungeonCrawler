@@ -39,7 +39,6 @@ export function initGunPanels({ pickReload, cancelReload, stopBar, stopStruggle 
   els.aim = document.getElementById('aimPanel');
   els.bar = document.getElementById('damageBar');
   els.hit = document.getElementById('damageHit');
-  els.weak = document.getElementById('damageWeak');
   els.marker = document.getElementById('damageMarker');
   els.prompt = document.getElementById('aimPrompt');
   els.legend = document.getElementById('damageLegend');
@@ -110,16 +109,35 @@ export function showQuestionOnMap(answers) {
 }
 
 // Opens the damage bar for the landed shot waiting in state.battle.aim:
-// the hit zone is `hitHalf` either side of the centre, the weak point
-// `weakWidth`. The marker sweeps end to end and back until the player
-// stops it.
+// its zones (gun.js damageZones), each marked 1, 2 or X, and a key for the
+// kinds of zone on this bar. The marker sweeps end to end and back until
+// the player stops it.
 export function showDamageBar(aim) {
-  els.weak.hidden = false;
-  els.weak.style.left = (0.5 - aim.weakWidth) * 100 + '%';
-  els.weak.style.width = aim.weakWidth * 200 + '%';
+  clearZones();
+  els.hit.hidden = true;
+  aim.zones.forEach(zone => {
+    const el = document.createElement('div');
+    el.className = 'damage-zone damage-' + zone.tier + ' rolled';
+    el.style.left = zone.from * 100 + '%';
+    el.style.width = (zone.to - zone.from) * 100 + '%';
+    el.textContent = t('gun.bar.zone.' + zone.tier);
+    els.bar.insertBefore(el, els.marker);
+  });
+  const tiers = ['hit', 'weak', 'penalty'].filter(tier => aim.zones.some(z => z.tier === tier));
+  els.legend.innerHTML = '';
+  [...tiers, 'graze'].forEach(tier => {
+    const span = document.createElement('span');
+    span.textContent = t('gun.bar.key.' + tier);
+    els.legend.appendChild(span);
+  });
   els.legend.hidden = false;
   els.prompt.textContent = t('gun.bar.prompt');
-  startBar('aim', aim.hitHalf, reducedMotion.matches ? DAMAGE_BAR_SLOW_SWEEP_MS : DAMAGE_BAR_SWEEP_MS);
+  startBar('aim', reducedMotion.matches ? DAMAGE_BAR_SLOW_SWEEP_MS : DAMAGE_BAR_SWEEP_MS);
+}
+
+// Takes the last damage bar's zones off the bar.
+function clearZones() {
+  els.bar.querySelectorAll('.rolled').forEach(el => el.remove());
 }
 
 // Opens the Struggle dial on the same bar: one zone, `hitHalf` either side
@@ -129,21 +147,22 @@ export function showDamageBar(aim) {
 // player sees why this one is harder. A minion has reached the player
 // with the chamber empty (gun.js settleStruggle).
 export function showStruggleBar({ hitHalf, sweepMs, count }) {
-  els.weak.hidden = true;
+  clearZones();
+  els.hit.hidden = false;
+  els.hit.style.left = (0.5 - hitHalf) * 100 + '%';
+  els.hit.style.width = hitHalf * 200 + '%';
   els.legend.hidden = true;
   els.prompt.textContent = count > 1 ? t('gun.struggle.promptAgain', { count }) : t('gun.struggle.prompt');
   const slow = STRUGGLE_SLOW_SWEEP_MS / STRUGGLE_SWEEP_MS;
-  startBar('struggle', hitHalf, reducedMotion.matches ? sweepMs * slow : sweepMs);
+  startBar('struggle', reducedMotion.matches ? sweepMs * slow : sweepMs);
 }
 
-// Shows the bar for `mode` with its hit zone and starts the marker
-// sweeping, one end to the other every `period` ms.
-function startBar(mode, hitHalf, period) {
+// Shows the bar for `mode` and starts the marker sweeping, one end to the
+// other every `period` ms.
+function startBar(mode, period) {
   barMode = mode;
   els.bar.setAttribute('aria-label', t(mode === 'struggle' ? 'gun.struggle.label' : 'gun.bar.label'));
   els.aim.classList.toggle('struggle', mode === 'struggle');
-  els.hit.style.left = (0.5 - hitHalf) * 100 + '%';
-  els.hit.style.width = hitHalf * 200 + '%';
   showOnly(els.aim);
   cancelAnimationFrame(sweep && sweep.frame);
   sweep = { start: performance.now(), period, x: 0, frame: 0 };
@@ -166,7 +185,7 @@ export function stopBarSweep() {
 }
 
 // The player stopped the bar: the marker holds where it stopped, and the
-// position (0 to 1, centre 0.5) goes to stopBar, or to stopStruggle for
+// position (0 to 1) goes to stopBar, or to stopStruggle for
 // the Struggle dial. Only once per bar.
 function stopSweep() {
   if (!sweep) return;

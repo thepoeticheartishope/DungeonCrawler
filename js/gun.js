@@ -10,7 +10,8 @@
 
 import { state, key } from './state.js';
 import {
-  BATTLE_CHOICE_COUNT, GUN_CHAMBER, GUN_RELOAD_MODIFIERS, GUN_RELOAD_ROUNDS, GUN_HIT_HALF,
+  BATTLE_CHOICE_COUNT, GUN_CHAMBER, GUN_RELOAD_MODIFIERS, GUN_RELOAD_ROUNDS,
+  DAMAGE_BAR_DEPTHS, DAMAGE_PENALTY_WIDTH, DAMAGE_ZONE_GAP,
   MINION_KINDS, MINION_STRIKE_COST, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
 } from './config.js';
@@ -148,8 +149,8 @@ export function fireBlock(target) {
 // on the hunter staggers it, since it can't be hurt. A blocked shot spends
 // nothing.
 // Events: fireBlocked { target, reason }, or shotFired { target, chance }
-// then shotMissed { target }, aimStarted { target, hitHalf, weakWidth }
-// or hunterStaggered { hunter }.
+// then shotMissed { target }, aimStarted { target, zones } or
+// hunterStaggered { hunter }.
 export function fire(target) {
   const reason = fireBlock(target);
   if (reason) return [{ type: 'fireBlocked', target, reason }];
@@ -164,26 +165,59 @@ export function fire(target) {
     events.push(...staggerHunter(target));
     return events;
   }
-  state.battle.aim = { target, hitHalf: GUN_HIT_HALF, weakWidth: MINION_KINDS[target.minionKind].weakWidth };
+  state.battle.aim = { target, zones: damageZones(target.minionKind) };
   events.push({ type: 'aimStarted', ...state.battle.aim });
   return events;
 }
 
-// The player stopped the damage bar at `barPosition` (0 to 1, centre 0.5)
-// for the shot in state.battle.aim. Inside the weak point: 2 damage and a
-// limb comes off, if any are left. Inside the hit zone: 1. Anything else
-// grazes for 0. A minion with no hp left dies and pays its kind's gold
-// (goldReward, so it doubles in the darkness).
-// Events: shotGrazed { minion }, or minionHurt { minion, damage, hpLeft,
-// weakPoint } and maybe limbLost { minion, limbsLeft }; then, on a kill,
-// minionKilled { minion } and goldGained { amount, from: 'kill' }.
+// The damage bar's zones for a landed shot on a minion of `minionKind`:
+// [{ tier, from, to }], left to right, tier 'hit', 'weak' or 'penalty'.
+// How many of each comes from the depth (DAMAGE_BAR_DEPTHS), how wide
+// from the kind (hit and weak) or DAMAGE_PENALTY_WIDTH. They land in a new
+// order at new spots each shot, so the player reads the bar instead of
+// learning one timing: the spare room is shared out at random between the
+// gaps, each at least DAMAGE_ZONE_GAP, so zones never touch.
+export function damageZones(minionKind) {
+  const counts = DAMAGE_BAR_DEPTHS[Math.min(state.run.roomIndex, DAMAGE_BAR_DEPTHS.length - 1)];
+  const kind = MINION_KINDS[minionKind];
+  const zones = shuffle([
+    ...Array(counts.hits).fill({ tier: 'hit', width: kind.hitWidth }),
+    ...Array(counts.weaks).fill({ tier: 'weak', width: kind.weakWidth }),
+    ...Array(counts.penalties).fill({ tier: 'penalty', width: DAMAGE_PENALTY_WIDTH }),
+  ]);
+  const spare = 1 - zones.reduce((sum, z) => sum + z.width, 0) - DAMAGE_ZONE_GAP * (zones.length + 1);
+  const shares = [...zones, null].map(() => Math.random());
+  const total = shares.reduce((sum, s) => sum + s, 0) || 1;
+  let at = 0;
+  return zones.map((z, i) => {
+    const from = at + DAMAGE_ZONE_GAP + Math.max(0, spare) * shares[i] / total;
+    at = from + z.width;
+    return { tier: z.tier, from, to: at };
+  });
+}
+
+// The player stopped the damage bar at `barPosition` (0 to 1) for the
+// shot in state.battle.aim. Inside a weak point: 2 damage and a limb comes
+// off, if any are left. Inside a hit zone: 1. Inside a penalty zone the
+// shot backfires: no damage, and one more round is lost, if the chamber
+// has one. Anywhere else grazes for 0. A minion with no hp left dies and
+// pays its kind's gold (goldReward, so it doubles in the darkness).
+// Events: shotGrazed { minion }, shotBackfired { minion, roundsLost }, or
+// minionHurt { minion, damage, hpLeft, weakPoint } and maybe limbLost
+// { minion, limbsLeft }; then, on a kill, minionKilled { minion } and
+// goldGained { amount, from: 'kill' }.
 export function settleShot(barPosition) {
   const aim = state.battle.aim;
   if (!aim) return [];
   state.battle.aim = null;
   const m = aim.target;
-  const off = Math.abs(barPosition - 0.5);
-  const damage = off <= aim.weakWidth ? 2 : off <= aim.hitHalf ? 1 : 0;
+  const zone = aim.zones.find(z => barPosition >= z.from && barPosition <= z.to);
+  if (zone && zone.tier === 'penalty') {
+    const roundsLost = Math.min(1, state.run.ammo);
+    state.run.ammo -= roundsLost;
+    return [{ type: 'shotBackfired', minion: m, roundsLost }];
+  }
+  const damage = !zone ? 0 : zone.tier === 'weak' ? 2 : 1;
   if (damage === 0) return [{ type: 'shotGrazed', minion: m }];
 
   m.hpLeft = Math.max(0, m.hpLeft - damage);

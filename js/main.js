@@ -292,8 +292,15 @@ function autoWinGun() {
   const shown = mapPanelShown();
   if (shown === 'reload') pickReload(reloadOffers().offers[0], reloadCategory());
   else if (shown === 'question' && mapAnswers) mapAnswers.onChoice(state.battle.currentQuestion.meaning);
-  else if (shown === 'aim') stopDamageBar(0.5);
+  else if (shown === 'aim') stopDamageBar(bestSpot(state.battle.aim));
   else if (shown === 'struggle') stopStruggleBar(0.5);
+}
+
+// The middle of the aim's weak point (its best zone, for Auto-win), or
+// the bar's middle if it has none.
+function bestSpot(aim) {
+  const zone = aim.zones.find(z => z.tier === 'weak') || aim.zones.find(z => z.tier === 'hit');
+  return zone ? (zone.from + zone.to) / 2 : 0.5;
 }
 
 // The Struggle dial stopped at `barPosition` (gun.js settleStruggle): the
@@ -931,6 +938,11 @@ function drawEvents(events) {
       case 'shotGrazed':
         shotOnMap(e.minion, false);
         parts.push(t('gun.grazed'));
+        break;
+      case 'shotBackfired':
+        cls = 'warn-msg';
+        shotOnMap(e.minion, true);
+        parts.push(t(e.roundsLost ? 'gun.backfired' : 'gun.backfiredEmpty'));
         break;
       case 'minionHurt':
         shotOnMap(e.minion, false);

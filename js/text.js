@@ -369,9 +369,13 @@ export const TEXT = {
   'gun.struggle.won': 'You shove it away.', // draft. The Struggle dial stopped in the zone
   'gun.struggle.lost': 'It gets through.', // draft. The Struggle dial missed; the strike line follows
   'gun.bar.label': 'Damage bar. Press SELECT, Space or F to fire.', // draft. Read out by screen readers
-  'gun.bar.graze': 'graze 0', // draft. The damage bar's legend, left to right: graze, hit, weak point, hit, graze
-  'gun.bar.hit': 'hit 1', // draft
-  'gun.bar.weak': 'weak 2', // draft
+  'gun.bar.zone.hit': '1', // draft. Marked on a hit zone of the damage bar
+  'gun.bar.zone.weak': '2', // draft. Marked on a weak point zone
+  'gun.bar.zone.penalty': 'X', // draft. Marked on a penalty zone
+  'gun.bar.key.hit': '1 = hit', // draft. The damage bar's key, one entry per kind of zone on the bar
+  'gun.bar.key.weak': '2 = weak point', // draft
+  'gun.bar.key.penalty': 'X = lose a round', // draft
+  'gun.bar.key.graze': 'else graze', // draft
   'gun.reloaded': 'Loaded {rounds} {rounds|plural:round}.', // draft. A right reload answer
   'gun.jammed': 'Jammed. Nothing loads.', // draft. A wrong reload answer
   // Gun combat on the map (gun plan step 6): the buttons by the d-pad, the
@@ -387,6 +391,8 @@ export const TEXT = {
   'minionKind.STALKER': 'STALKER', // draft
   'gun.missed': 'The shot goes wide.', // draft
   'gun.grazed': 'A graze. It keeps coming.', // draft
+  'gun.backfired': 'Backfire. A round is lost.', // draft. The damage bar stopped on a penalty zone
+  'gun.backfiredEmpty': 'Backfire.', // draft. The same, with no round left to lose
   'gun.hit': 'Hit.', // draft
   'gun.weakPoint': 'Weak point.', // draft
   'gun.limbLost': 'A limb comes away.', // draft

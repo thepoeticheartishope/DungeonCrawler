@@ -661,19 +661,36 @@
 
   /* The damage bar: the marker sweeps across; where it stops sets the
      damage. Same size at every distance (distance only decides whether a
-     shot lands). */
+     shot lands). Its zones sit at new spots each shot (gun.js
+     damageZones), each marked with what it does: 1, 2 or X. */
   .damage-bar {
     position: relative;
     height: 32px;
     border: 1px solid var(--muted);
   }
-  .damage-zone { position: absolute; top: 0; bottom: 0; }
+  .damage-zone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 18px;
+    color: var(--text);
+  }
   .damage-hit {
     background: rgba(var(--glow-rgb), 0.12);
     border-left: 1px dashed var(--muted);
     border-right: 1px dashed var(--muted);
   }
-  .damage-weak { background: rgba(var(--glow-rgb), 0.42); }
+  .damage-weak { background: rgba(var(--glow-rgb), 0.42); color: var(--ink); }
+  /* A penalty zone: hatched, so it reads as "keep off" without colour. */
+  .damage-penalty {
+    background: repeating-linear-gradient(45deg, rgba(var(--glow-rgb), 0.28) 0 3px, transparent 3px 7px);
+    border-left: 1px solid var(--muted);
+    border-right: 1px solid var(--muted);
+  }
   .damage-marker {
     position: absolute;
     top: -6px;
@@ -683,7 +700,7 @@
     background: var(--torch-bright);
     box-shadow: 0 0 8px var(--torch-bright);
   }
-  .damage-legend { display: flex; justify-content: space-between; color: var(--muted); font-size: 16px; text-transform: uppercase; }
+  .damage-legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 16px; text-transform: uppercase; }
   .damage-legend[hidden], .damage-zone[hidden] { display: none; }
   /* The Struggle dial (gun.js settleStruggle): the same bar, its prompt in
      inverse video and a brighter frame, so it reads as danger at a glance.
@@ -1452,13 +1469,12 @@
       <div class="map-panel" id="aimPanel" hidden>
         <div class="term-line" id="aimPrompt" data-t="gun.bar.prompt"></div>
         <div class="damage-bar" id="damageBar" role="img">
+          <!-- The Struggle dial's one zone; the damage bar's zones are added by gunpanels.js. -->
           <div class="damage-zone damage-hit" id="damageHit"></div>
-          <div class="damage-zone damage-weak" id="damageWeak"></div>
           <div class="damage-marker" id="damageMarker"></div>
         </div>
-        <div class="damage-legend" id="damageLegend">
-          <span data-t="gun.bar.graze"></span><span data-t="gun.bar.hit"></span><span data-t="gun.bar.weak"></span><span data-t="gun.bar.hit"></span><span data-t="gun.bar.graze"></span>
-        </div>
+        <!-- What each zone does, filled in by gunpanels.js showDamageBar. -->
+        <div class="damage-legend" id="damageLegend"></div>
       </div>
     </div>
     </div>

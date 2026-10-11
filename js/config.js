@@ -277,17 +277,18 @@ export const BOSS_HP = 3;       // hits needed to defeat the boss
 // answer, so only the map's later steps read these numbers:
 //   hp         hits a minion of this kind takes before it falls
 //   moveEvery  it moves every this many turns (1 = every turn)
-//   weakWidth  half the width of its weak point on the damage bar, which
-//              runs 0 to 1 with the centre at 0.5 (0.06 = 12% of the bar)
+//   hitWidth   width of each of its hit (1) zones on the damage bar, which
+//              runs 0 to 1 (0.14 = 14% of the bar)
+//   weakWidth  width of each of its weak point (2) zones on the bar
 //   size       how big it is drawn, against a tile
 //   limbs      limbs a weak-point shot can cut off
 //   gold       gold for killing it, before the darkness multiplier
 // Starting values from the reload-and-fire mockup, for Timothy to tune
 // (gold is new: tougher kinds pay more).
 export const MINION_KINDS = {
-  SHARD: { hp: 2, moveEvery: 1, weakWidth: 0.06, size: 0.85, limbs: 2, gold: 1 },
-  HUSK: { hp: 5, moveEvery: 2, weakWidth: 0.1, size: 1.15, limbs: 2, gold: 3 },
-  STALKER: { hp: 3, moveEvery: 1, weakWidth: 0.035, size: 1.0, limbs: 2, gold: 2 },
+  SHARD: { hp: 2, moveEvery: 1, hitWidth: 0.14, weakWidth: 0.07, size: 0.85, limbs: 2, gold: 1 },
+  HUSK: { hp: 5, moveEvery: 2, hitWidth: 0.18, weakWidth: 0.1, size: 1.15, limbs: 2, gold: 3 },
+  STALKER: { hp: 3, moveEvery: 1, hitWidth: 0.12, weakWidth: 0.05, size: 1.0, limbs: 2, gold: 2 },
 };
 // The order kinds come in on a floor whose recipe names none (or too few).
 export const MINION_KIND_ORDER = ['SHARD', 'STALKER', 'HUSK'];
@@ -362,14 +363,27 @@ export const AIM_MIN = 0.3;
 // from floor to floor. A reload offers the next category with no, one or
 // two modifiers (from GUN_RELOAD_MODIFIERS; Gambler is left out, there is
 // no gold at stake) and loads GUN_RELOAD_ROUNDS[modifier count] rounds on
-// a right answer. A landed shot's damage bar runs 0 to 1: within
-// GUN_HIT_HALF of the centre is a hit (1), inside the minion kind's
-// weakWidth a weak point (2), anything else a graze (0).
+// a right answer.
 export const GUN_CHAMBER = 4;
 export const GUN_START_ROUNDS = 1;
 export const GUN_RELOAD_MODIFIERS = ['blind', 'flip', 'timer'];
 export const GUN_RELOAD_ROUNDS = [1, 2, 3];
-export const GUN_HIT_HALF = 0.22;
+// A landed shot's damage bar (Timothy, 2026-10-11): the bar holds zones
+// at new random spots every shot (gun.js damageZones): hit zones (1
+// damage) and weak points (2 and a limb), sized by the minion kind
+// (MINION_KINDS hitWidth / weakWidth), and from depth 2 penalty zones
+// (DAMAGE_PENALTY_WIDTH wide; stopping on one loses one more round).
+// Anywhere else grazes for 0. DAMAGE_BAR_DEPTHS says how many of each per
+// danger depth (the last row carries on past the table). Zones keep
+// DAMAGE_ZONE_GAP from each other and from the bar's ends. Drafts for
+// Timothy to tune.
+export const DAMAGE_BAR_DEPTHS = [
+  { hits: 2, weaks: 1, penalties: 0 },
+  { hits: 2, weaks: 1, penalties: 1 },
+  { hits: 1, weaks: 1, penalties: 2 },
+];
+export const DAMAGE_PENALTY_WIDTH = 0.08;
+export const DAMAGE_ZONE_GAP = 0.04;
 // Ammo boxes (a drum on the map; decor.js placeAmmoBoxes): each room of a
 // floor gets one at this chance, then rooms without one are topped up
 // until the floor has at least AMMO_BOXES_MIN. Bumping one opens the
