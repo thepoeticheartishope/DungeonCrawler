@@ -4,6 +4,7 @@
 // drawEvents() draws it and picks the wording. No DOM access here.
 
 import { state, key } from './state.js';
+import { reachGate } from './gate.js';
 import { whatBlocks } from './passage.js';
 import { computeVisibility } from './sight.js';
 import { DARK_GOLD_MULTIPLIER, BOX_GOLD } from './config.js';
@@ -34,7 +35,10 @@ export function onStairs() {
 function takeKey(index) {
   state.floor.keys.splice(index, 1);
   state.floor.keysHeld++;
-  return { type: 'keyTaken', held: state.floor.keysHeld, total: state.floor.keysHeld + state.floor.keys.length };
+  // A new key unseals the gate (gate.js), at its new, easier level.
+  const unsealed = state.floor.gateSealed;
+  state.floor.gateSealed = false;
+  return { type: 'keyTaken', held: state.floor.keysHeld, total: state.floor.keysHeld + state.floor.keys.length, unsealed };
 }
 
 // One arrow press. A press in a new direction turns the player to face it
@@ -45,7 +49,8 @@ function takeKey(index) {
 // anything unseen gets next to them. Events: turned { facing } (alone when
 // turning first, else before the rest),
 // blocked { kind, thing }, stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
-// keyTaken { held, total },
+// keyTaken { held, total, unsealed }, gateReached { questions } (bumped the
+// boss; main.js opens the battle screen), blocked { kind: 'gate' } (it's sealed),
 // paperRead { paper, loot, story? }, roomEntered { theme }, exchangeOpened
 // (bumped THE UNFOLDING; main.js opens its screen), itemReached { thing }
 // (bumped the chest; main.js opens the battle screen) and
@@ -72,6 +77,10 @@ export function stepPlayer(dRow, dCol) {
   // Looking into it costs no turn: a rest floor has no light to feed.
   if (block && block.kind === 'exchange') {
     events.push({ type: 'exchangeOpened' });
+    return events;
+  }
+  if (block && block.kind === 'boss') {
+    events.push(reachGate());
     return events;
   }
   if (block && block.kind === 'chest') {

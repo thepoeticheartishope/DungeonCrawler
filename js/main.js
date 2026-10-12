@@ -2,11 +2,11 @@ import { state, key } from './state.js';
 import { buildFloor, buildRestFloor } from './floor.js';
 import { nextFloor } from './run.js';
 import {
-  MAX_HEARTS, ROOM_COUNT, BOSS_HP, ENERGY_START, ENERGY_MAX,
+  MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM
 } from './config.js';
-import { rollModifier, rollCategoryModifiers, maxWager } from './modifiers.js';
+import { rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
 import {
   shuffle, pickQuestion, escapeHtml,
@@ -21,6 +21,7 @@ import {
   isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
 } from './combat.js';
 import { lightConsumed } from './light.js';
+import { openGateFree } from './gate.js';
 import { stepPlayer, onStairs, stairsHere } from './moves.js';
 import { scoreGoals } from './goals.js';
 import { settleRelay } from './relays.js';
@@ -515,7 +516,7 @@ function clearLog() {
 // under log.start.* and log.rules.* in text.js.
 function logEncounterStart(target) {
   clearLog();
-  const vars = { queries: BOSS_HP };
+  const vars = { queries: target.max || 0 };
   logLine(t('log.start.' + target.kind, vars), 'bright');
   logLine(t('log.rules.' + target.kind, vars), 'sys');
 }
@@ -552,6 +553,12 @@ function renderCategoryChoices() {
 // fight whose pool can't offer at least two distinct choices.
 function startBattleTurn() {
   const target = state.battle.selectedTarget;
+  // Every key held: the gate gives with no question (gate.js).
+  if (target.kind === 'boss' && target.hp === 0) {
+    drawEvents(openGateFree());
+    endEncounter();
+    return;
+  }
   const isFight = target.kind === 'boss' || target.kind === 'minion' || target.kind === 'hunter';
   state.battle.categoryChoices = isFight
     ? buildCategoryChoices(state.settings.activeData, BATTLE_CHOICE_COUNT, state.floor.lastChoiceType)
@@ -582,7 +589,7 @@ function startBattleTurn() {
     // A boss question always carries a modifier, even with no category
     // choice to show it on. Any question may run as a minigame.
     clearModifier();
-    dressQuestion(target.kind === 'boss' ? [rollModifier(target)] : []);
+    dressQuestion(target.kind === 'boss' ? [].concat(rollCategoryModifiers(target, 1)[0] || []) : []);
     if (!state.settings.mcMode) answerInput.focus();
   }
   showBattlePhase();
@@ -985,6 +992,7 @@ function drawEvents(events) {
         break;
       case 'keyTaken':
         parts.push(t('room.key', { held: e.held, total: e.total }));
+        if (e.unsealed) parts.push(t('room.gate.unsealed'));
         break;
       case 'coinTaken':
         parts.push(t('room.coin'));
@@ -1026,7 +1034,7 @@ function drawEvents(events) {
         logLine(t('log.extraSpaces'), 'sys');
         break;
       case 'rejected':
-        logLine(t('log.rejected', { cost: e.cost }), 'alert');
+        logLine(t(e.cost ? 'log.rejected' : 'log.rejected.free', { cost: e.cost }), 'alert');
         if (state.settings.revealOnWrong) {
           logLine(t('log.expected', { answer: e.expected }), 'sys');
           if (e.source) logLine(t('log.source', { source: e.source }), 'sys');
@@ -1049,6 +1057,14 @@ function drawEvents(events) {
         break;
       case 'bossHeld':
         logLine(t('log.boss.holds'));
+        break;
+      case 'gateSealed':
+        logLine(t('log.gate.sealed', { turns: e.turns }), 'alert');
+        break;
+      case 'gateOpened':
+        logLine(t('log.gate.opened'), 'bright');
+        break;
+      case 'gateReached':
         break;
       case 'bossDefeated':
         logLine(t('log.boss.cleared'), 'bright');
@@ -1191,7 +1207,7 @@ function movePlayer(dRow, dCol) {
   } else {
     const note = drawEvents(events);
     if (note.text) showRoomNote(note.cls, note.text);
-    if (has('boxSprung') || has('itemReached')) syncBattleScreen();
+    if (has('boxSprung') || has('itemReached') || has('gateReached')) syncBattleScreen();
     if (has('exchangeOpened')) openExchange();
   }
   state.run.turnLocked = false;
@@ -1244,7 +1260,11 @@ function applyAnswerResult(isCorrect, hadExtraSpace, given, tier = '2', scored =
     setControlsEnabled(false);
     stopTimer();
     setTimeout(endLose, 900);
-  } else if (has('bossHit') || has('bossHeld')) {
+  } else if (has('gateSealed') && lightConsumed()) {
+    // The turns a wrong answer gave the light were its last.
+    endEncounter();
+    loseToLight();
+  } else if (has('bossHit')) {
     nextQuestion();
     startBattleTurn();
   } else {

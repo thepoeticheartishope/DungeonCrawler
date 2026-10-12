@@ -79,7 +79,7 @@ export const state = {
     sightSet: new Set(),    // just the player's own light (not the boss's) — what they can make out
     exploredSet: new Set(), // every tile ever seen this room (fog memory)
 
-    boss: null,         // { row, col, hp }
+    boss: null,         // { row, col, hp, max }: hp = right answers the gate still asks, max = how many it asked (gate.js)
     minions: [],        // [{ row, col, hp, kind }]
     // Boss light (see light.js). Reset as each room loads.
     bossDist: new Map(),   // walkable steps from the boss, per floor tile key
@@ -105,6 +105,7 @@ export const state = {
     coin: null,            // { row, col } or null once collected
     keys: [],              // the floor's keys still lying where dungeon.js put them: [{ row, col }] (CORE_KEYS on a depth, none on a rest)
     keysHeld: 0,           // keys the player has taken on this floor
+    gateSealed: false,     // a wrong answer at the gate (the boss) since the last key: it won't fight until another key is taken (gate.js)
     keyRoute: 0,           // steps of the shortest walk from the start through every key to the boss (light.js); the light's budget is this plus slack
     beats: [],             // [{ kind, row, col, at }] the recipe's beats and where they landed, `at` = step of the walk out to the farthest key (beats.js)
     stairs: null,          // { row, col } — sits inside the boss chamber, past the boss

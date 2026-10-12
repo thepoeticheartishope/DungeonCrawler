@@ -8,7 +8,7 @@ import { state, key } from './state.js';
 import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
 import {
-  BOSS_HP, CORE_KEYS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
+  CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
 } from './config.js';
 import { floorRecipe, pickPaths, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './quiz.js';
@@ -145,7 +145,9 @@ export function buildFloor() {
     state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
   });
 
-  state.floor.boss = { row: layout.spawn.row, col: layout.spawn.col, hp: BOSS_HP, kind: 'boss' };
+  // The gate's full count; reachGate (gate.js) sets it again by the keys held.
+  state.floor.boss = { row: layout.spawn.row, col: layout.spawn.col, hp: GATE_QUESTIONS[0], max: GATE_QUESTIONS[0], kind: 'boss' };
+  state.floor.gateSealed = false;
 
   // The boss stands on the chamber's one doorway, so the stairs behind it
   // are unreachable until it's defeated and state.floor.boss is nulled.
@@ -251,6 +253,7 @@ function clearDanger() {
   f.keys = [];
   f.keysHeld = 0;
   f.keyRoute = 0;
+  f.gateSealed = false;
   f.bossLitSet = new Set();
   f.bossDist = new Map();
   f.floorCount = 0;

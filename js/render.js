@@ -7,7 +7,7 @@
 // of each one threading them through as parameters.
 
 import { state } from './state.js';
-import { BOSS_HP, ENERGY_MAX, MINION_KINDS, SENSE_NOTE_MS } from './config.js';
+import { ENERGY_MAX, MINION_KINDS, SENSE_NOTE_MS } from './config.js';
 import { lightProgress } from './light.js';
 import { whatBlocks } from './passage.js';
 import { FACING_VECTORS } from './sight.js';
@@ -142,7 +142,7 @@ export function renderHud() {
   // Keys held of the floor's; a rest floor has none.
   const keysTotal = state.floor.keysHeld + state.floor.keys.length;
   els.keysStat.hidden = keysTotal === 0;
-  els.keysText.textContent = state.floor.keysHeld + '/' + keysTotal;
+  els.keysText.textContent = t(state.floor.gateSealed ? 'stat.keys.sealed' : 'stat.keys.count', { held: state.floor.keysHeld, total: keysTotal });
   renderGoals();
   renderGunHud();
 }
@@ -223,7 +223,7 @@ export function renderCombatStatus() {
     return;
   }
   const full = Math.max(target.hp, 0);
-  const empty = Math.max(BOSS_HP - full, 0);
+  const empty = Math.max((target.max || 0) - full, 0);
   const pips = '<span class="pip-full">' + '#'.repeat(full) + '</span>' +
     '<span class="pip-empty">' + '-'.repeat(empty) + '</span>';
   els.combatStatusEl.innerHTML = 'HP: ' + pips;

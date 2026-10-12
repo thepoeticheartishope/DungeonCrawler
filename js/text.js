@@ -76,12 +76,14 @@ export const TEXT = {
   'stat.room': '{@term.room}',
   'stat.time': 'TIME',
   'stat.keys': '{@term.key}', // draft. HUD: keys held of the floor's
+  'stat.keys.count': '{held}/{total}', // HUD: keys held of the floor's
+  'stat.keys.sealed': '{held}/{total} SEALED', // draft. HUD: the gate is sealed until another key
   'stat.rest': 'REST', // draft — shown for the depth number while on a rest floor
   'stat.light': 'The {@term.boss} light: {pct}% of the way to consuming everything', // draft (the eye's tooltip)
 
   // ---- Encounter log: opening lines (what it is, a hint of what's at stake) ----
   'log.start.boss': 'ENCOUNTER: {@term.boss.symbol}',
-  'log.rules.boss': 'CLEAR {queries} QUERIES TO PROCEED.',
+  'log.rules.boss': 'CLEAR {queries} QUERIES TO PROCEED. ONE WRONG SEALS IT.', // draft
   'log.start.minion': 'ENCOUNTER: {@term.minion.symbol}',
   'log.rules.minion': '{@term.query} REQUIRED FOR NEURON FUSION.',
   'log.start.hunter': 'ENCOUNTER: {@term.hunter}', // draft
@@ -99,6 +101,7 @@ export const TEXT = {
   'log.accepted': 'ACCEPTED.',
   'log.extraSpaces': 'NOTE: EXTRA SPACES IN INPUT.',
   'log.rejected': 'REJECTED. -{cost} {@term.hp}',
+  'log.rejected.free': 'REJECTED.', // a miss that costs no heart (the gate)
   'log.expected': 'EXPECTED: {answer}',
   'log.source': 'SOURCE: {source}',
   'log.signalLost': 'SIGNAL LOST.',
@@ -108,6 +111,8 @@ export const TEXT = {
   'log.boss.integrity': 'CONCEPT INTEGRITY {hp}/{max}.',
   'log.boss.holds': 'ITS {@term.boss} HOLDS.',
   'log.boss.cleared': '{@term.boss} REWRITTEN. ASCEND.',
+  'log.gate.sealed': 'IT SEALS. THE LIGHT GAINS {turns}. FIND ANOTHER {@term.key}.', // draft. A wrong answer at the gate
+  'log.gate.opened': 'EVERY {@term.key} TURNS. IT CANNOT HOLD.', // draft. All keys held: the gate gives
   'log.darkness': 'ITS LIGHT DIES WITH IT. WHAT REMAINS HUNTS YOU. MISSES COST MORE; {@term.gold} PAYS DOUBLE.', // draft
   'log.minion.cleared': '{@term.minion} PRUNED.', // draft (was: MINOR DOUBT ERASED. — the minion is a DENDRITE now)
   'log.minion.disperses': 'THE {@term.minion} RETRACTS INTO THE DARK.', // draft (minions no longer grow back; was: IT WILL GROW BACK. BE READY.)
@@ -296,6 +301,8 @@ export const TEXT = {
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft
   'room.key': '{@term.key} {held} of {total}.', // draft. A key taken (locked core plan)
+  'room.gate.unsealed': 'Somewhere behind you, the {@term.boss} listens again.', // draft. A key taken while the gate was sealed
+  'room.blocked.gate': 'The {@term.boss} is sealed. Find another {@term.key}.', // draft. Bumped the gate after a wrong answer
   'room.engage': 'Something fires in the dark.', // draft
   'room.light.consumed': 'The light reaches everything.', // draft
   'room.blocked.wall': 'The membrane holds.', // draft
