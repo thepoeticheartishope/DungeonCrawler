@@ -27,10 +27,11 @@ export function initRender(elements) {
 // When "I see you." fades (view-only timing, so a module var, not state).
 let senseFadeTimer = null;
 
-// Shows "I see you." over the map for SENSE_NOTE_MS, then lets it fade.
-// A new warning while it shows just keeps it up longer: no flash.
+// Shows "I see you." over the map for SENSE_NOTE_MS, then lets it fade
+// (a plain "Enemy close." with Simple enemies on). A new warning while it
+// shows just keeps it up longer: no flash.
 export function showSensed() {
-  els.senseNote.textContent = t('room.sensed');
+  els.senseNote.textContent = t(state.settings.simpleEnemies ? 'room.sensed.simple' : 'room.sensed');
   els.senseNote.classList.add('show');
   clearTimeout(senseFadeTimer);
   senseFadeTimer = setTimeout(() => els.senseNote.classList.remove('show'), SENSE_NOTE_MS);

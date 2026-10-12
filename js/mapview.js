@@ -13,7 +13,7 @@
 import { state, key } from './state.js';
 import {
   AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
-  MAP_ANIMATION_MS,
+  MAP_ANIMATION_MS, FORM_TELL_STEPS,
 } from './config.js';
 import { canMakeOut, FACING_VECTORS } from './sight.js';
 import { t } from './text.js';
@@ -112,7 +112,15 @@ export function initMapView(canvasEl) {
 // The glyph a map thing shows once it's made out, from its term.*.symbol
 // line in text.js (so a room's AREAS overrides can change it). The battle
 // screen shows the same.
+// With Simple enemies on, a minion is a still 'e', and an 'E' as its
+// strike tell, within FORM_TELL_STEPS of the player (as a form's tell);
+// the hunter is a still 'E', drawn bigger.
 export function glyphOf(thing) {
+  if (thing.kind === 'hunter' && state.settings.simpleEnemies) return t('term.hunter.simpleSymbol');
+  if (thing.kind === 'minion' && state.settings.simpleEnemies) {
+    const steps = Math.abs(thing.row - state.floor.playerRow) + Math.abs(thing.col - state.floor.playerCol);
+    return t(steps <= FORM_TELL_STEPS ? 'term.minion.tellSymbol' : 'term.minion.simpleSymbol');
+  }
   return t('term.' + thing.kind + '.symbol');
 }
 
@@ -182,9 +190,9 @@ export function limbOffOnMap(minion) {
 }
 
 // A killed minion's text form floats apart where it stood (gone at once
-// under reduced motion).
+// under reduced motion, or with Simple enemies on).
 export function deathOnMap(minion) {
-  killForm(minion, reducedMotion.matches);
+  killForm(minion, reducedMotion.matches || state.settings.simpleEnemies);
   requestMapDraw();
 }
 
@@ -404,6 +412,12 @@ function mapThings() {
   f.minions.forEach(m => {
     if (!isLit(m.row, m.col)) return;
     const hunter = m.kind === 'hunter';
+    // Simple enemies: a still white letter, like a key's k, with no warp,
+    // dropout or glow (the hunter's E is bigger, from its glyph size).
+    if (state.settings.simpleEnemies) {
+      add(m.kind, shownAt(m, m.row, m.col), glyphOrUnknown(m, glyphOf(m)), { size: m.kind, colour: colours.bright }, m);
+      return;
+    }
     const phase = phaseOf(m);
     const warpMs = hunter ? MAP_ANIMATION_MS.hunterWarp : MAP_ANIMATION_MS.warp;
     add(m.kind, shownAt(m, m.row, m.col), glyphOrUnknown(m, glyphOf(m)), {

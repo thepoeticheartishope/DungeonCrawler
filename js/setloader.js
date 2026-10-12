@@ -1,5 +1,6 @@
 // Start screen options and the workshop. The start screen keeps only what a
-// player sets before a run (name, reveal, real time), remembered across
+// player sets before a run (name, reveal, real time, swap sides, simple
+// enemies), remembered across
 // sessions. The workshop is for authors: pasted or file lists, the sample
 // list, saving and deleting sets, and the way into DATA.SYS. Players pick
 // the set itself after Enter (setpicker.js). Uses only state, sets.js,
@@ -13,6 +14,7 @@ import { t } from './text.js';
 const revealToggle = document.getElementById('revealToggle');
 const realTimeToggle = document.getElementById('realTimeToggle');
 const dpadRightToggle = document.getElementById('dpadRightToggle');
+const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 const roomControls = document.querySelector('.room-controls');
 const playerNameInput = document.getElementById('playerName');
 const workshopScreen = document.getElementById('workshopScreen');
@@ -29,7 +31,7 @@ const savedSetsList = document.getElementById('savedSetsList');
 // Wires the start screen options and the workshop. `showSets` returns to
 // the set screen (setpicker.js), which lists what the workshop made.
 export function initSetLoader({ showSets }) {
-  // ---- Remember the reveal, real-time and swap-sides toggles and the player's name across sessions ----
+  // ---- Remember the reveal, real-time, swap-sides and simple-enemies toggles and the player's name across sessions ----
   // localStorage access is wrapped in try/catch — private browsing or disabled
   // storage should degrade to "just use the checkbox defaults" rather than
   // break the start screen.
@@ -50,6 +52,7 @@ export function initSetLoader({ showSets }) {
         revealOnWrong: revealToggle.checked,
         realTime: realTimeToggle.checked,
         dpadRight: dpadRightToggle.checked,
+        simpleEnemies: simpleEnemiesToggle.checked,
         playerName: playerNameInput.value,
       }));
     } catch (e) {
@@ -68,12 +71,14 @@ export function initSetLoader({ showSets }) {
   if (typeof savedOptions.revealOnWrong === 'boolean') revealToggle.checked = savedOptions.revealOnWrong;
   if (typeof savedOptions.realTime === 'boolean') realTimeToggle.checked = savedOptions.realTime;
   if (typeof savedOptions.dpadRight === 'boolean') dpadRightToggle.checked = savedOptions.dpadRight;
+  if (typeof savedOptions.simpleEnemies === 'boolean') simpleEnemiesToggle.checked = savedOptions.simpleEnemies;
   placeDpad();
   playerNameInput.maxLength = PLAYER_NAME_MAX_LENGTH;
   if (typeof savedOptions.playerName === 'string') playerNameInput.value = savedOptions.playerName.slice(0, PLAYER_NAME_MAX_LENGTH);
 
   revealToggle.addEventListener('change', saveOptions);
   realTimeToggle.addEventListener('change', saveOptions);
+  simpleEnemiesToggle.addEventListener('change', saveOptions);
   dpadRightToggle.addEventListener('change', () => { placeDpad(); saveOptions(); });
   playerNameInput.addEventListener('input', saveOptions);
 

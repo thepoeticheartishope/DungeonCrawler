@@ -4,7 +4,7 @@
 //
 // Starts a static server for this repo, then drives the game in a real
 // browser via Playwright (imported from ~/Repo/codecraft-classroom/node_modules
-// — do NOT add Playwright or node_modules to this repo) through four runs,
+// — do NOT add Playwright or node_modules to this repo) through five runs,
 // all picking the built-in "Bible Quiz Bowl" set on the set screen, with Auto-win on:
 //
 //   1. Skip-room run: one manual step, then "Skip room (dev)" repeatedly to
@@ -28,6 +28,10 @@
 //      step at most; the NEXT meter shows; and the clock waits while a
 //      reload question is open on the ask screen. Then the option is still checked after a reload
 //      of the page (it's remembered).
+//   5. Simple enemies run: the start screen's Simple enemies on, then the
+//      gun run's walk until a reload and a kill; every minion's glyph is
+//      'e' (or 'E', its tell), the hunter's 'E', and the option is still checked after a
+//      reload of the page (it's remembered).
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -370,8 +374,9 @@ async function bumpEnergyCell(page) {
 // as the battle run does; press F (SELECT) whenever the target can be shot,
 // and bump an energy cell every few steps while energy isn't full,
 // until a reload loaded and a shot killed a minion.
-async function attemptGun(page, url) {
+async function attemptGun(page, url, simpleEnemies = false) {
   await loadPageAndSet(page, url);
+  if (simpleEnemies) await page.check('#simpleEnemiesToggle');
   await startGameAndWaitForRoom(page);
   await installGunWatchers(page);
   await turnOnAutoWin(page);
@@ -523,6 +528,45 @@ async function runRealTime(browser, url) {
   return { ok: true, detail: 'the clock moved the world and waited for the DEV panel and a reload question', consoleErrors, pageErrors };
 }
 
+// ---- Run 5: simple enemies ----
+
+// The gun run with Simple enemies on, then the checks listed in the
+// header. Returns what failed ('' when everything held).
+async function checkSimpleEnemies(page, url) {
+  const MAX_RESTARTS = 2;
+  let done = false;
+  for (let attempt = 0; attempt <= MAX_RESTARTS && !done; attempt++) {
+    done = await attemptGun(page, url, true);
+  }
+  if (!done) return `no reload and kill within ${GUN_MAX_STEPS} steps, after ${MAX_RESTARTS + 1} attempts`;
+
+  const glyphs = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { glyphOf } = await import('./js/mapview.js');
+    return state.floor.minions.map(m => [m.kind, glyphOf(m)]);
+  });
+  const odd = glyphs.filter(([kind, g]) => kind === 'hunter' ? g !== 'E' : g !== 'e' && g !== 'E');
+  if (odd.length) return `minion glyphs ${JSON.stringify(odd)} with Simple enemies on`;
+
+  await page.goto(url, { waitUntil: 'load' });
+  if (!await page.isChecked('#simpleEnemiesToggle')) return 'the Simple enemies option was not remembered';
+  return '';
+}
+
+async function runSimpleEnemies(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkSimpleEnemies(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'minions showed as e, a shot killed one, and the option was remembered', consoleErrors, pageErrors };
+}
+
 // ---- Main ----
 
 async function main() {
@@ -549,11 +593,12 @@ async function main() {
       const battleResult = await runBattle(browser, url);
       const gunResult = await runGun(browser, url);
       const realTimeResult = await runRealTime(browser, url);
+      const simpleResult = await runSimpleEnemies(browser, url);
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult]]) {
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult]]) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {
