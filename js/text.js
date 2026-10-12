@@ -101,6 +101,7 @@ export const TEXT = {
   'log.accepted': 'ACCEPTED.',
   'log.extraSpaces': 'NOTE: EXTRA SPACES IN INPUT.',
   'log.rejected': 'REJECTED. -{cost} {@term.hp}',
+  'log.rejected.free': 'REJECTED.', // a miss that costs no heart (the gate)
   'log.expected': 'EXPECTED: {answer}',
   'log.source': 'SOURCE: {source}',
   'log.signalLost': 'SIGNAL LOST.',

@@ -649,6 +649,8 @@ test('a wrong answer at the gate feeds the light and seals it until the next key
   assert.deepEqual(types(events), ['answerGiven', 'rejected', 'bossHeld', 'gateSealed']);
   assert.equal(state.floor.lightTurns, before + GATE_WRONG_TURNS);
   assert.equal(state.floor.gateSealed, true);
+  assert.equal(events[1].cost, 0, 'a gate miss costs no heart');
+  assert.equal(state.run.hearts, MAX_HEARTS);
   assert.ok(state.floor.boss, 'the boss stays in the doorway');
   // Sealed: a bump is only a bump.
   state.battle.selectedTarget = null;

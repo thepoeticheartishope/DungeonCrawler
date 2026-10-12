@@ -1034,7 +1034,7 @@ function drawEvents(events) {
         logLine(t('log.extraSpaces'), 'sys');
         break;
       case 'rejected':
-        logLine(t('log.rejected', { cost: e.cost }), 'alert');
+        logLine(t(e.cost ? 'log.rejected' : 'log.rejected.free', { cost: e.cost }), 'alert');
         if (state.settings.revealOnWrong) {
           logLine(t('log.expected', { answer: e.expected }), 'sys');
           if (e.source) logLine(t('log.source', { source: e.source }), 'sys');

@@ -18,8 +18,10 @@ import { goldReward, openBox } from './moves.js';
 //
 // One answer settles a minion, the chest or a box,
 // right or wrong: it's cleared or spent. Only the boss (the gate) goes on
-// past a right answer, until its HP runs out; a wrong one seals it. A miss costs 1 heart (DARK_MISS_COST in
-// the darkness); at 0 hearts the events end with signalLost.
+// past a right answer, until its HP runs out; a wrong one seals it. A
+// miss costs 1 heart (DARK_MISS_COST in the darkness), except at the gate,
+// where the seal and the light's turns are the cost (Timothy); at 0
+// hearts the events end with signalLost.
 // `tier` is a minigame's tier for a right answer ('1', '2' or 'X',
 // MINIGAME_TIER_PAY); a plain question is '2'. X takes more off a boss
 // and pays more gold; a minion or the hunter is settled the same by any.
@@ -36,7 +38,7 @@ export function settleAnswer(isCorrect, hadExtraSpace, given, tier = '2') {
       events.push({ type: 'extraSpaces' });
     }
   } else {
-    const cost = state.floor.darkness ? DARK_MISS_COST : 1;
+    const cost = target.kind === 'boss' ? 0 : state.floor.darkness ? DARK_MISS_COST : 1;
     state.run.hearts -= cost;
     state.floor.misses++;
     events.push({ type: 'rejected', cost, expected: q.meaning, source: q.source });
