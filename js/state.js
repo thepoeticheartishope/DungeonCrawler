@@ -23,6 +23,7 @@ export const state = {
   settings: {
     revealOnWrong: false,
     realTime: false,        // start screen option: the world moves on a clock (realclock.js), not after each action; remembered
+    enemyTendrils: 'random', // DEV -> Tendrils: each stick enemy's own random tendril style, or one of stickforms.js TENDRIL_STYLES for all
     enemyPose: 'random',    // DEV -> Look: each stick enemy's own random pose, or one stickforms.js STICK_POSES id for all
     simpleEnemies: false,   // start screen option (comfort): every minion on the map is a still 'e' (tell 'E'), no form, no motion; remembered
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered

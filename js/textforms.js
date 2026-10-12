@@ -26,6 +26,7 @@
 
 import { state } from './state.js';
 import { MAP_ANIMATION_MS, FORM_TELL_STEPS } from './config.js';
+import { letterPool } from './stickforms.js';
 
 // Sizes are shares of a tile's width, as in the mockup, whose tiles were
 // MOCKUP_TILE pixels wide: its pixel sizes are scaled by tw / MOCKUP_TILE.
@@ -48,10 +49,6 @@ const FORM_BOXES = {
 };
 const BOB = 2 / MOCKUP_TILE; // how far a form rises and sinks as it floats
 
-// The letters a form is made of: every answer in the loaded set, run
-// together, worked out again only when another set is loaded.
-let letterSource = null;
-let letters = ' ';
 // Each minion's view-only moments: minion -> { seed, hitAt, limbAt, deadAt }.
 const moments = new WeakMap();
 let seedCount = 0;
@@ -147,17 +144,6 @@ function moment(minion, view) {
     weak: view.aiming ? (limbs === 2 ? 0 : limbs === 1 ? 1 : -1) : -1,
     pulse: still ? 0.5 : 0.5 + 0.5 * Math.sin(now / WEAK_PULSE_MS),
   };
-}
-
-// The letters run together from the loaded set's answers, upper case.
-function letterPool() {
-  const data = state.settings.activeData;
-  if (data !== letterSource) {
-    letterSource = data;
-    const words = (data || []).map(d => String(d.meaning || '').toUpperCase().trim()).filter(Boolean);
-    letters = words.length ? words.join(' ') + ' ' : 'NOESIS ';
-  }
-  return letters;
 }
 
 // A number from 0 to 1 that always comes out the same for the same `n`.

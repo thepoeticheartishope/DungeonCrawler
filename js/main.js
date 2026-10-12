@@ -1113,7 +1113,7 @@ function drawEvents(events) {
         break;
       case 'minionHurt':
         shotOnMap(e.minion, false);
-        hurtOnMap(e.minion);
+        hurtOnMap(e.minion, e.damage);
         parts.push(t(e.weakPoint ? 'gun.weakPoint' : 'gun.hit'));
         if (e.matched) parts.push(t('gun.matched', { damage: e.damage }));
         if (e.hpLeft > 0) parts.push(t('gun.stunned'));

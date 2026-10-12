@@ -21,7 +21,8 @@
 //      energy cell to reload and pressing F (SELECT) to fire (Auto-win answers
 //      the reload and stops the damage bar on the weak point) until a
 //      reload gave energy and a shot killed a minion. Then DEV -> Look
-//      forces each stick enemy pose in turn (stickforms.js), drawing each.
+//      forces each stick enemy pose in turn (stickforms.js), drawing each,
+//      and DEV -> Tendrils each tendril style.
 //   4. Real-time run: Real time on (start screen), gun combat (the default),
 //      Auto-win off. With the DEV panel open the clock holds still; closed,
 //      the world takes turns with no input; the player's own steps don't
@@ -422,16 +423,22 @@ async function attemptGun(page, url, simpleEnemies = false) {
   return false;
 }
 
-// Clicks DEV -> Look through every pose and back to random, letting the
-// map draw each one. Returns how many looks it went through.
+// Clicks DEV -> Look through every pose and DEV -> Tendrils through
+// every style, each back to random, letting the map draw each one.
+// Returns how many looks it went through.
 async function cycleLooks(page) {
   if (!await page.isVisible('#devPanel.show')) await page.click('#devToggleBtn');
-  const poses = await page.evaluate(async () => (await import('./js/stickforms.js')).STICK_POSE_IDS.length);
-  for (let i = 0; i <= poses; i++) {
-    await page.click('#devLookBtn');
-    await page.waitForTimeout(150);
+  const counts = await page.evaluate(async () => {
+    const { STICK_POSE_IDS, TENDRIL_STYLES } = await import('./js/stickforms.js');
+    return [STICK_POSE_IDS.length, TENDRIL_STYLES.length];
+  });
+  for (const [button, count] of [['#devLookBtn', counts[0]], ['#devTendrilsBtn', counts[1]]]) {
+    for (let i = 0; i <= count; i++) {
+      await page.click(button);
+      await page.waitForTimeout(150);
+    }
   }
-  return poses + 1;
+  return counts[0] + counts[1] + 2;
 }
 
 async function runGun(browser, url) {
