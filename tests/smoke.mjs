@@ -17,7 +17,7 @@
 //      the start) until it or a minion engages and the battle screen appears, then lets Auto-win settle the
 //      fight, asserting an ACCEPTED. line appeared in the encounter log and
 //      the game is back on the room screen afterward (classic combat).
-//   3. Gun run (the default combat), wanders as run 2 does, bumping an
+//   3. Gun run (the default combat), walks toward the nearest minion, bumping an
 //      energy cell to reload and pressing F (SELECT) to fire (Auto-win answers
 //      the reload and stops the damage bar on the weak point) until a
 //      reload gave energy and a shot killed a minion.
@@ -195,11 +195,18 @@ const ARROW_KEYS = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'];
 // way into a fight; wandering the bigger floors can run out of light
 // first. Reads the game's own state and whatBlocks() in the page.
 async function stepTowardBoss(page) {
-  return page.evaluate(async () => {
+  return stepToward(page, 'boss');
+}
+
+// The arrow (index into ARROW_KEYS) for the first step of the shortest
+// walk to the boss (`goal` 'boss') or the nearest minion ('minion'), or
+// null when there is none to walk to.
+async function stepToward(page, goal) {
+  return page.evaluate(async (goal) => {
     const { state, key } = await import('/js/state.js');
     const { whatBlocks } = await import('/js/passage.js');
     const f = state.floor;
-    if (!f.boss) return null;
+    if (goal === 'boss' && !f.boss) return null;
     const dirs = [[-1, 0], [0, 1], [1, 0], [0, -1]]; // ARROW_KEYS order: up, right, down, left
     const first = new Map([[key(f.playerRow, f.playerCol), null]]);
     const queue = [{ row: f.playerRow, col: f.playerCol }];
@@ -210,14 +217,15 @@ async function stepTowardBoss(page) {
         const k = key(next.row, next.col);
         if (first.has(k)) continue;
         const step = first.get(key(cur.row, cur.col)) ?? d;
-        if (next.row === f.boss.row && next.col === f.boss.col) return step;
+        const at = p => p && next.row === p.row && next.col === p.col;
+        if (goal === 'boss' ? at(f.boss) : f.minions.some(at)) return step;
         if (whatBlocks(next.row, next.col)) continue;
         first.set(k, step);
         queue.push(next);
       }
     }
     return null;
-  });
+  }, goal);
 }
 
 // One attempt: load a fresh run, turn on Auto-win, and walk to the boss
@@ -394,11 +402,14 @@ async function attemptGun(page, url) {
     } else if (status.canReload && i % 6 === 5 && await bumpEnergyCell(page)) {
       await page.waitForTimeout(100);
     } else {
+      // Walk toward the nearest minion (a fixed plan can put them far from
+      // the start, out of reach of a blind wander); wander when none is left.
+      const toMinion = await stepToward(page, 'minion');
       const blocked = await page.evaluate(
         () => document.getElementById('roomFeedback').innerHTML.includes('block-msg')
       );
       if (blocked) dir = (dir + 1) % ARROW_KEYS.length;
-      await page.keyboard.press(i % 5 === 4 ? '.' : ARROW_KEYS[dir]);
+      await page.keyboard.press(i % 5 === 4 ? '.' : ARROW_KEYS[toMinion ?? dir]);
     }
     await page.waitForTimeout(40);
   }

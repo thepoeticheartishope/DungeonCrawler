@@ -30,8 +30,16 @@
 //                 STALKER, floor 3 adds a HUSK.
 //   slack         [min, max] turns the player gets beyond the shortest
 //                 walk from the start through every key to the boss
-//                 (light.js), the time left for searching and exploring. It is the difficulty
-//                 dial and shrinks each floor. Each floor rolls a number in
+//                 (light.js). On a fixed plan that walk already sweeps
+//                 every key spot, so the slack is only the spare time for
+//                 fights, questions and wrong turns; on a random floor it
+//                 is also the time for searching. It is the difficulty
+//                 dial and shrinks each floor. Fixed floors plan step C
+//                 (search sim, moves only, a first-timer exploring the
+//                 nearest unseen floor): depth 1 forgives a first visit
+//                 with room for its fights, depth 2 is fair to a
+//                 first-timer, depth 3 expects the player to have learned
+//                 the building. Each floor rolls a number in
 //                 the range, so luck with the layout no longer decides how
 //                 much time there is (light.js). The light still spreads
 //                 at the same speed; the share of the floor it covers when
@@ -61,15 +69,15 @@
 //                 floor 2 adds a second minion before the special, floor
 //                 3 puts minions between everything.
 export const FLOOR_RECIPES = [
-  { plan: 'school', grid: 37, rooms: 6, loops: 3, minions: 2, minionKinds: ['SHARD', 'SHARD'], slack: [130, 160],
+  { plan: 'school', grid: 37, rooms: 6, loops: 3, minions: 2, minionKinds: ['SHARD', 'SHARD'], slack: [100, 120],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.1.2', 'story.1.3'],
     beats: ['paper', 'box', 'minion', 'special'] },
-  { plan: 'archive', grid: 41, rooms: 7, loops: 3, minions: 3, minionKinds: ['SHARD', 'STALKER', 'SHARD'], slack: [105, 130],
+  { plan: 'archive', grid: 41, rooms: 7, loops: 3, minions: 3, minionKinds: ['SHARD', 'STALKER', 'SHARD'], slack: [70, 90],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.2.1', 'story.2.2'],
     beats: ['paper', 'minion', 'box', 'minion', 'special'] },
-  { plan: 'observatory', grid: 45, rooms: 8, loops: 3, minions: 4, minionKinds: ['SHARD', 'STALKER', 'HUSK', 'STALKER'], slack: [80, 105],
+  { plan: 'observatory', grid: 45, rooms: 8, loops: 3, minions: 4, minionKinds: ['SHARD', 'STALKER', 'HUSK', 'STALKER'], slack: [40, 60],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.3.1', 'story.3.2'],
     beats: ['paper', 'minion', 'box', 'minion', 'special', 'minion'] },

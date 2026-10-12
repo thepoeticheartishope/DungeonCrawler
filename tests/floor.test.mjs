@@ -11,9 +11,10 @@ import {
   GATE_QUESTIONS, CORE_KEYS, MINION_KINDS, MINION_KIND_ORDER, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP, PAPERS_PER_ROOM, ENERGY_CELLS_MIN,
 } from '../js/config.js';
 import { buildFloor } from '../js/floor.js';
-import { BEAT_KINDS } from '../js/beats.js';
+import { BEAT_KINDS, placeBeats } from '../js/beats.js';
+import { makePlacer } from '../js/decor.js';
 import { FLOOR_RECIPES } from '../js/floors.js';
-import { FLOOR_PLANS } from '../js/plans.js';
+import { FLOOR_PLANS, buildPlanLayout } from '../js/plans.js';
 import { TEXT } from '../js/text.js';
 import { generateDungeonLayout } from '../js/dungeon.js';
 import { ROOM_TEMPLATES, parseTemplate } from '../js/rooms.js';
@@ -355,4 +356,37 @@ test('a recipe naming no kinds falls back to MINION_KIND_ORDER', () => {
   } finally {
     recipe.minionKinds = saved;
   }
+});
+
+test('on a fixed plan the light\'s walk sweeps every key spot, so it is the same whichever spots hold keys', () => {
+  FLOOR_RECIPES.forEach((recipe, roomIndex) => {
+    if (!recipe.plan) return;
+    const walks = { A: new Set(), B: new Set() };
+    for (let i = 0; i < FLOORS_PER_DEPTH * 2; i++) {
+      const f = build(roomIndex);
+      assert.equal(f.keySpots.length, FLOOR_PLANS[recipe.plan].rows.join('').split('K').length - 1);
+      walks[f.plan.version].add(f.keyRoute);
+    }
+    Object.entries(walks).forEach(([v, seen]) => assert.ok(seen.size <= 1, `${recipe.plan} ${v}: walks ${[...seen]}`));
+  });
+});
+
+test('on a fixed plan the beats are placed the same whichever spots hold keys', () => {
+  const f = build(0);
+  const plan = FLOOR_PLANS[FLOOR_RECIPES[0].plan];
+  const layout = buildPlanLayout(plan, CORE_KEYS, f.plan.version);
+  const placeWith = (keys) => {
+    f.keys = keys;
+    let seed = 1;
+    const random = Math.random;
+    Math.random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    try {
+      return placeBeats(['paper', 'box', 'minion'], layout, makePlacer(layout, f.GRID_SIZE), []).placed;
+    } finally {
+      Math.random = random;
+    }
+  };
+  const near = f.keySpots.slice(0, CORE_KEYS);
+  const far = f.keySpots.slice(-CORE_KEYS);
+  assert.deepEqual(placeWith(near), placeWith(far));
 });

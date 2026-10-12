@@ -34,8 +34,11 @@ function stepsFrom(row, col) {
 // then. The budget is the shortest walk from the start through every key
 // to the boss (state.floor.keyRoute; the core sits beside the start, so
 // the keys are the real trip) plus the recipe's slack, rounded up to whole
-// light steps, so every floor at a depth leaves the same time for
-// searching however far out the keys lie. A recipe without slack uses its
+// light steps. On a fixed plan (plans.js) the walk goes through every key
+// SPOT, not just the ones holding keys: the player can't know which hold
+// them, so sweeping them all is the honest search, and the building's
+// clock is then the same whichever spots the run picked (fixed floors
+// plan, step C). The slack is the spare time on top of that. A recipe without slack uses its
 // lossCoverage share instead (floorBudget). Turns bought at THE UNFOLDING
 // (state.run.bonusSlack) are added on top and spent here, so they only
 // help the next depth.
@@ -55,30 +58,36 @@ export function initBossLight() {
 }
 
 // Steps of the shortest walk from the player through every key on the
-// floor, in the best order, ending at the boss. Walls only, like the
-// light. With no keys it is just the walk to the boss. A key the walls cut
-// off (never, on a built floor) counts as no steps.
+// floor (every key spot on a fixed plan), in the best order, ending at the
+// boss. Walls only, like the light. With no keys it is just the walk to
+// the boss. A key the walls cut off (never, on a built floor) counts as no
+// steps. A plan has up to 8 spots, too many orders to try one by one, so
+// it keeps the best walk for each set of spots seen and the spot it ended
+// on, and grows those sets one spot at a time.
 function keyRoute() {
   const f = state.floor;
   const here = key(f.playerRow, f.playerCol);
-  const fromKey = f.keys.map(k => stepsFrom(k.row, k.col));
+  const stops = f.keySpots.length ? f.keySpots : f.keys;
+  if (!stops.length) return f.bossDist.get(here) || 0;
+  const fromStop = stops.map(p => stepsFrom(p.row, p.col));
   const steps = (dist, p) => dist.get(key(p.row, p.col)) || 0;
-  const toBoss = i => steps(f.bossDist, f.keys[i]);
-  // Every order of the keys (CORE_KEYS is small, so trying them all is cheap).
-  let best = Infinity;
-  const walk = (left, last, sofar) => {
-    if (sofar >= best) return;
-    if (left.length === 0) {
-      best = Math.min(best, last === null ? (f.bossDist.get(here) || 0) : sofar + toBoss(last));
-      return;
+  const n = stops.length;
+  const all = (1 << n) - 1;
+  // best[set][last]: the shortest walk from the player through `set`, ending on `last`.
+  const best = Array.from({ length: all + 1 }, () => new Array(n).fill(Infinity));
+  stops.forEach((p, i) => { best[1 << i][i] = fromStop[i].get(here) || 0; });
+  for (let set = 1; set <= all; set++) {
+    for (let last = 0; last < n; last++) {
+      const sofar = best[set][last];
+      if (sofar === Infinity) continue;
+      for (let next = 0; next < n; next++) {
+        if (set & (1 << next)) continue;
+        const grown = set | (1 << next);
+        best[grown][next] = Math.min(best[grown][next], sofar + steps(fromStop[last], stops[next]));
+      }
     }
-    left.forEach(i => {
-      const leg = last === null ? (fromKey[i].get(here) || 0) : steps(fromKey[last], f.keys[i]);
-      walk(left.filter(j => j !== i), i, sofar + leg);
-    });
-  };
-  walk(f.keys.map((_, i) => i), null, 0);
-  return best;
+  }
+  return Math.min(...stops.map((p, i) => best[all][i] + steps(f.bossDist, p)));
 }
 
 // Turns the floor gives before the light wins. With a slack range: the
