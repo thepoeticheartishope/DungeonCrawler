@@ -10,7 +10,10 @@
 //   grid          the floor is grid x grid tiles. Later floors have more
 //                 rooms, not bigger ones (each room is a drawing from
 //                 rooms.js), so the grid grows to fit them.
-//   rooms         how many rooms the generator tries to place
+//   rooms         how many rooms the generator tries to place: the start,
+//                 the core (boss room) and the rooms the CORE_KEYS keys
+//                 are hidden among, so at least CORE_KEYS + 2, and more
+//                 so the player can't tell which rooms hold them
 //   loops         at most this many extra hallways beyond the minimum, for
 //                 more than one route (fewer when the floor has few rooms)
 //   minions       the floor's fixed set of minions (no summoning)
@@ -20,8 +23,9 @@
 //                 or too short, the rest follow MINION_KIND_ORDER. Drafts
 //                 for Timothy: floor 1 meets only SHARDs, floor 2 adds a
 //                 STALKER, floor 3 adds a HUSK.
-//   slack         [min, max] turns the player gets beyond the walk to the
-//                 boss, the time left for exploring. It is the difficulty
+//   slack         [min, max] turns the player gets beyond the shortest
+//                 walk from the start through every key to the boss
+//                 (light.js), the time left for searching and exploring. It is the difficulty
 //                 dial and shrinks each floor. Each floor rolls a number in
 //                 the range, so luck with the layout no longer decides how
 //                 much time there is (light.js). The light still spreads
@@ -33,7 +37,8 @@
 //                 tiles, whatever the walk (the old dial; the stats tool's
 //                 --loss mode uses it).
 //   startRoom     name of the rooms.js drawing the player wakes in
-//   bossRoom      name of the rooms.js drawing the boss guards
+//   bossRoom      name of the rooms.js drawing the boss guards: the
+//                 locked core, near the middle, beside the start room
 //                 Either left out means a random room, as before. Every
 //                 floor uses the same two for now (Timothy: one fixed
 //                 drawing each; a pool can come later).
@@ -41,8 +46,8 @@
 //                 next line goes to whichever paper the player reads, so
 //                 the story holds its order wherever the papers lie. Lines
 //                 left unread carry over to the next floor (moves.js).
-//   beats         what the player meets on the way from the start to the
-//                 boss, in this order (beats.js BEAT_KINDS: paper, box,
+//   beats         what the player meets on the way from the start out to
+//                 the farthest key, in this order (beats.js BEAT_KINDS: paper, box,
 //                 minion, special). Each lands beside its share of the
 //                 walk. Minion beats are some of the floor's `minions`,
 //                 never extra; the rest roam at random. Papers and boxes
@@ -51,15 +56,15 @@
 //                 floor 2 adds a second minion before the special, floor
 //                 3 puts minions between everything.
 export const FLOOR_RECIPES = [
-  { grid: 33, rooms: 4, loops: 3, minions: 2, minionKinds: ['SHARD', 'SHARD'], slack: [130, 160],
+  { grid: 37, rooms: 6, loops: 3, minions: 2, minionKinds: ['SHARD', 'SHARD'], slack: [130, 160],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.1.2', 'story.1.3'],
     beats: ['paper', 'box', 'minion', 'special'] },
-  { grid: 37, rooms: 5, loops: 3, minions: 3, minionKinds: ['SHARD', 'STALKER', 'SHARD'], slack: [105, 130],
+  { grid: 41, rooms: 7, loops: 3, minions: 3, minionKinds: ['SHARD', 'STALKER', 'SHARD'], slack: [105, 130],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.2.1', 'story.2.2'],
     beats: ['paper', 'minion', 'box', 'minion', 'special'] },
-  { grid: 41, rooms: 6, loops: 3, minions: 4, minionKinds: ['SHARD', 'STALKER', 'HUSK', 'STALKER'], slack: [80, 105],
+  { grid: 45, rooms: 8, loops: 3, minions: 4, minionKinds: ['SHARD', 'STALKER', 'HUSK', 'STALKER'], slack: [80, 105],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.3.1', 'story.3.2'],
     beats: ['paper', 'minion', 'box', 'minion', 'special', 'minion'] },

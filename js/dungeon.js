@@ -1,14 +1,16 @@
 // Dungeon generation: places rooms from the hand-drawn templates in
 // rooms.js, joins them with hallways that run from door to door around
-// the rooms (never through them), picks a boss room, and guarantees that
-// room has exactly one entrance. Rest floors get a one-room layout of
-// their own (buildRestLayout).
+// the rooms (never through them), and guarantees the boss room has
+// exactly one entrance. The boss room is the floor's locked core, near
+// the middle of the grid, with the player's room right beside its door;
+// the keys lie in other rooms, picked at random (locked core plan, step
+// A). Rest floors get a one-room layout of their own (buildRestLayout).
 //
 // This module is self-contained — it takes the grid size, chamber
-// target, extra-hallway cap and the names of the start and boss rooms
-// (from the floor recipe) as plain arguments instead of reading shared
-// game state, so it can be tested on its own with no dependency on the
-// rest of the game.
+// target, extra-hallway cap, the names of the start and boss rooms and
+// the key count (from the floor recipe) as plain arguments instead of
+// reading shared game state, so it can be tested on its own with no
+// dependency on the rest of the game.
 
 import { key } from './state.js';
 import { randomTemplate, namedTemplate, parseTemplate } from './rooms.js';
@@ -19,6 +21,9 @@ const TURN_COST = 3;         // extra cost of a bend, so hallways run in long st
 const REUSE_COST = 0.5;      // cost of a step along an existing hallway, so hallways merge
 
 const TURN_TRIES = 20;       // turns of a drawing tried before a room that won't fit gives up
+const CORE_JITTER = 2;       // tiles the core may sit off the grid's middle, either way
+const GATE_GAP = CHAMBER_BUFFER + 1; // tiles between the core's wall and the start room's wall
+const GATE_SLIDE = 2;        // tiles the start room may slide along the core's side, either way
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
@@ -226,43 +231,78 @@ function placeAtRandom(tpl, gridSize) {
     randInt(EDGE_MARGIN, gridSize - tpl.w - EDGE_MARGIN));
 }
 
-// Places the recipe's boss room far from the player's. It tries as many
-// free spots as the floor has other rooms and keeps the farthest, which
-// matches the old rule (the boss took the farthest of the random rooms),
-// so the walk to the boss stays about as long as before. Null if no spot
-// was free.
-function placeBossRoom(tpl, rooms, gridSize, spots) {
-  let best = null;
-  let found = 0;
-  for (let guard = 0; found < spots && guard < 300; guard++) {
-    const room = placeAtRandom(tpl, gridSize);
-    if (rooms.some(other => overlaps(room, other, CHAMBER_BUFFER))) continue;
-    found++;
-    if (!best || roomDist(room, rooms[0]) > roomDist(best, rooms[0])) best = room;
+function shuffle(list) {
+  const out = list.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
   }
-  return best;
+  return out;
+}
+
+// The core (the boss room) near the middle of the grid, up to
+// CORE_JITTER tiles off it, so the floor's other rooms lie all round it
+// and every key is a trip out and back.
+function placeCoreRoom(tpl, gridSize) {
+  const lo = EDGE_MARGIN;
+  const r0 = Math.floor((gridSize - tpl.h) / 2) + randInt(-CORE_JITTER, CORE_JITTER);
+  const c0 = Math.floor((gridSize - tpl.w) / 2) + randInt(-CORE_JITTER, CORE_JITTER);
+  return placeRoom(tpl, Math.max(lo, Math.min(r0, gridSize - tpl.h - lo)), Math.max(lo, Math.min(c0, gridSize - tpl.w - lo)));
+}
+
+// Which side of a placed room a door opens onto: 'N', 'S', 'W' or 'E'.
+function doorSide(room, d) {
+  if (d.exit.row < room.r0) return 'N';
+  if (d.exit.row >= room.r0 + room.h) return 'S';
+  return d.exit.col < room.c0 ? 'W' : 'E';
+}
+
+const OPPOSITE = { N: 'S', S: 'N', W: 'E', E: 'W' };
+
+// The start room on one side of the core, GATE_GAP tiles off its wall and
+// roughly centred along it, so the player wakes a few steps from the
+// boss's door. Sides where the core has a door facing out and the start
+// room a door facing back come first: the hallway between them is then a
+// short straight run. Null if no side fits on the grid.
+function placeStartBeside(tpl, core, gridSize) {
+  const slide = () => randInt(-GATE_SLIDE, GATE_SLIDE);
+  const spotOn = {
+    N: () => ({ r0: core.r0 - GATE_GAP - tpl.h, c0: core.c0 + Math.floor((core.w - tpl.w) / 2) + slide() }),
+    S: () => ({ r0: core.r0 + core.h + GATE_GAP, c0: core.c0 + Math.floor((core.w - tpl.w) / 2) + slide() }),
+    W: () => ({ r0: core.r0 + Math.floor((core.h - tpl.h) / 2) + slide(), c0: core.c0 - GATE_GAP - tpl.w }),
+    E: () => ({ r0: core.r0 + Math.floor((core.h - tpl.h) / 2) + slide(), c0: core.c0 + core.w + GATE_GAP }),
+  };
+  const fits = ({ r0, c0 }) => r0 >= EDGE_MARGIN && c0 >= EDGE_MARGIN &&
+    r0 + tpl.h <= gridSize - EDGE_MARGIN && c0 + tpl.w <= gridSize - EDGE_MARGIN;
+  const rooms = shuffle(Object.keys(spotOn)).map(side => {
+    const spot = spotOn[side]();
+    if (!fits(spot)) return null;
+    const room = placeRoom(tpl, spot.r0, spot.c0);
+    const facing = core.doors.some(d => doorSide(core, d) === side) &&
+      room.doors.some(d => doorSide(room, d) === OPPOSITE[side]);
+    return { room, facing };
+  }).filter(Boolean);
+  const best = rooms.find(r => r.facing) || rooms[0];
+  return best ? best.room : null;
 }
 
 // One attempt at building a dungeon. Returns null if something didn't fit
 // (too few rooms placed, a hallway that couldn't be routed, the boss room
-// not ending up with exactly one entrance), so the caller can try again.
-// `named.startRoom` / `named.bossRoom` are template names from the
-// recipe; either one left out means a random room, as before.
-function attemptGenerate(gridSize, chamberTarget, maxLoops, named) {
-  // The player's room sits along the bottom edge, roughly centered.
+// not ending up with exactly one entrance, too few rooms for the keys),
+// so the caller can try again. `named.startRoom` / `named.bossRoom` are
+// template names from the recipe; either one left out means a random
+// room. `keyCount` keys go in that many rooms, never the start or core.
+function attemptGenerate(gridSize, chamberTarget, maxLoops, named, keyCount) {
+  // The core goes down first, near the middle, then the player's room
+  // beside it. rooms[0] is always the player's.
+  const bossTpl = fittingTemplate(named.bossRoom, gridSize);
   const startTpl = fittingTemplate(named.startRoom, gridSize);
-  if (!startTpl) return null;
-  const startC0 = Math.floor((gridSize - startTpl.w) / 2) + randInt(-3, 3);
-  const rooms = [placeRoom(startTpl, gridSize - startTpl.h - EDGE_MARGIN,
-    Math.max(EDGE_MARGIN, Math.min(startC0, gridSize - startTpl.w - EDGE_MARGIN)))];
-
-  if (named.bossRoom) {
-    const bossTpl = fittingTemplate(named.bossRoom, gridSize);
-    if (!bossTpl) return null;
-    const bossPlaced = placeBossRoom(bossTpl, rooms, gridSize, Math.max(1, chamberTarget - 1));
-    if (!bossPlaced) return null;
-    rooms.push(bossPlaced);
-  }
+  if (!bossTpl || !startTpl) return null;
+  const bossRoom = placeCoreRoom(bossTpl, gridSize);
+  const startRoom = placeStartBeside(startTpl, bossRoom, gridSize);
+  if (!startRoom) return null;
+  const bossIdx = 1;
+  const rooms = [startRoom, bossRoom];
 
   for (let guard = 0; rooms.length < chamberTarget && guard < 300; guard++) {
     const tpl = fittingTemplate(null, gridSize);
@@ -271,15 +311,7 @@ function attemptGenerate(gridSize, chamberTarget, maxLoops, named) {
     if (rooms.some(other => overlaps(room, other, CHAMBER_BUFFER))) continue;
     rooms.push(room);
   }
-  if (rooms.length < 2) return null;
-
-  // The boss camps in the recipe's boss room (placed second, above), or
-  // else in whichever room sits farthest from the player's.
-  let bossIdx = 1;
-  for (let i = 2; i < rooms.length && !named.bossRoom; i++) {
-    if (roomDist(rooms[i], rooms[0]) > roomDist(rooms[bossIdx], rooms[0])) bossIdx = i;
-  }
-  const bossRoom = rooms[bossIdx];
+  if (rooms.length < 2 + keyCount) return null;
 
   // Hallways may not enter any room's footprint, nor the ring of tiles
   // hugging the boss room — so the only way a hallway can reach it is
@@ -296,10 +328,25 @@ function attemptGenerate(gridSize, chamberTarget, maxLoops, named) {
     openExits.add(key(db.exit.row, db.exit.col));
   };
 
-  // Join every room to its nearest already-joined neighbour. The boss room
-  // is never used as a starting point for reaching another room, so it
-  // ends up with exactly one hallway — its single entrance.
-  const connected = [0];
+  // The core's one hallway runs from the player's room, so the boss's
+  // door is the first thing past the start. Its exit tile sits in the
+  // blocked ring, so it is let through for this hallway only.
+  const gate = connect(rooms[0], bossRoom, blocked, corridors, gridSize, {
+    allowBExit: () => true,
+    blockedFor: (db) => {
+      const b = new Set(blocked);
+      b.delete(key(db.exit.row, db.exit.col));
+      return b;
+    },
+  });
+  if (!gate) return null;
+  carve(gate);
+  blocked.delete(key(gate.db.exit.row, gate.db.exit.col));
+
+  // Join every other room to its nearest already-joined neighbour. The
+  // boss room is never used as a starting point for reaching another
+  // room, so it keeps exactly one hallway — its single entrance.
+  const connected = [0, bossIdx];
   while (connected.length < rooms.length) {
     let best = null;
     for (const ci of connected) {
@@ -311,19 +358,9 @@ function attemptGenerate(gridSize, chamberTarget, maxLoops, named) {
       }
     }
     if (!best) return null;
-    const isBoss = best.cj === bossIdx;
-    const opts = isBoss ? {
-      allowBExit: () => true,
-      blockedFor: (db) => {
-        const b = new Set(blocked);
-        b.delete(key(db.exit.row, db.exit.col));
-        return b;
-      },
-    } : {};
-    const hall = connect(rooms[best.ci], rooms[best.cj], blocked, corridors, gridSize, opts);
+    const hall = connect(rooms[best.ci], rooms[best.cj], blocked, corridors, gridSize);
     if (!hall) return null;
     carve(hall);
-    if (isBoss) blocked.delete(key(hall.db.exit.row, hall.db.exit.col));
     connected.push(best.cj);
   }
 
@@ -379,6 +416,18 @@ function attemptGenerate(gridSize, chamberTarget, maxLoops, named) {
   const far = stairsOptions.slice(0, Math.max(1, Math.ceil(stairsOptions.length / 2)));
   const stairsCell = far[Math.floor(Math.random() * far.length)].p;
 
+  // The keys: one each in `keyCount` rooms picked at random from all but
+  // the player's and the core, so the player can't tell which rooms hold
+  // them (Timothy). Each on open floor, off the doorways and '?' spots.
+  const keyRooms = shuffle(rooms.map((_, i) => i).filter(i => i !== 0 && i !== bossIdx)).slice(0, keyCount);
+  const keys = [];
+  for (const i of keyRooms) {
+    const options = openInterior(rooms[i]);
+    if (options.length === 0) return null;
+    const p = options[Math.floor(Math.random() * options.length)];
+    keys.push({ row: p.row, col: p.col });
+  }
+
   const walls = new Set();
   for (let r = 0; r < gridSize; r++) {
     for (let c = 0; c < gridSize; c++) {
@@ -405,21 +454,22 @@ function attemptGenerate(gridSize, chamberTarget, maxLoops, named) {
 
   return {
     walls, spawn, roomTiles, stairs: { row: stairsCell.row, col: stairsCell.col },
-    start: { row: start.row, col: start.col }, chambers, chamberAt,
+    start: { row: start.row, col: start.col }, chambers, chamberAt, keys,
   };
 }
 
 // Builds a dungeon, retrying from scratch if an attempt didn't fit — rare
 // enough that regenerating is simpler and more robust than trying to
 // out-think every placement that could go wrong. `named` holds the
-// recipe's startRoom / bossRoom template names (optional).
-export function generateDungeonLayout(gridSize, chamberTarget, maxLoops, named = {}) {
+// recipe's startRoom / bossRoom template names (optional), `keyCount` how
+// many keys the floor hides.
+export function generateDungeonLayout(gridSize, chamberTarget, maxLoops, named = {}, keyCount = 0) {
   for (let attempt = 0; attempt < 60; attempt++) {
-    const layout = attemptGenerate(gridSize, chamberTarget, maxLoops, named);
+    const layout = attemptGenerate(gridSize, chamberTarget, maxLoops, named, keyCount);
     if (layout) return layout;
   }
   // Extremely unlikely fallback: one plain room, boss at one end and the
-  // stairs just past it, nothing left to get wrong.
+  // stairs just past it, nothing left to get wrong (and no keys).
   const size = Math.min(7, gridSize - 2);
   const r0 = Math.floor((gridSize - size) / 2);
   const walls = new Set();
@@ -433,7 +483,7 @@ export function generateDungeonLayout(gridSize, chamberTarget, maxLoops, named =
   const roomTiles = new Set(floorCells.map(p => key(p.row, p.col)));
   const chamberAt = new Map([...roomTiles].map(k => [k, 0]));
   return {
-    walls, roomTiles, chamberAt,
+    walls, roomTiles, chamberAt, keys: [],
     spawn: { row: r0, col: r0 + 1 },
     stairs: { row: r0, col: r0 },
     start: { row: r0 + size - 1, col: r0 + size - 1 },
@@ -482,7 +532,7 @@ export function buildRestLayout(templateName, gridSize) {
   }
   const chamberAt = new Map([...roomTiles].map(k => [k, 0]));
   return {
-    walls, roomTiles, chamberAt, stairs, start,
+    walls, roomTiles, chamberAt, stairs, start, keys: [],
     spawn: { ...stairs },
     chambers: [{
       floorCells,

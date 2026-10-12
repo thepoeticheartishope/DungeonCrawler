@@ -292,6 +292,10 @@ export const GOALS_PER_FLOOR = 2;
 // weak to one reload group, rolled per run. A round loaded from that group
 // does WEAKNESS_DAMAGE_SCALE times the damage bar's damage to it.
 export const WEAKNESS_DAMAGE_SCALE = 2;
+// The locked core (locked core plan, step A; dungeon.js, floor.js): every
+// danger depth hides CORE_KEYS keys, one each in that many rooms picked at
+// random (never the start room or the core). Stepping on one takes it.
+export const CORE_KEYS = 3;
 // Relays (strategy plan step B, relays.js): RELAYS_PER_FLOOR [min, max] per
 // danger depth, never in the boss's or the start room. A right answer holds
 // the room and takes RELAY_TURNS_BACK turns off the light (LIGHT_TURNS_PER_STEP
@@ -686,7 +690,7 @@ export const MAP_MAX_PIXEL_RATIO = 2;
 // the player, minions and the coin smaller.
 export const MAP_GLYPH_SIZES = {
   player: 0.84, boss: 1.03, minion: 0.71, hunter: 0.9, coin: 0.65,
-  stairs: 0.71, chest: 0.77, prop: 0.77, exchange: 0.9,
+  stairs: 0.71, chest: 0.77, prop: 0.77, exchange: 0.9, key: 0.71,
 };
 // The isometric map (js/isoview.js, DEV -> View). How many tile widths
 // fit across the map: fewer means bigger tiles. The camera stands on the

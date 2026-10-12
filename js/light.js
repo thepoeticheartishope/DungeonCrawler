@@ -1,6 +1,7 @@
 // The boss's light: it starts on the boss and spreads outward through the
-// floor one step every few turns. When the floor's turns run out (the walk
-// to the boss plus the recipe's slack, floors.js) the run is lost; defeating the boss puts it out. No
+// floor one step every few turns. When the floor's turns run out (the
+// walk through every key to the boss plus the recipe's slack, floors.js)
+// the run is lost; defeating the boss puts it out. No
 // DOM access here — mapview.js draws it, main.js decides what happens when
 // it's full.
 
@@ -27,19 +28,22 @@ function stepsFrom(row, col) {
   return dist;
 }
 
-// Called once per room, after the layout, boss and player start are set.
-// Works out how many turns the player gets before the light consumes the
-// floor, and the radius the steadily spreading light has reached by then.
-// The budget is the walk from the start to the boss plus the recipe's
-// slack, rounded up to whole light steps, so every floor at a depth leaves
-// the same time for exploring however far the layout put the boss. A
-// recipe without slack uses its lossCoverage share instead (floorBudget).
-// Turns bought at THE UNFOLDING (state.run.bonusSlack) are added on top
-// and spent here, so they only help the next depth.
+// Called once per room, after the layout, boss, keys and player start are
+// set. Works out how many turns the player gets before the light consumes
+// the floor, and the radius the steadily spreading light has reached by
+// then. The budget is the shortest walk from the start through every key
+// to the boss (state.floor.keyRoute; the core sits beside the start, so
+// the keys are the real trip) plus the recipe's slack, rounded up to whole
+// light steps, so every floor at a depth leaves the same time for
+// searching however far out the keys lie. A recipe without slack uses its
+// lossCoverage share instead (floorBudget). Turns bought at THE UNFOLDING
+// (state.run.bonusSlack) are added on top and spent here, so they only
+// help the next depth.
 export function initBossLight() {
   state.floor.bossDist = stepsFrom(state.floor.boss.row, state.floor.boss.col);
   state.floor.floorCount = state.floor.bossDist.size;
-  const walk = state.floor.bossDist.get(key(state.floor.playerRow, state.floor.playerCol)) || 0;
+  state.floor.keyRoute = keyRoute();
+  const walk = state.floor.keyRoute;
   const turns = floorBudget(floorRecipe(state.run.roomIndex, state.floor.path), walk) + state.run.bonusSlack;
   state.run.bonusSlack = 0;
   state.floor.lightFullRadius = Math.max(1, Math.ceil(turns / LIGHT_TURNS_PER_STEP));
@@ -48,6 +52,33 @@ export function initBossLight() {
   state.floor.lightLossShare = shareWithin(state.floor.lightFullRadius);
   state.floor.lightTurns = 0;
   updateBossLit();
+}
+
+// Steps of the shortest walk from the player through every key on the
+// floor, in the best order, ending at the boss. Walls only, like the
+// light. With no keys it is just the walk to the boss. A key the walls cut
+// off (never, on a built floor) counts as no steps.
+function keyRoute() {
+  const f = state.floor;
+  const here = key(f.playerRow, f.playerCol);
+  const fromKey = f.keys.map(k => stepsFrom(k.row, k.col));
+  const steps = (dist, p) => dist.get(key(p.row, p.col)) || 0;
+  const toBoss = i => steps(f.bossDist, f.keys[i]);
+  // Every order of the keys (CORE_KEYS is small, so trying them all is cheap).
+  let best = Infinity;
+  const walk = (left, last, sofar) => {
+    if (sofar >= best) return;
+    if (left.length === 0) {
+      best = Math.min(best, last === null ? (f.bossDist.get(here) || 0) : sofar + toBoss(last));
+      return;
+    }
+    left.forEach(i => {
+      const leg = last === null ? (fromKey[i].get(here) || 0) : steps(fromKey[last], f.keys[i]);
+      walk(left.filter(j => j !== i), i, sofar + leg);
+    });
+  };
+  walk(f.keys.map((_, i) => i), null, 0);
+  return best;
 }
 
 // Turns the floor gives before the light wins. With a slack range: the

@@ -1,6 +1,7 @@
 // Beats: the recipe's ordered interactions along the walk from the player's
-// start to the boss (floors.js `beats`, e.g. paper -> box -> minion ->
-// special). buildFloor() in floor.js calls placeBeats() once the furniture
+// start out to the farthest key (floors.js `beats`, e.g. paper -> box ->
+// minion -> special). The boss's core sits beside the start (locked core
+// plan), so the walk that paces a floor is the one out to the keys. buildFloor() in floor.js calls placeBeats() once the furniture
 // is down. Each beat lands on a room tile beside its share of that walk,
 // so the player meets them in the recipe's order. That is where a floor's
 // pacing comes from (Timothy: pacing from interaction, not map shape).
@@ -64,26 +65,35 @@ function stepsFrom(from, solid) {
   return steps;
 }
 
-// Where along the walk from the start to the boss each tile lies. `at` is
-// how far along, in steps of the shortest walk: a tile's steps from the
-// start, as a share of its steps from the start plus its steps on to the
-// boss. On the walk itself that is exactly the step it's on; a side room
+// Where along the walk from the start to its end (the farthest key, or
+// the boss on a floor with none) each tile lies. `at` is how far along,
+// in steps of the shortest walk: a tile's steps from the start, as a
+// share of its steps from the start plus its steps on to the end. On the walk itself that is exactly the step it's on; a side room
 // counts as far along as it is on the way. `off` is how far the player
 // strays from the walk to reach it (half the detour: there and back).
 // Only tiles the player can reach before the boss count.
 function progressAlong(solid) {
   const f = state.floor;
   const fromStart = stepsFrom(f.PLAYER_START, solid);
-  const toBoss = stepsFrom(f.boss, solid);
-  const walk = fromStart.get(key(f.boss.row, f.boss.col));
+  const end = walkEnd(fromStart);
+  const toEnd = stepsFrom(end, solid);
+  const walk = fromStart.get(key(end.row, end.col));
   const progress = new Map();
   if (!walk) return { walk: 0, progress };
   fromStart.forEach((ds, k) => {
-    const db = toBoss.get(k);
+    const db = toEnd.get(k);
     if (db === undefined || db === 0) return;
     progress.set(k, { at: walk * ds / (ds + db), off: (ds + db - walk) / 2, fromStart: ds });
   });
   return { walk, progress };
+}
+
+// Where the walk that paces the floor ends: the key farthest from the
+// start, or the boss when the floor has no keys.
+function walkEnd(fromStart) {
+  const f = state.floor;
+  const far = p => fromStart.get(key(p.row, p.col)) || 0;
+  return f.keys.reduce((best, p) => (!best || far(p) > far(best) ? p : best), null) || f.boss;
 }
 
 // Room floor that nothing stands on yet, away from the doors. Beats never
@@ -141,15 +151,15 @@ function placeOne(kind, candidates, ctx) {
   return candidates.find(p => ctx.placer.tryBlock([p], true)) || null;
 }
 
-// Places the recipe's beats, in order, along the walk from the start to
-// the boss. Beat i of n (from 0) aims at i/n of the stretch that has rooms
+// Places the recipe's beats, in order, along the walk from the start out
+// to the farthest key. Beat i of n (from 0) aims at i/n of the stretch that has rooms
 // beside it: the first is met near the start (the plan's paper in sight of
 // the waking spot), and the last is left room before the stretch ends, so
 // it isn't crowded out by the one before.
 //   beats      list of BEAT_KINDS from the floor's recipe
 //   layout     the floor's layout from dungeon.js (room tiles and doors)
 //   placer     the floor's furniture placer (decor.js makePlacer)
-//   taken      tiles already spoken for (start, boss, stairs)
+//   taken      tiles already spoken for (start, boss, stairs, keys)
 // Returns what buildFloor() puts on the floor:
 //   props        new papers and boxes, rolled like any other
 //   specialTile  where the special goes, or null to place it at random

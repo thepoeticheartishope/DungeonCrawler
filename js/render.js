@@ -139,6 +139,10 @@ export function renderHud() {
   els.roomNumEl.textContent = state.run.resting ? t('stat.rest') : state.run.roomIndex + 1;
   els.roomOfEl.style.display = state.run.resting ? 'none' : '';
   els.roomTotalEl.textContent = state.run.order.length;
+  // Keys held of the floor's; a rest floor has none.
+  const keysTotal = state.floor.keysHeld + state.floor.keys.length;
+  els.keysStat.hidden = keysTotal === 0;
+  els.keysText.textContent = state.floor.keysHeld + '/' + keysTotal;
   renderGoals();
   renderGunHud();
 }

@@ -375,6 +375,13 @@ function mapThings() {
       size: 'coin', lift: COIN_BOB * pulse(MAP_ANIMATION_MS.coinBob), moves: true,
     });
   }
+  // A key glows like the stairs, so a lit one isn't missed in a room.
+  f.keys.forEach(k => {
+    if (!isLit(k.row, k.col)) return;
+    add('key', k, glyphOrUnknown(k, t('term.key.symbol')), {
+      size: 'key', colour: colours.bright, glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
+    });
+  });
   if (f.chest && isLit(f.chest.row, f.chest.col)) {
     add('chest', f.chest, glyphOrUnknown(f.chest, glyphOf(f.chest)), { size: 'chest' });
   }

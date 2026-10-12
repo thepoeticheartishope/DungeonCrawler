@@ -66,14 +66,14 @@ export function makePlacer(layout, gridSize) {
   const examinable = new Set();
 
   // Never solid: doorways and the tile either side of them, where the
-  // player starts, the boss's door, and the stairs.
+  // player starts, the boss's door, the stairs and the keys.
   const reserved = new Set();
   layout.chambers.forEach(ch => ch.doorKeys.forEach(k => {
     reserved.add(k);
     const { row, col } = parseKey(k);
     DIRS.forEach(([dr, dc]) => reserved.add(key(row + dr, col + dc)));
   }));
-  [layout.start, layout.spawn, layout.stairs].forEach(p => reserved.add(key(p.row, p.col)));
+  [layout.start, layout.spawn, layout.stairs, ...(layout.keys || [])].forEach(p => reserved.add(key(p.row, p.col)));
 
   const startKey = key(layout.start.row, layout.start.col);
 

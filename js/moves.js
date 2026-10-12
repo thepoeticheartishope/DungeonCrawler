@@ -28,6 +28,15 @@ export function onStairs() {
   return !!stairsHere();
 }
 
+// Takes the key at this index of state.floor.keys (locked core plan): it
+// leaves the floor and counts toward the keys held. `total` is every key
+// the floor had. Event: keyTaken { held, total }.
+function takeKey(index) {
+  state.floor.keys.splice(index, 1);
+  state.floor.keysHeld++;
+  return { type: 'keyTaken', held: state.floor.keysHeld, total: state.floor.keysHeld + state.floor.keys.length };
+}
+
 // One arrow press. A press in a new direction turns the player to face it
 // (and the light cone with it), then goes on to step that way in the same
 // press. With state.settings.turnBeforeStep on, it only turns: no step, no
@@ -36,6 +45,7 @@ export function onStairs() {
 // anything unseen gets next to them. Events: turned { facing } (alone when
 // turning first, else before the rest),
 // blocked { kind, thing }, stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
+// keyTaken { held, total },
 // paperRead { paper, loot, story? }, roomEntered { theme }, exchangeOpened
 // (bumped THE UNFOLDING; main.js opens its screen), itemReached { thing }
 // (bumped the chest; main.js opens the battle screen) and
@@ -90,6 +100,8 @@ export function stepPlayer(dRow, dCol) {
     state.run.coinsTotal += gold;
     events.push({ type: 'coinTaken', gold });
   }
+  const keyHere = state.floor.keys.findIndex(p => p.row === state.floor.playerRow && p.col === state.floor.playerCol);
+  if (keyHere !== -1) events.push(takeKey(keyHere));
   // Stepping onto a paper reads it, as part of the step.
   const paper = state.floor.props.find(p => p.kind === 'paper' && !p.searched &&
     p.row === state.floor.playerRow && p.col === state.floor.playerCol);
