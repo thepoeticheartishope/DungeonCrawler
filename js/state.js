@@ -23,6 +23,7 @@ export const state = {
   settings: {
     revealOnWrong: false,
     realTime: false,        // start screen option: the world moves on a clock (realclock.js), not after each action; remembered
+    enemyPose: 'random',    // DEV -> Look: each stick enemy's own random pose, or one stickforms.js STICK_POSES id for all
     simpleEnemies: false,   // start screen option (comfort): every minion on the map is a still 'e' (tell 'E'), no form, no motion; remembered
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js

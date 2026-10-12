@@ -1,10 +1,11 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
-// panel over the screen): Skip room, Auto-win, Fog, Turn, Minigame, Camera and Combat
+// panel over the screen): Skip room, Auto-win, Fog, Turn, Minigame, Camera, Look and Combat
 // toggles, a test shot and a test reload, for testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw } from './mapview.js';
 import { renderRoomHints } from './render.js';
 import { MINIGAMES } from './minigames.js';
+import { STICK_POSE_IDS } from './stickforms.js';
 
 const devDock = document.getElementById('devDock');
 const devToggleBtn = document.getElementById('devToggleBtn');
@@ -14,6 +15,7 @@ const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devTurnBtn = document.getElementById('devTurnBtn');
 const devCameraBtn = document.getElementById('devCameraBtn');
+const devLookBtn = document.getElementById('devLookBtn');
 const devMinigameBtn = document.getElementById('devMinigameBtn');
 const devCombatBtn = document.getElementById('devCombatBtn');
 const devShotBtn = document.getElementById('devShotBtn');
@@ -101,6 +103,16 @@ export function initDevPanel({
     devCameraBtn.setAttribute('aria-pressed', String(state.settings.isoCameraGlide));
     requestMapDraw();
     renderRoomHints();
+  });
+
+  // Dev tool (stick enemies plan): every stick enemy shows its own random
+  // pose, or all show the one picked here, so each pose can be checked in play.
+  const LOOK_MODES = ['random', ...STICK_POSE_IDS];
+  devLookBtn.addEventListener('click', () => {
+    const next = LOOK_MODES[(LOOK_MODES.indexOf(state.settings.enemyPose) + 1) % LOOK_MODES.length];
+    state.settings.enemyPose = next;
+    devLookBtn.textContent = 'Look: ' + next + ' (dev)';
+    requestMapDraw();
   });
 
   // Dev tool (gun plan): the gun on the map (the default since step 9), or
