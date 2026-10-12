@@ -654,6 +654,14 @@ export const FOG_REVEAL_CLEAR = 2;
 export const FOG_REVEAL_STEP_MS = 2000;
 export const FOG_REVEAL_X_COVERED = 12;
 export const FOG_REVEAL_2_COVERED = 6;
+// Sum Lock: a trapped box only. When a trapped box rolls a minigame it is
+// Sum Lock if it can be (not twice in a row): its question becomes two
+// number questions, whole answers of 1 to SUM_LOCK_MAX_ADDEND, and the
+// lock takes only their total. Right pays SUM_LOCK_TIER (the box's gold
+// doubled); wrong shows both answers and both come back as haunts. No
+// modifiers: a box carries none.
+export const SUM_LOCK_MAX_ADDEND = 50;
+export const SUM_LOCK_TIER = 'X';
 
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.

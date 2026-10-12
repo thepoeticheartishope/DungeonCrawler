@@ -21,6 +21,7 @@ import {
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
   CROSSWIRE_MIN_LETTERS, CROSSWIRE_MAX_LETTERS, CROSSWIRE_TIERS, FOG_REVEAL_X_COVERED, FOG_REVEAL_2_COVERED,
+  SUM_LOCK_MAX_ADDEND,
   LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS,
 } from './config.js';
 import { numberQuestion, pickQuestion, shuffle, normalizeSpaces } from './quiz.js';
@@ -44,6 +45,8 @@ export const MINIGAME_MODIFIERS = {
   // No Timer (waiting is the game) and no Blind (the picture is the
   // question).
   fogReveal: ['flip', 'gambler'],
+  // A trapped box carries no modifiers, so neither does its lock.
+  sumLock: [],
 };
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
@@ -64,6 +67,9 @@ const FITS = {
   verdict: q => verdictFits(q) && verdictIndex().fitting.length >= VERDICT_BOSS_CLAIMS,
   crosswire: q => crosswirePartners(q).length > 0,
   fogReveal: q => Boolean(String(q.image || '').trim()),
+  // Sum Lock runs a trapped box, not a question: only its own stand-in
+  // question (sumLockQuestion in main.js) fits it.
+  sumLock: q => Boolean(q.sumLock),
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -105,14 +111,19 @@ export function rollMinigame(q, offered, group = null) {
 }
 
 // rollMinigame's choice, without recording it.
+// A trapped box that rolls one runs Sum Lock when it can, since that is
+// its own; never twice in a row, like any other.
 function pickMinigame(q, offered, group) {
   const mode = state.settings.minigame;
   if (mode === 'off') return null;
-  const ids = letterPoolFits(group) ? [...minigamesFor(q), 'letterPool'] : minigamesFor(q);
+  const ids = minigamesFor(q);
+  if (letterPoolFits(group)) ids.push('letterPool');
+  if (sumLockFits()) ids.push('sumLock');
   const fits = ids.filter(id => modifiersFor(id, offered));
   if (mode !== 'roll') return fits.includes(mode) ? mode : null;
   const fresh = fits.filter(id => id !== state.run.lastMinigame);
   if (!fresh.length || Math.random() >= MINIGAME_CHANCE) return null;
+  if (fresh.includes('sumLock')) return 'sumLock';
   return fresh[Math.floor(Math.random() * fresh.length)];
 }
 
@@ -646,4 +657,46 @@ export function crosswireTier(acrossRight, downRight, reveals) {
 export function fogRevealTier(covered) {
   if (covered >= FOG_REVEAL_X_COVERED) return 'X';
   return covered >= FOG_REVEAL_2_COVERED ? '2' : '1';
+}
+
+// ---- Sum Lock: a trapped box takes the total of two number answers ----
+
+// The set's questions a Sum Lock can add: a whole-number answer of 1 to
+// SUM_LOCK_MAX_ADDEND that a dial could take (no port, no "7½"), no
+// picture, not holding its answer. Worked out once per set.
+let sumLockCache = { data: null, questions: [] };
+
+// sumLockCache's questions for state.settings.activeData.
+export function sumLockQuestions() {
+  const data = state.settings.activeData || [];
+  if (sumLockCache.data === data) return sumLockCache.questions;
+  const questions = data.filter((q) => {
+    const n = closeEnoughAnswer(q);
+    return n && !n.unit && Number.isInteger(n.value) && n.value <= SUM_LOCK_MAX_ADDEND && !q.image && !answerInStem(q);
+  });
+  sumLockCache = { data, questions };
+  return questions;
+}
+
+// Whether the target is a trapped box and the set has two questions to
+// add: Sum Lock can run in place of its question.
+function sumLockFits() {
+  const target = state.battle.selectedTarget;
+  return Boolean(target && target.kind === 'box' && target.trapped) && sumLockQuestions().length >= 2;
+}
+
+// A new lock: two different questions to add (`first`, `second`), their
+// answers (`a`, `b`) and the `total` it opens on.
+export function sumLockSetup() {
+  const [first, second] = shuffle(sumLockQuestions()).slice(0, 2);
+  const a = closeEnoughAnswer(first).value;
+  const b = closeEnoughAnswer(second).value;
+  return { first, second, a, b, total: a + b };
+}
+
+// Whether `typed` is the lock's total: digits only count, so " 47 " and
+// "4,7" are 47; anything without a digit is no answer (null).
+export function sumLockMatches(lock, typed) {
+  const digits = String(typed || '').replace(/\D/g, '');
+  return digits ? Number(digits) === lock.total : null;
 }

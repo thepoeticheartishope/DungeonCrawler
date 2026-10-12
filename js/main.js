@@ -40,7 +40,7 @@ import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
 import { mountQuestionPanel, setQuestion, setMinigame, retypeQuestion, clearModifier, applyModifier, placeWager } from './questionview.js';
-import { rollMinigame, forcedQuestion, endMinigame, letterPoolSetup } from './minigames.js';
+import { rollMinigame, forcedQuestion, endMinigame, letterPoolSetup, sumLockSetup } from './minigames.js';
 import { playMinigameOut } from './minigameview.js';
 import { initMinimap, refreshMinimap } from './minimapview.js';
 
@@ -132,7 +132,7 @@ applyStaticText();
 
 initSetLoader({ showSets: showSetPicker });
 initSetPicker({ startGame, openWorkshop: showWorkshop });
-initPractice({ letterPoolQuestion, mountBattleQuestion });
+initPractice({ letterPoolQuestion, sumLockQuestion, mountBattleQuestion });
 initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
   gunCombatChanged, autoWinGun, battleScreen, wagerRow,
@@ -311,8 +311,23 @@ function dressQuestion(modifiers, group = null) {
   const list = modifiers.filter(Boolean);
   const minigame = rollMinigame(state.battle.currentQuestion, list, group);
   if (minigame === 'letterPool') setQuestion(letterPoolQuestion(group));
+  if (minigame === 'sumLock') setQuestion(sumLockQuestion());
   setMinigame(minigame);
   list.forEach(applyModifier);
+}
+
+// A Sum Lock's stand-in for a trapped box's question (minigames.js
+// sumLockSetup): its answer is the total with both answers, for the log
+// on a miss ("47 (40 + 7)"). It never comes back as a haunt; its two
+// questions do when the total is wrong (endMinigame).
+function sumLockQuestion() {
+  const lock = sumLockSetup();
+  return {
+    term: t('mg.sumLock.term'),
+    meaning: t('mg.sumLock.reveal', { a: lock.a, b: lock.b, total: lock.total }),
+    source: [lock.first.source, lock.second.source].filter(Boolean).join(' · '),
+    sumLock: lock,
+  };
 }
 
 // A Letter Pool's stand-in for a question (minigames.js letterPoolSetup):

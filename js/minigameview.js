@@ -13,13 +13,13 @@ import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
   LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS, VERDICT_TIMER_SECONDS,
-  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS,
+  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   syllableSplitTray, syllableSplitTier, letterPoolCheck, letterPoolTier,
   codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier, verdictSetup, verdictTier,
-  crosswireSetup, crosswireTier, fogRevealTier,
+  crosswireSetup, crosswireTier, fogRevealTier, sumLockMatches,
 } from './minigames.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
 import { normalizeSpaces, buildChoices, resolveImageSrc, shuffle } from './quiz.js';
@@ -56,6 +56,7 @@ const BUILDERS = {
   verdict: buildVerdict,
   crosswire: buildCrosswire,
   fogReveal: buildFogReveal,
+  sumLock: buildSumLock,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -1007,6 +1008,55 @@ function buildFogReveal() {
       const { slots, mode } = rollFlip(buttons.length);
       buttons.forEach((btn, i) => { if (slots.has(i)) btn.querySelector('.opt-text').classList.add('flip-' + mode); });
     },
+  };
+}
+
+// ---- Sum Lock: enter the total of two number answers ----
+// The two questions (in place of the stand-in, which is hidden) and one
+// box for their total; Enter or OPEN tries it, once. Right pays
+// SUM_LOCK_TIER; wrong shows both answers and sends both questions back
+// as `missed` (haunts). Carries no modifiers (a box has none), so no
+// Blind or Flip of its own.
+function buildSumLock() {
+  slot.classList.add('mg-sum');
+  const lock = state.battle.currentQuestion.sumLock;
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.sumLock.hint');
+  const list = add(slot, 'ol', 'mg-sum-list');
+  add(list, 'li').textContent = lock.first.term;
+  add(list, 'li').textContent = lock.second.term;
+  const box = add(slot, 'fieldset', 'mg-code-form');
+  const form = add(box, 'form', 'term-input-row mg-type');
+  const input = add(form, 'input');
+  const enter = add(form, 'button');
+  const said = add(slot, 'div', 'term-line mg-said');
+
+  input.type = 'text';
+  input.inputMode = 'numeric';
+  input.autocomplete = 'off';
+  input.placeholder = t('mg.sumLock.total');
+  input.setAttribute('aria-label', t('mg.sumLock.total'));
+  enter.type = 'submit';
+  enter.textContent = t('mg.sumLock.open');
+  said.setAttribute('aria-live', 'polite');
+
+  const answer = (typed) => {
+    const right = sumLockMatches(lock, typed);
+    if (right === null) return;
+    said.textContent = t('mg.sumLock.reveal', { a: lock.a, b: lock.b, total: lock.total });
+    finish({ right, tier: right ? SUM_LOCK_TIER : null, given: String(typed).trim(), missed: right ? [] : [lock.first, lock.second] });
+  };
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    answer(input.value);
+  });
+  // Typed digits are the total's, not the game's keys.
+  input.addEventListener('keydown', e => e.stopPropagation());
+
+  return {
+    lock: box,
+    asks: true,
+    focus: () => input.focus(),
+    finish: () => answer(String(lock.total)),
   };
 }
 
