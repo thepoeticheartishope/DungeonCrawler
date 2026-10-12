@@ -7,6 +7,11 @@
 
 // One entry per floor, first floor first. Floors past the end of the list
 // reuse the last entry.
+//   plan          name of the fixed plan the floor is built from
+//                 (plans.js FLOOR_PLANS): the same building every run, so
+//                 the plan sets the grid and the rooms, and grid, rooms,
+//                 loops, startRoom and bossRoom below are not used. Left
+//                 out, the floor is random (dungeon.js), sized by these.
 //   grid          the floor is grid x grid tiles. Later floors have more
 //                 rooms, not bigger ones (each room is a drawing from
 //                 rooms.js), so the grid grows to fit them.
@@ -56,15 +61,15 @@
 //                 floor 2 adds a second minion before the special, floor
 //                 3 puts minions between everything.
 export const FLOOR_RECIPES = [
-  { grid: 37, rooms: 6, loops: 3, minions: 2, minionKinds: ['SHARD', 'SHARD'], slack: [130, 160],
+  { plan: 'school', grid: 37, rooms: 6, loops: 3, minions: 2, minionKinds: ['SHARD', 'SHARD'], slack: [130, 160],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.1.2', 'story.1.3'],
     beats: ['paper', 'box', 'minion', 'special'] },
-  { grid: 41, rooms: 7, loops: 3, minions: 3, minionKinds: ['SHARD', 'STALKER', 'SHARD'], slack: [105, 130],
+  { plan: 'archive', grid: 41, rooms: 7, loops: 3, minions: 3, minionKinds: ['SHARD', 'STALKER', 'SHARD'], slack: [105, 130],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.2.1', 'story.2.2'],
     beats: ['paper', 'minion', 'box', 'minion', 'special'] },
-  { grid: 45, rooms: 8, loops: 3, minions: 4, minionKinds: ['SHARD', 'STALKER', 'HUSK', 'STALKER'], slack: [80, 105],
+  { plan: 'observatory', grid: 45, rooms: 8, loops: 3, minions: 4, minionKinds: ['SHARD', 'STALKER', 'HUSK', 'STALKER'], slack: [80, 105],
     startRoom: 'wake', bossRoom: 'antechamber',
     lore: ['story.3.1', 'story.3.2'],
     beats: ['paper', 'minion', 'box', 'minion', 'special', 'minion'] },

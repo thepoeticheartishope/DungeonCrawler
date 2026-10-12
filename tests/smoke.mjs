@@ -468,17 +468,21 @@ async function checkRealTime(page, url) {
   if (await page.isHidden('#clockStat')) return 'the NEXT meter is not shown';
 
   // Arrows pressed faster than REALTIME_WALK_MS take one step at most.
+  // All six go in at once, in the page, so the test's own round trips
+  // can't stretch them past the walk window (pressing them one by one
+  // from here took 400-600 ms, room for a second, allowed step).
   await page.waitForTimeout(300);
-  const where = () => page.evaluate(async () => {
+  const visited = await page.evaluate(async () => {
     const { state } = await import('./js/state.js');
-    return state.floor.playerRow * 1000 + state.floor.playerCol;
+    const where = () => state.floor.playerRow * 1000 + state.floor.playerCol;
+    const seen = new Set([where()]);
+    for (const k of ['ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft']) {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+      seen.add(where());
+    }
+    return seen.size;
   });
-  const visited = new Set([await where()]);
-  for (const k of ['ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft']) {
-    await page.keyboard.press(k);
-    visited.add(await where());
-  }
-  if (visited.size > 2) return `${visited.size - 1} steps taken inside REALTIME_WALK_MS`;
+  if (visited > 2) return `${visited - 1} steps taken inside REALTIME_WALK_MS`;
 
   await page.waitForTimeout(300);
   if (!await bumpEnergyCell(page)) return 'no energy cell to reload from';
