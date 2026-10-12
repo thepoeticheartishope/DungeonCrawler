@@ -752,13 +752,8 @@ export const MAP_ANIMATION_MS = {
   gunShot: 260,     // the shot's flash from the gun to where it went, fading (gun plan)
   gunMiss: 900,     // MISS floating up over a minion the shot missed, fading
   gunRecoil: 120,   // the gun kicking back toward the player as it fires
-  // Minions as text forms (gun plan step 4b, js/textforms.js). Slow on
+  // Minions as stick men (stick enemies plan, js/stickforms.js). Slow on
   // purpose: the calm rule for motion- and flicker-sensitive players.
-  formRewrite: 9000, // each letter of a form becomes another letter about this often, never two together
-  formFade: 1200,    // the crossfade from the old letter to the new one
-  formHit: 500,      // a hurt form's soft brightening and one small push
-  formLimb: 1400,    // a limb shot off drifting away and fading
-  formDeath: 1800,   // a killed form's letters floating apart
   stickTell: 900,    // a stick enemy eases into its tell pose, or back out (stickforms.js)
   stickTurn: 700,    // a stick enemy turns to face the player when they pass to its other side
   stickHit: 500,     // a hurt stick enemy's soft brightening and one small push
@@ -780,8 +775,8 @@ export const MINIMAP_TITLE_PX = 22;
 // speed instead (the mockup's "slower sweep").
 export const DAMAGE_BAR_SWEEP_MS = 1300;
 export const DAMAGE_BAR_SLOW_SWEEP_MS = 2600;
-// A text form shows its strike tell (limbs reaching out, swelling) when it
-// is this many steps from the player or nearer: one more step brings it
+// A stick enemy shows its strike tell (easing into its tell pose; with
+// Simple enemies, 'e' becomes 'E') when it is this many steps from the player or nearer: one more step brings it
 // next to them. Straight steps (rows + columns), like shootBlock's range.
 export const FORM_TELL_STEPS = 2;
 // The stick enemies' light (stickforms.js): the player's glow in a cold blue,
