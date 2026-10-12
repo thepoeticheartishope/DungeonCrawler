@@ -43,6 +43,7 @@ export const TEXT = {
   'term.minion.tellSymbol': 'E', // Simple enemies: the strike tell, one step from being next to the player
   'term.hunter': 'OBSESSION', // draft
   'term.hunter.symbol': 'Ø', // draft
+  'term.hunter.simpleSymbol': 'E', // Simple enemies: the hunter is a still big E (Timothy, 2026-10-12)
   'term.chest': 'TRAPPED THOUGHT',
   'term.chest.symbol': '[]',
   'term.hp': 'STABILITY',
@@ -299,6 +300,7 @@ export const TEXT = {
   'target.box': 'Target: {@term.box}',
 
   // ---- Room (map) screen ----
+  'room.sensed.simple': 'Enemy close.', // draft. "I see you." with Simple enemies on (Timothy: it falls under the filter)
   'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft

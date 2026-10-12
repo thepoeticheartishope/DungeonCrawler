@@ -30,7 +30,7 @@
 //      of the page (it's remembered).
 //   5. Simple enemies run: the start screen's Simple enemies on, then the
 //      gun run's walk until a reload and a kill; every minion's glyph is
-//      'e' (or 'E', its tell), and the option is still checked after a
+//      'e' (or 'E', its tell), the hunter's 'E', and the option is still checked after a
 //      reload of the page (it's remembered).
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
@@ -543,9 +543,9 @@ async function checkSimpleEnemies(page, url) {
   const glyphs = await page.evaluate(async () => {
     const { state } = await import('./js/state.js');
     const { glyphOf } = await import('./js/mapview.js');
-    return state.floor.minions.filter(m => m.kind === 'minion').map(glyphOf);
+    return state.floor.minions.map(m => [m.kind, glyphOf(m)]);
   });
-  const odd = glyphs.filter(g => g !== 'e' && g !== 'E');
+  const odd = glyphs.filter(([kind, g]) => kind === 'hunter' ? g !== 'E' : g !== 'e' && g !== 'E');
   if (odd.length) return `minion glyphs ${JSON.stringify(odd)} with Simple enemies on`;
 
   await page.goto(url, { waitUntil: 'load' });

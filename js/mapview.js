@@ -113,8 +113,10 @@ export function initMapView(canvasEl) {
 // line in text.js (so a room's AREAS overrides can change it). The battle
 // screen shows the same.
 // With Simple enemies on, a minion is a still 'e', and an 'E' as its
-// strike tell, within FORM_TELL_STEPS of the player (as a form's tell).
+// strike tell, within FORM_TELL_STEPS of the player (as a form's tell);
+// the hunter is a still 'E', drawn bigger.
 export function glyphOf(thing) {
+  if (thing.kind === 'hunter' && state.settings.simpleEnemies) return t('term.hunter.simpleSymbol');
   if (thing.kind === 'minion' && state.settings.simpleEnemies) {
     const steps = Math.abs(thing.row - state.floor.playerRow) + Math.abs(thing.col - state.floor.playerCol);
     return t(steps <= FORM_TELL_STEPS ? 'term.minion.tellSymbol' : 'term.minion.simpleSymbol');
@@ -410,8 +412,9 @@ function mapThings() {
   f.minions.forEach(m => {
     if (!isLit(m.row, m.col)) return;
     const hunter = m.kind === 'hunter';
-    // Simple enemies: a still white letter, like a key's k, with no warp or dropout.
-    if (!hunter && state.settings.simpleEnemies) {
+    // Simple enemies: a still white letter, like a key's k, with no warp,
+    // dropout or glow (the hunter's E is bigger, from its glyph size).
+    if (state.settings.simpleEnemies) {
       add(m.kind, shownAt(m, m.row, m.col), glyphOrUnknown(m, glyphOf(m)), { size: m.kind, colour: colours.bright }, m);
       return;
     }
