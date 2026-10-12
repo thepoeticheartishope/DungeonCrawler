@@ -18,7 +18,7 @@ import {
 import { canMakeOut, FACING_VECTORS } from './sight.js';
 import { t } from './text.js';
 import { drawIsoScene, showShot, isoTileAt } from './isoview.js';
-import { hurtForm, loseLimb, killForm } from './textforms.js';
+import { hurtStick, loseStickLimb, killStick } from './stickforms.js';
 import { setTileArtColour } from './tileart.js';
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
@@ -176,23 +176,23 @@ export function shotOnMap(target, missed) {
   setTimeout(requestMapDraw, MAP_ANIMATION_MS.gunMiss);
 }
 
-// A minion's text form (textforms.js) reacts to a landed shot: a soft
+// A minion's stick man (stickforms.js) reacts to a landed shot: a soft
 // brightening and one small push.
 export function hurtOnMap(minion) {
-  hurtForm(minion);
+  hurtStick(minion);
   requestMapDraw();
 }
 
-// A minion's text form lets the limb it just lost drift off and fade.
+// A minion's stick man loses the limb it just lost: its bones are gone.
 export function limbOffOnMap(minion) {
-  loseLimb(minion);
+  loseStickLimb(minion);
   requestMapDraw();
 }
 
-// A killed minion's text form floats apart where it stood (gone at once
-// under reduced motion, or with Simple enemies on).
+// A killed minion's stick man fades where it stood (gone at once under
+// reduced motion, or with Simple enemies on).
 export function deathOnMap(minion) {
-  killForm(minion, reducedMotion.matches || state.settings.simpleEnemies);
+  killStick(minion, reducedMotion.matches || state.settings.simpleEnemies);
   requestMapDraw();
 }
 

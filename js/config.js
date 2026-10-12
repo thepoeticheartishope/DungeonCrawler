@@ -759,6 +759,10 @@ export const MAP_ANIMATION_MS = {
   formHit: 500,      // a hurt form's soft brightening and one small push
   formLimb: 1400,    // a limb shot off drifting away and fading
   formDeath: 1800,   // a killed form's letters floating apart
+  stickTell: 900,    // a stick enemy eases into its tell pose, or back out (stickforms.js)
+  stickTurn: 700,    // a stick enemy turns to face the player when they pass to its other side
+  stickHit: 500,     // a hurt stick enemy's soft brightening and one small push
+  stickDeath: 1800,  // a killed stick enemy's lines fading
 };
 // The minimap (minimapview.js): a tile is at most MINIMAP_MAX_UNIT CSS px
 // from its centre to its side point, and the plan keeps MINIMAP_PAD px
@@ -780,6 +784,10 @@ export const DAMAGE_BAR_SLOW_SWEEP_MS = 2600;
 // is this many steps from the player or nearer: one more step brings it
 // next to them. Straight steps (rows + columns), like shootBlock's range.
 export const FORM_TELL_STEPS = 2;
+// The stick enemies' light (stickforms.js): the player's glow in a cold blue,
+// a little off from theirs. halo = the glow round a line, core = the line
+// itself (and step C's tendril letters), as 'r, g, b'.
+export const ENEMY_LIGHT = { halo: '112, 150, 255', core: '200, 216, 255' };
 
 // On-screen d-pad (js/dpad.js): holding an arrow walks like holding an
 // arrow key. The first step lands on the press; after DPAD_HOLD_DELAY_MS the

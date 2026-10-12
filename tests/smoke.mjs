@@ -20,7 +20,8 @@
 //   3. Gun run (the default combat), walks toward the nearest minion, bumping an
 //      energy cell to reload and pressing F (SELECT) to fire (Auto-win answers
 //      the reload and stops the damage bar on the weak point) until a
-//      reload gave energy and a shot killed a minion.
+//      reload gave energy and a shot killed a minion. Then DEV -> Look
+//      forces each stick enemy pose in turn (stickforms.js), drawing each.
 //   4. Real-time run: Real time on (start screen), gun combat (the default),
 //      Auto-win off. With the DEV panel open the clock holds still; closed,
 //      the world takes turns with no input; the player's own steps don't
@@ -421,6 +422,18 @@ async function attemptGun(page, url, simpleEnemies = false) {
   return false;
 }
 
+// Clicks DEV -> Look through every pose and back to random, letting the
+// map draw each one. Returns how many looks it went through.
+async function cycleLooks(page) {
+  if (!await page.isVisible('#devPanel.show')) await page.click('#devToggleBtn');
+  const poses = await page.evaluate(async () => (await import('./js/stickforms.js')).STICK_POSE_IDS.length);
+  for (let i = 0; i <= poses; i++) {
+    await page.click('#devLookBtn');
+    await page.waitForTimeout(150);
+  }
+  return poses + 1;
+}
+
 async function runGun(browser, url) {
   const context = await browser.newContext({ serviceWorkers: 'block' });
   const page = await context.newPage();
@@ -431,6 +444,7 @@ async function runGun(browser, url) {
   for (let attempt = 0; attempt <= MAX_RESTARTS && !done; attempt++) {
     done = await attemptGun(page, url);
   }
+  const looks = done ? await cycleLooks(page) : 0;
 
   await context.close();
 
@@ -445,7 +459,7 @@ async function runGun(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'a reload loaded and a shot killed a minion on the map', consoleErrors, pageErrors };
+  return { ok: true, detail: `a reload loaded and a shot killed a minion on the map; DEV -> Look drew ${looks} looks`, consoleErrors, pageErrors };
 }
 
 // ---- Run 4: real time ----
