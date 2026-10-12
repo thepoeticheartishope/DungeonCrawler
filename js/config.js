@@ -312,7 +312,15 @@ export const GOAL_SWIFT_SHARE = 0.5;
 export const PLAYER_NAME_MAX_LENGTH = 20;
 export const ROOM_COUNT = 3;
 
-export const BOSS_HP = 3;       // hits needed to defeat the boss
+// The gate (locked core plan, step B; gate.js): the boss is the gate. By
+// keys held (0, 1, 2, all CORE_KEYS), the right answers it asks
+// (GATE_QUESTIONS) and the modifiers on each (GATE_MODIFIERS; two come as
+// one of HUNTER_MODIFIER_PAIRS). With every key it falls with none. A wrong
+// answer gives the light GATE_WRONG_TURNS (like a relay's) and seals the
+// gate until another key is taken. Timothy's numbers, 2026-10-12.
+export const GATE_QUESTIONS = [3, 2, 1, 0];
+export const GATE_MODIFIERS = [2, 1, 0, 0];
+export const GATE_WRONG_TURNS = 4;
 // The kinds of minion (gun combat plan, step 1). Each minion is one of
 // these (`minionKind`); the floor recipe can name which (floors.js
 // `minionKinds`). Until the gun arrives a fight still settles in one

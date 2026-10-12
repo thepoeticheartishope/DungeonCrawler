@@ -6,10 +6,9 @@
 // the wording. No DOM access here.
 
 import { state } from './state.js';
-import { BOSS_HP, DARK_MISS_COST, MINIGAME_TIER_PAY } from './config.js';
+import { DARK_MISS_COST, MINIGAME_TIER_PAY } from './config.js';
 import { recordHauntAnswer } from './haunts.js';
-import { extinguishLight } from './light.js';
-import { computeVisibility } from './sight.js';
+import { sealGate, breakGate } from './gate.js';
 import { repelHunter } from './combat.js';
 import { goldReward, openBox } from './moves.js';
 
@@ -18,8 +17,8 @@ import { goldReward, openBox } from './moves.js';
 // is the player's answer, echoed back as answerGiven.
 //
 // One answer settles a minion, the chest or a box,
-// right or wrong: it's cleared or spent. Only a boss fight goes on past an
-// answer, until its HP runs out. A miss costs 1 heart (DARK_MISS_COST in
+// right or wrong: it's cleared or spent. Only the boss (the gate) goes on
+// past a right answer, until its HP runs out; a wrong one seals it. A miss costs 1 heart (DARK_MISS_COST in
 // the darkness); at 0 hearts the events end with signalLost.
 // `tier` is a minigame's tier for a right answer ('1', '2' or 'X',
 // MINIGAME_TIER_PAY); a plain question is '2'. X takes more off a boss
@@ -67,25 +66,18 @@ function settleWager(isCorrect) {
   return { type: 'wagerSettled', won: isCorrect, n };
 }
 
-// Boss fights are the one encounter that outlasts an answer: a correct one
-// takes the tier's `bossDamage` HP off the boss (1 for a plain answer;
-// bossHit), a miss doesn't (bossHeld), and either way the caller goes back
-// to the category choice until the boss is cleared (bossDefeated, then
-// darknessFell).
+// The boss is the gate (gate.js), the one encounter that outlasts an
+// answer: a correct one takes the tier's `bossDamage` HP off it (1 for a
+// plain answer; bossHit) and the caller asks the next, until it falls
+// (gate.js breakGate: bossDefeated, then darknessFell). A miss ends the
+// fight: the gate seals until the next key and the light gains turns
+// (bossHeld, then gate.js sealGate's gateSealed).
 function resolveBossAnswer(isCorrect, pay) {
-  if (!isCorrect) return [{ type: 'bossHeld' }];
-  state.floor.boss.hp = Math.max(0, state.floor.boss.hp - pay.bossDamage);
-  if (state.floor.boss.hp > 0) return [{ type: 'bossHit', hp: state.floor.boss.hp, max: BOSS_HP }];
   const boss = state.floor.boss;
-  state.floor.boss = null; // clears the doorway it was blocking
-  // Its light dies with it, and the floor goes dark: explored tiles are
-  // forgotten, the minions left start hunting, misses cost more and gold
-  // pays more (DARK_* in config.js).
-  extinguishLight();
-  state.floor.darkness = true;
-  state.floor.exploredSet = new Set();
-  computeVisibility();
-  return [{ type: 'bossDefeated', boss }, { type: 'darknessFell' }];
+  if (!isCorrect) return [{ type: 'bossHeld' }, sealGate()];
+  boss.hp = Math.max(0, boss.hp - pay.bossDamage);
+  if (boss.hp > 0) return [{ type: 'bossHit', hp: boss.hp, max: boss.max }];
+  return breakGate();
 }
 
 // Everything but the boss is settled by a single answer. Success pays out

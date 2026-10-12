@@ -14,7 +14,7 @@ import { state, key } from '../js/state.js';
 import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE,
   LIGHT_TURNS_PER_STEP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, DARK_GOLD_MULTIPLIER,
-  MAX_HEARTS, DARK_MISS_COST, BOSS_HP, MINION_KINDS, MINION_TRAIL_LENGTH,
+  MAX_HEARTS, DARK_MISS_COST, GATE_QUESTIONS, GATE_MODIFIERS, GATE_WRONG_TURNS, CORE_KEYS, MINION_KINDS, MINION_TRAIL_LENGTH,
 } from '../js/config.js';
 import { computeVisibility, canMakeOut, shootBlock, canShoot } from '../js/sight.js';
 import {
@@ -25,6 +25,8 @@ import { advanceMonsters, spawnMinion, refreshTargetValidity } from '../js/comba
 import { stepPlayer, goldReward } from '../js/moves.js';
 import { settleAnswer } from '../js/answers.js';
 import { resetHaunts } from '../js/haunts.js';
+import { reachGate, openGateFree } from '../js/gate.js';
+import { rollCategoryModifiers } from '../js/modifiers.js';
 
 // An open size x size floor, player in the middle facing north, fog on,
 // nothing else on it. Classic combat (the gun is the game's default since
@@ -54,6 +56,7 @@ function resetFloor(size = 21) {
   state.floor.coin = null;
   state.floor.keys = [];
   state.floor.keysHeld = 0;
+  state.floor.gateSealed = false;
   state.floor.stairs = null;
   state.run.coinsTotal = 0;
   state.run.loreQueue = [];
@@ -520,10 +523,10 @@ test('stepping on a key takes it and counts it among the floor\'s', () => {
   const [r, c] = [state.floor.playerRow, state.floor.playerCol];
   state.floor.keys = [{ row: r - 1, col: c }, { row: r - 2, col: c }, { row: r + 5, col: c }];
   const first = stepPlayer(-1, 0).find(e => e.type === 'keyTaken');
-  assert.deepEqual(first, { type: 'keyTaken', held: 1, total: 3 });
+  assert.deepEqual(first, { type: 'keyTaken', held: 1, total: 3, unsealed: false });
   assert.equal(state.floor.keys.length, 2);
   const second = stepPlayer(-1, 0).find(e => e.type === 'keyTaken');
-  assert.deepEqual(second, { type: 'keyTaken', held: 2, total: 3 });
+  assert.deepEqual(second, { type: 'keyTaken', held: 2, total: 3, unsealed: false });
   assert.equal(whatBlocks(r + 5, c), null, 'a key never blocks');
 });
 
@@ -602,16 +605,80 @@ test('a right answer adds to the run\'s correct total, a miss does not', () => {
   assert.equal(state.run.correctTotal, 5);
 });
 
+// --- gate.js: the boss is the gate ---
+
+// The boss one step north of the player, the light set up, `keys` held.
+function resetGate(keys) {
+  resetFloor();
+  resetHaunts();
+  state.run.hearts = MAX_HEARTS;
+  state.battle.wager = 0;
+  state.battle.currentQuestion = { term: 'Who built the ark?', meaning: 'Noah', difficulty: 'easy' };
+  state.floor.boss = { row: state.floor.playerRow - 1, col: state.floor.playerCol, kind: 'boss', hp: 3, max: 3 };
+  state.floor.keysHeld = keys;
+  initBossLight();
+}
+
+test('bumping the gate asks GATE_QUESTIONS by keys held; standing beside it does nothing', () => {
+  for (let keys = 0; keys < GATE_QUESTIONS.length; keys++) {
+    resetGate(keys);
+    refreshTargetValidity();
+    assert.equal(state.battle.selectedTarget, null, 'beside the gate is not a fight');
+    const reached = stepPlayer(-1, 0).find(e => e.type === 'gateReached');
+    assert.deepEqual(reached, { type: 'gateReached', questions: GATE_QUESTIONS[keys] });
+    assert.equal(state.battle.selectedTarget, state.floor.boss);
+    assert.equal(state.floor.boss.max, GATE_QUESTIONS[keys]);
+  }
+  assert.equal(GATE_QUESTIONS[CORE_KEYS], 0, 'every key opens it free');
+});
+
+test('the gate\'s questions carry GATE_MODIFIERS modifiers each, by keys held', () => {
+  for (let keys = 0; keys < GATE_MODIFIERS.length; keys++) {
+    resetGate(keys);
+    rollCategoryModifiers(state.floor.boss, 3).forEach(mods => {
+      assert.equal([].concat(mods || []).length, GATE_MODIFIERS[keys], `${keys} keys`);
+    });
+  }
+});
+
+test('a wrong answer at the gate feeds the light and seals it until the next key', () => {
+  resetGate(1);
+  stepPlayer(-1, 0);
+  const before = state.floor.lightTurns;
+  const events = settleAnswer(false, false, 'Moses');
+  assert.deepEqual(types(events), ['answerGiven', 'rejected', 'bossHeld', 'gateSealed']);
+  assert.equal(state.floor.lightTurns, before + GATE_WRONG_TURNS);
+  assert.equal(state.floor.gateSealed, true);
+  assert.ok(state.floor.boss, 'the boss stays in the doorway');
+  // Sealed: a bump is only a bump.
+  state.battle.selectedTarget = null;
+  assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['blocked']);
+  assert.equal(state.battle.selectedTarget, null);
+  // The next key unseals it, at the easier level.
+  state.floor.keys = [{ row: state.floor.playerRow + 1, col: state.floor.playerCol }];
+  const taken = stepPlayer(1, 0).find(e => e.type === 'keyTaken');
+  assert.equal(taken.unsealed, true);
+  assert.equal(state.floor.gateSealed, false);
+  stepPlayer(-1, 0);
+  assert.equal(stepPlayer(-1, 0).find(e => e.type === 'gateReached').questions, GATE_QUESTIONS[2]);
+});
+
+test('with every key the gate gives: the boss falls and the floor goes dark', () => {
+  resetGate(CORE_KEYS);
+  assert.deepEqual(types(openGateFree()), ['gateOpened', 'bossDefeated', 'darknessFell']);
+  assert.equal(state.floor.boss, null);
+  assert.equal(state.floor.darkness, true);
+});
+
 test('boss hits count down, and the last one fires bossDefeated then darknessFell', () => {
-  const boss = { row: 0, col: 0, kind: 'boss', hp: 2 };
+  const boss = { row: 0, col: 0, kind: 'boss', hp: 2, max: 2 };
   resetAnswer(boss);
   state.floor.boss = boss;
-  assert.deepEqual(types(settleAnswer(false, false, 'Moses')), ['answerGiven', 'rejected', 'bossHeld']);
-  resetHaunts(); // so the next right answer isn't also a silenced haunt
+  state.floor.gateSealed = false;
   const hit = settleAnswer(true, false, 'Noah');
   assert.deepEqual(types(hit), ['answerGiven', 'accepted', 'bossHit']);
   assert.equal(hit[2].hp, 1);
-  assert.equal(hit[2].max, BOSS_HP);
+  assert.equal(hit[2].max, 2);
   assert.deepEqual(types(settleAnswer(true, false, 'Noah')),
     ['answerGiven', 'accepted', 'bossDefeated', 'darknessFell']);
   assert.equal(state.floor.boss, null);

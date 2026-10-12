@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import { state } from '../js/state.js';
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS, ENERGY_MAX, RELOAD_ENERGY,
-  BOSS_HP, MINIGAME_TIER_PAY, HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
+  GATE_QUESTIONS, MINIGAME_TIER_PAY, HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
   SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM, CODE_BREAK_TIERS, VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS,
 } from '../js/config.js';
 import {
@@ -380,9 +380,9 @@ test('a reload pays one less energy at tier 1 (at least 1) and one more at X, bu
 
 test('X takes two HP off the boss; a plain answer one', () => {
   reset();
-  // More HP than BOSS_HP, so neither answer clears it.
-  const hp = BOSS_HP + 2;
-  state.floor.boss = { row: 1, col: 1, hp, kind: 'boss' };
+  // More HP than the gate's most, so neither answer clears it.
+  const hp = GATE_QUESTIONS[0] + 2;
+  state.floor.boss = { row: 1, col: 1, hp, max: hp, kind: 'boss' };
   state.battle.selectedTarget = state.floor.boss;
   const events = settleAnswer(true, false, '40', 'X');
   assert.equal(state.floor.boss.hp, hp - MINIGAME_TIER_PAY.X.bossDamage);

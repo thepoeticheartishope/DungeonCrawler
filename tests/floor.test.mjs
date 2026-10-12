@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  BOSS_HP, CORE_KEYS, MINION_KINDS, MINION_KIND_ORDER, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP, PAPERS_PER_ROOM, ENERGY_CELLS_MIN,
+  GATE_QUESTIONS, CORE_KEYS, MINION_KINDS, MINION_KIND_ORDER, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP, PAPERS_PER_ROOM, ENERGY_CELLS_MIN,
 } from '../js/config.js';
 import { buildFloor } from '../js/floor.js';
 import { BEAT_KINDS } from '../js/beats.js';
@@ -50,7 +50,8 @@ test('player starts on PLAYER_START facing north; boss has full HP', () => {
     assert.equal(f.playerRow, f.PLAYER_START.row);
     assert.equal(f.playerCol, f.PLAYER_START.col);
     assert.equal(f.facing, 'N');
-    assert.equal(f.boss.hp, BOSS_HP);
+    assert.equal(f.boss.hp, GATE_QUESTIONS[0]);
+    assert.equal(f.gateSealed, false);
     assert.ok(f.stairs);
   });
 });

@@ -20,7 +20,8 @@ export function isAdjacentToPlayer(entity) {
 // pulls the player into a question.
 export function findAdjacentEnemies() {
   const result = [];
-  if (state.floor.boss && isAdjacentToPlayer(state.floor.boss)) result.push(state.floor.boss);
+  // The boss is the gate (gate.js): only a bump opens it (moves.js), so
+  // walking past it never starts a fight the player didn't choose.
   if (!state.settings.gunCombat) {
     for (const m of state.floor.minions) {
       if (isAdjacentToPlayer(m)) result.push(m);
