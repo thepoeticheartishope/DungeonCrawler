@@ -642,6 +642,18 @@ export const CROSSWIRE_MAX_LETTERS = 8;
 export const CROSSWIRE_TIERS = ['X', '2', '1'];
 // Crosswire's Timer is for the whole grid; time up checks what is typed.
 export const CROSSWIRE_TIMER_SECONDS = 60;
+// Fog Reveal: a picture question's image under fog, FOG_REVEAL_SIDE
+// tiles a side. FOG_REVEAL_CLEAR tiles lift every FOG_REVEAL_STEP_MS (a
+// slow clock, held while Gambler locks it); pick from the options any
+// time. Tiles still covered set the tier: at least FOG_REVEAL_X_COVERED
+// = X, at least FOG_REVEAL_2_COVERED = 2, fewer = 1. No Timer (waiting
+// is the game) and no Blind (the question is only "Which tool is
+// shown?"; the picture is the question).
+export const FOG_REVEAL_SIDE = 4;
+export const FOG_REVEAL_CLEAR = 2;
+export const FOG_REVEAL_STEP_MS = 2000;
+export const FOG_REVEAL_X_COVERED = 12;
+export const FOG_REVEAL_2_COVERED = 6;
 
 // A rest floor (dungeon.js buildRestLayout) is one room centred on a
 // REST_GRID x REST_GRID grid; the rest is solid wall around the room.

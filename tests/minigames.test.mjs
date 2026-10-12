@@ -5,7 +5,7 @@
 // Syllable Split's splitter, fit, tray and tiers, Letter Pool's roll,
 // tray, checks, tiers and no haunts, Code Break's fit, marks and tiers,
 // Verdict's fit, claims, tiers and haunts, Crosswire's fit, grid and
-// tiers, and what a
+// tiers, Fog Reveal's fit and tiers, and what a
 // tier pays in the settle rules (gun.js, answers.js).
 //
 // Run: node --test tests/*.test.mjs
@@ -24,7 +24,7 @@ import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   splitSyllables, syllableSplitPieces, syllableSplitTray, syllableSplitTier,
   letterPoolSetup, letterPoolCheck, letterPoolTier, codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier,
-  verdictSetup, verdictTier, verdictClaimCount, crosswireSetup, crosswireTier,
+  verdictSetup, verdictTier, verdictClaimCount, crosswireSetup, crosswireTier, fogRevealTier,
 } from '../js/minigames.js';
 import { recordHauntAnswer } from '../js/haunts.js';
 import { settleReload } from '../js/gun.js';
@@ -520,6 +520,7 @@ test('Crosswire fits a one-word answer of 4-8 letters that crosses another, past
   assert.ok(!fits({ term: 'Who?', meaning: 'Methuselah', answerType: 'name' }), 'too long');
   assert.ok(!fits({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }), 'two words');
   assert.ok(!fits({ term: 'Did Moses lead them?', meaning: 'Moses', answerType: 'name' }), 'the question holds it');
+  assert.ok(!fits({ ...VERDICT_SET[1], image: 'images/moses.svg' }), 'a clue shows no picture');
   state.settings.activeData = [VERDICT_SET[0], { term: 'Who?', meaning: 'Noah', answerType: 'name' }];
   assert.ok(!fits(VERDICT_SET[0]), 'the same answer twice is no crossing');
   state.settings.activeData = [{ term: 'Who?', meaning: 'Abel', answerType: 'name' }, { term: 'Who?', meaning: 'Amos', answerType: 'name' }];
@@ -548,4 +549,22 @@ test('Crosswire tiers: both words with 0 / 1 / 2+ reveals = X / 2 / 1, one word 
   assert.equal(crosswireTier(true, false, 0), '1');
   assert.equal(crosswireTier(false, true, 0), '1');
   assert.equal(crosswireTier(false, false, 0), null);
+});
+
+test('Fog Reveal fits picture questions only, and takes no Timer or Blind', () => {
+  reset();
+  const PICTURE = { term: 'Which tool is shown?', meaning: 'Crimper', answerType: 'tool', image: 'images/crimper.svg' };
+  assert.ok(minigamesFor(PICTURE).includes('fogReveal'));
+  assert.ok(!minigamesFor({ ...PICTURE, image: undefined }).includes('fogReveal'));
+  assert.ok(!minigamesFor({ ...PICTURE, image: '  ' }).includes('fogReveal'));
+  assert.deepEqual(MINIGAME_MODIFIERS.fogReveal, ['flip', 'gambler']);
+});
+
+test('Fog Reveal tiers: 12+ tiles covered = X, 6+ = 2, fewer = 1', () => {
+  assert.equal(fogRevealTier(16), 'X');
+  assert.equal(fogRevealTier(12), 'X');
+  assert.equal(fogRevealTier(11), '2');
+  assert.equal(fogRevealTier(6), '2');
+  assert.equal(fogRevealTier(5), '1');
+  assert.equal(fogRevealTier(0), '1');
 });

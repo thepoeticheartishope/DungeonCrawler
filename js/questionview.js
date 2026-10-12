@@ -12,7 +12,7 @@ import { TIMER_SECONDS } from './config.js';
 import { rollFlip, maxWager, blindReadMs } from './modifiers.js';
 import { escapeHtml, buildChoices, resolveImageSrc } from './quiz.js';
 import { t } from './text.js';
-import { showMinigame, hideMinigame, applyMinigameModifier, lockMinigame, minigameSeconds, minigameTimeUp, minigameAsks } from './minigameview.js';
+import { showMinigame, hideMinigame, applyMinigameModifier, lockMinigame, minigameSeconds, minigameTimeUp, minigameAsks, minigameDrawsImage } from './minigameview.js';
 
 const queryPanel = document.getElementById('queryPanel');
 const enemyName = document.getElementById('enemyName');
@@ -234,7 +234,7 @@ export function setMinigame(id) {
   state.battle.minigame = id || null;
   queryPanel.classList.toggle('minigame-on', Boolean(id));
   if (!id) {
-    queryPanel.classList.remove('minigame-asks');
+    queryPanel.classList.remove('minigame-asks', 'minigame-image');
     hideMinigame();
     return;
   }
@@ -244,6 +244,8 @@ export function setMinigame(id) {
   showMinigame(id, result => handlers.onResult(result), restartCountdown);
   // A minigame that shows its own questions (Verdict) hides this one.
   queryPanel.classList.toggle('minigame-asks', minigameAsks());
+  // One that draws the question's picture itself (Fog Reveal) hides this one.
+  queryPanel.classList.toggle('minigame-image', minigameDrawsImage());
 }
 
 // Types the question now showing again. A question is often set well

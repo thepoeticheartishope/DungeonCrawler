@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- the cable: jacket on the left, bare twisted pairs on the right -->
+  <path d="M6 56 H70 M6 72 H70" />
+  <path d="M130 58 C140 50 150 66 160 58 S180 66 194 58 M130 64 C140 72 150 56 160 64 S180 56 194 64 M130 68 C140 60 150 76 160 68 S180 76 194 68 M130 72 C140 80 150 66 160 72 S180 66 194 72" stroke-width="2" />
+  <!-- the stripper round it: a rounded body with a finger ring -->
+  <rect x="62" y="34" width="76" height="60" rx="28" />
+  <circle cx="100" cy="112" r="12" />
+  <path d="M100 94 V100" />
+  <!-- its blade, scoring the jacket -->
+  <path d="M94 40 L100 54 L106 40 Z" stroke-width="2" />
+  <path d="M70 64 H130" stroke-dasharray="4 4" stroke-width="2" />
+</svg>

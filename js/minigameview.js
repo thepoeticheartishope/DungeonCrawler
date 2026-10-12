@@ -13,16 +13,16 @@ import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
   LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS, VERDICT_TIMER_SECONDS,
-  CROSSWIRE_TIMER_SECONDS,
+  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   syllableSplitTray, syllableSplitTier, letterPoolCheck, letterPoolTier,
   codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier, verdictSetup, verdictTier,
-  crosswireSetup, crosswireTier,
+  crosswireSetup, crosswireTier, fogRevealTier,
 } from './minigames.js';
-import { blindReadMs } from './modifiers.js';
-import { normalizeSpaces } from './quiz.js';
+import { blindReadMs, rollFlip } from './modifiers.js';
+import { normalizeSpaces, buildChoices, resolveImageSrc, shuffle } from './quiz.js';
 import { t } from './text.js';
 
 const slot = document.getElementById('minigameSlot');
@@ -36,12 +36,15 @@ let shown = null;
 let claimTimer = null;
 // Slow Spell's clock, filling in its letters.
 let letterClock = null;
+// Fog Reveal's clock, lifting its fog.
+let fogClock = null;
 
 // Builders, one per minigame: each fills `slot` and returns the parts the
 // shared code needs: `lock` (its answer button), `finish()` (DEV ->
 // Auto-win: plays it out perfectly), `flip()` (its version of Flip), and
 // if it differs, `asks` (it shows its own questions, so the panel's is
-// hidden and Blind is its own: `blind()`), `seconds` (the Timer's clock) and `timeUp()` (the Timer ran out: score
+// hidden and Blind is its own: `blind()`), `drawsImage` (it shows the
+// question's picture itself, so the panel's is hidden), `seconds` (the Timer's clock) and `timeUp()` (the Timer ran out: score
 // what was done, instead of a miss).
 const BUILDERS = {
   closeEnough: buildCloseEnough,
@@ -52,6 +55,7 @@ const BUILDERS = {
   codeBreak: buildCodeBreak,
   verdict: buildVerdict,
   crosswire: buildCrosswire,
+  fogReveal: buildFogReveal,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -72,6 +76,8 @@ export function hideMinigame() {
   claimTimer = null;
   clearInterval(letterClock);
   letterClock = null;
+  clearInterval(fogClock);
+  fogClock = null;
   shown = null;
   slot.hidden = true;
   slot.innerHTML = '';
@@ -90,6 +96,12 @@ export function applyMinigameModifier(modifier) {
 // question panel hides its own and leaves Blind to it.
 export function minigameAsks() {
   return Boolean(shown && shown.asks);
+}
+
+// Whether the minigame showing draws the question's picture itself (Fog
+// Reveal), so the question panel hides its own.
+export function minigameDrawsImage() {
+  return Boolean(shown && shown.drawsImage);
 }
 
 // The Timer's seconds for the minigame showing, or null for the usual.
@@ -921,6 +933,80 @@ function buildCrosswire() {
       settle();
     },
     blind: () => { claimTimer = setTimeout(hideClues, blindReadMs(across.q.term + ' ' + down.q.term)); },
+  };
+}
+
+// ---- Fog Reveal: name the picture before the fog lifts ----
+// The question's picture under a grid of fog tiles; FOG_REVEAL_CLEAR of
+// them lift every FOG_REVEAL_STEP_MS (the clock waits while Gambler locks
+// the options), each fading slowly. The options (buildChoices, as a plain
+// question has; tap, or 1-4 / A-D) answer any time: the tiles still
+// covered set the tier (fogRevealTier), and the rest of the fog lifts.
+// Gambler locks the options (a fieldset). Flip turns some options upside
+// down or mirrored, as on a plain question.
+function buildFogReveal() {
+  slot.classList.add('mg-fog');
+  const q = state.battle.currentQuestion;
+  const total = FOG_REVEAL_SIDE * FOG_REVEAL_SIDE;
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.fogReveal.hint');
+  const box = add(slot, 'div', 'mg-fogbox');
+  const image = add(box, 'img', 'mg-fog-image');
+  const fog = add(box, 'div', 'mg-fog-tiles');
+  const count = add(slot, 'div', 'term-line mg-left');
+  const lock = add(slot, 'fieldset', 'mg-fog-opts');
+
+  image.src = resolveImageSrc(q.image);
+  image.alt = '';
+  fog.style.gridTemplateColumns = 'repeat(' + FOG_REVEAL_SIDE + ', 1fr)';
+  const tiles = Array.from({ length: total }, () => add(fog, 'span'));
+  const letters = ['A', 'B', 'C', 'D'];
+  const options = buildChoices(q);
+  const buttons = options.map((opt, i) => {
+    const btn = add(lock, 'button', 'mc-option');
+    btn.type = 'button';
+    add(btn, 'span', 'letter').textContent = letters[i];
+    add(btn, 'span', 'opt-text').textContent = opt;
+    btn.addEventListener('click', () => choose(opt));
+    return btn;
+  });
+
+  const covered = () => tiles.filter(tile => !tile.classList.contains('mg-gone')).length;
+  const showCount = () => { count.textContent = t('mg.fogReveal.covered', { n: covered(), total }); };
+  const lift = () => {
+    if (lock.disabled) return;
+    shuffle(tiles.filter(tile => !tile.classList.contains('mg-gone'))).slice(0, FOG_REVEAL_CLEAR).forEach(tile => tile.classList.add('mg-gone'));
+    showCount();
+    if (!covered()) clearInterval(fogClock);
+  };
+  const choose = (opt) => {
+    if (shown.done) return;
+    clearInterval(fogClock);
+    const right = normalizeSpaces(opt).toLowerCase() === normalizeSpaces(q.meaning).toLowerCase();
+    const tier = right ? fogRevealTier(covered()) : null;
+    tiles.forEach(tile => tile.classList.add('mg-gone'));
+    finish({ right, tier, given: opt });
+  };
+  // 1-4 / A-D pick an option, as on a plain question. On the options,
+  // not the slot: the slot outlives this minigame.
+  lock.addEventListener('keydown', (e) => {
+    const at = '1234'.indexOf(e.key) >= 0 ? '1234'.indexOf(e.key) : 'abcd'.indexOf(e.key.toLowerCase());
+    if (at < 0 || !options[at] || e.key.length !== 1) return;
+    e.preventDefault();
+    e.stopPropagation();
+    choose(options[at]);
+  });
+  fogClock = setInterval(lift, FOG_REVEAL_STEP_MS);
+  showCount();
+
+  return {
+    lock,
+    drawsImage: true,
+    focus: () => buttons[0].focus(),
+    finish: () => choose(q.meaning),
+    flip: () => {
+      const { slots, mode } = rollFlip(buttons.length);
+      buttons.forEach((btn, i) => { if (slots.has(i)) btn.querySelector('.opt-text').classList.add('flip-' + mode); });
+    },
   };
 }
 

@@ -20,7 +20,7 @@ import {
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
-  CROSSWIRE_MIN_LETTERS, CROSSWIRE_MAX_LETTERS, CROSSWIRE_TIERS,
+  CROSSWIRE_MIN_LETTERS, CROSSWIRE_MAX_LETTERS, CROSSWIRE_TIERS, FOG_REVEAL_X_COVERED, FOG_REVEAL_2_COVERED,
   LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS,
 } from './config.js';
 import { numberQuestion, pickQuestion, shuffle, normalizeSpaces } from './quiz.js';
@@ -41,6 +41,9 @@ export const MINIGAME_MODIFIERS = {
   verdict: ['blind', 'flip', 'timer', 'gambler'],
   // No Flip: no fair version for a typed grid.
   crosswire: ['blind', 'timer', 'gambler'],
+  // No Timer (waiting is the game) and no Blind (the picture is the
+  // question).
+  fogReveal: ['flip', 'gambler'],
 };
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
@@ -60,6 +63,7 @@ const FITS = {
   codeBreak: q => codeBreakCode(q) !== null && !answerInStem(q),
   verdict: q => verdictFits(q) && verdictIndex().fitting.length >= VERDICT_BOSS_CLAIMS,
   crosswire: q => crosswirePartners(q).length > 0,
+  fogReveal: q => Boolean(String(q.image || '').trim()),
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -569,8 +573,10 @@ export function verdictTier(wrong, count) {
 // ---- Crosswire: two answers cross on a shared letter ----
 
 // Question `q`'s answer as Crosswire letters (one word of letters only,
-// in capitals), or null when it can't be a word in the grid.
+// in capitals), or null when it can't be a word in the grid. A picture
+// question can't: its clue would show without its picture.
 function crosswireWord(q) {
+  if (q.image) return null;
   const answer = String(q.meaning || '').trim();
   if (!/^\p{L}+$/u.test(answer)) return null;
   const word = [...answer.toUpperCase()];
@@ -630,4 +636,14 @@ export function crosswireSetup(q) {
 export function crosswireTier(acrossRight, downRight, reveals) {
   if (acrossRight && downRight) return CROSSWIRE_TIERS[Math.min(reveals, CROSSWIRE_TIERS.length - 1)];
   return acrossRight || downRight ? '1' : null;
+}
+
+// ---- Fog Reveal: name a picture as the fog lifts off it ----
+
+// The tier for an answer given with `covered` tiles still over the
+// picture: FOG_REVEAL_X_COVERED or more = 'X', FOG_REVEAL_2_COVERED or
+// more = '2', fewer '1'. A wrong pick is a miss however early.
+export function fogRevealTier(covered) {
+  if (covered >= FOG_REVEAL_X_COVERED) return 'X';
+  return covered >= FOG_REVEAL_2_COVERED ? '2' : '1';
 }

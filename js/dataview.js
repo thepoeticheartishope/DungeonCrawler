@@ -44,8 +44,15 @@ function typeOf(entry) {
   return entry.answerType || '';
 }
 
+// Where an entry's comment is kept: its question text, plus its picture
+// for a picture question, since those share a text ("Which tool is
+// shown?").
+function commentKey(entry) {
+  return entry.image ? entry.term + ' [' + entry.image + ']' : entry.term;
+}
+
 function commentFor(entry) {
-  return comments[entry.term] || '';
+  return comments[commentKey(entry)] || '';
 }
 
 export function initDataView({ backScreen }) {
@@ -181,8 +188,8 @@ function renderRows() {
     box.addEventListener('input', () => {
       autoGrow(box);
       const text = box.value.trim();
-      if (text) comments[entry.term] = box.value;
-      else delete comments[entry.term];
+      if (text) comments[commentKey(entry)] = box.value;
+      else delete comments[commentKey(entry)];
       row.classList.toggle('has-comment', Boolean(text));
       writeComments();
       renderSummary();
@@ -281,7 +288,7 @@ function buildExport() {
     const tags = [typeOf(entry) || t('data.untyped')];
     if (entry.draft) tags.push('draft');
     if (entry.fact === false) tags.push('not fact');
-    lines.push('#' + (i + 1) + ' [' + tags.join(', ') + '] ' + entry.term);
+    lines.push('#' + (i + 1) + ' [' + tags.join(', ') + '] ' + commentKey(entry));
     lines.push('  ' + t('data.exportAnswer', { answer: entry.meaning }));
     comment.split('\n').forEach((line, n) => {
       lines.push('  ' + (n === 0 ? t('data.exportComment', { comment: line }) : line));

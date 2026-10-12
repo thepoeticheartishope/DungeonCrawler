@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- an RJ45 plug: eight contacts on its face, the latch on top -->
+  <path d="M34 50 H104 V90 H34 Z" />
+  <path d="M40 54 V66 M47 54 V66 M54 54 V66 M61 54 V66 M68 54 V66 M75 54 V66 M82 54 V66 M89 54 V66" stroke-width="2" />
+  <path d="M46 50 L58 36 H90 L84 50" />
+  <!-- its short boot, and the wire that loops straight back in -->
+  <path d="M104 56 H130 V84 H104" />
+  <path d="M130 64 C186 38 186 112 130 78" />
+  <path d="M130 70 C176 50 176 100 130 72" stroke-width="2" />
+</svg>

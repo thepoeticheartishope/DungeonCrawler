@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- a screen: signal strength over 2.4 GHz channels -->
+  <rect x="12" y="8" width="176" height="114" rx="6" />
+  <path d="M34 22 V102 H178" stroke-width="2" />
+  <text x="16" y="30" font-family="monospace" font-size="8" fill="#D8D8D8" stroke="none">dBm</text>
+  <!-- one bell per access point, on channels 1, 6 and 11 -->
+  <path d="M38 102 C46 102 50 36 62 36 C74 36 78 102 86 102" />
+  <path d="M84 102 C92 102 96 58 108 58 C120 58 124 102 132 102" />
+  <path d="M126 102 C134 102 138 76 150 76 C162 76 166 102 174 102" />
+  <path d="M90 102 C98 102 102 84 112 84 C122 84 126 102 134 102" stroke-dasharray="4 3" stroke-width="2" />
+  <text x="59" y="114" font-family="monospace" font-size="9" fill="#D8D8D8" stroke="none">1</text>
+  <text x="105" y="114" font-family="monospace" font-size="9" fill="#D8D8D8" stroke="none">6</text>
+  <text x="144" y="114" font-family="monospace" font-size="9" fill="#D8D8D8" stroke="none">11</text>
+</svg>

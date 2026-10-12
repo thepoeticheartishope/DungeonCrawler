@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- head with the two crimp dies (8P, 6P) and the cutting blade -->
+  <path d="M18 30 H92 L106 46 L92 62 H18 Z" />
+  <rect x="28" y="38" width="18" height="16" />
+  <path d="M28 44 H46" stroke-width="1.5" />
+  <rect x="54" y="40" width="14" height="12" />
+  <path d="M76 36 V56" />
+  <text x="31" y="73" font-family="monospace" font-size="9" fill="#D8D8D8" stroke="none">8P</text>
+  <text x="54" y="73" font-family="monospace" font-size="9" fill="#D8D8D8" stroke="none">6P</text>
+  <circle cx="106" cy="46" r="6" />
+  <!-- two handles with grips, a spring between them -->
+  <path d="M110 40 L184 14 L190 26 L114 50" />
+  <path d="M112 52 L190 92 L183 104 L108 58" />
+  <path d="M130 44 L136 50 L130 56 L136 62" stroke-width="2" />
+  <path d="M150 30 L156 42 M162 26 L168 38 M150 82 L157 72 M162 88 L169 78" stroke-width="2" />
+</svg>

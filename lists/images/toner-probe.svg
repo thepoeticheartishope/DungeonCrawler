@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- tone generator: a box with a switch and two clip leads -->
+  <rect x="16" y="22" width="58" height="64" rx="6" />
+  <rect x="30" y="34" width="30" height="12" rx="2" />
+  <circle cx="45" cy="64" r="6" />
+  <path d="M32 86 C30 100 26 106 22 114 M58 86 C60 100 64 106 68 114" stroke-width="2" />
+  <path d="M16 114 L28 114 L26 124 L18 124 Z M62 114 L74 114 L72 124 L64 124 Z" stroke-width="2" />
+  <!-- probe: a long wand with a pointed tip, a grille and a button -->
+  <path d="M112 118 L124 124 L178 34 L184 18 L172 30 L118 112 Z" />
+  <path d="M136 98 L144 102 M140 91 L148 95 M144 84 L152 88" stroke-width="2" />
+  <circle cx="160" cy="62" r="4" />
+  <!-- the tone it hears -->
+  <path d="M188 30 C194 24 194 16 190 10 M194 36 C202 26 202 12 196 4" stroke-width="2" />
+</svg>

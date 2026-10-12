@@ -318,5 +318,68 @@
     "difficulty": "medium",
     "source": "220-1201 2.5 · Lesson 5C",
     "answerType": "number"
+  },
+  {
+    "term": "Which tool is shown?",
+    "meaning": "Crimper",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.8 · Lesson 5C",
+    "answerType": "tool",
+    "image": "images/crimper.svg"
+  },
+  {
+    "term": "Which tool is shown?",
+    "meaning": "Punchdown tool",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.8 · Lesson 5C",
+    "answerType": "tool",
+    "image": "images/punchdown-tool.svg"
+  },
+  {
+    "term": "Which tool is shown?",
+    "meaning": "Toner probe",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.8 · Lesson 5C",
+    "answerType": "tool",
+    "image": "images/toner-probe.svg"
+  },
+  {
+    "term": "Which tool is shown?",
+    "meaning": "Loopback plug",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.8 · Lesson 5C",
+    "answerType": "tool",
+    "image": "images/loopback-plug.svg"
+  },
+  {
+    "term": "Which tool is shown?",
+    "meaning": "Cable tester",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.8 · Lesson 5C",
+    "answerType": "tool",
+    "image": "images/cable-tester.svg"
+  },
+  {
+    "term": "Which tool is shown?",
+    "meaning": "Cable stripper",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.8 · Lesson 5C",
+    "answerType": "tool",
+    "image": "images/cable-stripper.svg"
+  },
+  {
+    "term": "Which tool is shown?",
+    "meaning": "Wi-Fi analyzer",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.8 · Lesson 5D",
+    "answerType": "tool",
+    "image": "images/wifi-analyzer.svg"
   }
 ]
