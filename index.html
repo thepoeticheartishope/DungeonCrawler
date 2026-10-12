@@ -1250,6 +1250,17 @@
   .mg-cell.mg-cell-shown { color: var(--muted); }
   .mg-cell.mg-cell-good { background: var(--torch-bright); color: var(--ink); }
   .mg-cell.mg-cell-bad { border-style: dashed; color: var(--muted); }
+  /* Fog Reveal: the picture under a grid of fog tiles that fade away
+     slowly (at once under reduced motion); the panel's own picture is
+     hidden. Its options look like a plain question's. */
+  #queryPanel.minigame-image #queryImage { display: none; }
+  .mg-fogbox { position: relative; display: inline-block; width: min(280px, 100%); margin: 6px auto; border: 1px solid var(--line); background: var(--stone-dark); }
+  .mg-fog-image { display: block; width: 100%; padding: 8px; filter: grayscale(100%) contrast(1.1); }
+  .mg-fog-tiles { position: absolute; inset: 0; display: grid; }
+  .mg-fog-tiles span { background: var(--stone-light); border: 1px solid var(--stone); transition: opacity 1.6s ease; }
+  .mg-fog-tiles span.mg-gone { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { .mg-fog-tiles span { transition: none; } }
+  .mg-fog-opts { border: none; padding: 0; margin: 6px 0 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; text-align: left; }
   /* Timer: the countdown line; bright for the last few seconds. */
   .mod-timer[hidden] { display: none; }
   .mod-timer.urgent { color: var(--torch-bright); text-shadow: var(--glow-strong); }

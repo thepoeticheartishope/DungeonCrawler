@@ -3,7 +3,7 @@
     "id": "comptia-aplus",
     "subject": "comptia-aplus",
     "name": "CompTIA A+ Networking",
-    "description": "40 short-answer questions from A+ Core 1 (220-1201) Networking: ports, protocols, devices, tools, network types and DNS records.",
+    "description": "47 short-answer questions from A+ Core 1 (220-1201) Networking: ports, protocols, devices, tools, network types and DNS records, with 7 picture questions on network tools.",
     "file": "comptia-aplus.json"
   },
   {

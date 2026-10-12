@@ -258,6 +258,13 @@ export const TEXT = {
   'mg.crosswire.scored.2': '{name|upper}: both words, one reveal.', // draft
   'mg.crosswire.scored.1': '{name|upper}: {given}.', // draft
   'mg.crosswire.scored.miss': '{name|upper}: neither word. It was {answer}.', // draft
+  'mg.fogReveal': 'Fog Reveal', // draft
+  'mg.fogReveal.hint': 'The fog lifts slowly. Name it early for a bigger hit.', // draft
+  'mg.fogReveal.covered': 'Covered: {n} of {total}', // draft
+  'mg.fogReveal.scored.X': '{name|upper}: named it in the fog.', // draft
+  'mg.fogReveal.scored.2': '{name|upper}: named it half seen.', // draft
+  'mg.fogReveal.scored.1': '{name|upper}: named it late.', // draft
+  'mg.fogReveal.scored.miss': '{name|upper}: wrong. It was {answer}.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
   'battle.blindQuestion': '????', // draft

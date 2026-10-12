@@ -37,7 +37,12 @@ for set_info in manifest:
             err(f'unknown answerType {e.get("answerType")!r}')
         if 'difficulty' in e and e['difficulty'] not in DIFFICULTIES:
             err(f'unknown difficulty {e["difficulty"]!r}')
-        key = str(e.get('term', '')).strip().lower()
+        image = e.get('image')
+        if image and not re.match(r'^(https?:|data:)', image) and not os.path.isfile(os.path.join(ROOT, 'lists', image)):
+            err(f'image not found: lists/{image}')
+        # A picture question is told apart by its picture ("Which tool is
+        # shown?" with a different image each time).
+        key = (str(e.get('term', '')).strip().lower(), e.get('image') or '')
         if key in seen:
             err(f'same question text as #{seen[key]}')
         seen[key] = i + 1

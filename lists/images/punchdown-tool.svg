@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- the tool: a grip, the impact barrel, and a thin blade with a hook -->
+  <rect x="22" y="34" width="104" height="30" rx="13" />
+  <path d="M44 38 V60 M54 38 V60 M64 38 V60" stroke-width="2" />
+  <rect x="126" y="40" width="16" height="18" />
+  <path d="M142 45 H180 L188 49 L180 53 H142" />
+  <path d="M176 45 V53" stroke-width="2" />
+  <!-- an IDC block below it: a strip of slotted teeth -->
+  <rect x="20" y="92" width="168" height="18" />
+  <path d="M30 92 V104 M42 92 V104 M54 92 V104 M66 92 V104 M78 92 V104 M90 92 V104 M102 92 V104 M114 92 V104 M126 92 V104 M138 92 V104 M150 92 V104 M162 92 V104 M174 92 V104" stroke-width="2" />
+  <path d="M184 72 V86" stroke-dasharray="3 4" stroke-width="2" />
+</svg>
