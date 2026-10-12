@@ -13,8 +13,8 @@
 //      last rest being the epilogue), so it takes 7 skips; the cap is 10.
 //   2. Battle run: DEV -> Combat back to classic (the gun is the default),
 //      skips out of the opening rest (it has no minions), then
-//      walks with the arrow keys and "Skip turn" until a minion
-//      engages and the battle screen appears, then lets Auto-win settle the
+//      walks with the arrow keys and "Skip turn" to the boss (beside
+//      the start) until it or a minion engages and the battle screen appears, then lets Auto-win settle the
 //      fight, asserting an ACCEPTED. line appeared in the encounter log and
 //      the game is back on the room screen afterward (classic combat).
 //   3. Gun run (the default combat), wanders as run 2 does, bumping an
@@ -189,9 +189,40 @@ async function installBattleWatchers(page) {
 const BATTLE_MAX_STEPS = 450;
 const ARROW_KEYS = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'];
 
-// One attempt: load a fresh run, turn on Auto-win, and wander (arrow keys,
-// falling back to "Skip turn" when blocked) until a fight is seen through
-// to settlement, or the step budget runs out.
+// Which arrow (an ARROW_KEYS index) is the first step of the shortest
+// walk to the boss, or null with no boss or no way there. The boss's core
+// is beside the start (locked core plan), so walking to it is the sure
+// way into a fight; wandering the bigger floors can run out of light
+// first. Reads the game's own state and whatBlocks() in the page.
+async function stepTowardBoss(page) {
+  return page.evaluate(async () => {
+    const { state, key } = await import('/js/state.js');
+    const { whatBlocks } = await import('/js/passage.js');
+    const f = state.floor;
+    if (!f.boss) return null;
+    const dirs = [[-1, 0], [0, 1], [1, 0], [0, -1]]; // ARROW_KEYS order: up, right, down, left
+    const first = new Map([[key(f.playerRow, f.playerCol), null]]);
+    const queue = [{ row: f.playerRow, col: f.playerCol }];
+    while (queue.length) {
+      const cur = queue.shift();
+      for (let d = 0; d < dirs.length; d++) {
+        const next = { row: cur.row + dirs[d][0], col: cur.col + dirs[d][1] };
+        const k = key(next.row, next.col);
+        if (first.has(k)) continue;
+        const step = first.get(key(cur.row, cur.col)) ?? d;
+        if (next.row === f.boss.row && next.col === f.boss.col) return step;
+        if (whatBlocks(next.row, next.col)) continue;
+        first.set(k, step);
+        queue.push(next);
+      }
+    }
+    return null;
+  });
+}
+
+// One attempt: load a fresh run, turn on Auto-win, and walk to the boss
+// (or wander: arrow keys, falling back to "Skip turn" when blocked) until
+// a fight is seen through to settlement, or the step budget runs out.
 async function attemptBattle(page, url) {
   await loadPageAndSet(page, url);
   await installBattleWatchers(page);
@@ -231,7 +262,8 @@ async function attemptBattle(page, url) {
       () => document.getElementById('roomFeedback').innerHTML.includes('block-msg')
     );
     if (blocked) dir = (dir + 1) % ARROW_KEYS.length;
-    await page.keyboard.press(ARROW_KEYS[dir]);
+    const toBoss = await stepTowardBoss(page);
+    await page.keyboard.press(ARROW_KEYS[toBoss ?? dir]);
     // Every so often, also use Skip turn (dpad center button), which lets
     // minions close in without the player having to path directly to one.
     // The arrow press just above can itself trigger an engage (the battle
