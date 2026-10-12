@@ -3,14 +3,15 @@
 // It shows as little as it can: the tiles the player has seen (walls
 // brighter than floor) and a dot for the player. No minions, items or
 // stairs, so it helps the player find their way without playing the floor
-// for them. Drawn as a diamond like the map, so north is up and to the
+// for them. On a fixed plan it also names the building and each room the
+// player has walked into, so the floor can be learned run after run. Drawn as a diamond like the map, so north is up and to the
 // right, as on the d-pad, and scaled to fit, but never bigger than
 // MINIMAP_MAX_UNIT, so a few seen tiles don't fill the screen. Opening it costs no turn. main.js calls
 // refreshMinimap() whenever the map is drawn. Reads state only.
 
 import { state, key } from './state.js';
 import { t } from './text.js';
-import { MINIMAP_MAX_UNIT, MINIMAP_PAD } from './config.js';
+import { MINIMAP_MAX_UNIT, MINIMAP_PAD, MINIMAP_LABEL_PX, MINIMAP_TITLE_PX } from './config.js';
 
 const els = {};
 // The page's colours, read once from the CSS variables.
@@ -101,11 +102,56 @@ export function refreshMinimap() {
     ctx.fillStyle = isSolid(tile) ? colours.wall : colours.floor;
     ctx.fill();
   }
+  // Names first, so the player's dot is never hidden under one.
+  drawNames(ctx, tile => ({ x: left + across(tile) * unit, y: top + down(tile) * unit }));
   const player = { row: f.playerRow, col: f.playerCol };
   ctx.beginPath();
   ctx.arc(left + across(player) * unit, top + down(player) * unit, Math.max(3, unit * 0.45), 0, Math.PI * 2);
   ctx.fillStyle = colours.player;
   ctx.fill();
+}
+
+// On a fixed plan: the building's name in the corner, and each room's
+// name over its middle once the player has walked in (every room with
+// DEV -> Fog off). Each name sits on a dark band so the floor under it
+// doesn't make it hard to read. `at` turns a tile into canvas px.
+function drawNames(ctx, at) {
+  const f = state.floor;
+  if (!f.plan) return;
+  ctx.textBaseline = 'middle';
+  ctx.font = MINIMAP_TITLE_PX + 'px ' + colours.font;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = colours.label;
+  ctx.fillText(t(f.plan.name), MINIMAP_PAD, MINIMAP_PAD + MINIMAP_TITLE_PX / 2);
+
+  ctx.font = MINIMAP_LABEL_PX + 'px ' + colours.font;
+  ctx.textAlign = 'center';
+  roomMiddles().forEach((middle, room) => {
+    if (state.settings.fogEnabled && !f.visitedChambers.has(room)) return;
+    const name = t(f.chamberNames[room]);
+    const { x, y } = at(middle);
+    const w = ctx.measureText(name).width + 8;
+    ctx.fillStyle = colours.band;
+    ctx.fillRect(x - w / 2, y - MINIMAP_LABEL_PX * 0.6, w, MINIMAP_LABEL_PX * 1.2);
+    ctx.fillStyle = colours.label;
+    ctx.fillText(name, x, y);
+  });
+}
+
+// The middle of each named room, as a (fractional) tile: the average of
+// its tiles. A Map from the room's index to { row, col }.
+function roomMiddles() {
+  const f = state.floor;
+  const sums = new Map();
+  f.chamberAt.forEach((room, k) => {
+    if (!f.chamberNames[room]) return;
+    const [row, col] = k.split(',').map(Number);
+    const s = sums.get(room) || { row: 0, col: 0, n: 0 };
+    sums.set(room, { row: s.row + row, col: s.col + col, n: s.n + 1 });
+  });
+  const middles = new Map();
+  sums.forEach((s, room) => middles.set(room, { row: s.row / s.n, col: s.col / s.n }));
+  return middles;
 }
 
 // The tiles the minimap shows, as { row, col }: every tile the player has
@@ -142,8 +188,8 @@ function besideOpen({ row, col }) {
   return false;
 }
 
-// Floor, wall and player colours from the page's CSS variables, so the
-// minimap matches the phosphor screen.
+// Floor, wall, player and name colours and the font from the page's CSS
+// variables, so the minimap matches the phosphor screen.
 function readColours() {
   const css = getComputedStyle(document.documentElement);
   const glow = css.getPropertyValue('--glow-rgb').trim();
@@ -151,6 +197,9 @@ function readColours() {
     floor: 'rgba(' + glow + ', 0.3)',
     wall: 'rgba(' + glow + ', 0.6)',
     player: css.getPropertyValue('--torch-bright').trim(),
+    label: css.getPropertyValue('--torch-bright').trim(),
+    band: 'rgba(0, 0, 0, 0.7)',
+    font: css.getPropertyValue('--font').trim(),
   };
 }
 

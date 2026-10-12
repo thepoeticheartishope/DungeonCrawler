@@ -62,6 +62,7 @@ function resetFloor(size = 21) {
   state.run.loreQueue = [];
   state.floor.chamberAt = new Map();
   state.floor.chamberThemes = [];
+  state.floor.chamberNames = [];
   state.floor.visitedChambers = new Set();
   state.battle.selectedTarget = null;
   state.run.turnCount = 0;
@@ -539,7 +540,18 @@ test('the first step into a room fires roomEntered once', () => {
   const first = stepPlayer(-1, 0);
   assert.deepEqual(first.map(e => e.type), ['stepped', 'roomEntered']);
   assert.equal(first[1].theme, 'crypt');
+  assert.equal(first[1].name, null, 'a random floor\'s room has no name');
   assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['stepped']);
+});
+
+test('on a fixed plan, roomEntered carries the room\'s name', () => {
+  resetFloor();
+  const [r, c] = [state.floor.playerRow, state.floor.playerCol];
+  state.floor.chamberAt.set(key(r - 1, c), 0);
+  state.floor.chamberThemes = ['crypt'];
+  state.floor.chamberNames = ['plan.school.library'];
+  const entered = stepPlayer(-1, 0).find(e => e.type === 'roomEntered');
+  assert.equal(entered.name, 'plan.school.library');
 });
 
 test('papers give the story in order, then their own roll', () => {

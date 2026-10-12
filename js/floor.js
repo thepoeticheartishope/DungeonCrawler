@@ -151,6 +151,7 @@ export function buildFloor() {
   state.floor.chamberAt = layout.chamberAt;
   state.floor.doorSet = doorTiles(layout);
   state.floor.chamberThemes = furnishing.themes;
+  state.floor.chamberNames = plan ? layout.chambers.map(ch => ch.name) : [];
   state.floor.visitedChambers = new Set();
   furnishing.props.forEach(p => {
     state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
@@ -353,6 +354,7 @@ export function buildRestFloor(kind) {
   f.chamberAt = layout.chamberAt;
   f.doorSet = doorTiles(layout);
   f.chamberThemes = [theme];
+  f.chamberNames = [];
   f.visitedChambers = new Set([0]);
   // Papers lie flat, so they need no placer: nobody is blocked by them.
   f.props = layout.chambers[0].slots.map(s => ({

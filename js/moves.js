@@ -51,7 +51,7 @@ function takeKey(index) {
 // blocked { kind, thing }, stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
 // keyTaken { held, total, unsealed }, gateReached { questions } (bumped the
 // boss; main.js opens the battle screen), blocked { kind: 'gate' } (it's sealed),
-// paperRead { paper, loot, story? }, roomEntered { theme }, exchangeOpened
+// paperRead { paper, loot, story? }, roomEntered { theme, name }, exchangeOpened
 // (bumped THE UNFOLDING; main.js opens its screen), itemReached { thing }
 // (bumped the chest; main.js opens the battle screen) and
 // the box events from examineProp. A turn is spent only by `stepped` or `propSearched`.
@@ -115,11 +115,11 @@ export function stepPlayer(dRow, dCol) {
   const paper = state.floor.props.find(p => p.kind === 'paper' && !p.searched &&
     p.row === state.floor.playerRow && p.col === state.floor.playerCol);
   if (paper) events.push(readPaper(paper));
-  // First step into a room: its theme line.
+  // First step into a room: its name on a fixed plan, else its theme line.
   const chamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
   if (chamber !== undefined && !state.floor.visitedChambers.has(chamber)) {
     state.floor.visitedChambers.add(chamber);
-    events.push({ type: 'roomEntered', theme: state.floor.chamberThemes[chamber] });
+    events.push({ type: 'roomEntered', theme: state.floor.chamberThemes[chamber], name: state.floor.chamberNames[chamber] || null });
   }
   return events;
 }

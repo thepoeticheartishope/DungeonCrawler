@@ -765,6 +765,11 @@ export const MAP_ANIMATION_MS = {
 // from the map's edge.
 export const MINIMAP_MAX_UNIT = 9;
 export const MINIMAP_PAD = 12;
+// On a fixed plan (plans.js) the minimap names the rooms the player has
+// walked into, in MINIMAP_LABEL_PX text, and the building in
+// MINIMAP_TITLE_PX text in its top-left corner. CSS px.
+export const MINIMAP_LABEL_PX = 15;
+export const MINIMAP_TITLE_PX = 22;
 // The damage bar (gunpanels.js): ms for its marker to sweep from one end
 // to the other (then it comes back). Under reduced motion the marker
 // still has to move, since its timing is the shot, so it sweeps at half

@@ -758,9 +758,13 @@ function drawFloor() {
   renderCombatStatus();
   clearLog();
   roomFeedback.innerHTML = '';
-  // The room the player wakes in announces itself like any other.
+  // The room the player wakes in announces itself like any other; on a
+  // fixed plan, after the building's name.
   const startChamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
-  if (startChamber !== undefined) {
+  const startName = state.floor.chamberNames[startChamber];
+  if (startName) {
+    showRoomNote('move-msg', t('room.enter.plan', { floor: t(state.floor.plan.name), name: t(startName) }));
+  } else if (startChamber !== undefined) {
     showRoomNote('move-msg', t('theme.' + state.floor.chamberThemes[startChamber] + '.enter'));
   }
   if (state.floor.stairsAlt) showRoomNote('move-msg', t('room.stairs.two'));
@@ -1006,7 +1010,9 @@ function drawEvents(events) {
         else parts.push(t('room.paper.junk'));
         break;
       case 'roomEntered':
-        parts.push(t('theme.' + e.theme + '.enter'));
+        // On a fixed plan the room's own name says where you are; a random
+        // theme line ("A crypt.") would argue with it.
+        parts.push(e.name ? t('room.enter.named', { name: t(e.name) }) : t('theme.' + e.theme + '.enter'));
         break;
       case 'boxOpened':
         parts.push(e.gold ? t('room.box.gold', { gold: e.gold }) : t('room.box.junk'));
