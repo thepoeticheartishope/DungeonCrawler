@@ -103,7 +103,10 @@ export const state = {
     bossLitSet: new Set(), // tiles the boss light currently reaches
     lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
     coin: null,            // { row, col } or null once collected
-    beats: [],             // [{ kind, row, col, at }] the recipe's beats and where they landed, `at` = step of the walk to the boss (beats.js)
+    keys: [],              // the floor's keys still lying where dungeon.js put them: [{ row, col }] (CORE_KEYS on a depth, none on a rest)
+    keysHeld: 0,           // keys the player has taken on this floor
+    keyRoute: 0,           // steps of the shortest walk from the start through every key to the boss (light.js); the light's budget is this plus slack
+    beats: [],             // [{ kind, row, col, at }] the recipe's beats and where they landed, `at` = step of the walk out to the farthest key (beats.js)
     stairs: null,          // { row, col } — sits inside the boss chamber, past the boss
     chest: null,           // { row, col, el, kind: 'chest' } or null once opened/trapped
     exchange: null,        // THE UNFOLDING on a rest floor: { row, col, kind: 'exchange' }, or null on a depth

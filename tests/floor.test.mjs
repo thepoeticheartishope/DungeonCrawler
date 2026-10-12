@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  BOSS_HP, MINION_KINDS, MINION_KIND_ORDER, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP, PAPERS_PER_ROOM, ENERGY_CELLS_MIN,
+  BOSS_HP, CORE_KEYS, MINION_KINDS, MINION_KIND_ORDER, MC_SAMPLE_DATA, LIGHT_TURNS_PER_STEP, PAPERS_PER_ROOM, ENERGY_CELLS_MIN,
 } from '../js/config.js';
 import { buildFloor } from '../js/floor.js';
 import { BEAT_KINDS } from '../js/beats.js';
@@ -189,7 +189,7 @@ function beatThere(f, beat) {
   return specials(f).some(on);
 }
 
-test('beats land in rooms along the walk to the boss, in the recipe\'s order', () => {
+test('beats land in rooms along the walk out to the farthest key, in the recipe\'s order', () => {
   let wanted = 0;
   let placed = 0;
   eachFloor((f, roomIndex) => {
@@ -215,7 +215,7 @@ test('beats land in rooms along the walk to the boss, in the recipe\'s order', (
 test('the light leaves each floor the slack its recipe asks for', () => {
   eachFloor((f, roomIndex) => {
     const [min, max] = FLOOR_RECIPES[roomIndex].slack;
-    const walk = f.bossDist.get(key(f.PLAYER_START.row, f.PLAYER_START.col));
+    const walk = f.keyRoute;
     assert.equal(f.lightSlack, f.lightTurnBudget - walk);
     // The budget rounds up to whole light steps, so slack can run a few turns over.
     assert.ok(f.lightSlack >= min && f.lightSlack < max + LIGHT_TURNS_PER_STEP,
@@ -236,6 +236,68 @@ test('a recipe without slack falls back to its loss share', () => {
     recipe.slack = saved;
     delete recipe.lossCoverage;
   }
+});
+
+// Walking steps (walls only, like the light) from `from` to every tile.
+function stepsOver(f, from) {
+  const dist = new Map([[key(from.row, from.col), 0]]);
+  const queue = [from];
+  while (queue.length) {
+    const cur = queue.shift();
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dr, dc]) => {
+      const next = { row: cur.row + dr, col: cur.col + dc };
+      const k = key(next.row, next.col);
+      if (next.row < 0 || next.col < 0 || next.row >= f.GRID_SIZE || next.col >= f.GRID_SIZE) return;
+      if (dist.has(k) || f.wallSet.has(k)) return;
+      dist.set(k, dist.get(key(cur.row, cur.col)) + 1);
+      queue.push(next);
+    });
+  }
+  return dist;
+}
+
+test('every depth hides CORE_KEYS keys, each in its own room, never the start room or the core', () => {
+  eachFloor(f => {
+    assert.equal(f.keys.length, CORE_KEYS);
+    assert.equal(f.keysHeld, 0);
+    const startRoom = f.chamberAt.get(key(f.PLAYER_START.row, f.PLAYER_START.col));
+    const coreRoom = f.chamberAt.get(key(f.stairs.row, f.stairs.col));
+    const rooms = f.keys.map(p => f.chamberAt.get(key(p.row, p.col)));
+    rooms.forEach(r => {
+      assert.notEqual(r, undefined, 'key in a hallway');
+      assert.notEqual(r, startRoom, 'key in the start room');
+      assert.notEqual(r, coreRoom, 'key in the core');
+    });
+    assert.equal(new Set(rooms).size, CORE_KEYS, 'two keys share a room');
+    // Nothing solid or collectable sits on a key.
+    f.keys.forEach(p => {
+      const k = key(p.row, p.col);
+      assert.ok(!f.pillarSet.has(k) && !f.props.some(q => key(q.row, q.col) === k), 'something on a key');
+      assert.ok(!(f.coin && key(f.coin.row, f.coin.col) === k) && !(f.chest && key(f.chest.row, f.chest.col) === k));
+      assert.ok(!f.minions.some(m => key(m.row, m.col) === k), 'minion on a key');
+    });
+  });
+});
+
+test('the core is beside the start: its door is nearer than any key', () => {
+  eachFloor(f => {
+    const fromStart = stepsOver(f, f.PLAYER_START);
+    const toDoor = fromStart.get(key(f.boss.row, f.boss.col));
+    f.keys.forEach(p => assert.ok(fromStart.get(key(p.row, p.col)) > toDoor, 'a key nearer than the boss'));
+  });
+});
+
+test('the light\'s walk goes from the start through every key to the boss', () => {
+  eachFloor(f => {
+    const fromStart = stepsOver(f, f.PLAYER_START);
+    // No route through every key is shorter than out to one key and back to the boss.
+    f.keys.forEach(p => {
+      const there = fromStart.get(key(p.row, p.col));
+      const back = f.bossDist.get(key(p.row, p.col));
+      assert.ok(f.keyRoute >= there + back, `route ${f.keyRoute} shorter than one key's trip ${there + back}`);
+    });
+    assert.ok(f.keyRoute > f.bossDist.get(key(f.PLAYER_START.row, f.PLAYER_START.col)));
+  });
 });
 
 test('every floor built counts as a new floor, even the same depth again', () => {

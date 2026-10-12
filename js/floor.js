@@ -8,7 +8,7 @@ import { state, key } from './state.js';
 import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
 import {
-  BOSS_HP, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
+  BOSS_HP, CORE_KEYS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
 } from './config.js';
 import { floorRecipe, pickPaths, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './quiz.js';
@@ -126,7 +126,7 @@ export function buildFloor() {
   state.floor.lastChoiceType = null;
 
   const layout = generateDungeonLayout(state.floor.GRID_SIZE, state.floor.CHAMBER_TARGET, recipe.loops,
-    { startRoom: recipe.startRoom, bossRoom: recipe.bossRoom });
+    { startRoom: recipe.startRoom, bossRoom: recipe.bossRoom }, CORE_KEYS);
   state.floor.wallSet = layout.walls;
   state.floor.PLAYER_START = { row: layout.start.row, col: layout.start.col };
 
@@ -151,6 +151,10 @@ export function buildFloor() {
   // are unreachable until it's defeated and state.floor.boss is nulled.
   state.floor.stairs = { row: layout.stairs.row, col: layout.stairs.col };
 
+  // The keys, each in its own room (dungeon.js picks which).
+  state.floor.keys = layout.keys.map(p => ({ row: p.row, col: p.col }));
+  state.floor.keysHeld = 0;
+
   // Coin and the room's one special item only ever land in an actual room
   // tile, never a hallway — a hallway is one tile wide, so an object
   // sitting in one would force answering it (with a wrong-answer trap, for
@@ -160,7 +164,7 @@ export function buildFloor() {
   // furniture (never in a doorway, never cutting the floor in two).
   const roomTiles = layout.roomTiles;
   const placer = furnishing.placer;
-  const fixedTiles = [state.floor.PLAYER_START, { row: state.floor.boss.row, col: state.floor.boss.col }, state.floor.stairs];
+  const fixedTiles = [state.floor.PLAYER_START, { row: state.floor.boss.row, col: state.floor.boss.col }, state.floor.stairs, ...state.floor.keys];
 
   // The recipe's beats go down first, along the walk to the boss, so the
   // random coin can't take their spots (beats.js).
@@ -244,6 +248,9 @@ function clearDanger() {
   f.chest = null;
   f.lastChoiceType = null;
   f.beats = [];
+  f.keys = [];
+  f.keysHeld = 0;
+  f.keyRoute = 0;
   f.bossLitSet = new Set();
   f.bossDist = new Map();
   f.floorCount = 0;

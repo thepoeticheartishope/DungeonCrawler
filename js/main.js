@@ -114,6 +114,8 @@ initRender({
   energyCount: document.getElementById('energyCount'),
   gunTarget: document.getElementById('gunTarget'),
   clockStat: document.getElementById('clockStat'),
+  keysStat: document.getElementById('keysStat'),
+  keysText: document.getElementById('keysText'),
   goalsStat: document.getElementById('goalsStat'),
   goalsText: document.getElementById('goalsText'),
   goalNames: document.getElementById('goalNames'),
@@ -980,6 +982,9 @@ function drawEvents(events) {
         parts.push(t('exchange.why.' + e.reason));
         break;
       case 'hauntSilenced':
+        break;
+      case 'keyTaken':
+        parts.push(t('room.key', { held: e.held, total: e.total }));
         break;
       case 'coinTaken':
         parts.push(t('room.coin'));

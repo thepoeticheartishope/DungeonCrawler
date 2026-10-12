@@ -52,6 +52,8 @@ function resetFloor(size = 21) {
   state.floor.chest = null;
   state.floor.props = [];
   state.floor.coin = null;
+  state.floor.keys = [];
+  state.floor.keysHeld = 0;
   state.floor.stairs = null;
   state.run.coinsTotal = 0;
   state.run.loreQueue = [];
@@ -511,6 +513,18 @@ test('the coin pays goldReward(1), doubled in the darkness', () => {
     assert.equal(state.run.coinsTotal, taken.gold);
     assert.equal(state.floor.coin, null);
   }
+});
+
+test('stepping on a key takes it and counts it among the floor\'s', () => {
+  resetFloor();
+  const [r, c] = [state.floor.playerRow, state.floor.playerCol];
+  state.floor.keys = [{ row: r - 1, col: c }, { row: r - 2, col: c }, { row: r + 5, col: c }];
+  const first = stepPlayer(-1, 0).find(e => e.type === 'keyTaken');
+  assert.deepEqual(first, { type: 'keyTaken', held: 1, total: 3 });
+  assert.equal(state.floor.keys.length, 2);
+  const second = stepPlayer(-1, 0).find(e => e.type === 'keyTaken');
+  assert.deepEqual(second, { type: 'keyTaken', held: 2, total: 3 });
+  assert.equal(whatBlocks(r + 5, c), null, 'a key never blocks');
 });
 
 test('the first step into a room fires roomEntered once', () => {

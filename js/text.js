@@ -61,6 +61,8 @@ export const TEXT = {
   'term.cell': 'ENERGY CELL', // draft
   'term.relay': 'RELAY', // draft
   'term.relay.symbol': '¥', // draft. A mast with two arms
+  'term.key': 'KEY', // draft (locked core plan)
+  'term.key.symbol': 'k', // draft
   'term.cell.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
   // The player's glyph (the isometric map draws a stick man in its place).
   'term.player.symbol': '@',
@@ -73,6 +75,7 @@ export const TEXT = {
   'stat.turn': 'CYCLE', // draft
   'stat.room': '{@term.room}',
   'stat.time': 'TIME',
+  'stat.keys': '{@term.key}', // draft. HUD: keys held of the floor's
   'stat.rest': 'REST', // draft — shown for the depth number while on a rest floor
   'stat.light': 'The {@term.boss} light: {pct}% of the way to consuming everything', // draft (the eye's tooltip)
 
@@ -292,6 +295,7 @@ export const TEXT = {
   'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft
+  'room.key': '{@term.key} {held} of {total}.', // draft. A key taken (locked core plan)
   'room.engage': 'Something fires in the dark.', // draft
   'room.light.consumed': 'The light reaches everything.', // draft
   'room.blocked.wall': 'The membrane holds.', // draft
