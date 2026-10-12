@@ -265,6 +265,14 @@ export const TEXT = {
   'mg.fogReveal.scored.2': '{name|upper}: named it half seen.', // draft
   'mg.fogReveal.scored.1': '{name|upper}: named it late.', // draft
   'mg.fogReveal.scored.miss': '{name|upper}: wrong. It was {answer}.', // draft
+  'mg.sumLock': 'Sum Lock', // draft
+  'mg.sumLock.term': 'LOCKED. TWO ANSWERS, ONE CODE.', // draft. Stands in for a trapped box's question
+  'mg.sumLock.hint': 'Add the two answers. Enter the total.', // draft
+  'mg.sumLock.total': 'total', // draft. Sum Lock's answer box
+  'mg.sumLock.open': 'Open', // draft
+  'mg.sumLock.reveal': '{total} ({a} + {b})', // draft
+  'mg.sumLock.scored.X': '{name|upper}: {given}. The lock opens.', // draft
+  'mg.sumLock.scored.miss': '{name|upper}: {given} is wrong. It was {answer}.', // draft
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
   'battle.blindQuestion': '????', // draft

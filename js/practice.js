@@ -7,11 +7,11 @@
 // recorded as a haunt, and the run's "not the same minigame twice"
 // memory is left alone. Shares the one question panel (questionview.js)
 // with the battle screen and the ask screen; main.js passes in
-// letterPoolQuestion (a Letter Pool's stand-in question) and
+// letterPoolQuestion and sumLockQuestion (the stand-in questions) and
 // mountBattleQuestion (hands the panel back on the way out).
 import { state } from './state.js';
 import { BATTLE_CHOICE_COUNT, PRACTICE_TAPS, PRACTICE_TAP_MS, PRACTICE_MODIFIERS, PRACTICE_DEFAULT_SET } from './config.js';
-import { MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, letterPoolFits } from './minigames.js';
+import { MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, letterPoolFits, sumLockQuestions } from './minigames.js';
 import { mountQuestionPanel, setQuestion, setMinigame, applyModifier, clearModifier } from './questionview.js';
 import { fightGroups, pickQuestion } from './quiz.js';
 import { lastSetValue, setChoices, fetchSet } from './setpicker.js';
@@ -45,8 +45,8 @@ let fitting = new Map();
 let settled = true;
 
 // Wires the title taps and the screen's buttons.
-export function initPractice({ letterPoolQuestion, mountBattleQuestion }) {
-  actions = { letterPoolQuestion, mountBattleQuestion };
+export function initPractice({ letterPoolQuestion, sumLockQuestion, mountBattleQuestion }) {
+  actions = { letterPoolQuestion, sumLockQuestion, mountBattleQuestion };
   title.addEventListener('click', countTap);
   setSelect.addEventListener('change', () => loadSet(setSelect.value));
   playBtn.addEventListener('click', play);
@@ -143,9 +143,13 @@ function renderGames() {
 function questionsFor(id) {
   if (!fitting.has(id)) {
     const data = state.settings.activeData;
-    fitting.set(id, id === 'letterPool'
-      ? fightGroups(data, BATTLE_CHOICE_COUNT).filter(letterPoolFits)
-      : data.filter(q => minigamesFor(q).includes(id)));
+    // Letter Pool runs a category and Sum Lock two number questions, not
+    // one question each.
+    const runs = {
+      letterPool: () => fightGroups(data, BATTLE_CHOICE_COUNT).filter(letterPoolFits),
+      sumLock: () => (sumLockQuestions().length >= 2 ? sumLockQuestions() : []),
+    };
+    fitting.set(id, runs[id] ? runs[id]() : data.filter(q => minigamesFor(q).includes(id)));
   }
   return fitting.get(id);
 }
@@ -162,9 +166,11 @@ function play() {
   resultButtons.hidden = true;
   settled = false;
   mountQuestionPanel(slot, { onChoice() {}, onTyped() {}, onTimeout: () => settle(null), onResult: settle, log() {} });
-  const q = chosenGame === 'letterPool'
-    ? actions.letterPoolQuestion(pool[Math.floor(Math.random() * pool.length)])
-    : pickQuestion(state.battle.currentQuestion, pool);
+  const standIn = {
+    letterPool: () => actions.letterPoolQuestion(pool[Math.floor(Math.random() * pool.length)]),
+    sumLock: () => actions.sumLockQuestion(),
+  }[chosenGame];
+  const q = standIn ? standIn() : pickQuestion(state.battle.currentQuestion, pool);
   setQuestion(q);
   setMinigame(chosenGame);
   mods.forEach(applyModifier);

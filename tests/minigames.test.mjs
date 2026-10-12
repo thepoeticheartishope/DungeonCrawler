@@ -5,7 +5,8 @@
 // Syllable Split's splitter, fit, tray and tiers, Letter Pool's roll,
 // tray, checks, tiers and no haunts, Code Break's fit, marks and tiers,
 // Verdict's fit, claims, tiers and haunts, Crosswire's fit, grid and
-// tiers, Fog Reveal's fit and tiers, and what a
+// tiers, Fog Reveal's fit and tiers, Sum Lock's roll, lock and haunts,
+// and what a
 // tier pays in the settle rules (gun.js, answers.js).
 //
 // Run: node --test tests/*.test.mjs
@@ -24,7 +25,7 @@ import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   splitSyllables, syllableSplitPieces, syllableSplitTray, syllableSplitTier,
   letterPoolSetup, letterPoolCheck, letterPoolTier, codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier,
-  verdictSetup, verdictTier, verdictClaimCount, crosswireSetup, crosswireTier, fogRevealTier,
+  verdictSetup, verdictTier, verdictClaimCount, crosswireSetup, crosswireTier, fogRevealTier, sumLockQuestions, sumLockSetup, sumLockMatches,
 } from '../js/minigames.js';
 import { recordHauntAnswer } from '../js/haunts.js';
 import { settleReload } from '../js/gun.js';
@@ -63,8 +64,11 @@ function withRandom(value, fn) {
   try { return fn(); } finally { Math.random = real; }
 }
 
-test('every minigame supports at least two modifiers', () => {
-  for (const id of MINIGAMES) assert.ok(MINIGAME_MODIFIERS[id].length >= 2, id);
+test('every minigame supports at least two modifiers, but Sum Lock (a box carries none)', () => {
+  for (const id of MINIGAMES) {
+    if (id === 'sumLock') assert.deepEqual(MINIGAME_MODIFIERS[id], []);
+    else assert.ok(MINIGAME_MODIFIERS[id].length >= 2, id);
+  }
 });
 
 test('Close Enough fits plain number answers only', () => {
@@ -567,4 +571,53 @@ test('Fog Reveal tiers: 12+ tiles covered = X, 6+ = 2, fewer = 1', () => {
   assert.equal(fogRevealTier(6), '2');
   assert.equal(fogRevealTier(5), '1');
   assert.equal(fogRevealTier(0), '1');
+});
+
+// Number questions a Sum Lock can add, and one it can't.
+const SUMS = [
+  { term: 'How many days did it rain?', meaning: '40', answerType: 'number' },
+  { term: 'How many years was the honeymoon?', meaning: '1', answerType: 'number' },
+  { term: 'How many were sealed?', meaning: '144000', answerType: 'number' },
+  { term: 'What TCP port does SSH use?', meaning: '22', answerType: 'port' },
+  WORD,
+];
+
+test('Sum Lock adds whole answers of 1-50 only, no ports', () => {
+  reset();
+  state.settings.activeData = SUMS;
+  assert.deepEqual(sumLockQuestions(), SUMS.slice(0, 2));
+  const lock = sumLockSetup();
+  assert.notEqual(lock.first, lock.second);
+  assert.equal(lock.total, 41);
+  assert.equal(sumLockMatches(lock, ' 41 '), true);
+  assert.equal(sumLockMatches(lock, '40'), false);
+  assert.equal(sumLockMatches(lock, 'forty'), null, 'no digits, no answer yet');
+});
+
+test('a trapped box that rolls a minigame runs Sum Lock; nothing else can', () => {
+  reset();
+  state.settings.activeData = SUMS;
+  state.battle.selectedTarget = { kind: 'box', trapped: true };
+  assert.equal(withRandom(0, () => rollMinigame(WORD, [])), 'sumLock');
+  assert.equal(withRandom(0, () => rollMinigame(WORD, [])), 'slowSpell', 'not twice in a row');
+  state.battle.selectedTarget = { kind: 'chest' };
+  state.run.lastMinigame = null;
+  assert.notEqual(withRandom(0, () => rollMinigame(WORD, [])), 'sumLock');
+  state.battle.selectedTarget = { kind: 'box', trapped: true };
+  state.settings.activeData = [SUMS[0], WORD];
+  assert.notEqual(withRandom(0, () => rollMinigame(WORD, [])), 'sumLock', 'one number is not enough');
+  state.battle.selectedTarget = null;
+});
+
+test('a wrong total brings both questions back as haunts, never the lock itself', () => {
+  reset();
+  state.settings.activeData = SUMS;
+  const lock = sumLockSetup();
+  const standIn = { term: 'LOCKED.', meaning: '41 (40 + 1)', sumLock: lock };
+  assert.equal(recordHauntAnswer(standIn, false), null);
+  state.battle.minigame = 'sumLock';
+  state.battle.currentQuestion = standIn;
+  endMinigame({ right: false, tier: null, given: '40', missed: [lock.first, lock.second] });
+  assert.ok(state.run.haunts.has(lock.first) && state.run.haunts.has(lock.second));
+  assert.ok(!state.run.haunts.has(standIn));
 });
