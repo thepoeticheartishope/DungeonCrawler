@@ -528,6 +528,38 @@ export const TEXT = {
   'log.btn': 'LOG', // draft. The room log button (L on a keyboard): the whole log over the map
   'hud.more': 'Status: tap for more', // draft. The HUD's tooltip: a tap shows myelin, cycle and the goals' names
   'map.label': 'Map of what you have seen on this floor. Tap to close.', // draft. Read out by screen readers
+  // Fixed floor plans (plans.js): each floor's name, then its rooms' names.
+  // A room's name shows the first time the player walks in (room.enter.named)
+  // and on the minimap. Depth 1 is Timothy's pick; depths 2 and 3 are drafts.
+  'room.enter.named': '{name}.', // draft. The log line on first walking into a room on a fixed plan
+  'room.enter.plan': '{floor}. {name}.', // draft. On arriving on a fixed plan: the building's name, then the room you wake in
+  'plan.school': 'THE SCHOOL', // draft. The floor's name, on the minimap
+  'plan.school.examHall': 'Exam hall', // draft
+  'plan.school.frontHall': 'Front hall', // draft
+  'plan.school.lab': 'Lab', // draft
+  'plan.school.library': 'Library', // draft
+  'plan.school.artRoom': 'Art room', // draft
+  'plan.school.class1': 'Class 1', // draft
+  'plan.school.class2': 'Class 2', // draft
+  'plan.school.toilets': 'Toilets', // draft
+  'plan.school.staffRoom': 'Staff room', // draft
+  'plan.archive': 'THE ARCHIVE', // draft. The floor's name, on the minimap
+  'plan.archive.core': 'Strongroom', // draft
+  'plan.archive.wake': 'Front desk', // draft
+  'plan.archive.readingRoom': 'Reading room', // draft
+  'plan.archive.vault': 'Vault', // draft
+  'plan.archive.catalogue': 'Catalogue', // draft
+  'plan.archive.bindery': 'Bindery', // draft
+  'plan.observatory': 'THE OBSERVATORY', // draft. The floor's name, on the minimap
+  'plan.observatory.telescopeRoom': 'Telescope room', // draft
+  'plan.observatory.lobby': 'Lobby', // draft
+  'plan.observatory.dome': 'Dome', // draft
+  'plan.observatory.darkroom': 'Darkroom', // draft
+  'plan.observatory.bunks': 'Bunks', // draft
+  'plan.observatory.orrery': 'Orrery', // draft
+  'plan.observatory.plateStore': 'Plate store', // draft
+  'plan.observatory.clockRoom': 'Clock room', // draft
+  'plan.observatory.boilerRoom': 'Boiler room', // draft
   'gun.struggle.prompt': 'STRUGGLE: PRESS SELECT', // draft. Over the Struggle dial (no energy, a minion reached the player)
   'gun.struggle.promptAgain': 'STRUGGLE {count}: PRESS SELECT', // draft. The same, for a later Struggle on this floor (faster, smaller zone)
   'gun.struggle.label': 'Struggle dial. Press SELECT, Space or F in the middle to push it back.', // draft. Read out by screen readers

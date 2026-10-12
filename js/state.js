@@ -103,7 +103,7 @@ export const state = {
     bossLitSet: new Set(), // tiles the boss light currently reaches
     lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
     coin: null,            // { row, col } or null once collected
-    plan: null,            // the fixed plan this floor is built from (plans.js): { name, version: 'A' | 'B' }, or null for a random floor or a rest
+    plan: null,            // the fixed plan this floor is built from (plans.js): { name (text.js key), version: 'A' | 'B' }, or null for a random floor or a rest
     keys: [],              // the floor's keys still lying where dungeon.js put them: [{ row, col }] (CORE_KEYS on a depth, none on a rest)
     keysHeld: 0,           // keys the player has taken on this floor
     gateSealed: false,     // a wrong answer at the gate (the boss) since the last key: it won't fight until another key is taken (gate.js)
@@ -119,6 +119,7 @@ export const state = {
     chamberAt: new Map(),     // tile key -> which room on the floor it belongs to
     doorSet: new Set(),       // doorway tiles: each room's open doors and inner doors (isoview.js draws an arch over each)
     chamberThemes: [],        // theme per room
+    chamberNames: [],         // text.js key of each room's name on a fixed plan (plans.js), same order as chamberAt's rooms; empty on a random floor or a rest
     visitedChambers: new Set(), // rooms the player has walked into (their theme line shows once)
   },
 

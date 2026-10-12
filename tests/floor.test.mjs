@@ -39,6 +39,16 @@ function specials(f) {
   return [f.chest].filter(Boolean);
 }
 
+test('a fixed plan names every room and records its version', () => {
+  eachFloor((f, roomIndex) => {
+    const plan = FLOOR_PLANS[FLOOR_RECIPES[roomIndex].plan];
+    if (!plan) return;
+    assert.equal(f.plan.name, plan.name);
+    assert.ok(['A', 'B'].includes(f.plan.version));
+    assert.deepEqual(f.chamberNames, plan.rooms.map(room => room.name));
+  });
+});
+
 test('grid size and minion count follow the depth', () => {
   eachFloor((f, roomIndex) => {
     const recipe = FLOOR_RECIPES[roomIndex];

@@ -10,6 +10,7 @@ import { key } from '../js/state.js';
 import { CORE_KEYS } from '../js/config.js';
 import { FLOOR_PLANS, PLAN_VERSIONS, buildPlanLayout } from '../js/plans.js';
 import { FLOOR_RECIPES } from '../js/floors.js';
+import { TEXT } from '../js/text.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
@@ -93,4 +94,13 @@ test('a version is picked at random when none is given, and both come up', () =>
   const seen = new Set();
   for (let i = 0; i < 60; i++) seen.add(buildPlanLayout(FLOOR_PLANS.school, CORE_KEYS).version);
   assert.deepEqual([...seen].sort(), PLAN_VERSIONS);
+});
+
+test('every plan and every room has a name with wording, and no two rooms share one', () => {
+  Object.values(FLOOR_PLANS).forEach(plan => {
+    assert.ok(plan.name in TEXT, plan.name);
+    plan.rooms.forEach(room => assert.ok(room.name in TEXT, room.name));
+    const names = plan.rooms.map(room => TEXT[room.name]);
+    assert.equal(new Set(names).size, names.length, plan.name + ': two rooms share a name');
+  });
 });
