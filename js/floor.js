@@ -167,6 +167,7 @@ export function buildFloor() {
 
   // The keys, each in its own room (dungeon.js picks which).
   state.floor.keys = layout.keys.map(p => ({ row: p.row, col: p.col }));
+  state.floor.keySpots = (layout.keySpots || []).map(p => ({ row: p.row, col: p.col }));
   state.floor.keysHeld = 0;
 
   // Coin and the room's one special item only ever land in an actual room
@@ -264,6 +265,7 @@ function clearDanger() {
   f.beats = [];
   f.keys = [];
   f.keysHeld = 0;
+  f.keySpots = [];
   f.keyRoute = 0;
   f.gateSealed = false;
   f.bossLitSet = new Set();

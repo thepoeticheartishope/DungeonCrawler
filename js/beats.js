@@ -89,11 +89,14 @@ function progressAlong(solid) {
 }
 
 // Where the walk that paces the floor ends: the key farthest from the
-// start, or the boss when the floor has no keys.
+// start, or the boss when the floor has no keys. On a fixed plan, the
+// key SPOT farthest from the start instead: the same every run, so the
+// beats never make a trail to where this run's keys lie.
 function walkEnd(fromStart) {
   const f = state.floor;
   const far = p => fromStart.get(key(p.row, p.col)) || 0;
-  return f.keys.reduce((best, p) => (!best || far(p) > far(best) ? p : best), null) || f.boss;
+  const ends = f.keySpots.length ? f.keySpots : f.keys;
+  return ends.reduce((best, p) => (!best || far(p) > far(best) ? p : best), null) || f.boss;
 }
 
 // Room floor that nothing stands on yet, away from the doors. Beats never
