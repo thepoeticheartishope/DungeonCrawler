@@ -39,6 +39,8 @@ export const TEXT = {
   'term.boss.symbol': '¤',
   'term.minion': 'DENDRITE',
   'term.minion.symbol': '•',
+  'term.minion.simpleSymbol': 'e', // Simple enemies (start screen): every minion on the map is this still letter, like k for a key
+  'term.minion.tellSymbol': 'E', // Simple enemies: the strike tell, one step from being next to the player
   'term.hunter': 'OBSESSION', // draft
   'term.hunter.symbol': 'Ø', // draft
   'term.chest': 'TRAPPED THOUGHT',
@@ -413,6 +415,7 @@ export const TEXT = {
   'start.name.label': 'Your name', // draft
   'start.name.placeholder': 'Leave blank to stay nameless', // draft
   'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
+  'start.simpleEnemies': 'Simple enemies: every enemy is a still letter e', // draft. A comfort option for players who don't want creepy enemies
   'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft
 
   // ---- Set screen (after Enter: which questions this run asks) ----

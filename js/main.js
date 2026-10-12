@@ -49,6 +49,7 @@ const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
 const revealToggle = document.getElementById('revealToggle');
 const realTimeToggle = document.getElementById('realTimeToggle');
+const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
 const battleScreen = document.getElementById('battleScreen');
@@ -704,6 +705,7 @@ function startGame() {
   resetHaunts();
   state.settings.revealOnWrong = revealToggle.checked;
   state.settings.realTime = realTimeToggle.checked;
+  state.settings.simpleEnemies = simpleEnemiesToggle.checked;
   resetClock();
   // Read on every start, so a retry keeps the name without asking again.
   state.settings.playerName = playerNameInput.value.trim();

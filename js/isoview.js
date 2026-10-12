@@ -1158,8 +1158,9 @@ function drawEnergyCell(ctx, thing) {
 // The minion a map thing shows as a text form: a minion with a kind that
 // the player has made out. A '?' stays a glyph (everything past three
 // tiles is a '?', enemies included), and so does the hunter, which has no kind.
+// With Simple enemies on, no minion has a form: it stays its still glyph.
 function formOf(thing) {
-  if (thing.kind !== 'minion' || thing.glyph === null) return null;
+  if (thing.kind !== 'minion' || thing.glyph === null || state.settings.simpleEnemies) return null;
   const m = minionOn(thing.tile);
   return m && m.minionKind ? m : null;
 }
