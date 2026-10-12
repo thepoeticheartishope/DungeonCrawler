@@ -6,6 +6,7 @@
 
 import { state, key } from './state.js';
 import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
+import { FLOOR_PLANS, buildPlanLayout } from './plans.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
 import {
   CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
@@ -96,6 +97,13 @@ function makeSpaceForPaper(paper) {
   inRoom.slice(0, inRoom.length - PAPERS_PER_ROOM + 1).forEach(p => f.props.splice(f.props.indexOf(p), 1));
 }
 
+// A random floor (dungeon.js), sized by the recipe, for a recipe with no
+// fixed plan.
+function randomLayout(recipe) {
+  return generateDungeonLayout(recipe.grid, recipe.rooms, recipe.loops,
+    { startRoom: recipe.startRoom, bossRoom: recipe.bossRoom }, CORE_KEYS);
+}
+
 // The floor as data only: layout, furniture, boss, stairs, the recipe's
 // beats, coin, the one special item and minions, plus the light, sight
 // and camera that follow from them. No page access.
@@ -106,8 +114,7 @@ export function buildFloor() {
   state.run.nextPath = null;
   state.floor.stairsAlt = null;
   const recipe = floorRecipe(state.run.roomIndex, state.floor.path);
-  state.floor.GRID_SIZE = recipe.grid;
-  state.floor.CHAMBER_TARGET = recipe.rooms;
+  const plan = recipe.plan ? FLOOR_PLANS[recipe.plan] : null;
   // The floor's story joins the end of the run's queue, behind any lines
   // the player left unread upstairs, so no line is skipped.
   state.run.loreQueue.push(...(recipe.lore || []));
@@ -125,8 +132,12 @@ export function buildFloor() {
   state.floor.props = [];
   state.floor.lastChoiceType = null;
 
-  const layout = generateDungeonLayout(state.floor.GRID_SIZE, state.floor.CHAMBER_TARGET, recipe.loops,
-    { startRoom: recipe.startRoom, bossRoom: recipe.bossRoom }, CORE_KEYS);
+  // A fixed plan (plans.js) is the same building every run; without one
+  // the floor is random.
+  const layout = plan ? buildPlanLayout(plan, CORE_KEYS) : randomLayout(recipe);
+  state.floor.GRID_SIZE = plan ? plan.rows.length : recipe.grid;
+  state.floor.CHAMBER_TARGET = layout.chambers.length;
+  state.floor.plan = plan ? { name: plan.name, version: layout.version } : null;
   state.floor.wallSet = layout.walls;
   state.floor.PLAYER_START = { row: layout.start.row, col: layout.start.col };
 
@@ -322,6 +333,7 @@ export function buildRestFloor(kind) {
   const f = state.floor;
   f.GRID_SIZE = REST_GRID;
   f.CHAMBER_TARGET = 1;
+  f.plan = null;
   clearDanger();
   // A rest's story joins the queue like a depth's. The epilogue ends the
   // story, so its own line replaces whatever is left unread.

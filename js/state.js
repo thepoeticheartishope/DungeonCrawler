@@ -103,6 +103,7 @@ export const state = {
     bossLitSet: new Set(), // tiles the boss light currently reaches
     lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
     coin: null,            // { row, col } or null once collected
+    plan: null,            // the fixed plan this floor is built from (plans.js): { name, version: 'A' | 'B' }, or null for a random floor or a rest
     keys: [],              // the floor's keys still lying where dungeon.js put them: [{ row, col }] (CORE_KEYS on a depth, none on a rest)
     keysHeld: 0,           // keys the player has taken on this floor
     gateSealed: false,     // a wrong answer at the gate (the boss) since the last key: it won't fight until another key is taken (gate.js)

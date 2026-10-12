@@ -13,6 +13,7 @@ import {
 import { buildFloor } from '../js/floor.js';
 import { BEAT_KINDS } from '../js/beats.js';
 import { FLOOR_RECIPES } from '../js/floors.js';
+import { FLOOR_PLANS } from '../js/plans.js';
 import { TEXT } from '../js/text.js';
 import { generateDungeonLayout } from '../js/dungeon.js';
 import { ROOM_TEMPLATES, parseTemplate } from '../js/rooms.js';
@@ -40,7 +41,8 @@ function specials(f) {
 
 test('grid size and minion count follow the depth', () => {
   eachFloor((f, roomIndex) => {
-    assert.equal(f.GRID_SIZE, FLOOR_RECIPES[roomIndex].grid);
+    const recipe = FLOOR_RECIPES[roomIndex];
+    assert.equal(f.GRID_SIZE, recipe.plan ? FLOOR_PLANS[recipe.plan].rows.length : recipe.grid);
     assert.equal(f.minions.length, FLOOR_RECIPES[roomIndex].minions);
   });
 });
@@ -258,18 +260,25 @@ function stepsOver(f, from) {
 }
 
 test('every depth hides CORE_KEYS keys, each in its own room, never the start room or the core', () => {
-  eachFloor(f => {
+  eachFloor((f, roomIndex) => {
+    const plan = FLOOR_PLANS[FLOOR_RECIPES[roomIndex].plan];
     assert.equal(f.keys.length, CORE_KEYS);
     assert.equal(f.keysHeld, 0);
     const startRoom = f.chamberAt.get(key(f.PLAYER_START.row, f.PLAYER_START.col));
     const coreRoom = f.chamberAt.get(key(f.stairs.row, f.stairs.col));
     const rooms = f.keys.map(p => f.chamberAt.get(key(p.row, p.col)));
+    // On a fixed plan a key lies on one of the plan's key spots, which may
+    // be in a hallway; on a random floor always in a room.
+    f.keys.forEach(p => {
+      if (plan) assert.equal(plan.rows[p.row][p.col], 'K', 'key off the plan\'s key spots');
+      else assert.notEqual(f.chamberAt.get(key(p.row, p.col)), undefined, 'key in a hallway');
+    });
     rooms.forEach(r => {
-      assert.notEqual(r, undefined, 'key in a hallway');
       assert.notEqual(r, startRoom, 'key in the start room');
       assert.notEqual(r, coreRoom, 'key in the core');
     });
-    assert.equal(new Set(rooms).size, CORE_KEYS, 'two keys share a room');
+    const inRooms = rooms.filter(r => r !== undefined);
+    assert.equal(new Set(inRooms).size, inRooms.length, 'two keys share a room');
     // Nothing solid or collectable sits on a key.
     f.keys.forEach(p => {
       const k = key(p.row, p.col);
