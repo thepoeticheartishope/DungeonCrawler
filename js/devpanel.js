@@ -1,11 +1,11 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
-// panel over the screen): Skip room, Auto-win, Fog, Turn, Minigame, Camera, Look and Combat
+// panel over the screen): Skip room, Auto-win, Fog, Turn, Minigame, Camera, Look, Tendrils and Combat
 // toggles, a test shot and a test reload, for testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw } from './mapview.js';
 import { renderRoomHints } from './render.js';
 import { MINIGAMES } from './minigames.js';
-import { STICK_POSE_IDS } from './stickforms.js';
+import { STICK_POSE_IDS, TENDRIL_STYLES } from './stickforms.js';
 
 const devDock = document.getElementById('devDock');
 const devToggleBtn = document.getElementById('devToggleBtn');
@@ -16,6 +16,7 @@ const devFogBtn = document.getElementById('devFogBtn');
 const devTurnBtn = document.getElementById('devTurnBtn');
 const devCameraBtn = document.getElementById('devCameraBtn');
 const devLookBtn = document.getElementById('devLookBtn');
+const devTendrilsBtn = document.getElementById('devTendrilsBtn');
 const devMinigameBtn = document.getElementById('devMinigameBtn');
 const devCombatBtn = document.getElementById('devCombatBtn');
 const devShotBtn = document.getElementById('devShotBtn');
@@ -112,6 +113,16 @@ export function initDevPanel({
     const next = LOOK_MODES[(LOOK_MODES.indexOf(state.settings.enemyPose) + 1) % LOOK_MODES.length];
     state.settings.enemyPose = next;
     devLookBtn.textContent = 'Look: ' + next + ' (dev)';
+    requestMapDraw();
+  });
+
+  // Dev tool (stick enemies plan): every stick enemy uses its own random
+  // tendril style, or all use the one picked here (wound, head, unravel).
+  const TENDRIL_MODES = ['random', ...TENDRIL_STYLES];
+  devTendrilsBtn.addEventListener('click', () => {
+    const next = TENDRIL_MODES[(TENDRIL_MODES.indexOf(state.settings.enemyTendrils) + 1) % TENDRIL_MODES.length];
+    state.settings.enemyTendrils = next;
+    devTendrilsBtn.textContent = 'Tendrils: ' + next + ' (dev)';
     requestMapDraw();
   });
 

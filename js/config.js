@@ -762,7 +762,7 @@ export const MAP_ANIMATION_MS = {
   stickTell: 900,    // a stick enemy eases into its tell pose, or back out (stickforms.js)
   stickTurn: 700,    // a stick enemy turns to face the player when they pass to its other side
   stickHit: 500,     // a hurt stick enemy's soft brightening and one small push
-  stickDeath: 1800,  // a killed stick enemy's lines fading
+  stickDeath: 2400,  // a killed stick enemy's lines fading while six tendrils grow, go limp and fade
 };
 // The minimap (minimapview.js): a tile is at most MINIMAP_MAX_UNIT CSS px
 // from its centre to its side point, and the plan keeps MINIMAP_PAD px
@@ -788,6 +788,23 @@ export const FORM_TELL_STEPS = 2;
 // a little off from theirs. halo = the glow round a line, core = the line
 // itself (and step C's tendril letters), as 'r, g, b'.
 export const ENEMY_LIGHT = { halo: '112, 150, 255', core: '200, 216, 255' };
+// Tendrils of letters (stickforms.js, stick enemies plan step C). A hit's
+// tendrils grow over TENDRIL_GROW_MS, hold for TENDRIL_HOLD_MS, then pull
+// back over TENDRIL_BACK_MS, unless they stay out. Letters sit
+// TENDRIL_STEP of a tile's width apart and are TENDRIL_SIZE of it tall.
+export const TENDRIL_GROW_MS = 1300;
+export const TENDRIL_HOLD_MS = 1700;
+export const TENDRIL_BACK_MS = 1700;
+export const TENDRIL_STEP = 0.09;
+export const TENDRIL_SIZE = 0.15;
+// Tendril letters are the set's answers with one letter wrong in each word:
+// a lookalike from this table, or (for a letter in TENDRIL_MIRRORABLE, half
+// the time) itself drawn backwards. Shapes, not wording, so they live here.
+export const TENDRIL_LOOKALIKES = {
+  E: 'F', F: 'E', O: 'Q', Q: 'O', I: 'L', L: 'I', D: 'O', B: '8', S: '5', A: '4', H: 'N', M: 'N', N: 'M',
+  C: 'G', G: 'C', U: 'V', V: 'U', R: 'P', P: 'R', T: 'I', J: 'I', K: 'X', Y: 'V', W: 'V', Z: '2', X: 'K',
+};
+export const TENDRIL_MIRRORABLE = 'NRSJEKZLCPBDGQ';
 
 // On-screen d-pad (js/dpad.js): holding an arrow walks like holding an
 // arrow key. The first step lands on the press; after DPAD_HOLD_DELAY_MS the

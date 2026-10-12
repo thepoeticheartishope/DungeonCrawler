@@ -176,14 +176,16 @@ export function shotOnMap(target, missed) {
   setTimeout(requestMapDraw, MAP_ANIMATION_MS.gunMiss);
 }
 
-// A minion's stick man (stickforms.js) reacts to a landed shot: a soft
-// brightening and one small push.
-export function hurtOnMap(minion) {
-  hurtStick(minion);
+// A minion's stick man (stickforms.js) reacts to a landed shot for
+// `damage`: a soft brightening, one small push and a hit's tendrils (one
+// stays out when it did damage).
+export function hurtOnMap(minion, damage) {
+  hurtStick(minion, damage);
   requestMapDraw();
 }
 
-// A minion's stick man loses the limb it just lost: its bones are gone.
+// A minion's stick man loses the limb it just lost: its bones are gone and
+// a tendril grows where it was.
 export function limbOffOnMap(minion) {
   loseStickLimb(minion);
   requestMapDraw();
