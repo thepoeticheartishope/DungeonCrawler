@@ -38,6 +38,8 @@ function resetFloor(size = 21) {
   state.floor.playerRow = Math.floor(size / 2);
   state.floor.playerCol = Math.floor(size / 2);
   state.floor.facing = 'N';
+  state.floor.look = null;
+  state.settings.freeLook = false;
   state.settings.fogEnabled = true;
   state.settings.gunCombat = false;
   state.settings.turnBeforeStep = false;
@@ -212,7 +214,9 @@ test('a thing in the light with a clear line can be shot', () => {
   assert.equal(shootBlock(at(-3, 1)), null);
   assert.ok(canShoot(at(-3, 1)));
   assert.ok(canShoot(at(-PLAYER_CONE_RANGE, 0)));
-  assert.ok(canShoot(at(1, 0)), 'next to the player, even behind, is in the light');
+  assert.ok(state.floor.sightSet.has(key(at(1, 0).row, at(1, 0).col)), 'next to the player, even behind, is lit');
+  assert.equal(shootBlock(at(1, 0)), 'notInLight', 'but lit only by standing beside them, it can\'t be shot (free look plan)');
+  assert.equal(shootBlock(at(0, 1)), 'notInLight');
 });
 
 test('past the light\'s reach is out of range', () => {

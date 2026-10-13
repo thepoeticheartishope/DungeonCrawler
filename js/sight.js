@@ -5,27 +5,30 @@
 
 import { state, key } from './state.js';
 import {
-  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE,
+  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, LOOK_CONE_HALF, LOOK_CONE_SLACK,
 } from './config.js';
+import { lookAngle, angleTo, wrapAngle } from './look.js';
 
-// Facing vectors for the cone test below.
+// One step each way the body can face.
 export const FACING_VECTORS = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] };
 
-// True if the tile at (row, col) falls within a 90-degree cone opening in
-// `facing`'s direction from the player — a diamond that widens as it gets
-// further away, using only integer math (no trig needed on a square grid).
-// The player's own tile always passes (forward = lateral = 0).
-function inFacingCone(row, col) {
-  const [fr, fc] = FACING_VECTORS[state.floor.facing];
+// True if the tile at (row, col) falls within the light's 90-degree cone,
+// opening where the player looks (look.js lookAngle). Each tile gets a
+// little slack, shrinking with distance, so a cone at an odd angle isn't
+// ragged; looking straight along a way it lights exactly the old diamond
+// (tests/look.test.mjs checks). Walls are the caller's job. The player's
+// own tile always passes.
+export function inLookCone(row, col) {
   const dr = row - state.floor.playerRow;
   const dc = col - state.floor.playerCol;
-  const forward = dr * fr + dc * fc;       // distance projected along facing
-  const lateral = dr * fc - dc * fr;       // signed distance perpendicular to it
-  return forward >= 0 && Math.abs(lateral) <= forward;
+  const dist = Math.hypot(dr, dc);
+  if (dist === 0) return true;
+  const off = Math.abs(wrapAngle(angleTo(row, col) - lookAngle()));
+  return off <= LOOK_CONE_HALF + Math.atan2(LOOK_CONE_SLACK, dist);
 }
 
 // The player's own light: every open tile within PLAYER_LIGHT_RADIUS steps,
-// plus open tiles up to PLAYER_CONE_RANGE steps inside the facing cone.
+// plus open tiles up to PLAYER_CONE_RANGE steps inside the look cone.
 // Walls fully block it (a lit cone never bleeds through a wall into an
 // adjacent corridor); pillars are lit themselves but cast a shadow behind. Everything the boss's light reaches is visible too
 // (state.floor.bossLitSet, from light.js) — the thing that ends the run is also
@@ -51,7 +54,7 @@ export function computeVisibility() {
       seen.add(nk);
       const dist = cur.dist + 1;
       if (state.floor.pillarSet.has(nk)) {
-        if (dist <= PLAYER_LIGHT_RADIUS || inFacingCone(nr, nc)) {
+        if (dist <= PLAYER_LIGHT_RADIUS || inLookCone(nr, nc)) {
           state.floor.visibleSet.add(nk);
           state.floor.sightSet.add(nk);
         }
@@ -59,7 +62,7 @@ export function computeVisibility() {
       }
       // Still traverse through out-of-cone tiles (a corridor can bend into
       // view further on), but only mark in-cone ones as actually visible.
-      if (dist <= PLAYER_LIGHT_RADIUS || inFacingCone(nr, nc)) {
+      if (dist <= PLAYER_LIGHT_RADIUS || inLookCone(nr, nc)) {
         state.floor.visibleSet.add(nk);
         state.floor.sightSet.add(nk);
       }
@@ -103,14 +106,16 @@ export function canMakeOut(row, col) {
 // Why the player can't shoot `thing` (anything with row/col) right now, as
 // a text.js key under 'gun.block.', or null if they can. It has to be in
 // the player's own light (sightSet, not the boss's) with a clear line to
-// it, like making a thing out. Range is the light's reach in walkable
-// steps (PLAYER_CONE_RANGE), so "out of range" only shows when turning
-// toward it wouldn't help.
+// it, like making a thing out, and inside the cone itself (free look plan):
+// a thing lit only because it stands beside the player can't be shot until
+// they look at it. Range is the light's reach in walkable steps
+// (PLAYER_CONE_RANGE), so "out of range" only shows when looking toward it
+// wouldn't help.
 export function shootBlock(thing) {
   const dr = thing.row - state.floor.playerRow;
   const dc = thing.col - state.floor.playerCol;
   if (Math.abs(dr) + Math.abs(dc) > PLAYER_CONE_RANGE) return 'outOfRange';
-  if (!state.floor.sightSet.has(key(thing.row, thing.col))) return 'notInLight';
+  if (!state.floor.sightSet.has(key(thing.row, thing.col)) || !inLookCone(thing.row, thing.col)) return 'notInLight';
   if (!clearLineTo(thing.row, thing.col)) return 'noLineOfSight';
   return null;
 }

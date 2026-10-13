@@ -391,6 +391,20 @@ export const INTRO_STILL_MS = 3500;
 export const PLAYER_LIGHT_RADIUS = 1;
 export const PLAYER_CONE_RANGE = 5;
 
+// Free look (look.js, free look plan): the light points wherever the player
+// aims, up to LOOK_FREE_ARC either side of the way the body faces, at no
+// cost; looking further round turns the body, which costs a turn. The cone
+// stays 90° wide (45° each side of the look) and PLAYER_CONE_RANGE deep.
+// LOOK_NUDGE is one press of Q / E. DEV -> Free look switches it
+// (state.settings.freeLook); off, the light points where the body faces.
+export const LOOK_FREE_ARC = Math.PI / 6;
+export const LOOK_NUDGE = Math.PI / 12;
+export const FREE_LOOK = false;
+// The cone's half-width, and the slack each tile gets (sight.js inLookCone:
+// atan2(LOOK_CONE_SLACK, distance)) so an off-angle cone isn't ragged.
+export const LOOK_CONE_HALF = Math.PI / 4;
+export const LOOK_CONE_SLACK = 0.35;
+
 // Turning (moves.js stepPlayer). With TURN_BEFORE_STEP on, a press in a new
 // direction only turns the player, so they look before they walk. Off, a
 // press turns and steps at once, and the warning below covers what looking

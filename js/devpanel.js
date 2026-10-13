@@ -1,11 +1,14 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
-// panel over the screen): Skip room, Auto-win, Fog, Turn, Minigame, Camera, Look, Tendrils and Combat
+// panel over the screen): Skip room, Auto-win, Fog, Turn, Free look, Minigame, Camera, Look, Tendrils and Combat
 // toggles, a test shot and a test reload, for testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw } from './mapview.js';
 import { renderRoomHints } from './render.js';
 import { MINIGAMES } from './minigames.js';
 import { STICK_POSE_IDS, TENDRIL_STYLES } from './stickforms.js';
+import { followBody, lookAngle, bodyAngle } from './look.js';
+import { computeVisibility } from './sight.js';
+import { refreshGunTarget } from './gun.js';
 
 const devDock = document.getElementById('devDock');
 const devToggleBtn = document.getElementById('devToggleBtn');
@@ -14,6 +17,7 @@ const devSkipBtn = document.getElementById('devSkipBtn');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devTurnBtn = document.getElementById('devTurnBtn');
+const devFreeLookBtn = document.getElementById('devFreeLookBtn');
 const devCameraBtn = document.getElementById('devCameraBtn');
 const devLookBtn = document.getElementById('devLookBtn');
 const devTendrilsBtn = document.getElementById('devTendrilsBtn');
@@ -84,6 +88,20 @@ export function initDevPanel({
     state.settings.turnBeforeStep = !state.settings.turnBeforeStep;
     devTurnBtn.textContent = state.settings.turnBeforeStep ? 'Turn: look first (dev)' : 'Turn: and step (dev)';
     devTurnBtn.setAttribute('aria-pressed', String(state.settings.turnBeforeStep));
+  });
+
+  // Dev tool (free look plan): the light points where the player aims,
+  // within the free arc, or only where the body faces. Off, the aim goes
+  // back with the body, so the light is straight ahead again.
+  devFreeLookBtn.addEventListener('click', () => {
+    state.settings.freeLook = !state.settings.freeLook;
+    devFreeLookBtn.textContent = state.settings.freeLook ? 'Free look: ON (dev)' : 'Free look: OFF (dev)';
+    devFreeLookBtn.setAttribute('aria-pressed', String(state.settings.freeLook));
+    if (state.floor.playerRow === undefined) return;
+    followBody();
+    computeVisibility();
+    if (state.settings.gunCombat) refreshGunTarget();
+    requestMapDraw();
   });
 
   // Dev tool: minigames roll as usual, never, or (one minigame picked)
@@ -188,11 +206,18 @@ function brief(key, value) {
   return value;
 }
 
+// Where the light points against the body, as '+20°' (east of it) or
+// '-15°', for the player line.
+function lookOffset() {
+  const deg = Math.round((lookAngle() - bodyAngle()) * 180 / Math.PI);
+  return (deg < 0 ? '' : '+') + deg + '°';
+}
+
 function floorSummary() {
   const f = state.floor;
   return {
     grid: f.GRID_SIZE,
-    player: f.playerRow + ',' + f.playerCol + ' ' + f.facing,
+    player: f.playerRow + ',' + f.playerCol + ' ' + f.facing + ' ' + lookOffset(),
     boss: f.boss && where(f.boss) + ' hp ' + f.boss.hp,
     hunter: where(f.hunter),
     darkness: f.darkness,
