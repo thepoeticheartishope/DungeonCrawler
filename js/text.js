@@ -303,8 +303,10 @@ export const TEXT = {
   'room.sensed.simple': 'Enemy close.', // draft. "I see you." with Simple enemies on (Timothy: it falls under the filter)
   'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
-  'room.waitAgain': 'Tap again to wait.', // draft. The look stick's first tap: a second one waits
-  'dpad.stick.wait': 'Look stick: drag to aim, tap twice to wait', // draft. The d-pad centre's label
+  'room.stickTaps': 'Tap 3 times for your light. Hold to wait.', // draft. The look stick's first tap (light battery plan step D)
+  'room.stickTaps.plain': 'Hold to wait.', // draft. The same in Comfort mode, where there is no light to switch
+  'dpad.stick.wait': 'Look stick: drag to aim, hold to wait, tap 3 times for your light', // draft. The d-pad centre's label
+  'dpad.stick.wait.plain': 'Look stick: drag to aim, hold to wait', // draft. Its label in Comfort mode
   'dpad.stick.turn': 'Look stick: tap to turn and face your aim', // draft. Its label while the aim is past the arc
   'room.turn': 'You turn.', // draft. Free look: turning the body to look further round costs a turn
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft

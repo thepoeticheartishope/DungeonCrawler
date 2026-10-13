@@ -36,7 +36,8 @@
 //      reload of the page (it's remembered).
 //   6. Free look run (free look is the default): the gun run's walk until a
 //      reload and a kill; a tap on a seen minion aims the light at it and
-//      spends no turn. The look stick: a drag aims for free, two taps wait
+//      spends no turn. The look stick: a drag aims for free, two taps spend
+//      nothing and a 1 s hold (wobbling, as a finger does) waits
 //      one turn, aimed past the arc one tap turns for one turn; the mouse
 //      over the map aims. Then the map is drawn looking ahead, at the arc's
 //      edge and past it, saved as noesis-free-look-*.png
@@ -44,7 +45,7 @@
 //      turns played.
 //   7. Light battery run: the battery reads LIGHT #### ON at the foot of
 //      the map; V switches it off (only the small circle lit, no turn spent)
-//      and on; 4 turns on and it dies, refuses V while charging, and is
+//      and on, and so do 3 taps on the look stick; 4 turns on and it dies, refuses V while charging, and is
 //      charged again after 4 turns off; a few turns on the first depth with
 //      the stick men noticing the light, and a shot into the dark (its bar
 //      says DARK SHOT). Then Comfort mode (the renamed
@@ -668,7 +669,8 @@ async function roomIdle(page) {
 }
 
 // The look stick (dpad.js initLookStick) and the map with a mouse: a
-// drag aims and spends no turn; two taps wait one turn; aimed past the
+// drag aims and spends no turn; two taps spend nothing; a hold of
+// LOOK_STICK_HOLD_MS, wobbling, waits one turn; aimed past the
 // arc (E pressed 5 times), one tap (wobbling 8 px, as a finger does) turns
 // the body for one turn; the mouse
 // over the map aims.
@@ -701,9 +703,20 @@ async function lookControls(page) {
   before = await lookNow(page);
   await page.click('#btnSkip');
   await page.click('#btnSkip');
+  await page.waitForTimeout(100);
+  after = await lookNow(page);
+  if (after.turns !== before.turns) return `two taps on the look stick passed ${after.turns - before.turns} turns, not 0`;
+  await page.waitForTimeout(500); // past the taps' count
+  const holdMs = await page.evaluate(async () => (await import('./js/config.js')).LOOK_STICK_HOLD_MS);
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + 6, cy + 5, { steps: 2 });
+  if (!await page.locator('#btnSkip.holding').count()) return 'holding the look stick showed no ring';
+  await page.waitForTimeout(holdMs + 150);
+  await page.mouse.up();
   await roomIdle(page);
   after = await lookNow(page);
-  if (after.turns !== before.turns + 1) return `two taps on the look stick passed ${after.turns - before.turns} turns, not 1`;
+  if (after.turns !== before.turns + 1) return `holding the look stick passed ${after.turns - before.turns} turns, not 1`;
 
   await page.evaluate(async () => {
     const { aimLook, bodyAngle } = await import('./js/look.js');
@@ -924,6 +937,13 @@ async function checkLightBattery(page, url) {
   if (!(await lastNote(page)).startsWith('Light off')) return `switching off said "${await lastNote(page)}"`;
   await page.keyboard.press('v');
   if (await batteryShown(page) !== 'LIGHT #### ON') return `V again left ${await batteryShown(page)}`;
+  // 3 taps on the look stick switch it too, and spend no turn.
+  for (const want of ['OFF', 'ON']) {
+    for (let i = 0; i < 3; i++) await page.click('#btnSkip');
+    if (await batteryShown(page) !== 'LIGHT #### ' + want) return `3 taps on the stick left ${await batteryShown(page)}`;
+    await page.waitForTimeout(500);
+  }
+  if (await turnsShown(page) !== turns) return 'tapping the stick spent a turn';
 
   await wait(3);
   if (await batteryShown(page) !== 'LIGHT #--- ON') return `3 turns on left ${await batteryShown(page)}`;
