@@ -13,6 +13,7 @@ import {
 } from './config.js';
 import { floorRecipe, pickPaths, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './quiz.js';
+import { BODY_ANGLES } from './look.js';
 import { computeVisibility } from './sight.js';
 import { spawnMinion } from './combat.js';
 import { initBossLight } from './light.js';
@@ -144,6 +145,7 @@ export function buildFloor() {
   state.floor.playerRow = state.floor.PLAYER_START.row;
   state.floor.playerCol = state.floor.PLAYER_START.col;
   state.floor.facing = 'N';
+  state.floor.look = BODY_ANGLES.N;
 
   // Each room's theme, pillars, papers and boxes (decor.js).
   const furnishing = furnishFloor(layout, state.floor.GRID_SIZE, state.run.roomIndex);
@@ -349,6 +351,7 @@ export function buildRestFloor(kind) {
   f.playerRow = f.PLAYER_START.row;
   f.playerCol = f.PLAYER_START.col;
   f.facing = facingToward(layout.start, layout.stairs);
+  f.look = BODY_ANGLES[f.facing];
 
   const themeKeys = Object.keys(ROOM_THEMES);
   const theme = themeKeys[Math.floor(Math.random() * themeKeys.length)];

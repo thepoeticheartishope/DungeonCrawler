@@ -19,6 +19,7 @@ import {
 import { fightGroups, shuffle } from './quiz.js';
 import { recordHauntAnswer } from './haunts.js';
 import { shootBlock, canShoot } from './sight.js';
+import { aimLook, angleTo, lookAngle, wantsTurn, wrapAngle } from './look.js';
 import { goldReward } from './moves.js';
 import { tileOccupied } from './combat.js';
 
@@ -119,10 +120,13 @@ export function settleReload(isCorrect, offer, box = null, tier = '2') {
 }
 
 // The player tapped `tile` on the map. A minion or the hunter standing
-// there, in sight (visibleSet, so the map is showing it), becomes the gun's
-// target, even if it can't be shot right now: the map then says why not.
-// Anything else clears the target. Picking costs no turn.
-// Events: targetPicked { target } or targetCleared.
+// there, in sight (visibleSet, so the map is showing it), draws the light:
+// the aim goes to it (look.js aimLook), as far as the free arc allows, and
+// the target follows the light. If it still can't be shot, the event says
+// why ('needsTurn' when only turning the body would bring it into the
+// cone). Anything else clears the target. Costs no turn.
+// Events: targetPicked { target }, or targetBlocked { target, reason },
+// or targetCleared.
 export function pickTarget(tile) {
   const f = state.floor;
   const target = f.minions.find(m => m.row === tile.row && m.col === tile.col);
@@ -131,18 +135,29 @@ export function pickTarget(tile) {
     f.gunTarget = null;
     return [{ type: 'targetCleared' }];
   }
+  aimLook(angleTo(target.row, target.col));
+  const reason = shootBlock(target);
+  if (reason) {
+    refreshGunTarget();
+    return [{ type: 'targetBlocked', target, reason: reason === 'notInLight' && wantsTurn() ? 'needsTurn' : reason }];
+  }
+  // Free look off, the light can't move to it: a tap still picks it.
   f.gunTarget = target;
   return [{ type: 'targetPicked', target }];
 }
 
 // What the gun can fire at right now: seen minions and the hunter that
-// sight.js canShoot allows, nearest first.
+// sight.js canShoot allows (inside the cone), the one closest to where the
+// player is aiming first, a nearer one breaking a tie (free look plan:
+// sweeping the light switches targets).
 function shootable() {
   const f = state.floor;
+  const look = lookAngle();
+  const offAim = m => Math.abs(wrapAngle(angleTo(m.row, m.col) - look));
   return f.minions
     .filter(m => !state.settings.fogEnabled || f.visibleSet.has(key(m.row, m.col)))
     .filter(canShoot)
-    .sort((a, b) => distanceTo(a) - distanceTo(b));
+    .sort((a, b) => (offAim(a) - offAim(b)) || (distanceTo(a) - distanceTo(b)));
 }
 
 // Straight-line distance from the player to `thing`, in tiles.
@@ -150,20 +165,16 @@ function distanceTo(thing) {
   return Math.hypot(thing.row - state.floor.playerRow, thing.col - state.floor.playerCol);
 }
 
-// Keeps the gun's target up to date after a turn: a target that died,
-// went out of sight or can no longer be shot is dropped, and with none,
-// the best shootable thing is picked, so FIRE always has something to
-// aim at when anything is in reach. A target the player tapped that
-// can't be shot stays until the next turn, so the map can say why not.
-// Events: targetPicked { target, auto: true } when it picks one.
+// Keeps the gun's target up to date after a turn or a look: the target is
+// always the shootable thing closest to the aim, so it follows the light,
+// and with nothing in reach there is none. Events: targetPicked
+// { target, auto: true } when it changes to a new one.
 export function refreshGunTarget() {
   const f = state.floor;
-  if (f.gunTarget && (!f.minions.includes(f.gunTarget) || !canShoot(f.gunTarget))) f.gunTarget = null;
-  if (f.gunTarget) return [];
-  const best = shootable()[0];
-  if (!best) return [];
+  const best = shootable()[0] || null;
+  if (best === f.gunTarget) return [];
   f.gunTarget = best;
-  return [{ type: 'targetPicked', target: best, auto: true }];
+  return best ? [{ type: 'targetPicked', target: best, auto: true }] : [];
 }
 
 // The next shootable thing after the current target, best aim first,

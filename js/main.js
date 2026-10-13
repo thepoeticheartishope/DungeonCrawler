@@ -143,11 +143,13 @@ initDevPanel({
 });
 
 // A tap on the map. With the gun on (DEV -> Combat), it picks the gun's
-// target: the minion on that tile, or none. Costs no turn. Only SELECT
+// target: the light swings to the minion on that tile and the target
+// follows it, or a note says why it can't be shot. Costs no turn. Only SELECT
 // fires (Timothy: tap, then SELECT), so a tap can never shoot by accident.
 function tapMap(tile) {
   if (!gunReady()) return;
-  drawEvents(pickTarget(tile));
+  const note = drawEvents(pickTarget(tile));
+  if (note.text) showRoomNote(note.cls, note.text);
 }
 
 // Whether the gun can be used right now: gun combat on, the room screen
@@ -947,6 +949,10 @@ function drawEvents(events) {
       case 'waited':
         parts.push(t('room.wait'));
         break;
+      // A bump that turned the body says only what it bumped.
+      case 'bodyTurned':
+        if (!e.bumped) parts.push(t('room.turn'));
+        break;
       // On the map itself, not in the room log: a whisper, not a report.
       case 'presenceSensed':
         showSensed();
@@ -1099,6 +1105,7 @@ function drawEvents(events) {
       // The gun (gun plan): room notes, and the map's effects. A landed
       // shot flies once the damage bar stops.
       case 'fireBlocked':
+      case 'targetBlocked':
         cls = 'block-msg';
         parts.push(t('gun.block.' + e.reason));
         break;
@@ -1201,7 +1208,8 @@ let lastWalkAt = -Infinity;
 // box spends a turn; a step onto the stairs only asks (goDown takes them); a trapped box or the
 // chest opens the battle screen; an energy cell opens the
 // reload panel (its answer is the turn); a turn to a new direction or a
-// bump only draws. With Real time
+// bump only draws, except that with free look a bump that turned the body
+// is a turn (bodyTurned). With Real time
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
 function movePlayer(dRow, dCol) {
   if (state.run.turnLocked || state.run.runEnded || mapPanelShown() === 'struggle') return;
@@ -1210,7 +1218,7 @@ function movePlayer(dRow, dCol) {
   const events = stepPlayer(dRow, dCol);
   const has = (type) => events.some(e => e.type === type);
   if (has('stepped')) lastWalkAt = performance.now();
-  if (has('stepped') || has('propSearched')) {
+  if (has('stepped') || has('propSearched') || has('bodyTurned')) {
     applyTurnOutcome(events);
   } else {
     const note = drawEvents(events);

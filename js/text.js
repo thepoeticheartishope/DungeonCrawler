@@ -303,6 +303,7 @@ export const TEXT = {
   'room.sensed.simple': 'Enemy close.', // draft. "I see you." with Simple enemies on (Timothy: it falls under the filter)
   'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
+  'room.turn': 'You turn.', // draft. Free look: turning the body to look further round costs a turn
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft
   'room.key': '{@term.key} {held} of {total}.', // draft. A key taken (locked core plan)
   'room.gate.unsealed': 'Somewhere behind you, the {@term.boss} listens again.', // draft. A key taken while the gate was sealed
@@ -513,7 +514,8 @@ export const TEXT = {
 
   // ---- Gun (gun combat plan): why a target can't be shot (sight.js shootBlock).
   'gun.block.outOfRange': 'Out of range.', // draft
-  'gun.block.notInLight': 'Not in your light. Turn toward it.', // draft
+  'gun.block.notInLight': 'Not in your light. Look at it first.', // draft
+  'gun.block.needsTurn': 'Behind your shoulder. Turn to face it.', // draft. Tapped, but past the free look arc
   'gun.block.noLineOfSight': 'No line of sight.', // draft
   'gun.block.noEnergy': 'No energy. Find a cell.', // draft
   'gun.block.energyFull': 'Energy is full.', // draft

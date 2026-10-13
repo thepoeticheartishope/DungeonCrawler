@@ -22,6 +22,7 @@ import { resetHaunts } from '../js/haunts.js';
 import { stepPlayer } from '../js/moves.js';
 import { whatBlocks } from '../js/passage.js';
 import { buildFloor } from '../js/floor.js';
+import { aimLook } from '../js/look.js';
 import {
   reloadCategory, reloadOffers, settleReload, pickTarget, refreshGunTarget, cycleTarget, fireBlock, fire, settleShot,
   minionStrike, staggerHunter, settleStruggle, damageZones, rollWeaknesses, addRounds, weaknessOf,
@@ -46,6 +47,8 @@ function resetFloor(size = 21) {
   state.floor.playerRow = Math.floor(size / 2);
   state.floor.playerCol = Math.floor(size / 2);
   state.floor.facing = 'N';
+  state.floor.look = null;
+  state.settings.freeLook = false;
   state.settings.fogEnabled = true;
   state.settings.activeData = SET;
   state.settings.gunCombat = false;
@@ -257,7 +260,7 @@ test('a landed shot staggers the hunter where it stands', () => {
 
 // --- pickTarget ---
 
-test('tapping a minion in sight targets it, even out of reach; tapping anything else clears it', () => {
+test('tapping a shootable minion targets it; tapping anything else clears it', () => {
   resetFloor();
   const m = minionAt(-1, 0);
   assert.deepEqual(pickTarget({ row: m.row, col: m.col }), [{ type: 'targetPicked', target: m }]);
@@ -271,6 +274,49 @@ test('a minion the player can\'t see can\'t be picked', () => {
   const m = minionAt(3, 0); // behind the player, out of their light
   assert.deepEqual(pickTarget({ row: m.row, col: m.col }), [{ type: 'targetCleared' }]);
   assert.equal(state.floor.gunTarget, null);
+});
+
+test('a minion lit only by standing beside the player can\'t be shot until they look at it', () => {
+  resetFloor();
+  state.settings.gunCombat = true;
+  const beside = minionAt(0, 1);
+  assert.ok(state.floor.sightSet.has(key(beside.row, beside.col)), 'it is lit');
+  assert.equal(fireBlock(beside), 'notInLight');
+  assert.deepEqual(refreshGunTarget(), [], 'never the target');
+  assert.deepEqual(pickTarget(beside), [{ type: 'targetBlocked', target: beside, reason: 'notInLight' }],
+    'free look off: the light can\'t go to it');
+  state.settings.freeLook = true;
+  assert.deepEqual(pickTarget(beside), [{ type: 'targetPicked', target: beside }],
+    'free look on: aiming at it brings it into the cone (30° plus the slack reaches the tile beside)');
+  const behind = minionAt(1, 0);
+  const events = pickTarget(behind);
+  assert.equal(events.at(-1).type, 'targetBlocked');
+  assert.equal(events.at(-1).reason, 'needsTurn', 'behind is past the free arc');
+});
+
+test('with free look, tapping a minion swings the light to it and the target follows', () => {
+  resetFloor();
+  state.settings.gunCombat = true;
+  state.settings.freeLook = true;
+  const ahead = minionAt(-1, 0);
+  const off = minionAt(-3, 2); // 34° east of north, further away
+  refreshGunTarget();
+  assert.equal(state.floor.gunTarget, ahead);
+  assert.deepEqual(pickTarget(off), [{ type: 'targetPicked', target: off }]);
+  assert.equal(state.floor.gunTarget, off);
+  assert.ok(Math.abs(state.floor.look - Math.atan2(2, 3)) < 1e-9, 'the aim is on it');
+});
+
+test('with two in the cone, the one nearer the aim is the target even when further away', () => {
+  resetFloor();
+  state.settings.gunCombat = true;
+  state.settings.freeLook = true;
+  const near = minionAt(-1, 1);  // 45° east, close
+  const far = minionAt(-4, 0);   // straight north, far
+  refreshGunTarget();
+  assert.equal(state.floor.gunTarget, far, 'looking north: the far one is on the aim');
+  aimLook(Math.PI / 6);
+  assert.equal(state.floor.gunTarget, near, 'sweeping the light east switches targets');
 });
 
 // --- settleShot ---
@@ -430,9 +476,9 @@ test('refreshGunTarget picks the best shootable minion and drops a dead one', ()
   resetFloor();
   const far = minionAt(-3, 0);
   const near = minionAt(-1, 0);
-  assert.deepEqual(refreshGunTarget(), [{ type: 'targetPicked', target: near, auto: true }]);
+  assert.deepEqual(refreshGunTarget(), [{ type: 'targetPicked', target: near, auto: true }], 'both on the aim: the nearer one');
   assert.equal(state.floor.gunTarget, near);
-  assert.deepEqual(refreshGunTarget(), [], 'a target that can still be shot stays');
+  assert.deepEqual(refreshGunTarget(), [], 'a target that is still the best stays');
   state.floor.minions = state.floor.minions.filter(m => m !== near);
   refreshGunTarget();
   assert.equal(state.floor.gunTarget, far);

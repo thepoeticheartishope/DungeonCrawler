@@ -7,6 +7,7 @@ import { state, key } from './state.js';
 import { reachGate } from './gate.js';
 import { whatBlocks } from './passage.js';
 import { computeVisibility } from './sight.js';
+import { followBody } from './look.js';
 import { DARK_GOLD_MULTIPLIER, BOX_GOLD } from './config.js';
 
 // Gold pays DARK_GOLD_MULTIPLIER times as much in the darkness after the boss.
@@ -41,25 +42,29 @@ function takeKey(index) {
   return { type: 'keyTaken', held: state.floor.keysHeld, total: state.floor.keysHeld + state.floor.keys.length, unsealed };
 }
 
-// One arrow press. A press in a new direction turns the player to face it
-// (and the light cone with it), then goes on to step that way in the same
-// press. With state.settings.turnBeforeStep on, it only turns: no step, no
+// One arrow press. A press in a new direction turns the player's body to
+// face it, then goes on to step that way in the same press. The light turns
+// with the body; with free look on, the aim stays where it was and the
+// light is held inside the new arc (look.js followBody / lookAngle). With state.settings.turnBeforeStep on, it only turns: no step, no
 // bump, no turn spent, so they can look behind them first. Turning first is
 // off by default because combat.js senseUnseen warns ("I see you.") before
 // anything unseen gets next to them. Events: turned { facing } (alone when
 // turning first, else before the rest),
-// blocked { kind, thing }, stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
+// blocked { kind, thing } (with free look, then bodyTurned { facing,
+// bumped: true } if the press turned the body: a spent turn), stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
 // keyTaken { held, total, unsealed }, gateReached { questions } (bumped the
 // boss; main.js opens the battle screen), blocked { kind: 'gate' } (it's sealed),
 // paperRead { paper, loot, story? }, roomEntered { theme, name }, exchangeOpened
 // (bumped THE UNFOLDING; main.js opens its screen), itemReached { thing }
 // (bumped the chest; main.js opens the battle screen) and
-// the box events from examineProp. A turn is spent only by `stepped` or `propSearched`.
+// the box events from examineProp. A turn is spent only by `stepped`, `propSearched` or `bodyTurned`.
 export function stepPlayer(dRow, dCol) {
   const events = [];
   const facing = dRow === -1 ? 'N' : dRow === 1 ? 'S' : dCol === 1 ? 'E' : 'W';
-  if (state.floor.facing !== facing) {
+  const turned = state.floor.facing !== facing;
+  if (turned) {
     state.floor.facing = facing;
+    followBody();
     computeVisibility();
     events.push({ type: 'turned', facing });
     if (state.settings.turnBeforeStep) return events;
@@ -89,6 +94,9 @@ export function stepPlayer(dRow, dCol) {
   }
   if (block) {
     events.push({ type: 'blocked', kind: block.kind, thing: block.thing });
+    // With free look, turning costs a turn, so a bump that turned the body
+    // isn't a free turn: it's spent like one (free look plan, call 1).
+    if (turned && state.settings.freeLook) events.push({ type: 'bodyTurned', facing, bumped: true });
     return events;
   }
 

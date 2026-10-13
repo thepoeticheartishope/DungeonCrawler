@@ -4,7 +4,7 @@
 //
 // Starts a static server for this repo, then drives the game in a real
 // browser via Playwright (imported from ~/Repo/codecraft-classroom/node_modules
-// — do NOT add Playwright or node_modules to this repo) through five runs,
+// — do NOT add Playwright or node_modules to this repo) through six runs,
 // all picking the built-in "Bible Quiz Bowl" set on the set screen, with Auto-win on:
 //
 //   1. Skip-room run: one manual step, then "Skip room (dev)" repeatedly to
@@ -34,6 +34,9 @@
 //      gun run's walk until a reload and a kill; every minion's glyph is
 //      'e' (or 'E', its tell), the hunter's 'E', and the option is still checked after a
 //      reload of the page (it's remembered).
+//   6. Free look run: DEV -> Free look on, then the gun run's walk until a
+//      reload and a kill; a tap on a seen minion aims the light at it and
+//      spends no turn.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -364,6 +367,7 @@ async function bumpEnergyCell(page) {
     f.playerRow = drum.row + 1;
     f.playerCol = drum.col;
     f.facing = 'N';
+    f.look = 0;
     computeVisibility();
     return true;
   });
@@ -376,10 +380,11 @@ async function bumpEnergyCell(page) {
 // as the battle run does; press F (SELECT) whenever the target can be shot,
 // and bump an energy cell every few steps while energy isn't full,
 // until a reload loaded and a shot killed a minion.
-async function attemptGun(page, url, simpleEnemies = false) {
+async function attemptGun(page, url, simpleEnemies = false, freeLook = false) {
   await loadPageAndSet(page, url);
   if (simpleEnemies) await page.check('#simpleEnemiesToggle');
   await startGameAndWaitForRoom(page);
+  if (freeLook) await page.evaluate(() => document.getElementById('devFreeLookBtn').click());
   await installGunWatchers(page);
   await turnOnAutoWin(page);
   await page.click('#devSkipBtn');
@@ -588,6 +593,50 @@ async function runSimpleEnemies(browser, url) {
   return { ok: true, detail: 'minions showed as e, a shot killed one, and the option was remembered', consoleErrors, pageErrors };
 }
 
+// ---- Run 6: free look ----
+
+// DEV -> Free look on, then the gun run's walk until a reload and a kill.
+// Then a minion's tile is tapped through the real rule (gun.js
+// pickTarget): the aim goes to it and no turn passes.
+async function checkFreeLook(page, url) {
+  const MAX_RESTARTS = 2;
+  let done = false;
+  for (let attempt = 0; attempt <= MAX_RESTARTS && !done; attempt++) {
+    done = await attemptGun(page, url, false, true);
+  }
+  if (!done) return `no reload and kill within ${GUN_MAX_STEPS} steps, after ${MAX_RESTARTS + 1} attempts`;
+  const tap = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { pickTarget } = await import('./js/gun.js');
+    const f = state.floor;
+    if (!state.settings.freeLook) return 'free look did not switch on';
+    f.look = 0;
+    const turns = state.run.turnCount;
+    const m = f.minions.find(x => x.kind === 'minion' && f.visibleSet.has(x.row + ',' + x.col));
+    if (!m) return '';
+    pickTarget({ row: m.row, col: m.col });
+    const aim = Math.atan2(m.col - f.playerCol, -(m.row - f.playerRow));
+    if (Math.abs(Math.atan2(Math.sin(f.look - aim), Math.cos(f.look - aim))) > 1e-6) return 'a tap did not aim the light at the minion';
+    if (state.run.turnCount !== turns) return 'aiming spent a turn';
+    return '';
+  });
+  return tap;
+}
+
+async function runFreeLook(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkFreeLook(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'with free look on, a reload loaded, a shot killed a minion, and a tap aimed the light', consoleErrors, pageErrors };
+}
+
 // ---- Main ----
 
 async function main() {
@@ -615,11 +664,12 @@ async function main() {
       const gunResult = await runGun(browser, url);
       const realTimeResult = await runRealTime(browser, url);
       const simpleResult = await runSimpleEnemies(browser, url);
+      const freeLookResult = await runFreeLook(browser, url);
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult]]) {
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult]]) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {
