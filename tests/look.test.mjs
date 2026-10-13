@@ -11,6 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { freshLight } from '../js/battery.js';
 import { state, key } from '../js/state.js';
 import { LOOK_FREE_ARC, PLAYER_CONE_RANGE } from '../js/config.js';
 import { computeVisibility, inLookCone, FACING_VECTORS } from '../js/sight.js';
@@ -33,6 +34,7 @@ function resetFloor(size = 21) {
   state.settings.turnBeforeStep = false;
   state.settings.eightWays = true;
   state.floor.darkness = false;
+  state.floor.light = freshLight();
   state.floor.wallSet = new Set();
   state.floor.pillarSet = new Set();
   state.floor.bossLitSet = new Set();

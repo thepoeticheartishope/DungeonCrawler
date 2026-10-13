@@ -10,6 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { freshLight } from '../js/battery.js';
 import { state, key } from '../js/state.js';
 import {
   ENERGY_MAX, RELOAD_ENERGY, WEAKNESS_DAMAGE_SCALE, MINION_KINDS, DAMAGE_BAR_DEPTHS, DAMAGE_ZONE_GAP, MINION_STRIKE_COST, MINION_STUN_MOVES,
@@ -53,6 +54,7 @@ function resetFloor(size = 21) {
   state.settings.activeData = SET;
   state.settings.gunCombat = false;
   state.floor.darkness = false;
+  state.floor.light = freshLight();
   state.floor.wallSet = new Set();
   state.floor.pillarSet = new Set();
   state.floor.bossLitSet = new Set();

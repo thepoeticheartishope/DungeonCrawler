@@ -4,7 +4,7 @@
 //
 // Starts a static server for this repo, then drives the game in a real
 // browser via Playwright (imported from ~/Repo/codecraft-classroom/node_modules
-// — do NOT add Playwright or node_modules to this repo) through six runs,
+// — do NOT add Playwright or node_modules to this repo) through seven runs,
 // all picking the built-in "Bible Quiz Bowl" set on the set screen, with Auto-win on:
 //
 //   1. Skip-room run: one manual step, then "Skip room (dev)" repeatedly to
@@ -42,6 +42,11 @@
 //      edge and past it, saved as noesis-free-look-*.png
 //      in the system's temp folder. Then DEV -> Free look off and a few
 //      turns played.
+//   7. Light battery run: the battery reads LIGHT #### ON at the foot of
+//      the map; V switches it off (only the small circle lit, no turn spent)
+//      and on; 4 turns on and it dies, refuses V while charging, and is
+//      charged again after 4 turns off. Then Comfort mode (the renamed
+//      Simple enemies) on: no battery shown and V does nothing.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -396,6 +401,9 @@ async function attemptGun(page, url, simpleEnemies = false) {
   await installGunWatchers(page);
   await turnOnAutoWin(page);
   await page.click('#devSkipBtn');
+  // The walk never switches the light, so the battery is left out (the
+  // light battery run plays it); otherwise the light dies in 4 turns.
+  if (!simpleEnemies) await page.click('#devLightBatteryBtn');
   await page.waitForTimeout(200);
 
   let dir = 0;
@@ -876,6 +884,87 @@ async function runEightWays(browser, url) {
   return { ok: true, detail: 'the square pad fit a phone, keys, chord, buttons and number pad walked by screen, and 8 ways off walked as before', consoleErrors, pageErrors };
 }
 
+// ---- Run 7: light battery ----
+
+// The battery's text at the foot of the map, or null while it's hidden.
+function batteryShown(page) {
+  return page.evaluate(() => {
+    const el = document.getElementById('lightBattery');
+    return el.hidden ? null : el.textContent;
+  });
+}
+
+// The newest note in the room log.
+function lastNote(page) {
+  return page.evaluate(() => document.getElementById('roomFeedback').lastElementChild?.dataset.text || '');
+}
+
+// The checks listed in the header. Returns what failed ('' when all held).
+async function checkLightBattery(page, url) {
+  await loadPageAndSet(page, url);
+  await startGameAndWaitForRoom(page);
+  await roomIdle(page);
+  const wait = async (turns) => {
+    for (let i = 0; i < turns; i++) {
+      await page.keyboard.press('.');
+      await roomIdle(page);
+    }
+  };
+  const lit = () => page.evaluate(async () => (await import('./js/state.js')).state.floor.sightSet.size);
+
+  if (await batteryShown(page) !== 'LIGHT #### ON') return `the battery read ${await batteryShown(page)} at the start`;
+  const litOn = await lit();
+  const turns = await turnsShown(page);
+  await page.keyboard.press('v');
+  if (await batteryShown(page) !== 'LIGHT #### OFF') return `V left the battery reading ${await batteryShown(page)}`;
+  if (await turnsShown(page) !== turns) return 'switching the light spent a turn';
+  if (await lit() > 9 || await lit() >= litOn) return `${await lit()} tiles lit with the light off (${litOn} on)`;
+  if (!(await lastNote(page)).startsWith('Light off')) return `switching off said "${await lastNote(page)}"`;
+  await page.keyboard.press('v');
+  if (await batteryShown(page) !== 'LIGHT #### ON') return `V again left ${await batteryShown(page)}`;
+
+  await wait(3);
+  if (await batteryShown(page) !== 'LIGHT #--- ON') return `3 turns on left ${await batteryShown(page)}`;
+  await wait(1);
+  if (await batteryShown(page) !== 'LIGHT ---- EMPTY') return `4 turns on left ${await batteryShown(page)}`;
+  if (!(await page.evaluate(() => document.getElementById('roomFeedback').textContent)).includes('Your light dies.')) return 'no "Your light dies." in the log';
+  await page.keyboard.press('v');
+  if (await lastNote(page) !== 'No light until it is full. 4 more turns.') return `V while empty said "${await lastNote(page)}"`;
+  if (await batteryShown(page) !== 'LIGHT ---- EMPTY') return `V while empty left ${await batteryShown(page)}`;
+  await wait(4);
+  if (await batteryShown(page) !== 'LIGHT #### OFF') return `4 turns off left ${await batteryShown(page)}`;
+  if (!(await page.evaluate(() => document.getElementById('roomFeedback').textContent)).includes('Your light is charged.')) return 'no "Your light is charged." in the log';
+  await page.keyboard.press('v');
+  if (await batteryShown(page) !== 'LIGHT #### ON') return `V when charged left ${await batteryShown(page)}`;
+
+  await loadPageAndSet(page, url);
+  const label = await page.locator('label:has(#simpleEnemiesToggle)').textContent();
+  if (!label.includes('Comfort mode')) return `the comfort option reads "${label.trim()}"`;
+  await page.check('#simpleEnemiesToggle');
+  await startGameAndWaitForRoom(page);
+  await roomIdle(page);
+  if (await batteryShown(page) !== null) return 'the battery shows in Comfort mode';
+  const before = await lit();
+  await page.keyboard.press('v');
+  await wait(5);
+  if (await lit() !== before) return 'the light changed in Comfort mode';
+  return '';
+}
+
+async function runLightBattery(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkLightBattery(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'V switched the light, the battery died after 4 turns, locked, charged after 4, and Comfort mode kept it always on', consoleErrors, pageErrors };
+}
+
 // ---- Main ----
 
 async function main() {
@@ -905,11 +994,12 @@ async function main() {
       const simpleResult = await runSimpleEnemies(browser, url);
       const freeLookResult = await runFreeLook(browser, url);
       const eightWaysResult = await runEightWays(browser, url);
+      const lightBatteryResult = await runLightBattery(browser, url);
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult]]) {
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult]]) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {

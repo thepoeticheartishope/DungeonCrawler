@@ -15,6 +15,7 @@ import { floorRecipe, pickPaths, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './quiz.js';
 import { BODY_ANGLES } from './look.js';
 import { computeVisibility } from './sight.js';
+import { freshLight } from './battery.js';
 import { spawnMinion } from './combat.js';
 import { initBossLight } from './light.js';
 import { placeBeats } from './beats.js';
@@ -110,6 +111,7 @@ function randomLayout(recipe) {
 // and camera that follow from them. No page access.
 export function buildFloor() {
   state.run.floorsEntered++;
+  state.floor.light = freshLight();
   // The way down the player chose at the last rest's stairs, if any.
   state.floor.path = state.run.nextPath;
   state.run.nextPath = null;
@@ -335,6 +337,7 @@ function doorTiles(layout) {
 // (run.js nextFloor()). No page access.
 export function buildRestFloor(kind) {
   state.run.floorsEntered++;
+  state.floor.light = freshLight();
   const f = state.floor;
   f.GRID_SIZE = REST_GRID;
   f.CHAMBER_TARGET = 1;

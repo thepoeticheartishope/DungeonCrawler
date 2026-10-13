@@ -3,7 +3,7 @@
 // toggles, a test shot and a test reload, for testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw } from './mapview.js';
-import { renderRoomHints } from './render.js';
+import { renderRoomHints, renderHud } from './render.js';
 import { MINIGAMES } from './minigames.js';
 import { STICK_POSE_IDS, TENDRIL_STYLES } from './stickforms.js';
 import { followBody, lookAngle, bodyAngle, nearestWay } from './look.js';
@@ -19,6 +19,7 @@ const devFogBtn = document.getElementById('devFogBtn');
 const devTurnBtn = document.getElementById('devTurnBtn');
 const devFreeLookBtn = document.getElementById('devFreeLookBtn');
 const devEightWaysBtn = document.getElementById('devEightWaysBtn');
+const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
 const dpadEl = document.getElementById('dpad');
 const devCameraBtn = document.getElementById('devCameraBtn');
 const devLookBtn = document.getElementById('devLookBtn');
@@ -123,6 +124,19 @@ export function initDevPanel({
     computeVisibility();
     if (state.settings.gunCombat) refreshGunTarget();
     renderRoomHints();
+    requestMapDraw();
+  });
+
+  // Dev tool (light battery plan): the light goes on and off and runs on
+  // its battery, or is always on, as before. Off, the light comes back on.
+  devLightBatteryBtn.addEventListener('click', () => {
+    state.settings.lightBattery = !state.settings.lightBattery;
+    devLightBatteryBtn.textContent = state.settings.lightBattery ? 'Light battery: ON (dev)' : 'Light battery: OFF (dev)';
+    devLightBatteryBtn.setAttribute('aria-pressed', String(state.settings.lightBattery));
+    if (state.floor.playerRow === undefined) return;
+    computeVisibility();
+    if (state.settings.gunCombat) refreshGunTarget();
+    renderHud();
     requestMapDraw();
   });
 

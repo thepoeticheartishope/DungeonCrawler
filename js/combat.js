@@ -5,6 +5,7 @@
 import { state, key } from './state.js';
 import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS } from './config.js';
 import { advanceLight } from './light.js';
+import { tickLight } from './battery.js';
 import { minionStrike, struggleDial } from './gun.js';
 import { keptOut } from './relays.js';
 import { canPassCorner } from './passage.js';
@@ -234,7 +235,8 @@ export function advanceMonsters({ canStruggle = true } = {}) {
   // and slow kinds only move every MINION_KINDS moveEvery turns. Minions roam freely and only
   // give chase once the player is within MINION_CHASE_RANGE walkable steps.
   const gun = state.settings.gunCombat;
-  const events = [];
+  // The light's battery runs down or charges first (battery.js).
+  const events = tickLight();
   if (state.floor.darkness) {
     state.floor.darkTurns++;
     const hunter = !state.floor.hunter && state.floor.darkTurns >= HUNTER_SPAWN_DELAY ? wakeHunter() : null;

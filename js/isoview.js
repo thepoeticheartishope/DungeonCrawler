@@ -28,6 +28,7 @@ import { state, key } from './state.js';
 import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF } from './config.js';
 import { FACING_VECTORS, canShoot } from './sight.js';
 import { lookAngle, bodyAngle, wrapAngle } from './look.js';
+import { lightOn } from './battery.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
 import { drawStickForm, stickBox, dyingSticks } from './stickforms.js';
@@ -1049,8 +1050,8 @@ function easeLook() {
 
 // The look at the player's feet (free look plan): a faint ring all round,
 // a brighter arc over the free range (body ±30°), the body's wedge, and a
-// tick where the light points, then the cone's edges. With free look off,
-// only the wedge, as before.
+// tick where the light points, then the cone's edges (none with the light
+// off: battery.js). With free look off, only the wedge, as before.
 function drawLookRing(ctx, at) {
   drawFacing(ctx, at);
   if (!state.settings.freeLook) return;
@@ -1065,7 +1066,7 @@ function drawLookRing(ctx, at) {
   ctx.lineWidth = EDGE_WIDTH * tw * 2;
   strokeGlow(ctx, LOOK_TICK_LEVEL, RIDGE_BLUR);
   line(ctx, toward(at, frameLook, LOOK_RING * LOOK_TICK[0]), toward(at, frameLook, LOOK_RING * LOOK_TICK[1]));
-  drawConeEdges(ctx, at);
+  if (lightOn()) drawConeEdges(ctx, at);
   ctx.restore();
 }
 
