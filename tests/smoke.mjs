@@ -34,11 +34,14 @@
 //      gun run's walk until a reload and a kill; every minion's glyph is
 //      'e' (or 'E', its tell), the hunter's 'E', and the option is still checked after a
 //      reload of the page (it's remembered).
-//   6. Free look run: DEV -> Free look on, then the gun run's walk until a
+//   6. Free look run (free look is the default): the gun run's walk until a
 //      reload and a kill; a tap on a seen minion aims the light at it and
-//      spends no turn. Then the map is drawn looking ahead, at the arc's
-//      edge and past it (the turn ghost), saved as noesis-free-look-*.png
-//      in the system's temp folder.
+//      spends no turn. The look stick: a drag aims for free, two taps wait
+//      one turn, aimed past the arc one tap turns for one turn; the mouse
+//      over the map aims. Then the map is drawn looking ahead, at the arc's
+//      edge and past it, saved as noesis-free-look-*.png
+//      in the system's temp folder. Then DEV -> Free look off and a few
+//      turns played.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -383,11 +386,10 @@ async function bumpEnergyCell(page) {
 // as the battle run does; press F (SELECT) whenever the target can be shot,
 // and bump an energy cell every few steps while energy isn't full,
 // until a reload loaded and a shot killed a minion.
-async function attemptGun(page, url, simpleEnemies = false, freeLook = false) {
+async function attemptGun(page, url, simpleEnemies = false) {
   await loadPageAndSet(page, url);
   if (simpleEnemies) await page.check('#simpleEnemiesToggle');
   await startGameAndWaitForRoom(page);
-  if (freeLook) await page.evaluate(() => document.getElementById('devFreeLookBtn').click());
   await installGunWatchers(page);
   await turnOnAutoWin(page);
   await page.click('#devSkipBtn');
@@ -598,14 +600,16 @@ async function runSimpleEnemies(browser, url) {
 
 // ---- Run 6: free look ----
 
-// DEV -> Free look on, then the gun run's walk until a reload and a kill.
-// Then a minion's tile is tapped through the real rule (gun.js
-// pickTarget): the aim goes to it and no turn passes.
+// Free look (on by default): the gun run's walk until a reload and a
+// kill. Then a minion's tile is tapped through the real rule (gun.js
+// pickTarget): the aim goes to it and no turn passes. Then the look stick
+// and the map are checked (lookControls), pictures are taken (lookShots),
+// and with DEV -> Free look off a few turns are played.
 async function checkFreeLook(page, url) {
   const MAX_RESTARTS = 2;
   let done = false;
   for (let attempt = 0; attempt <= MAX_RESTARTS && !done; attempt++) {
-    done = await attemptGun(page, url, false, true);
+    done = await attemptGun(page, url);
   }
   if (!done) return `no reload and kill within ${GUN_MAX_STEPS} steps, after ${MAX_RESTARTS + 1} attempts`;
   const tap = await page.evaluate(async () => {
@@ -624,11 +628,108 @@ async function checkFreeLook(page, url) {
     return '';
   });
   if (tap) return tap;
-  return await lookShots(page);
+  const controls = await lookControls(page);
+  if (controls) return controls;
+  const shots = await lookShots(page);
+  if (shots) return shots;
+  return await playWithoutFreeLook(page);
 }
 
-// Aims straight ahead, at the edge of the free arc, and past it (the turn
-// ghost), drawing each and saving a picture of the map to the system's
+// The look's state now: { look, facing, turns, wants }.
+function lookNow(page) {
+  return page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { wantsTurn } = await import('./js/look.js');
+    return { look: state.floor.look, facing: state.floor.facing, turns: state.run.turnCount, wants: wantsTurn() };
+  });
+}
+
+// Waits until the room screen takes input again (no panel, no turn).
+async function roomIdle(page) {
+  await page.waitForFunction(async () => {
+    const { state } = await import('./js/state.js');
+    return document.getElementById('roomScreen').classList.contains('show') && !state.run.turnLocked &&
+      ['reloadPanel', 'askQuestionPanel', 'aimPanel'].every(id => document.getElementById(id).hidden);
+  }, null, { timeout: 10000 });
+}
+
+// The look stick (dpad.js initLookStick) and the map with a mouse: a
+// drag aims and spends no turn; two taps wait one turn; aimed past the
+// arc (E pressed 5 times), one tap turns the body for one turn; the mouse
+// over the map aims.
+async function lookControls(page) {
+  if (await page.isVisible('#devPanel.show')) await page.click('#devToggleBtn');
+  await roomIdle(page);
+  await page.evaluate(async () => {
+    const { aimLook, bodyAngle } = await import('./js/look.js');
+    aimLook(bodyAngle());
+  });
+  const stick = await page.locator('#btnSkip').boundingBox();
+  const cx = stick.x + stick.width / 2;
+  const cy = stick.y + stick.height / 2;
+  let before = await lookNow(page);
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + 10, cy, { steps: 3 });
+  await page.mouse.move(cx + 24, cy, { steps: 3 });
+  await page.mouse.up();
+  let after = await lookNow(page);
+  if (after.look === before.look) return 'dragging the look stick did not aim';
+  if (after.turns !== before.turns) return 'dragging the look stick spent a turn';
+
+  await page.evaluate(async () => {
+    const { aimLook, bodyAngle } = await import('./js/look.js');
+    aimLook(bodyAngle());
+  });
+  before = await lookNow(page);
+  await page.click('#btnSkip');
+  await page.click('#btnSkip');
+  await roomIdle(page);
+  after = await lookNow(page);
+  if (after.turns !== before.turns + 1) return `two taps on the look stick passed ${after.turns - before.turns} turns, not 1`;
+
+  await page.evaluate(async () => {
+    const { aimLook, bodyAngle } = await import('./js/look.js');
+    aimLook(bodyAngle());
+  });
+  for (let i = 0; i < 5; i++) await page.keyboard.press('e'); // 5 nudges of 15°: past the arc
+  before = await lookNow(page);
+  if (!before.wants) return 'aiming past the arc did not want a turn';
+  if (!await page.locator('#btnSkip.armed').count()) return 'the look stick was not lit past the arc';
+  await page.click('#btnSkip');
+  await roomIdle(page);
+  after = await lookNow(page);
+  if (after.facing === before.facing) return 'one tap past the arc did not turn the body';
+  if (after.turns !== before.turns + 1) return `turning passed ${after.turns - before.turns} turns, not 1`;
+
+  const map = await page.locator('#mapCanvas').boundingBox();
+  before = await lookNow(page);
+  await page.mouse.move(map.x + map.width * 0.15, map.y + map.height * 0.2);
+  await page.mouse.move(map.x + map.width * 0.85, map.y + map.height * 0.8, { steps: 4 });
+  after = await lookNow(page);
+  if (after.look === before.look) return 'the mouse over the map did not aim';
+  if (after.turns !== before.turns) return 'the mouse over the map spent a turn';
+  return '';
+}
+
+// DEV -> Free look off, then a few waits and arrow presses: the light
+// is straight ahead again and nothing breaks.
+async function playWithoutFreeLook(page) {
+  await page.evaluate(() => document.getElementById('devFreeLookBtn').click());
+  for (const k of ['.', 'ArrowLeft', '.', 'ArrowUp', 'ArrowRight']) {
+    await roomIdle(page);
+    await page.keyboard.press(k);
+    await page.waitForTimeout(80);
+  }
+  const off = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { lookAngle, bodyAngle } = await import('./js/look.js');
+    return !state.settings.freeLook && lookAngle() === bodyAngle();
+  });
+  return off ? '' : 'with free look off the light was not straight ahead';
+}
+
+// Aims straight ahead, at the edge of the free arc, and past it, drawing each and saving a picture of the map to the system's
 // temp folder for a look by eye. Past the arc a turn must be wanted.
 async function lookShots(page) {
   for (const [name, offset] of [['ahead', 0], ['edge', 30], ['past', 100]]) {
@@ -658,7 +759,7 @@ async function runFreeLook(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'with free look on, a reload loaded, a shot killed a minion, and a tap aimed the light', consoleErrors, pageErrors };
+  return { ok: true, detail: 'a shot killed a minion, a tap and the mouse aimed, the look stick aimed, waited and turned, and free look off played', consoleErrors, pageErrors };
 }
 
 // ---- Main ----

@@ -666,6 +666,9 @@
     width: 100%;
     height: 100%;
     border: 1px solid var(--line);
+    /* A finger dragged on the map aims the light (js/mapview.js
+       onMapPointer), so the page mustn't scroll under it. */
+    touch-action: none;
   }
 
   /* The damage bar and the Struggle dial (js/gunpanels.js): a strip on
@@ -914,6 +917,20 @@
   .dpad-n { grid-column: 2; grid-row: 1; }
   .dpad-w { grid-column: 1; grid-row: 2; }
   .dpad-center { grid-column: 2; grid-row: 2; }
+  /* The look stick (js/dpad.js initLookStick): a knob that follows a drag
+     and springs back; lit while a tap would turn the body. */
+  .look-knob {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: currentColor;
+    pointer-events: none;
+    transition: transform 0.12s ease-out;
+  }
+  .dpad-center.armed { background: var(--torch-bright); color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) {
+    .look-knob { transition: none; }
+  }
   .dpad-e { grid-column: 3; grid-row: 2; }
   .dpad-s { grid-column: 2; grid-row: 3; }
   /* Which ways are open (render.js renderMoveHints): blocked dims, a
@@ -1460,7 +1477,7 @@
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devTurnBtn" type="button" aria-pressed="false" title="Testing only: a press in a new direction turns and steps (warned by I see you.), or only turns so you look first">Turn: and step (dev)</button>
-      <button class="dev-skip" id="devFreeLookBtn" type="button" aria-pressed="false" title="Testing only: the light points where you aim, up to 30 degrees off the way you face (free look), or only where you face">Free look: OFF (dev)</button>
+      <button class="dev-skip" id="devFreeLookBtn" type="button" aria-pressed="true" title="Testing only: the light points where you aim, up to 30 degrees off the way you face (free look), or only where you face">Free look: ON (dev)</button>
       <button class="dev-skip" id="devMinigameBtn" type="button" title="Testing only: minigames roll as usual, never, or always (one picked), swapping in a question it fits">Minigame: roll (dev)</button>
       <button class="dev-skip" id="devCameraBtn" type="button" title="Testing only: in isometric, the camera glides after the player or stays locked to them" aria-pressed="true">Camera: glide (dev)</button>
       <button class="dev-skip" id="devLookBtn" type="button" title="Testing only: each stick enemy picks its own pose at random, or every one shows the pose picked here">Look: random (dev)</button>
@@ -1736,7 +1753,7 @@
     <div class="dpad" id="dpad">
       <button class="dpad-n" id="btnN" type="button" aria-label="Move north">^</button>
       <button class="dpad-w" id="btnW" type="button" aria-label="Move west">&lt;</button>
-      <button class="dpad-center" id="btnSkip" type="button" aria-label="Skip turn">.</button>
+      <button class="dpad-center" id="btnSkip" type="button" aria-label="Look stick: drag to aim, tap twice to wait"><span class="look-knob" aria-hidden="true"></span></button>
       <button class="dpad-e" id="btnE" type="button" aria-label="Move east">&gt;</button>
       <button class="dpad-s" id="btnS" type="button" aria-label="Move south">v</button>
     </div>

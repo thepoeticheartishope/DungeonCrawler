@@ -397,13 +397,27 @@ export const PLAYER_CONE_RANGE = 5;
 // stays 90° wide (45° each side of the look) and PLAYER_CONE_RANGE deep.
 // LOOK_NUDGE is one press of Q / E. DEV -> Free look switches it
 // (state.settings.freeLook); off, the light points where the body faces.
+// On by default since the controls (free look plan step C).
 export const LOOK_FREE_ARC = Math.PI / 6;
 export const LOOK_NUDGE = Math.PI / 12;
-export const FREE_LOOK = false;
+export const FREE_LOOK = true;
 // The cone's half-width, and the slack each tile gets (sight.js inLookCone:
 // atan2(LOOK_CONE_SLACK, distance)) so an off-angle cone isn't ragged.
 export const LOOK_CONE_HALF = Math.PI / 4;
 export const LOOK_CONE_SLACK = 0.35;
+// The look controls (free look plan step C). The d-pad's centre is a look
+// stick (dpad.js initLookStick): a drag past LOOK_STICK_DRAG_PX aims, its
+// knob following up to LOOK_STICK_KNOB_PX; a tap turns the body when the
+// aim is past the arc, else two taps within LOOK_STICK_WAIT_MS wait. On the
+// map (mapview.js onMapPointer), a press that moves past MAP_DRAG_PX is a
+// drag that aims, not a tap.
+export const LOOK_STICK_DRAG_PX = 6;
+export const LOOK_STICK_KNOB_PX = 18;
+export const LOOK_STICK_WAIT_MS = 450;
+export const MAP_DRAG_PX = 8;
+// The pointer this close to the player's own tile (in tiles) doesn't aim:
+// the angle would jump about under it.
+export const LOOK_POINTER_DEAD = 0.35;
 
 // Turning (moves.js stepPlayer). With TURN_BEFORE_STEP on, a press in a new
 // direction only turns the player, so they look before they walk. Off, a
@@ -767,7 +781,6 @@ export const MAP_ANIMATION_MS = {
   gunMiss: 900,     // MISS floating up over a minion the shot missed, fading
   gunRecoil: 120,   // the gun kicking back toward the player as it fires
   lookEase: 70,     // the drawn look (ring tick, cone edges, the stick man's gaze) easing toward where the player aims (free look)
-  turnGhost: 1800,  // the turn ghost's slow pulse while the player aims past the free arc (free look)
   // Minions as stick men (stick enemies plan, js/stickforms.js). Slow on
   // purpose: the calm rule for motion- and flicker-sensitive players.
   stickTell: 900,    // a stick enemy eases into its tell pose, or back out (stickforms.js)

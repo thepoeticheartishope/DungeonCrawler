@@ -4,7 +4,8 @@ import { nextFloor } from './run.js';
 import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX,
   BATTLE_CHOICE_COUNT,
-  TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM
+  TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
+  LOOK_NUDGE, LOOK_POINTER_DEAD,
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -31,12 +32,14 @@ import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapTap, glyphOf } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapPointer, glyphOf } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
-import { initDpad } from './dpad.js';
+import { initDpad, initLookStick } from './dpad.js';
+import { aimLook, turnBody, wantsTurn, lookAngle } from './look.js';
+import { isoAngleOf } from './isoview.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
@@ -102,8 +105,9 @@ const dpadButtons = {
   S: document.getElementById('btnS'),
   E: document.getElementById('btnE'),
   W: document.getElementById('btnW'),
-  Skip: document.getElementById('btnSkip')
+  Skip: document.getElementById('btnSkip'),
 };
+const lookStick = dpadButtons.Skip; // the d-pad's centre: the look stick (dpad.js initLookStick)
 const btnSelect = document.getElementById('btnSelect');
 
 initRender({
@@ -125,7 +129,7 @@ initRender({
   btnSelect,
 });
 initMapView(document.getElementById('mapCanvas'));
-onMapTap(tapMap);
+onMapPointer({ aim: aimAtPoint, tap: tapMap });
 
 initDataView({ backScreen: document.getElementById('workshopScreen') });
 initExchangeView({ buyItem, leaveExchange });
@@ -146,10 +150,64 @@ initDevPanel({
 // target: the light swings to the minion on that tile and the target
 // follows it, or a note says why it can't be shot. Costs no turn. Only SELECT
 // fires (Timothy: tap, then SELECT), so a tap can never shoot by accident.
-function tapMap(tile) {
+// A mouse click on anything else turns the body when the aim is past the
+// free arc (free look plan); a tap on a phone never turns, so a stray tap
+// can't spend a turn.
+function tapMap(tile, pointerType) {
+  const minion = state.floor.minions.some(m => m.row === tile.row && m.col === tile.col);
+  if (!minion && pointerType === 'mouse' && wantsTurn()) { turnLook(); return; }
   if (!gunReady()) return;
   const note = drawEvents(pickTarget(tile));
   if (note.text) showRoomNote(note.cls, note.text);
+}
+
+// Whether the player can aim right now: free look on, the room screen up
+// with no panel over it, and no turn in progress. Aiming is free, so the
+// real-time clock doesn't matter.
+function lookReady() {
+  return state.settings.freeLook && roomScreen.classList.contains('show') && !mapPanelShown() &&
+    !state.run.turnLocked && !state.run.runEnded;
+}
+
+// Aims the light at `angle` (look.js aimLook) and draws the result. No turn.
+function aimTo(angle) {
+  if (!lookReady()) return;
+  drawEvents(aimLook(angle));
+}
+
+// The mouse or a dragged finger over the map: aims at the grid point
+// under it, unless it's on the player's own tile, where the angle would
+// jump about.
+function aimAtPoint(point) {
+  const dr = point.row - state.floor.playerRow;
+  const dc = point.col - state.floor.playerCol;
+  if (Math.hypot(dr, dc) < LOOK_POINTER_DEAD) return;
+  aimTo(Math.atan2(dc, -dr));
+}
+
+// Q / E: nudges the aim LOOK_NUDGE round, anticlockwise (-1) or clockwise
+// (1). An aim already past the arc goes on from there, so presses add up
+// to a turn.
+function nudgeLook(dir) {
+  const from = wantsTurn() ? state.floor.look : lookAngle();
+  aimTo(from + dir * LOOK_NUDGE);
+}
+
+// Turns the body toward an aim past the free arc (look.js turnBody): a
+// spent turn, so the minions get a move.
+function turnLook() {
+  if (!wantsTurn() || state.run.turnLocked || state.run.runEnded || mapPanelShown()) return;
+  state.run.turnLocked = true;
+  applyTurnOutcome(turnBody());
+  state.run.turnLocked = false;
+}
+
+// The look stick lights up while a tap would turn the body, and its label
+// says what a tap does.
+function syncLookStick() {
+  const armed = wantsTurn();
+  lookStick.classList.toggle('armed', armed);
+  lookStick.setAttribute('aria-label', t(armed ? 'dpad.stick.turn' : 'dpad.stick.wait'));
 }
 
 // Whether the gun can be used right now: gun combat on, the room screen
@@ -752,6 +810,7 @@ function drawFloor() {
   applyStaticText();
 
   renderRoomHints();
+  syncLookStick();
   renderLightEye();
   renderTargeting();
   requestMapDraw();
@@ -1181,6 +1240,7 @@ function drawEvents(events) {
   renderHud();
   renderCombatStatus();
   renderRoomHints();
+  syncLookStick();
   renderLightEye();
   renderTargeting();
   requestMapDraw();
@@ -1377,12 +1437,22 @@ btnSelect.addEventListener('keydown', () => { selectPressed = false; });
 btnSelect.addEventListener('contextmenu', (e) => e.preventDefault());
 
 initDpad({
-  buttons: dpadButtons, movePlayer, skipTurn,
+  buttons: dpadButtons, movePlayer,
   canWalk: () => roomScreen.classList.contains('show') && !state.run.runEnded,
+});
+initLookStick({
+  button: lookStick,
+  aim: (dx, dy) => aimTo(isoAngleOf(dx, dy)),
+  wait: skipTurn,
+  waitAgain: () => showRoomNote('move-msg', t('room.waitAgain')),
+  turn: turnLook,
+  wantsTurn,
 });
 
 // Arrow-key support on desktop, ignored while typing in the answer box.
-// With the gun on: F is SELECT (fires), T picks the next target, . waits.
+// Q / E nudge the look, Space turns the body toward an aim past the arc
+// (free look plan). With the gun on: F is SELECT (fires), T picks the next
+// target, . waits.
 // On the stairs, Enter goes down (so does SELECT).
 // Letter and number keys answer a question on the ask screen, unless the
 // gun panels already used the key (picking a reload with 1-3, or F / Space
@@ -1395,6 +1465,9 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'ArrowLeft') { e.preventDefault(); movePlayer(0, -1); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(0, 1); }
   else if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
+  else if (lookReady() && (e.key === 'q' || e.key === 'Q')) { e.preventDefault(); nudgeLook(-1); }
+  else if (lookReady() && (e.key === 'e' || e.key === 'E')) { e.preventDefault(); nudgeLook(1); }
+  else if (e.key === ' ' && wantsTurn() && !mapPanelShown()) { e.preventDefault(); turnLook(); }
   else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); pressSelect(); }
   else if (gunReady() && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
   else if (gunReady() && e.key === '.') { e.preventDefault(); skipTurn(); }
