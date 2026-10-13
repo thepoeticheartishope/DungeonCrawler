@@ -407,6 +407,10 @@ export const FREE_LOOK = true;
 // canPassCorner). DEV -> 8 ways switches it (state.settings.eightWays);
 // off is the 4-way game as it was.
 export const EIGHT_WAYS = true;
+// Arrow keys (dpad.js arrowChord): after a first arrow, how long to wait
+// for a second before stepping, so two pressed together walk a diagonal.
+// The number pad (7 8 9 / 4 6 / 1 2 3) steps at once.
+export const KEY_CHORD_MS = 60;
 // The cone's half-width, and the slack each tile gets (sight.js inLookCone:
 // atan2(LOOK_CONE_SLACK, distance)) so an off-angle cone isn't ragged.
 export const LOOK_CONE_HALF = Math.PI / 4;

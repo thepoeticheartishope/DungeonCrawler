@@ -37,7 +37,7 @@ import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCate
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
-import { initDpad, initLookStick } from './dpad.js';
+import { initDpad, initLookStick, SCREEN_WAYS, screenStep, arrowChord } from './dpad.js';
 import { aimLook, turnBody, wantsTurn, lookAngle } from './look.js';
 import { isoAngleOf } from './isoview.js';
 import { buy } from './exchange.js';
@@ -100,11 +100,10 @@ const lightHintEls = {
   w: document.getElementById('lightHintW'),
 };
 
+// The d-pad's arrows by where they point on screen (dpad.js SCREEN_WAYS),
+// and its centre.
 const dpadButtons = {
-  N: document.getElementById('btnN'),
-  S: document.getElementById('btnS'),
-  E: document.getElementById('btnE'),
-  W: document.getElementById('btnW'),
+  ...Object.fromEntries(Object.keys(SCREEN_WAYS).map(way => [way, document.getElementById('btn' + way)])),
   Skip: document.getElementById('btnSkip'),
 };
 const lookStick = dpadButtons.Skip; // the d-pad's centre: the look stick (dpad.js initLookStick)
@@ -1439,6 +1438,7 @@ btnSelect.addEventListener('contextmenu', (e) => e.preventDefault());
 initDpad({
   buttons: dpadButtons, movePlayer,
   canWalk: () => roomScreen.classList.contains('show') && !state.run.runEnded,
+  eightWays: () => state.settings.eightWays,
 });
 initLookStick({
   button: lookStick,
@@ -1449,7 +1449,33 @@ initLookStick({
   wantsTurn,
 });
 
+// Walks the way (sx, sy) points on screen (dpad.js screenStep), if the
+// room screen is still up: the arrow keys' chord steps a moment after the
+// press.
+function walkScreen(sx, sy) {
+  const grid = screenStep(sx, sy, state.settings.eightWays);
+  if (!grid || !roomScreen.classList.contains('show')) return;
+  movePlayer(grid[0], grid[1]);
+}
+
+// The arrow keys by the screen way they push, and the number pad's keys by
+// the way they point (eight ways plan: 7 8 9 / 4 6 / 1 2 3).
+const ARROW_WAYS = { ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R' };
+const NUMPAD_WAYS = {
+  Numpad7: 'UL', Numpad8: 'U', Numpad9: 'UR', Numpad4: 'L',
+  Numpad6: 'R', Numpad1: 'DL', Numpad2: 'D', Numpad3: 'DR',
+};
+const arrows = arrowChord(walkScreen);
+document.addEventListener('keyup', (e) => {
+  if (ARROW_WAYS[e.key]) arrows.up(ARROW_WAYS[e.key]);
+});
+window.addEventListener('blur', () => arrows.reset());
+
 // Arrow-key support on desktop, ignored while typing in the answer box.
+// With 8 ways the arrows walk by screen, and two together walk a diagonal
+// (arrowChord); the number pad walks all 8 at once, unless a question on
+// the map is taking number keys. With 8 ways off they walk as before
+// (up is grid north).
 // Q / E nudge the look, Space turns the body toward an aim past the arc
 // (free look plan). With the gun on: F is SELECT (fires), T picks the next
 // target, . waits.
@@ -1460,10 +1486,10 @@ initLookStick({
 document.addEventListener('keydown', (e) => {
   if (document.activeElement === answerInput || e.defaultPrevented) return;
   if (!roomScreen.classList.contains('show')) return;
-  if (e.key === 'ArrowUp') { e.preventDefault(); movePlayer(-1, 0); }
-  else if (e.key === 'ArrowDown') { e.preventDefault(); movePlayer(1, 0); }
-  else if (e.key === 'ArrowLeft') { e.preventDefault(); movePlayer(0, -1); }
-  else if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(0, 1); }
+  const numpad = NUMPAD_WAYS[e.code];
+  if (numpad && !mapPanelShown()) { e.preventDefault(); walkScreen(...SCREEN_WAYS[numpad]); }
+  else if (ARROW_WAYS[e.key] && state.settings.eightWays) { e.preventDefault(); arrows.down(ARROW_WAYS[e.key], e.repeat); }
+  else if (ARROW_WAYS[e.key]) { e.preventDefault(); walkScreen(...SCREEN_WAYS[ARROW_WAYS[e.key]]); }
   else if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
   else if (lookReady() && (e.key === 'q' || e.key === 'Q')) { e.preventDefault(); nudgeLook(-1); }
   else if (lookReady() && (e.key === 'e' || e.key === 'E')) { e.preventDefault(); nudgeLook(1); }

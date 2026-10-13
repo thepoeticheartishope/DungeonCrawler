@@ -9,8 +9,8 @@
 import { state } from './state.js';
 import { ENERGY_MAX, MINION_KINDS, SENSE_NOTE_MS } from './config.js';
 import { lightProgress } from './light.js';
-import { whatBlocks } from './passage.js';
-import { FACING_VECTORS } from './sight.js';
+import { whatBlocks, canPassCorner } from './passage.js';
+import { SCREEN_WAYS, screenStep } from './dpad.js';
 import { isoScreenShare, isoScreenOffset } from './isoview.js';
 import { clockReading } from './realclock.js';
 import { goalMark } from './goals.js';
@@ -61,15 +61,19 @@ export function renderRoomHints() {
 // The d-pad shows which ways the player can go: a blocked direction dims
 // (pressing it still turns to look that way), and one with a paper or box
 // not yet gone through lights up, since that press reads or examines it;
-// so does THE UNFOLDING, which a press opens.
+// so does THE UNFOLDING, which a press opens. A diagonal that would cut a
+// corner is blocked too (passage.js canPassCorner).
 function renderMoveHints() {
   const buttons = els.dpadButtons;
   if (!buttons) return;
-  for (const [dir, [dr, dc]] of Object.entries(FACING_VECTORS)) {
+  for (const [dir, [sx, sy]] of Object.entries(SCREEN_WAYS)) {
     const btn = buttons[dir];
-    if (!btn) continue;
+    const step = screenStep(sx, sy, state.settings.eightWays);
+    if (!btn || !step) continue;
+    const [dr, dc] = step;
     const row = state.floor.playerRow + dr, col = state.floor.playerCol + dc;
-    const block = whatBlocks(row, col);
+    const cornered = !canPassCorner(state.floor.playerRow, state.floor.playerCol, dr, dc);
+    const block = cornered ? { kind: 'corner' } : whatBlocks(row, col);
     const unreadPaper = !block && state.floor.props.some(p => p.kind === 'paper' && !p.searched && p.row === row && p.col === col);
     const examine = unreadPaper || (!!block && block.kind === 'prop' && !block.thing.searched) ||
       (!!block && block.kind === 'exchange');
