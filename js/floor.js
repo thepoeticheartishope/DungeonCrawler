@@ -21,6 +21,7 @@ import { initBossLight } from './light.js';
 import { placeBeats } from './beats.js';
 import { rollGoals } from './goals.js';
 import { placeRelays } from './relays.js';
+import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
 function pickCoinTile(walls, avoidList, allowedTiles) {
@@ -116,6 +117,8 @@ export function buildFloor() {
   state.floor.path = state.run.nextPath;
   state.run.nextPath = null;
   state.floor.stairsAlt = null;
+  state.floor.tutorial = null;
+  state.floor.spotSet = new Set();
   const recipe = floorRecipe(state.run.roomIndex, state.floor.path);
   const plan = recipe.plan ? FLOOR_PLANS[recipe.plan] : null;
   // The floor's story joins the end of the run's queue, behind any lines
@@ -273,6 +276,8 @@ function clearDanger() {
   f.keyRoute = 0;
   f.gateSealed = false;
   f.bossLitSet = new Set();
+  f.spotSet = new Set();
+  f.tutorial = null;
   f.bossDist = new Map();
   f.floorCount = 0;
   f.lightTurns = 0;
@@ -386,6 +391,50 @@ export function buildRestFloor(kind) {
   const avoid = [f.PLAYER_START, f.stairs, ...f.props, ...(f.exchange ? [f.exchange] : []), ...(f.stairsAlt ? [f.stairsAlt] : [])];
   const coinTile = pickCoinTile(f.wallSet, avoid, layout.roomTiles);
   f.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
+
+  f.visibleSet = new Set();
+  f.exploredSet = new Set();
+  computeVisibility();
+  state.battle.selectedTarget = null;
+}
+
+// The tutorial room as data (tutorial.js): the hand-drawn room, never
+// generated, with its pillars and empty boxes, the locked door at the top
+// and no stairs. Nothing dangerous yet: the stick man comes only once the
+// barrel's question is answered. The player wakes in the dark facing the
+// door, and their light won't come on. No page access.
+export function buildTutorialFloor() {
+  const room = parseTutorialRoom();
+  const f = state.floor;
+  clearDanger();
+  f.light = darkLight();
+  f.GRID_SIZE = room.size;
+  f.CHAMBER_TARGET = 1;
+  f.plan = null;
+  f.tutorial = freshTutorial(room);
+  f.wallSet = room.walls;
+  f.PLAYER_START = { row: room.start.row, col: room.start.col };
+  f.playerRow = f.PLAYER_START.row;
+  f.playerCol = f.PLAYER_START.col;
+  f.facing = facingToward(room.start, room.door);
+  f.look = BODY_ANGLES[f.facing];
+
+  const themeKeys = Object.keys(ROOM_THEMES);
+  const theme = themeKeys[Math.floor(Math.random() * themeKeys.length)];
+  f.pillarSet = new Set(room.pillars.map(p => key(p.row, p.col)));
+  f.chamberAt = new Map([...room.roomTiles, key(room.door.row, room.door.col)].map(k => [k, 0]));
+  f.doorSet = new Set([key(room.door.row, room.door.col)]);
+  f.chamberThemes = [theme];
+  f.chamberNames = [];
+  f.visitedChambers = new Set([0]);
+  f.props = room.boxes.map(b => ({
+    row: b.row, col: b.col, kind: 'box', theme, loot: 'junk', gold: 0, trapped: false,
+    identified: false, searched: true, sprung: false,
+  }));
+  f.stairs = null;
+  f.exchange = null;
+  f.exchangeBought = new Set();
+  f.coin = null;
 
   f.visibleSet = new Set();
   f.exploredSet = new Set();

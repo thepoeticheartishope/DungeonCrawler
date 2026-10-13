@@ -478,6 +478,31 @@ export const SENSE_STEPS = 2;
 // How long "I see you." stays on the map before it fades (render.js showSensed).
 export const SENSE_NOTE_MS = 2600;
 
+// The tutorial room (tutorial.js, tutorial chamber plan).
+// Turns in the dark before the light falls from above on its spot.
+export const TUTORIAL_SPOT_TURNS = 4;
+// How far the light from above reaches round its middle, in tiles (3 x 3).
+export const TUTORIAL_SPOT_RADIUS = 1;
+// How close to the light's middle (in steps) counts as walking to it: the kind voice speaks and the barrel appears.
+export const TUTORIAL_SPOT_NEAR = 2;
+// The stick man that comes after the name: a slow kind (moves every other turn)...
+export const TUTORIAL_MINION_KIND = 'HUSK';
+// ...with only this much hp, so a first fight is short.
+export const TUTORIAL_MINION_HP = 2;
+// How long a tutorial line stays on the map before it fades (slowly: render.js showWhisper).
+export const TUTORIAL_WHISPER_MS = 5000;
+// After "Die in darkness.", how long until the kind voice: "Don't let them dim your light."
+export const TUTORIAL_KIND_DELAY_MS = 3000;
+// In Comfort mode (the light is always on), how long after the kind voice the ring breaks by itself.
+export const TUTORIAL_COMFORT_BREAK_MS = 2500;
+// How long a tutorial stage can go on before its plain hint shows in the room log (only for a player who is stuck).
+export const TUTORIAL_STUCK_MS = 15000;
+// The ring of words round the player (isoview.js drawDarkRing): its distance from them in tiles,
+// ms for one slow turn round, and how long they take to scatter when the light breaks it.
+export const TUTORIAL_RING_RADIUS = 1.4;
+export const TUTORIAL_RING_TURN_MS = 24000;
+export const TUTORIAL_RING_SCATTER_MS = 1400;
+
 // Shooting (gun combat plan, step 2; sight.js canShoot): a minion can be
 // shot when it is in the player's own light with a clear line to it. A shot
 // that can be taken always lands (Timothy, 2026-10-11: the old hit chance by

@@ -29,7 +29,9 @@ export function stepsAway(row, col) {
 
 // null if (row, col) is open, otherwise { kind, thing }: kind is 'wall'
 // (also the grid's edge), 'pillar', 'boss', 'hunter', 'minion', 'chest',
-// 'exchange' (THE UNFOLDING on a rest floor; a bump opens its screen) or
+// 'exchange' (THE UNFOLDING on a rest floor; a bump opens its screen), 'door'
+// (the tutorial room's door, until its key is taken: tutorial.js), 'dark'
+// (anywhere but the player's tile while the tutorial's ring holds them) or
 // 'prop' (a box or an energy cell, which a bump examines — papers lie flat
 // and never block); thing is the minion/prop itself where there is one.
 export function whatBlocks(row, col) {
@@ -38,6 +40,10 @@ export function whatBlocks(row, col) {
   const at = (p) => !!p && p.row === row && p.col === col;
   if (state.floor.wallSet.has(k)) return { kind: 'wall' };
   if (state.floor.pillarSet.has(k)) return { kind: 'pillar' };
+  const tut = state.floor.tutorial;
+  if (tut && tut.stage !== 'open' && at(tut.door)) return { kind: 'door' };
+  // The tutorial's ring of dark holds the player where they stand.
+  if (tut && tut.stage === 'ring' && !at({ row: state.floor.playerRow, col: state.floor.playerCol })) return { kind: 'dark' };
   if (at(state.floor.boss)) return { kind: 'boss' };
   if (at(state.floor.hunter)) return { kind: 'hunter' };
   const minion = state.floor.minions.find(at);

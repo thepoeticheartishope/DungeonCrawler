@@ -302,7 +302,8 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     const path = sheltered ? null : bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blockedTilesFor(m));
     // In the darkness after the boss falls, every minion hunts, from anywhere.
     const noticed = noticing ? m.drawn || m.track > 0 : path && path.length - 1 <= MINION_CHASE_RANGE;
-    const chasing = path && (state.floor.darkness || noticed);
+    // The tutorial's stick man (m.hunts) always comes for the player.
+    const chasing = path && (state.floor.darkness || noticed || m.hunts);
     const next = chasing ? path[1] : wanderStep(m, noticing);
     if (next) {
       const isPlayerTile = next.row === state.floor.playerRow && next.col === state.floor.playerCol;

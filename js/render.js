@@ -32,10 +32,20 @@ let senseFadeTimer = null;
 // (a plain "Enemy close." with Simple enemies on). A new warning while it
 // shows just keeps it up longer: no flash.
 export function showSensed() {
-  els.senseNote.textContent = t(state.settings.simpleEnemies ? 'room.sensed.simple' : 'room.sensed');
+  showWhisper(t(state.settings.simpleEnemies ? 'room.sensed.simple' : 'room.sensed'));
+}
+
+// Shows `text` over the map where "I see you." shows, for `ms`, then lets
+// it fade. `tone` 'dread' is the dungeon's faint voice; 'kind' is the
+// warmer one that is on the player's side (the tutorial's lines). A line
+// held longer than "I see you." also fades out slower ('slow').
+export function showWhisper(text, tone = 'dread', ms = SENSE_NOTE_MS) {
+  els.senseNote.textContent = text;
+  els.senseNote.classList.toggle('kind', tone === 'kind');
+  els.senseNote.classList.toggle('slow', ms > SENSE_NOTE_MS);
   els.senseNote.classList.add('show');
   clearTimeout(senseFadeTimer);
-  senseFadeTimer = setTimeout(() => els.senseNote.classList.remove('show'), SENSE_NOTE_MS);
+  senseFadeTimer = setTimeout(() => els.senseNote.classList.remove('show'), ms);
 }
 
 export function showScreen(el) {

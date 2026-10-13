@@ -1,6 +1,6 @@
 // Start screen options and the workshop. The start screen keeps only what a
 // player sets before a run (name, reveal, real time, swap sides, simple
-// enemies), remembered across
+// enemies, the tutorial room), remembered across
 // sessions. The workshop is for authors: pasted or file lists, the sample
 // list, saving and deleting sets, and the way into DATA.SYS. Players pick
 // the set itself after Enter (setpicker.js). Uses only state, sets.js,
@@ -15,6 +15,7 @@ const revealToggle = document.getElementById('revealToggle');
 const realTimeToggle = document.getElementById('realTimeToggle');
 const dpadRightToggle = document.getElementById('dpadRightToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
+const tutorialToggle = document.getElementById('tutorialToggle');
 const roomControls = document.querySelector('.room-controls');
 const playerNameInput = document.getElementById('playerName');
 const workshopScreen = document.getElementById('workshopScreen');
@@ -53,6 +54,7 @@ export function initSetLoader({ showSets }) {
         realTime: realTimeToggle.checked,
         dpadRight: dpadRightToggle.checked,
         simpleEnemies: simpleEnemiesToggle.checked,
+        tutorial: tutorialToggle.checked,
         playerName: playerNameInput.value,
       }));
     } catch (e) {
@@ -72,6 +74,9 @@ export function initSetLoader({ showSets }) {
   if (typeof savedOptions.realTime === 'boolean') realTimeToggle.checked = savedOptions.realTime;
   if (typeof savedOptions.dpadRight === 'boolean') dpadRightToggle.checked = savedOptions.dpadRight;
   if (typeof savedOptions.simpleEnemies === 'boolean') simpleEnemiesToggle.checked = savedOptions.simpleEnemies;
+  // On until a tutorial is finished (main.js switches it off then), so a
+  // player who has never played gets one.
+  if (typeof savedOptions.tutorial === 'boolean') tutorialToggle.checked = savedOptions.tutorial;
   placeDpad();
   playerNameInput.maxLength = PLAYER_NAME_MAX_LENGTH;
   if (typeof savedOptions.playerName === 'string') playerNameInput.value = savedOptions.playerName.slice(0, PLAYER_NAME_MAX_LENGTH);
@@ -79,6 +84,7 @@ export function initSetLoader({ showSets }) {
   revealToggle.addEventListener('change', saveOptions);
   realTimeToggle.addEventListener('change', saveOptions);
   simpleEnemiesToggle.addEventListener('change', saveOptions);
+  tutorialToggle.addEventListener('change', saveOptions);
   dpadRightToggle.addEventListener('change', () => { placeDpad(); saveOptions(); });
   playerNameInput.addEventListener('input', saveOptions);
 

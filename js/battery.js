@@ -33,6 +33,8 @@ export function lightOn() {
 export function tickLight() {
   if (!batteryInPlay()) return [];
   const light = state.floor.light;
+  // The tutorial's light is steady (tutorial.js): it never runs down or charges.
+  if (light.steady) return [];
   if (light.on) {
     light.charge = Math.max(light.charge - 1, 0);
     if (light.charge > 0) return [];

@@ -1,11 +1,13 @@
 import { state, key } from './state.js';
-import { buildFloor, buildRestFloor } from './floor.js';
+import { buildFloor, buildRestFloor, buildTutorialFloor } from './floor.js';
+import { tutorialTurn, settleName, breakRing } from './tutorial.js';
 import { nextFloor } from './run.js';
 import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
-  LOOK_NUDGE, LOOK_POINTER_DEAD, GAZE_POLL_MS, GAZE_STEP_MS,
+  LOOK_NUDGE, LOOK_POINTER_DEAD, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
+  TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS,
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -16,7 +18,7 @@ import {
 } from './quiz.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
-  formatTime, startTimer, stopTimer, renderLightEye, renderClock, showSensed
+  formatTime, startTimer, stopTimer, renderLightEye, renderClock, showSensed, showWhisper
 } from './render.js';
 import {
   isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
@@ -57,6 +59,7 @@ const introGlitch = document.getElementById('introGlitch');
 const revealToggle = document.getElementById('revealToggle');
 const realTimeToggle = document.getElementById('realTimeToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
+const tutorialToggle = document.getElementById('tutorialToggle');
 const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
 const battleScreen = document.getElementById('battleScreen');
@@ -180,13 +183,61 @@ function switchLight() {
   if (!roomScreen.classList.contains('show') || mapPanelShown() || state.run.turnLocked || state.run.runEnded) return;
   const result = toggleLight();
   if (!result) return;
+  if (result === 'locked' && state.floor.light.steady) {
+    showRoomNote('block-msg', t('tut.light.none'));
+    return;
+  }
   if (result === 'locked') {
     showRoomNote('block-msg', t('room.ownLight.locked', { turns: turnsToFull() }));
     return;
   }
   computeVisibility();
-  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }, ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
+  // In the tutorial's ring, the light on is the way out (tutorial.js breakRing).
+  const freed = result === 'on' ? breakRing() : [];
+  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }, ...freed, ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
   showRoomNote(note.cls, note.text);
+}
+
+// The tutorial's ring has closed ("Die in darkness."): a moment later the
+// kind voice says the one hint, "Don't let them dim your light." In
+// Comfort mode the light is always on, so there is nothing to switch:
+// the ring breaks by itself a little after. Real seconds, view-side.
+function speakInRing() {
+  const inRing = () => state.floor.tutorial && state.floor.tutorial.stage === 'ring' && !state.run.runEnded;
+  setTimeout(() => {
+    if (!inRing()) return;
+    showWhisper(t('tut.dimLight'), 'kind', TUTORIAL_WHISPER_MS);
+    if (batteryInPlay()) return;
+    setTimeout(() => {
+      if (!inRing()) return;
+      const note = drawEvents([...breakRing(), ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
+      if (note.text) showRoomNote(note.cls, note.text);
+    }, TUTORIAL_COMFORT_BREAK_MS);
+  }, TUTORIAL_KIND_DELAY_MS);
+}
+
+// The tutorial teaches without hand holding (Timothy): a stage's plain
+// hint shows in the room log only if the player is still on it after
+// TUTORIAL_STUCK_MS. Stages with no hint teach themselves.
+const STUCK_HINTS = { dark: 'tut.hint.move', name: 'tut.hint.barrel', ring: 'tut.hint.light', fight: 'tut.hint.fire' };
+let watchedStage = null;
+let stuckTimer = null;
+
+// Starts the stuck clock when the tutorial's stage changes (`restart`:
+// start it again on the same stage, as when the intro ends). Called after
+// every drawEvents and floor load.
+function watchTutorial(restart = false) {
+  const tut = state.floor.tutorial;
+  const stage = tut ? tut.stage : null;
+  if (stage === watchedStage && !restart) return;
+  watchedStage = stage;
+  clearTimeout(stuckTimer);
+  const hint = STUCK_HINTS[stage];
+  if (!hint || (stage === 'ring' && !batteryInPlay())) return;
+  stuckTimer = setTimeout(() => {
+    const now = state.floor.tutorial;
+    if (now && now.stage === stage && !state.run.runEnded) showRoomNote('move-msg', t(hint));
+  }, TUTORIAL_STUCK_MS);
 }
 
 // Aims the light at `angle` (look.js aimLook) and draws the result. No turn.
@@ -375,6 +426,38 @@ function openRelay(relay) {
   };
   showQuestionScreen(askAnswers, 'relay');
   askQuestion(pickQuestion(state.battle.currentQuestion), []);
+}
+
+// The tutorial's barrel was bumped (moves.js nameAsked): it asks the
+// player's name on the ask screen, typed, with no options, no modifiers
+// and no minigame. Any name that isn't blank settles it (tutorial.js
+// settleName), and that is the turn.
+function openNameBarrel() {
+  gunTest = false;
+  state.run.turnLocked = true;
+  const none = () => {};
+  askAnswers = {
+    onChoice: none,
+    onTyped: raw => {
+      if (!raw.trim()) return;
+      showTypedAnswer(false);
+      endReload(() => settleName(raw));
+    },
+    onTimeout: none,
+    onResult: none,
+    log: text => showRoomNote('', text),
+  };
+  showQuestionScreen(askAnswers, 'barrel');
+  setQuestion({ term: t('tut.name.q'), meaning: '' });
+  showTypedAnswer(true);
+}
+
+// Shows the typed answer box in place of the options (`on`), or puts the
+// options back: every other question is multiple choice (startGame).
+function showTypedAnswer(on) {
+  answerForm.style.display = on ? 'flex' : 'none';
+  mcOptionsEl.classList.toggle('show', !on);
+  if (on) answerInput.focus();
 }
 
 // Sets question `q` and puts `modifiers` on it; it may run as a minigame
@@ -761,7 +844,10 @@ function introScript() {
   return { questions: pool.map(q => q.term), attempt: { question: asked.term, answer: wrong } };
 }
 
-function startGame() {
+// A fresh run's numbers: the questions, hearts, energy, gold, turns and
+// story. startGame() sets them, and again once the tutorial is left, so
+// nothing spent or won there carries into the run.
+function resetRun() {
   state.run.order = shuffle(state.settings.activeData).slice(0, Math.min(ROOM_COUNT, state.settings.activeData.length));
   state.run.roomIndex = 0;
   state.run.resting = true; // every run opens on a rest floor
@@ -783,6 +869,10 @@ function startGame() {
   rollWeaknesses();
   state.run.loreQueue = [];
   resetHaunts();
+}
+
+function startGame() {
+  resetRun();
   state.settings.revealOnWrong = revealToggle.checked;
   state.settings.realTime = realTimeToggle.checked;
   state.settings.simpleEnemies = simpleEnemiesToggle.checked;
@@ -801,21 +891,30 @@ function startGame() {
   // no added real loading time, only the intro itself. The elapsed-time
   // clock starts once the intro ends or is skipped, so it isn't charged
   // against the player.
-  loadRoom('opening');
+  // A player who has never finished the tutorial room wakes in it first
+  // (the start screen's toggle; tutorial.js).
+  const tutorial = tutorialToggle.checked;
+  loadRoom(tutorial ? 'tutorial' : 'opening');
   showScreen(introGlitch);
   playIntro(introScript(), () => {
     showScreen(roomScreen);
     startTimer();
+    if (!tutorial) return;
+    showWhisper(t('tut.cantLeave'), 'dread', TUTORIAL_WHISPER_MS);
+    watchTutorial(true);
   });
 }
 
 // A new floor: make the new floor's data, then put it on the page.
-// `restKind` ('opening' / 'between' / 'epilogue') builds a rest floor;
-// none builds the danger floor at the current depth.
+// `restKind` ('opening' / 'between' / 'epilogue') builds a rest floor,
+// 'tutorial' the tutorial room; none builds the danger floor at the
+// current depth.
 function loadRoom(restKind) {
-  if (restKind) buildRestFloor(restKind);
+  if (restKind === 'tutorial') buildTutorialFloor();
+  else if (restKind) buildRestFloor(restKind);
   else buildFloor();
   drawFloor();
+  watchTutorial();
   refreshInspector();
 }
 
@@ -843,7 +942,8 @@ function drawFloor() {
   roomFeedback.innerHTML = '';
   // The room the player wakes in announces itself like any other; on a
   // fixed plan, after the building's name.
-  const startChamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
+  // The tutorial room has no name or theme line: its whispers speak instead.
+  const startChamber = state.floor.tutorial ? undefined : state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
   const startName = state.floor.chamberNames[startChamber];
   if (startName) {
     showRoomNote('move-msg', t('room.enter.plan', { floor: t(state.floor.plan.name), name: t(startName) }));
@@ -863,9 +963,20 @@ function drawFloor() {
 // Shared by the stairs (goDown) and the dev skip button.
 // run.js decides what comes next: a depth, a rest floor, or the win.
 function advanceRoom() {
+  if (state.floor.tutorial) { leaveTutorial(); return; }
   const next = nextFloor();
   if (next.kind === 'win') endWin();
   else loadRoom(next.kind === 'rest' ? next.rest : null);
+}
+
+// Out through the tutorial room's door (or DEV -> Skip room): the
+// tutorial is done, so its toggle goes off and is saved (setloader.js
+// listens), and the run starts fresh on the opening rest.
+function leaveTutorial() {
+  tutorialToggle.checked = false;
+  tutorialToggle.dispatchEvent(new Event('change'));
+  resetRun();
+  loadRoom('opening');
 }
 
 // Going down the stairs, once the player says so (SELECT or Enter while
@@ -957,6 +1068,8 @@ statsEl.addEventListener('keydown', (e) => {
 function applyTurnOutcome(events, worldMoves = !state.settings.realTime) {
   const turn = worldMoves ? events.concat(advanceMonsters({ canStruggle: !mapPanelShown() })) : events;
   if (!worldMoves) refreshTargetValidity();
+  // The tutorial room moves on (tutorial.js) after any spent turn.
+  turn.push(...tutorialTurn(turn));
   if (state.settings.gunCombat) turn.push(...refreshGunTarget());
   const note = drawEvents(turn);
   if (lightConsumed()) {
@@ -1082,6 +1195,31 @@ function drawEvents(events) {
         break;
       case 'relayFound':
         parts.push(t('room.relay.found'));
+        break;
+      // The tutorial room (tutorial.js).
+      case 'nameAsked':
+      case 'tutorialLeft':
+      case 'spotLit':
+      case 'barrelAppeared':
+      case 'ringBroken':
+        break;
+      case 'whispered':
+        showWhisper(t(e.line), e.tone, TUTORIAL_WHISPER_MS);
+        break;
+      case 'ringClosed':
+        speakInRing();
+        break;
+      case 'nameGiven':
+        // The start screen's name field keeps it (setloader.js saves on input).
+        playerNameInput.value = e.name;
+        playerNameInput.dispatchEvent(new Event('input'));
+        parts.push(t('tut.name.kept', { name: e.name }));
+        break;
+      case 'keyDropped':
+        parts.push(t('tut.key.dropped'));
+        break;
+      case 'doorUnlocked':
+        parts.push(t('tut.door.open'));
         break;
       case 'relayHeld':
         parts.push(t(e.turns ? 'room.relay.held' : 'room.relay.heldDark', { turns: e.turns }));
@@ -1320,6 +1458,7 @@ function drawEvents(events) {
   requestMapDraw();
   refreshMinimap();
   recordEvents(events);
+  watchTutorial();
   return { cls, text: parts.join(' ') };
 }
 
@@ -1368,6 +1507,8 @@ function movePlayer(dRow, dCol) {
   if (cell) openReload(false, cell.prop);
   const relay = events.find(e => e.type === 'relayFound');
   if (relay) openRelay(relay.prop);
+  if (has('nameAsked')) openNameBarrel();
+  if (has('tutorialLeft')) leaveTutorial();
 }
 
 // THE UNFOLDING's screen (exchangeview.js), opened by bumping it on a rest
