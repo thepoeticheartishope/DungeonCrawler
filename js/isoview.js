@@ -149,6 +149,7 @@ const WEAK_RING_LEVEL = 0.7;     // and its strength
 // Walls in front of the camera, cut away (Timothy chose this over see-through glass).
 const WALL_STUB = 0.22;          // a cut-away wall's stub, as a share of its height
 const WALL_HOLD_STEPS = 2;       // a lowered wall stays down while the player is this many steps away or nearer
+const FACING_WEDGE = { tip: 0.62, base: 0.28, half: 0.25 }; // the body's wedge on the floor, in tiles: its tip and base along the body's way, and half its base across
 const WALL_COVER_WIDTH = 0.4;    // half the width of a wall that counts as covering something:
                                  // under half a tile, so a wall only touching it at a corner stays
 const GHOST_LEVEL = 0.2;         // the dashed outline of a cut wall's full height
@@ -999,16 +1000,16 @@ function searched(at) {
   return Boolean(prop && prop.searched);
 }
 
-// The wedge on the floor pointing where the player's body faces. Arrow
+// The wedge on the floor pointing where the player's body faces, any of
+// the 8 ways: laid out on the floor (in tiles along and across the body's
+// way), so a diagonal wedge is the same size as a straight one. Arrow
 // glyphs (^ v < >) would point the wrong way on a diamond.
 function drawFacing(ctx, at) {
-  const [cx, cy] = centre(at.row, at.col);
-  const [fr, fc] = FACING_VECTORS[state.floor.facing];
-  const dx = (fc - fr) * tw / 2;
-  const dy = (fc + fr) * th / 2;
-  const tip = [cx + dx * 0.62, cy + dy * 0.62];
-  const baseL = [cx + dx * 0.28 - dy * 0.5, cy + dy * 0.28 + dx * 0.12];
-  const baseR = [cx + dx * 0.28 + dy * 0.5, cy + dy * 0.28 - dx * 0.12];
+  const [fr, fc] = lookVector(bodyAngle());
+  const onFloor = (along, across) => centre(at.row + fr * along - fc * across, at.col + fc * along + fr * across);
+  const tip = onFloor(FACING_WEDGE.tip, 0);
+  const baseL = onFloor(FACING_WEDGE.base, -FACING_WEDGE.half);
+  const baseR = onFloor(FACING_WEDGE.base, FACING_WEDGE.half);
   poly(ctx, [tip, baseL, baseR]);
   ctx.fillStyle = glow(0.5);
   ctx.fill();
@@ -1330,7 +1331,7 @@ function drawStickMan(ctx, at, fx, fy) {
   // step slide go with the body.
   const [fr, fc] = lookVector(frameLook);
   const side = fc - fr;          // which way it looks across the screen
-  const away = fr + fc < 0;      // north and west look up the screen
+  const away = fr + fc < -1e-9;  // north and west look up the screen; straight across (NE, SW) is side on
   // How far through a step or bump it is: 0 standing on its tile.
   const off = Math.max(Math.abs(at.row - f.playerRow), Math.abs(at.col - f.playerCol));
   const now = look.now;
