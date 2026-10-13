@@ -518,6 +518,8 @@ export const TUTORIAL_RING_SCATTER_MS = 1400;
 // plain 2, one modifier 3, two fill it (Timothy, 2026-10-11: was 1 / 2 / 3).
 export const ENERGY_MAX = 4;
 export const ENERGY_START = 1;
+// A run that starts by leaving the tutorial room starts with this much instead (Timothy, 2026-10-13).
+export const TUTORIAL_EXIT_ENERGY = 2;
 export const GUN_RELOAD_MODIFIERS = ['blind', 'flip', 'timer'];
 export const RELOAD_ENERGY = [2, 3, ENERGY_MAX];
 // A landed shot's damage bar (Timothy, 2026-10-11): the bar holds zones
