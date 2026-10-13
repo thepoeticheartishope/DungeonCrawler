@@ -3,6 +3,7 @@
 // empty and stays locked off until full, can be switched back on any time
 // when switched off by hand, is full on every floor, and is out of play in
 // Comfort mode. With the light off only the small circle is lit.
+// Step B: the stick men notice the light (combat.js notice).
 //
 // Run: node --test tests/*.test.mjs
 //
@@ -13,10 +14,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
-import { LIGHT_BATTERY_MAX, PLAYER_LIGHT_RADIUS } from '../js/config.js';
+import { LIGHT_BATTERY_MAX, PLAYER_LIGHT_RADIUS, MINION_TRACK_TURNS } from '../js/config.js';
 import { freshLight, lightOn, tickLight, toggleLight, turnsToFull } from '../js/battery.js';
 import { computeVisibility, inLookCone, shootBlock } from '../js/sight.js';
-import { advanceMonsters } from '../js/combat.js';
+import { advanceMonsters, spawnMinion } from '../js/combat.js';
 
 function resetFloor(size = 21) {
   state.floor.GRID_SIZE = size;
@@ -34,6 +35,7 @@ function resetFloor(size = 21) {
   state.settings.lightBattery = true;
   state.settings.simpleEnemies = false;
   state.floor.darkness = false;
+  state.floor.darkTurns = 0;
   state.floor.light = freshLight();
   state.floor.wallSet = new Set();
   state.floor.pillarSet = new Set();
@@ -126,4 +128,97 @@ test('Comfort mode and DEV -> Light battery off: always on, no battery', () => {
     state.floor.light.on = false; // even a light left off before the switch
     assert.ok(lightOn());
   }
+});
+
+// --- Step B: the stick men notice the light ---
+
+const at = m => ({ row: m.row, col: m.col });
+
+test('a stick man that sees a lit tile is drawn, even with the player out of its sight', () => {
+  resetFloor();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  // 9 tiles ahead: the player is past MINION_LIGHT_SIGHT, the cone's far
+  // tiles aren't.
+  const m = spawnMinion({ row: pr - 9, col: pc });
+  advanceMonsters();
+  assert.equal(m.drawn, true);
+  assert.equal(m.track, MINION_TRACK_TURNS);
+  assert.deepEqual(at(m), { row: pr - 8, col: pc }, 'it comes for the light');
+});
+
+test('with the light off, one that never saw the player does not notice them', () => {
+  resetFloor();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  toggleLight();
+  computeVisibility();
+  const m = spawnMinion({ row: pr, col: pc + 2 });
+  for (let i = 0; i < 3; i++) {
+    m.row = pr; m.col = pc + 2;
+    advanceMonsters();
+    assert.equal(m.drawn, false);
+    assert.equal(m.track, 0);
+  }
+});
+
+test('tracking in the dark runs down out of sight and refreshes in sight', () => {
+  resetFloor();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  toggleLight();
+  computeVisibility();
+  const m = spawnMinion({ row: pr - 10, col: pc - 10 });
+  m.track = MINION_TRACK_TURNS;
+  advanceMonsters();
+  assert.equal(m.track, MINION_TRACK_TURNS - 1, 'out of sight, one turn less');
+  assert.ok(Math.max(Math.abs(m.row - pr), Math.abs(m.col - pc)) === 9, 'still coming in the dark');
+  m.row = pr; m.col = pc + 3;
+  advanceMonsters();
+  assert.equal(m.track, MINION_TRACK_TURNS, 'sees the player: refreshed');
+  assert.equal(m.drawn, false, 'no light to be drawn by');
+  m.row = pr - 10; m.col = pc - 10;
+  for (let i = 0; i < MINION_TRACK_TURNS; i++) advanceMonsters();
+  assert.equal(m.track, 0, 'lost them');
+});
+
+test('one that never saw the player can still blunder into them in the dark, and then knows them', () => {
+  resetFloor();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  toggleLight();
+  const c = pc + 1;
+  // Boxed in: the only way out is the player's tile.
+  for (const [dr, dc] of [[-1, -1], [-1, 0], [-1, 1], [0, 1], [1, -1], [1, 0], [1, 1]]) state.floor.wallSet.add(key(pr + dr, c + dc));
+  computeVisibility();
+  const m = spawnMinion({ row: pr, col: c });
+  const events = advanceMonsters();
+  assert.ok(events.some(e => e.type === 'minionEngaged' && e.minion === m));
+  assert.equal(m.track, MINION_TRACK_TURNS);
+});
+
+test('the hunter and the boss darkness keep their rules: every one chases, light or not', () => {
+  resetFloor();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  toggleLight();
+  computeVisibility();
+  state.floor.darkness = true;
+  const m = spawnMinion({ row: pr - 10, col: pc });
+  const hunter = spawnMinion({ row: pr + 10, col: pc }, null);
+  hunter.kind = 'hunter';
+  hunter.rest = 0;
+  state.floor.hunter = hunter;
+  advanceMonsters();
+  assert.equal(m.row, pr - 9, 'a minion chases in the darkness');
+  assert.equal(hunter.row, pr + 9, 'so does the hunter');
+  assert.equal(hunter.track, 0, 'the hunter is never drawn by the light');
+  assert.equal(hunter.drawn, false);
+});
+
+test('Comfort mode keeps the old chase range and nothing is noticed', () => {
+  resetFloor();
+  state.settings.simpleEnemies = true;
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  // Behind the player, 4 steps: the old rule chases.
+  const near = spawnMinion({ row: pr + 4, col: pc });
+  advanceMonsters();
+  assert.equal(near.row, pr + 3);
+  assert.equal(near.track, 0);
+  assert.equal(near.drawn, false);
 });

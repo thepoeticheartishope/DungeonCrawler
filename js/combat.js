@@ -3,13 +3,13 @@
 // that change what's on the map return what changed, and main.js draws it.
 
 import { state, key } from './state.js';
-import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS } from './config.js';
+import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIGHT, MINION_TRACK_TURNS, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS } from './config.js';
 import { advanceLight } from './light.js';
-import { tickLight } from './battery.js';
+import { tickLight, batteryInPlay, lightOn } from './battery.js';
 import { minionStrike, struggleDial } from './gun.js';
 import { keptOut } from './relays.js';
 import { canPassCorner } from './passage.js';
-import { computeVisibility, FACING_VECTORS } from './sight.js';
+import { computeVisibility, clearLine, FACING_VECTORS } from './sight.js';
 import { waysInUse } from './look.js';
 
 // True if `entity` stands on one of the tiles around the player: the 8
@@ -193,6 +193,8 @@ export function spawnMinion(spot, minionKind = 'SHARD') {
     hpLeft: stats ? stats.hp : null,
     limbs: stats ? stats.limbs : 0,
     trail: [],
+    track: 0,      // turns it keeps tracking the player with no sight of them (0: never saw them, or lost them); combat.js notice
+    drawn: false,  // it can see the player's light this turn
   };
   state.floor.minions.push(m);
   return m;
@@ -200,14 +202,45 @@ export function spawnMinion(spot, minionKind = 'SHARD') {
 
 // A random free neighbouring floor tile for a wandering minion, or null if
 // it's boxed in this turn. Unlike a chase, wandering never steps onto an
-// item, so an idle minion doesn't sit on top of the chest.
-function wanderStep(m) {
+// item, so an idle minion doesn't sit on top of the chest. With
+// `intoPlayer` (the light battery's rules) the player's tile is one of the
+// choices: one that never saw them in the dark can still blunder into them.
+function wanderStep(m, intoPlayer = false) {
   const out = keptOut(m);
+  const isPlayer = (r, c) => intoPlayer && r === state.floor.playerRow && c === state.floor.playerCol;
   const options = neighbors(m.row, m.col)
-    .filter(([r, c]) => !state.floor.wallSet.has(key(r, c)) && !out.has(key(r, c)) && !tileOccupied(r, c, m));
+    .filter(([r, c]) => !state.floor.wallSet.has(key(r, c)) && !out.has(key(r, c)) && (isPlayer(r, c) || !tileOccupied(r, c, m)));
   if (options.length === 0) return null;
   const [row, col] = options[Math.floor(Math.random() * options.length)];
   return { row, col };
+}
+
+// What a stick man knows (light battery plan step B), worked out each turn
+// before it moves. With the light on, a clear line within
+// MINION_LIGHT_SIGHT tiles to the player or any tile their light is on
+// draws it (`drawn`) and it locks on (`track`). With the light off, one
+// already tracking keeps it up while it can see the player; one that never
+// saw them doesn't notice them, even right beside them. Out of sight,
+// `track` runs down a turn at a time until it has lost them.
+function sees(m, row, col) {
+  return Math.hypot(row - m.row, col - m.col) <= MINION_LIGHT_SIGHT && clearLine(m.row, m.col, row, col);
+}
+function notice(m) {
+  const f = state.floor;
+  m.drawn = false;
+  if (lightOn()) {
+    const lit = sees(m, f.playerRow, f.playerCol) ||
+      [...f.sightSet].some(k => { const [row, col] = k.split(',').map(Number); return sees(m, row, col); });
+    if (lit) {
+      m.drawn = true;
+      m.track = MINION_TRACK_TURNS;
+      return;
+    }
+  } else if (m.track > 0 && sees(m, f.playerRow, f.playerCol)) {
+    m.track = MINION_TRACK_TURNS;
+    return;
+  }
+  if (m.track > 0) m.track--;
 }
 
 // Advances the room by one turn: the boss light spreads, minions move, and
@@ -233,16 +266,25 @@ export function advanceMonsters({ canStruggle = true } = {}) {
   // which puts the battle screen up, and hearts are only ever lost by
   // missing a question. With the gun on, it strikes (so does the hunter),
   // and slow kinds only move every MINION_KINDS moveEvery turns. Minions roam freely and only
-  // give chase once the player is within MINION_CHASE_RANGE walkable steps.
+  // give chase once they notice the player (notice: their light, or
+  // tracking them in the dark), or in Comfort mode once the player is
+  // within MINION_CHASE_RANGE walkable steps.
   const gun = state.settings.gunCombat;
-  // The light's battery runs down or charges first (battery.js).
+  // The light's battery runs down or charges first (battery.js); a light
+  // that just died lights only the small circle for what follows.
   const events = tickLight();
+  if (events.length) computeVisibility();
+  const lightRules = batteryInPlay();
   if (state.floor.darkness) {
     state.floor.darkTurns++;
     const hunter = !state.floor.hunter && state.floor.darkTurns >= HUNTER_SPAWN_DELAY ? wakeHunter() : null;
     if (hunter) events.push({ type: 'hunterWoke', hunter });
   }
   for (const m of state.floor.minions) {
+    // What it knows comes first, every turn, even one it won't move on.
+    // The hunter keeps its own rule (new call 1): it isn't drawn by the light.
+    const noticing = lightRules && m.kind !== 'hunter';
+    if (noticing) notice(m);
     // A slow kind's off turn comes first, so a rest (a stun) is only used
     // up on a turn it would really have moved.
     const stats = MINION_KINDS[m.minionKind];
@@ -258,10 +300,13 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     const sheltered = keptOut(m).has(key(state.floor.playerRow, state.floor.playerCol));
     const path = sheltered ? null : bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blockedTilesFor(m));
     // In the darkness after the boss falls, every minion hunts, from anywhere.
-    const chasing = path && (state.floor.darkness || path.length - 1 <= MINION_CHASE_RANGE);
-    const next = chasing ? path[1] : wanderStep(m);
+    const noticed = noticing ? m.drawn || m.track > 0 : path && path.length - 1 <= MINION_CHASE_RANGE;
+    const chasing = path && (state.floor.darkness || noticed);
+    const next = chasing ? path[1] : wanderStep(m, noticing);
     if (next) {
       const isPlayerTile = next.row === state.floor.playerRow && next.col === state.floor.playerCol;
+      // Reaching the player, even by blundering into them, it knows them.
+      if (isPlayerTile && noticing) m.track = MINION_TRACK_TURNS;
 
       const struggles = canStruggle && state.run.energy <= 0 && !state.battle.struggle;
       if (isPlayerTile && gun && struggles) {

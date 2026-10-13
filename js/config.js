@@ -355,8 +355,15 @@ export const MINION_STRIKE_COST = 1;
 export const MINION_STUN_MOVES = 1;
 // Minions are placed when a room loads (no summoning; how many is in the
 // floor recipe) and roam freely: they wander at random and only chase once
-// the player is within MINION_CHASE_RANGE walkable steps.
+// the player is within MINION_CHASE_RANGE walkable steps. That is the rule
+// in Comfort mode and with DEV -> Light battery off; with the battery in
+// play (light battery plan step B, combat.js notice) a stick man chases
+// once it has a clear line, within MINION_LIGHT_SIGHT tiles, to the player
+// or a tile their light is on (with the light on), and keeps tracking them
+// in the dark until MINION_TRACK_TURNS turns pass with no sight of them.
 export const MINION_CHASE_RANGE = 4;
+export const MINION_LIGHT_SIGHT = 7;
+export const MINION_TRACK_TURNS = 5;
 export const MINION_MIN_START_DISTANCE = 6; // walkable steps from the player's start
 
 // The intro before the first floor (introview.js): the set's questions type

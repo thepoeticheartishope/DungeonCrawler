@@ -90,21 +90,28 @@ export function computeVisibility() {
   state.floor.props.forEach(p => { if (canMakeOut(p.row, p.col)) p.identified = true; });
 }
 
-// True if a straight line from the player's tile to (row, col) passes no
-// wall or pillar — the light can creep a step around a corner, but seeing
-// what something is takes a clear view of it.
-function clearLineTo(row, col) {
-  const dr = row - state.floor.playerRow;
-  const dc = col - state.floor.playerCol;
+// True if a straight line from (fromRow, fromCol) to (row, col) passes no
+// wall or pillar between them (the ends don't count). A stick man's view
+// of the player's light uses it too (combat.js notice).
+export function clearLine(fromRow, fromCol, row, col) {
+  const dr = row - fromRow;
+  const dc = col - fromCol;
   const steps = Math.max(Math.abs(dr), Math.abs(dc)) * 4;
   for (let i = 1; i < steps; i++) {
-    const r = Math.round(state.floor.playerRow + (dr * i) / steps);
-    const c = Math.round(state.floor.playerCol + (dc * i) / steps);
-    if (r === row && c === col) continue;
+    const r = Math.round(fromRow + (dr * i) / steps);
+    const c = Math.round(fromCol + (dc * i) / steps);
+    if ((r === row && c === col) || (r === fromRow && c === fromCol)) continue;
     const k = key(r, c);
     if (state.floor.wallSet.has(k) || state.floor.pillarSet.has(k)) return false;
   }
   return true;
+}
+
+// True if a straight line from the player's tile to (row, col) passes no
+// wall or pillar — the light can creep a step around a corner, but seeing
+// what something is takes a clear view of it.
+function clearLineTo(row, col) {
+  return clearLine(state.floor.playerRow, state.floor.playerCol, row, col);
 }
 
 // Whether the player can make out what's on (row, col), rather than a

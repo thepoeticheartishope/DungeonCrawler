@@ -45,7 +45,8 @@
 //   7. Light battery run: the battery reads LIGHT #### ON at the foot of
 //      the map; V switches it off (only the small circle lit, no turn spent)
 //      and on; 4 turns on and it dies, refuses V while charging, and is
-//      charged again after 4 turns off. Then Comfort mode (the renamed
+//      charged again after 4 turns off; a few turns on the first depth with
+//      the stick men noticing the light. Then Comfort mode (the renamed
 //      Simple enemies) on: no battery shown and V does nothing.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
@@ -936,6 +937,21 @@ async function checkLightBattery(page, url) {
   if (!(await page.evaluate(() => document.getElementById('roomFeedback').textContent)).includes('Your light is charged.')) return 'no "Your light is charged." in the log';
   await page.keyboard.press('v');
   if (await batteryShown(page) !== 'LIGHT #### ON') return `V when charged left ${await batteryShown(page)}`;
+
+  // Down to the first depth, where the stick men notice the light: a few
+  // turns with it on and off (any page error fails the run).
+  await page.click('#devToggleBtn');
+  await page.waitForSelector('#devPanel.show', { timeout: 5000 });
+  await page.click('#devSkipBtn');
+  await page.click('#devToggleBtn');
+  await roomIdle(page);
+  if (await batteryShown(page) !== 'LIGHT #### ON') return `a new floor's battery read ${await batteryShown(page)}`;
+  await wait(2);
+  await page.keyboard.press('v');
+  await wait(3);
+  const known = await page.evaluate(async () => (await import('./js/state.js')).state.floor.minions
+    .every(m => m.kind === 'hunter' || (typeof m.track === 'number' && typeof m.drawn === 'boolean')));
+  if (!known) return 'a stick man has no track / drawn';
 
   await loadPageAndSet(page, url);
   const label = await page.locator('label:has(#simpleEnemiesToggle)').textContent();
