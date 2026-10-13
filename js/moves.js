@@ -43,9 +43,9 @@ function takeKey(index) {
 }
 
 // One arrow press. A press in a new direction turns the player's body to
-// face it, then goes on to step that way in the same press. The light turns
-// with the body; with free look on, the aim stays where it was and the
-// light is held inside the new arc (look.js followBody / lookAngle). With state.settings.turnBeforeStep on, it only turns: no step, no
+// face it, then goes on to step that way in the same press. A turn or a
+// step points the light straight ahead again (look.js followBody), even
+// with free look on. With state.settings.turnBeforeStep on, it only turns: no step, no
 // bump, no turn spent, so they can look behind them first. Turning first is
 // off by default because combat.js senseUnseen warns ("I see you.") before
 // anything unseen gets next to them. Events: turned { facing } (alone when
@@ -102,6 +102,7 @@ export function stepPlayer(dRow, dCol) {
 
   state.floor.playerRow = newRow;
   state.floor.playerCol = newCol;
+  followBody();
   computeVisibility();
   events.push({ type: 'stepped', facing });
 

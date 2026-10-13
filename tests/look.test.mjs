@@ -1,5 +1,5 @@
 // Unit tests for free look (js/look.js) and the look cone (sight.js
-// inLookCone): the free arc, turning the body, the look kept on a walk,
+// inLookCone): the free arc, turning the body, the look recentred on a walk,
 // the bump rule, and the cone matching the old diamond when looking
 // straight along a way.
 //
@@ -96,17 +96,16 @@ test('turnBody picks the way closest to the aim', () => {
   assert.deepEqual(turnBody(), [{ type: 'bodyTurned', facing: 'S' }]);
 });
 
-test('walking a new way keeps the look as far as the new arc allows', () => {
+test('walking points the light straight ahead again', () => {
   resetFloor();
   aimLook(20 * DEG);
+  stepPlayer(-1, 0); // north, the way the body faces
+  assert.equal(lookAngle(), BODY_ANGLES.N, 'a step straight on recentres');
+  aimLook(-25 * DEG);
   stepPlayer(0, 1); // east
   assert.equal(state.floor.facing, 'E');
-  assert.ok(near(lookAngle(), BODY_ANGLES.E - LOOK_FREE_ARC), 'held at the new arc\'s north edge');
-  stepPlayer(0, 1);
-  assert.ok(near(lookAngle(), BODY_ANGLES.E - LOOK_FREE_ARC), 'and kept while walking on');
-  aimLook(BODY_ANGLES.E);
-  stepPlayer(-1, 0); // north
-  assert.ok(near(lookAngle(), LOOK_FREE_ARC));
+  assert.equal(lookAngle(), BODY_ANGLES.E, 'a turn by walking recentres');
+  assert.ok(!wantsTurn());
 });
 
 test('free look off: walking a new way points the light straight ahead', () => {

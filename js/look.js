@@ -66,9 +66,9 @@ export function turnBody() {
   return [{ type: 'bodyTurned', facing }];
 }
 
-// The body turned some other way (a step, a bump): with free look off the
-// aim goes with it, so the light points straight ahead as before. With it
-// on, the aim stays where it was, and lookAngle holds it inside the new arc.
+// The player stepped or turned by walking: the aim goes back to straight
+// ahead, so the light points the way they walk. Timothy: a look kept at the
+// arc's edge while walking was jarring; looking round is for standing still.
 export function followBody() {
-  if (!state.settings.freeLook) state.floor.look = bodyAngle();
+  state.floor.look = bodyAngle();
 }
