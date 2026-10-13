@@ -303,7 +303,6 @@ export const TEXT = {
   'room.sensed.simple': 'Enemy close.', // draft. "I see you." with Simple enemies on (Timothy: it falls under the filter)
   'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
-  'room.turnGhost': 'TURN · 1 turn', // draft. On the map, toward an aim past the free look arc
   'room.waitAgain': 'Tap again to wait.', // draft. The look stick's first tap: a second one waits
   'dpad.stick.wait': 'Look stick: drag to aim, tap twice to wait', // draft. The d-pad centre's label
   'dpad.stick.turn': 'Look stick: tap to turn and face your aim', // draft. Its label while the aim is past the arc

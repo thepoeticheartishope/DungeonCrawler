@@ -27,7 +27,7 @@
 import { state, key } from './state.js';
 import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF } from './config.js';
 import { FACING_VECTORS, canShoot } from './sight.js';
-import { lookAngle, bodyAngle, wantsTurn, wrapAngle } from './look.js';
+import { lookAngle, bodyAngle, wrapAngle } from './look.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
 import { drawStickForm, stickBox, dyingSticks } from './stickforms.js';
@@ -109,8 +109,8 @@ const STICK_ARM_SWAY = 0.012;  // how far the hands move with the breath
 const STICK_STRIDE = 0.16;     // how far the feet swing apart on a step
 const STICK_GLANCE = 0.8;      // how far the head turns on an idle glance, as a share of its radius
 const TARGET_PULSE = [0.45, 1]; // the target diamond's strength at either end of its pulse
-// Free look (free look plan step B): the ring at the player's feet, the
-// cone's edges and the turn ghost. Sizes in tiles unless they say otherwise.
+// Free look (free look plan step B): the ring at the player's feet and the
+// cone's edges. Sizes in tiles unless they say otherwise.
 const LOOK_RING = 0.42;          // the ring's radius
 const LOOK_RING_LEVEL = 0.16;    // the faint ring all round
 const LOOK_ARC_LEVEL = 0.5;      // the brighter arc over the free range (body ±30°)
@@ -120,9 +120,6 @@ const LOOK_SETTLED = 0.002;      // radians: the drawn look this close to the re
 const CONE_EDGE_LEVEL = 0.22;    // the dashed lines along the cone's edges
 const CONE_EDGE_DASH = [0.05, 0.08]; // their dash and gap, in tile widths
 const CONE_EDGE_STEP = 0.1;      // how finely an edge is walked out to the first wall
-const TURN_GHOST_LENGTH = 2.2;   // the dashed line toward an aim past the arc
-const TURN_GHOST_LEVEL = [0.3, 0.75]; // its strength at either end of its pulse
-const TURN_GHOST_TEXT = 0.26;    // its label's height, as a share of a tile's width
 // The gun (gun plan), as shares of the stick man's height unless they say
 // otherwise. Laid out as in the fight mockup (reload-fire-iso-mockup.html).
 const GUN_REACH = 0.22;          // the gun hand, out from the shoulder toward where he faces
@@ -285,7 +282,6 @@ export function drawIsoScene(ctx, canvasSize, shared) {
     drawShot(ctx);
   }
   drawTarget(ctx);
-  drawTurnGhost(ctx, player.at);
 }
 
 // Every grid tile whose diamond (or a wall standing on it) falls on the
@@ -1103,28 +1099,6 @@ function drawConeEdges(ctx, at) {
     if (reach > LOOK_RING) line(ctx, toward(at, angle, LOOK_RING), toward(at, angle, reach));
   });
   ctx.setLineDash([]);
-}
-
-// While the player aims past the free arc (look.js wantsTurn), a dashed
-// line toward the aim with what a turn costs, pulsing slowly
-// (MAP_ANIMATION_MS.turnGhost); held still under reduced motion.
-function drawTurnGhost(ctx, at) {
-  if (!wantsTurn()) return;
-  const aim = state.floor.look;
-  const level = TURN_GHOST_LEVEL[0] + (TURN_GHOST_LEVEL[1] - TURN_GHOST_LEVEL[0]) * look.pulse(MAP_ANIMATION_MS.turnGhost);
-  if (!look.still) look.keepMoving();
-  const end = toward(at, aim, TURN_GHOST_LENGTH);
-  ctx.save();
-  ctx.setLineDash(CONE_EDGE_DASH.map(n => n * tw));
-  ctx.lineWidth = EDGE_WIDTH * tw * 1.4;
-  strokeGlow(ctx, level, 0);
-  line(ctx, toward(at, aim, LOOK_RING), end);
-  ctx.fillStyle = glow(level);
-  ctx.font = Math.round(tw * TURN_GHOST_TEXT) + 'px VT323, monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.fillText(t('room.turnGhost'), end[0], end[1] - th * 0.15);
-  ctx.restore();
 }
 
 // A dark wedge thrown away from the player by each pillar in their light:

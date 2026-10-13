@@ -39,7 +39,7 @@
 //      spends no turn. The look stick: a drag aims for free, two taps wait
 //      one turn, aimed past the arc one tap turns for one turn; the mouse
 //      over the map aims. Then the map is drawn looking ahead, at the arc's
-//      edge and past it (the turn ghost), saved as noesis-free-look-*.png
+//      edge and past it, saved as noesis-free-look-*.png
 //      in the system's temp folder. Then DEV -> Free look off and a few
 //      turns played.
 //
@@ -729,8 +729,7 @@ async function playWithoutFreeLook(page) {
   return off ? '' : 'with free look off the light was not straight ahead';
 }
 
-// Aims straight ahead, at the edge of the free arc, and past it (the turn
-// ghost), drawing each and saving a picture of the map to the system's
+// Aims straight ahead, at the edge of the free arc, and past it, drawing each and saving a picture of the map to the system's
 // temp folder for a look by eye. Past the arc a turn must be wanted.
 async function lookShots(page) {
   for (const [name, offset] of [['ahead', 0], ['edge', 30], ['past', 100]]) {

@@ -781,7 +781,6 @@ export const MAP_ANIMATION_MS = {
   gunMiss: 900,     // MISS floating up over a minion the shot missed, fading
   gunRecoil: 120,   // the gun kicking back toward the player as it fires
   lookEase: 70,     // the drawn look (ring tick, cone edges, the stick man's gaze) easing toward where the player aims (free look)
-  turnGhost: 1800,  // the turn ghost's slow pulse while the player aims past the free arc (free look)
   // Minions as stick men (stick enemies plan, js/stickforms.js). Slow on
   // purpose: the calm rule for motion- and flicker-sensitive players.
   stickTell: 900,    // a stick enemy eases into its tell pose, or back out (stickforms.js)
