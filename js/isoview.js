@@ -25,8 +25,9 @@
 // killed one keeps fading where it died until it is gone.
 
 import { state, key } from './state.js';
-import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS, ENEMY_LIGHT } from './config.js';
+import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF } from './config.js';
 import { FACING_VECTORS, canShoot } from './sight.js';
+import { lookAngle, bodyAngle, wantsTurn, wrapAngle } from './look.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
 import { drawStickForm, stickBox, dyingSticks } from './stickforms.js';
@@ -108,6 +109,20 @@ const STICK_ARM_SWAY = 0.012;  // how far the hands move with the breath
 const STICK_STRIDE = 0.16;     // how far the feet swing apart on a step
 const STICK_GLANCE = 0.8;      // how far the head turns on an idle glance, as a share of its radius
 const TARGET_PULSE = [0.45, 1]; // the target diamond's strength at either end of its pulse
+// Free look (free look plan step B): the ring at the player's feet, the
+// cone's edges and the turn ghost. Sizes in tiles unless they say otherwise.
+const LOOK_RING = 0.42;          // the ring's radius
+const LOOK_RING_LEVEL = 0.16;    // the faint ring all round
+const LOOK_ARC_LEVEL = 0.5;      // the brighter arc over the free range (body ±30°)
+const LOOK_TICK = [0.7, 1.3];    // the tick where the light points, from and to, as shares of the ring's radius
+const LOOK_TICK_LEVEL = 0.9;
+const LOOK_SETTLED = 0.002;      // radians: the drawn look this close to the real one has arrived
+const CONE_EDGE_LEVEL = 0.22;    // the dashed lines along the cone's edges
+const CONE_EDGE_DASH = [0.05, 0.08]; // their dash and gap, in tile widths
+const CONE_EDGE_STEP = 0.1;      // how finely an edge is walked out to the first wall
+const TURN_GHOST_LENGTH = 2.2;   // the dashed line toward an aim past the arc
+const TURN_GHOST_LEVEL = [0.3, 0.75]; // its strength at either end of its pulse
+const TURN_GHOST_TEXT = 0.26;    // its label's height, as a share of a tile's width
 // The gun (gun plan), as shares of the stick man's height unless they say
 // otherwise. Laid out as in the fight mockup (reload-fire-iso-mockup.html).
 const GUN_REACH = 0.22;          // the gun hand, out from the shoulder toward where he faces
@@ -187,6 +202,11 @@ let cameraFloor = -1;    // the floor (state.run.floorsEntered) the camera is on
 let cameraPlayer = null; // the player's tile when the camera last looked
 let stickSeen = null;    // the player's tile and facing when the stick man last stood still
 let stickActiveAt = 0;   // when the player last moved, turned or bumped: idle time counts from here
+// The look as drawn: view-only, easing toward look.js lookAngle().
+let shownLook = null;    // the drawn look angle (radians on the grid), or null before the first frame
+let shownLookAt = 0;     // the frame time it last moved
+let shownLookFloor = -1; // the floor (state.run.floorsEntered) it was drawn on: a new floor snaps it
+let frameLook = 0;       // the drawn look this frame
 // The gun's effects: view-only, like the camera.
 let shot = null;         // the last shot, from showShot(): { start, to: { row, col }, missed }
 let muzzle = null;       // where the gun's muzzle is this frame, in pixels (null with no gun drawn)
@@ -195,8 +215,8 @@ let pageScale = 1;       // canvas pixels per CSS pixel this frame
 let shotsShown = 0;      // shots shown so far, so a miss goes to the left and right in turn
 
 // Draws the whole isometric map as state has it now, in layer order:
-// floor, things lying on it (stairs, papers, the facing wedge, pillar
-// shadows), the player's light pool, then everything standing up and the
+// floor, things lying on it (stairs, papers, the look ring and cone
+// edges, pillar shadows), the player's light pool, then everything standing up and the
 // boss mist back to front, so nearer things paint over farther ones. Walls
 // in front of anything in sight are cut away.
 // `canvasSize` is { width, height } in pixels and `pageWidth`, the map's
@@ -217,6 +237,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   const player = look.things.find(thing => thing.kind === 'player');
   if (player.at.row !== state.floor.playerRow || player.at.col !== state.floor.playerCol) look.showPlain();
   [originX, originY] = centre(player.at.row, player.at.col);
+  frameLook = easeLook();
   const tiles = tilesInView();
   findFrontWalls(tiles);
   easeWallCuts(tiles, look.now, look.still);
@@ -248,7 +269,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
       return drawStairs(ctx, thing.at);
     }
     if (thing.kind === 'paper' && thing.glyph !== null) return drawPaper(ctx, thing.at);
-    if (thing.kind === 'player') drawFacing(ctx, thing.at);
+    if (thing.kind === 'player') drawLookRing(ctx, thing.at);
     standing.push({ depth: thing.at.row + thing.at.col + 0.5, draw: () => drawStanding(ctx, thing) });
   });
   dyingSticks(look.now).forEach(m => {
@@ -264,6 +285,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
     drawShot(ctx);
   }
   drawTarget(ctx);
+  drawTurnGhost(ctx, player.at);
 }
 
 // Every grid tile whose diamond (or a wall standing on it) falls on the
@@ -980,8 +1002,8 @@ function searched(at) {
   return Boolean(prop && prop.searched);
 }
 
-// The wedge on the floor pointing where the player faces. Arrow glyphs
-// (^ v < >) would point the wrong way on a diamond.
+// The wedge on the floor pointing where the player's body faces. Arrow
+// glyphs (^ v < >) would point the wrong way on a diamond.
 function drawFacing(ctx, at) {
   const [cx, cy] = centre(at.row, at.col);
   const [fr, fc] = FACING_VECTORS[state.floor.facing];
@@ -993,6 +1015,116 @@ function drawFacing(ctx, at) {
   poly(ctx, [tip, baseL, baseR]);
   ctx.fillStyle = glow(0.5);
   ctx.fill();
+}
+
+// One step on the grid toward `angle` (0 = north, +90° = east), as
+// [rows, cols].
+function lookVector(angle) {
+  return [-Math.cos(angle), Math.sin(angle)];
+}
+
+// The point `distance` tiles from `at` toward `angle`, in pixels.
+function toward(at, angle, distance) {
+  const [dr, dc] = lookVector(angle);
+  return centre(at.row + dr * distance, at.col + dc * distance);
+}
+
+// The drawn look this frame: it eases toward lookAngle() over
+// MAP_ANIMATION_MS.lookEase, so a swing of the light is smooth; under
+// reduced motion, and on a new floor, it is simply there.
+function easeLook() {
+  const goal = lookAngle();
+  const now = look.now;
+  const fresh = shownLook === null || shownLookFloor !== state.run.floorsEntered;
+  const gap = fresh ? 0 : wrapAngle(goal - shownLook);
+  const dt = Math.min(now - shownLookAt, WALL_CUT_MAX_FRAME_MS);
+  shownLookAt = now;
+  shownLookFloor = state.run.floorsEntered;
+  if (fresh || look.still || Math.abs(gap) < LOOK_SETTLED) {
+    shownLook = goal;
+    return goal;
+  }
+  shownLook = wrapAngle(shownLook + gap * (1 - Math.exp(-dt / MAP_ANIMATION_MS.lookEase)));
+  look.keepMoving();
+  return shownLook;
+}
+
+// The look at the player's feet (free look plan): a faint ring all round,
+// a brighter arc over the free range (body ±30°), the body's wedge, and a
+// tick where the light points, then the cone's edges. With free look off,
+// only the wedge, as before.
+function drawLookRing(ctx, at) {
+  drawFacing(ctx, at);
+  if (!state.settings.freeLook) return;
+  const body = bodyAngle();
+  ctx.save();
+  ctx.lineWidth = EDGE_WIDTH * tw;
+  strokeGlow(ctx, LOOK_RING_LEVEL, 0);
+  arcOnFloor(ctx, at, 0, Math.PI * 2);
+  ctx.lineWidth = EDGE_WIDTH * tw * 1.6;
+  strokeGlow(ctx, LOOK_ARC_LEVEL, 0);
+  arcOnFloor(ctx, at, body - LOOK_FREE_ARC, body + LOOK_FREE_ARC);
+  ctx.lineWidth = EDGE_WIDTH * tw * 2;
+  strokeGlow(ctx, LOOK_TICK_LEVEL, RIDGE_BLUR);
+  line(ctx, toward(at, frameLook, LOOK_RING * LOOK_TICK[0]), toward(at, frameLook, LOOK_RING * LOOK_TICK[1]));
+  drawConeEdges(ctx, at);
+  ctx.restore();
+}
+
+// The ring's arc on the floor round `at`, from grid angle `from` to `to`.
+function arcOnFloor(ctx, at, from, to) {
+  const steps = Math.max(4, Math.ceil((to - from) / (Math.PI / 24)));
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const [x, y] = toward(at, from + (to - from) * i / steps, LOOK_RING);
+    if (i) ctx.lineTo(x, y);
+    else ctx.moveTo(x, y);
+  }
+  glowStroke(ctx);
+}
+
+// Two faint dashed lines along the cone's edges, out from the ring to
+// PLAYER_CONE_RANGE, each stopped at the first wall or pillar.
+function drawConeEdges(ctx, at) {
+  const f = state.floor;
+  ctx.setLineDash(CONE_EDGE_DASH.map(n => n * tw));
+  ctx.lineWidth = EDGE_WIDTH * tw;
+  strokeGlow(ctx, CONE_EDGE_LEVEL, 0);
+  [-1, 1].forEach(side => {
+    const angle = frameLook + side * LOOK_CONE_HALF;
+    const [dr, dc] = lookVector(angle);
+    let reach = LOOK_RING;
+    while (reach < PLAYER_CONE_RANGE) {
+      const next = reach + CONE_EDGE_STEP;
+      const k = key(Math.round(f.playerRow + dr * next), Math.round(f.playerCol + dc * next));
+      if (f.wallSet.has(k) || f.pillarSet.has(k)) break;
+      reach = next;
+    }
+    if (reach > LOOK_RING) line(ctx, toward(at, angle, LOOK_RING), toward(at, angle, reach));
+  });
+  ctx.setLineDash([]);
+}
+
+// While the player aims past the free arc (look.js wantsTurn), a dashed
+// line toward the aim with what a turn costs, pulsing slowly
+// (MAP_ANIMATION_MS.turnGhost); held still under reduced motion.
+function drawTurnGhost(ctx, at) {
+  if (!wantsTurn()) return;
+  const aim = state.floor.look;
+  const level = TURN_GHOST_LEVEL[0] + (TURN_GHOST_LEVEL[1] - TURN_GHOST_LEVEL[0]) * look.pulse(MAP_ANIMATION_MS.turnGhost);
+  if (!look.still) look.keepMoving();
+  const end = toward(at, aim, TURN_GHOST_LENGTH);
+  ctx.save();
+  ctx.setLineDash(CONE_EDGE_DASH.map(n => n * tw));
+  ctx.lineWidth = EDGE_WIDTH * tw * 1.4;
+  strokeGlow(ctx, level, 0);
+  line(ctx, toward(at, aim, LOOK_RING), end);
+  ctx.fillStyle = glow(level);
+  ctx.font = Math.round(tw * TURN_GHOST_TEXT) + 'px VT323, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(t('room.turnGhost'), end[0], end[1] - th * 0.15);
+  ctx.restore();
 }
 
 // A dark wedge thrown away from the player by each pillar in their light:
@@ -1219,14 +1351,16 @@ function outline(ctx, path, level) {
 function drawStickMan(ctx, at, fx, fy) {
   const f = state.floor;
   const h = tw * STICK_HEIGHT;
-  const [fr, fc] = FACING_VECTORS[f.facing];
-  const side = fc - fr;          // which way it faces across the screen
-  const away = fr + fc < 0;      // north and west face up the screen
+  // It looks where the light points (free look plan); the legs and the
+  // step slide go with the body.
+  const [fr, fc] = lookVector(frameLook);
+  const side = fc - fr;          // which way it looks across the screen
+  const away = fr + fc < 0;      // north and west look up the screen
   // How far through a step or bump it is: 0 standing on its tile.
   const off = Math.max(Math.abs(at.row - f.playerRow), Math.abs(at.col - f.playerCol));
   const now = look.now;
-  if (off || !stickSeen || stickSeen.row !== f.playerRow || stickSeen.col !== f.playerCol || stickSeen.facing !== f.facing) {
-    stickSeen = { row: f.playerRow, col: f.playerCol, facing: f.facing };
+  if (off || !stickSeen || stickSeen.row !== f.playerRow || stickSeen.col !== f.playerCol || stickSeen.facing !== f.facing || stickSeen.look !== frameLook) {
+    stickSeen = { row: f.playerRow, col: f.playerCol, facing: f.facing, look: frameLook };
     stickActiveAt = now;
   }
   let breath = 0;  // 0..1 through a breath
@@ -1257,7 +1391,7 @@ function drawStickMan(ctx, at, fx, fy) {
   const arm = sway * STICK_ARM_SWAY * h + swing * h * 0.1;
   const handY = shoulder[1] + h * 0.3 - lift * 0.4;
   const lineWidth = Math.max(1.5, tw * STICK_LINE);
-  const gun = state.settings.gunCombat ? holdGun(shoulder, h, side) : null;
+  const gun = state.settings.gunCombat ? holdGun(shoulder, h, side, fr, fc) : null;
   if (gun) muzzle = gun.muzzle;
   ctx.save();
   ctx.lineCap = 'round';
@@ -1311,13 +1445,13 @@ function drawTarget(ctx) {
 }
 
 // Where the stick man's hands and gun go, from its shoulder: the gun hand
-// out toward where it faces (on screen), the other hand under it, the gun
+// out toward where it looks (on screen), the other hand under it, the gun
 // raised while a landed shot waits for the damage bar (state.battle.aim)
 // and kicked back for a moment after a shot. `h` is the stick man's
-// height and `side` which way it faces across the screen.
+// height, `side` which way it looks across the screen, and (fr, fc) one
+// grid step where it looks.
 // Returns { grip, backHand, butt, muzzle, gripFoot }, in pixels.
-function holdGun(shoulder, h, side) {
-  const [fr, fc] = FACING_VECTORS[state.floor.facing];
+function holdGun(shoulder, h, side, fr, fc) {
   const screenX = fc - fr;
   const screenY = (fc + fr) / 2;
   const length = Math.hypot(screenX, screenY);
