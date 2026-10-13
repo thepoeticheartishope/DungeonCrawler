@@ -36,7 +36,9 @@
 //      reload of the page (it's remembered).
 //   6. Free look run: DEV -> Free look on, then the gun run's walk until a
 //      reload and a kill; a tap on a seen minion aims the light at it and
-//      spends no turn.
+//      spends no turn. Then the map is drawn looking ahead, at the arc's
+//      edge and past it (the turn ghost), saved as noesis-free-look-*.png
+//      in the system's temp folder.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -46,6 +48,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
+import os from 'node:os';
 
 const require = createRequire(
   path.join(process.env.HOME, 'Repo/codecraft-classroom/smoke-test-resolver.js')
@@ -620,7 +623,28 @@ async function checkFreeLook(page, url) {
     if (state.run.turnCount !== turns) return 'aiming spent a turn';
     return '';
   });
-  return tap;
+  if (tap) return tap;
+  return await lookShots(page);
+}
+
+// Aims straight ahead, at the edge of the free arc, and past it (the turn
+// ghost), drawing each and saving a picture of the map to the system's
+// temp folder for a look by eye. Past the arc a turn must be wanted.
+async function lookShots(page) {
+  for (const [name, offset] of [['ahead', 0], ['edge', 30], ['past', 100]]) {
+    const wants = await page.evaluate(async (deg) => {
+      const { state } = await import('./js/state.js');
+      const { aimLook, bodyAngle, wantsTurn } = await import('./js/look.js');
+      const { requestMapDraw } = await import('./js/mapview.js');
+      aimLook(bodyAngle() + deg * Math.PI / 180);
+      requestMapDraw();
+      return state.settings.freeLook && wantsTurn();
+    }, offset);
+    if (wants !== (offset > 30)) return `aiming ${offset}° off the body: wantsTurn was ${wants}`;
+    await page.waitForTimeout(400);
+    await page.locator('#mapCanvas').screenshot({ path: path.join(os.tmpdir(), `noesis-free-look-${name}.png`) });
+  }
+  return '';
 }
 
 async function runFreeLook(browser, url) {
