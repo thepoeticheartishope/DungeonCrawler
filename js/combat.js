@@ -9,7 +9,7 @@ import { tickLight, batteryInPlay, lightOn } from './battery.js';
 import { minionStrike, struggleDial } from './gun.js';
 import { keptOut } from './relays.js';
 import { canPassCorner } from './passage.js';
-import { computeVisibility, clearLine, FACING_VECTORS } from './sight.js';
+import { computeVisibility, clearLine, seesEnemy, FACING_VECTORS } from './sight.js';
 import { waysInUse } from './look.js';
 
 // True if `entity` stands on one of the tiles around the player: the 8
@@ -350,7 +350,7 @@ function senseUnseen() {
   for (const m of state.floor.minions) {
     const path = bfsPath({ row: m.row, col: m.col }, player, blockedTilesFor(m));
     const close = path && path.length - 1 <= SENSE_STEPS;
-    if (!close || state.floor.visibleSet.has(key(m.row, m.col))) {
+    if (!close || seesEnemy(m)) {
       m.sensed = false;
       continue;
     }

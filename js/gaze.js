@@ -21,8 +21,8 @@ export function gazeInPlay() {
 }
 
 // Whether `m` stands in the player's cone right now: in their own light,
-// inside the cone, not on their tile.
-function inCone(m) {
+// inside the cone, not on their tile. The eye only shows while it does.
+export function inCone(m) {
   const f = state.floor;
   if (m.row === f.playerRow && m.col === f.playerCol) return false;
   return f.sightSet.has(key(m.row, m.col)) && inLookCone(m.row, m.col);

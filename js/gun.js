@@ -18,7 +18,7 @@ import {
 } from './config.js';
 import { fightGroups, shuffle } from './quiz.js';
 import { recordHauntAnswer } from './haunts.js';
-import { shootBlock, canShoot } from './sight.js';
+import { shootBlock, canShoot, seesEnemy } from './sight.js';
 import { aimLook, angleTo, lookAngle, wantsTurn, wrapAngle } from './look.js';
 import { goldReward } from './moves.js';
 import { tileOccupied } from './combat.js';
@@ -122,7 +122,7 @@ export function settleReload(isCorrect, offer, box = null, tier = '2') {
 }
 
 // The player tapped `tile` on the map. A minion or the hunter standing
-// there, in sight (visibleSet, so the map is showing it), draws the light:
+// there, in sight (seesEnemy, so the map is showing it), draws the light:
 // the aim goes to it (look.js aimLook), as far as the free arc allows, and
 // the target follows the light. If it still can't be shot, the event says
 // why ('needsTurn' when only turning the body would bring it into the
@@ -132,7 +132,7 @@ export function settleReload(isCorrect, offer, box = null, tier = '2') {
 export function pickTarget(tile) {
   const f = state.floor;
   const target = f.minions.find(m => m.row === tile.row && m.col === tile.col);
-  const seen = target && (!state.settings.fogEnabled || f.visibleSet.has(key(target.row, target.col)));
+  const seen = target && seesEnemy(target);
   if (!seen) {
     f.gunTarget = null;
     return [{ type: 'targetCleared' }];
@@ -157,8 +157,7 @@ function shootable() {
   const look = lookAngle();
   const offAim = m => Math.abs(wrapAngle(angleTo(m.row, m.col) - look));
   return f.minions
-    .filter(m => !state.settings.fogEnabled || f.visibleSet.has(key(m.row, m.col)))
-    .filter(canShoot)
+    .filter(m => seesEnemy(m) && canShoot(m))
     .sort((a, b) => (offAim(a) - offAim(b)) || (distanceTo(a) - distanceTo(b)));
 }
 
