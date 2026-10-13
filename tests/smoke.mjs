@@ -54,8 +54,10 @@
 //   8. Tutorial run (tutorial.js): on for a new player; wakes dark with
 //      "You can't leave. Don't try." and V does nothing; the light falls
 //      after 4 waits; walking to it brings "You can do this. I trust you."
-//      and the barrel; bumping it asks the name, typed; a name brings
-//      "Be ready." and a stick man, shot dead (Auto-win stops the bar);
+//      and the barrel; bumping it asks the name, typed; a name closes the
+//      ring of dark ("Die in darkness.", no step out), the kind voice
+//      follows ("Don't let them dim your light."), V breaks it: "Be
+//      ready." and a stick man, shot dead (Auto-win stops the bar);
 //      its key opens the door, and through it the opening rest starts
 //      with the run's numbers fresh, the name kept and the toggle off.
 //
@@ -1141,8 +1143,27 @@ async function checkTutorial(page, url) {
   await page.keyboard.press('Enter');
   await page.waitForTimeout(200);
   st = await tutorialState(page);
-  if (st.stage !== 'fight' || st.name !== 'Smoke') return 'the name did not start the fight (stage ' + st.stage + ', name ' + st.name + ')';
-  if (!st.sense.includes('Be ready')) return 'no "Be ready." after the name: ' + st.sense;
+  if (st.stage !== 'ring' || st.name !== 'Smoke') return 'the name did not close the ring (stage ' + st.stage + ', name ' + st.name + ')';
+  if (!st.sense.includes('Die in darkness')) return 'no "Die in darkness." after the name: ' + st.sense;
+  const held = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    return [state.floor.playerRow, state.floor.playerCol].join(',');
+  });
+  await page.keyboard.press(ARROW_KEYS[2]);
+  await page.waitForTimeout(200);
+  const after = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    return [state.floor.playerRow, state.floor.playerCol].join(',');
+  });
+  if (after !== held) return 'the player stepped out of the ring of dark';
+  await page.waitForTimeout(3300);
+  st = await tutorialState(page);
+  if (!st.sense.includes('dim your light')) return 'no kind voice in the ring: ' + st.sense;
+  await page.keyboard.press('v');
+  await page.waitForTimeout(200);
+  st = await tutorialState(page);
+  if (st.stage !== 'fight') return 'the light did not break the ring (stage ' + st.stage + ')';
+  if (!st.sense.includes('Be ready')) return 'no "Be ready." once the ring broke: ' + st.sense;
 
   // Face the stick man and shoot; Auto-win stops the damage bar on its weak point.
   await turnOnAutoWin(page);
@@ -1197,7 +1218,7 @@ async function runTutorial(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'dark, light from above, barrel name, stick man, key, door, out to the opening rest', consoleErrors, pageErrors };
+  return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, stick man, key, door, out to the opening rest', consoleErrors, pageErrors };
 }
 
 async function main() {

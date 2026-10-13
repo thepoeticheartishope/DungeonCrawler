@@ -6,15 +6,23 @@
 //   spot   after TUTORIAL_SPOT_TURNS a light falls from above on one spot
 //   name   walking toward it: "You can do this. I trust you." and a barrel
 //          (a box) in the light asks the player's name
-//   fight  "Be ready." The light comes on and a slow stick man comes from
-//          the far side of the room, always for the player
+//   ring   the dark closes round the player ("Die in darkness."): words
+//          circle at the edge of their light and they can't step out. A
+//          moment later the kind voice: "Don't let them dim your light."
+//          Their light works now; switching it on breaks the ring. It
+//          teaches the light by making it the only way out (Timothy:
+//          teach without hand holding)
+//   fight  "Be ready." A slow stick man comes from the far side of the
+//          room, always for the player
 //   key    it falls and leaves a key
 //   open   the key opens the door at the top; through it, the run begins
 // It shows the game's central mechanics, so when a core mechanic is added,
 // the tutorial gets a beat for it.
 // floor.js buildTutorialFloor() builds the room from TUTORIAL_ROOM; main.js
-// calls tutorialTurn() after each spent turn and settleName() for the
-// barrel's answer. No DOM access here.
+// calls tutorialTurn() after each spent turn, settleName() for the
+// barrel's answer and breakRing() once the light is on. Lines are
+// whispered { line, tone } events: 'dread' is the dungeon, 'kind' the
+// voice on the player's side. No DOM access here.
 
 import { state, key } from './state.js';
 import {
@@ -24,6 +32,7 @@ import {
 import { computeVisibility } from './sight.js';
 import { spawnMinion } from './combat.js';
 import { addRounds } from './gun.js';
+import { lightOn } from './battery.js';
 
 // The room: '#' wall, '.' floor, 'S' where the player wakes, 'D' the
 // locked door (in the top wall), 'L' the middle of the light from above,
@@ -77,8 +86,8 @@ function stepsTo(p) {
 }
 
 // Moves the tutorial on after a spent turn (`events` are the turn's).
-// Returns the events that adds, in order: spotLit; then kindSpoken
-// { line } and barrelAppeared { prop } once the player walks toward the
+// Returns the events that adds, in order: spotLit; then whispered
+// { line, tone } and barrelAppeared { prop } once the player walks toward the
 // light; keyDropped { row, col } once the stick man is gone (shot, or
 // cleared in classic combat); doorUnlocked once the key is taken. None
 // off the tutorial.
@@ -95,7 +104,7 @@ export function tutorialTurn(events) {
   if (tut.stage === 'spot') {
     if (stepsTo(tut.spot) > TUTORIAL_SPOT_NEAR) return [];
     tut.stage = 'name';
-    return [{ type: 'kindSpoken', line: 'tut.trust' }, { type: 'barrelAppeared', prop: placeBarrel(tut.spot) }];
+    return [{ type: 'whispered', line: 'tut.trust', tone: 'kind' }, { type: 'barrelAppeared', prop: placeBarrel(tut.spot) }];
   }
   if (tut.stage === 'fight') {
     if (state.floor.minions.includes(tut.minion)) {
@@ -147,10 +156,11 @@ function placeBarrel(spot) {
 }
 
 // The barrel's answer. Any name that isn't blank is right (Timothy's call
-// a): it becomes the player's name. Then the light comes on and stays on,
-// the energy is filled, and a slow stick man comes from the far side of
-// the room. Returns [] for a blank answer (nothing happens), else
-// nameGiven { name }, kindSpoken { line: 'tut.ready' }, lightSwitched { on: true }.
+// a): it becomes the player's name. Then the dark closes in: the player
+// can't step out of the ring (passage.js) until their light is on, and
+// from now on it works, steady (it never runs down here). Returns [] for
+// a blank answer (nothing happens), else nameGiven { name },
+// whispered { line: 'tut.die', tone: 'dread' }, ringClosed.
 export function settleName(raw) {
   const f = state.floor;
   const tut = f.tutorial;
@@ -159,7 +169,22 @@ export function settleName(raw) {
   state.settings.playerName = name;
   const barrel = f.props.find(p => p.asks === 'name');
   if (barrel) barrel.searched = true;
-  f.light = { on: true, charge: LIGHT_BATTERY_MAX, locked: false, steady: true };
+  f.light = { on: false, charge: LIGHT_BATTERY_MAX, locked: false, steady: true };
+  tut.stage = 'ring';
+  computeVisibility();
+  return [{ type: 'nameGiven', name }, { type: 'whispered', line: 'tut.die', tone: 'dread' }, { type: 'ringClosed' }];
+}
+
+// The light is on in the ring (main.js, after V or 3 taps on the look
+// stick; in Comfort mode, where it is always on, once the kind voice has
+// spoken): the ring breaks, the energy is filled, and a slow stick man
+// comes from the far side of the room. Events: ringBroken,
+// whispered { line: 'tut.ready', tone: 'kind' }; none if the ring isn't
+// closed or the light is still off.
+export function breakRing() {
+  const f = state.floor;
+  const tut = f.tutorial;
+  if (!tut || tut.stage !== 'ring' || !lightOn()) return [];
   if (state.run.energy < ENERGY_MAX) addRounds(ENERGY_MAX - state.run.energy);
   const m = spawnMinion(farthestTile(), TUTORIAL_MINION_KIND);
   m.hpLeft = TUTORIAL_MINION_HP;
@@ -168,7 +193,7 @@ export function settleName(raw) {
   tut.minionAt = { row: m.row, col: m.col };
   tut.stage = 'fight';
   computeVisibility();
-  return [{ type: 'nameGiven', name }, { type: 'kindSpoken', line: 'tut.ready' }, { type: 'lightSwitched', on: true }];
+  return [{ type: 'ringBroken' }, { type: 'whispered', line: 'tut.ready', tone: 'kind' }];
 }
 
 // The free room tile the most walkable steps from the player: the other

@@ -491,6 +491,17 @@ export const TUTORIAL_MINION_KIND = 'HUSK';
 export const TUTORIAL_MINION_HP = 2;
 // How long a tutorial line stays on the map before it fades (slowly: render.js showWhisper).
 export const TUTORIAL_WHISPER_MS = 5000;
+// After "Die in darkness.", how long until the kind voice: "Don't let them dim your light."
+export const TUTORIAL_KIND_DELAY_MS = 3000;
+// In Comfort mode (the light is always on), how long after the kind voice the ring breaks by itself.
+export const TUTORIAL_COMFORT_BREAK_MS = 2500;
+// How long a tutorial stage can go on before its plain hint shows in the room log (only for a player who is stuck).
+export const TUTORIAL_STUCK_MS = 15000;
+// The ring of words round the player (isoview.js drawDarkRing): its distance from them in tiles,
+// ms for one slow turn round, and how long they take to scatter when the light breaks it.
+export const TUTORIAL_RING_RADIUS = 1.4;
+export const TUTORIAL_RING_TURN_MS = 24000;
+export const TUTORIAL_RING_SCATTER_MS = 1400;
 
 // Shooting (gun combat plan, step 2; sight.js canShoot): a minion can be
 // shot when it is in the player's own light with a clear line to it. A shot

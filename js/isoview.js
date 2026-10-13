@@ -25,7 +25,7 @@
 // killed one keeps fading where it died until it is gone.
 
 import { state, key } from './state.js';
-import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF, GAZE_MS } from './config.js';
+import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF, GAZE_MS, TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS } from './config.js';
 import { FACING_VECTORS, canShoot } from './sight.js';
 import { lookAngle, bodyAngle, wrapAngle } from './look.js';
 import { lightOn } from './battery.js';
@@ -217,6 +217,9 @@ let muzzle = null;       // where the gun's muzzle is this frame, in pixels (nul
 let tapBoxes = [];       // this frame's minions, front first, for isoTileAt: [{ box, tile }]
 let pageScale = 1;       // canvas pixels per CSS pixel this frame
 let shotsShown = 0;      // shots shown so far, so a miss goes to the left and right in turn
+// The tutorial's ring of words: view-only, like the shot.
+let ringShown = false;   // the ring was drawn closed on the last frame
+let ringBrokeAt = null;  // the frame time it broke (its words scatter), or null
 
 // Draws the whole isometric map as state has it now, in layer order:
 // floor, things lying on it (stairs, papers, the look ring and cone
@@ -288,6 +291,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   });
   drawLightPool(ctx);
   standing.sort((a, b) => a.depth - b.depth).forEach(s => s.draw());
+  drawDarkRing(ctx);
   noteTapBoxes();
   if (gun) {
     drawBrackets(ctx);
@@ -894,6 +898,49 @@ function drawStairBeam(ctx, at) {
     ctx.lineTo(x + half, top);
     ctx.closePath();
     ctx.fill();
+  });
+  ctx.restore();
+}
+
+// The tutorial's ring of dark (tutorial.js stage 'ring'): words in the
+// stick men's cold light circling at the edge of the player's small
+// light, slowly. When the light breaks the ring they scatter outward and
+// fade over TUTORIAL_RING_SCATTER_MS. Under reduced motion, and in
+// Comfort mode, they stand still and are simply gone when it breaks.
+function drawDarkRing(ctx) {
+  const tut = state.floor.tutorial;
+  const closed = !!tut && tut.stage === 'ring';
+  const still = look.still || state.settings.simpleEnemies;
+  if (closed) {
+    ringShown = true;
+    ringBrokeAt = null;
+  } else if (ringShown) {
+    ringShown = false;
+    ringBrokeAt = still ? null : look.now;
+  }
+  if (!closed && ringBrokeAt === null) return;
+  const gone = closed ? 0 : (look.now - ringBrokeAt) / TUTORIAL_RING_SCATTER_MS;
+  if (gone >= 1) {
+    ringBrokeAt = null;
+    return;
+  }
+  if (!still) look.keepMoving();
+  const words = t('tut.ring.words').split(' ');
+  const spin = still ? 0 : (look.now / TUTORIAL_RING_TURN_MS) * Math.PI * 2;
+  const radius = TUTORIAL_RING_RADIUS * (1 + gone * 1.5);
+  const at = look.walkAt;
+  ctx.save();
+  ctx.font = Math.round(tw * 0.3) + 'px VT323, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.globalAlpha = 0.75 * (1 - gone);
+  ctx.fillStyle = 'rgb(' + ENEMY_LIGHT.core + ')';
+  ctx.shadowColor = 'rgba(' + ENEMY_LIGHT.halo + ', 0.6)';
+  ctx.shadowBlur = tw * 0.15;
+  words.forEach((word, i) => {
+    const angle = spin + (i / words.length) * Math.PI * 2;
+    const [x, y] = centre(at.row + radius * Math.cos(angle), at.col + radius * Math.sin(angle));
+    ctx.fillText(word, x, y - th * 0.6);
   });
   ctx.restore();
 }

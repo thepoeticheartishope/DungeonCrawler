@@ -305,11 +305,17 @@ export const TEXT = {
   // whisper, then the kind voice, then the barrel's question.
   'tut.cantLeave': "You can't leave. Don't try.", // Timothy's wording. Fades on waking, in "I see you."'s style
   'tut.trust': 'You can do this. I trust you.', // Timothy's wording. The kind voice, walking toward the light
-  'tut.ready': 'Be ready.', // Timothy's wording. The kind voice, after the name
+  'tut.die': 'Die in darkness.', // Timothy's wording. The dungeon, as the ring of dark closes after the name
+  'tut.dimLight': "Don't let them dim your light.", // Timothy's wording. The kind voice, a moment later: the only hint
+  'tut.ring.words': 'dark dim die dark dim die', // draft. The words circling the player in the ring (split on spaces)
+  'room.blocked.dark': 'The dark holds you here.', // draft. A step while the tutorial's ring is closed
+  'tut.hint.light': 'Your light: V, or tap the middle of the arrows 3 times.', // draft. Room log, only if stuck in the ring
+  'tut.ready': 'Be ready.', // Timothy's wording. The kind voice, once the ring breaks
   'tut.name.q': 'What is your name?', // Timothy: the barrel asks the player's name; any name is right
-  'tut.hint.move': 'Arrows move you. You are in the dark.', // draft. Room log on waking
-  'tut.hint.barrel': 'Walk into the barrel to open it.', // draft. Room log when the barrel appears
-  'tut.hint.fire': 'Look at it and press SELECT to shoot.', // draft. Room log when the stick man comes
+  // The plain hints show only for a player stuck on a stage (TUTORIAL_STUCK_MS).
+  'tut.hint.move': 'Arrows move you.', // draft. Stuck in the dark
+  'tut.hint.barrel': 'Walk into the barrel to open it.', // draft. Stuck at the barrel
+  'tut.hint.fire': 'Look at it and press SELECT to shoot.', // draft. Stuck in the fight
   'tut.key.dropped': 'It falls. Something is left where it stood.', // draft. The stick man is gone and left the key
   'tut.door.open': 'The door at the top unlocks.', // draft. Key taken
   'tut.light.none': 'Your light will not come on.', // draft. V in the tutorial's dark

@@ -1,12 +1,13 @@
 import { state, key } from './state.js';
 import { buildFloor, buildRestFloor, buildTutorialFloor } from './floor.js';
-import { tutorialTurn, settleName } from './tutorial.js';
+import { tutorialTurn, settleName, breakRing } from './tutorial.js';
 import { nextFloor } from './run.js';
 import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
   LOOK_NUDGE, LOOK_POINTER_DEAD, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
+  TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS,
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -191,8 +192,52 @@ function switchLight() {
     return;
   }
   computeVisibility();
-  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }, ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
+  // In the tutorial's ring, the light on is the way out (tutorial.js breakRing).
+  const freed = result === 'on' ? breakRing() : [];
+  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }, ...freed, ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
   showRoomNote(note.cls, note.text);
+}
+
+// The tutorial's ring has closed ("Die in darkness."): a moment later the
+// kind voice says the one hint, "Don't let them dim your light." In
+// Comfort mode the light is always on, so there is nothing to switch:
+// the ring breaks by itself a little after. Real seconds, view-side.
+function speakInRing() {
+  const inRing = () => state.floor.tutorial && state.floor.tutorial.stage === 'ring' && !state.run.runEnded;
+  setTimeout(() => {
+    if (!inRing()) return;
+    showWhisper(t('tut.dimLight'), 'kind', TUTORIAL_WHISPER_MS);
+    if (batteryInPlay()) return;
+    setTimeout(() => {
+      if (!inRing()) return;
+      const note = drawEvents([...breakRing(), ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
+      if (note.text) showRoomNote(note.cls, note.text);
+    }, TUTORIAL_COMFORT_BREAK_MS);
+  }, TUTORIAL_KIND_DELAY_MS);
+}
+
+// The tutorial teaches without hand holding (Timothy): a stage's plain
+// hint shows in the room log only if the player is still on it after
+// TUTORIAL_STUCK_MS. Stages with no hint teach themselves.
+const STUCK_HINTS = { dark: 'tut.hint.move', name: 'tut.hint.barrel', ring: 'tut.hint.light', fight: 'tut.hint.fire' };
+let watchedStage = null;
+let stuckTimer = null;
+
+// Starts the stuck clock when the tutorial's stage changes (`restart`:
+// start it again on the same stage, as when the intro ends). Called after
+// every drawEvents and floor load.
+function watchTutorial(restart = false) {
+  const tut = state.floor.tutorial;
+  const stage = tut ? tut.stage : null;
+  if (stage === watchedStage && !restart) return;
+  watchedStage = stage;
+  clearTimeout(stuckTimer);
+  const hint = STUCK_HINTS[stage];
+  if (!hint || (stage === 'ring' && !batteryInPlay())) return;
+  stuckTimer = setTimeout(() => {
+    const now = state.floor.tutorial;
+    if (now && now.stage === stage && !state.run.runEnded) showRoomNote('move-msg', t(hint));
+  }, TUTORIAL_STUCK_MS);
 }
 
 // Aims the light at `angle` (look.js aimLook) and draws the result. No turn.
@@ -854,7 +899,9 @@ function startGame() {
   playIntro(introScript(), () => {
     showScreen(roomScreen);
     startTimer();
-    if (tutorial) showWhisper(t('tut.cantLeave'), 'dread', TUTORIAL_WHISPER_MS);
+    if (!tutorial) return;
+    showWhisper(t('tut.cantLeave'), 'dread', TUTORIAL_WHISPER_MS);
+    watchTutorial(true);
   });
 }
 
@@ -867,6 +914,7 @@ function loadRoom(restKind) {
   else if (restKind) buildRestFloor(restKind);
   else buildFloor();
   drawFloor();
+  watchTutorial();
   refreshInspector();
 }
 
@@ -894,12 +942,10 @@ function drawFloor() {
   roomFeedback.innerHTML = '';
   // The room the player wakes in announces itself like any other; on a
   // fixed plan, after the building's name.
-  const startChamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
-  const startName = state.floor.chamberNames[startChamber];
   // The tutorial room has no name or theme line: its whispers speak instead.
-  if (state.floor.tutorial) {
-    showRoomNote('move-msg', t('tut.hint.move'));
-  } else if (startName) {
+  const startChamber = state.floor.tutorial ? undefined : state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
+  const startName = state.floor.chamberNames[startChamber];
+  if (startName) {
     showRoomNote('move-msg', t('room.enter.plan', { floor: t(state.floor.plan.name), name: t(startName) }));
   } else if (startChamber !== undefined) {
     showRoomNote('move-msg', t('theme.' + state.floor.chamberThemes[startChamber] + '.enter'));
@@ -1154,18 +1200,20 @@ function drawEvents(events) {
       case 'nameAsked':
       case 'tutorialLeft':
       case 'spotLit':
-        break;
-      case 'kindSpoken':
-        showWhisper(t(e.line), 'kind', TUTORIAL_WHISPER_MS);
-        break;
       case 'barrelAppeared':
-        parts.push(t('tut.hint.barrel'));
+      case 'ringBroken':
+        break;
+      case 'whispered':
+        showWhisper(t(e.line), e.tone, TUTORIAL_WHISPER_MS);
+        break;
+      case 'ringClosed':
+        speakInRing();
         break;
       case 'nameGiven':
         // The start screen's name field keeps it (setloader.js saves on input).
         playerNameInput.value = e.name;
         playerNameInput.dispatchEvent(new Event('input'));
-        parts.push(t('tut.name.kept', { name: e.name }), t('tut.hint.fire'));
+        parts.push(t('tut.name.kept', { name: e.name }));
         break;
       case 'keyDropped':
         parts.push(t('tut.key.dropped'));
@@ -1410,6 +1458,7 @@ function drawEvents(events) {
   requestMapDraw();
   refreshMinimap();
   recordEvents(events);
+  watchTutorial();
   return { cls, text: parts.join(' ') };
 }
 
