@@ -123,6 +123,13 @@ export function canMakeOut(row, col) {
   return state.floor.sightSet.has(key(row, col)) && clearLineTo(row, col);
 }
 
+// Whether the player sees minion or hunter `m` at all. Unlike items, an
+// enemy is never a '?': one the player can't make out isn't shown, so it
+// can't be tracked in the dark (Timothy). Back in the light, it's there.
+export function seesEnemy(m) {
+  return canMakeOut(m.row, m.col);
+}
+
 // Why the player can't shoot `thing` (anything with row/col) right now, as
 // a text.js key under 'gun.block.', or null if they can. It has to be in
 // the player's own light (sightSet, not the boss's) with a clear line to

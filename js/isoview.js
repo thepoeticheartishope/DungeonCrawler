@@ -29,7 +29,7 @@ import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MA
 import { FACING_VECTORS, canShoot } from './sight.js';
 import { lookAngle, bodyAngle, wrapAngle } from './look.js';
 import { lightOn } from './battery.js';
-import { gazeInPlay } from './gaze.js';
+import { gazeInPlay, inCone } from './gaze.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
 import { drawStickForm, stickBox, dyingSticks } from './stickforms.js';
@@ -1207,12 +1207,13 @@ function drawStanding(ctx, thing) {
   if (thing.kind === 'minion') drawGazeEye(ctx, at, minionOn(thing.tile));
 }
 
-// The eye over a stick man in the player's light (gaze.js): shut, a line;
+// The eye over a stick man in the player's cone (gaze.js): shut, a line;
 // then the lids part slowly with its gaze (0 to GAZE_MS), the pupil
 // showing from a third open. In the enemies' cold blue. No blink, and it
 // only moves as the gaze grows, so it is the same under reduced motion.
+// Out of the cone it isn't drawn, though its gaze is kept for next time.
 function drawGazeEye(ctx, at, m) {
-  if (!m || !m.gaze || !gazeInPlay()) return;
+  if (!m || !m.gaze || !gazeInPlay() || !inCone(m)) return;
   const share = Math.min(1, m.gaze / GAZE_MS);
   const [x, foot] = centre(at.row, at.col);
   const y = foot - tw * (STICK_HEIGHT + EYE_LIFT);
@@ -1310,9 +1311,9 @@ function drawEnergyCell(ctx, thing) {
   ctx.restore();
 }
 
-// The minion a map thing shows as a stick man: a minion with a kind that
-// the player has made out. A '?' stays a glyph (everything past three
-// tiles is a '?', enemies included), and so does the hunter, which has no kind.
+// The minion a map thing shows as a stick man: a minion with a kind (an
+// enemy is only on the map once made out, never a '?'). The hunter, which
+// has no kind, stays a glyph.
 // With Simple enemies on, no minion has a form: it stays its still glyph.
 function formOf(thing) {
   if (thing.kind !== 'minion' || thing.glyph === null || state.settings.simpleEnemies) return null;

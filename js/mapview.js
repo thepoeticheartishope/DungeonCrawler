@@ -16,7 +16,7 @@ import {
   AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
   MAP_ANIMATION_MS, FORM_TELL_STEPS, MAP_DRAG_PX,
 } from './config.js';
-import { canMakeOut, FACING_VECTORS } from './sight.js';
+import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { t } from './text.js';
 import { drawIsoScene, showShot, isoTileAt, isoGridAt } from './isoview.js';
 import { hurtStick, loseStickLimb, killStick } from './stickforms.js';
@@ -389,8 +389,8 @@ function mistStrength(row, col) {
 // the tile the rules have it on (where a slide ends), glyph is
 // null for the '?' of something too far to make out, and look holds the
 // paintGlyph options. Things are seen only on lit tiles, '?' until the
-// player is close enough to make them out (and then with no hostile glow
-// to give an enemy away), stairs always, papers and boxes remembered
+// player is close enough to make them out, enemies only once made out
+// (no '?' to track them by), stairs always, papers and boxes remembered
 // dimly once seen. The list runs in drawing order: moving things after
 // items, so they draw over them.
 function mapThings() {
@@ -452,19 +452,19 @@ function mapThings() {
   add('player', shownAt(PLAYER, f.playerRow, f.playerCol), t('term.player.symbol'), { size: 'player' },
     { row: f.playerRow, col: f.playerCol });
   f.minions.forEach(m => {
-    const flashed = inFlash(m);
-    if (!isLit(m.row, m.col) && !flashed) return;
-    const glyphOrUnknown = (thing, glyph) => (flashed || canMakeOut(thing.row, thing.col) ? glyph : null);
+    // An enemy shows only while made out (or lit by a dark shot), never
+    // as a '?' to follow round the dark.
+    if (state.settings.fogEnabled && !seesEnemy(m) && !inFlash(m)) return;
     const hunter = m.kind === 'hunter';
     // Simple enemies: a still white letter, like a key's k, with no warp,
     // dropout or glow (the hunter's E is bigger, from its glyph size).
     if (state.settings.simpleEnemies) {
-      add(m.kind, shownAt(m, m.row, m.col), glyphOrUnknown(m, glyphOf(m)), { size: m.kind, colour: colours.bright }, m);
+      add(m.kind, shownAt(m, m.row, m.col), glyphOf(m), { size: m.kind, colour: colours.bright }, m);
       return;
     }
     const phase = phaseOf(m);
     const warpMs = hunter ? MAP_ANIMATION_MS.hunterWarp : MAP_ANIMATION_MS.warp;
-    add(m.kind, shownAt(m, m.row, m.col), glyphOrUnknown(m, glyphOf(m)), {
+    add(m.kind, shownAt(m, m.row, m.col), glyphOf(m), {
       size: m.kind, colour: hunter ? colours.bright : colours.text, bloom: hunter ? 0.32 : 0.26,
       warp: warpAt(warpMs, phase * warpMs),
       // Only minions drop out; the hunter is always there.

@@ -631,11 +631,12 @@ async function checkFreeLook(page, url) {
   const tap = await page.evaluate(async () => {
     const { state } = await import('./js/state.js');
     const { pickTarget } = await import('./js/gun.js');
+    const { seesEnemy } = await import('./js/sight.js');
     const f = state.floor;
     if (!state.settings.freeLook) return 'free look did not switch on';
     f.look = 0;
     const turns = state.run.turnCount;
-    const m = f.minions.find(x => x.kind === 'minion' && f.visibleSet.has(x.row + ',' + x.col));
+    const m = f.minions.find(x => x.kind === 'minion' && seesEnemy(x));
     if (!m) return '';
     pickTarget({ row: m.row, col: m.col });
     const aim = Math.atan2(m.col - f.playerCol, -(m.row - f.playerRow));

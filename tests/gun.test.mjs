@@ -17,7 +17,7 @@ import {
   DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
 } from '../js/config.js';
-import { computeVisibility } from '../js/sight.js';
+import { computeVisibility, seesEnemy } from '../js/sight.js';
 import { spawnMinion, advanceMonsters, findAdjacentEnemies } from '../js/combat.js';
 import { resetHaunts } from '../js/haunts.js';
 import { stepPlayer } from '../js/moves.js';
@@ -276,6 +276,16 @@ test('a minion the player can\'t see can\'t be picked', () => {
   const m = minionAt(3, 0); // behind the player, out of their light
   assert.deepEqual(pickTarget({ row: m.row, col: m.col }), [{ type: 'targetCleared' }]);
   assert.equal(state.floor.gunTarget, null);
+});
+
+test('a minion lit only by the boss isn\'t seen, so it can\'t be picked', () => {
+  resetFloor();
+  const m = minionAt(3, 0); // behind the player, out of their own light
+  state.floor.bossLitSet = new Set([m.row + ',' + m.col]);
+  computeVisibility();
+  assert.ok(state.floor.visibleSet.has(m.row + ',' + m.col));
+  assert.equal(seesEnemy(m), false);
+  assert.deepEqual(pickTarget({ row: m.row, col: m.col }), [{ type: 'targetCleared' }]);
 });
 
 test('a minion lit only by standing beside the player can\'t be shot until they look at it', () => {
