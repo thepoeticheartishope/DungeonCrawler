@@ -874,9 +874,10 @@
      MAP, LOG and SELECT on the left. */
   .room-controls.dpad-right { flex-direction: row-reverse; }
 
-  /* Clips the turned d-pad's empty corners, which would otherwise poke
-     past the screen's edge and make a phone zoom out. The padding keeps
-     the button tips; the negative margin keeps the layout as it was. */
+  /* With DEV -> 8 ways off, clips the turned d-pad's empty corners, which
+     would otherwise poke past the screen's edge and make a phone zoom out.
+     The padding keeps the button tips; the negative margin keeps the
+     layout as it was. The square 8-way pad never pokes out. */
   .dpad-clip {
     flex: none;
     padding: 12px;
@@ -886,18 +887,26 @@
   }
 
   /* ---- D-pad ---- */
+  /* Square, 8 arrows, each walking that way on screen (eight ways plan,
+     js/dpad.js screenStep). */
   .dpad {
     display: grid;
-    grid-template-columns: repeat(3, 48px);
-    grid-template-rows: repeat(3, 48px);
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
     gap: 4px;
     justify-content: center;
     flex: none;
-    /* The d-pad turns with the isometric diamond, so ^ points up and to
-       the right, where a step north goes on screen. Its corners are empty,
-       so turned it still fits its own box and needs no room from the log. */
+  }
+  /* DEV -> 8 ways off: the old pad. It turns with the isometric diamond,
+     so its top arrow points up and to the right, where a step north goes
+     on screen. Its corners are hidden, so turned it still fits its own box
+     and needs no room from the log. */
+  .dpad.four-ways {
+    grid-template-columns: repeat(3, 48px);
+    grid-template-rows: repeat(3, 48px);
     transform: rotate(45deg);
   }
+  .dpad.four-ways .dpad-corner { visibility: hidden; }
 
   .dpad button {
     /* Held to walk (js/dpad.js): no scrolling, text selection or callout
@@ -914,9 +923,15 @@
     justify-content: center;
   }
   .dpad button::before, .dpad button::after { content: none; }
-  .dpad-n { grid-column: 2; grid-row: 1; }
-  .dpad-w { grid-column: 1; grid-row: 2; }
+  .dpad-ul { grid-column: 1; grid-row: 1; }
+  .dpad-u { grid-column: 2; grid-row: 1; }
+  .dpad-ur { grid-column: 3; grid-row: 1; }
+  .dpad-l { grid-column: 1; grid-row: 2; }
   .dpad-center { grid-column: 2; grid-row: 2; }
+  .dpad-r { grid-column: 3; grid-row: 2; }
+  .dpad-dl { grid-column: 1; grid-row: 3; }
+  .dpad-d { grid-column: 2; grid-row: 3; }
+  .dpad-dr { grid-column: 3; grid-row: 3; }
   /* The look stick (js/dpad.js initLookStick): a knob that follows a drag
      and springs back; lit while a tap would turn the body. */
   .look-knob {
@@ -931,8 +946,6 @@
   @media (prefers-reduced-motion: reduce) {
     .look-knob { transition: none; }
   }
-  .dpad-e { grid-column: 3; grid-row: 2; }
-  .dpad-s { grid-column: 2; grid-row: 3; }
   /* Which ways are open (render.js renderMoveHints): blocked dims, a
      paper or box to examine shows in inverse video. */
   .dpad button.move-blocked { opacity: 0.3; }
@@ -1752,11 +1765,15 @@
 
     <div class="dpad-clip">
     <div class="dpad" id="dpad">
-      <button class="dpad-n" id="btnN" type="button" aria-label="Move north">^</button>
-      <button class="dpad-w" id="btnW" type="button" aria-label="Move west">&lt;</button>
+      <button class="dpad-ul dpad-corner" id="btnUL" type="button" aria-label="Move up and left">&#8598;</button>
+      <button class="dpad-u" id="btnU" type="button" aria-label="Move up">&#8593;</button>
+      <button class="dpad-ur dpad-corner" id="btnUR" type="button" aria-label="Move up and right">&#8599;</button>
+      <button class="dpad-l" id="btnL" type="button" aria-label="Move left">&#8592;</button>
       <button class="dpad-center" id="btnSkip" type="button" aria-label="Look stick: drag to aim, tap twice to wait"><span class="look-knob" aria-hidden="true"></span></button>
-      <button class="dpad-e" id="btnE" type="button" aria-label="Move east">&gt;</button>
-      <button class="dpad-s" id="btnS" type="button" aria-label="Move south">v</button>
+      <button class="dpad-r" id="btnR" type="button" aria-label="Move right">&#8594;</button>
+      <button class="dpad-dl dpad-corner" id="btnDL" type="button" aria-label="Move down and left">&#8601;</button>
+      <button class="dpad-d" id="btnD" type="button" aria-label="Move down">&#8595;</button>
+      <button class="dpad-dr dpad-corner" id="btnDR" type="button" aria-label="Move down and right">&#8600;</button>
     </div>
     </div>
     <!-- MAP (js/minimapview.js), LOG (the whole room log) and the gun's one

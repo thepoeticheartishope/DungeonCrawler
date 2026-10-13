@@ -136,7 +136,7 @@ async function runSkipRoom(browser, url) {
   await startGameAndWaitForRoom(page);
 
   // Walk one step.
-  await page.click('#btnN');
+  await page.click('#btnU');
 
   await turnOnAutoWin(page);
 
@@ -202,7 +202,10 @@ async function installBattleWatchers(page) {
 }
 
 const BATTLE_MAX_STEPS = 450;
-const ARROW_KEYS = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'];
+// The keys that walk grid north, east, south and west: since the eight
+// ways plan the arrows walk by screen (up = grid NW), and the number pad
+// steps at once with no wait for a second arrow.
+const ARROW_KEYS = ['Numpad9', 'Numpad3', 'Numpad1', 'Numpad7'];
 
 // Which arrow (an ARROW_KEYS index) is the first step of the shortest
 // walk to the boss, or null with no boss or no way there. The boss's core
@@ -359,7 +362,7 @@ async function installGunWatchers(page) {
 const GUN_MAX_STEPS = 500;
 
 // Puts the player on the open tile south of an unused energy cell, facing
-// it, and bumps it (ArrowUp), which opens the reload panel: energy comes
+// it, and bumps it (number pad 9, screen up-right = grid north), which opens the reload panel: energy comes
 // only from drums. Walking there would take a pathfinder; the bump is what
 // is being checked. Returns false if no drum could be reached that way.
 async function bumpEnergyCell(page) {
@@ -377,7 +380,7 @@ async function bumpEnergyCell(page) {
     computeVisibility();
     return true;
   });
-  if (placed) await page.keyboard.press('ArrowUp');
+  if (placed) await page.keyboard.press('Numpad9');
   return placed;
 }
 
@@ -525,6 +528,7 @@ async function checkRealTime(page, url) {
     const seen = new Set([where()]);
     for (const k of ['ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft']) {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+      document.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true, cancelable: true }));
       seen.add(where());
     }
     return seen.size;
@@ -661,9 +665,11 @@ async function roomIdle(page) {
 async function lookControls(page) {
   if (await page.isVisible('#devPanel.show')) await page.click('#devToggleBtn');
   await roomIdle(page);
+  // Aimed a little off the body, so a drag straight right (which is a
+  // way the body can face since the eight ways plan) still moves the aim.
   await page.evaluate(async () => {
     const { aimLook, bodyAngle } = await import('./js/look.js');
-    aimLook(bodyAngle());
+    aimLook(bodyAngle() + 0.2);
   });
   const stick = await page.locator('#btnSkip').boundingBox();
   const cx = stick.x + stick.width / 2;
@@ -767,6 +773,109 @@ async function runFreeLook(browser, url) {
   return { ok: true, detail: 'a shot killed a minion, a tap and the mouse aimed, the look stick aimed, waited and turned, and free look off played', consoleErrors, pageErrors };
 }
 
+// Eight ways plan step B, on a phone-sized screen: the square pad fits
+// (swap sides off and on), two arrows together walk a diagonal, a corner
+// button and the number pad walk by screen, and DEV -> 8 ways off turns
+// the pad back with the arrows walking as before. Minions are cleared and
+// the player put on an open tile so every press is a real step.
+async function checkEightWays(page) {
+  await loadPageAndSet(page, page.url());
+  await startGameAndWaitForRoom(page);
+  await roomIdle(page);
+  const width = page.viewportSize().width;
+  for (const swapped of [false, true]) {
+    await page.evaluate((on) => document.querySelector('.room-controls').classList.toggle('dpad-right', on), swapped);
+    const pad = await page.locator('#dpad').boundingBox();
+    const buttons = await page.locator('.room-buttons').boundingBox();
+    if (pad.x < 0 || pad.x + pad.width > width) return `the pad runs off a ${width} px screen (swap ${swapped})`;
+    if (buttons.x < 0 || buttons.x + buttons.width > width) return `MAP / LOG run off a ${width} px screen (swap ${swapped})`;
+    if (pad.width < 180) return `the pad is only ${pad.width} px wide`;
+    await page.locator('.room-controls').screenshot({ path: path.join(os.tmpdir(), `noesis-eight-ways-pad${swapped ? '-swapped' : ''}.png`) });
+  }
+  await page.evaluate(() => document.querySelector('.room-controls').classList.remove('dpad-right'));
+
+  const place = () => page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { whatBlocks } = await import('./js/passage.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const f = state.floor;
+    f.minions = [];
+    f.hunter = null;
+    const open = (r, c) => !whatBlocks(r, c) && !f.props.some(p => p.row === r && p.col === c) &&
+      !(f.stairs && f.stairs.row === r && f.stairs.col === c);
+    for (let r = 2; r < f.GRID_SIZE - 2; r++) {
+      for (let c = 2; c < f.GRID_SIZE - 2; c++) {
+        let clear = true;
+        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) clear = clear && open(r + dr, c + dc);
+        if (!clear) continue;
+        f.playerRow = r;
+        f.playerCol = c;
+        f.facing = 'NW';
+        f.look = -Math.PI / 4;
+        computeVisibility();
+        return true;
+      }
+    }
+    return false;
+  });
+  const where = () => page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    return { row: state.floor.playerRow, col: state.floor.playerCol, facing: state.floor.facing };
+  });
+  const tryStep = async (press, want, label) => {
+    if (!await place()) return 'no open 3 x 3 spot on the floor';
+    const before = await where();
+    await press();
+    await page.waitForTimeout(150);
+    await roomIdle(page);
+    const after = await where();
+    const moved = [after.row - before.row, after.col - before.col];
+    if (after.facing !== want.facing || moved[0] !== want.step[0] || moved[1] !== want.step[1]) {
+      return `${label}: went ${moved} facing ${after.facing}, not ${want.step} facing ${want.facing}`;
+    }
+    return '';
+  };
+  const chord = async () => {
+    await page.keyboard.down('ArrowUp');
+    await page.keyboard.down('ArrowRight');
+    await page.keyboard.up('ArrowUp');
+    await page.keyboard.up('ArrowRight');
+  };
+  const checks = [
+    [chord, { step: [-1, 0], facing: 'N' }, 'up + right keys'],
+    [() => page.keyboard.press('ArrowUp'), { step: [-1, -1], facing: 'NW' }, 'up key'],
+    [() => page.click('#btnDL'), { step: [1, 0], facing: 'S' }, 'down-left button'],
+    [() => page.click('#btnR'), { step: [-1, 1], facing: 'NE' }, 'right button'],
+    [() => page.keyboard.press('Numpad7'), { step: [0, -1], facing: 'W' }, 'number pad 7'],
+  ];
+  for (const [press, want, label] of checks) {
+    const failed = await tryStep(press, want, label);
+    if (failed) return failed;
+  }
+
+  await page.evaluate(() => document.getElementById('devEightWaysBtn').click());
+  if (!await page.locator('#dpad.four-ways').count()) return 'DEV -> 8 ways off did not turn the pad back';
+  const old = await tryStep(() => page.keyboard.press('ArrowUp'), { step: [-1, 0], facing: 'N' }, '8 ways off, up key');
+  if (old) return old;
+  await page.locator('.room-controls').screenshot({ path: path.join(os.tmpdir(), 'noesis-eight-ways-pad-four.png') });
+  return '';
+}
+
+async function runEightWays(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 390, height: 844 }, hasTouch: true });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  await page.goto(url, { waitUntil: 'load' });
+  const failure = await checkEightWays(page);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'the square pad fit a phone, keys, chord, buttons and number pad walked by screen, and 8 ways off walked as before', consoleErrors, pageErrors };
+}
+
 // ---- Main ----
 
 async function main() {
@@ -795,11 +904,12 @@ async function main() {
       const realTimeResult = await runRealTime(browser, url);
       const simpleResult = await runSimpleEnemies(browser, url);
       const freeLookResult = await runFreeLook(browser, url);
+      const eightWaysResult = await runEightWays(browser, url);
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult]]) {
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult]]) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {
