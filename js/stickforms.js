@@ -23,6 +23,7 @@
 // kept here, not in state. Reads state and never changes it.
 
 import { state } from './state.js';
+import { stepsAway } from './passage.js';
 import {
   MAP_ANIMATION_MS, FORM_TELL_STEPS, MINION_KINDS, ENEMY_LIGHT,
   TENDRIL_GROW_MS, TENDRIL_HOLD_MS, TENDRIL_BACK_MS, TENDRIL_STEP, TENDRIL_SIZE, TENDRIL_LOOKALIKES, TENDRIL_MIRRORABLE,
@@ -439,7 +440,7 @@ function momentsOf(minion) {
 // easing in and back out over MAP_ANIMATION_MS.stickTell from wherever it
 // was; held still under reduced motion.
 function telling(fx, minion, now, still) {
-  const steps = Math.abs(minion.row - state.floor.playerRow) + Math.abs(minion.col - state.floor.playerCol);
+  const steps = stepsAway(minion.row, minion.col);
   const on = fx.deadAt === null && steps <= FORM_TELL_STEPS;
   if (on !== fx.tellOn) {
     fx.tellFrom = eased(fx.tellFrom, fx.tellOn ? 1 : 0, now - fx.tellAt, MAP_ANIMATION_MS.stickTell);

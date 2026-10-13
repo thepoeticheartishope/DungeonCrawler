@@ -11,6 +11,7 @@
 // pass (curved glass, bloom) can read that canvas and draw on top of it.
 
 import { state, key } from './state.js';
+import { stepsAway } from './passage.js';
 import {
   AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
   MAP_ANIMATION_MS, FORM_TELL_STEPS, MAP_DRAG_PX,
@@ -118,7 +119,7 @@ export function initMapView(canvasEl) {
 export function glyphOf(thing) {
   if (thing.kind === 'hunter' && state.settings.simpleEnemies) return t('term.hunter.simpleSymbol');
   if (thing.kind === 'minion' && state.settings.simpleEnemies) {
-    const steps = Math.abs(thing.row - state.floor.playerRow) + Math.abs(thing.col - state.floor.playerCol);
+    const steps = stepsAway(thing.row, thing.col);
     return t(steps <= FORM_TELL_STEPS ? 'term.minion.tellSymbol' : 'term.minion.simpleSymbol');
   }
   return t('term.' + thing.kind + '.symbol');

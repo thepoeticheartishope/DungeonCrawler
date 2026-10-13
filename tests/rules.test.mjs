@@ -20,7 +20,7 @@ import { computeVisibility, canMakeOut, shootBlock, canShoot } from '../js/sight
 import {
   initBossLight, advanceLight, extinguishLight, lightCoverage, lightProgress, lightConsumed,
 } from '../js/light.js';
-import { whatBlocks, canPassCorner } from '../js/passage.js';
+import { whatBlocks, canPassCorner, stepsAway } from '../js/passage.js';
 import { advanceMonsters, spawnMinion, refreshTargetValidity } from '../js/combat.js';
 import { stepPlayer, goldReward } from '../js/moves.js';
 import { settleAnswer } from '../js/answers.js';
@@ -866,5 +866,15 @@ test('8 ways off: diagonals do nothing and minions chase 4 ways, as before', () 
   assert.equal(state.battle.selectedTarget, null, 'a diagonal is not next to the player');
   advanceMonsters();
   assert.equal(Math.abs(m.row - r) + Math.abs(m.col - c), 1, 'it took a straight step');
+  state.settings.eightWays = true;
+});
+
+test('stepsAway counts a diagonal as one step, or two with 8 ways off', () => {
+  resetFloor();
+  const r = state.floor.playerRow, c = state.floor.playerCol;
+  assert.equal(stepsAway(r - 2, c + 2), 2);
+  assert.equal(stepsAway(r + 1, c - 3), 3);
+  state.settings.eightWays = false;
+  assert.equal(stepsAway(r - 2, c + 2), 4);
   state.settings.eightWays = true;
 });
