@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, LIGHT_BATTERY, LIGHT_BATTERY_MAX } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -25,7 +25,7 @@ export const state = {
     realTime: false,        // start screen option: the world moves on a clock (realclock.js), not after each action; remembered
     enemyTendrils: 'random', // DEV -> Tendrils: each stick enemy's own random tendril style, or one of stickforms.js TENDRIL_STYLES for all
     enemyPose: 'random',    // DEV -> Look: each stick enemy's own random pose, or one stickforms.js STICK_POSES id for all
-    simpleEnemies: false,   // start screen option (comfort): every minion on the map is a still 'e' (tell 'E'), no form, no motion; remembered
+    simpleEnemies: false,   // start screen option, Comfort mode: every minion on the map is a still 'e' (tell 'E'), no form, no motion, and the light is always on (no battery); remembered
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
@@ -33,6 +33,7 @@ export const state = {
     turnBeforeStep: TURN_BEFORE_STEP, // a press in a new direction only turns (true) or turns and steps (false); DEV -> Turn flips it
     freeLook: FREE_LOOK,    // the light points where the player aims, within look.js's free arc (true), or where the body faces (false); DEV -> Free look flips it
     eightWays: EIGHT_WAYS,  // the player and minions walk and face 8 ways (true) or the 4 grid ways (false); DEV -> 8 ways flips it
+    lightBattery: LIGHT_BATTERY, // the light goes on and off and runs on a battery (battery.js); DEV -> Light battery flips it (off: always on)
     minigame: 'roll',       // DEV -> Minigame: 'roll' (minigames roll as usual), 'off' (never), or a minigame id (always, when it fits)
     gunCombat: true,        // the gun on the map (gun plan; the default since step 9). DEV -> Combat switches back to classic (minions on the battle screen)
     usingSample: true, // the workshop list is the built-in sample (it can't be saved as a set); false once a list is pasted or loaded there
@@ -80,6 +81,7 @@ export const state = {
     facing: 'N', // 'N'|'S'|'E'|'W' — which way the player's body faces (bumps, slides, the stick man's legs)
     look: null,  // where the player aims, in radians on the grid (0 = north, +π/2 = east), or null = straight ahead; the light points here, held inside the body's free arc (look.js lookAngle)
     wallSet: new Set(),
+    light: { on: true, charge: LIGHT_BATTERY_MAX, locked: false }, // the player's light (battery.js): on or off, turns of charge left, locked off until full after running empty; full again each floor
 
     visibleSet: new Set(),  // tiles lit right now, from the player's spot
     sightSet: new Set(),    // just the player's own light (not the boss's) — what they can make out

@@ -39,6 +39,8 @@ import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, SCREEN_WAYS, screenStep, arrowChord } from './dpad.js';
 import { aimLook, turnBody, wantsTurn, lookAngle } from './look.js';
+import { toggleLight, turnsToFull } from './battery.js';
+import { computeVisibility } from './sight.js';
 import { isoAngleOf } from './isoview.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
@@ -117,6 +119,7 @@ initRender({
   energyStat: document.getElementById('energyStat'),
   gunTargetStat: document.getElementById('gunTargetStat'),
   energyCount: document.getElementById('energyCount'),
+  lightBattery: document.getElementById('lightBattery'),
   gunTarget: document.getElementById('gunTarget'),
   clockStat: document.getElementById('clockStat'),
   keysStat: document.getElementById('keysStat'),
@@ -166,6 +169,22 @@ function tapMap(tile, pointerType) {
 function lookReady() {
   return state.settings.freeLook && roomScreen.classList.contains('show') && !mapPanelShown() &&
     !state.run.turnLocked && !state.run.runEnded;
+}
+
+// Switches the light on or off (battery.js toggleLight; V). No turn, so
+// the real-time clock doesn't matter. Locked after running empty, it stays
+// off and says how long until it is full.
+function switchLight() {
+  if (!roomScreen.classList.contains('show') || mapPanelShown() || state.run.turnLocked || state.run.runEnded) return;
+  const result = toggleLight();
+  if (!result) return;
+  if (result === 'locked') {
+    showRoomNote('block-msg', t('room.ownLight.locked', { turns: turnsToFull() }));
+    return;
+  }
+  computeVisibility();
+  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }, ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
+  showRoomNote(note.cls, note.text);
 }
 
 // Aims the light at `angle` (look.js aimLook) and draws the result. No turn.
@@ -1087,6 +1106,17 @@ function drawEvents(events) {
         parts.push(t('room.hunter.wakes'));
         cls = 'warn-msg';
         break;
+      // The player's light (battery.js).
+      case 'lightSwitched':
+        parts.push(t(e.on ? 'room.ownLight.on' : 'room.ownLight.off'));
+        break;
+      case 'lightDied':
+        parts.push(t('room.ownLight.died'));
+        cls = 'warn-msg';
+        break;
+      case 'lightCharged':
+        parts.push(t('room.ownLight.charged'));
+        break;
       case 'minionMoved':
         slideOnMap(e.minion, e.from);
         break;
@@ -1478,7 +1508,7 @@ window.addEventListener('blur', () => arrows.reset());
 // (up is grid north).
 // Q / E nudge the look, Space turns the body toward an aim past the arc
 // (free look plan). With the gun on: F is SELECT (fires), T picks the next
-// target, . waits.
+// target, . waits. V switches the light (light battery plan).
 // On the stairs, Enter goes down (so does SELECT).
 // Letter and number keys answer a question on the ask screen, unless the
 // gun panels already used the key (picking a reload with 1-3, or F / Space
@@ -1498,6 +1528,7 @@ document.addEventListener('keydown', (e) => {
   else if (gunReady() && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
   else if (gunReady() && e.key === '.') { e.preventDefault(); skipTurn(); }
   else if ((e.key === 'l' || e.key === 'L') && !mapPanelShown()) { e.preventDefault(); toggleRoomLog(); }
+  else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); switchLight(); }
   else if (e.key === 'Escape' && roomLogEl.classList.contains('open')) { e.preventDefault(); toggleRoomLog(false); }
   else if (mapPanelShown() === 'question' && state.settings.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {
     const idxMap = { 1: 0, a: 0, 2: 1, b: 1, 3: 2, c: 2, 4: 3, d: 3 };

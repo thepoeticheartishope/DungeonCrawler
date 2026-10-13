@@ -313,6 +313,12 @@ export const TEXT = {
   'room.blocked.gate': 'The {@term.boss} is sealed. Find another {@term.key}.', // draft. Bumped the gate after a wrong answer
   'room.engage': 'Something fires in the dark.', // draft
   'room.light.consumed': 'The light reaches everything.', // draft
+  // The player's own light on its battery (battery.js; light battery plan, wording from the mockup)
+  'room.ownLight.on': 'Light on.', // draft
+  'room.ownLight.off': 'Light off. Only the circle round you now.', // draft
+  'room.ownLight.died': 'Your light dies. It needs a full charge.', // draft. Ran empty with the light on: locked off until full
+  'room.ownLight.charged': 'Your light is charged.', // draft. A locked light is full again
+  'room.ownLight.locked': 'No light until it is full. {turns} more turns.', // draft. V while locked
   'room.blocked.wall': 'The membrane holds.', // draft
   'room.blocked.boss': 'The {@term.boss} will not move.', // draft
   'room.blocked.minion': 'A {@term.minion} is in the way.', // draft
@@ -422,7 +428,7 @@ export const TEXT = {
   'start.name.label': 'Your name', // draft
   'start.name.placeholder': 'Leave blank to stay nameless', // draft
   'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
-  'start.simpleEnemies': 'Simple enemies: every enemy is a still letter e', // draft. A comfort option for players who don't want creepy enemies
+  'start.simpleEnemies': 'Comfort mode: plain enemies, light always on', // draft. A comfort option for players who don't want creepy enemies: every enemy a still letter e, and no light battery (was "Simple enemies")
   'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft
 
   // ---- Set screen (after Enter: which questions this run asks) ----
@@ -591,6 +597,10 @@ export const TEXT = {
   // HUD, and the room notes a shot or a strike adds up to.
   'gun.btn.select': 'SELECT', // draft. The gun's one button, by the d-pad (key F): fires at the target, or stops the damage bar
   'stat.energy': 'ENERGY', // draft. HUD: energy held, # each and - for room left
+  'stat.battery': 'LIGHT {cells} {state}', // draft. Foot of the map: the light's battery, # a turn of charge and - spent, then its state
+  'stat.battery.on': 'ON', // draft
+  'stat.battery.off': 'OFF', // draft
+  'stat.battery.empty': 'EMPTY', // draft. Ran empty: locked off until full
   'stat.target': 'TARGET', // draft. HUD: the gun's target and its hp, # left and - lost
   'stat.noTarget': '-', // the HUD's target with nothing targeted
   'stat.goals': 'GOALS', // draft. HUD: the floor's goals, [x] kept / [-] lost / [ ] not yet

@@ -14,6 +14,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { freshLight } from '../js/battery.js';
 import { state } from '../js/state.js';
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS, ENERGY_MAX, RELOAD_ENERGY,
@@ -51,6 +52,7 @@ function reset() {
   state.run.roomIndex = 0;
   state.floor.misses = 0;
   state.floor.darkness = false;
+  state.floor.light = freshLight();
   state.battle.minigame = null;
   state.battle.wager = 0;
   state.battle.currentQuestion = NUMBER;

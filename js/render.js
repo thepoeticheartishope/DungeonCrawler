@@ -7,7 +7,8 @@
 // of each one threading them through as parameters.
 
 import { state } from './state.js';
-import { ENERGY_MAX, MINION_KINDS, SENSE_NOTE_MS } from './config.js';
+import { ENERGY_MAX, MINION_KINDS, SENSE_NOTE_MS, LIGHT_BATTERY_MAX } from './config.js';
+import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
 import { whatBlocks, canPassCorner } from './passage.js';
 import { SCREEN_WAYS, screenStep } from './dpad.js';
@@ -150,6 +151,21 @@ export function renderHud() {
   els.keysText.textContent = t(state.floor.gateSealed ? 'stat.keys.sealed' : 'stat.keys.count', { held: state.floor.keysHeld, total: keysTotal });
   renderGoals();
   renderGunHud();
+  renderBattery();
+}
+
+// The light's battery at the foot of the map (battery.js): # a turn of
+// charge, - spent, like the energy cells, then ON / OFF / EMPTY (locked
+// until full). Hidden with the battery out of play (Comfort mode, DEV).
+function renderBattery() {
+  const inPlay = batteryInPlay();
+  els.lightBattery.hidden = !inPlay;
+  if (!inPlay) return;
+  const light = state.floor.light;
+  const cells = '#'.repeat(light.charge) + '-'.repeat(Math.max(LIGHT_BATTERY_MAX - light.charge, 0));
+  const word = light.on ? 'on' : light.locked ? 'empty' : 'off';
+  els.lightBattery.textContent = t('stat.battery', { cells, state: t('stat.battery.' + word) });
+  els.lightBattery.classList.toggle('battery-off', !light.on);
 }
 
 // The floor's goals (goals.js), each with a mark: [x] kept if the player

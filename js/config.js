@@ -390,6 +390,14 @@ export const INTRO_STILL_MS = 3500;
 // tiles up to PLAYER_CONE_RANGE steps inside the cone they're facing.
 export const PLAYER_LIGHT_RADIUS = 1;
 export const PLAYER_CONE_RANGE = 5;
+// The light's battery (battery.js, light battery plan): the light goes on
+// and off (V, no turn spent) and lasts LIGHT_BATTERY_MAX turns on, charging
+// 1 a turn while off. Run empty, it stays off until full again. Off, only
+// the PLAYER_LIGHT_RADIUS circle is lit. DEV -> Light battery switches it
+// (state.settings.lightBattery); off, or in Comfort mode, the light is
+// always on, as before.
+export const LIGHT_BATTERY_MAX = 4;
+export const LIGHT_BATTERY = true;
 
 // Free look (look.js, free look plan): the light points wherever the player
 // aims, up to LOOK_FREE_ARC either side of the way the body faces, at no

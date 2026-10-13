@@ -10,6 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { freshLight } from '../js/battery.js';
 import { state, key } from '../js/state.js';
 import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE,
@@ -45,6 +46,7 @@ function resetFloor(size = 21) {
   state.settings.turnBeforeStep = false;
   state.settings.eightWays = true;
   state.floor.darkness = false;
+  state.floor.light = freshLight();
   state.floor.wallSet = new Set();
   state.floor.pillarSet = new Set();
   state.floor.bossLitSet = new Set();
@@ -424,7 +426,9 @@ test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the 
   assert.equal(woke.length, 1);
   const hunter = woke[0];
   // It wakes first, then takes its first step in the same turn.
-  assert.equal(events[0].type, 'hunterWoke');
+  // (The light's battery may speak before it.)
+  const moved = events.findIndex(e => e.type === 'minionMoved' && e.minion === hunter);
+  assert.ok(events.findIndex(e => e.type === 'hunterWoke') < moved);
   assert.equal(state.floor.hunter, hunter);
   assert.equal(hunter.kind, 'hunter');
   assert.equal(hunter.minionKind, null, 'the hunter has no minion kind');

@@ -1401,6 +1401,27 @@
   }
   #mapWrap:has(.map-panel:not([hidden])) .feedback,
   #mapWrap:has(.minimap:not([hidden])) .feedback { display: none; }
+  /* The light's battery (render.js renderBattery): small, in the map's
+     bottom-right corner; the room log's lines stop short of it. Hidden
+     with the log while a gun panel or the minimap is over the map. Off or
+     empty it dims, so the cells read as the light itself. */
+  .light-battery {
+    position: absolute;
+    right: 10px;
+    bottom: 7px;
+    z-index: 4;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    text-shadow: var(--glow);
+    pointer-events: none;
+    white-space: pre;
+  }
+  .light-battery.battery-off { color: var(--muted); text-shadow: none; }
+  #mapWrap:has(.light-battery:not([hidden])) .feedback:not(.open) { padding-right: 9.5em; }
+  #mapWrap:has(.map-panel:not([hidden])) .light-battery,
+  #mapWrap:has(.minimap:not([hidden])) .light-battery,
+  #mapWrap:has(.feedback.open) .light-battery { display: none; }
   @media (prefers-reduced-motion: reduce) { .feedback { transition: none; } }
   .feedback::-webkit-scrollbar { display: none; }
   .feedback .room-note { margin-top: 4px; }
@@ -1492,6 +1513,7 @@
       <button class="dev-skip" id="devTurnBtn" type="button" aria-pressed="false" title="Testing only: a press in a new direction turns and steps (warned by I see you.), or only turns so you look first">Turn: and step (dev)</button>
       <button class="dev-skip" id="devFreeLookBtn" type="button" aria-pressed="true" title="Testing only: the light points where you aim, up to 30 degrees off the way you face (free look), or only where you face">Free look: ON (dev)</button>
       <button class="dev-skip" id="devEightWaysBtn" type="button" aria-pressed="true" title="Testing only: you and the minions walk and face 8 ways (diagonals need both corner tiles open), or only the 4 ways, as before">8 ways: ON (dev)</button>
+      <button class="dev-skip" id="devLightBatteryBtn" type="button" aria-pressed="true" title="Testing only: your light goes on and off (V) and runs on a 4-turn battery, or is always on, as before">Light battery: ON (dev)</button>
       <button class="dev-skip" id="devMinigameBtn" type="button" title="Testing only: minigames roll as usual, never, or always (one picked), swapping in a question it fits">Minigame: roll (dev)</button>
       <button class="dev-skip" id="devCameraBtn" type="button" title="Testing only: in isometric, the camera glides after the player or stays locked to them" aria-pressed="true">Camera: glide (dev)</button>
       <button class="dev-skip" id="devLookBtn" type="button" title="Testing only: each stick enemy picks its own pose at random, or every one shows the pose picked here">Look: random (dev)</button>
@@ -1725,6 +1747,9 @@
            newest notes, dimming after a while. LOG (or L) opens all of it
            over the map (main.js toggleRoomLog). -->
       <div class="feedback" id="roomLog" role="log" aria-live="polite"><div id="roomFeedback"></div></div>
+      <!-- The light's battery (render.js renderBattery; light battery plan):
+           the map's bottom-right corner, beside the room log. -->
+      <div class="light-battery" id="lightBattery" hidden></div>
       <!-- The minimap (js/minimapview.js): MAP or M lays it over the map. -->
       <canvas class="minimap" id="minimap" role="img" hidden></canvas>
 

@@ -8,6 +8,7 @@ import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, LOOK_CONE_HALF, LOOK_CONE_SLACK,
 } from './config.js';
 import { lookAngle, angleTo, wrapAngle } from './look.js';
+import { lightOn } from './battery.js';
 
 // One step each way the body can face. The 4 grid ways, then the 4
 // diagonals (eight ways plan); on screen the diagonals are straight up,
@@ -27,18 +28,20 @@ export function facingOf(dRow, dCol) {
 // little slack, shrinking with distance, so a cone at an odd angle isn't
 // ragged; looking straight along a way it lights exactly the old diamond
 // (tests/look.test.mjs checks). Walls are the caller's job. The player's
-// own tile always passes.
+// own tile always passes. With the light off (battery.js) there is no cone.
 export function inLookCone(row, col) {
   const dr = row - state.floor.playerRow;
   const dc = col - state.floor.playerCol;
   const dist = Math.hypot(dr, dc);
   if (dist === 0) return true;
+  if (!lightOn()) return false;
   const off = Math.abs(wrapAngle(angleTo(row, col) - lookAngle()));
   return off <= LOOK_CONE_HALF + Math.atan2(LOOK_CONE_SLACK, dist);
 }
 
 // The player's own light: every open tile within PLAYER_LIGHT_RADIUS steps,
-// plus open tiles up to PLAYER_CONE_RANGE steps inside the look cone.
+// plus open tiles up to PLAYER_CONE_RANGE steps inside the look cone (none
+// with the light off: only the circle).
 // Walls fully block it (a lit cone never bleeds through a wall into an
 // adjacent corridor); pillars are lit themselves but cast a shadow behind. Everything the boss's light reaches is visible too
 // (state.floor.bossLitSet, from light.js) — the thing that ends the run is also
@@ -50,7 +53,7 @@ export function computeVisibility() {
   // The player's own light, apart from the boss's: only what the player
   // sees themselves can be made out (see canMakeOut).
   state.floor.sightSet = new Set([startKey]);
-  const reach = Math.max(PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE);
+  const reach = lightOn() ? Math.max(PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE) : PLAYER_LIGHT_RADIUS;
   const queue = [{ row: state.floor.playerRow, col: state.floor.playerCol, dist: 0 }];
   const seen = new Set([startKey]);
   while (queue.length) {
