@@ -166,6 +166,21 @@ test('switching the light on breaks the ring: energy fills and a slow stick man 
   assert.ok(near < far, 'it came for the player');
 });
 
+test('in the fight the energy fills again every turn, so a miss never empties it', () => {
+  resetRun();
+  passTurns(TUTORIAL_SPOT_TURNS);
+  walkToSpot();
+  tutorialTurn([]);
+  settleName('Ada');
+  toggleLight();
+  breakRing();
+  state.run.energy = 0;
+  state.run.rounds = [];
+  tutorialTurn([]);
+  assert.equal(state.run.energy, ENERGY_MAX);
+  assert.equal(state.run.rounds.length, ENERGY_MAX);
+});
+
 test('the stick man gone leaves a key; taking it opens the door; the door is the way out', () => {
   resetRun();
   passTurns(TUTORIAL_SPOT_TURNS);

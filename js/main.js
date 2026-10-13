@@ -3,7 +3,7 @@ import { buildFloor, buildRestFloor, buildTutorialFloor } from './floor.js';
 import { tutorialTurn, settleName, breakRing } from './tutorial.js';
 import { nextFloor } from './run.js';
 import {
-  MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX,
+  MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX, TUTORIAL_EXIT_ENERGY,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
   LOOK_NUDGE, LOOK_POINTER_DEAD, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
@@ -844,10 +844,10 @@ function introScript() {
   return { questions: pool.map(q => q.term), attempt: { question: asked.term, answer: wrong } };
 }
 
-// A fresh run's numbers: the questions, hearts, energy, gold, turns and
-// story. startGame() sets them, and again once the tutorial is left, so
-// nothing spent or won there carries into the run.
-function resetRun() {
+// A fresh run's numbers: the questions, hearts, energy (`energy` of it),
+// gold, turns and story. startGame() sets them, and again once the
+// tutorial is left, so nothing spent or won there carries into the run.
+function resetRun(energy = ENERGY_START) {
   state.run.order = shuffle(state.settings.activeData).slice(0, Math.min(ROOM_COUNT, state.settings.activeData.length));
   state.run.roomIndex = 0;
   state.run.resting = true; // every run opens on a rest floor
@@ -863,7 +863,7 @@ function resetRun() {
   state.run.coinsTotal = 0;
   state.run.energy = 0;
   state.run.rounds = [];
-  addRounds(ENERGY_START);
+  addRounds(energy);
   state.run.reloadIndex = 0;
   state.run.lastMinigame = null;
   rollWeaknesses();
@@ -971,11 +971,12 @@ function advanceRoom() {
 
 // Out through the tutorial room's door (or DEV -> Skip room): the
 // tutorial is done, so its toggle goes off and is saved (setloader.js
-// listens), and the run starts fresh on the opening rest.
+// listens), and the run starts fresh on the opening rest, with
+// TUTORIAL_EXIT_ENERGY.
 function leaveTutorial() {
   tutorialToggle.checked = false;
   tutorialToggle.dispatchEvent(new Event('change'));
-  resetRun();
+  resetRun(TUTORIAL_EXIT_ENERGY);
   loadRoom('opening');
 }
 

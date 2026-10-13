@@ -59,7 +59,7 @@
 //      follows ("Don't let them dim your light."), V breaks it: "Be
 //      ready." and a stick man, shot dead (Auto-win stops the bar);
 //      its key opens the door, and through it the opening rest starts
-//      with the run's numbers fresh, the name kept and the toggle off.
+//      with the run's numbers fresh (2 energy), the name kept and the toggle off.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -1095,7 +1095,7 @@ async function tutorialState(page) {
       light: f.light.on,
       name: state.settings.playerName,
       toggle: document.getElementById('tutorialToggle').checked,
-      hearts: state.run.hearts, maxHearts: state.run.maxHearts,
+      hearts: state.run.hearts, maxHearts: state.run.maxHearts, energy: state.run.energy,
       rest: !!f.exchange,
       sense: document.getElementById('senseNote').textContent,
       ask: !document.getElementById('askQuestionPanel').hidden,
@@ -1200,6 +1200,7 @@ async function checkTutorial(page, url) {
   if (!st.rest) return 'leaving the tutorial did not start the opening rest';
   if (st.toggle) return 'the tutorial toggle was not switched off once finished';
   if (st.hearts !== st.maxHearts) return 'the run did not start with full hearts';
+  if (st.energy !== 2) return 'the run after the tutorial did not start with 2 energy (' + st.energy + ')';
   if (st.name !== 'Smoke') return 'the name was not kept';
   await page.reload({ waitUntil: 'load' });
   await page.waitForSelector('#startBtn', { timeout: 10000 });

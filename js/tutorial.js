@@ -90,10 +90,12 @@ function stepsTo(p) {
 // { line, tone } and barrelAppeared { prop } once the player walks toward the
 // light; keyDropped { row, col } once the stick man is gone (shot, or
 // cleared in classic combat); doorUnlocked once the key is taken. None
-// off the tutorial.
+// off the tutorial. In the fight the energy is filled again every turn,
+// so a miss never leaves the player with nothing to shoot (Timothy).
 export function tutorialTurn(events) {
   const tut = state.floor.tutorial;
   if (!tut) return [];
+  if (tut.stage === 'fight' && state.run.energy < ENERGY_MAX) addRounds(ENERGY_MAX - state.run.energy);
   if (tut.stage === 'dark') {
     tut.turns++;
     if (tut.turns < TUTORIAL_SPOT_TURNS) return [];
