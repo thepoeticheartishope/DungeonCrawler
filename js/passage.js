@@ -5,6 +5,18 @@
 
 import { state, key } from './state.js';
 
+// True if a step from (row, col) by (dRow, dCol) doesn't cut a corner: a
+// diagonal step needs both tiles it passes between free of walls and
+// pillars (eight ways plan, Timothy: no cutting corners). That also keeps a
+// one-wide doorway shut from the side. A box, a chest or a minion beside it
+// doesn't block. A straight step always passes. Shared by the player
+// (moves.js) and the minions (combat.js), so the rule is the same for both.
+export function canPassCorner(row, col, dRow, dCol) {
+  if (dRow === 0 || dCol === 0) return true;
+  const solid = (r, c) => state.floor.wallSet.has(key(r, c)) || state.floor.pillarSet.has(key(r, c));
+  return !solid(row + dRow, col) && !solid(row, col + dCol);
+}
+
 // null if (row, col) is open, otherwise { kind, thing }: kind is 'wall'
 // (also the grid's edge), 'pillar', 'boss', 'hunter', 'minion', 'chest',
 // 'exchange' (THE UNFOLDING on a rest floor; a bump opens its screen) or

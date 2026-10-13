@@ -9,8 +9,18 @@ import {
 } from './config.js';
 import { lookAngle, angleTo, wrapAngle } from './look.js';
 
-// One step each way the body can face.
-export const FACING_VECTORS = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] };
+// One step each way the body can face. The 4 grid ways, then the 4
+// diagonals (eight ways plan); on screen the diagonals are straight up,
+// right, down and left (grid NW is screen up).
+export const FACING_VECTORS = {
+  N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1],
+  NE: [-1, 1], SE: [1, 1], SW: [1, -1], NW: [-1, -1],
+};
+
+// The way a one-tile step (dRow, dCol) faces, or null for none.
+export function facingOf(dRow, dCol) {
+  return Object.keys(FACING_VECTORS).find(way => FACING_VECTORS[way][0] === dRow && FACING_VECTORS[way][1] === dCol) || null;
+}
 
 // True if the tile at (row, col) falls within the light's 90-degree cone,
 // opening where the player looks (look.js lookAngle). Each tile gets a

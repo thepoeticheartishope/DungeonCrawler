@@ -318,6 +318,7 @@ export const TEXT = {
   'room.blocked.minion': 'A {@term.minion} is in the way.', // draft
   'room.blocked.hunter': 'The {@term.hunter} is right there.', // draft
   'room.hunter.wakes': ['Something else wakes. It knows where you are.', 'An {@term.hunter} stirs, far off, and turns toward you.'], // draft
+  'room.blocked.corner': 'The corner is in the way.', // draft. A diagonal step that would cut past a wall or pillar (eight ways plan)
   'room.blocked.pillar': ['A pillar. Cold, and older than you.', 'Stone. It does not think.'], // draft
 
   // Reading papers (step onto one) and examining boxes (bump into one; a turn passes).

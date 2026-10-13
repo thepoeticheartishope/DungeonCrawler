@@ -5,12 +5,18 @@
 import { state, key } from './state.js';
 import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS } from './config.js';
 import { advanceLight } from './light.js';
-import { computeVisibility } from './sight.js';
 import { minionStrike, struggleDial } from './gun.js';
 import { keptOut } from './relays.js';
+import { canPassCorner } from './passage.js';
+import { computeVisibility, FACING_VECTORS } from './sight.js';
+import { waysInUse } from './look.js';
 
+// True if `entity` stands on one of the tiles around the player: the 8
+// around them (eight ways plan, call 4), apart from a diagonal a corner
+// cuts off, so whatever can step onto the player can strike them, and the
+// other way round; only the 4 beside them with DEV -> 8 ways off.
 export function isAdjacentToPlayer(entity) {
-  return Math.abs(entity.row - state.floor.playerRow) + Math.abs(entity.col - state.floor.playerCol) === 1;
+  return neighbors(entity.row, entity.col).some(([r, c]) => r === state.floor.playerRow && c === state.floor.playerCol);
 }
 
 // Everything next to the player that opens the battle screen. With the
@@ -64,8 +70,22 @@ export function tileOccupied(row, col, excludeMinion) {
   return false;
 }
 
+// The order neighbors() tries the ways in: the grid ways first, in the
+// order they were tried before the eight ways plan, so with 8 ways off a
+// chase picks the same path as it always did.
+const NEIGHBOR_ORDER = ['N', 'S', 'W', 'E', 'NE', 'SE', 'SW', 'NW'];
+
+// The tiles a minion (or the hunter) can step to from (r, c): one step
+// each way in use (look.js waysInUse: 8, or 4 with DEV -> 8 ways off),
+// inside the grid, never cutting a corner (passage.js canPassCorner), the
+// same rule as the player's. Paths, wandering and the warning all go
+// through here.
 export function neighbors(r, c) {
-  return [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]
+  const ways = waysInUse();
+  return NEIGHBOR_ORDER.filter(way => ways.includes(way))
+    .map(way => FACING_VECTORS[way])
+    .filter(([dr, dc]) => canPassCorner(r, c, dr, dc))
+    .map(([dr, dc]) => [r + dr, c + dc])
     .filter(([nr, nc]) => nr >= 0 && nr < state.floor.GRID_SIZE && nc >= 0 && nc < state.floor.GRID_SIZE);
 }
 

@@ -20,7 +20,7 @@ import { computeVisibility, canMakeOut, shootBlock, canShoot } from '../js/sight
 import {
   initBossLight, advanceLight, extinguishLight, lightCoverage, lightProgress, lightConsumed,
 } from '../js/light.js';
-import { whatBlocks } from '../js/passage.js';
+import { whatBlocks, canPassCorner } from '../js/passage.js';
 import { advanceMonsters, spawnMinion, refreshTargetValidity } from '../js/combat.js';
 import { stepPlayer, goldReward } from '../js/moves.js';
 import { settleAnswer } from '../js/answers.js';
@@ -43,6 +43,7 @@ function resetFloor(size = 21) {
   state.settings.fogEnabled = true;
   state.settings.gunCombat = false;
   state.settings.turnBeforeStep = false;
+  state.settings.eightWays = true;
   state.floor.darkness = false;
   state.floor.wallSet = new Set();
   state.floor.pillarSet = new Set();
@@ -430,9 +431,10 @@ test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the 
   assert.equal(hunter.hpLeft, null);
   assert.equal(hunter.limbs, 0);
   assert.ok(state.floor.minions.includes(hunter));
-  // Woke in a corner, so it's still far off after its first step.
-  const steps = Math.abs(hunter.row - state.floor.playerRow) + Math.abs(hunter.col - state.floor.playerCol);
-  assert.ok(steps >= 18, 'hunter is ' + steps + ' steps away');
+  // Woke in a corner, so it's still far off after its first step (10
+  // steps on a 21 floor, walking 8 ways).
+  const steps = Math.max(Math.abs(hunter.row - state.floor.playerRow), Math.abs(hunter.col - state.floor.playerCol));
+  assert.ok(steps >= 9, 'hunter is ' + steps + ' steps away');
   // Only ever one.
   assert.deepEqual(ofType(advanceMonsters(), 'hunterWoke', 'hunter'), []);
 });
@@ -759,4 +761,110 @@ test('standing next to an item does not select it; walking into it does', () => 
   assert.equal(state.battle.selectedTarget, state.floor.chest);
   assert.equal(state.floor.playerRow, r);
   assert.equal(state.run.turnCount, 0);
+});
+
+// --- eight ways (eight ways plan step A) ---
+
+test('a diagonal step walks and faces that way', () => {
+  resetFloor();
+  const r = state.floor.playerRow, c = state.floor.playerCol;
+  const events = stepPlayer(-1, 1);
+  assert.deepEqual(events.map(e => e.type), ['turned', 'stepped']);
+  assert.equal(events[1].facing, 'NE');
+  assert.deepEqual([state.floor.playerRow, state.floor.playerCol], [r - 1, c + 1]);
+  for (const [dr, dc, way] of [[1, 1, 'SE'], [1, -1, 'SW'], [-1, -1, 'NW']]) {
+    stepPlayer(dr, dc);
+    assert.equal(state.floor.facing, way);
+  }
+});
+
+test('the corner rule: a diagonal needs both side tiles free of walls and pillars', () => {
+  resetFloor();
+  const r = state.floor.playerRow, c = state.floor.playerCol;
+  assert.ok(canPassCorner(r, c, -1, 1), 'open floor');
+  state.floor.wallSet.add(key(r - 1, c));
+  assert.ok(!canPassCorner(r, c, -1, 1), 'a wall on one side');
+  state.floor.wallSet = new Set([key(r, c + 1)]);
+  assert.ok(!canPassCorner(r, c, -1, 1), 'a wall on the other side');
+  state.floor.wallSet = new Set();
+  state.floor.pillarSet.add(key(r - 1, c));
+  assert.ok(!canPassCorner(r, c, -1, 1), 'a pillar counts too');
+  state.floor.pillarSet = new Set();
+  state.floor.chest = { kind: 'chest', row: r - 1, col: c };
+  state.floor.props = [{ kind: 'box', row: r, col: c + 1 }];
+  assert.ok(canPassCorner(r, c, -1, 1), 'a box or a chest beside it does not (call 2)');
+  assert.ok(canPassCorner(r, c, -1, 0), 'a straight step always passes');
+});
+
+test('a cut corner is a bump: no step, "corner"', () => {
+  resetFloor();
+  const r = state.floor.playerRow, c = state.floor.playerCol;
+  state.floor.wallSet.add(key(r - 1, c));
+  const events = stepPlayer(-1, 1);
+  assert.deepEqual(events.map(e => e.type), ['turned', 'blocked']);
+  assert.equal(events[1].kind, 'corner');
+  assert.deepEqual([state.floor.playerRow, state.floor.playerCol], [r, c]);
+});
+
+test('a one-wide door cannot be entered from the side', () => {
+  resetFloor();
+  const r = state.floor.playerRow, c = state.floor.playerCol;
+  // A wall row above the player with a door straight up-right of them.
+  for (let col = 0; col < state.floor.GRID_SIZE; col++) if (col !== c + 1) state.floor.wallSet.add(key(r - 1, col));
+  assert.equal(stepPlayer(-1, 1).find(e => e.type === 'blocked').kind, 'corner');
+  stepPlayer(0, 1);
+  assert.equal(stepPlayer(-1, 0).at(-1).type, 'stepped', 'straight in works');
+});
+
+test('diagonal bumps open the gate and the chest', () => {
+  resetGate(0);
+  const r = state.floor.playerRow, c = state.floor.playerCol;
+  state.floor.boss.row = r - 1;
+  state.floor.boss.col = c + 1;
+  assert.deepEqual(stepPlayer(-1, 1).find(e => e.type === 'gateReached'), { type: 'gateReached', questions: GATE_QUESTIONS[0] });
+
+  resetFloor();
+  state.floor.chest = { kind: 'chest', row: state.floor.playerRow + 1, col: state.floor.playerCol - 1 };
+  assert.equal(stepPlayer(1, -1).at(-1).type, 'itemReached');
+  assert.equal(state.battle.selectedTarget, state.floor.chest);
+});
+
+test('a minion chases on a diagonal and engages from a diagonal tile', () => {
+  resetFloor(21);
+  const r = state.floor.playerRow, c = state.floor.playerCol;
+  const m = spawnMinion({ row: r - 3, col: c + 3 });
+  advanceMonsters();
+  assert.deepEqual({ row: m.row, col: m.col }, { row: r - 2, col: c + 2 }, 'straight down the diagonal');
+  advanceMonsters();
+  assert.deepEqual({ row: m.row, col: m.col }, { row: r - 1, col: c + 1 });
+  const events = advanceMonsters();
+  assert.deepEqual(ofType(events, 'minionEngaged', 'minion'), [m], 'next to the player on a diagonal');
+  assert.deepEqual({ row: m.row, col: m.col }, { row: r - 1, col: c + 1 });
+});
+
+test('a corner keeps a diagonal minion from striking', () => {
+  resetFloor(21);
+  const r = state.floor.playerRow, c = state.floor.playerCol;
+  state.floor.wallSet.add(key(r - 1, c));
+  state.floor.wallSet.add(key(r, c + 1));
+  const m = spawnMinion({ row: r - 1, col: c + 1 });
+  refreshTargetValidity();
+  assert.equal(state.battle.selectedTarget, null, 'not next to the player through a corner');
+  const events = advanceMonsters();
+  assert.deepEqual(ofType(events, 'minionEngaged', 'minion'), []);
+  assert.notDeepEqual({ row: m.row, col: m.col }, { row: r, col: c });
+});
+
+test('8 ways off: diagonals do nothing and minions chase 4 ways, as before', () => {
+  resetFloor(21);
+  state.settings.eightWays = false;
+  const r = state.floor.playerRow, c = state.floor.playerCol;
+  assert.deepEqual(stepPlayer(-1, 1), []);
+  assert.deepEqual([state.floor.playerRow, state.floor.playerCol, state.floor.facing], [r, c, 'N']);
+  const m = spawnMinion({ row: r - 1, col: c + 1 });
+  refreshTargetValidity();
+  assert.equal(state.battle.selectedTarget, null, 'a diagonal is not next to the player');
+  advanceMonsters();
+  assert.equal(Math.abs(m.row - r) + Math.abs(m.col - c), 1, 'it took a straight step');
+  state.settings.eightWays = true;
 });

@@ -5,9 +5,9 @@
 
 import { state, key } from './state.js';
 import { reachGate } from './gate.js';
-import { whatBlocks } from './passage.js';
-import { computeVisibility } from './sight.js';
-import { followBody } from './look.js';
+import { whatBlocks, canPassCorner } from './passage.js';
+import { computeVisibility, facingOf } from './sight.js';
+import { followBody, waysInUse } from './look.js';
 import { DARK_GOLD_MULTIPLIER, BOX_GOLD } from './config.js';
 
 // Gold pays DARK_GOLD_MULTIPLIER times as much in the darkness after the boss.
@@ -42,15 +42,19 @@ function takeKey(index) {
   return { type: 'keyTaken', held: state.floor.keysHeld, total: state.floor.keysHeld + state.floor.keys.length, unsealed };
 }
 
-// One arrow press. A press in a new direction turns the player's body to
-// face it, then goes on to step that way in the same press. A turn or a
+// One arrow press, (dRow, dCol) one tile on the grid: one of the 8 ways
+// (eight ways plan), or the 4 grid ways with DEV -> 8 ways off, when a
+// diagonal does nothing. A press in a new direction turns the player's body to
+// face it, then goes on to step that way in the same press. A diagonal that
+// would cut a corner (passage.js canPassCorner) is a bump, kind 'corner',
+// before anything on the tile itself counts. A turn or a
 // step points the light straight ahead again (look.js followBody), even
 // with free look on. With state.settings.turnBeforeStep on, it only turns: no step, no
 // bump, no turn spent, so they can look behind them first. Turning first is
 // off by default because combat.js senseUnseen warns ("I see you.") before
 // anything unseen gets next to them. Events: turned { facing } (alone when
 // turning first, else before the rest),
-// blocked { kind, thing } (with free look, then bodyTurned { facing,
+// blocked { kind, thing } (kind 'corner' too; with free look, then bodyTurned { facing,
 // bumped: true } if the press turned the body: a spent turn), stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
 // keyTaken { held, total, unsealed }, gateReached { questions } (bumped the
 // boss; main.js opens the battle screen), blocked { kind: 'gate' } (it's sealed),
@@ -60,7 +64,8 @@ function takeKey(index) {
 // the box events from examineProp. A turn is spent only by `stepped`, `propSearched` or `bodyTurned`.
 export function stepPlayer(dRow, dCol) {
   const events = [];
-  const facing = dRow === -1 ? 'N' : dRow === 1 ? 'S' : dCol === 1 ? 'E' : 'W';
+  const facing = facingOf(dRow, dCol);
+  if (!facing || !waysInUse().includes(facing)) return events;
   const turned = state.floor.facing !== facing;
   if (turned) {
     state.floor.facing = facing;
@@ -74,7 +79,8 @@ export function stepPlayer(dRow, dCol) {
   const newCol = state.floor.playerCol + dCol;
 
   // Anything in the way stops the move, or, for a box, is examined instead.
-  const block = whatBlocks(newRow, newCol);
+  const cornered = !canPassCorner(state.floor.playerRow, state.floor.playerCol, dRow, dCol);
+  const block = cornered ? { kind: 'corner' } : whatBlocks(newRow, newCol);
   if (block && block.kind === 'prop') {
     events.push(...examineProp(block.thing));
     return events;
