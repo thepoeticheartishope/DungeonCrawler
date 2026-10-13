@@ -655,7 +655,8 @@ async function roomIdle(page) {
 
 // The look stick (dpad.js initLookStick) and the map with a mouse: a
 // drag aims and spends no turn; two taps wait one turn; aimed past the
-// arc (E pressed 5 times), one tap turns the body for one turn; the mouse
+// arc (E pressed 5 times), one tap (wobbling 8 px, as a finger does) turns
+// the body for one turn; the mouse
 // over the map aims.
 async function lookControls(page) {
   if (await page.isVisible('#devPanel.show')) await page.click('#devToggleBtn');
@@ -696,7 +697,11 @@ async function lookControls(page) {
   before = await lookNow(page);
   if (!before.wants) return 'aiming past the arc did not want a turn';
   if (!await page.locator('#btnSkip.armed').count()) return 'the look stick was not lit past the arc';
-  await page.click('#btnSkip');
+  // A tap that wobbles a little, as a finger's does, is still a tap.
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + 6, cy + 5, { steps: 2 });
+  await page.mouse.up();
   await roomIdle(page);
   after = await lookNow(page);
   if (after.facing === before.facing) return 'one tap past the arc did not turn the body';

@@ -410,8 +410,9 @@ export const LOOK_CONE_SLACK = 0.35;
 // knob following up to LOOK_STICK_KNOB_PX; a tap turns the body when the
 // aim is past the arc, else two taps within LOOK_STICK_WAIT_MS wait. On the
 // map (mapview.js onMapPointer), a press that moves past MAP_DRAG_PX is a
-// drag that aims, not a tap.
-export const LOOK_STICK_DRAG_PX = 6;
+// drag that aims, not a tap. A finger's tap wobbles: at 6 px, a tap on a
+// phone became a small drag that re-aimed the light and never turned.
+export const LOOK_STICK_DRAG_PX = 14;
 export const LOOK_STICK_KNOB_PX = 18;
 export const LOOK_STICK_WAIT_MS = 450;
 export const MAP_DRAG_PX = 8;
