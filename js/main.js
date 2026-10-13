@@ -32,7 +32,7 @@ import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, hurtOnMap, limbOffOnMap, deathOnMap, onMapPointer, glyphOf } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, limbOffOnMap, deathOnMap, onMapPointer, glyphOf } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
@@ -1199,15 +1199,23 @@ function drawEvents(events) {
         break;
       case 'shotGrazed':
         shotOnMap(e.minion, false);
+        if (e.dark) revealInFlash(e.minion);
         parts.push(t('gun.grazed'));
         break;
       case 'shotBackfired':
         cls = 'warn-msg';
-        shotOnMap(e.minion, true);
+        shotOnMap(e.minion || e.end, true);
         parts.push(t(e.energyLost ? 'gun.backfired' : 'gun.backfiredEmpty'));
+        break;
+      // A shot in the dark with nothing there (light battery plan step C).
+      case 'shotIntoDark':
+        shotOnMap(e.end, false);
+        parts.push(t('gun.dark.nothing'));
         break;
       case 'minionHurt':
         shotOnMap(e.minion, false);
+        // In the dark, the shot's flash shows it for a moment.
+        if (e.dark) revealInFlash(e.minion);
         hurtOnMap(e.minion, e.damage);
         parts.push(t(e.weakPoint ? 'gun.weakPoint' : 'gun.hit'));
         if (e.matched) parts.push(t('gun.matched', { damage: e.damage }));

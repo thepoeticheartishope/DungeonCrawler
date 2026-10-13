@@ -14,7 +14,7 @@ import {
   DAMAGE_BAR_DEPTHS, DAMAGE_PENALTY_WIDTH, DAMAGE_ZONE_GAP,
   MINION_KINDS, MINION_STRIKE_COST, MINION_STUN_MOVES, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
-  MINIGAME_TIER_PAY,
+  MINIGAME_TIER_PAY, PLAYER_CONE_RANGE, MINION_TRACK_TURNS, DARK_SHOT_STEP,
 } from './config.js';
 import { fightGroups, shuffle } from './quiz.js';
 import { recordHauntAnswer } from './haunts.js';
@@ -23,6 +23,7 @@ import { aimLook, angleTo, lookAngle, wantsTurn, wrapAngle } from './look.js';
 import { goldReward } from './moves.js';
 import { tileOccupied } from './combat.js';
 import { canPassCorner } from './passage.js';
+import { batteryInPlay, lightOn } from './battery.js';
 
 // The category the next reload asks from, as { label, category, pool }.
 // Categories come round in a fixed order (the same groups the battle
@@ -190,12 +191,43 @@ export function cycleTarget() {
   return [{ type: 'targetPicked', target }];
 }
 
+// Whether a shot now goes into the dark (light battery plan step C): the
+// battery in play and the light off.
+export function shootingDark() {
+  return batteryInPlay() && !lightOn();
+}
+
+// Where a shot in the dark goes: straight along the aim (look.js
+// lookAngle) up to PLAYER_CONE_RANGE tiles, stopped by the first wall or
+// pillar. { target, end }: the first minion or hunter in the way (or
+// null), and the tile the shot reaches (the target's, or the last open
+// one).
+export function darkShotPath() {
+  const f = state.floor;
+  const a = lookAngle();
+  const [dr, dc] = [-Math.cos(a), Math.sin(a)];
+  let end = { row: f.playerRow, col: f.playerCol };
+  for (let d = DARK_SHOT_STEP; d <= PLAYER_CONE_RANGE + 1e-9; d += DARK_SHOT_STEP) {
+    const row = Math.round(f.playerRow + dr * d);
+    const col = Math.round(f.playerCol + dc * d);
+    if (row === end.row && col === end.col) continue;
+    const k = key(row, col);
+    if (row < 0 || col < 0 || row >= f.GRID_SIZE || col >= f.GRID_SIZE || f.wallSet.has(k) || f.pillarSet.has(k)) break;
+    end = { row, col };
+    const target = f.minions.find(m => m.row === row && m.col === col);
+    if (target) return { target, end };
+  }
+  return { target: null, end };
+}
+
 // Why `target` can't be fired at right now, or null if it can: no energy
 // ('noEnergy'), no target ('noTarget'), something that isn't
 // a minion or the hunter ('notShootable': the boss and items stay on the
-// battle screen), or a sight.js shootBlock reason.
+// battle screen), or a sight.js shootBlock reason. In the dark only energy
+// matters: the shot goes where the player aims (fireDark).
 export function fireBlock(target) {
   if (state.run.energy <= 0) return 'noEnergy';
+  if (shootingDark()) return null;
   if (!target) return 'noTarget';
   if (target.kind !== 'minion' && target.kind !== 'hunter') return 'notShootable';
   return shootBlock(target);
@@ -213,6 +245,7 @@ export function fireBlock(target) {
 export function fire(target) {
   const reason = fireBlock(target);
   if (reason) return [{ type: 'fireBlocked', target, reason }];
+  if (shootingDark()) return fireDark();
   const weak = weaknessOf(target.minionKind);
   const round = spendRound(weak);
   const events = [{ type: 'shotFired', target }];
@@ -230,6 +263,35 @@ export function fire(target) {
   return events;
 }
 
+// A shot in the dark (light battery plan step C), for 1 energy: it goes
+// along the aim (darkShotPath) and the damage bar always opens, even with
+// nothing there, so firing gives nothing away (mockup call 3). The bar is
+// one step harder, at random: `dark` 'fast' (it sweeps faster,
+// gunpanels.js) or 'x' (one more penalty zone). Its zones are sized for a
+// kind picked at random, not the target's, for the same reason. The
+// oldest round goes, matched only by luck, and no weakness is found. On
+// the hunter it staggers it, as in the light.
+// Events: shotFired { target, dark: true, end } then aimStarted, or
+// hunterStaggered.
+function fireDark() {
+  const { target, end } = darkShotPath();
+  const round = spendRound();
+  const events = [{ type: 'shotFired', target, dark: true, end }];
+  if (target && target.kind === 'hunter') {
+    events.push(...staggerHunter(target));
+    return events;
+  }
+  const dark = Math.random() < 0.5 ? 'fast' : 'x';
+  const kind = MINION_KIND_ORDER[Math.floor(Math.random() * MINION_KIND_ORDER.length)];
+  state.battle.aim = {
+    target, end, dark,
+    zones: damageZones(kind, { extraPenalty: dark === 'x' ? 1 : 0 }),
+    matched: !!target && !!round && round === weaknessOf(target.minionKind),
+  };
+  events.push({ type: 'aimStarted', ...state.battle.aim });
+  return events;
+}
+
 // The damage bar's zones for a landed shot on a minion of `minionKind`:
 // [{ tier, from, to }], left to right, tier 'hit', 'weak' or 'penalty'.
 // How many of each comes from the depth (DAMAGE_BAR_DEPTHS), how wide
@@ -237,13 +299,14 @@ export function fire(target) {
 // order at new spots each shot, so the player reads the bar instead of
 // learning one timing: the spare room is shared out at random between the
 // gaps, each at least DAMAGE_ZONE_GAP, so zones never touch.
-export function damageZones(minionKind) {
+// A dark shot's 'x' asks for `extraPenalty` more penalty zones.
+export function damageZones(minionKind, { extraPenalty = 0 } = {}) {
   const counts = DAMAGE_BAR_DEPTHS[Math.min(state.run.roomIndex, DAMAGE_BAR_DEPTHS.length - 1)];
   const kind = MINION_KINDS[minionKind];
   const zones = shuffle([
     ...Array(counts.hits).fill({ tier: 'hit', width: kind.hitWidth }),
     ...Array(counts.weaks).fill({ tier: 'weak', width: kind.weakWidth }),
-    ...Array(counts.penalties).fill({ tier: 'penalty', width: DAMAGE_PENALTY_WIDTH }),
+    ...Array(counts.penalties + extraPenalty).fill({ tier: 'penalty', width: DAMAGE_PENALTY_WIDTH }),
   ]);
   const spare = 1 - zones.reduce((sum, z) => sum + z.width, 0) - DAMAGE_ZONE_GAP * (zones.length + 1);
   const shares = [...zones, null].map(() => Math.random());
@@ -269,6 +332,10 @@ export function damageZones(minionKind) {
 // minionHurt { minion, damage, hpLeft, weakPoint, matched } and maybe limbLost
 // { minion, limbsLeft }; then, on a kill, minionKilled { minion } and
 // goldGained { amount, from: 'kill' }.
+// A shot in the dark (aim.dark) with nothing there: shotIntoDark { end }
+// unless it backfires (shotBackfired with no minion, `end` where it went).
+// One that hurts a stick man in the dark gives it MINION_TRACK_TURNS: it
+// knows where the shot came from (minionHurt's `dark`).
 export function settleShot(barPosition) {
   const aim = state.battle.aim;
   if (!aim) return [];
@@ -278,16 +345,18 @@ export function settleShot(barPosition) {
   if (zone && zone.tier === 'penalty') {
     const energyLost = Math.min(1, state.run.energy);
     if (energyLost) spendRound();
-    return [{ type: 'shotBackfired', minion: m, energyLost }];
+    return [{ type: 'shotBackfired', minion: m, energyLost, ...(aim.dark ? { end: aim.end } : {}) }];
   }
+  if (!m) return [{ type: 'shotIntoDark', end: aim.end }];
   const weakPoint = !!zone && zone.tier === 'weak';
   const base = !zone ? 0 : weakPoint ? 2 : 1;
-  if (base === 0) return [{ type: 'shotGrazed', minion: m }];
+  if (base === 0) return [{ type: 'shotGrazed', minion: m, ...(aim.dark ? { dark: true } : {}) }];
 
   const damage = aim.matched ? base * WEAKNESS_DAMAGE_SCALE : base;
   m.hpLeft = Math.max(0, m.hpLeft - damage);
   m.rest = Math.max(m.rest || 0, MINION_STUN_MOVES);
-  const events = [{ type: 'minionHurt', minion: m, damage, hpLeft: m.hpLeft, weakPoint, matched: aim.matched }];
+  if (aim.dark) m.track = MINION_TRACK_TURNS;
+  const events = [{ type: 'minionHurt', minion: m, damage, hpLeft: m.hpLeft, weakPoint, matched: aim.matched, ...(aim.dark ? { dark: true } : {}) }];
   if (weakPoint && m.limbs > 0) {
     m.limbs--;
     events.push({ type: 'limbLost', minion: m, limbsLeft: m.limbs });

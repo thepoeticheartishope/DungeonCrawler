@@ -3,7 +3,8 @@
 // empty and stays locked off until full, can be switched back on any time
 // when switched off by hand, is full on every floor, and is out of play in
 // Comfort mode. With the light off only the small circle is lit.
-// Step B: the stick men notice the light (combat.js notice).
+// Step B: the stick men notice the light (combat.js notice). Step C: shots
+// in the dark (gun.js fireDark).
 //
 // Run: node --test tests/*.test.mjs
 //
@@ -14,7 +15,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
-import { LIGHT_BATTERY_MAX, PLAYER_LIGHT_RADIUS, MINION_TRACK_TURNS } from '../js/config.js';
+import { LIGHT_BATTERY_MAX, PLAYER_LIGHT_RADIUS, MINION_TRACK_TURNS, DAMAGE_BAR_DEPTHS } from '../js/config.js';
+import { fire, fireBlock, settleShot, darkShotPath } from '../js/gun.js';
 import { freshLight, lightOn, tickLight, toggleLight, turnsToFull } from '../js/battery.js';
 import { computeVisibility, inLookCone, shootBlock } from '../js/sight.js';
 import { advanceMonsters, spawnMinion } from '../js/combat.js';
@@ -221,4 +223,83 @@ test('Comfort mode keeps the old chase range and nothing is noticed', () => {
   assert.equal(near.row, pr + 3);
   assert.equal(near.track, 0);
   assert.equal(near.drawn, false);
+});
+
+// --- Step C: shots in the dark ---
+
+// The battery's light off, the gun on with `energy` plain rounds.
+function darkWithGun(energy = 2) {
+  resetFloor();
+  state.settings.gunCombat = true;
+  state.run.energy = energy;
+  state.run.rounds = Array(energy).fill(null);
+  state.run.weakTo = {};
+  state.run.weakKnown = new Set();
+  state.battle.aim = null;
+  toggleLight();
+  computeVisibility();
+}
+
+// Runs `fn` with Math.random fixed at `value`.
+function withRandom(value, fn) {
+  const real = Math.random;
+  Math.random = () => value;
+  try { return fn(); } finally { Math.random = real; }
+}
+
+test('a dark shot goes along the aim to the first stick man in the way, and stops at a wall', () => {
+  darkWithGun();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  const near = spawnMinion({ row: pr - 2, col: pc });
+  spawnMinion({ row: pr - 4, col: pc });
+  spawnMinion({ row: pr, col: pc + 1 }); // beside the player, off the aim
+  assert.equal(darkShotPath().target, near);
+  state.floor.wallSet.add(key(pr - 1, pc));
+  assert.deepEqual(darkShotPath(), { target: null, end: { row: pr, col: pc } });
+});
+
+test('a dark shot with nothing there still costs 1 energy and opens the bar', () => {
+  darkWithGun();
+  assert.equal(fireBlock(null), null, 'no target needed in the dark');
+  const events = fire(null);
+  assert.deepEqual(events.map(e => e.type), ['shotFired', 'aimStarted']);
+  assert.equal(state.run.energy, 1);
+  assert.equal(state.battle.aim.target, null);
+  assert.ok(['fast', 'x'].includes(state.battle.aim.dark));
+  assert.deepEqual(settleShot(0).map(e => e.type), ['shotIntoDark']);
+  state.run.energy = 0;
+  assert.equal(fireBlock(null), 'noEnergy');
+});
+
+test('the dark bar is one step harder: one more X, or faster', () => {
+  darkWithGun();
+  const base = DAMAGE_BAR_DEPTHS[0].penalties;
+  withRandom(0.9, () => fire(null));
+  assert.equal(state.battle.aim.dark, 'x');
+  assert.equal(state.battle.aim.zones.filter(z => z.tier === 'penalty').length, base + 1);
+  settleShot(0);
+  withRandom(0.1, () => fire(null));
+  assert.equal(state.battle.aim.dark, 'fast');
+  assert.equal(state.battle.aim.zones.filter(z => z.tier === 'penalty').length, base);
+});
+
+test('a dark shot that hurts a stick man sets it tracking the player', () => {
+  darkWithGun();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  const m = spawnMinion({ row: pr - 3, col: pc });
+  fire(null);
+  assert.equal(state.battle.aim.target, m);
+  const hit = state.battle.aim.zones.find(z => z.tier === 'hit');
+  const events = settleShot((hit.from + hit.to) / 2);
+  const hurt = events.find(e => e.type === 'minionHurt');
+  assert.equal(hurt.dark, true);
+  assert.equal(m.track, MINION_TRACK_TURNS);
+});
+
+test('with the light on, a shot still needs a target in the cone', () => {
+  darkWithGun();
+  toggleLight();
+  computeVisibility();
+  assert.deepEqual(fire(null).map(e => [e.type, e.reason]), [['fireBlocked', 'noTarget']]);
+  assert.equal(state.run.energy, 2);
 });

@@ -46,7 +46,8 @@
 //      the map; V switches it off (only the small circle lit, no turn spent)
 //      and on; 4 turns on and it dies, refuses V while charging, and is
 //      charged again after 4 turns off; a few turns on the first depth with
-//      the stick men noticing the light. Then Comfort mode (the renamed
+//      the stick men noticing the light, and a shot into the dark (its bar
+//      says DARK SHOT). Then Comfort mode (the renamed
 //      Simple enemies) on: no battery shown and V does nothing.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
@@ -952,6 +953,14 @@ async function checkLightBattery(page, url) {
   const known = await page.evaluate(async () => (await import('./js/state.js')).state.floor.minions
     .every(m => m.kind === 'hunter' || (typeof m.track === 'number' && typeof m.drawn === 'boolean')));
   if (!known) return 'a stick man has no track / drawn';
+  // The light is off: F fires into the dark, and the bar opens, harder.
+  if (await batteryShown(page) !== 'LIGHT #### OFF') return `before the dark shot the battery read ${await batteryShown(page)}`;
+  await page.keyboard.press('f');
+  await page.waitForSelector('#aimPanel:not([hidden])', { timeout: 5000 });
+  const prompt = await page.locator('#aimPrompt').textContent();
+  if (!prompt.startsWith('DARK SHOT')) return `the dark shot's bar said "${prompt}"`;
+  await page.keyboard.press('f');
+  await roomIdle(page);
 
   await loadPageAndSet(page, url);
   const label = await page.locator('label:has(#simpleEnemiesToggle)').textContent();
