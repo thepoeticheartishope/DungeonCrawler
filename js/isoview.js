@@ -276,6 +276,12 @@ export function drawIsoScene(ctx, canvasSize, shared) {
     if (thing.kind === 'player') drawLookRing(ctx, thing.at);
     standing.push({ depth: thing.at.row + thing.at.col + 0.5, draw: () => drawStanding(ctx, thing) });
   });
+  // The tutorial's light from above (tutorial.js) falls in a column like
+  // the stairs' light, over the middle of its spot.
+  const tut = state.floor.tutorial;
+  if (tut && state.floor.spotSet.size && onScreen(tut.spot.row, tut.spot.col)) {
+    standing.push({ depth: tut.spot.row + tut.spot.col + STAIR_BEAM_DEPTH, draw: () => drawStairBeam(ctx, tut.spot) });
+  }
   dyingSticks(look.now).forEach(m => {
     if (!onScreen(m.row, m.col)) return;
     standing.push({ depth: m.row + m.col + 0.5, draw: () => drawForm(ctx, m, m) });

@@ -45,9 +45,10 @@ export function inLookCone(row, col) {
 // Walls fully block it (a lit cone never bleeds through a wall into an
 // adjacent corridor); pillars are lit themselves but cast a shadow behind. Everything the boss's light reaches is visible too
 // (state.floor.bossLitSet, from light.js) — the thing that ends the run is also
-// what shows the player the way.
+// what shows the player the way — and so is the tutorial's light from above
+// (state.floor.spotSet, tutorial.js).
 export function computeVisibility() {
-  state.floor.visibleSet = new Set(state.floor.bossLitSet);
+  state.floor.visibleSet = new Set([...state.floor.bossLitSet, ...state.floor.spotSet]);
   const startKey = key(state.floor.playerRow, state.floor.playerCol);
   state.floor.visibleSet.add(startKey);
   // The player's own light, apart from the boss's: only what the player

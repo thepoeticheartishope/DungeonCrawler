@@ -111,6 +111,8 @@ export const state = {
     misses: 0,             // wrong answers on this floor, questions and reloads (the noMiss goal)
     struggles: 0,          // Struggles started on this floor; each one makes the next dial harder (gun.js struggleDial)
     bossLitSet: new Set(), // tiles the boss light currently reaches
+    spotSet: new Set(),    // tiles lit by the tutorial's light from above (tutorial.js); empty elsewhere
+    tutorial: null,        // the tutorial room's progress (tutorial.js freshTutorial): { stage, turns, door, spot, roomTiles, minion, minionAt }; null on every other floor
     lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
     coin: null,            // { row, col } or null once collected
     plan: null,            // the fixed plan this floor is built from (plans.js): { name (text.js key), version: 'A' | 'B' }, or null for a random floor or a rest

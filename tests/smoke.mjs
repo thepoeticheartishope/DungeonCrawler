@@ -4,7 +4,7 @@
 //
 // Starts a static server for this repo, then drives the game in a real
 // browser via Playwright (imported from ~/Repo/codecraft-classroom/node_modules
-// — do NOT add Playwright or node_modules to this repo) through seven runs,
+// — do NOT add Playwright or node_modules to this repo) through its runs,
 // all picking the built-in "Bible Quiz Bowl" set on the set screen, with Auto-win on:
 //
 //   1. Skip-room run: one manual step, then "Skip room (dev)" repeatedly to
@@ -51,6 +51,13 @@
 //      says DARK SHOT), and a stick man alone in the light for 3 s steps
 //      closer (the eye). Then Comfort mode (the renamed
 //      Simple enemies) on: no battery shown and V does nothing.
+//   8. Tutorial run (tutorial.js): on for a new player; wakes dark with
+//      "You can't leave. Don't try." and V does nothing; the light falls
+//      after 4 waits; walking to it brings "You can do this. I trust you."
+//      and the barrel; bumping it asks the name, typed; a name brings
+//      "Be ready." and a stick man, shot dead (Auto-win stops the bar);
+//      its key opens the door, and through it the opening rest starts
+//      with the run's numbers fresh, the name kept and the toggle off.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -110,10 +117,12 @@ function collectErrors(page) {
   return { consoleErrors, pageErrors };
 }
 
-// Loads the page fresh, ready for #startBtn.
+// Loads the page fresh, ready for #startBtn, with the tutorial room off
+// (it is on for a new player; the tutorial run plays it).
 async function loadPageAndSet(page, url) {
   await page.goto(url, { waitUntil: 'load' });
   await page.waitForSelector('#startBtn', { timeout: 10000 });
+  await page.uncheck('#tutorialToggle');
 }
 
 // Enter, then pick the built-in "Bible Quiz Bowl" on the set screen, which
@@ -1038,6 +1047,159 @@ async function runLightBattery(browser, url) {
 
 // ---- Main ----
 
+// ---- Run 8: tutorial room ----
+
+// The arrow (ARROW_KEYS index) for the first step of the shortest walk
+// onto (or, if it is solid, into) `goal` { row, col }, or null.
+async function stepTo(page, goal) {
+  return page.evaluate(async (goal) => {
+    const { state, key } = await import('/js/state.js');
+    const { whatBlocks } = await import('/js/passage.js');
+    const f = state.floor;
+    const dirs = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+    const first = new Map([[key(f.playerRow, f.playerCol), null]]);
+    const queue = [{ row: f.playerRow, col: f.playerCol }];
+    while (queue.length) {
+      const cur = queue.shift();
+      for (let d = 0; d < dirs.length; d++) {
+        const next = { row: cur.row + dirs[d][0], col: cur.col + dirs[d][1] };
+        const k = key(next.row, next.col);
+        if (first.has(k)) continue;
+        const step = first.get(key(cur.row, cur.col)) ?? d;
+        if (next.row === goal.row && next.col === goal.col) return step;
+        if (whatBlocks(next.row, next.col)) continue;
+        first.set(k, step);
+        queue.push(next);
+      }
+    }
+    return null;
+  }, goal);
+}
+
+// The tutorial's state in the page: { stage, spot, door, barrel, key,
+// minion, light, name, toggle, hearts, sense }.
+async function tutorialState(page) {
+  return page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const f = state.floor;
+    const tut = f.tutorial;
+    const barrel = f.props.find(p => p.asks === 'name');
+    return {
+      stage: tut ? tut.stage : null,
+      spot: tut && tut.spot, door: tut && tut.door,
+      barrel: barrel ? { row: barrel.row, col: barrel.col } : null,
+      key: f.keys[0] || null,
+      minion: f.minions[0] ? { row: f.minions[0].row, col: f.minions[0].col } : null,
+      light: f.light.on,
+      name: state.settings.playerName,
+      toggle: document.getElementById('tutorialToggle').checked,
+      hearts: state.run.hearts, maxHearts: state.run.maxHearts,
+      rest: !!f.exchange,
+      sense: document.getElementById('senseNote').textContent,
+      ask: !document.getElementById('askQuestionPanel').hidden,
+    };
+  });
+}
+
+// Walks toward `goal` until `done(tutorialState)` is true or `steps` run out.
+async function walkUntil(page, goal, done, steps = 40) {
+  for (let i = 0; i < steps; i++) {
+    const st = await tutorialState(page);
+    if (done(st)) return st;
+    const dir = await stepTo(page, typeof goal === 'function' ? goal(st) : goal);
+    await page.keyboard.press(dir === null ? '.' : ARROW_KEYS[dir]);
+    await page.waitForTimeout(60);
+  }
+  return null;
+}
+
+async function checkTutorial(page, url) {
+  await page.goto(url, { waitUntil: 'load' });
+  await page.waitForSelector('#startBtn', { timeout: 10000 });
+  if (!await page.isChecked('#tutorialToggle')) return 'the tutorial was not on for a new player';
+  await startGameAndWaitForRoom(page);
+  let st = await tutorialState(page);
+  if (st.stage !== 'dark') return 'the run did not start in the tutorial room';
+  if (!st.sense.includes("can't leave")) return 'no "You can\'t leave." on waking: ' + st.sense;
+  await page.keyboard.press('v');
+  if ((await tutorialState(page)).light) return 'the light came on in the dark';
+
+  for (let i = 0; i < 4; i++) {
+    await page.keyboard.press('.');
+    await page.waitForTimeout(60);
+  }
+  st = await tutorialState(page);
+  if (st.stage !== 'spot') return 'the light from above did not fall after 4 waits (stage ' + st.stage + ')';
+  st = await walkUntil(page, st.spot, s => s.stage === 'name');
+  if (!st) return 'walking to the light did not bring the barrel';
+  if (!st.sense.includes('trust you')) return 'no kind voice at the light: ' + st.sense;
+
+  st = await walkUntil(page, st.barrel, s => s.ask);
+  if (!st) return 'bumping the barrel did not ask anything';
+  if (!await page.isVisible('#answerInput')) return 'the barrel gave no box to type the name in';
+  await page.fill('#answerInput', 'Smoke');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(200);
+  st = await tutorialState(page);
+  if (st.stage !== 'fight' || st.name !== 'Smoke') return 'the name did not start the fight (stage ' + st.stage + ', name ' + st.name + ')';
+  if (!st.sense.includes('Be ready')) return 'no "Be ready." after the name: ' + st.sense;
+
+  // Face the stick man and shoot; Auto-win stops the damage bar on its weak point.
+  await turnOnAutoWin(page);
+  await page.click('#devToggleBtn');
+  for (let i = 0; i < 40 && st.stage === 'fight'; i++) {
+    // Out of reach, wait for it to come (a blocked shot spends no turn).
+    const canShoot = await page.evaluate(async () => {
+      const { state } = await import('/js/state.js');
+      const { BODY_ANGLES } = await import('/js/look.js');
+      const { computeVisibility, shootBlock } = await import('/js/sight.js');
+      const { refreshGunTarget } = await import('/js/gun.js');
+      const f = state.floor;
+      const m = f.minions[0];
+      if (!m) return false;
+      const angle = Math.atan2(m.col - f.playerCol, -(m.row - f.playerRow));
+      const off = a => Math.abs(Math.atan2(Math.sin(a - angle), Math.cos(a - angle)));
+      f.facing = Object.keys(BODY_ANGLES).sort((a, b) => off(BODY_ANGLES[a]) - off(BODY_ANGLES[b]))[0];
+      f.look = angle;
+      computeVisibility();
+      refreshGunTarget();
+      return !shootBlock(m);
+    });
+    await page.keyboard.press(canShoot ? 'f' : '.');
+    await page.waitForTimeout(400);
+    st = await tutorialState(page);
+    if (st.hearts <= 0) return 'the stick man won the tutorial fight';
+  }
+  if (st.stage !== 'key') return 'the stick man was not killed, or left no key (stage ' + st.stage + ')';
+
+  st = await walkUntil(page, st.key, s => s.stage === 'open');
+  if (!st) return 'taking the key did not open the door';
+  st = await walkUntil(page, st.door, s => s.stage === null);
+  if (!st) return 'the open door did not lead out of the tutorial';
+  if (!st.rest) return 'leaving the tutorial did not start the opening rest';
+  if (st.toggle) return 'the tutorial toggle was not switched off once finished';
+  if (st.hearts !== st.maxHearts) return 'the run did not start with full hearts';
+  if (st.name !== 'Smoke') return 'the name was not kept';
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForSelector('#startBtn', { timeout: 10000 });
+  if (await page.isChecked('#tutorialToggle')) return 'the finished tutorial came back on after a reload';
+  if (await page.inputValue('#playerName') !== 'Smoke') return 'the name from the barrel was not saved';
+  return null;
+}
+
+async function runTutorial(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const reason = await checkTutorial(page, url);
+  await context.close();
+  if (reason) return { ok: false, reason, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'dark, light from above, barrel name, stick man, key, door, out to the opening rest', consoleErrors, pageErrors };
+}
+
 async function main() {
   const port = await findFreePort();
   const server = spawn(process.execPath, [
@@ -1066,11 +1228,12 @@ async function main() {
       const freeLookResult = await runFreeLook(browser, url);
       const eightWaysResult = await runEightWays(browser, url);
       const lightBatteryResult = await runLightBattery(browser, url);
+      const tutorialResult = await runTutorial(browser, url);
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult]]) {
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult], ['tutorial', tutorialResult]]) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {

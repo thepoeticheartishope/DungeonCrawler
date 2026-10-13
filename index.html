@@ -788,8 +788,16 @@
     z-index: 3;
   }
   .sense-note.show { opacity: 1; transition: opacity 0.9s ease; }
+  /* The tutorial's lines (tutorial.js): they come and go slower, and the
+     kind voice is warm and clear where the dungeon's is faint. */
+  .sense-note.slow { transition: opacity 3.2s ease; }
+  .sense-note.slow.show { transition: opacity 1.6s ease; }
+  .sense-note.kind {
+    color: rgb(255, 232, 196);
+    text-shadow: 0 0 10px rgba(255, 232, 196, 0.45);
+  }
   @media (prefers-reduced-motion: reduce) {
-    .sense-note, .sense-note.show { transition: none; }
+    .sense-note, .sense-note.show, .sense-note.slow, .sense-note.slow.show { transition: none; }
   }
 
   /* The NEXT meter in the status bar (Real time only, render.js
@@ -1598,6 +1606,11 @@
     <label class="option-toggle">
       <input type="checkbox" id="simpleEnemiesToggle">
       <span data-t="start.simpleEnemies"></span>
+    </label>
+
+    <label class="option-toggle">
+      <input type="checkbox" id="tutorialToggle" checked>
+      <span data-t="start.tutorial"></span>
     </label>
 
     <button id="startBtn" data-t="start.enter"></button>

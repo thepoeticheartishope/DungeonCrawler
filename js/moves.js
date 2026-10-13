@@ -58,7 +58,8 @@ function takeKey(index) {
 // bumped: true } if the press turned the body: a spent turn), stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
 // keyTaken { held, total, unsealed }, gateReached { questions } (bumped the
 // boss; main.js opens the battle screen), blocked { kind: 'gate' } (it's sealed),
-// paperRead { paper, loot, story? }, roomEntered { theme, name }, exchangeOpened
+// paperRead { paper, loot, story? }, roomEntered { theme, name }, tutorialLeft
+// (stepped into the tutorial's open door), exchangeOpened
 // (bumped THE UNFOLDING; main.js opens its screen), itemReached { thing }
 // (bumped the chest; main.js opens the battle screen) and
 // the box events from examineProp. A turn is spent only by `stepped`, `propSearched` or `bodyTurned`.
@@ -111,6 +112,14 @@ export function stepPlayer(dRow, dCol) {
   followBody();
   computeVisibility();
   events.push({ type: 'stepped', facing });
+
+  // The tutorial's open door is the way out of it (tutorial.js): main.js
+  // starts the run.
+  const tut = state.floor.tutorial;
+  if (tut && tut.stage === 'open' && tut.door.row === newRow && tut.door.col === newCol) {
+    events.push({ type: 'tutorialLeft' });
+    return events;
+  }
 
   const stairs = stairsHere();
   if (stairs) {
@@ -170,11 +179,14 @@ function reachItem(block) {
 // takes no turn here: main.js opens the reload panel for it, and the
 // answer is the turn (gun.js settleReload uses the cell up). A relay is
 // the same: main.js asks its question, relays.js settleRelay settles it.
-// Events: blocked, boxSprung, cellFound { prop }, relayFound { prop }, or propSearched then
+// The tutorial's barrel asks the player's name instead (tutorial.js; main.js
+// opens the ask screen, settleName settles it).
+// Events: blocked, boxSprung, cellFound { prop }, relayFound { prop }, nameAsked { prop }, or propSearched then
 // boxOpened.
 function examineProp(prop) {
   if (prop.searched) return [{ type: 'blocked', kind: 'prop', thing: prop }];
   prop.identified = true;
+  if (prop.asks === 'name') return [{ type: 'nameAsked', prop }];
   if (prop.kind === 'cell') return [{ type: 'cellFound', prop }];
   if (prop.kind === 'relay') return [{ type: 'relayFound', prop }];
   if (prop.kind === 'box' && prop.trapped) {

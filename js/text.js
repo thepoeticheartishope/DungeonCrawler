@@ -301,6 +301,20 @@ export const TEXT = {
 
   // ---- Room (map) screen ----
   'room.sensed.simple': 'Enemy close.', // draft. "I see you." with Simple enemies on (Timothy: it falls under the filter)
+  // The tutorial room (tutorial.js). Timothy's script: the dungeon's
+  // whisper, then the kind voice, then the barrel's question.
+  'tut.cantLeave': "You can't leave. Don't try.", // Timothy's wording. Fades on waking, in "I see you."'s style
+  'tut.trust': 'You can do this. I trust you.', // Timothy's wording. The kind voice, walking toward the light
+  'tut.ready': 'Be ready.', // Timothy's wording. The kind voice, after the name
+  'tut.name.q': 'What is your name?', // Timothy: the barrel asks the player's name; any name is right
+  'tut.hint.move': 'Arrows move you. You are in the dark.', // draft. Room log on waking
+  'tut.hint.barrel': 'Walk into the barrel to open it.', // draft. Room log when the barrel appears
+  'tut.hint.fire': 'Look at it and press SELECT to shoot.', // draft. Room log when the stick man comes
+  'tut.key.dropped': 'It falls. Something is left where it stood.', // draft. The stick man is gone and left the key
+  'tut.door.open': 'The door at the top unlocks.', // draft. Key taken
+  'tut.light.none': 'Your light will not come on.', // draft. V in the tutorial's dark
+  'tut.name.kept': 'Your name is {name}.', // draft. After the barrel's answer
+  'room.blocked.door': 'The door is locked.', // draft. The tutorial's door before its key
   'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
   'room.stickTaps': 'Tap 3 times for your light. Hold to wait.', // draft. The look stick's first tap (light battery plan step D)
@@ -433,6 +447,7 @@ export const TEXT = {
   'start.name.placeholder': 'Leave blank to stay nameless', // draft
   'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
   'start.simpleEnemies': 'Comfort mode: plain enemies, light always on', // draft. A comfort option for players who don't want creepy enemies: every enemy a still letter e, and no light battery (was "Simple enemies")
+  'start.tutorial': 'Tutorial room: runs once before your first run', // draft. On until a tutorial is finished
   'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft
 
   // ---- Set screen (after Enter: which questions this run asks) ----
@@ -549,6 +564,7 @@ export const TEXT = {
   'map.btn': 'MAP', // draft. The minimap button (M on a keyboard)
   'ask.title.reload': 'RELOAD.SYS', // draft. The ask screen's title for a reload (its offers, then its question)
   'ask.title.relay': 'RELAY.SYS', // draft. The ask screen's title for a relay's question
+  'ask.title.barrel': 'BARREL', // draft. The ask screen's title for the tutorial barrel's question
   'log.btn': 'LOG', // draft. The room log button (L on a keyboard): the whole log over the map
   'hud.more': 'Status: tap for more', // draft. The HUD's tooltip: a tap shows myelin, cycle and the goals' names
   'map.label': 'Map of what you have seen on this floor. Tap to close.', // draft. Read out by screen readers
