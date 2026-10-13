@@ -20,6 +20,7 @@ const devTurnBtn = document.getElementById('devTurnBtn');
 const devFreeLookBtn = document.getElementById('devFreeLookBtn');
 const devEightWaysBtn = document.getElementById('devEightWaysBtn');
 const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
+const devGazeBtn = document.getElementById('devGazeBtn');
 const dpadEl = document.getElementById('dpad');
 const devCameraBtn = document.getElementById('devCameraBtn');
 const devLookBtn = document.getElementById('devLookBtn');
@@ -137,6 +138,16 @@ export function initDevPanel({
     computeVisibility();
     if (state.settings.gunCombat) refreshGunTarget();
     renderHud();
+    requestMapDraw();
+  });
+
+  // Dev tool (light battery plan step E): the eye over a stick man in the
+  // light, or none. Off, every eye shuts.
+  devGazeBtn.addEventListener('click', () => {
+    state.settings.gaze = !state.settings.gaze;
+    devGazeBtn.textContent = state.settings.gaze ? 'Gaze: ON (dev)' : 'Gaze: OFF (dev)';
+    devGazeBtn.setAttribute('aria-pressed', String(state.settings.gaze));
+    state.floor.minions.forEach(m => { m.gaze = 0; });
     requestMapDraw();
   });
 

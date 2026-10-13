@@ -47,8 +47,9 @@
 //      the map; V switches it off (only the small circle lit, no turn spent)
 //      and on, and so do 3 taps on the look stick; 4 turns on and it dies, refuses V while charging, and is
 //      charged again after 4 turns off; a few turns on the first depth with
-//      the stick men noticing the light, and a shot into the dark (its bar
-//      says DARK SHOT). Then Comfort mode (the renamed
+//      the stick men noticing the light, a shot into the dark (its bar
+//      says DARK SHOT), and a stick man alone in the light for 3 s steps
+//      closer (the eye). Then Comfort mode (the renamed
 //      Simple enemies) on: no battery shown and V does nothing.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
@@ -981,6 +982,30 @@ async function checkLightBattery(page, url) {
   if (!prompt.startsWith('DARK SHOT')) return `the dark shot's bar said "${prompt}"`;
   await page.keyboard.press('f');
   await roomIdle(page);
+
+  // The eye: the light back on and one stick man alone in the cone, 3 tiles
+  // or more away; after GAZE_MS of real time it steps closer (or stares).
+  await page.keyboard.press('v');
+  const placed = await page.evaluate(async () => {
+    const { state, key } = await import('./js/state.js');
+    const { spawnMinion } = await import('./js/combat.js');
+    const { inLookCone } = await import('./js/sight.js');
+    const f = state.floor;
+    f.minions = [];
+    f.hunter = null;
+    const spot = [...f.sightSet].map(k => k.split(',').map(Number))
+      .find(([r, c]) => Math.max(Math.abs(r - f.playerRow), Math.abs(c - f.playerCol)) >= 3 && inLookCone(r, c) &&
+        !f.props.some(p => p.row === r && p.col === c) && !f.keys.some(k => k.row === r && k.col === c));
+    if (!spot) return null;
+    spawnMinion({ row: spot[0], col: spot[1] }, 'SHARD');
+    return spot;
+  });
+  if (placed) {
+    const gazeMs = await page.evaluate(async () => (await import('./js/config.js')).GAZE_MS);
+    await page.waitForTimeout(gazeMs + 600);
+    const log = await page.evaluate(() => document.getElementById('roomFeedback').textContent);
+    if (!log.includes('It comes closer while you look.') && !log.includes('It stares at you.')) return 'the eye did nothing after 3 s in the light';
+  }
 
   await loadPageAndSet(page, url);
   const label = await page.locator('label:has(#simpleEnemiesToggle)').textContent();

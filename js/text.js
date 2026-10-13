@@ -321,6 +321,8 @@ export const TEXT = {
   'room.ownLight.died': 'Your light dies. It needs a full charge.', // draft. Ran empty with the light on: locked off until full
   'room.ownLight.charged': 'Your light is charged.', // draft. A locked light is full again
   'room.ownLight.locked': 'No light until it is full. {turns} more turns.', // draft. V while locked
+  'room.gaze.step': 'It comes closer while you look.', // draft. The eye (gaze.js) is full: the stick man steps one closer
+  'room.gaze.stare': 'It stares at you.', // draft. The same, already beside the player
   'room.blocked.wall': 'The membrane holds.', // draft
   'room.blocked.boss': 'The {@term.boss} will not move.', // draft
   'room.blocked.minion': 'A {@term.minion} is in the way.', // draft

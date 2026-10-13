@@ -411,6 +411,15 @@ export const LIGHT_BATTERY = true;
 // in DARK_SWEEP_SCALE of the time (faster), or has one more penalty zone.
 export const DARK_SHOT_STEP = 0.25;
 export const DARK_SWEEP_SCALE = 0.65;
+// The eye (light battery plan step E, gaze.js): GAZE_MS of the player's
+// light on a stick man, in total, and it steps one closer, a quick
+// GAZE_STEP_MS slide (none under reduced motion). The clock polls every
+// GAZE_POLL_MS and pauses wherever the real-time clock does. DEV -> Gaze
+// switches it (state.settings.gaze).
+export const GAZE = true;
+export const GAZE_MS = 3000;
+export const GAZE_STEP_MS = 160;
+export const GAZE_POLL_MS = 100;
 
 // Free look (look.js, free look plan): the light points wherever the player
 // aims, up to LOOK_FREE_ARC either side of the way the body faces, at no

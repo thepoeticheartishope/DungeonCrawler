@@ -135,12 +135,12 @@ export function requestMapDraw() {
 
 // Slides a minion that has just stepped from `from` to its new tile. A minion already sliding starts from
 // where it shows now, so quick turns don't make it jump.
-export function slideOnMap(thing, from) {
+export function slideOnMap(thing, from, ms = MAP_ANIMATION_MS.slide) {
   if (!canvas || reducedMotion.matches) return;
   const now = performance.now();
   const running = effects.get(thing);
   const start = running && running.kind === 'slide' ? slidePlace(running, now) : from;
-  effects.set(thing, { kind: 'slide', start: now, ms: MAP_ANIMATION_MS.slide, from: start, to: { row: thing.row, col: thing.col } });
+  effects.set(thing, { kind: 'slide', start: now, ms, from: start, to: { row: thing.row, col: thing.col } });
   requestMapDraw();
 }
 

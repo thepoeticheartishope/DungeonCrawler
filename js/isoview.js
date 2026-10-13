@@ -25,10 +25,11 @@
 // killed one keeps fading where it died until it is gone.
 
 import { state, key } from './state.js';
-import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF } from './config.js';
+import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF, GAZE_MS } from './config.js';
 import { FACING_VECTORS, canShoot } from './sight.js';
 import { lookAngle, bodyAngle, wrapAngle } from './look.js';
 import { lightOn } from './battery.js';
+import { gazeInPlay } from './gaze.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
 import { drawStickForm, stickBox, dyingSticks } from './stickforms.js';
@@ -103,6 +104,10 @@ const PAPER_LINES = [-0.3, 0, 0.3];
 const PAPER_SCALE = 0.2;
 // The player, drawn as a stick man standing on their tile.
 const STICK_HEIGHT = 0.62;     // feet to top of head
+const EYE_LIFT = 0.22;         // the eye over a stick man in the light (drawGazeEye): its height over the head
+const EYE_WIDTH = 0.16;        // half its width
+const EYE_OPEN = 0.07;         // how far the lids part when it is full
+const EYE_LEVEL = [0.45, 1];   // its strength, shut to full
 const STICK_LINE = 0.035;      // line width (never under 1.5px)
 const STICK_BLUR = 0.12;       // its glow
 const STICK_BREATH = 0.022;    // how far the chest lifts on a breath, as a share of its height
@@ -1183,7 +1188,11 @@ function drawStanding(ctx, thing) {
     return;
   }
   const form = formOf(thing);
-  if (form) return drawForm(ctx, at, form);
+  if (form) {
+    drawForm(ctx, at, form);
+    drawGazeEye(ctx, at, form);
+    return;
+  }
   const [cx, cy] = centre(at.row, at.col);
   ctx.save();
   ctx.globalAlpha = thing.look.alpha === undefined ? 1 : thing.look.alpha;
@@ -1195,6 +1204,43 @@ function drawStanding(ctx, thing) {
   if (thing.kind === 'player') return drawStickMan(ctx, thing.at, cx, cy);
   const [x, y] = glyphPlace(thing);
   look.paintGlyph(ctx, tw * GLYPH_CELL, x, y, thing.glyph, thing.look);
+  if (thing.kind === 'minion') drawGazeEye(ctx, at, minionOn(thing.tile));
+}
+
+// The eye over a stick man in the player's light (gaze.js): shut, a line;
+// then the lids part slowly with its gaze (0 to GAZE_MS), the pupil
+// showing from a third open. In the enemies' cold blue. No blink, and it
+// only moves as the gaze grows, so it is the same under reduced motion.
+function drawGazeEye(ctx, at, m) {
+  if (!m || !m.gaze || !gazeInPlay()) return;
+  const share = Math.min(1, m.gaze / GAZE_MS);
+  const [x, foot] = centre(at.row, at.col);
+  const y = foot - tw * (STICK_HEIGHT + EYE_LIFT);
+  const w = tw * EYE_WIDTH;
+  const open = tw * EYE_OPEN * share * share * (3 - 2 * share);
+  const lids = () => {
+    ctx.beginPath();
+    ctx.moveTo(x - w, y);
+    ctx.quadraticCurveTo(x, y - open * 2, x + w, y);
+    ctx.quadraticCurveTo(x, y + open * 2, x - w, y);
+  };
+  const level = EYE_LEVEL[0] + (EYE_LEVEL[1] - EYE_LEVEL[0]) * share;
+  ctx.save();
+  if (open > 1) {
+    lids();
+    ctx.fillStyle = '#000';
+    ctx.fill();
+  }
+  if (share > 1 / 3) {
+    lids();
+    ctx.clip();
+    ctx.beginPath();
+    ctx.arc(x, y, w * (0.18 + 0.24 * share), 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(' + ENEMY_LIGHT.core + ', ' + level + ')';
+    ctx.fill();
+  }
+  ctx.restore();
+  enemyLine(ctx, lids, level, Math.max(1.2, tw * STICK_LINE));
 }
 
 // An energy cell: a round case with bands and three round ends on its lid,
