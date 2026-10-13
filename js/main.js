@@ -38,6 +38,7 @@ import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, show
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, SCREEN_WAYS, screenStep, arrowChord } from './dpad.js';
+import { repeatMs, noteStep, heldStepReady, heldStepWait } from './walkpace.js';
 import { aimLook, turnBody, wantsTurn, lookAngle } from './look.js';
 import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
@@ -1350,7 +1351,10 @@ function movePlayer(dRow, dCol) {
   state.run.turnLocked = true;
   const events = stepPlayer(dRow, dCol);
   const has = (type) => events.some(e => e.type === type);
-  if (has('stepped')) lastWalkAt = performance.now();
+  if (has('stepped')) {
+    lastWalkAt = performance.now();
+    noteStep(dRow, dCol, lastWalkAt);
+  }
   if (has('stepped') || has('propSearched') || has('bodyTurned')) {
     applyTurnOutcome(events);
   } else {
@@ -1513,6 +1517,7 @@ initDpad({
   buttons: dpadButtons, movePlayer,
   canWalk: () => roomScreen.classList.contains('show') && !state.run.runEnded,
   eightWays: () => state.settings.eightWays,
+  repeatMs,
 });
 initLookStick({
   button: lookStick,
@@ -1528,11 +1533,13 @@ initLookStick({
 
 // Walks the way (sx, sy) points on screen (dpad.js screenStep), if the
 // room screen is still up: the arrow keys' chord steps a moment after the
-// press.
+// press. Returns the ms until a held key steps again (walkpace.js), or
+// null to stop the held walk.
 function walkScreen(sx, sy) {
   const grid = screenStep(sx, sy, state.settings.eightWays);
-  if (!grid || !roomScreen.classList.contains('show')) return;
+  if (!grid || !roomScreen.classList.contains('show') || state.run.runEnded) return null;
   movePlayer(grid[0], grid[1]);
+  return repeatMs(grid[0], grid[1]);
 }
 
 // The arrow keys by the screen way they push, and the number pad's keys by
@@ -1542,7 +1549,7 @@ const NUMPAD_WAYS = {
   Numpad7: 'UL', Numpad8: 'U', Numpad9: 'UR', Numpad4: 'L',
   Numpad6: 'R', Numpad1: 'DL', Numpad2: 'D', Numpad3: 'DR',
 };
-const arrows = arrowChord(walkScreen);
+const arrows = arrowChord(walkScreen, { readyIn: () => heldStepWait(performance.now()) });
 document.addEventListener('keyup', (e) => {
   if (ARROW_WAYS[e.key]) arrows.up(ARROW_WAYS[e.key]);
 });
@@ -1564,6 +1571,10 @@ document.addEventListener('keydown', (e) => {
   if (document.activeElement === answerInput || e.defaultPrevented) return;
   if (!roomScreen.classList.contains('show')) return;
   const numpad = NUMPAD_WAYS[e.code];
+  // A held number pad key steps again only once its last step has landed
+  // (walkpace.js), not at the keyboard's own repeat rate. Held arrows walk
+  // on their own beat (dpad.js arrowChord).
+  if (e.repeat && numpad && !heldStepReady(performance.now())) { e.preventDefault(); return; }
   if (numpad && !mapPanelShown()) { e.preventDefault(); walkScreen(...SCREEN_WAYS[numpad]); }
   else if (ARROW_WAYS[e.key] && state.settings.eightWays) { e.preventDefault(); arrows.down(ARROW_WAYS[e.key], e.repeat); }
   else if (ARROW_WAYS[e.key]) { e.preventDefault(); walkScreen(...SCREEN_WAYS[ARROW_WAYS[e.key]]); }

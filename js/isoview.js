@@ -225,8 +225,8 @@ let shotsShown = 0;      // shots shown so far, so a miss goes to the left and r
 // in front of anything in sight are cut away.
 // `canvasSize` is { width, height } in pixels and `pageWidth`, the map's
 // width on the page. `shared` is { colours, things, fogOf, paintGlyph,
-// mistSprite, mistStrength, pulse, keepMoving, showPlain, now, still }
-// from mapview.js.
+// mistSprite, mistStrength, pulse, keepMoving, showPlain, now, still,
+// walkAt } from mapview.js (walkAt: the player's step slide, no bump).
 export function drawIsoScene(ctx, canvasSize, shared) {
   look = shared;
   width = canvasSize.width;
@@ -346,6 +346,16 @@ function moveCamera(now, still) {
     camera = cameraGoal = player;
     glide = null;
     return false;
+  }
+  // Smooth walk: the camera follows the player's slide frame by frame,
+  // so once they reach the box's edge it moves with the step itself, in
+  // its time and easing, rather than gliding after it.
+  if (state.settings.smoothWalk) {
+    glide = null;
+    const goal = keepInBox(camera, look.walkAt || player);
+    const moved = goal.row !== camera.row || goal.col !== camera.col;
+    camera = cameraGoal = goal;
+    return moved;
   }
   const goal = keepInBox(cameraGoal, player);
   if (goal.row !== cameraGoal.row || goal.col !== cameraGoal.col) {

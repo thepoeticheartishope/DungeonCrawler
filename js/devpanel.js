@@ -23,6 +23,7 @@ const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
 const devGazeBtn = document.getElementById('devGazeBtn');
 const dpadEl = document.getElementById('dpad');
 const devCameraBtn = document.getElementById('devCameraBtn');
+const devSmoothWalkBtn = document.getElementById('devSmoothWalkBtn');
 const devLookBtn = document.getElementById('devLookBtn');
 const devTendrilsBtn = document.getElementById('devTendrilsBtn');
 const devMinigameBtn = document.getElementById('devMinigameBtn');
@@ -169,6 +170,15 @@ export function initDevPanel({
     devCameraBtn.setAttribute('aria-pressed', String(state.settings.isoCameraGlide));
     requestMapDraw();
     renderRoomHints();
+  });
+
+  // Dev tool: smooth walk (walkpace.js) on, or one step time for every way
+  // with the camera gliding after the player, as before, to compare.
+  devSmoothWalkBtn.addEventListener('click', () => {
+    state.settings.smoothWalk = !state.settings.smoothWalk;
+    devSmoothWalkBtn.textContent = state.settings.smoothWalk ? 'Smooth walk: ON (dev)' : 'Smooth walk: OFF (dev)';
+    devSmoothWalkBtn.setAttribute('aria-pressed', String(state.settings.smoothWalk));
+    requestMapDraw();
   });
 
   // Dev tool (stick enemies plan): every stick enemy shows its own random

@@ -807,7 +807,7 @@ export const ISO_WALL_HEIGHT = 1;
 // under reduced motion.
 export const MAP_ANIMATION_MS = {
   slide: 300,       // a minion stepping to the next tile
-  step: 140,        // the player stepping to the next tile (isometric): short, so walking stays quick
+  step: 140,        // the player stepping to the next tile (isometric): short, so walking stays quick. A grid N/E/S/W step; smooth walk (walkpace.js) scales the others by their length on screen
   wallCut: 160,     // a wall lowering to a stub in front of something in sight, or rising again (isometric)
   bump: 180,        // the player walking into something, out and back
   bossPulse: 2000,  // the boss's glow swelling and fading
@@ -883,6 +883,11 @@ export const TENDRIL_MIRRORABLE = 'NRSJEKZLCPBDGQ';
 // The repeat is a little slower than the iso step slide, so each step reads.
 export const DPAD_HOLD_DELAY_MS = 300;
 export const DPAD_HOLD_REPEAT_MS = 170;
+// Smooth walk (walkpace.js): a held way steps again this long after a
+// step's slide has landed (170 - 140, the beat a grid step always had).
+export const WALK_REPEAT_GAP_MS = 30;
+// Smooth walk is on by default; DEV -> Smooth walk switches it off.
+export const SMOOTH_WALK = true;
 // The room log keeps this many notes, newest at the bottom: all of them
 // show when LOG opens it over the map; otherwise only the newest two sit on
 // the map's bottom edge (index.html .feedback, nth-last-child(-n+2)), and
