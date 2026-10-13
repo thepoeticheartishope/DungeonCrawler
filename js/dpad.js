@@ -7,7 +7,7 @@
 // the look stick (free look plan step C): drag it to aim the light, tap it
 // to turn or (twice) to wait. main.js passes in the buttons and the
 // actions; this file only handles input.
-import { DPAD_HOLD_DELAY_MS, DPAD_HOLD_REPEAT_MS, LOOK_STICK_DRAG_PX, LOOK_STICK_KNOB_PX, LOOK_STICK_WAIT_MS, KEY_CHORD_MS } from './config.js';
+import { DPAD_HOLD_DELAY_MS, DPAD_HOLD_REPEAT_MS, LOOK_STICK_DRAG_PX, LOOK_STICK_KNOB_PX, LOOK_STICK_TAP_MS, LOOK_STICK_HOLD_MS, LOOK_STICK_LIGHT_TAPS, KEY_CHORD_MS } from './config.js';
 
 // The pad's arrows by where they point on screen, as [x, y] (y down). The
 // d-pad's buttons and the arrow keys are named by these.
@@ -120,27 +120,90 @@ export function initDpad({ buttons, movePlayer, canWalk, eightWays }) {
   window.addEventListener('blur', stopHold);
 }
 
+// What a press on the look stick means (light battery plan step D), apart
+// from the page, so it can be tested with a hand-run clock: `timers`
+// { set(fn, ms), clear(id) } and `now()`. A press held `holdMs` calls
+// `onWait()` (`onHold(true)` as the press starts, so the stick can show its
+// ring, and `onHold(false)` when the hold ends either way). A tap calls
+// `onTurn()` when `wantsTurn()` and no taps are counting; otherwise taps
+// count, each within `tapMs` of the last: the LOOK_STICK_LIGHT_TAPS-th
+// calls `onLight()`, and the ones before it `onCount(n)`. A drag cancels
+// the hold and the count.
+export function stickGestures({ onWait, onLight, onTurn, onCount, onHold, wantsTurn,
+  holdMs = LOOK_STICK_HOLD_MS, tapMs = LOOK_STICK_TAP_MS,
+  timers = { set: (fn, ms) => setTimeout(fn, ms), clear: (id) => clearTimeout(id) },
+  now = () => performance.now() }) {
+  let holdTimer = null;
+  let held = false;      // this press already waited
+  let taps = 0;
+  let lastTapAt = -Infinity;
+  const endHold = () => {
+    if (holdTimer === null) return;
+    timers.clear(holdTimer);
+    holdTimer = null;
+    onHold(false);
+  };
+  const resetTaps = () => {
+    taps = 0;
+    lastTapAt = -Infinity;
+  };
+  const tap = () => {
+    const at = now();
+    if (at - lastTapAt > tapMs) taps = 0;
+    if (taps === 0 && wantsTurn()) { resetTaps(); onTurn(); return; }
+    taps++;
+    lastTapAt = at;
+    if (taps < LOOK_STICK_LIGHT_TAPS) { onCount(taps); return; }
+    resetTaps();
+    onLight();
+  };
+  return {
+    press() {
+      endHold();
+      held = false;
+      onHold(true);
+      holdTimer = timers.set(() => {
+        holdTimer = null;
+        held = true;
+        resetTaps();
+        onHold(false);
+        onWait();
+      }, holdMs);
+    },
+    drag() {
+      endHold();
+      resetTaps();
+    },
+    // The press ended: a tap, unless it already waited or `tapped` is
+    // false (a drag, a cancelled press).
+    release(tapped = true) {
+      endHold();
+      if (held) { held = false; return; }
+      if (tapped) tap();
+    },
+    // A tap with no press behind it (Enter on the focused stick).
+    tap,
+  };
+}
+
 // Wires the look stick, the d-pad's centre `button` (with a `.look-knob`
 // inside). A drag past LOOK_STICK_DRAG_PX calls `aim(dx, dy)` with the push
 // on screen, and the knob follows up to LOOK_STICK_KNOB_PX, springing back
 // on release; pointer capture keeps the drag when the finger leaves the
-// button. A tap (or Enter on the focused stick) calls `turn()` when
-// `wantsTurn()`; otherwise the first tap calls `waitAgain()` (the room note
-// asks for a second) and a second within LOOK_STICK_WAIT_MS calls `wait()`,
-// so a stray tap never spends a turn.
-export function initLookStick({ button, aim, wait, waitAgain, turn, wantsTurn }) {
+// button. Taps and holds go through stickGestures: hold to `wait()`, a tap
+// to `turn()` when `wantsTurn()`, 3 taps to `light()`, and `count(n)` for
+// the taps before the third, so a stray tap never spends a turn. While a
+// press could still become a hold, the button has the class `holding` (its
+// filling ring, index.html).
+export function initLookStick({ button, aim, wait, light, count, turn, wantsTurn }) {
   const knob = button.querySelector('.look-knob');
   let press = null;      // { x, y, id, dragged } while held
-  let firstTapAt = -Infinity;
   let pressed = false;   // a pointer press already counted; skip the click that follows it
-  const tap = () => {
-    if (button.disabled) return;
-    if (wantsTurn()) { firstTapAt = -Infinity; turn(); return; }
-    const now = performance.now();
-    if (now - firstTapAt <= LOOK_STICK_WAIT_MS) { firstTapAt = -Infinity; wait(); return; }
-    firstTapAt = now;
-    waitAgain();
-  };
+  const gestures = stickGestures({
+    onWait: wait, onLight: light, onTurn: turn, onCount: count,
+    onHold: on => button.classList.toggle('holding', on),
+    wantsTurn,
+  });
   const moveKnob = (dx, dy) => {
     const length = Math.hypot(dx, dy);
     const scale = length > LOOK_STICK_KNOB_PX ? LOOK_STICK_KNOB_PX / length : 1;
@@ -157,12 +220,14 @@ export function initLookStick({ button, aim, wait, waitAgain, turn, wantsTurn })
     pressed = true;
     press = { x: e.clientX, y: e.clientY, id: e.pointerId, dragged: false };
     button.setPointerCapture(e.pointerId);
+    gestures.press();
   });
   button.addEventListener('pointermove', (e) => {
     if (!press || press.id !== e.pointerId) return;
     const dx = e.clientX - press.x;
     const dy = e.clientY - press.y;
     if (!press.dragged && Math.hypot(dx, dy) <= LOOK_STICK_DRAG_PX) return;
+    if (!press.dragged) gestures.drag();
     press.dragged = true;
     moveKnob(dx, dy);
     aim(dx, dy);
@@ -172,13 +237,13 @@ export function initLookStick({ button, aim, wait, waitAgain, turn, wantsTurn })
     const dragged = press.dragged;
     press = null;
     moveKnob(0, 0);
-    if (!dragged && !cancelled) tap();
+    gestures.release(!dragged && !cancelled && !button.disabled);
   };
   button.addEventListener('pointerup', (e) => release(e, false));
   button.addEventListener('pointercancel', (e) => release(e, true));
   button.addEventListener('click', () => {
     if (pressed) { pressed = false; return; }
-    tap();
+    if (!button.disabled) gestures.tap();
   });
   button.addEventListener('keydown', () => { pressed = false; });
   button.addEventListener('contextmenu', (e) => e.preventDefault());

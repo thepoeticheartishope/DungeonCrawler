@@ -39,7 +39,7 @@ import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, SCREEN_WAYS, screenStep, arrowChord } from './dpad.js';
 import { aimLook, turnBody, wantsTurn, lookAngle } from './look.js';
-import { toggleLight, turnsToFull } from './battery.js';
+import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
 import { computeVisibility } from './sight.js';
 import { isoAngleOf } from './isoview.js';
 import { buy } from './exchange.js';
@@ -225,7 +225,7 @@ function turnLook() {
 function syncLookStick() {
   const armed = wantsTurn();
   lookStick.classList.toggle('armed', armed);
-  lookStick.setAttribute('aria-label', t(armed ? 'dpad.stick.turn' : 'dpad.stick.wait'));
+  lookStick.setAttribute('aria-label', t(armed ? 'dpad.stick.turn' : batteryInPlay() ? 'dpad.stick.wait' : 'dpad.stick.wait.plain'));
 }
 
 // Whether the gun can be used right now: gun combat on, the room screen
@@ -1482,7 +1482,10 @@ initLookStick({
   button: lookStick,
   aim: (dx, dy) => aimTo(isoAngleOf(dx, dy)),
   wait: skipTurn,
-  waitAgain: () => showRoomNote('move-msg', t('room.waitAgain')),
+  light: switchLight,
+  // The first tap says what the stick does (3 taps only in Comfort mode
+  // do nothing, so it says only how to wait there).
+  count: (taps) => { if (taps === 1) showRoomNote('move-msg', t(batteryInPlay() ? 'room.stickTaps' : 'room.stickTaps.plain')); },
   turn: turnLook,
   wantsTurn,
 });

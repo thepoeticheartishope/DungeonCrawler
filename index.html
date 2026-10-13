@@ -943,8 +943,23 @@
     transition: transform 0.12s ease-out;
   }
   .dpad-center.armed { background: var(--torch-bright); color: var(--ink); }
+  /* Holding the stick to wait (light battery plan step D): a ring round
+     the knob brightens slowly over the hold (LOOK_STICK_HOLD_MS), so the
+     player sees it coming; under reduced motion it is just there. */
+  .dpad-center { position: relative; }
+  .dpad-center::after {
+    content: '';
+    position: absolute;
+    inset: 22%;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .dpad-center.holding::after { opacity: 0.9; transition: opacity 1s linear; }
   @media (prefers-reduced-motion: reduce) {
     .look-knob { transition: none; }
+    .dpad-center.holding::after { transition: none; }
   }
   /* Which ways are open (render.js renderMoveHints): blocked dims, a
      paper or box to examine shows in inverse video. */
@@ -1794,7 +1809,7 @@
       <button class="dpad-u" id="btnU" type="button" aria-label="Move up">&#8593;</button>
       <button class="dpad-ur dpad-corner" id="btnUR" type="button" aria-label="Move up and right">&#8599;</button>
       <button class="dpad-l" id="btnL" type="button" aria-label="Move left">&#8592;</button>
-      <button class="dpad-center" id="btnSkip" type="button" aria-label="Look stick: drag to aim, tap twice to wait"><span class="look-knob" aria-hidden="true"></span></button>
+      <button class="dpad-center" id="btnSkip" type="button" aria-label="Look stick: drag to aim, hold to wait, tap 3 times for your light"><span class="look-knob" aria-hidden="true"></span></button>
       <button class="dpad-r" id="btnR" type="button" aria-label="Move right">&#8594;</button>
       <button class="dpad-dl dpad-corner" id="btnDL" type="button" aria-label="Move down and left">&#8601;</button>
       <button class="dpad-d" id="btnD" type="button" aria-label="Move down">&#8595;</button>
