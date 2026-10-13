@@ -405,6 +405,12 @@ export const PLAYER_CONE_RANGE = 5;
 // always on, as before.
 export const LIGHT_BATTERY_MAX = 4;
 export const LIGHT_BATTERY = true;
+// Shots in the dark (light battery plan step C, gun.js fireDark): the shot
+// goes along the aim, checked every DARK_SHOT_STEP tiles for the first
+// thing in the way. Its damage bar is one step harder at random: it sweeps
+// in DARK_SWEEP_SCALE of the time (faster), or has one more penalty zone.
+export const DARK_SHOT_STEP = 0.25;
+export const DARK_SWEEP_SCALE = 0.65;
 
 // Free look (look.js, free look plan): the light points wherever the player
 // aims, up to LOOK_FREE_ARC either side of the way the body faces, at no
@@ -805,6 +811,7 @@ export const MAP_ANIMATION_MS = {
   playerGlance: 5200, // once idle, one glance to the side and back in each of these
   gunShot: 260,     // the shot's flash from the gun to where it went, fading (gun plan)
   gunMiss: 900,     // MISS floating up over a minion the shot missed, fading
+  darkFlash: 700,   // a stick man hit in the dark, shown in the shot's flash (light battery plan step C)
   gunRecoil: 120,   // the gun kicking back toward the player as it fires
   lookEase: 70,     // the drawn look (ring tick, cone edges, the stick man's gaze) easing toward where the player aims (free look)
   // Minions as stick men (stick enemies plan, js/stickforms.js). Slow on

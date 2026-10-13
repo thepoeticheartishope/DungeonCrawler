@@ -539,6 +539,9 @@ export const TEXT = {
   'gun.reload.room': 'room for {room}', // draft. When less energy fits under the most you can hold than the offer gives
   'gun.reload.cancel': 'CANCEL', // draft
   'gun.bar.prompt': 'PRESS SELECT', // draft. Over the damage bar
+  'gun.bar.dark.fast': 'DARK SHOT · FASTER', // draft. Over the damage bar of a shot in the dark that sweeps faster (light battery plan)
+  'gun.bar.dark.x': 'DARK SHOT · ONE MORE X', // draft. Over the damage bar of a shot in the dark with one more penalty zone
+  'gun.dark.nothing': 'The shot goes into the dark. Nothing there.', // draft. A shot in the dark that found nothing
   'map.btn': 'MAP', // draft. The minimap button (M on a keyboard)
   'ask.title.reload': 'RELOAD.SYS', // draft. The ask screen's title for a reload (its offers, then its question)
   'ask.title.relay': 'RELAY.SYS', // draft. The ask screen's title for a relay's question

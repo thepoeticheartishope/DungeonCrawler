@@ -10,7 +10,7 @@
 // (or settleStruggle(), for the Struggle dial on the same bar);
 // this only draws and listens. Until step 6 only the DEV panel opens them.
 
-import { TIMER_SECONDS, DAMAGE_BAR_SWEEP_MS, DAMAGE_BAR_SLOW_SWEEP_MS, STRUGGLE_SWEEP_MS, STRUGGLE_SLOW_SWEEP_MS } from './config.js';
+import { TIMER_SECONDS, DAMAGE_BAR_SWEEP_MS, DAMAGE_BAR_SLOW_SWEEP_MS, STRUGGLE_SWEEP_MS, STRUGGLE_SLOW_SWEEP_MS, DARK_SWEEP_SCALE } from './config.js';
 import { maxWager } from './modifiers.js';
 import { escapeHtml } from './quiz.js';
 import { mountQuestionPanel } from './questionview.js';
@@ -144,8 +144,12 @@ export function showDamageBar(aim) {
     els.legend.appendChild(span);
   });
   els.legend.hidden = false;
-  els.prompt.textContent = t('gun.bar.prompt');
-  startBar('aim', reducedMotion.matches ? DAMAGE_BAR_SLOW_SWEEP_MS : DAMAGE_BAR_SWEEP_MS);
+  // A shot in the dark (gun.js fireDark) says which way it is harder; a
+  // 'fast' one sweeps in DARK_SWEEP_SCALE of the time, under reduced
+  // motion too.
+  els.prompt.textContent = aim.dark ? t('gun.bar.dark.' + aim.dark) : t('gun.bar.prompt');
+  const period = reducedMotion.matches ? DAMAGE_BAR_SLOW_SWEEP_MS : DAMAGE_BAR_SWEEP_MS;
+  startBar('aim', aim.dark === 'fast' ? period * DARK_SWEEP_SCALE : period);
 }
 
 // Takes the last damage bar's zones off the bar.

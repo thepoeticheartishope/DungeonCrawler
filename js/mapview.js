@@ -177,6 +177,20 @@ export function shotOnMap(target, missed) {
   setTimeout(requestMapDraw, MAP_ANIMATION_MS.gunMiss);
 }
 
+// A stick man hit in the dark (light battery plan step C): drawn for
+// MAP_ANIMATION_MS.darkFlash in the shot's flash, though no light is on
+// it, then gone into the dark again. Shown under reduced motion too: it
+// is seen, not moved.
+let flashSeen = null; // { minion, until }
+export function revealInFlash(minion) {
+  flashSeen = { minion, until: performance.now() + MAP_ANIMATION_MS.darkFlash };
+  requestMapDraw();
+  setTimeout(requestMapDraw, MAP_ANIMATION_MS.darkFlash + 20);
+}
+function inFlash(m) {
+  return !!flashSeen && flashSeen.minion === m && performance.now() < flashSeen.until;
+}
+
 // A minion's stick man (stickforms.js) reacts to a landed shot for
 // `damage`: a soft brightening, one small push and a hit's tendrils (one
 // stays out when it did damage).
@@ -438,7 +452,9 @@ function mapThings() {
   add('player', shownAt(PLAYER, f.playerRow, f.playerCol), t('term.player.symbol'), { size: 'player' },
     { row: f.playerRow, col: f.playerCol });
   f.minions.forEach(m => {
-    if (!isLit(m.row, m.col)) return;
+    const flashed = inFlash(m);
+    if (!isLit(m.row, m.col) && !flashed) return;
+    const glyphOrUnknown = (thing, glyph) => (flashed || canMakeOut(thing.row, thing.col) ? glyph : null);
     const hunter = m.kind === 'hunter';
     // Simple enemies: a still white letter, like a key's k, with no warp,
     // dropout or glow (the hunter's E is bigger, from its glyph size).
