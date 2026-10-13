@@ -5,7 +5,7 @@
 //
 // main.js calls initMapView() once, requestMapDraw() after anything on
 // the map may have changed, slideOnMap() / bumpOnMap() / shotOnMap() and a
-// minion's hurtOnMap() / limbOffOnMap() / deathOnMap() from their drawEvents cases, and onMapTap() to hear taps on the map. This file reads state and never changes it.
+// minion's hurtOnMap() / limbOffOnMap() / deathOnMap() from their drawEvents cases, and onMapPointer() to hear taps and aiming on the map. This file reads state and never changes it.
 //
 // Everything is drawn into one canvas (the "phosphor"), so a later CRT
 // pass (curved glass, bloom) can read that canvas and draw on top of it.
@@ -13,11 +13,11 @@
 import { state, key } from './state.js';
 import {
   AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
-  MAP_ANIMATION_MS, FORM_TELL_STEPS,
+  MAP_ANIMATION_MS, FORM_TELL_STEPS, MAP_DRAG_PX,
 } from './config.js';
 import { canMakeOut, FACING_VECTORS } from './sight.js';
 import { t } from './text.js';
-import { drawIsoScene, showShot, isoTileAt } from './isoview.js';
+import { drawIsoScene, showShot, isoTileAt, isoGridAt } from './isoview.js';
 import { hurtStick, loseStickLimb, killStick } from './stickforms.js';
 import { setTileArtColour } from './tileart.js';
 
@@ -198,14 +198,39 @@ export function deathOnMap(minion) {
   requestMapDraw();
 }
 
-// Calls `handler(tile)` with the tile under each tap or click on the map
-// (isoview.js isoTileAt), so main.js can act on it.
-export function onMapTap(handler) {
-  canvas.addEventListener('click', e => {
+// Hands main.js what the pointer does on the map (free look plan step C):
+// `aim(point)` with the grid point under it (isoview isoGridAt, not
+// rounded) while a mouse moves over the map with no button down, or while
+// a finger or pen drags past MAP_DRAG_PX; `tap(tile, pointerType)` with the
+// tile under a press that didn't drag (isoview isoTileAt). A drag never
+// taps, so aiming on a phone can't pick or clear a target by accident.
+export function onMapPointer({ aim, tap }) {
+  let press = null; // { x, y, id, dragged } while a press is down
+  const place = e => {
     const box = canvas.getBoundingClientRect();
-    const tile = isoTileAt(e.clientX - box.left, e.clientY - box.top);
-    if (tile) handler(tile);
+    return [e.clientX - box.left, e.clientY - box.top];
+  };
+  canvas.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    press = { x: e.clientX, y: e.clientY, id: e.pointerId, dragged: false };
+    if (e.pointerType !== 'mouse') canvas.setPointerCapture(e.pointerId);
   });
+  canvas.addEventListener('pointermove', e => {
+    if (press && press.id === e.pointerId && Math.hypot(e.clientX - press.x, e.clientY - press.y) > MAP_DRAG_PX) press.dragged = true;
+    const hovering = e.pointerType === 'mouse' && !press;
+    if (!hovering && !(press && press.dragged)) return;
+    const point = isoGridAt(...place(e));
+    if (point) aim(point);
+  });
+  canvas.addEventListener('pointerup', e => {
+    if (!press || press.id !== e.pointerId) return;
+    const dragged = press.dragged;
+    press = null;
+    if (dragged) return;
+    const tile = isoTileAt(...place(e));
+    if (tile) tap(tile, e.pointerType);
+  });
+  canvas.addEventListener('pointercancel', () => { press = null; });
 }
 
 function queueFrame() {

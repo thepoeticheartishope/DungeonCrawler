@@ -1680,7 +1680,26 @@ export function isoTileAt(px, py) {
   const y = py * pageScale;
   const hit = tapBoxes.find(({ box }) => x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3]);
   if (hit) return { row: hit.tile.row, col: hit.tile.col };
-  const sx = (x / width - 0.5) * across;
-  const sy = (y / height - CAMERA_Y) * across / shape;
-  return { row: Math.round(camera.row + 2 * sy - sx), col: Math.round(camera.col + sx + 2 * sy) };
+  const at = isoGridAt(px, py);
+  return { row: Math.round(at.row), col: Math.round(at.col) };
 }
+
+// The grid point under (px, py) CSS pixels from the map's top-left, not
+// rounded to a tile, for aiming the light at the pointer; null before the
+// first frame. Undoes isoScreenShare.
+export function isoGridAt(px, py) {
+  if (!camera || !width) return null;
+  const sx = (px * pageScale / width - 0.5) * across;
+  const sy = (py * pageScale / height - CAMERA_Y) * across / shape;
+  return { row: camera.row + 2 * sy - sx, col: camera.col + sx + 2 * sy };
+}
+
+// The grid angle (0 = north, +90° = east) of a push (dx, dy) on screen,
+// so the light points on the map the way the look stick is pushed. The
+// inverse of isoScreenOffset.
+export function isoAngleOf(dx, dy) {
+  const sx = dx;
+  const sy = dy * 2;
+  return Math.atan2(sx + sy, -(sy - sx));
+}
+
