@@ -422,10 +422,11 @@ function floorLevel(row, col) {
   return LIGHT_FALLOFF[Math.min(steps, LIGHT_FALLOFF.length - 1)];
 }
 
-// A wall is as bright as the brightest floor beside it.
+// A wall is as bright as the brightest floor beside it (the 4 grid ways,
+// not the diagonals, so a wall isn't lit round a corner).
 function wallLevel(row, col) {
   let level = WALL_MIN_LEVEL;
-  for (const [dr, dc] of Object.values(FACING_VECTORS)) {
+  for (const [dr, dc] of ['N', 'S', 'E', 'W'].map(way => FACING_VECTORS[way])) {
     if (!isWall(row + dr, col + dc)) level = Math.max(level, floorLevel(row + dr, col + dc));
   }
   return level;

@@ -401,6 +401,12 @@ export const PLAYER_CONE_RANGE = 5;
 export const LOOK_FREE_ARC = Math.PI / 6;
 export const LOOK_NUDGE = Math.PI / 12;
 export const FREE_LOOK = true;
+// Eight ways (eight ways plan): the player and the stick men walk and face
+// the 4 grid ways and the 4 diagonals between them. A diagonal step needs
+// both tiles it passes between free of walls and pillars (passage.js
+// canPassCorner). DEV -> 8 ways switches it (state.settings.eightWays);
+// off is the 4-way game as it was.
+export const EIGHT_WAYS = true;
 // The cone's half-width, and the slack each tile gets (sight.js inLookCone:
 // atan2(LOOK_CONE_SLACK, distance)) so an off-angle cone isn't ragged.
 export const LOOK_CONE_HALF = Math.PI / 4;

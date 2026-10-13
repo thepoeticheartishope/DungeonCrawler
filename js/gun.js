@@ -22,6 +22,7 @@ import { shootBlock, canShoot } from './sight.js';
 import { aimLook, angleTo, lookAngle, wantsTurn, wrapAngle } from './look.js';
 import { goldReward } from './moves.js';
 import { tileOccupied } from './combat.js';
+import { canPassCorner } from './passage.js';
 
 // The category the next reload asks from, as { label, category, pool }.
 // Categories come round in a fixed order (the same groups the battle
@@ -361,7 +362,8 @@ export function settleStruggle(barPosition) {
 }
 
 // Shoves `m` up to `tiles` tiles straight away from the player, stopping
-// at the first wall or occupied tile. If it can't go that way at all, it
+// at the first wall or occupied tile (a diagonal push stops at a corner,
+// passage.js canPassCorner, like a diagonal step). If it can't go that way at all, it
 // goes back along its trail like a strike's knockback. Its trail is spent
 // either way. Returns whether it moved.
 function pushBack(m, tiles) {
@@ -371,7 +373,7 @@ function pushBack(m, tiles) {
   const open = (row, col) => row >= 0 && col >= 0 && row < size && col < size &&
     !state.floor.wallSet.has(key(row, col)) && !tileOccupied(row, col, m);
   const start = { row: m.row, col: m.col };
-  for (let i = 0; i < tiles && open(m.row + dRow, m.col + dCol); i++) {
+  for (let i = 0; i < tiles && open(m.row + dRow, m.col + dCol) && canPassCorner(m.row, m.col, dRow, dCol); i++) {
     m.row += dRow;
     m.col += dCol;
   }

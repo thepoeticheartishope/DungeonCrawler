@@ -31,6 +31,7 @@ function resetFloor(size = 21) {
   state.settings.fogEnabled = true;
   state.settings.gunCombat = false;
   state.settings.turnBeforeStep = false;
+  state.settings.eightWays = true;
   state.floor.darkness = false;
   state.floor.wallSet = new Set();
   state.floor.pillarSet = new Set();
@@ -153,4 +154,17 @@ test('looking straight along a way, the cone lights exactly the old diamond', ()
       }
     }
   }
+});
+
+test('turnBody picks among 8 ways, or 4 with 8 ways off', () => {
+  resetFloor();
+  aimLook(50 * DEG);
+  assert.deepEqual(turnBody(), [{ type: 'bodyTurned', facing: 'NE' }]);
+  aimLook(-140 * DEG);
+  assert.deepEqual(turnBody(), [{ type: 'bodyTurned', facing: 'SW' }]);
+  resetFloor();
+  state.settings.eightWays = false;
+  aimLook(50 * DEG);
+  assert.deepEqual(turnBody(), [{ type: 'bodyTurned', facing: 'E' }]);
+  state.settings.eightWays = true;
 });

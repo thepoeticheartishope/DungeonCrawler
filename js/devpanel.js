@@ -6,7 +6,7 @@ import { requestMapDraw } from './mapview.js';
 import { renderRoomHints } from './render.js';
 import { MINIGAMES } from './minigames.js';
 import { STICK_POSE_IDS, TENDRIL_STYLES } from './stickforms.js';
-import { followBody, lookAngle, bodyAngle } from './look.js';
+import { followBody, lookAngle, bodyAngle, nearestWay } from './look.js';
 import { computeVisibility } from './sight.js';
 import { refreshGunTarget } from './gun.js';
 
@@ -18,6 +18,7 @@ const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devTurnBtn = document.getElementById('devTurnBtn');
 const devFreeLookBtn = document.getElementById('devFreeLookBtn');
+const devEightWaysBtn = document.getElementById('devEightWaysBtn');
 const devCameraBtn = document.getElementById('devCameraBtn');
 const devLookBtn = document.getElementById('devLookBtn');
 const devTendrilsBtn = document.getElementById('devTendrilsBtn');
@@ -101,6 +102,22 @@ export function initDevPanel({
     followBody();
     computeVisibility();
     if (state.settings.gunCombat) refreshGunTarget();
+    requestMapDraw();
+  });
+
+  // Dev tool (eight ways plan): the player and the minions walk and face 8
+  // ways, or only the 4 grid ways, as before, so the two can be compared.
+  // Off while facing a diagonal, the body turns to the nearest grid way.
+  devEightWaysBtn.addEventListener('click', () => {
+    state.settings.eightWays = !state.settings.eightWays;
+    devEightWaysBtn.textContent = state.settings.eightWays ? '8 ways: ON (dev)' : '8 ways: OFF (dev)';
+    devEightWaysBtn.setAttribute('aria-pressed', String(state.settings.eightWays));
+    if (state.floor.playerRow === undefined) return;
+    state.floor.facing = nearestWay(bodyAngle());
+    followBody();
+    computeVisibility();
+    if (state.settings.gunCombat) refreshGunTarget();
+    renderRoomHints();
     requestMapDraw();
   });
 
