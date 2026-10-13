@@ -38,6 +38,7 @@ import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, show
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, SCREEN_WAYS, screenStep, arrowChord } from './dpad.js';
+import { repeatMs, noteStep, heldStepReady } from './walkpace.js';
 import { aimLook, turnBody, wantsTurn, lookAngle } from './look.js';
 import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
@@ -1350,7 +1351,10 @@ function movePlayer(dRow, dCol) {
   state.run.turnLocked = true;
   const events = stepPlayer(dRow, dCol);
   const has = (type) => events.some(e => e.type === type);
-  if (has('stepped')) lastWalkAt = performance.now();
+  if (has('stepped')) {
+    lastWalkAt = performance.now();
+    noteStep(dRow, dCol, lastWalkAt);
+  }
   if (has('stepped') || has('propSearched') || has('bodyTurned')) {
     applyTurnOutcome(events);
   } else {
@@ -1513,6 +1517,7 @@ initDpad({
   buttons: dpadButtons, movePlayer,
   canWalk: () => roomScreen.classList.contains('show') && !state.run.runEnded,
   eightWays: () => state.settings.eightWays,
+  repeatMs,
 });
 initLookStick({
   button: lookStick,
@@ -1564,6 +1569,9 @@ document.addEventListener('keydown', (e) => {
   if (document.activeElement === answerInput || e.defaultPrevented) return;
   if (!roomScreen.classList.contains('show')) return;
   const numpad = NUMPAD_WAYS[e.code];
+  // A held walking key steps again only once its last step has landed
+  // (walkpace.js), not at the keyboard's own repeat rate.
+  if (e.repeat && (numpad || ARROW_WAYS[e.key]) && !heldStepReady(performance.now())) { e.preventDefault(); return; }
   if (numpad && !mapPanelShown()) { e.preventDefault(); walkScreen(...SCREEN_WAYS[numpad]); }
   else if (ARROW_WAYS[e.key] && state.settings.eightWays) { e.preventDefault(); arrows.down(ARROW_WAYS[e.key], e.repeat); }
   else if (ARROW_WAYS[e.key]) { e.preventDefault(); walkScreen(...SCREEN_WAYS[ARROW_WAYS[e.key]]); }

@@ -17,6 +17,7 @@ import {
   MAP_ANIMATION_MS, FORM_TELL_STEPS, MAP_DRAG_PX,
 } from './config.js';
 import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
+import { stepMs } from './walkpace.js';
 import { t } from './text.js';
 import { drawIsoScene, showShot, isoTileAt, isoGridAt } from './isoview.js';
 import { hurtStick, loseStickLimb, killStick } from './stickforms.js';
@@ -145,7 +146,8 @@ export function slideOnMap(thing, from, ms = MAP_ANIMATION_MS.slide) {
 }
 
 // Slides the player onto the tile they just stepped to, from the one
-// behind them (a step is always one tile toward `facing`). A slide still
+// behind them (a step is always one tile toward `facing`), over the
+// step's time on screen (walkpace.js). A slide still
 // playing starts from where the player shows now.
 export function slidePlayerOnMap(facing) {
   if (!canvas || reducedMotion.matches) return;
@@ -154,7 +156,7 @@ export function slidePlayerOnMap(facing) {
   const now = performance.now();
   const running = effects.get(PLAYER);
   const from = running && running.kind === 'slide' ? slidePlace(running, now) : { row: f.playerRow - dr, col: f.playerCol - dc };
-  effects.set(PLAYER, { kind: 'slide', start: now, ms: MAP_ANIMATION_MS.step, from, to: { row: f.playerRow, col: f.playerCol } });
+  effects.set(PLAYER, { kind: 'slide', start: now, ms: stepMs(dr, dc), from, to: { row: f.playerRow, col: f.playerCol } });
   requestMapDraw();
 }
 
@@ -342,7 +344,7 @@ function drawScene(now) {
   ctx.fillRect(0, 0, scene.width, scene.height);
   drawIsoScene(ctx, { width: scene.width, height: scene.height, pageWidth: pageSize.width }, {
     colours, things: mapThings(), fogOf, paintGlyph, mistSprite, mistStrength, pulse, keepMoving,
-    showPlain, now, still: reducedMotion.matches,
+    showPlain, now, still: reducedMotion.matches, walkAt: walkAt(now),
   });
 }
 
@@ -546,6 +548,16 @@ function shownAt(effectKey, row, col) {
 }
 
 // How far along its slide a minion (or the player) is at `now`, as a place in tiles.
+// Where the player's step slide has them at `now`: their tile once it has
+// landed. A bump doesn't count, so the camera following this never nudges.
+function walkAt(now) {
+  const f = state.floor;
+  const fx = effects.get(PLAYER);
+  const tile = { row: f.playerRow, col: f.playerCol };
+  if (!fx || fx.kind !== 'slide' || fx.to.row !== tile.row || fx.to.col !== tile.col || now - fx.start >= fx.ms) return tile;
+  return slidePlace(fx, now);
+}
+
 function slidePlace(fx, now) {
   const s = EASE(Math.min(1, Math.max(0, (now - fx.start) / fx.ms)));
   return { row: fx.from.row + (fx.to.row - fx.from.row) * s, col: fx.from.col + (fx.to.col - fx.from.col) * s };

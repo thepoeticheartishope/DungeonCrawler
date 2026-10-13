@@ -82,10 +82,11 @@ let holdTimer = null;
 
 // Wires the d-pad's arrows (`buttons`, by SCREEN_WAYS name): they step on
 // press and repeat while held, each the way screenStep gives for 8 ways or
-// 4 (`eightWays()`). The centre is wired by initLookStick. `canWalk()` says
+// 4 (`eightWays()`), the next step `repeatMs(dRow, dCol)` after the last
+// (walkpace.js: longer steps on screen wait longer). The centre is wired by initLookStick. `canWalk()` says
 // whether the room screen is taking moves right now; the repeat stops as soon
 // as it isn't (a fight opened, the floor changed, the run ended).
-export function initDpad({ buttons, movePlayer, canWalk, eightWays }) {
+export function initDpad({ buttons, movePlayer, canWalk, eightWays, repeatMs = () => DPAD_HOLD_REPEAT_MS }) {
   for (const [dir, [sx, sy]] of Object.entries(SCREEN_WAYS)) {
     const btn = buttons[dir];
     let pressed = false; // a pointer press already stepped; skip the click that follows it
@@ -93,6 +94,7 @@ export function initDpad({ buttons, movePlayer, canWalk, eightWays }) {
       const grid = screenStep(sx, sy, eightWays());
       if (btn.disabled || !grid || !canWalk()) { stopHold(); return; }
       movePlayer(grid[0], grid[1]);
+      return grid;
     };
     btn.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
@@ -101,8 +103,8 @@ export function initDpad({ buttons, movePlayer, canWalk, eightWays }) {
       stopHold();
       step();
       holdTimer = setTimeout(function repeat() {
-        step();
-        if (holdTimer !== null) holdTimer = setTimeout(repeat, DPAD_HOLD_REPEAT_MS);
+        const grid = step();
+        if (holdTimer !== null) holdTimer = setTimeout(repeat, grid ? repeatMs(grid[0], grid[1]) : DPAD_HOLD_REPEAT_MS);
       }, DPAD_HOLD_DELAY_MS);
     });
     ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => btn.addEventListener(type, stopHold));
