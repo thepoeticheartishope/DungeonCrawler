@@ -195,6 +195,7 @@ export function spawnMinion(spot, minionKind = 'SHARD') {
     trail: [],
     track: 0,      // turns it keeps tracking the player with no sight of them (0: never saw them, or lost them); combat.js notice
     drawn: false,  // it can see the player's light this turn
+    gaze: 0,       // ms of the player's light on it so far, toward GAZE_MS (gaze.js)
   };
   state.floor.minions.push(m);
   return m;

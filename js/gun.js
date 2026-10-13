@@ -246,6 +246,8 @@ export function fire(target) {
   const reason = fireBlock(target);
   if (reason) return [{ type: 'fireBlocked', target, reason }];
   if (shootingDark()) return fireDark();
+  // Combat with it has begun: its eye shuts (gaze.js).
+  if (target) target.gaze = 0;
   const weak = weaknessOf(target.minionKind);
   const round = spendRound(weak);
   const events = [{ type: 'shotFired', target }];
@@ -275,6 +277,7 @@ export function fire(target) {
 // hunterStaggered.
 function fireDark() {
   const { target, end } = darkShotPath();
+  if (target) target.gaze = 0;
   const round = spendRound();
   const events = [{ type: 'shotFired', target, dark: true, end }];
   if (target && target.kind === 'hunter') {

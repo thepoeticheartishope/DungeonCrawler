@@ -5,7 +5,7 @@ import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
-  LOOK_NUDGE, LOOK_POINTER_DEAD,
+  LOOK_NUDGE, LOOK_POINTER_DEAD, GAZE_POLL_MS, GAZE_STEP_MS,
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -40,6 +40,7 @@ import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, SCREEN_WAYS, screenStep, arrowChord } from './dpad.js';
 import { aimLook, turnBody, wantsTurn, lookAngle } from './look.js';
 import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
+import { tickGaze } from './gaze.js';
 import { computeVisibility } from './sight.js';
 import { isoAngleOf } from './isoview.js';
 import { buy } from './exchange.js';
@@ -1005,6 +1006,31 @@ function clockTick() {
 }
 setInterval(clockTick, REALTIME_POLL_MS);
 
+// The eye's clock (gaze.js, light battery plan step E): real time, in turn
+// mode too, paused wherever the real-time clock is (a panel over the map,
+// the battle screen, the DEV panel, a hidden tab) and while a turn plays
+// out. A long gap (a slow tab) counts as one poll at most.
+let gazeAt = performance.now();
+function gazeMayRun() {
+  return !state.run.runEnded && !state.run.turnLocked && !document.hidden &&
+    roomScreen.classList.contains('show') && !mapPanelShown() && !devPanel.classList.contains('show');
+}
+function gazeTick() {
+  const now = performance.now();
+  const dt = Math.min(now - gazeAt, GAZE_POLL_MS * 2);
+  gazeAt = now;
+  if (!gazeMayRun() || state.floor.playerRow === undefined) return;
+  const events = tickGaze(dt);
+  if (events.length) {
+    computeVisibility();
+    const note = drawEvents([...events, ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
+    showRoomNote(note.cls, note.text);
+  } else if (state.floor.minions.some(m => m.gaze > 0)) {
+    requestMapDraw();
+  }
+}
+setInterval(gazeTick, GAZE_POLL_MS);
+
 // Draws a list of rule events, in order, then redraws the HUD, fog, eye
 // and targeting once. Returns the room note the events add up to
 // ({ cls, text }, text in event order); the caller decides whether to show it.
@@ -1104,6 +1130,16 @@ function drawEvents(events) {
         break;
       case 'hunterWoke':
         parts.push(t('room.hunter.wakes'));
+        cls = 'warn-msg';
+        break;
+      // The eye (gaze.js): full, it steps closer, or stares from beside the player.
+      case 'gazeStep':
+        slideOnMap(e.minion, e.from, GAZE_STEP_MS);
+        parts.push(t('room.gaze.step'));
+        cls = 'warn-msg';
+        break;
+      case 'gazeStare':
+        parts.push(t('room.gaze.stare'));
         cls = 'warn-msg';
         break;
       // The player's light (battery.js).

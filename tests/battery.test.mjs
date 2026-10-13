@@ -4,7 +4,7 @@
 // when switched off by hand, is full on every floor, and is out of play in
 // Comfort mode. With the light off only the small circle is lit.
 // Step B: the stick men notice the light (combat.js notice). Step C: shots
-// in the dark (gun.js fireDark).
+// in the dark (gun.js fireDark). Step E: the eye (gaze.js).
 //
 // Run: node --test tests/*.test.mjs
 //
@@ -15,7 +15,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
-import { LIGHT_BATTERY_MAX, PLAYER_LIGHT_RADIUS, MINION_TRACK_TURNS, DAMAGE_BAR_DEPTHS } from '../js/config.js';
+import { LIGHT_BATTERY_MAX, PLAYER_LIGHT_RADIUS, MINION_TRACK_TURNS, DAMAGE_BAR_DEPTHS, GAZE_MS } from '../js/config.js';
+import { tickGaze } from '../js/gaze.js';
 import { fire, fireBlock, settleShot, darkShotPath } from '../js/gun.js';
 import { freshLight, lightOn, tickLight, toggleLight, turnsToFull } from '../js/battery.js';
 import { computeVisibility, inLookCone, shootBlock } from '../js/sight.js';
@@ -36,6 +37,7 @@ function resetFloor(size = 21) {
   state.settings.eightWays = true;
   state.settings.lightBattery = true;
   state.settings.simpleEnemies = false;
+  state.settings.gaze = true;
   state.floor.darkness = false;
   state.floor.darkTurns = 0;
   state.floor.light = freshLight();
@@ -302,4 +304,92 @@ test('with the light on, a shot still needs a target in the cone', () => {
   computeVisibility();
   assert.deepEqual(fire(null).map(e => [e.type, e.reason]), [['fireBlocked', 'noTarget']]);
   assert.equal(state.run.energy, 2);
+});
+
+// --- Step E: the eye (gaze.js) ---
+
+test('the eye adds up over every look, never runs down, and at 3 s the stick man steps closer', () => {
+  resetFloor();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  const m = spawnMinion({ row: pr - 3, col: pc });
+  const turns = state.run.turnCount;
+  const charge = state.floor.light.charge;
+  assert.deepEqual(tickGaze(GAZE_MS / 2), []);
+  assert.equal(m.gaze, GAZE_MS / 2);
+  state.floor.facing = 'S'; // turn away
+  state.floor.look = Math.PI;
+  computeVisibility();
+  tickGaze(GAZE_MS * 2);
+  assert.equal(m.gaze, GAZE_MS / 2, 'out of the light it holds, not runs down');
+  state.floor.facing = 'N';
+  state.floor.look = 0;
+  computeVisibility();
+  const events = tickGaze(GAZE_MS / 2);
+  assert.deepEqual(events.map(e => e.type), ['gazeStep']);
+  assert.deepEqual(at(m), { row: pr - 2, col: pc });
+  assert.deepEqual(events[0].from, { row: pr - 3, col: pc });
+  assert.equal(m.gaze, 0, 'the eye shuts again');
+  assert.equal(m.track, MINION_TRACK_TURNS);
+  assert.equal(state.run.turnCount, turns, 'not a turn');
+  assert.equal(state.floor.light.charge, charge, 'no battery spent');
+});
+
+test('only the cone counts, not the small circle; the light off counts nothing', () => {
+  resetFloor();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  const behind = spawnMinion({ row: pr + 1, col: pc });
+  const ahead = spawnMinion({ row: pr - 3, col: pc });
+  tickGaze(1000);
+  assert.equal(behind.gaze, 0);
+  assert.equal(ahead.gaze, 1000);
+  toggleLight();
+  computeVisibility();
+  tickGaze(1000);
+  assert.equal(ahead.gaze, 1000);
+});
+
+test('a full eye beside the player only stares, and never steps onto them', () => {
+  resetFloor();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  const m = spawnMinion({ row: pr - 1, col: pc });
+  const events = tickGaze(GAZE_MS);
+  assert.deepEqual(events.map(e => e.type), ['gazeStare']);
+  assert.deepEqual(at(m), { row: pr - 1, col: pc });
+  assert.equal(m.track, MINION_TRACK_TURNS);
+});
+
+test('firing at a stick man shuts its eye, in the light or the dark', () => {
+  resetFloor();
+  state.settings.gunCombat = true;
+  state.run.energy = 2;
+  state.run.rounds = [null, null];
+  state.run.weakTo = {};
+  state.battle.aim = null;
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  const m = spawnMinion({ row: pr - 2, col: pc });
+  m.gaze = 2000;
+  fire(m);
+  assert.equal(m.gaze, 0);
+  state.battle.aim = null;
+  m.gaze = 2000;
+  toggleLight();
+  computeVisibility();
+  fire(null);
+  assert.equal(m.gaze, 0);
+});
+
+test('no eye in Comfort mode, with DEV -> Gaze off, or on the hunter', () => {
+  for (const flip of [() => { state.settings.simpleEnemies = true; }, () => { state.settings.gaze = false; }]) {
+    resetFloor();
+    const m = spawnMinion({ row: state.floor.playerRow - 3, col: state.floor.playerCol });
+    flip();
+    assert.deepEqual(tickGaze(GAZE_MS * 2), []);
+    assert.equal(m.gaze, 0);
+    state.settings.gaze = true;
+  }
+  resetFloor();
+  const hunter = spawnMinion({ row: state.floor.playerRow - 3, col: state.floor.playerCol }, null);
+  hunter.kind = 'hunter';
+  tickGaze(GAZE_MS * 2);
+  assert.equal(hunter.gaze, 0);
 });
