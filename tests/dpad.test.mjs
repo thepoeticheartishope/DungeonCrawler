@@ -30,14 +30,17 @@ test('4 ways: the turned pad and the keys walk as before, diagonals do nothing',
   assert.equal(screenStep(1, -1, false), null);
 });
 
-// A chord with a hand-run timer: `flush()` plays the wait out.
-function chord() {
+// A chord with a hand-run timer: `flush()` plays the next wait out, and
+// `dueIn()` says how long it was set for. Each step asks 100 ms to the
+// next held step; the first held step comes 300 ms after the press.
+function chord({ readyIn = () => 0 } = {}) {
   const steps = [];
   let due = null;
-  const timers = { set: (fn) => { due = fn; return 1; }, clear: () => { due = null; } };
-  const c = arrowChord((sx, sy) => steps.push([sx, sy]), 60, timers);
-  const flush = () => { const fn = due; due = null; if (fn) fn(); };
-  return { c, steps, flush, waiting: () => due !== null };
+  let dueMs = null;
+  const timers = { set: (fn, ms) => { due = fn; dueMs = ms; return 1; }, clear: () => { due = null; dueMs = null; } };
+  const c = arrowChord((sx, sy) => { steps.push([sx, sy]); return 100; }, { waitMs: 60, holdMs: 300, readyIn, timers });
+  const flush = () => { const fn = due; due = null; dueMs = null; if (fn) fn(); };
+  return { c, steps, flush, waiting: () => due !== null, dueIn: () => dueMs };
 }
 
 test('one arrow steps once the wait is over', () => {
@@ -49,11 +52,11 @@ test('one arrow steps once the wait is over', () => {
 });
 
 test('two arrows together step the diagonal at once', () => {
-  const { c, steps, waiting } = chord();
+  const { c, steps, dueIn } = chord();
   c.down('U', false);
   c.down('R', false);
   assert.deepEqual(steps, [[1, -1]]);
-  assert.equal(waiting(), false);
+  assert.equal(dueIn(), 300, 'no chord wait left, only the held step to come');
 });
 
 test('a pair released inside the wait still steps the diagonal', () => {
@@ -75,23 +78,64 @@ test('a single arrow released inside the wait still steps', () => {
   assert.deepEqual(steps, [[0, 1]]);
 });
 
-test('held arrows repeat the held combination; opposites cancel', () => {
-  const { c, steps, flush } = chord();
+test('held arrows walk on their own beat, whatever is held at each step; opposites cancel', () => {
+  const { c, steps, flush, dueIn } = chord();
   c.down('U', false);
   flush();
-  c.down('L', false);
+  assert.deepEqual(steps, [[0, -1]]);
+  assert.equal(dueIn(), 300, 'the first held step waits the hold delay');
+  c.down('U', true);
+  c.down('U', true);
+  assert.equal(steps.length, 1, 'the keyboard\'s own repeat adds no steps');
   flush();
-  assert.deepEqual(steps.at(-1), [-1, -1], 'a second arrow joins the one held');
-  c.down('L', true);
-  assert.deepEqual(steps.at(-1), [-1, -1], 'a repeat walks what is held');
-  c.up('U');
-  c.down('L', true);
-  assert.deepEqual(steps.at(-1), [-1, 0]);
+  assert.deepEqual(steps.at(-1), [0, -1]);
+  assert.equal(dueIn(), 100, 'then each step sets the next');
   const before = steps.length;
   c.reset();
   c.down('U', false);
   c.down('D', false);
   assert.equal(steps.length, before, 'up with down goes nowhere');
+});
+
+test('letting go of one of two held arrows keeps walking with the other', () => {
+  const { c, steps, flush } = chord();
+  c.down('U', false);
+  c.down('L', false);
+  assert.deepEqual(steps, [[-1, -1]]);
+  c.up('L');
+  flush();
+  assert.deepEqual(steps.at(-1), [0, -1], 'still walking up');
+  c.up('U');
+  assert.equal(steps.length, 2);
+  flush();
+  assert.equal(steps.length, 2, 'nothing held, no more steps');
+});
+
+test('an arrow pressed while walking joins at the next step, adding none of its own', () => {
+  let ready = 80;
+  const { c, steps, flush, dueIn } = chord({ readyIn: () => ready });
+  c.down('U', false);
+  flush();
+  c.down('R', false);
+  assert.equal(steps.length, 1, 'no step on the press');
+  assert.equal(dueIn(), 80, 'it waits for the last step to land');
+  flush();
+  assert.deepEqual(steps.at(-1), [1, -1]);
+  ready = 0;
+  c.up('R');
+  c.down('L', false);
+  assert.equal(dueIn(), 60, 'never sooner than the chord\'s wait');
+});
+
+test('a step that returns null stops the held walk until a fresh press', () => {
+  const steps = [];
+  const set = [];
+  const timers = { set: (fn) => { set.push(fn); return set.length; }, clear: () => {} };
+  const c = arrowChord((sx, sy) => { steps.push([sx, sy]); return null; }, { waitMs: 60, timers });
+  c.down('D', false);
+  set[0]();
+  assert.deepEqual(steps, [[0, 1]]);
+  assert.equal(set.length, 1, 'no held step was set');
 });
 
 // --- The look stick's taps and holds (dpad.js stickGestures, light

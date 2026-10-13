@@ -40,9 +40,14 @@ export function noteStep(dRow, dCol, now) {
   lastStep = { at: now, wait: repeatMs(dRow, dCol) };
 }
 
-// Whether a held key may step again at `now`: its last step has landed.
-// A fresh press never waits.
+// How long, from `now`, until a held key may step again: 0 once its last
+// step has landed. A fresh press never waits.
+export function heldStepWait(now) {
+  if (!state.settings.smoothWalk || !lastStep) return 0;
+  return Math.max(0, lastStep.at + lastStep.wait - now);
+}
+
+// Whether a held key may step again at `now`.
 export function heldStepReady(now) {
-  if (!state.settings.smoothWalk || !lastStep) return true;
-  return now - lastStep.at >= lastStep.wait;
+  return heldStepWait(now) === 0;
 }

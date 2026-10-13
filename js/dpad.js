@@ -30,50 +30,77 @@ export function screenStep(sx, sy, eightWays) {
 // The arrow keys' chord (eight ways plan, call 5): two arrows pressed
 // together walk a diagonal. After a first arrow it waits `waitMs` for a
 // second; a second arrow inside that wait steps at once, and an arrow
-// released inside it still counts. A key's own repeat (held down) steps
-// whatever arrows are held. Up with down, or left with right, cancel out.
-// `step(sx, sy)` walks; `timers` stands in for setTimeout / clearTimeout
-// in tests. Returns { down(way, repeat), up(way), reset() }, ways being
-// 'U', 'D', 'L' or 'R'.
-export function arrowChord(step, waitMs = KEY_CHORD_MS, timers = { set: (fn, ms) => setTimeout(fn, ms), clear: id => clearTimeout(id) }) {
+// released inside it still counts. Up with down, or left with right,
+// cancel out. Held arrows walk on a beat of their own, like a held d-pad
+// way (smooth walk), not on the keyboard's repeat, which only repeats the
+// last key pressed: the first held step comes `holdMs` after the press,
+// each one walks whatever arrows are held then, letting one of two go
+// keeps walking with the other, and an arrow pressed while walking joins
+// at the next step, once the last has landed (`readyIn()` ms from now), so
+// it never adds a step of its own. `step(sx, sy)` walks and returns the ms
+// to the next held step, or null to stop until a fresh press. `timers`
+// stands in for setTimeout / clearTimeout in tests. Returns
+// { down(way, repeat), up(way), reset() }, ways being 'U', 'D', 'L' or 'R'.
+export function arrowChord(step, {
+  waitMs = KEY_CHORD_MS, holdMs = DPAD_HOLD_DELAY_MS, readyIn = () => 0,
+  timers = { set: (fn, ms) => setTimeout(fn, ms), clear: id => clearTimeout(id) },
+} = {}) {
   const held = new Set();
   let pending = null; // arrows pressed inside the wait
-  let timer = null;
+  let timer = null;   // the wait's end, or the next held step
+  const later = (fn, ms) => {
+    if (timer) timers.clear(timer);
+    timer = timers.set(fn, ms);
+  };
+  const stop = () => {
+    if (timer) timers.clear(timer);
+    timer = null;
+    pending = null;
+  };
+  // Walks `ways`; the ms to the next held step, or null to stop.
   const walk = (ways) => {
     const sx = (ways.has('R') ? 1 : 0) - (ways.has('L') ? 1 : 0);
     const sy = (ways.has('D') ? 1 : 0) - (ways.has('U') ? 1 : 0);
-    if (sx || sy) step(sx, sy);
+    if (!sx && !sy) return DPAD_HOLD_REPEAT_MS;
+    const next = step(sx, sy);
+    return next === undefined ? DPAD_HOLD_REPEAT_MS : next;
+  };
+  const beat = () => {
+    timer = null;
+    if (!held.size) return;
+    const next = walk(held);
+    if (next !== null) later(beat, next);
   };
   const fire = () => {
     const ways = new Set([...pending, ...held]);
     timer = null;
     pending = null;
-    walk(ways);
+    if (walk(ways) !== null && held.size) later(beat, holdMs);
   };
   return {
     down(way, repeat) {
       held.add(way);
-      if (repeat) {
-        if (!timer) walk(held);
-        return;
-      }
-      if (timer) {
+      if (repeat) return; // the beat walks what is held
+      if (pending) {
         pending.add(way);
         timers.clear(timer);
         fire();
         return;
       }
+      if (timer) {
+        later(beat, Math.max(waitMs, readyIn()));
+        return;
+      }
       pending = new Set([way]);
-      timer = timers.set(fire, waitMs);
+      later(fire, waitMs);
     },
     up(way) {
       held.delete(way);
+      if (!held.size && !pending) stop();
     },
     reset() {
       held.clear();
-      if (timer) timers.clear(timer);
-      timer = null;
-      pending = null;
+      stop();
     },
   };
 }
