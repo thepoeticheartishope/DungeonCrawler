@@ -13,6 +13,14 @@ DIFFICULTIES = {'easy', 'medium', 'hard'}
 EXPLICIT = re.compile(r'\b(sex|sexual|rape[sd]?|incest\w*|adulter\w*|fornicat\w*|harlot\w*|whore\w*|prostitut\w*)\b', re.I)
 SUBJECT = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
 VERSE_ADDRESS = re.compile(r'^(\d )?[A-Za-z]+( of [A-Za-z]+)? \d+(:\d+(-\d+)?)?$')
+# A CompTIA question's category is the exam domain its objective belongs to,
+# read from its source ("220-1201 2.5 · Lesson 5B" -> domain 2, Networking).
+# Add an exam here before its first question goes in.
+COMPTIA_DOMAINS = {
+    '220-1201': {'1': 'Mobile Devices', '2': 'Networking', '3': 'Hardware',
+                 '4': 'Virtualization & Cloud', '5': 'Troubleshooting'},
+}
+COMPTIA_SOURCE = re.compile(r'^(\d{3}-\d{4}) (\d+)\.\d+ · Lesson \d+[A-Z]$')
 
 errors = []
 answers_by_subject = {}  # subject -> {(answer, answerType)}
@@ -24,6 +32,7 @@ for set_info in manifest:
     if not isinstance(subject, str) or not SUBJECT.match(subject):
         errors.append(f'lists/manifest.json {set_info["id"]}: "subject" must be a lowercase name like "bible" or "comptia-aplus", got {subject!r}')
     is_bible = subject == 'bible'
+    is_comptia = subject.startswith('comptia')
     seen = {}
     subject_answers = answers_by_subject.setdefault(subject, set())
     for i, e in enumerate(data):
@@ -58,6 +67,15 @@ for set_info in manifest:
             err(f'verse answer {e.get("meaning")!r} is not an address like "Micah 1:1"')
         if 'draft' in e and e['draft'] is not True:
             err('"draft" must be true when present')
+        if is_comptia:
+            source = COMPTIA_SOURCE.match(str(e.get('source', '')))
+            domains = COMPTIA_DOMAINS.get(source.group(1), {}) if source else {}
+            if not source:
+                err(f'source {e.get("source")!r} is not like "220-1201 2.5 · Lesson 5B"')
+            elif source.group(2) not in domains:
+                err(f'no domain {source.group(2)} for exam {source.group(1)} in COMPTIA_DOMAINS')
+            elif e.get('category') != domains[source.group(2)]:
+                err(f'category {e.get("category")!r} should be {domains[source.group(2)]!r} (domain {source.group(2)})')
         if is_bible:
             if not isinstance(e.get('fact'), bool):
                 err('missing "fact": true/false (run python3 tools/fact_check.py)')
