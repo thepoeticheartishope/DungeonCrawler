@@ -60,6 +60,11 @@
 //      ready." and a stick man, shot dead (Auto-win stops the bar);
 //      its key opens the door, and through it the opening rest starts
 //      with the run's numbers fresh (2 energy), the name kept and the toggle off.
+//   9. Answer line run (answer swirl plan step A): Reveal on, Auto-win off,
+//      minigames off; a reload from an energy cell answered wrong puts the
+//      right answer over the map (#answerNote); a Real-time-free wait
+//      fades it and takes it off the map. Then the same miss with Reveal
+//      off shows nothing.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -1242,6 +1247,93 @@ async function runTutorial(browser, url) {
 // Runs one smoke run. A throw (a Playwright timeout, say) becomes that
 // run's FAIL with its first stack line, so it is named in the report and
 // the runs after it still go.
+// ---- Run 9: the answer line ----
+
+// One miss on a reload: bumps an energy cell, picks the plain reload (1)
+// and answers it wrong (a wrong option, or a typed answer that can't be
+// right). Returns the right answer, or null if no cell could be bumped.
+async function missReload(page) {
+  if (!await bumpEnergyCell(page)) return null;
+  await page.waitForSelector('#reloadPanel:not([hidden])', { timeout: 5000 });
+  await page.keyboard.press('1');
+  await page.waitForSelector('#askQuestionPanel:not([hidden])', { timeout: 5000 });
+  return page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const right = state.battle.currentQuestion.meaning;
+    const wrong = [...document.querySelectorAll('#askQuestionPanel .mc-option')]
+      .find(b => b.offsetParent && b.querySelector('.opt-text').textContent !== right);
+    if (wrong) wrong.click();
+    else {
+      const input = document.getElementById('answerInput');
+      input.value = 'zzzz';
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    }
+    return right;
+  });
+}
+
+// What the answer line shows: its text, and whether it is on the map and lit.
+function answerLine(page) {
+  return page.evaluate(() => {
+    const el = document.getElementById('answerNote');
+    return { text: el.textContent, onMap: !el.hidden, lit: el.classList.contains('show') };
+  });
+}
+
+async function checkAnswerLine(page, url, reveal) {
+  await loadPageAndSet(page, url);
+  if (reveal) await page.check('#revealToggle');
+  else await page.uncheck('#revealToggle');
+  await startGameAndWaitForRoom(page);
+  await page.click('#devToggleBtn');
+  await page.waitForSelector('#devPanel.show', { timeout: 5000 });
+  await page.click('#devSkipBtn');
+  await page.click('#devLightBatteryBtn');
+  await page.click('#devToggleBtn');
+  await page.evaluate(async () => { (await import('./js/state.js')).state.settings.minigame = 'off'; });
+  await page.waitForTimeout(200);
+
+  const right = await missReload(page);
+  if (right === null) return { skipped: 'no energy cell to bump' };
+  await page.waitForSelector('#askQuestionPanel', { state: 'hidden', timeout: 5000 });
+  await page.waitForTimeout(300);
+  const shown = await answerLine(page);
+  if (!reveal) return shown.onMap ? 'the answer showed with Reveal off' : { detail: 'no line with Reveal off' };
+  if (!shown.onMap || !shown.lit) return 'no answer line after a miss';
+  if (shown.text !== right) return `the line says "${shown.text}", the answer is "${right}"`;
+
+  await page.waitForTimeout(1500);
+  if (!(await answerLine(page)).lit) return 'the line went before the player moved';
+  await page.keyboard.press('.');
+  await page.waitForTimeout(200);
+  if ((await answerLine(page)).lit) return 'a wait did not fade the line';
+  const fade = await page.evaluate(async () => (await import('./js/config.js')).ANSWER_LINE_FADE_MS);
+  await page.waitForTimeout(fade + 300);
+  if ((await answerLine(page)).onMap) return 'the line stayed on the map after its fade';
+  return { detail: `"${right}" showed until a wait, then faded` };
+}
+
+async function runAnswerLine(browser, url) {
+  const results = [];
+  for (const reveal of [true, false]) {
+    const page = await browser.newPage();
+    const errors = collectErrors(page);
+    // A cell may sit where it can't be bumped from the south; a new run
+    // lays the floor out again.
+    let res;
+    for (let tries = 0; tries < 4; tries++) {
+      res = await checkAnswerLine(page, url, reveal);
+      if (!res || !res.skipped) break;
+    }
+    await page.close();
+    if (typeof res === 'string') return { ok: false, reason: res, ...errors };
+    if (res.skipped) return { ok: false, reason: res.skipped, ...errors };
+    if (errors.consoleErrors.length || errors.pageErrors.length) return { ok: false, reason: 'errors on the page', ...errors };
+    results.push(res.detail);
+  }
+  return { ok: true, detail: results.join('; '), consoleErrors: [], pageErrors: [] };
+}
+
 async function guarded(run, browser, url) {
   try {
     return await run(browser, url);
@@ -1280,11 +1372,12 @@ async function main() {
       const eightWaysResult = await guarded(runEightWays, browser, url);
       const lightBatteryResult = await guarded(runLightBattery, browser, url);
       const tutorialResult = await guarded(runTutorial, browser, url);
+      const answerLineResult = await guarded(runAnswerLine, browser, url);
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult], ['tutorial', tutorialResult]]) {
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult], ['tutorial', tutorialResult], ['answer line', answerLineResult]]) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {
