@@ -161,6 +161,9 @@ export const TEXT = {
   'type.tool': 'Tools', // draft
   'type.networkType': 'Network types', // draft
   'type.record': 'DNS records', // draft
+  'type.standard': 'Standards', // draft
+  'type.config': 'Network setup', // draft
+  'type.connection': 'Connections', // draft
 
   // ---- Question modifiers: name, the tag beside a category, its tooltip ----
   // Tags are one whole word (Timothy: players didn't understand the old

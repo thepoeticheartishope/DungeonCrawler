@@ -381,5 +381,325 @@
     "source": "220-1201 2.8",
     "answerType": "tool",
     "image": "images/wifi-analyzer.svg"
+  },
+  {
+    "term": "Which TCP port does an FTP client open first, to send its commands?",
+    "meaning": "21",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.1",
+    "answerType": "port"
+  },
+  {
+    "term": "Which TCP port does a Telnet server wait on by default?",
+    "meaning": "23",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.1",
+    "answerType": "port"
+  },
+  {
+    "term": "Which TCP port carries Windows file and printer sharing (SMB)?",
+    "meaning": "445",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.1",
+    "answerType": "port"
+  },
+  {
+    "term": "Which old protocol uploads and downloads files with no encryption, using one channel for commands and another for data?",
+    "meaning": "FTP",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.1",
+    "answerType": "protocol"
+  },
+  {
+    "term": "Which protocol lets Windows computers share folders and printers with each other?",
+    "meaning": "SMB",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.1",
+    "answerType": "protocol"
+  },
+  {
+    "term": "Which mail protocol leaves messages on the server so a phone and a laptop see the same inbox?",
+    "meaning": "IMAP",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.1",
+    "answerType": "protocol"
+  },
+  {
+    "term": "Which transport protocol opens a connection with SYN, SYN/ACK and ACK before any data moves?",
+    "meaning": "TCP",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.1",
+    "answerType": "protocol"
+  },
+  {
+    "term": "Which transport protocol sends data with no handshake and no check that it arrived?",
+    "meaning": "UDP",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.1",
+    "answerType": "protocol"
+  },
+  {
+    "term": "Which 802.11 standard is sold as Wi-Fi 6?",
+    "meaning": "802.11ax",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.2",
+    "answerType": "standard"
+  },
+  {
+    "term": "Which 802.11 standard, now called Wi-Fi 4, can use both the 2.4 and 5 GHz bands?",
+    "meaning": "802.11n",
+    "category": "Networking",
+    "difficulty": "hard",
+    "source": "220-1201 2.2",
+    "answerType": "standard"
+  },
+  {
+    "term": "Which short-range radio standard links a phone to wireless headphones?",
+    "meaning": "Bluetooth",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.2",
+    "answerType": "standard"
+  },
+  {
+    "term": "Which wireless tech lets you pay by holding a phone a few centimeters from a card reader?",
+    "meaning": "NFC",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.2",
+    "answerType": "standard"
+  },
+  {
+    "term": "Which wireless tech tracks parcels with sticker tags that need no battery?",
+    "meaning": "RFID",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.2",
+    "answerType": "standard"
+  },
+  {
+    "term": "Which PoE standard, known as PoE+, lets a device draw about 25 W?",
+    "meaning": "802.3at",
+    "category": "Networking",
+    "difficulty": "hard",
+    "source": "220-1201 2.5",
+    "answerType": "standard"
+  },
+  {
+    "term": "Which PoE standard, known as PoE++, supplies the most power, up to about 73 W?",
+    "meaning": "802.3bt",
+    "category": "Networking",
+    "difficulty": "hard",
+    "source": "220-1201 2.5",
+    "answerType": "standard"
+  },
+  {
+    "term": "How many 2.4 GHz Wi-Fi channels can run side by side without overlapping?",
+    "meaning": "3",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.2",
+    "answerType": "number"
+  },
+  {
+    "term": "How many bits long is an IPv4 address?",
+    "meaning": "32",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.6",
+    "answerType": "number"
+  },
+  {
+    "term": "How many bits long is an IPv6 address?",
+    "meaning": "128",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.6",
+    "answerType": "number"
+  },
+  {
+    "term": "Which server gathers log messages from routers, switches and servers in one place?",
+    "meaning": "Syslog server",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.3",
+    "answerType": "device"
+  },
+  {
+    "term": "Which server checks logins for every switch, access point and VPN server, so each device needn't store them?",
+    "meaning": "AAA server",
+    "category": "Networking",
+    "difficulty": "hard",
+    "source": "220-1201 2.3",
+    "answerType": "device"
+  },
+  {
+    "term": "Which appliance shares incoming client requests across a farm of servers?",
+    "meaning": "Load balancer",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.3",
+    "answerType": "device"
+  },
+  {
+    "term": "Which single appliance does the work of several security tools, with one place to set rules and read reports?",
+    "meaning": "UTM",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.3",
+    "answerType": "device"
+  },
+  {
+    "term": "Which appliance filters junk email before it reaches users' inboxes?",
+    "meaning": "Spam gateway",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.3",
+    "answerType": "device"
+  },
+  {
+    "term": "Which kind of system runs industrial plants such as power and water works?",
+    "meaning": "SCADA",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.3",
+    "answerType": "device"
+  },
+  {
+    "term": "Which device lets wireless clients join a wired network?",
+    "meaning": "Access point",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.5",
+    "answerType": "device"
+  },
+  {
+    "term": "Which device adds power to an Ethernet link when the switch can't supply PoE?",
+    "meaning": "PoE injector",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.5",
+    "answerType": "device"
+  },
+  {
+    "term": "Which device copies every frame on a cable to a monitor port for a packet analyzer?",
+    "meaning": "Network tap",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.8",
+    "answerType": "tool"
+  },
+  {
+    "term": "What is the range of addresses a DHCP server may hand out?",
+    "meaning": "Scope",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.4",
+    "answerType": "config"
+  },
+  {
+    "term": "Which DHCP setting gives the same IP address to one MAC address every time?",
+    "meaning": "Reservation",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.4",
+    "answerType": "config"
+  },
+  {
+    "term": "Which managed-switch feature splits one switch into separate logical networks?",
+    "meaning": "VLAN",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.4",
+    "answerType": "config"
+  },
+  {
+    "term": "Which feature builds an encrypted tunnel over the internet into an office network?",
+    "meaning": "VPN",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.4",
+    "answerType": "config"
+  },
+  {
+    "term": "What does Windows call it when a host picks itself a 169.254.x.x address because no DHCP server answered?",
+    "meaning": "APIPA",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.6",
+    "answerType": "config"
+  },
+  {
+    "term": "Which setting holds the router address a host uses to reach other networks?",
+    "meaning": "Default gateway",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.6",
+    "answerType": "config"
+  },
+  {
+    "term": "Which setting shows which bits of an IPv4 address are the network ID?",
+    "meaning": "Subnet mask",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.6",
+    "answerType": "config"
+  },
+  {
+    "term": "Which internet connection runs over the copper phone line and is often faster down than up?",
+    "meaning": "DSL",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.7",
+    "answerType": "connection"
+  },
+  {
+    "term": "Which internet connection comes in over the TV provider's coax?",
+    "meaning": "Cable",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.7",
+    "answerType": "connection"
+  },
+  {
+    "term": "Which internet connection has high latency because the signal goes to orbit and back?",
+    "meaning": "Satellite",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.7",
+    "answerType": "connection"
+  },
+  {
+    "term": "Which internet connection uses a mobile carrier's 4G or 5G network?",
+    "meaning": "Cellular",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.7",
+    "answerType": "connection"
+  },
+  {
+    "term": "Which kind of provider links homes to the internet with a fixed directional antenna on the roof?",
+    "meaning": "WISP",
+    "category": "Networking",
+    "difficulty": "medium",
+    "source": "220-1201 2.7",
+    "answerType": "connection"
+  },
+  {
+    "term": "Which internet connection sends light through glass strands right up to the building?",
+    "meaning": "Fiber",
+    "category": "Networking",
+    "difficulty": "easy",
+    "source": "220-1201 2.7",
+    "answerType": "connection"
   }
 ]

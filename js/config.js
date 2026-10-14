@@ -82,6 +82,9 @@ export const ANSWER_TYPE_GROUPS = {
   tool: 'noun',        // "Crimper", "Toner probe"
   networkType: 'noun', // "PAN", "WAN"
   record: 'noun',      // a DNS record type: "AAAA", "MX"
+  standard: 'noun',    // a named standard: "802.11ax", "802.3at", "Bluetooth", "NFC"
+  config: 'noun',      // a network setting or feature: "Subnet mask", "VLAN", "Scope"
+  connection: 'noun',  // an internet connection type: "DSL", "Satellite", "WISP"
   port: 'number',      // a port number: "443" (a label, not an amount: PORT_LIKE_TYPES)
   adjective: 'adjective',
   verb: 'verb',
@@ -144,7 +147,10 @@ export const CHOICE_TYPES = {
   device: 'device',
   tool: 'tool',
   networkType: 'networkType',
-  record: 'record'
+  record: 'record',
+  standard: 'standard',
+  config: 'config',
+  connection: 'connection'
 };
 // Choice types that aren't offered on the turn right after the player
 // picked them (when enough other choices remain), so the biggest, most
