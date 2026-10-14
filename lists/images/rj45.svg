@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- an RJ45 plug from the front: eight contacts across its face, the latch on top -->
+  <path d="M46 48 H134 V100 H46 Z" />
+  <path d="M54 54 V70 M63 54 V70 M72 54 V70 M81 54 V70 M90 54 V70 M99 54 V70 M108 54 V70 M117 54 V70" stroke-width="2.5" />
+  <path d="M60 48 L72 30 H112 L120 48" />
+  <path d="M46 84 H134" stroke-width="1.5" />
+</svg>

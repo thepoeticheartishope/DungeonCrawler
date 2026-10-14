@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- an M.2 SSD card from above: long thin board, gold edge contacts split by a key notch at one end, chips, a half-round screw notch at the other -->
+  <path d="M14 44 H176 V58 A8 8 0 0 0 176 74 V88 H14 V70 H24 V62 H14 Z" />
+  <path d="M18 48 V58 M18 74 V84" stroke-width="2" />
+  <path d="M14 44 H30 M14 88 H30" stroke-width="5" />
+  <rect x="42" y="54" width="36" height="24" stroke-width="2" />
+  <rect x="88" y="54" width="36" height="24" stroke-width="2" />
+  <rect x="134" y="56" width="20" height="20" stroke-width="2" />
+</svg>

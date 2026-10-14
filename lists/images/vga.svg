@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- a VGA port from the front: D-shaped shell, fifteen holes in three rows of five, screw posts -->
+  <path d="M40 34 H160 L148 98 H52 Z" />
+  <circle cx="68" cy="50" r="3" /><circle cx="84" cy="50" r="3" /><circle cx="100" cy="50" r="3" /><circle cx="116" cy="50" r="3" /><circle cx="132" cy="50" r="3" />
+  <circle cx="72" cy="66" r="3" /><circle cx="88" cy="66" r="3" /><circle cx="104" cy="66" r="3" /><circle cx="120" cy="66" r="3" /><circle cx="136" cy="66" r="3" />
+  <circle cx="68" cy="82" r="3" /><circle cx="84" cy="82" r="3" /><circle cx="100" cy="82" r="3" /><circle cx="116" cy="82" r="3" /><circle cx="132" cy="82" r="3" />
+  <circle cx="22" cy="66" r="7" /><circle cx="178" cy="66" r="7" />
+</svg>

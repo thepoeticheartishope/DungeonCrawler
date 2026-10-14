@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- an HDMI port from the front: wide shell narrowed at both lower corners, a long tongue inside -->
+  <path d="M30 44 H170 V70 L156 86 H44 L30 70 Z" />
+  <path d="M48 58 H152 V66 H48 Z" stroke-width="2" />
+</svg>

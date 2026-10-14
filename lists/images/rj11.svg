@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- a narrower RJ11 plug from the front: four contacts, the latch on top -->
+  <path d="M64 50 H120 V98 H64 Z" />
+  <path d="M78 56 V72 M88 56 V72 M98 56 V72 M108 56 V72" stroke-width="2.5" />
+  <path d="M74 50 L82 34 H106 L112 50" />
+  <path d="M64 84 H120" stroke-width="1.5" />
+</svg>

@@ -2421,5 +2421,140 @@
     "difficulty": "easy",
     "source": "220-1201 5.6",
     "answerType": "causePrinter"
+  },
+  {
+    "term": "Which connector is shown?",
+    "meaning": "RJ45",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "connector",
+    "image": "images/rj45.svg"
+  },
+  {
+    "term": "Which connector is shown?",
+    "meaning": "RJ11",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector",
+    "image": "images/rj11.svg"
+  },
+  {
+    "term": "Which connector is shown?",
+    "meaning": "F-type",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector",
+    "image": "images/f-type.svg"
+  },
+  {
+    "term": "Which connector is shown?",
+    "meaning": "ST",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.2",
+    "answerType": "connector",
+    "image": "images/st-fiber.svg"
+  },
+  {
+    "term": "Which connector is shown?",
+    "meaning": "LC",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.2",
+    "answerType": "connector",
+    "image": "images/lc-fiber.svg"
+  },
+  {
+    "term": "Which connector is shown?",
+    "meaning": "DB9",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector",
+    "image": "images/db9.svg"
+  },
+  {
+    "term": "Which connector is shown?",
+    "meaning": "Molex",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector",
+    "image": "images/molex.svg"
+  },
+  {
+    "term": "Which connector is shown?",
+    "meaning": "USB Type B",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector",
+    "image": "images/usb-b.svg"
+  },
+  {
+    "term": "Which connector is shown?",
+    "meaning": "USB-C",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "connector",
+    "image": "images/usb-c.svg"
+  },
+  {
+    "term": "Which connector is shown?",
+    "meaning": "Lightning",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector",
+    "image": "images/lightning.svg"
+  },
+  {
+    "term": "Which port is shown?",
+    "meaning": "HDMI",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "interface",
+    "image": "images/hdmi.svg"
+  },
+  {
+    "term": "Which port is shown?",
+    "meaning": "DisplayPort",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "interface",
+    "image": "images/displayport.svg"
+  },
+  {
+    "term": "Which port is shown?",
+    "meaning": "VGA",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "interface",
+    "image": "images/vga.svg"
+  },
+  {
+    "term": "Which port is shown?",
+    "meaning": "DVI",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "interface",
+    "image": "images/dvi.svg"
+  },
+  {
+    "term": "Which SSD form factor is shown?",
+    "meaning": "M.2",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.4",
+    "answerType": "storage",
+    "image": "images/m2-ssd.svg"
   }
 ]

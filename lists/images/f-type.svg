@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- an F-type coax plug from the side: cable, crimp sleeve, hex nut, threads, bare center wire -->
+  <path d="M8 58 H52 M8 74 H52" />
+  <path d="M52 52 H82 V80 H52 Z" />
+  <path d="M82 44 H112 V88 H82 Z" />
+  <path d="M82 58 H112 M82 74 H112" stroke-width="1.5" />
+  <path d="M112 50 H148 V82 H112" />
+  <path d="M118 50 L114 82 M126 50 L122 82 M134 50 L130 82 M142 50 L138 82" stroke-width="1.5" />
+  <path d="M148 66 H186" stroke-width="2" />
+</svg>

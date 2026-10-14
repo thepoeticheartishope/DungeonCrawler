@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- a duplex LC pair from the side: two small plugs held by one clip, a springy latch lever on top of each, short ferrules -->
+  <path d="M6 54 H44 M6 80 H44" />
+  <path d="M44 40 H78 V94 H44 Z" />
+  <path d="M78 46 H128 V62 H78 Z M78 72 H128 V88 H78 Z" />
+  <path d="M86 46 Q100 32 120 40 L122 46 M86 72 Q100 58 120 66 L122 72" stroke-width="2" />
+  <path d="M128 50 H152 V58 H128 M128 76 H152 V84 H128" stroke-width="2" />
+</svg>

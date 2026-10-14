@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- a DisplayPort port from the front: a rectangle with only ONE corner cut off, a tongue inside -->
+  <path d="M40 42 H160 V72 L146 88 H40 Z" />
+  <path d="M54 58 H146 V66 H54 Z" stroke-width="2" />
+</svg>

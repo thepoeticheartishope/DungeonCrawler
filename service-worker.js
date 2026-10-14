@@ -3,7 +3,7 @@
 // game loads instantly and still works with no connection. Bump
 // CACHE_NAME whenever the cached files change, so old caches get cleared.
 
-const CACHE_NAME = 'term-dungeon-v227';
+const CACHE_NAME = 'term-dungeon-v228';
 const APP_SHELL = [
   './',
   './index.html',
@@ -73,6 +73,21 @@ const APP_SHELL = [
   './lists/images/punchdown-tool.svg',
   './lists/images/toner-probe.svg',
   './lists/images/wifi-analyzer.svg',
+  './lists/images/rj45.svg',
+  './lists/images/rj11.svg',
+  './lists/images/f-type.svg',
+  './lists/images/st-fiber.svg',
+  './lists/images/lc-fiber.svg',
+  './lists/images/db9.svg',
+  './lists/images/molex.svg',
+  './lists/images/usb-b.svg',
+  './lists/images/usb-c.svg',
+  './lists/images/lightning.svg',
+  './lists/images/hdmi.svg',
+  './lists/images/displayport.svg',
+  './lists/images/vga.svg',
+  './lists/images/dvi.svg',
+  './lists/images/m2-ssd.svg',
   './fonts/VT323-Regular.ttf',
   './icons/icon-192.png',
   './icons/icon-512.png',
