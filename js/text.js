@@ -177,6 +177,8 @@ export const TEXT = {
   'type.printSetting': 'Print setup', // draft
   'type.accessory': 'Accessories', // draft
   'type.mobileSetting': 'Mobile setup', // draft
+  'type.virtualization': 'Virtualization', // draft
+  'type.cloud': 'Cloud', // draft
 
   // ---- Question modifiers: name, the tag beside a category, its tooltip ----
   // Tags are one whole word (Timothy: players didn't understand the old

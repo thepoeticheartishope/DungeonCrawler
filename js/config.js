@@ -96,10 +96,15 @@ export const ANSWER_TYPE_GROUPS = {
   display: 'noun',     // a display type, part or attribute: "OLED", "Inverter", "Refresh rate"
   printer: 'noun',     // a printer type or part: "Laser printer", "Fuser", "ADF"
   printSetting: 'noun', // a print or scan setting or task: "Duplex", "Secured print", "Calibration"
-  pdl: 'noun',         // a page description language: "PCL", "PostScript" (too few to be a fight choice)
+  pdl: 'noun',         // a page description language: "PCL", "PostScript" (fights offer it under a bigger choice)
   accessory: 'noun',   // a mobile accessory or input device: "Stylus", "Docking station"
   mobileSetting: 'noun', // a mobile connection or management feature: "Hotspot", "eSIM", "MDM"
-  cellular: 'noun',    // a cellular generation: "3G", "4G", "5G" (too few to be a fight choice)
+  cellular: 'noun',    // a cellular generation: "3G", "4G", "5G" (fights offer it under a bigger choice)
+  virtualization: 'noun', // a virtualization idea: "Type 1 hypervisor", "Container", "VDI"
+  cloud: 'noun',       // a cloud trait: "Elasticity", "Egress", "Multitenancy"
+  cloudModel: 'noun',  // a cloud deployment model: "Hybrid cloud" (fights offer it under a bigger choice)
+  cloudService: 'noun', // a cloud service model: "IaaS", "SaaS" (fights offer it under a bigger choice)
+  cpuFeature: 'noun',  // a CPU virtualization feature: "VT-x", "SLAT" (fights offer it under a bigger choice)
   port: 'number',      // a port number: "443" (a label, not an amount: PORT_LIKE_TYPES)
   adjective: 'adjective',
   verb: 'verb',
@@ -178,7 +183,16 @@ export const CHOICE_TYPES = {
   printer: 'printer',
   printSetting: 'printSetting',
   accessory: 'accessory',
-  mobileSetting: 'mobileSetting'
+  mobileSetting: 'mobileSetting',
+  virtualization: 'virtualization',
+  cloud: 'cloud',
+  // Small CompTIA types, each too few for a choice of its own, ride with
+  // a bigger one (wrong answers still come from their own type).
+  cloudModel: 'cloud',
+  cloudService: 'cloud',
+  cpuFeature: 'virtualization',
+  cellular: 'mobileSetting',
+  pdl: 'printSetting'
 };
 // Choice types that aren't offered on the turn right after the player
 // picked them (when enough other choices remain), so the biggest, most
