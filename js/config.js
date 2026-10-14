@@ -97,6 +97,9 @@ export const ANSWER_TYPE_GROUPS = {
   printer: 'noun',     // a printer type or part: "Laser printer", "Fuser", "ADF"
   printSetting: 'noun', // a print or scan setting or task: "Duplex", "Secured print", "Calibration"
   pdl: 'noun',         // a page description language: "PCL", "PostScript" (too few to be a fight choice)
+  accessory: 'noun',   // a mobile accessory or input device: "Stylus", "Docking station"
+  mobileSetting: 'noun', // a mobile connection or management feature: "Hotspot", "eSIM", "MDM"
+  cellular: 'noun',    // a cellular generation: "3G", "4G", "5G" (too few to be a fight choice)
   port: 'number',      // a port number: "443" (a label, not an amount: PORT_LIKE_TYPES)
   adjective: 'adjective',
   verb: 'verb',
@@ -173,7 +176,9 @@ export const CHOICE_TYPES = {
   component: 'component',
   display: 'display',
   printer: 'printer',
-  printSetting: 'printSetting'
+  printSetting: 'printSetting',
+  accessory: 'accessory',
+  mobileSetting: 'mobileSetting'
 };
 // Choice types that aren't offered on the turn right after the player
 // picked them (when enough other choices remain), so the biggest, most

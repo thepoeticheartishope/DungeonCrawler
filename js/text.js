@@ -175,6 +175,8 @@ export const TEXT = {
   'type.display': 'Displays', // draft
   'type.printer': 'Printers', // draft
   'type.printSetting': 'Print setup', // draft
+  'type.accessory': 'Accessories', // draft
+  'type.mobileSetting': 'Mobile setup', // draft
 
   // ---- Question modifiers: name, the tag beside a category, its tooltip ----
   // Tags are one whole word (Timothy: players didn't understand the old
