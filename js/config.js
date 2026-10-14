@@ -102,6 +102,14 @@ export const ANSWER_TYPE_GROUPS = {
   cellular: 'noun',    // a cellular generation: "3G", "4G", "5G" (fights offer it under a bigger choice)
   virtualization: 'noun', // a virtualization idea: "Type 1 hypervisor", "Container", "VDI"
   cloud: 'noun',       // a cloud trait: "Elasticity", "Egress", "Multitenancy"
+  // The likeliest cause of a symptom (220-1201 domain 5), one type per area
+  // so wrong answers stay in the same area; fights offer them all as one.
+  causePC: 'noun',     // "Failing CMOS battery", "Overheating"
+  causeDrive: 'noun',  // "Mechanical failure", "Damaged boot sector"
+  causeDisplay: 'noun', // "Wrong input source", "Failed backlight"
+  causeMobile: 'noun', // "Swollen battery", "Damaged charging port"
+  causeNetwork: 'noun', // "No DHCP lease", "Duplex mismatch"
+  causePrinter: 'noun', // "Low toner", "Faulty fuser"
   cloudModel: 'noun',  // a cloud deployment model: "Hybrid cloud" (fights offer it under a bigger choice)
   cloudService: 'noun', // a cloud service model: "IaaS", "SaaS" (fights offer it under a bigger choice)
   cpuFeature: 'noun',  // a CPU virtualization feature: "VT-x", "SLAT" (fights offer it under a bigger choice)
@@ -192,7 +200,13 @@ export const CHOICE_TYPES = {
   cloudService: 'cloud',
   cpuFeature: 'virtualization',
   cellular: 'mobileSetting',
-  pdl: 'printSetting'
+  pdl: 'printSetting',
+  causePC: 'cause',
+  causeDrive: 'cause',
+  causeDisplay: 'cause',
+  causeMobile: 'cause',
+  causeNetwork: 'cause',
+  causePrinter: 'cause'
 };
 // Choice types that aren't offered on the turn right after the player
 // picked them (when enough other choices remain), so the biggest, most

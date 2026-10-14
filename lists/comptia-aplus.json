@@ -2093,5 +2093,333 @@
     "difficulty": "easy",
     "source": "220-1201 4.2",
     "answerType": "cloud"
+  },
+  {
+    "term": "A desktop PC forgets the date and time every time it is unplugged. What is the most likely cause?",
+    "meaning": "Failing CMOS battery",
+    "category": "Troubleshooting",
+    "difficulty": "easy",
+    "source": "220-1201 5.1",
+    "answerType": "causePC"
+  },
+  {
+    "term": "A PC gives one long continuous beep at startup and shows nothing. What is the most likely cause?",
+    "meaning": "Faulty RAM",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.1",
+    "answerType": "causePC"
+  },
+  {
+    "term": "A PC gives off a burning smell and its case feels hot. Which part is the most likely source?",
+    "meaning": "Power supply",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.1",
+    "answerType": "causePC"
+  },
+  {
+    "term": "A PC restarts on its own, but only once it has been on for an hour or so. What is the most likely cause?",
+    "meaning": "Overheating",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.1",
+    "answerType": "causePC"
+  },
+  {
+    "term": "A PC feels slower right after an extra memory module was added. What is the most likely cause?",
+    "meaning": "Dual-channel disabled",
+    "category": "Troubleshooting",
+    "difficulty": "hard",
+    "source": "220-1201 5.1",
+    "answerType": "causePC"
+  },
+  {
+    "term": "The fans spin but a PC shows nothing, right after its firmware was updated. What is the most likely cause?",
+    "meaning": "Failed firmware update",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.1",
+    "answerType": "causePC"
+  },
+  {
+    "term": "Windows shows a blue screen each time since a new device driver was installed. What is the most likely cause?",
+    "meaning": "Faulty driver",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.1",
+    "answerType": "causePC"
+  },
+  {
+    "term": "A hard drive makes loud clicking and grinding noises. What is the most likely cause?",
+    "meaning": "Mechanical failure",
+    "category": "Troubleshooting",
+    "difficulty": "easy",
+    "source": "220-1201 5.2",
+    "answerType": "causeDrive"
+  },
+  {
+    "term": "The disk light stays lit nonstop and the PC crawls while several apps are open. What is the most likely cause?",
+    "meaning": "Not enough RAM",
+    "category": "Troubleshooting",
+    "difficulty": "hard",
+    "source": "220-1201 5.2",
+    "answerType": "causeDrive"
+  },
+  {
+    "term": "A RAID 1 volume is marked degraded, but all its data can still be read. What is the most likely cause?",
+    "meaning": "One failed disk",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.2",
+    "answerType": "causeDrive"
+  },
+  {
+    "term": "A RAID volume has vanished and its configuration utility will not open. What is the most likely cause?",
+    "meaning": "Failed RAID controller",
+    "category": "Troubleshooting",
+    "difficulty": "hard",
+    "source": "220-1201 5.2",
+    "answerType": "causeDrive"
+  },
+  {
+    "term": "A new drive shows up in Disk Management but not in File Explorer. What is the most likely cause?",
+    "meaning": "Unformatted drive",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.2",
+    "answerType": "causeDrive"
+  },
+  {
+    "term": "Disk checks keep finding more bad sectors on a drive each week. What is the most likely cause?",
+    "meaning": "Failing drive",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.2",
+    "answerType": "causeDrive"
+  },
+  {
+    "term": "After a virus, a PC detects its drive but reports \"OS not found.\" What is the most likely cause?",
+    "meaning": "Damaged boot sector",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.2",
+    "answerType": "causeDrive"
+  },
+  {
+    "term": "A monitor is on and says \"no signal\" while the PC runs normally. What is the most likely cause?",
+    "meaning": "Wrong input source",
+    "category": "Troubleshooting",
+    "difficulty": "easy",
+    "source": "220-1201 5.3",
+    "answerType": "causeDisplay"
+  },
+  {
+    "term": "A monitor's picture looks blurry after the video driver was reinstalled. What is the most likely cause?",
+    "meaning": "Non-native resolution",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.3",
+    "answerType": "causeDisplay"
+  },
+  {
+    "term": "A projector switches itself off partway through a meeting. What is the most likely cause?",
+    "meaning": "Overheating",
+    "category": "Troubleshooting",
+    "difficulty": "easy",
+    "source": "220-1201 5.3",
+    "answerType": "causeDisplay"
+  },
+  {
+    "term": "A projector's picture keeps getting dimmer and a lamp warning appears. What is the most likely cause?",
+    "meaning": "Failing bulb",
+    "category": "Troubleshooting",
+    "difficulty": "easy",
+    "source": "220-1201 5.3",
+    "answerType": "causeDisplay"
+  },
+  {
+    "term": "A laptop screen shows a picture so faint you can only see it with a flashlight. What is the most likely cause?",
+    "meaning": "Failed backlight",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.3",
+    "answerType": "causeDisplay"
+  },
+  {
+    "term": "A faint ghost of the taskbar stays on an OLED screen all the time. What is the most likely cause?",
+    "meaning": "Burn-in",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.3",
+    "answerType": "causeDisplay"
+  },
+  {
+    "term": "Purple and green lines flicker across a monitor's picture. What is the most likely cause?",
+    "meaning": "Loose video cable",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.3",
+    "answerType": "causeDisplay"
+  },
+  {
+    "term": "A laptop rocks on a flat desk and its touchpad bulges upward. What is the most likely cause?",
+    "meaning": "Swollen battery",
+    "category": "Troubleshooting",
+    "difficulty": "easy",
+    "source": "220-1201 5.4",
+    "answerType": "causeMobile"
+  },
+  {
+    "term": "A phone runs hot, its battery drains fast, and its data use suddenly spikes. What is the most likely cause?",
+    "meaning": "Malware",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.4",
+    "answerType": "causeMobile"
+  },
+  {
+    "term": "A laptop pointer jumps around the screen while the user is typing. What is the most likely cause?",
+    "meaning": "Touchpad too sensitive",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.4",
+    "answerType": "causeMobile"
+  },
+  {
+    "term": "A laptop's Wi-Fi stopped working right after a repair inside the case. What is the most likely cause?",
+    "meaning": "Loose antenna wire",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.4",
+    "answerType": "causeMobile"
+  },
+  {
+    "term": "A Bluetooth mouse that worked yesterday no longer responds. What is the most likely cause?",
+    "meaning": "Dead mouse battery",
+    "category": "Troubleshooting",
+    "difficulty": "easy",
+    "source": "220-1201 5.4",
+    "answerType": "causeMobile"
+  },
+  {
+    "term": "A phone only charges when its cable is held at an angle. What is the most likely cause?",
+    "meaning": "Damaged charging port",
+    "category": "Troubleshooting",
+    "difficulty": "easy",
+    "source": "220-1201 5.4",
+    "answerType": "causeMobile"
+  },
+  {
+    "term": "A laptop gets very hot and shuts down when used on a bed. What is the most likely cause?",
+    "meaning": "Blocked vents",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.4",
+    "answerType": "causeMobile"
+  },
+  {
+    "term": "Windows shows limited connectivity and the PC has a 169.254.x.x address. What is the most likely cause?",
+    "meaning": "No DHCP lease",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.5",
+    "answerType": "causeNetwork"
+  },
+  {
+    "term": "A switch port keeps flipping between up and down. What is the most likely cause?",
+    "meaning": "Bad cabling",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.5",
+    "answerType": "causeNetwork"
+  },
+  {
+    "term": "VoIP calls break up whenever big downloads run on the same network. What is the most likely cause?",
+    "meaning": "Network congestion",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.5",
+    "answerType": "causeNetwork"
+  },
+  {
+    "term": "Wi-Fi drops out whenever the office microwave is running. What is the most likely cause?",
+    "meaning": "Interference",
+    "category": "Troubleshooting",
+    "difficulty": "easy",
+    "source": "220-1201 5.5",
+    "answerType": "causeNetwork"
+  },
+  {
+    "term": "A cabled link is slow, and its wire pairs are untwisted far back from the plug. What is the most likely cause?",
+    "meaning": "Crosstalk",
+    "category": "Troubleshooting",
+    "difficulty": "hard",
+    "source": "220-1201 5.5",
+    "answerType": "causeNetwork"
+  },
+  {
+    "term": "A Gigabit link runs slowly because the NIC and switch port are set differently. What is the most likely cause?",
+    "meaning": "Duplex mismatch",
+    "category": "Troubleshooting",
+    "difficulty": "hard",
+    "source": "220-1201 5.5",
+    "answerType": "causeNetwork"
+  },
+  {
+    "term": "Pages from a laser printer come out faint and washed out. What is the most likely cause?",
+    "meaning": "Low toner",
+    "category": "Troubleshooting",
+    "difficulty": "easy",
+    "source": "220-1201 5.6",
+    "answerType": "causePrinter"
+  },
+  {
+    "term": "Laser printouts smudge when you rub a finger across them. What is the most likely cause?",
+    "meaning": "Faulty fuser",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.6",
+    "answerType": "causePrinter"
+  },
+  {
+    "term": "Each laser printout shows a faint repeat of the image further down the page. What is the most likely cause?",
+    "meaning": "Dirty drum",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.6",
+    "answerType": "causePrinter"
+  },
+  {
+    "term": "Laser printouts come out with black stripes or a fully black page. What is the most likely cause?",
+    "meaning": "Dirty charge roller",
+    "category": "Troubleshooting",
+    "difficulty": "hard",
+    "source": "220-1201 5.6",
+    "answerType": "causePrinter"
+  },
+  {
+    "term": "A printer keeps pulling in two or more sheets at once. What is the most likely cause?",
+    "meaning": "Worn pickup rollers",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.6",
+    "answerType": "causePrinter"
+  },
+  {
+    "term": "Every line on a dot matrix printout has the same blank gap through it. What is the most likely cause?",
+    "meaning": "Stuck pin",
+    "category": "Troubleshooting",
+    "difficulty": "medium",
+    "source": "220-1201 5.6",
+    "answerType": "causePrinter"
+  },
+  {
+    "term": "An inkjet printout has thin blank lines running through it. What is the most likely cause?",
+    "meaning": "Blocked nozzle",
+    "category": "Troubleshooting",
+    "difficulty": "easy",
+    "source": "220-1201 5.6",
+    "answerType": "causePrinter"
   }
 ]

@@ -179,6 +179,7 @@ export const TEXT = {
   'type.mobileSetting': 'Mobile setup', // draft
   'type.virtualization': 'Virtualization', // draft
   'type.cloud': 'Cloud', // draft
+  'type.cause': 'Likely causes', // draft
 
   // ---- Question modifiers: name, the tag beside a category, its tooltip ----
   // Tags are one whole word (Timothy: players didn't understand the old
