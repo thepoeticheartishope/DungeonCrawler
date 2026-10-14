@@ -7,7 +7,7 @@
 // of each one threading them through as parameters.
 
 import { state } from './state.js';
-import { ENERGY_MAX, MINION_KINDS, SENSE_NOTE_MS, LIGHT_BATTERY_MAX } from './config.js';
+import { ENERGY_MAX, MINION_KINDS, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS } from './config.js';
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
 import { whatBlocks, canPassCorner } from './passage.js';
@@ -46,6 +46,34 @@ export function showWhisper(text, tone = 'dread', ms = SENSE_NOTE_MS) {
   els.senseNote.classList.add('show');
   clearTimeout(senseFadeTimer);
   senseFadeTimer = setTimeout(() => els.senseNote.classList.remove('show'), ms);
+}
+
+// When the answer line is taken off the map after its fade (view-only
+// timing, so a module var, not state).
+let answerHideTimer = null;
+
+// Shows the right answer to a missed question as a line across the top of
+// the map (answer swirl plan step A): "I see you."'s spot and form, in the
+// enemies' cold blue. It stays until the player's next move (fadeAnswerLine),
+// so they can stop and read it or walk on; "I see you." shows under it
+// meanwhile, so neither replaces the other. A new miss replaces the answer.
+export function showAnswerLine(text) {
+  clearTimeout(answerHideTimer);
+  els.answerNote.textContent = text;
+  els.answerNote.hidden = false;
+  // Read the layout once so the fade runs from the hidden line.
+  void els.answerNote.offsetWidth;
+  els.answerNote.classList.add('show');
+}
+
+// The player moved: the answer line fades, then leaves the map so
+// "I see you." moves back up. `now` takes it away at once (a new floor).
+export function fadeAnswerLine(now = false) {
+  if (els.answerNote.hidden) return;
+  els.answerNote.classList.remove('show');
+  clearTimeout(answerHideTimer);
+  if (now) els.answerNote.hidden = true;
+  else answerHideTimer = setTimeout(() => { els.answerNote.hidden = true; }, ANSWER_LINE_FADE_MS);
 }
 
 export function showScreen(el) {

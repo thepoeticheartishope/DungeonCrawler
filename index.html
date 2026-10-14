@@ -772,20 +772,25 @@
   /* "I see you." (render.js showSensed): faint text near the top of the map,
      over the dark rather than the player. It fades in and out slowly, never
      flickers; under reduced motion it just appears and goes. */
-  .sense-note {
+  .map-notes {
     position: absolute;
     top: 9%;
     left: 0;
     right: 0;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .sense-note, .answer-note {
+    padding: 0 12px;
     text-align: center;
     font-size: 24px;
     letter-spacing: 0.08em;
     color: rgba(var(--glow-rgb), 0.55);
     text-shadow: 0 0 6px rgba(var(--glow-rgb), 0.35);
-    pointer-events: none;
     opacity: 0;
     transition: opacity 1.6s ease;
-    z-index: 3;
   }
   .sense-note.show { opacity: 1; transition: opacity 0.9s ease; }
   /* The tutorial's lines (tutorial.js): they come and go slower, and the
@@ -798,6 +803,24 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .sense-note, .sense-note.show, .sense-note.slow, .sense-note.slow.show { transition: none; }
+  }
+  /* The right answer after a miss (render.js showAnswerLine, answer swirl
+     plan): "I see you."'s form in the enemies' cold blue (ENEMY_LIGHT),
+     brighter, so it reads as the answer and not a warning. It holds until
+     the player moves, then fades over ANSWER_LINE_FADE_MS (config.js). */
+  .answer-note {
+    font-size: 24px;
+    letter-spacing: 0.08em;
+    line-height: 1.15;
+    text-wrap: balance;
+    color: rgba(200, 216, 255, 0.95);
+    text-shadow: 0 0 8px rgba(112, 150, 255, 0.7);
+    opacity: 0;
+    transition: opacity 1.6s ease;
+  }
+  .answer-note.show { opacity: 1; transition: opacity 0.9s ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .answer-note, .answer-note.show { transition: none; }
   }
 
   /* The NEXT meter in the status bar (Real time only, render.js
@@ -1771,8 +1794,13 @@
       <div class="light-hint light-hint-s" id="lightHintS" aria-hidden="true"></div>
       <div class="light-hint light-hint-e" id="lightHintE" aria-hidden="true"></div>
       <div class="light-hint light-hint-w" id="lightHintW" aria-hidden="true"></div>
-      <!-- "I see you.": something unseen is about to be beside the player (render.js showSensed). -->
-      <div class="sense-note" id="senseNote" role="status" aria-live="polite"></div>
+      <!-- Lines over the top of the map: the right answer after a miss
+           (render.js showAnswerLine, answer swirl), and under it "I see you.":
+           something unseen is about to be beside the player (render.js showSensed). -->
+      <div class="map-notes">
+        <div class="answer-note" id="answerNote" role="status" aria-live="polite" hidden></div>
+        <div class="sense-note" id="senseNote" role="status" aria-live="polite"></div>
+      </div>
       <!-- The room log (main.js showRoomNote) on the map's bottom edge: the
            newest notes, dimming after a while. LOG (or L) opens all of it
            over the map (main.js toggleRoomLog). -->

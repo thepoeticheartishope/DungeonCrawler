@@ -18,7 +18,8 @@ import {
 } from './quiz.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
-  formatTime, startTimer, stopTimer, renderLightEye, renderClock, showSensed, showWhisper
+  formatTime, startTimer, stopTimer, renderLightEye, renderClock, showSensed, showWhisper,
+  showAnswerLine, fadeAnswerLine
 } from './render.js';
 import {
   isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
@@ -121,6 +122,7 @@ initRender({
   heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightEyeEl, lightHintEls, dpadButtons,
   senseNote: document.getElementById('senseNote'),
+  answerNote: document.getElementById('answerNote'),
   energyStat: document.getElementById('energyStat'),
   gunTargetStat: document.getElementById('gunTargetStat'),
   energyCount: document.getElementById('energyCount'),
@@ -922,6 +924,7 @@ function loadRoom(restKind) {
 // a fresh room screen.
 function drawFloor() {
   resetClock();
+  fadeAnswerLine(true);
   if (state.settings.gunCombat) refreshGunTarget();
   renderHud();
   // Per-room wording overrides (text.js AREAS) apply from here on.
@@ -1149,10 +1152,17 @@ setInterval(gazeTick, GAZE_POLL_MS);
 // Draws a list of rule events, in order, then redraws the HUD, fog, eye
 // and targeting once. Returns the room note the events add up to
 // ({ cls, text }, text in event order); the caller decides whether to show it.
+// The events that mean the player moved: they put the answer line away.
+const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched']);
+
 function drawEvents(events) {
   const parts = [];
   let cls = 'move-msg';
   let engaged = false;
+  // The player's own move (a step, a turn, a wait, a bump) puts away the
+  // answer a miss left on the map (answer swirl). The world's turn alone
+  // (Real time) and looking around with the light don't.
+  if (events.some(e => PLAYER_MOVES.has(e.type))) fadeAnswerLine();
   for (const e of events) {
     switch (e.type) {
       case 'blocked':
@@ -1227,6 +1237,7 @@ function drawEvents(events) {
         break;
       case 'relaySparked':
         cls = 'block-msg';
+        if (state.settings.revealOnWrong) showAnswerLine(e.expected);
         parts.push(t(e.turns ? 'room.relay.sparked' : 'room.relay.sparkedDark', { turns: e.turns }));
         break;
       case 'propSearched':
@@ -1314,6 +1325,7 @@ function drawEvents(events) {
       case 'rejected':
         logLine(t(e.cost ? 'log.rejected' : 'log.rejected.free', { cost: e.cost }), 'alert');
         if (state.settings.revealOnWrong) {
+          showAnswerLine(e.expected);
           logLine(t('log.expected', { answer: e.expected }), 'sys');
           if (e.source) logLine(t('log.source', { source: e.source }), 'sys');
         }
@@ -1431,6 +1443,7 @@ function drawEvents(events) {
         break;
       case 'jammed':
         cls = 'block-msg';
+        if (state.settings.revealOnWrong) showAnswerLine(e.expected);
         parts.push(t('gun.jammed'));
         break;
       // No energy and a minion on the player: the Struggle dial opens over

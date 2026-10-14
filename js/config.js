@@ -539,6 +539,12 @@ export const TURN_BEFORE_STEP = false;
 export const SENSE_STEPS = 2;
 // How long "I see you." stays on the map before it fades (render.js showSensed).
 export const SENSE_NOTE_MS = 2600;
+// The answer swirl (answer swirl plan, ideas/answer-swirl-plan.md outside the
+// repo): after a wrong answer, with Reveal on, the right answer shows over
+// the map until the player's next move. How long the answer line takes to
+// fade once they move (keep in step with .answer-note in index.html), after
+// which it is taken off the map and "I see you." moves back up.
+export const ANSWER_LINE_FADE_MS = 1600;
 
 // The tutorial room (tutorial.js, tutorial chamber plan).
 // Turns in the dark before the light falls from above on its spot.
