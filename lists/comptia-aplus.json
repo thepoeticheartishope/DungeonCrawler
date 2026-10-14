@@ -1621,5 +1621,261 @@
     "difficulty": "medium",
     "source": "220-1201 3.8",
     "answerType": "number"
+  },
+  {
+    "term": "Which pressure-sensitive nub in the middle of some laptop keyboards moves the cursor?",
+    "meaning": "Track point",
+    "category": "Mobile Devices",
+    "difficulty": "easy",
+    "source": "220-1201 1.2",
+    "answerType": "accessory"
+  },
+  {
+    "term": "Which large touch surface, also called a graphics tablet, is used for sketching and digital painting?",
+    "meaning": "Drawing pad",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.2",
+    "answerType": "accessory"
+  },
+  {
+    "term": "Which pen-like tool gives finer control than a finger on a touch screen?",
+    "meaning": "Stylus",
+    "category": "Mobile Devices",
+    "difficulty": "easy",
+    "source": "220-1201 1.2",
+    "answerType": "accessory"
+  },
+  {
+    "term": "Which device adds a full set of ports to a laptop but no other features?",
+    "meaning": "Port replicator",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.2",
+    "answerType": "accessory"
+  },
+  {
+    "term": "Which device gives a laptop extra ports plus room for drives or a full-size expansion card?",
+    "meaning": "Docking station",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.2",
+    "answerType": "accessory"
+  },
+  {
+    "term": "Which accessory pairs earphones with a microphone for calls?",
+    "meaning": "Headset",
+    "category": "Mobile Devices",
+    "difficulty": "easy",
+    "source": "220-1201 1.2",
+    "answerType": "accessory"
+  },
+  {
+    "term": "What is the built-in panel below a laptop keyboard that steers the pointer?",
+    "meaning": "Touchpad",
+    "category": "Mobile Devices",
+    "difficulty": "easy",
+    "source": "220-1201 1.2",
+    "answerType": "accessory"
+  },
+  {
+    "term": "Which sliding or magnetic cover blocks a laptop camera when it is not in use?",
+    "meaning": "Privacy shade",
+    "category": "Mobile Devices",
+    "difficulty": "easy",
+    "source": "220-1201 1.1",
+    "answerType": "accessory"
+  },
+  {
+    "term": "Which way of sharing a phone's cellular data with a laptop can run over USB, Bluetooth or Wi-Fi?",
+    "meaning": "Tethering",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.2",
+    "answerType": "mobileSetting"
+  },
+  {
+    "term": "What is it called when a phone shares its cellular data by acting as a Wi-Fi access point?",
+    "meaning": "Hotspot",
+    "category": "Mobile Devices",
+    "difficulty": "easy",
+    "source": "220-1201 1.2",
+    "answerType": "mobileSetting"
+  },
+  {
+    "term": "Which small card identifies a phone on its carrier's network?",
+    "meaning": "SIM",
+    "category": "Mobile Devices",
+    "difficulty": "easy",
+    "source": "220-1201 1.3",
+    "answerType": "mobileSetting"
+  },
+  {
+    "term": "Which chip built into a phone does a SIM card's job, with profiles downloaded over the air?",
+    "meaning": "eSIM",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.3",
+    "answerType": "mobileSetting"
+  },
+  {
+    "term": "Which mode switches off a phone's cellular, Wi-Fi and Bluetooth radios for a flight?",
+    "meaning": "Airplane mode",
+    "category": "Mobile Devices",
+    "difficulty": "easy",
+    "source": "220-1201 1.3",
+    "answerType": "mobileSetting"
+  },
+  {
+    "term": "Which system works out a phone's latitude and longitude from satellite signals?",
+    "meaning": "GPS",
+    "category": "Mobile Devices",
+    "difficulty": "easy",
+    "source": "220-1201 1.3",
+    "answerType": "mobileSetting"
+  },
+  {
+    "term": "Which software sets policies, limits features and can remotely wipe company phones?",
+    "meaning": "MDM",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.3",
+    "answerType": "mobileSetting"
+  },
+  {
+    "term": "Which software controls which apps may handle company data and keeps it apart from personal apps?",
+    "meaning": "MAM",
+    "category": "Mobile Devices",
+    "difficulty": "hard",
+    "source": "220-1201 1.3",
+    "answerType": "mobileSetting"
+  },
+  {
+    "term": "Which model lets staff use their own phones to reach company email and apps?",
+    "meaning": "BYOD",
+    "category": "Mobile Devices",
+    "difficulty": "easy",
+    "source": "220-1201 1.3",
+    "answerType": "mobileSetting"
+  },
+  {
+    "term": "Which limit on a phone plan means syncing big files over cellular can cost extra?",
+    "meaning": "Data cap",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.3",
+    "answerType": "mobileSetting"
+  },
+  {
+    "term": "Which feature lets a phone find its mail server settings from DNS records once you type your address?",
+    "meaning": "Autodiscover",
+    "category": "Mobile Devices",
+    "difficulty": "hard",
+    "source": "220-1201 1.3",
+    "answerType": "mobileSetting"
+  },
+  {
+    "term": "Which phone sensor gives more accurate compass directions?",
+    "meaning": "Magnetometer",
+    "category": "Mobile Devices",
+    "difficulty": "hard",
+    "source": "220-1201 1.3",
+    "answerType": "component"
+  },
+  {
+    "term": "Tapping an NFC headset against a phone sets up which kind of wireless link for you?",
+    "meaning": "Bluetooth",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.2",
+    "answerType": "standard"
+  },
+  {
+    "term": "Which cellular generation brought LTE, at up to about 300 Mbps?",
+    "meaning": "4G",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.3",
+    "answerType": "cellular"
+  },
+  {
+    "term": "Which cellular generation did the very first iPhones and Android phones use?",
+    "meaning": "3G",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.3",
+    "answerType": "cellular"
+  },
+  {
+    "term": "Which protocol does Exchange use to sync mail, contacts and calendars to phones?",
+    "meaning": "Exchange ActiveSync",
+    "category": "Mobile Devices",
+    "difficulty": "hard",
+    "source": "220-1201 1.3",
+    "answerType": "protocol"
+  },
+  {
+    "term": "Which incoming mail protocol downloads messages and removes them from the server?",
+    "meaning": "POP3",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.3",
+    "answerType": "protocol"
+  },
+  {
+    "term": "Which rechargeable battery type do laptops use, which wears out after about 2 to 3 years?",
+    "meaning": "Li-ion",
+    "category": "Mobile Devices",
+    "difficulty": "easy",
+    "source": "220-1201 1.1",
+    "answerType": "component"
+  },
+  {
+    "term": "Which security part records a fingerprint, face or iris template to unlock a laptop?",
+    "meaning": "Biometric sensor",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.1",
+    "answerType": "component"
+  },
+  {
+    "term": "At what charge percent does balanced charging stop topping up a laptop battery?",
+    "meaning": "80",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.1",
+    "answerType": "number"
+  },
+  {
+    "term": "At what angle, in degrees, does a SODIMM slot tip up so the module can be fitted?",
+    "meaning": "45",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.1",
+    "answerType": "number"
+  },
+  {
+    "term": "How many millimeters long is an M.2 2280 card?",
+    "meaning": "80",
+    "category": "Mobile Devices",
+    "difficulty": "medium",
+    "source": "220-1201 1.1",
+    "answerType": "number"
+  },
+  {
+    "term": "Which laptop hard drive size is smaller than 2.5-inch and may need a micro SATA connector?",
+    "meaning": "1.8-inch",
+    "category": "Mobile Devices",
+    "difficulty": "hard",
+    "source": "220-1201 1.1",
+    "answerType": "storage"
+  },
+  {
+    "term": "Which older laptop card slot for Wi-Fi adapters does not fit mSATA or M.2 cards?",
+    "meaning": "Mini PCIe",
+    "category": "Mobile Devices",
+    "difficulty": "hard",
+    "source": "220-1201 1.1",
+    "answerType": "board"
   }
 ]
