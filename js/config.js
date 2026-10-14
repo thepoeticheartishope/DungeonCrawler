@@ -88,6 +88,11 @@ export const ANSWER_TYPE_GROUPS = {
   cable: 'noun',       // a cable type: "UTP", "Plenum cable", "Cat 6A", "Single-mode"
   connector: 'noun',   // a connector: "RJ45", "LC", "Molex", "USB-C"
   interface: 'noun',   // a bus or video interface: "HDMI", "SATA", "USB 3.0"
+  memory: 'noun',      // a RAM type or module: "DDR5", "SODIMM", "ECC"
+  storage: 'noun',     // a drive, its interface or form factor: "NVMe", "M.2", "2.5-inch"
+  raid: 'noun',        // a RAID level: "RAID 5"
+  board: 'noun',       // a motherboard form factor, slot or card: "ATX", "PCIe", "Capture card"
+  component: 'noun',   // another PC part or feature: "TPM", "Heat sink", "Modular PSU"
   port: 'number',      // a port number: "443" (a label, not an amount: PORT_LIKE_TYPES)
   adjective: 'adjective',
   verb: 'verb',
@@ -156,7 +161,12 @@ export const CHOICE_TYPES = {
   connection: 'connection',
   cable: 'cable',
   connector: 'connector',
-  interface: 'interface'
+  interface: 'interface',
+  memory: 'memory',
+  storage: 'storage',
+  raid: 'raid',
+  board: 'board',
+  component: 'component'
 };
 // Choice types that aren't offered on the turn right after the player
 // picked them (when enough other choices remain), so the biggest, most

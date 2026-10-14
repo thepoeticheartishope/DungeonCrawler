@@ -1021,5 +1021,325 @@
     "difficulty": "hard",
     "source": "220-1201 3.2",
     "answerType": "standard"
+  },
+  {
+    "term": "Which memory module form factor fits laptops and mini PCs?",
+    "meaning": "SODIMM",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.3",
+    "answerType": "memory"
+  },
+  {
+    "term": "Which full-size memory module goes in desktop PCs?",
+    "meaning": "DIMM",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.3",
+    "answerType": "memory"
+  },
+  {
+    "term": "Which DDR generation splits each module into two 32-bit channels?",
+    "meaning": "DDR5",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.3",
+    "answerType": "memory"
+  },
+  {
+    "term": "Which kind of RAM stores extra check bits so it can find and repair a single flipped bit?",
+    "meaning": "ECC",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.3",
+    "answerType": "memory"
+  },
+  {
+    "term": "Most ECC memory is sold as which kind of module, whose register takes strain off the memory controller?",
+    "meaning": "RDIMM",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.3",
+    "answerType": "memory"
+  },
+  {
+    "term": "Which DDR generation runs at 1600 to 3200 MT/s?",
+    "meaning": "DDR4",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.3",
+    "answerType": "memory"
+  },
+  {
+    "term": "How many bits wide is the data path in dual-channel memory?",
+    "meaning": "128",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.3",
+    "answerType": "number"
+  },
+  {
+    "term": "How many bits wide is the data bus for ECC memory?",
+    "meaning": "72",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.3",
+    "answerType": "number"
+  },
+  {
+    "term": "Which SSD interface talks to the CPU over PCIe lanes, far faster than SATA?",
+    "meaning": "NVMe",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.4",
+    "answerType": "storage"
+  },
+  {
+    "term": "Which small SSD form factor is a flat stick that screws onto the motherboard and needs no power cable?",
+    "meaning": "M.2",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.4",
+    "answerType": "storage"
+  },
+  {
+    "term": "Which small SSD form factor uses a single slot for both data and power, but is capped at SATA speed?",
+    "meaning": "mSATA",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.4",
+    "answerType": "storage"
+  },
+  {
+    "term": "Which enterprise drive interface sends SCSI commands over a serial link?",
+    "meaning": "SAS",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.4",
+    "answerType": "storage"
+  },
+  {
+    "term": "Which drive width is the usual size for desktop hard disks?",
+    "meaning": "3.5-inch",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.4",
+    "answerType": "storage"
+  },
+  {
+    "term": "Which drive width is found in laptops and pocket-sized external drives?",
+    "meaning": "2.5-inch",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.4",
+    "answerType": "storage"
+  },
+  {
+    "term": "Which pocket-sized removable storage plugs straight into a USB port?",
+    "meaning": "Flash drive",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.4",
+    "answerType": "storage"
+  },
+  {
+    "term": "Which drive reads CDs, DVDs and Blu-ray discs?",
+    "meaning": "Optical drive",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.4",
+    "answerType": "storage"
+  },
+  {
+    "term": "At how many RPM does a typical desktop hard drive spin?",
+    "meaning": "7200",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.4",
+    "answerType": "number"
+  },
+  {
+    "term": "Which RAID level stripes data across disks with no redundancy at all?",
+    "meaning": "RAID 0",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.4",
+    "answerType": "raid"
+  },
+  {
+    "term": "Which RAID level copies one disk onto another?",
+    "meaning": "RAID 1",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.4",
+    "answerType": "raid"
+  },
+  {
+    "term": "Which RAID level stripes data with one set of parity and survives one failed disk?",
+    "meaning": "RAID 5",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.4",
+    "answerType": "raid"
+  },
+  {
+    "term": "Which RAID level keeps two sets of parity and survives two failed disks?",
+    "meaning": "RAID 6",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.4",
+    "answerType": "raid"
+  },
+  {
+    "term": "Which RAID level is a stripe built out of mirrored pairs?",
+    "meaning": "RAID 10",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.4",
+    "answerType": "raid"
+  },
+  {
+    "term": "What is the fewest number of disks RAID 5 can use?",
+    "meaning": "3",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.4",
+    "answerType": "number"
+  },
+  {
+    "term": "Which full-size motherboard form factor is 12 by 9.6 inches and holds as many as seven cards?",
+    "meaning": "ATX",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.5",
+    "answerType": "board"
+  },
+  {
+    "term": "Which motherboard form factor is a 9.6-inch square, smaller than ATX?",
+    "meaning": "microATX",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.5",
+    "answerType": "board"
+  },
+  {
+    "term": "Which small square motherboard, about 6.7 inches a side, has just one expansion slot?",
+    "meaning": "Mini-ITX",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.5",
+    "answerType": "board"
+  },
+  {
+    "term": "Which expansion slot standard gives each card its own serial link, in sizes like x1 and x16?",
+    "meaning": "PCIe",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.5",
+    "answerType": "board"
+  },
+  {
+    "term": "Which older expansion slot interface sits beside PCIe on some motherboards?",
+    "meaning": "PCI",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.5",
+    "answerType": "board"
+  },
+  {
+    "term": "Which add-in card records or streams video from a game console or camera?",
+    "meaning": "Capture card",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.5",
+    "answerType": "board"
+  },
+  {
+    "term": "Which chip on the motherboard holds encryption keys and checks boot files for tampering?",
+    "meaning": "TPM",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.5",
+    "answerType": "component"
+  },
+  {
+    "term": "Which UEFI feature lets only digitally signed bootloaders start?",
+    "meaning": "Secure Boot",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.5",
+    "answerType": "component"
+  },
+  {
+    "term": "What is a secure USB key that holds encryption keys, often used when a PC has no TPM?",
+    "meaning": "HSM",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.5",
+    "answerType": "component"
+  },
+  {
+    "term": "Which finned metal block draws heat away from the CPU?",
+    "meaning": "Heat sink",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.5",
+    "answerType": "component"
+  },
+  {
+    "term": "What fills the tiny air gaps between a CPU and its heat sink?",
+    "meaning": "Thermal paste",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.5",
+    "answerType": "component"
+  },
+  {
+    "term": "Which power-saving CPU architecture runs most Android phones and Apple M-series Macs?",
+    "meaning": "ARM",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.5",
+    "answerType": "component"
+  },
+  {
+    "term": "Which 64-bit extension of x86, first made by AMD, runs most Windows PCs?",
+    "meaning": "x64",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.5",
+    "answerType": "component"
+  },
+  {
+    "term": "Which kind of PSU lets you attach only the power cables the PC needs?",
+    "meaning": "Modular PSU",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.6",
+    "answerType": "component"
+  },
+  {
+    "term": "Which setup gives a server a second PSU that takes over if the first one fails?",
+    "meaning": "Redundant PSU",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.6",
+    "answerType": "component"
+  },
+  {
+    "term": "Which DC voltage rail, in volts, carries the most load in a modern PC?",
+    "meaning": "12",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.6",
+    "answerType": "number"
+  },
+  {
+    "term": "How many pins does a modern ATX motherboard power connector have?",
+    "meaning": "24",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.6",
+    "answerType": "number"
   }
 ]
