@@ -134,8 +134,11 @@ async function startGameAndWaitForRoom(page) {
   const quizBowl = '#pickScreen .set-option[data-set="builtin:bible-quiz-bowl"]';
   await page.waitForSelector(quizBowl, { timeout: 10000 });
   await page.click(quizBowl);
-  // Start shows the intro (introview.js, about 5 s) before the
-  // room screen appears.
+  // Start shows the intro (introview.js, about 9 s). A tap skips it, as a
+  // player can: waiting it out ran close to the timeout on a busy machine.
+  // If it ends on its own first, there's nothing left to tap.
+  await page.waitForSelector('#introGlitch.show', { timeout: 10000 });
+  await page.click('#introGlitch', { timeout: 3000 }).catch(() => {});
   await page.waitForSelector('#roomScreen.show', { timeout: 10000 });
 }
 
@@ -689,6 +692,13 @@ async function roomIdle(page) {
 // over the map aims.
 async function lookControls(page) {
   if (await page.isVisible('#devPanel.show')) await page.click('#devToggleBtn');
+  // No minions from here on: the waited and turned turns below would let
+  // one move, and a key pressed while its move settles is dropped.
+  await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    state.floor.minions = [];
+    state.floor.hunter = null;
+  });
   await roomIdle(page);
   // Aimed a little off the body, so a drag straight right (which is a
   // way the body can face since the eight ways plan) still moves the aim.
@@ -735,7 +745,11 @@ async function lookControls(page) {
     const { aimLook, bodyAngle } = await import('./js/look.js');
     aimLook(bodyAngle());
   });
-  for (let i = 0; i < 5; i++) await page.keyboard.press('e'); // 5 nudges of 15°: past the arc
+  await roomIdle(page);
+  for (let i = 0; i < 5; i++) { // 5 nudges of 15°: past the arc
+    await roomIdle(page);
+    await page.keyboard.press('e');
+  }
   before = await lookNow(page);
   if (!before.wants) return 'aiming past the arc did not want a turn';
   if (!await page.locator('#btnSkip.armed').count()) return 'the look stick was not lit past the arc';
@@ -837,13 +851,16 @@ async function checkEightWays(page) {
     const f = state.floor;
     f.minions = [];
     f.hunter = null;
-    const open = (r, c) => !whatBlocks(r, c) && !f.props.some(p => p.row === r && p.col === c) &&
-      !(f.stairs && f.stairs.row === r && f.stairs.col === c);
+    // Props don't count: the spot's own are cleared below. A small rest
+    // room with a few props sometimes had no clear 3 x 3 spot at all.
+    const blocked = (r, c) => { const b = whatBlocks(r, c); return b && b.kind !== 'prop'; };
+    const open = (r, c) => !blocked(r, c) && !(f.stairs && f.stairs.row === r && f.stairs.col === c);
     for (let r = 2; r < f.GRID_SIZE - 2; r++) {
       for (let c = 2; c < f.GRID_SIZE - 2; c++) {
         let clear = true;
         for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) clear = clear && open(r + dr, c + dc);
         if (!clear) continue;
+        f.props = f.props.filter(p => Math.abs(p.row - r) > 1 || Math.abs(p.col - c) > 1);
         f.playerRow = r;
         f.playerCol = c;
         f.facing = 'NW';
@@ -1222,6 +1239,18 @@ async function runTutorial(browser, url) {
   return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, stick man, key, door, out to the opening rest', consoleErrors, pageErrors };
 }
 
+// Runs one smoke run. A throw (a Playwright timeout, say) becomes that
+// run's FAIL with its first stack line, so it is named in the report and
+// the runs after it still go.
+async function guarded(run, browser, url) {
+  try {
+    return await run(browser, url);
+  } catch (err) {
+    const where = String(err.stack || '').split('\n').find(l => l.includes('smoke.mjs')) || '';
+    return { ok: false, reason: `${err.message.split('\n')[0]} ${where.trim()}`, consoleErrors: [], pageErrors: [] };
+  }
+}
+
 async function main() {
   const port = await findFreePort();
   const server = spawn(process.execPath, [
@@ -1242,15 +1271,15 @@ async function main() {
 
     const browser = await chromium.launch();
     try {
-      const skipRoomResult = await runSkipRoom(browser, url);
-      const battleResult = await runBattle(browser, url);
-      const gunResult = await runGun(browser, url);
-      const realTimeResult = await runRealTime(browser, url);
-      const simpleResult = await runSimpleEnemies(browser, url);
-      const freeLookResult = await runFreeLook(browser, url);
-      const eightWaysResult = await runEightWays(browser, url);
-      const lightBatteryResult = await runLightBattery(browser, url);
-      const tutorialResult = await runTutorial(browser, url);
+      const skipRoomResult = await guarded(runSkipRoom, browser, url);
+      const battleResult = await guarded(runBattle, browser, url);
+      const gunResult = await guarded(runGun, browser, url);
+      const realTimeResult = await guarded(runRealTime, browser, url);
+      const simpleResult = await guarded(runSimpleEnemies, browser, url);
+      const freeLookResult = await guarded(runFreeLook, browser, url);
+      const eightWaysResult = await guarded(runEightWays, browser, url);
+      const lightBatteryResult = await guarded(runLightBattery, browser, url);
+      const tutorialResult = await guarded(runTutorial, browser, url);
 
       await browser.close();
 
