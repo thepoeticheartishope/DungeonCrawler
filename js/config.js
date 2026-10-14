@@ -85,6 +85,9 @@ export const ANSWER_TYPE_GROUPS = {
   standard: 'noun',    // a named standard: "802.11ax", "802.3at", "Bluetooth", "NFC"
   config: 'noun',      // a network setting or feature: "Subnet mask", "VLAN", "Scope"
   connection: 'noun',  // an internet connection type: "DSL", "Satellite", "WISP"
+  cable: 'noun',       // a cable type: "UTP", "Plenum cable", "Cat 6A", "Single-mode"
+  connector: 'noun',   // a connector: "RJ45", "LC", "Molex", "USB-C"
+  interface: 'noun',   // a bus or video interface: "HDMI", "SATA", "USB 3.0"
   port: 'number',      // a port number: "443" (a label, not an amount: PORT_LIKE_TYPES)
   adjective: 'adjective',
   verb: 'verb',
@@ -150,7 +153,10 @@ export const CHOICE_TYPES = {
   record: 'record',
   standard: 'standard',
   config: 'config',
-  connection: 'connection'
+  connection: 'connection',
+  cable: 'cable',
+  connector: 'connector',
+  interface: 'interface'
 };
 // Choice types that aren't offered on the turn right after the player
 // picked them (when enough other choices remain), so the biggest, most

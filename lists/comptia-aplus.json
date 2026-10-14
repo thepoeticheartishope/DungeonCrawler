@@ -701,5 +701,325 @@
     "difficulty": "easy",
     "source": "220-1201 2.7",
     "answerType": "connection"
+  },
+  {
+    "term": "Which copper network cable has four twisted pairs and no foil or braid around them?",
+    "meaning": "UTP",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "cable"
+  },
+  {
+    "term": "Which twisted pair cable adds foil or braid to cope with motors and fluorescent lights nearby?",
+    "meaning": "STP",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "cable"
+  },
+  {
+    "term": "Which fire-safe cable must be used in the air-handling space above a false ceiling?",
+    "meaning": "Plenum cable",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "cable"
+  },
+  {
+    "term": "Which cable type is gel-filled, often armored, and laid straight into the ground?",
+    "meaning": "Direct burial",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "cable"
+  },
+  {
+    "term": "Which fiber has a tiny core and a laser light source, for runs of many kilometers?",
+    "meaning": "Single-mode",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "cable"
+  },
+  {
+    "term": "Which fiber uses cheaper LEDs and a wider core, suiting LANs more than long links?",
+    "meaning": "Multimode",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "cable"
+  },
+  {
+    "term": "Which cable has a center conductor and a mesh shield on the same axis, used for cable TV?",
+    "meaning": "Coaxial",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "cable"
+  },
+  {
+    "term": "Which is the lowest Cat rating still sold that carries Gigabit Ethernet the full 100 m?",
+    "meaning": "Cat 5e",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.2",
+    "answerType": "cable"
+  },
+  {
+    "term": "Which Cat rating carries 10 Gbps the full 100 m and still plugs into RJ45?",
+    "meaning": "Cat 6A",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "cable"
+  },
+  {
+    "term": "Which Cat rating reaches 25 or 40 Gbps, but only to 30 m?",
+    "meaning": "Cat 8",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.2",
+    "answerType": "cable"
+  },
+  {
+    "term": "Which Cat rating carries 10 Gbps, but only to about 55 m?",
+    "meaning": "Cat 6",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "cable"
+  },
+  {
+    "term": "Which 8-pin connector ends an Ethernet patch cord?",
+    "meaning": "RJ45",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which smaller connector ends two-pair phone and DSL cable?",
+    "meaning": "RJ11",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which screw-on connector ends coax from a cable TV wall plate?",
+    "meaning": "F-type",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which fiber connector locks with a push and a twist, mostly on older multimode links?",
+    "meaning": "ST",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which fiber connector is small with a tab, so more ports fit on one panel?",
+    "meaning": "LC",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which square push/pull fiber connector works with both single-mode and multimode?",
+    "meaning": "SC",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which connector does Cat 7 cable use in place of RJ45?",
+    "meaning": "GG45",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which 9-pin D-shaped connector is found on a PC's serial port?",
+    "meaning": "DB9",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which 4-pin white plastic connector powers older drives from the PSU?",
+    "meaning": "Molex",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which Apple connector, now giving way to USB-C, charges iPhones and iPads?",
+    "meaning": "Lightning",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which reversible USB connector do Thunderbolt 3 and later also use?",
+    "meaning": "USB-C",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which small, flat USB connector was common on phones and tablets before USB-C?",
+    "meaning": "Micro-USB",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which USB connector, now rare, was used on early digital cameras?",
+    "meaning": "Mini-USB",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which square USB connector with a sloped top plugs into big devices like printers?",
+    "meaning": "USB Type B",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Permanent cable in the wall ends on which block of IDCs, worked with a punchdown tool?",
+    "meaning": "Punchdown block",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "connector"
+  },
+  {
+    "term": "Which video interface carries HD video and sound in one cable to TVs and game consoles?",
+    "meaning": "HDMI",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "interface"
+  },
+  {
+    "term": "Which video interface can drive several monitors from one port using MST?",
+    "meaning": "DisplayPort",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "interface"
+  },
+  {
+    "term": "Which older video interface can send analog, digital or both, depending on its pin layout?",
+    "meaning": "DVI",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "interface"
+  },
+  {
+    "term": "Which 15-pin analog video interface was the PC standard back in the CRT monitor days?",
+    "meaning": "VGA",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "interface"
+  },
+  {
+    "term": "Which interface, shown by a lightning-bolt icon on its port, carries both display and data at up to 40 Gbps in version 3?",
+    "meaning": "Thunderbolt",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "interface"
+  },
+  {
+    "term": "Which interface links internal hard drives to the motherboard with a 7-pin data cable?",
+    "meaning": "SATA",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.2",
+    "answerType": "interface"
+  },
+  {
+    "term": "Which interface connects external drives over a shielded cable up to 2 m long?",
+    "meaning": "eSATA",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "interface"
+  },
+  {
+    "term": "Which legacy interface, also called RS-232, shows up in Windows as a COM port?",
+    "meaning": "Serial",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "interface"
+  },
+  {
+    "term": "Which USB version first reached 5 Gbps, often marked with a blue tab?",
+    "meaning": "USB 3.0",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "interface"
+  },
+  {
+    "term": "Which USB version raised the top speed to 480 Mbps?",
+    "meaning": "USB 2.0",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "interface"
+  },
+  {
+    "term": "How many pins are on a SATA power connector?",
+    "meaning": "15",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "number"
+  },
+  {
+    "term": "In theory, how many devices can one USB host controller support?",
+    "meaning": "127",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.2",
+    "answerType": "number"
+  },
+  {
+    "term": "Which wiring standard puts the orange pair on pins 1 and 2 of an RJ45?",
+    "meaning": "T568B",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.2",
+    "answerType": "standard"
+  },
+  {
+    "term": "Which wiring standard puts the green pair on pins 1 and 2 of an RJ45?",
+    "meaning": "T568A",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.2",
+    "answerType": "standard"
   }
 ]
