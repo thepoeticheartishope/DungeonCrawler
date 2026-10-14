@@ -13,14 +13,16 @@ DIFFICULTIES = {'easy', 'medium', 'hard'}
 EXPLICIT = re.compile(r'\b(sex|sexual|rape[sd]?|incest\w*|adulter\w*|fornicat\w*|harlot\w*|whore\w*|prostitut\w*)\b', re.I)
 SUBJECT = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
 VERSE_ADDRESS = re.compile(r'^(\d )?[A-Za-z]+( of [A-Za-z]+)? \d+(:\d+(-\d+)?)?$')
-# A CompTIA question's category is the exam domain its objective belongs to,
-# read from its source ("220-1201 2.5 · Lesson 5B" -> domain 2, Networking).
-# Add an exam here before its first question goes in.
+# A CompTIA question's source names only the exam and the public objective
+# ("220-1201 2.5"), never an instructor-guide lesson: the questions are our
+# own, not taken from CompTIA's course books (Timothy). Its category is the
+# exam domain of that objective (2.5 -> domain 2, Networking). Add an exam
+# here before its first question goes in.
 COMPTIA_DOMAINS = {
     '220-1201': {'1': 'Mobile Devices', '2': 'Networking', '3': 'Hardware',
                  '4': 'Virtualization & Cloud', '5': 'Troubleshooting'},
 }
-COMPTIA_SOURCE = re.compile(r'^(\d{3}-\d{4}) (\d+)\.\d+ · Lesson \d+[A-Z]$')
+COMPTIA_SOURCE = re.compile(r'^(\d{3}-\d{4}) (\d+)\.\d+$')
 
 errors = []
 answers_by_subject = {}  # subject -> {(answer, answerType)}
@@ -71,7 +73,7 @@ for set_info in manifest:
             source = COMPTIA_SOURCE.match(str(e.get('source', '')))
             domains = COMPTIA_DOMAINS.get(source.group(1), {}) if source else {}
             if not source:
-                err(f'source {e.get("source")!r} is not like "220-1201 2.5 · Lesson 5B"')
+                err(f'source {e.get("source")!r} is not like "220-1201 2.5" (exam and objective only, no lesson)')
             elif source.group(2) not in domains:
                 err(f'no domain {source.group(2)} for exam {source.group(1)} in COMPTIA_DOMAINS')
             elif e.get('category') != domains[source.group(2)]:
