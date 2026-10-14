@@ -7,7 +7,7 @@ import json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TYPES = {'name', 'relation', 'group', 'role', 'related', 'location', 'book', 'creature', 'object', 'theology', 'adjective', 'verb', 'number', 'verse', 'term',
-         'port', 'protocol', 'device', 'tool', 'networkType', 'record', 'standard', 'config', 'connection', 'cable', 'connector', 'interface'}  # CompTIA; keep in step with ANSWER_TYPE_GROUPS in js/config.js
+         'port', 'protocol', 'device', 'tool', 'networkType', 'record', 'standard', 'config', 'connection', 'cable', 'connector', 'interface', 'memory', 'storage', 'raid', 'board', 'component'}  # CompTIA; keep in step with ANSWER_TYPE_GROUPS in js/config.js
 DIFFICULTIES = {'easy', 'medium', 'hard'}
 # Keep in step with EXPLICIT_ANSWER_TERMS in js/config.js.
 EXPLICIT = re.compile(r'\b(sex|sexual|rape[sd]?|incest\w*|adulter\w*|fornicat\w*|harlot\w*|whore\w*|prostitut\w*)\b', re.I)

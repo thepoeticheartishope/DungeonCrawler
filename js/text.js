@@ -167,6 +167,11 @@ export const TEXT = {
   'type.cable': 'Cables', // draft
   'type.connector': 'Connectors', // draft
   'type.interface': 'Interfaces', // draft
+  'type.memory': 'Memory', // draft
+  'type.storage': 'Storage', // draft
+  'type.raid': 'RAID', // draft
+  'type.board': 'Boards & slots', // draft
+  'type.component': 'Parts', // draft
 
   // ---- Question modifiers: name, the tag beside a category, its tooltip ----
   // Tags are one whole word (Timothy: players didn't understand the old
