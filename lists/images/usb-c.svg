@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- a USB-C port from the front: a small rounded oval, the same either way up, a flat tongue inside -->
+  <rect x="50" y="48" width="100" height="34" rx="17" />
+  <rect x="68" y="60" width="64" height="10" rx="3" stroke-width="2" />
+</svg>

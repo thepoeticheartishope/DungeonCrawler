@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- a USB Type B port from the front: square with its two top corners beveled, the tongue inside -->
+  <path d="M66 46 L78 34 H122 L134 46 V102 H66 Z" />
+  <path d="M82 54 H118 V88 H82 Z" />
+  <path d="M88 60 H94 M106 60 H112 M88 82 H94 M106 82 H112" stroke-width="2" />
+</svg>

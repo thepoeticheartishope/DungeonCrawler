@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- an ST fiber plug from the side: round bayonet barrel with its twist-lock slot, long ferrule -->
+  <path d="M6 60 H36 M6 72 H36" />
+  <path d="M36 56 H58 V76 H36 Z" />
+  <path d="M58 46 H118 V86 H58 Z" />
+  <path d="M96 46 V60 H110" stroke-width="2.5" />
+  <path d="M66 46 V86 M74 46 V86" stroke-width="1.5" />
+  <path d="M118 60 H170 V72 H118" />
+  <path d="M170 63 H180 V69 H170" stroke-width="2" />
+</svg>

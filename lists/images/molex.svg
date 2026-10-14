@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- a 4-pin Molex power plug from the front: both lower corners cut off, four round sockets, four wires out the back -->
+  <path d="M30 42 H170 V72 L156 86 H44 L30 72 Z" />
+  <circle cx="60" cy="63" r="8" /><circle cx="88" cy="63" r="8" /><circle cx="116" cy="63" r="8" /><circle cx="144" cy="63" r="8" />
+  <path d="M60 86 V116 M88 86 V116 M116 86 V116 M144 86 V116" stroke-width="2.5" />
+</svg>

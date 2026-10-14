@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 130" fill="none" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- a Lightning plug from the side: cable, molded head, and a flat blade with contacts and a rounded tip -->
+  <path d="M6 58 H40 M6 72 H40" />
+  <rect x="40" y="46" width="62" height="38" rx="8" />
+  <path d="M102 56 H168 Q180 56 180 65 Q180 74 168 74 H102" />
+  <path d="M112 60 V70 M122 60 V70 M132 60 V70 M142 60 V70 M152 60 V70" stroke-width="2" />
+</svg>
