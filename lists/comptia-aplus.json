@@ -1341,5 +1341,285 @@
     "difficulty": "easy",
     "source": "220-1201 3.6",
     "answerType": "number"
+  },
+  {
+    "term": "Which LCD panel type gives the truest color and widest viewing angles, but responds more slowly?",
+    "meaning": "IPS",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.1",
+    "answerType": "display"
+  },
+  {
+    "term": "Which LCD panel type responds fastest for gaming, but has weak color and narrow viewing angles?",
+    "meaning": "TN",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.1",
+    "answerType": "display"
+  },
+  {
+    "term": "In which LCD panel type do the crystals stand upright and tip over when voltage is applied?",
+    "meaning": "VA",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.1",
+    "answerType": "display"
+  },
+  {
+    "term": "Which display type lights each pixel by itself, giving true blacks but risking burn-in?",
+    "meaning": "OLED",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.1",
+    "answerType": "display"
+  },
+  {
+    "term": "Which LCD upgrade puts thousands of tiny LEDs behind the panel for finer brightness control?",
+    "meaning": "Mini-LED",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.1",
+    "answerType": "display"
+  },
+  {
+    "term": "Which part in older LCDs turns DC into AC to drive a fluorescent backlight?",
+    "meaning": "Inverter",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.1",
+    "answerType": "display"
+  },
+  {
+    "term": "Which layer of a touch screen turns a finger or stylus touch into input?",
+    "meaning": "Digitizer",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.1",
+    "answerType": "display"
+  },
+  {
+    "term": "Which display attribute, measured in Hz, makes motion look smoother?",
+    "meaning": "Refresh rate",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.1",
+    "answerType": "display"
+  },
+  {
+    "term": "Which display attribute is the spread of colors a screen can reproduce, such as sRGB or DCI-P3?",
+    "meaning": "Color gamut",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.1",
+    "answerType": "display"
+  },
+  {
+    "term": "Which display attribute counts how many pixels are packed into each inch?",
+    "meaning": "Pixel density",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.1",
+    "answerType": "display"
+  },
+  {
+    "term": "How many pixels wide is a 4K display?",
+    "meaning": "3840",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.1",
+    "answerType": "number"
+  },
+  {
+    "term": "Which printer option puts the job on the front and back of each sheet?",
+    "meaning": "Duplex",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.7",
+    "answerType": "printSetting"
+  },
+  {
+    "term": "Which print setting picks portrait or landscape?",
+    "meaning": "Orientation",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.7",
+    "answerType": "printSetting"
+  },
+  {
+    "term": "Which feature keeps a print job waiting at the printer until its owner signs in there?",
+    "meaning": "Secured print",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.7",
+    "answerType": "printSetting"
+  },
+  {
+    "term": "Which way of releasing a held print job uses an ID card held up to a smart card reader?",
+    "meaning": "Badging",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.7",
+    "answerType": "printSetting"
+  },
+  {
+    "term": "Which record shows who printed which document, so a leak can be traced?",
+    "meaning": "Audit log",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.7",
+    "answerType": "printSetting"
+  },
+  {
+    "term": "Which network scan service needs the MFD to know an SMTP server address?",
+    "meaning": "Scan to email",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.7",
+    "answerType": "printSetting"
+  },
+  {
+    "term": "Which protocol does an MFD use to save scans into a shared folder on a file server?",
+    "meaning": "SMB",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.7",
+    "answerType": "protocol"
+  },
+  {
+    "term": "Which MFD part pulls a stack of pages one at a time past a fixed scan head?",
+    "meaning": "ADF",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.7",
+    "answerType": "printer"
+  },
+  {
+    "term": "Which kind of scanner reads a page lying face down on a sheet of glass?",
+    "meaning": "Flatbed scanner",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.7",
+    "answerType": "printer"
+  },
+  {
+    "term": "Which HP page description language is closely tied to printer models and is usually the faster choice?",
+    "meaning": "PCL",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.7",
+    "answerType": "pdl"
+  },
+  {
+    "term": "Which device-independent page description language do graphic designers pick for the same output on every printer?",
+    "meaning": "PostScript",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.7",
+    "answerType": "pdl"
+  },
+  {
+    "term": "Which computer shares its printer with other clients and controls who may print?",
+    "meaning": "Print server",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.7",
+    "answerType": "device"
+  },
+  {
+    "term": "Which printer type uses a drum, toner and a fuser?",
+    "meaning": "Laser printer",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.8",
+    "answerType": "printer"
+  },
+  {
+    "term": "Which printer type sprays tiny droplets of ink onto the page, often for photos?",
+    "meaning": "Inkjet printer",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.8",
+    "answerType": "printer"
+  },
+  {
+    "term": "Which printer type needs heat-sensitive paper and is used for receipts and labels?",
+    "meaning": "Thermal printer",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.8",
+    "answerType": "printer"
+  },
+  {
+    "term": "Which printer type strikes an inked ribbon and can mark several carbon copies in one pass?",
+    "meaning": "Impact printer",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.8",
+    "answerType": "printer"
+  },
+  {
+    "term": "Which laser printer part bonds toner to the paper with heat and pressure?",
+    "meaning": "Fuser",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.8",
+    "answerType": "printer"
+  },
+  {
+    "term": "Which light-sensitive laser printer part carries the charge pattern that toner sticks to?",
+    "meaning": "Imaging drum",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.8",
+    "answerType": "printer"
+  },
+  {
+    "term": "Which laser printer part gives the drum an even negative charge before the laser writes on it?",
+    "meaning": "Primary charge roller",
+    "category": "Hardware",
+    "difficulty": "hard",
+    "source": "220-1201 3.8",
+    "answerType": "printer"
+  },
+  {
+    "term": "Which laser printer kit swaps out the fuser, transfer roller and feed rollers together?",
+    "meaning": "Maintenance kit",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.8",
+    "answerType": "printer"
+  },
+  {
+    "term": "Which consumable does a dot matrix printer hit with its pins to mark the page?",
+    "meaning": "Ribbon",
+    "category": "Hardware",
+    "difficulty": "easy",
+    "source": "220-1201 3.8",
+    "answerType": "printer"
+  },
+  {
+    "term": "Which inkjet routine flushes blocked nozzles that leave gaps in the output?",
+    "meaning": "Head cleaning",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.8",
+    "answerType": "printSetting"
+  },
+  {
+    "term": "Which routine sets how much toner a laser printer uses, for the right density and color balance?",
+    "meaning": "Calibration",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.8",
+    "answerType": "printSetting"
+  },
+  {
+    "term": "What percent isopropyl alcohol should be used to clean printer rollers?",
+    "meaning": "99",
+    "category": "Hardware",
+    "difficulty": "medium",
+    "source": "220-1201 3.8",
+    "answerType": "number"
   }
 ]

@@ -93,6 +93,10 @@ export const ANSWER_TYPE_GROUPS = {
   raid: 'noun',        // a RAID level: "RAID 5"
   board: 'noun',       // a motherboard form factor, slot or card: "ATX", "PCIe", "Capture card"
   component: 'noun',   // another PC part or feature: "TPM", "Heat sink", "Modular PSU"
+  display: 'noun',     // a display type, part or attribute: "OLED", "Inverter", "Refresh rate"
+  printer: 'noun',     // a printer type or part: "Laser printer", "Fuser", "ADF"
+  printSetting: 'noun', // a print or scan setting or task: "Duplex", "Secured print", "Calibration"
+  pdl: 'noun',         // a page description language: "PCL", "PostScript" (too few to be a fight choice)
   port: 'number',      // a port number: "443" (a label, not an amount: PORT_LIKE_TYPES)
   adjective: 'adjective',
   verb: 'verb',
@@ -166,7 +170,10 @@ export const CHOICE_TYPES = {
   storage: 'storage',
   raid: 'raid',
   board: 'board',
-  component: 'component'
+  component: 'component',
+  display: 'display',
+  printer: 'printer',
+  printSetting: 'printSetting'
 };
 // Choice types that aren't offered on the turn right after the player
 // picked them (when enough other choices remain), so the biggest, most
