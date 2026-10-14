@@ -4,7 +4,7 @@
     "meaning": "22",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.1 · Lesson 6C",
+    "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
@@ -12,7 +12,7 @@
     "meaning": "25",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.1 · Lesson 7A",
+    "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
@@ -20,7 +20,7 @@
     "meaning": "53",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.1 · Lesson 6C",
+    "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
@@ -28,7 +28,7 @@
     "meaning": "80",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.1 · Lesson 7A",
+    "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
@@ -36,7 +36,7 @@
     "meaning": "110",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.1 · Lesson 7A",
+    "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
@@ -44,7 +44,7 @@
     "meaning": "143",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.1 · Lesson 7A",
+    "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
@@ -52,7 +52,7 @@
     "meaning": "443",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.1 · Lesson 7A",
+    "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
@@ -60,7 +60,7 @@
     "meaning": "3389",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.1 · Lesson 7A",
+    "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
@@ -68,7 +68,7 @@
     "meaning": "DHCP",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.4 · Lesson 6D",
+    "source": "220-1201 2.4",
     "answerType": "protocol"
   },
   {
@@ -76,7 +76,7 @@
     "meaning": "DNS",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.4 · Lesson 6D",
+    "source": "220-1201 2.4",
     "answerType": "protocol"
   },
   {
@@ -84,7 +84,7 @@
     "meaning": "SSH",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.1 · Lesson 7A",
+    "source": "220-1201 2.1",
     "answerType": "protocol"
   },
   {
@@ -92,7 +92,7 @@
     "meaning": "RDP",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.1 · Lesson 7A",
+    "source": "220-1201 2.1",
     "answerType": "protocol"
   },
   {
@@ -100,15 +100,15 @@
     "meaning": "LDAP",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.1 · Lesson 7A",
+    "source": "220-1201 2.1",
     "answerType": "protocol"
   },
   {
-    "term": "Which protocol lets networked hosts sync their clocks to a common time source?",
+    "term": "Which protocol keeps the clocks on a network matched to one time server?",
     "meaning": "NTP",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.3 · Lesson 7A",
+    "source": "220-1201 2.3",
     "answerType": "protocol"
   },
   {
@@ -116,7 +116,7 @@
     "meaning": "Switch",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.5 · Lesson 5B",
+    "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
@@ -124,7 +124,7 @@
     "meaning": "Router",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.5 · Lesson 6B",
+    "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
@@ -132,7 +132,7 @@
     "meaning": "Firewall",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.5 · Lesson 7B",
+    "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
@@ -140,15 +140,15 @@
     "meaning": "Patch panel",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.5 · Lesson 5B",
+    "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
-    "term": "On a fiber-to-the-premises link, which device converts the optical signal to an electrical one at the customer's site?",
+    "term": "When fiber runs all the way to a home, which box at the customer end turns light pulses into electrical signals?",
     "meaning": "ONT",
     "category": "Networking",
     "difficulty": "hard",
-    "source": "220-1201 2.5 · Lesson 6A",
+    "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
@@ -156,7 +156,7 @@
     "meaning": "Proxy server",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.3 · Lesson 7B",
+    "source": "220-1201 2.3",
     "answerType": "device"
   },
   {
@@ -164,7 +164,7 @@
     "meaning": "Crimper",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
@@ -172,15 +172,15 @@
     "meaning": "Punchdown tool",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
-    "term": "Which pair of devices energizes each wire in turn to check that a cable is terminated correctly?",
+    "term": "Which pair of devices sends a signal down every wire, one by one, to confirm a cable was wired to the right pins?",
     "meaning": "Cable tester",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
@@ -188,15 +188,15 @@
     "meaning": "Toner probe",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
-    "term": "Which adapter tests a NIC or switch port by showing a solid link LED when the port works?",
+    "term": "Which adapter, plugged into a network card or switch port, makes the link light come on if that port works?",
     "meaning": "Loopback plug",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
@@ -204,7 +204,7 @@
     "meaning": "Cable stripper",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
@@ -212,7 +212,7 @@
     "meaning": "Wi-Fi analyzer",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.8 · Lesson 5D",
+    "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
@@ -220,7 +220,7 @@
     "meaning": "PAN",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.7 · Lesson 5A",
+    "source": "220-1201 2.7",
     "answerType": "networkType"
   },
   {
@@ -228,7 +228,7 @@
     "meaning": "SAN",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.7 · Lesson 5A",
+    "source": "220-1201 2.7",
     "answerType": "networkType"
   },
   {
@@ -236,7 +236,7 @@
     "meaning": "WAN",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.7 · Lesson 5A",
+    "source": "220-1201 2.7",
     "answerType": "networkType"
   },
   {
@@ -244,31 +244,31 @@
     "meaning": "MAN",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.7 · Lesson 5A",
+    "source": "220-1201 2.7",
     "answerType": "networkType"
   },
   {
-    "term": "Which network type uses radios and antennas, mostly under the IEEE 802.11 standards?",
+    "term": "Which network type joins hosts by radio instead of cable, mostly using IEEE 802.11?",
     "meaning": "WLAN",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.7 · Lesson 5A",
+    "source": "220-1201 2.7",
     "answerType": "networkType"
   },
   {
-    "term": "Which DNS record resolves a host name to an IPv4 address?",
+    "term": "Which DNS record points a domain name at an IPv4 address?",
     "meaning": "A",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.4 · Lesson 6D",
+    "source": "220-1201 2.4",
     "answerType": "record"
   },
   {
-    "term": "Which DNS record resolves a host name to an IPv6 address?",
+    "term": "Which DNS record points a domain name at an IPv6 address?",
     "meaning": "AAAA",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.4 · Lesson 6D",
+    "source": "220-1201 2.4",
     "answerType": "record"
   },
   {
@@ -276,7 +276,7 @@
     "meaning": "MX",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.4 · Lesson 6D",
+    "source": "220-1201 2.4",
     "answerType": "record"
   },
   {
@@ -284,7 +284,7 @@
     "meaning": "CNAME",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.4 · Lesson 6D",
+    "source": "220-1201 2.4",
     "answerType": "record"
   },
   {
@@ -292,7 +292,7 @@
     "meaning": "TXT",
     "category": "Networking",
     "difficulty": "hard",
-    "source": "220-1201 2.4 · Lesson 6D",
+    "source": "220-1201 2.4",
     "answerType": "record"
   },
   {
@@ -300,7 +300,7 @@
     "meaning": "48",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.5 · Lesson 5B",
+    "source": "220-1201 2.5",
     "answerType": "number"
   },
   {
@@ -308,7 +308,7 @@
     "meaning": "13",
     "category": "Networking",
     "difficulty": "hard",
-    "source": "220-1201 2.5 · Lesson 5B",
+    "source": "220-1201 2.5",
     "answerType": "number"
   },
   {
@@ -316,7 +316,7 @@
     "meaning": "100",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.5 · Lesson 5C",
+    "source": "220-1201 2.5",
     "answerType": "number"
   },
   {
@@ -324,7 +324,7 @@
     "meaning": "Crimper",
     "category": "Networking",
     "difficulty": "easy",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool",
     "image": "images/crimper.svg"
   },
@@ -333,7 +333,7 @@
     "meaning": "Punchdown tool",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool",
     "image": "images/punchdown-tool.svg"
   },
@@ -342,7 +342,7 @@
     "meaning": "Toner probe",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool",
     "image": "images/toner-probe.svg"
   },
@@ -351,7 +351,7 @@
     "meaning": "Loopback plug",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool",
     "image": "images/loopback-plug.svg"
   },
@@ -360,7 +360,7 @@
     "meaning": "Cable tester",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool",
     "image": "images/cable-tester.svg"
   },
@@ -369,7 +369,7 @@
     "meaning": "Cable stripper",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.8 · Lesson 5C",
+    "source": "220-1201 2.8",
     "answerType": "tool",
     "image": "images/cable-stripper.svg"
   },
@@ -378,7 +378,7 @@
     "meaning": "Wi-Fi analyzer",
     "category": "Networking",
     "difficulty": "medium",
-    "source": "220-1201 2.8 · Lesson 5D",
+    "source": "220-1201 2.8",
     "answerType": "tool",
     "image": "images/wifi-analyzer.svg"
   }
