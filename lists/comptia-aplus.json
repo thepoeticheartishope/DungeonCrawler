@@ -1877,5 +1877,221 @@
     "difficulty": "hard",
     "source": "220-1201 1.1",
     "answerType": "board"
+  },
+  {
+    "term": "Which hypervisor installs straight onto the hardware, with no host OS beneath it?",
+    "meaning": "Type 1 hypervisor",
+    "category": "Virtualization & Cloud",
+    "difficulty": "easy",
+    "source": "220-1201 4.1",
+    "answerType": "virtualization"
+  },
+  {
+    "term": "Which hypervisor runs as an app inside a normal desktop OS, like VirtualBox?",
+    "meaning": "Type 2 hypervisor",
+    "category": "Virtualization & Cloud",
+    "difficulty": "easy",
+    "source": "220-1201 4.1",
+    "answerType": "virtualization"
+  },
+  {
+    "term": "Which isolated VM lets a researcher run malware without risking the real PC?",
+    "meaning": "Sandbox",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.1",
+    "answerType": "virtualization"
+  },
+  {
+    "term": "Which setup gives staff thin clients that log on to desktop VMs held on a server?",
+    "meaning": "VDI",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.1",
+    "answerType": "virtualization"
+  },
+  {
+    "term": "Which low-spec computer gets nearly all its resources from a central server?",
+    "meaning": "Thin client",
+    "category": "Virtualization & Cloud",
+    "difficulty": "easy",
+    "source": "220-1201 4.1",
+    "answerType": "virtualization"
+  },
+  {
+    "term": "Which kind of virtualization shares the host OS kernel and needs no hypervisor?",
+    "meaning": "Container",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.1",
+    "answerType": "virtualization"
+  },
+  {
+    "term": "Which approach streams programs from a server so users always run the newest version without installing it?",
+    "meaning": "Application virtualization",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.1",
+    "answerType": "virtualization"
+  },
+  {
+    "term": "Which saved copy of a VM's disk state lets you roll back after a test?",
+    "meaning": "Snapshot",
+    "category": "Virtualization & Cloud",
+    "difficulty": "easy",
+    "source": "220-1201 4.1",
+    "answerType": "virtualization"
+  },
+  {
+    "term": "What is it called when unapproved VMs pile up and become hard to secure and manage?",
+    "meaning": "VM sprawl",
+    "category": "Virtualization & Cloud",
+    "difficulty": "hard",
+    "source": "220-1201 4.1",
+    "answerType": "virtualization"
+  },
+  {
+    "term": "Which attack lets malware in a guest OS break out to other VMs or the host?",
+    "meaning": "VM escaping",
+    "category": "Virtualization & Cloud",
+    "difficulty": "hard",
+    "source": "220-1201 4.1",
+    "answerType": "virtualization"
+  },
+  {
+    "term": "Which use of VMs tests one app under several different operating systems?",
+    "meaning": "Cross-platform virtualization",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.1",
+    "answerType": "virtualization"
+  },
+  {
+    "term": "Which Intel CPU extension speeds up virtual machines?",
+    "meaning": "VT-x",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.1",
+    "answerType": "cpuFeature"
+  },
+  {
+    "term": "Which AMD CPU extension speeds up virtual machines?",
+    "meaning": "AMD-V",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.1",
+    "answerType": "cpuFeature"
+  },
+  {
+    "term": "At least how many GB of RAM does a PC need to host one Windows 11 guest on Windows 11?",
+    "meaning": "8",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.1",
+    "answerType": "number"
+  },
+  {
+    "term": "Which cloud model is offered over the internet to many tenants at once?",
+    "meaning": "Public cloud",
+    "category": "Virtualization & Cloud",
+    "difficulty": "easy",
+    "source": "220-1201 4.2",
+    "answerType": "cloudModel"
+  },
+  {
+    "term": "Which cloud model is owned and run by one organization for its own use?",
+    "meaning": "Private cloud",
+    "category": "Virtualization & Cloud",
+    "difficulty": "easy",
+    "source": "220-1201 4.2",
+    "answerType": "cloudModel"
+  },
+  {
+    "term": "Which cloud model mixes public and private, such as renting public capacity only at peak times?",
+    "meaning": "Hybrid cloud",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.2",
+    "answerType": "cloudModel"
+  },
+  {
+    "term": "Which cloud model has several organizations split the costs to meet shared needs like security policies?",
+    "meaning": "Community cloud",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.2",
+    "answerType": "cloudModel"
+  },
+  {
+    "term": "Which service model rents out virtual servers, storage and networks, so no hardware has to be bought?",
+    "meaning": "IaaS",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.2",
+    "answerType": "cloudService"
+  },
+  {
+    "term": "Which service model delivers ready-made apps like Microsoft 365 by subscription?",
+    "meaning": "SaaS",
+    "category": "Virtualization & Cloud",
+    "difficulty": "easy",
+    "source": "220-1201 4.2",
+    "answerType": "cloudService"
+  },
+  {
+    "term": "Which service model gives developers servers plus tools to build their own apps, but no finished app?",
+    "meaning": "PaaS",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.2",
+    "answerType": "cloudService"
+  },
+  {
+    "term": "Which service model delivers whole virtual desktops over the internet, run by a third party?",
+    "meaning": "DaaS",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.2",
+    "answerType": "cloudService"
+  },
+  {
+    "term": "Which cloud trait means you pay only for the resources you actually use?",
+    "meaning": "Metered utilization",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.2",
+    "answerType": "cloud"
+  },
+  {
+    "term": "Which cloud trait copes with sudden swings in demand without losing performance?",
+    "meaning": "Elasticity",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.2",
+    "answerType": "cloud"
+  },
+  {
+    "term": "Which cloud trait means one provider's hardware serves many customers at the same time?",
+    "meaning": "Multitenancy",
+    "category": "Virtualization & Cloud",
+    "difficulty": "hard",
+    "source": "220-1201 4.2",
+    "answerType": "cloud"
+  },
+  {
+    "term": "What is data leaving the cloud called, which providers often charge for?",
+    "meaning": "Egress",
+    "category": "Virtualization & Cloud",
+    "difficulty": "medium",
+    "source": "220-1201 4.2",
+    "answerType": "cloud"
+  },
+  {
+    "term": "Which cloud storage feature keeps the same files up to date on every device?",
+    "meaning": "File synchronization",
+    "category": "Virtualization & Cloud",
+    "difficulty": "easy",
+    "source": "220-1201 4.2",
+    "answerType": "cloud"
   }
 ]
