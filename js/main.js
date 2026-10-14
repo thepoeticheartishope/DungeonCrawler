@@ -35,7 +35,7 @@ import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, limbOffOnMap, deathOnMap, onMapPointer, glyphOf } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, limbOffOnMap, deathOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
@@ -1152,7 +1152,7 @@ setInterval(gazeTick, GAZE_POLL_MS);
 // Draws a list of rule events, in order, then redraws the HUD, fog, eye
 // and targeting once. Returns the room note the events add up to
 // ({ cls, text }, text in event order); the caller decides whether to show it.
-// The events that mean the player moved: they put the answer line away.
+// The events that mean the player moved: they put the answer (line or ring) away.
 const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched']);
 
 function drawEvents(events) {
@@ -1162,7 +1162,10 @@ function drawEvents(events) {
   // The player's own move (a step, a turn, a wait, a bump) puts away the
   // answer a miss left on the map (answer swirl). The world's turn alone
   // (Real time) and looking around with the light don't.
-  if (events.some(e => PLAYER_MOVES.has(e.type))) fadeAnswerLine();
+  if (events.some(e => PLAYER_MOVES.has(e.type))) {
+    fadeAnswerLine();
+    endAnswerRingOnMap();
+  }
   for (const e of events) {
     switch (e.type) {
       case 'blocked':
@@ -1325,7 +1328,13 @@ function drawEvents(events) {
       case 'rejected':
         logLine(t(e.cost ? 'log.rejected' : 'log.rejected.free', { cost: e.cost }), 'alert');
         if (state.settings.revealOnWrong) {
-          showAnswerLine(e.expected);
+          // A short answer circles over what asked it; a long one (or the
+          // comfort version) is the line across the top of the map.
+          if (answerRingOnMap(e.expected, e.at, e.boss)) fadeAnswerLine(true);
+          else {
+            endAnswerRingOnMap();
+            showAnswerLine(e.expected);
+          }
           logLine(t('log.expected', { answer: e.expected }), 'sys');
           if (e.source) logLine(t('log.source', { source: e.source }), 'sys');
         }

@@ -602,6 +602,9 @@ test('a miss costs 1 heart, 2 in the darkness, and ends at 0 hearts with signalL
     const rejected = events.find(e => e.type === 'rejected');
     assert.equal(rejected.cost, darkness ? DARK_MISS_COST : 1);
     assert.equal(rejected.expected, 'Noah');
+    // Where the miss happened, for the answer ring (swirl.js).
+    assert.deepEqual(rejected.at, { row: 0, col: 0 });
+    assert.equal(rejected.boss, false);
     assert.equal(state.run.hearts, MAX_HEARTS - rejected.cost);
     assert.deepEqual(types(events), ['answerGiven', 'rejected', 'targetSpent']);
     assert.equal(events[0].given, 'Moses');

@@ -545,6 +545,24 @@ export const SENSE_NOTE_MS = 2600;
 // fade once they move (keep in step with .answer-note in index.html), after
 // which it is taken off the map and "I see you." moves back up.
 export const ANSWER_LINE_FADE_MS = 1600;
+// The answer ring (step B, swirl.js): a short answer circles over the thing
+// that asked it instead. Up to ANSWER_RING_MAX_LETTERS letters and digits
+// rings (a draft number: tune after play); longer is the line. The answer
+// repeats round the ring to at least ANSWER_RING_MIN_CHARS characters, so
+// one copy is always passing along the front. One turn every
+// ANSWER_RING_TURN_MS, slow enough to read. It comes in, letter by letter,
+// over ANSWER_RING_IN_MS and fades over ANSWER_RING_OUT_MS after a move.
+export const ANSWER_RING_MAX_LETTERS = 10;
+export const ANSWER_RING_MIN_CHARS = 20;
+export const ANSWER_RING_TURN_MS = 8000;
+export const ANSWER_RING_IN_MS = 900;
+export const ANSWER_RING_OUT_MS = 1000;
+// Its shape, in tile widths (isoview.js drawAnswerRing): the ring's
+// half-width over a minion, chest or box and round the boss, its letters'
+// size, and how high it sits (over the head; round the boss, at its chest).
+// The far side shrinks to backSize and dims to backLevel; the near letters
+// are never under minPx CSS px, so it still reads on a phone.
+export const ANSWER_RING = { radius: 0.62, bossRadius: 0.7, size: 0.26, minPx: 14, lift: 0.95, bossLift: 0.35, depth: 0.3, backSize: 0.68, backLevel: 0.22 };
 
 // The tutorial room (tutorial.js, tutorial chamber plan).
 // Turns in the dark before the light falls from above on its spot.

@@ -21,6 +21,7 @@ import { stepMs } from './walkpace.js';
 import { t } from './text.js';
 import { drawIsoScene, showShot, isoTileAt, isoGridAt } from './isoview.js';
 import { hurtStick, loseStickLimb, killStick } from './stickforms.js';
+import { startAnswerRing, endAnswerRing } from './swirl.js';
 import { setTileArtColour } from './tileart.js';
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
@@ -212,6 +213,22 @@ export function limbOffOnMap(minion) {
 // reduced motion, or with Simple enemies on).
 export function deathOnMap(minion) {
   killStick(minion, reducedMotion.matches || state.settings.simpleEnemies);
+  requestMapDraw();
+}
+
+// After a miss: puts the right answer `text` up as a ring over tile `at`
+// (round the boss when `boss`; answer swirl plan step B). Returns false
+// when it should be the line instead (too long, reduced motion, Simple
+// enemies, no tile): main.js then shows render.js showAnswerLine.
+export function answerRingOnMap(text, at, boss) {
+  if (!startAnswerRing(text, at, boss, reducedMotion.matches, performance.now())) return false;
+  requestMapDraw();
+  return true;
+}
+
+// The player moved: the answer ring fades.
+export function endAnswerRingOnMap() {
+  endAnswerRing(performance.now());
   requestMapDraw();
 }
 

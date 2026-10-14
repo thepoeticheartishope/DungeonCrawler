@@ -41,7 +41,7 @@ export function settleAnswer(isCorrect, hadExtraSpace, given, tier = '2') {
     const cost = target.kind === 'boss' ? 0 : state.floor.darkness ? DARK_MISS_COST : 1;
     state.run.hearts -= cost;
     state.floor.misses++;
-    events.push({ type: 'rejected', cost, expected: q.meaning, source: q.source });
+    events.push({ type: 'rejected', cost, expected: q.meaning, source: q.source, at: { row: target.row, col: target.col }, boss: target.kind === 'boss' });
   }
   const haunt = recordHauntAnswer(q, isCorrect);
   if (haunt === 'silenced') events.push({ type: 'hauntSilenced' });
