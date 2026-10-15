@@ -427,6 +427,12 @@ export const MINION_STUN_MOVES = 1;
 export const MINION_CHASE_RANGE = 4;
 export const MINION_LIGHT_SIGHT = 7;
 export const MINION_TRACK_TURNS = 5;
+// Grates (vents and noise plan step A, vents.js): up to VENT_PAIRS pairs a
+// floor, each joining two rooms at least VENT_MIN_APART walking steps
+// apart, so the duct is a real short cut (Timothy: random, never the start
+// room or the core).
+export const VENT_PAIRS = 2;
+export const VENT_MIN_APART = 12;
 // An idle stick man walks to a spot in another room, stands there for a
 // number of turns in this [min, max] range, then picks a new room (smarter
 // enemies step 2, Timothy 2026-10-15: random steps each turn looked like

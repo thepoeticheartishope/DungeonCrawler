@@ -105,6 +105,8 @@ const DOOR_DEPTH = 0.6;          // draws after a thing standing in the doorway,
 const PAPER_SHEET = [[-0.8, -0.55], [0.75, -0.7], [0.8, 0.55], [-0.75, 0.7]];
 const PAPER_LINES = [-0.3, 0, 0.3];
 const PAPER_SCALE = 0.2;
+const GRATE_SCALE = 0.19;     // a grate's frame: its corners sit this share of a tile in from the middle (it lies flat, inside its tile)
+const GRATE_BARS = [-0.5, -0.17, 0.17, 0.5]; // where its bars cross it, from -1 to 1
 // The player, drawn as a stick man standing on their tile.
 const STICK_HEIGHT = 0.62;     // feet to top of head
 const EYE_LIFT = 0.22;         // the eye over a stick man in the light (drawGazeEye): its height over the head
@@ -279,6 +281,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
       return drawStairs(ctx, thing.at);
     }
     if (thing.kind === 'paper' && thing.glyph !== null) return drawPaper(ctx, thing.at);
+    if (thing.kind === 'vent') return drawGrate(ctx, thing);
     if (thing.kind === 'player') drawLookRing(ctx, thing.at);
     standing.push({ depth: thing.at.row + thing.at.col + 0.5, draw: () => drawStanding(ctx, thing) });
   });
@@ -1125,6 +1128,31 @@ function drawPaper(ctx, at) {
   glowStroke(ctx);
   strokeGlow(ctx, 0.45 * level, 0);
   PAPER_LINES.forEach(v => line(ctx, p([-0.5, v - 0.05]), p([0.5, v - 0.15])));
+  ctx.restore();
+}
+
+// A grate in the floor (vents.js): a dark square frame lying flat, bars
+// across it, lit like the floor round it. A sealed one (its room held by
+// a relay) has its bars crossed out.
+function drawGrate(ctx, thing) {
+  const [cx, cy] = centre(thing.at.row, thing.at.col);
+  const level = floorLevel(thing.at.row, thing.at.col) * (thing.look.alpha === undefined ? 1 : thing.look.alpha);
+  const p = ([u, v]) => [cx + (u - v) * tw * GRATE_SCALE, cy + (u + v) * th * GRATE_SCALE];
+  const frame = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(p);
+  ctx.save();
+  poly(ctx, frame);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+  ctx.fill();
+  ctx.lineWidth = EDGE_WIDTH * tw * 0.8;
+  strokeGlow(ctx, 0.75 * level, FACE_BLUR);
+  glowStroke(ctx);
+  strokeGlow(ctx, 0.5 * level, 0);
+  GRATE_BARS.forEach(u => line(ctx, p([u, -1]), p([u, 1])));
+  if (thing.look.sealed) {
+    strokeGlow(ctx, 0.9 * level, 0);
+    line(ctx, p([-1, -1]), p([1, 1]));
+    line(ctx, p([1, -1]), p([-1, 1]));
+  }
   ctx.restore();
 }
 

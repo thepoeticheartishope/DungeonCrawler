@@ -67,6 +67,8 @@ export const TEXT = {
   'term.key': 'KEY', // draft (locked core plan)
   'term.key.symbol': 'k', // draft
   'term.desk': 'REFLECTIVE DESK', // draft
+  'term.vent': 'GRATE', // draft. A grate in the floor over a duct (vents.js)
+  'term.vent.symbol': '#', // draft. Drawn as a grate on the map; the glyph is a fallback
   'term.desk.symbol': 'Π', // draft. A desk seen from the front
   'term.cell.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
   // The player's glyph (the isometric map draws a stick man in its place).
@@ -388,6 +390,8 @@ export const TEXT = {
   'room.relay.sparked': 'The {@term.relay} sparks and dies. The light surges.', // draft
   'room.relay.sparkedDark': 'The {@term.relay} sparks and dies.', // draft
   'room.relay.done': 'The {@term.relay} is spent.', // draft. Bumping a used relay
+  // Grates (vents.js): stepping onto one, as part of the step.
+  'room.vent.stepped': 'A grate. Air moves through it.', // draft (Timothy's plan call 1)
   // The reflective desk (desk.js): in the start room, heals to full once a floor.
   'room.desk.healed': 'You see yourself in the {@term.desk}. You are whole again.', // draft
   'room.desk.full': 'Your face looks back from the {@term.desk}. You are already whole.', // draft. Full stability: the heal is kept

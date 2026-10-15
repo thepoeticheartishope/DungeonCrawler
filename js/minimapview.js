@@ -3,7 +3,10 @@
 // It shows as little as it can: the tiles the player has seen (walls
 // brighter than floor) and a dot for the player. No minions, items or
 // stairs, so it helps the player find their way without playing the floor
-// for them. On a fixed plan it also names the building and each room the
+// for them. The one thing it does mark is the grates the player has seen,
+// and a dashed line between a pair once they know where it leads (vents
+// and noise plan, Timothy's call): the ducts are how the stick men come.
+// On a fixed plan it also names the building and each room the
 // player has walked into, so the floor can be learned run after run. Drawn as a diamond like the map, so north is up and to the
 // right, as on the d-pad, and scaled to fit, but never bigger than
 // MINIMAP_MAX_UNIT, so a few seen tiles don't fill the screen. Opening it costs no turn. main.js calls
@@ -102,6 +105,29 @@ export function refreshMinimap() {
     ctx.fillStyle = isSolid(tile) ? colours.wall : colours.floor;
     ctx.fill();
   }
+  // Grates the player has seen, and a line between a pair they know.
+  const at = tile => [left + across(tile) * unit, top + down(tile) * unit];
+  const seen = v => !state.settings.fogEnabled || f.exploredSet.has(key(v.row, v.col));
+  ctx.save();
+  ctx.strokeStyle = colours.player;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  f.vents.forEach((v, i) => {
+    if (!v.known || i > v.pair) return;
+    ctx.beginPath();
+    ctx.moveTo(...at(v));
+    ctx.lineTo(...at(f.vents[v.pair]));
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  f.vents.filter(seen).forEach(v => {
+    const [x, y] = at(v);
+    const r = Math.max(2.5, unit * 0.35);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(x - r, y - r / 2, r * 2, r);
+    ctx.strokeRect(x - r, y - r / 2, r * 2, r);
+  });
+  ctx.restore();
   // Names first, so the player's dot is never hidden under one.
   drawNames(ctx, tile => ({ x: left + across(tile) * unit, y: top + down(tile) * unit }));
   const player = { row: f.playerRow, col: f.playerCol };

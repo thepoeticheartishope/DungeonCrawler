@@ -121,6 +121,7 @@ export function makePlacer(layout, gridSize) {
 
   return {
     blocked,
+    reserved,
     tryBlock,
     // A random tile from `candidates` that can be made solid (and now
     // is), or null if none can.

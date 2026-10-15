@@ -6,6 +6,7 @@
 import { state, key } from './state.js';
 import { reachGate } from './gate.js';
 import { useDesk } from './desk.js';
+import { ventUnderfoot } from './vents.js';
 import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
 import { followBody, waysInUse } from './look.js';
@@ -140,6 +141,7 @@ export function stepPlayer(dRow, dCol) {
   const paper = state.floor.props.find(p => p.kind === 'paper' && !p.searched &&
     p.row === state.floor.playerRow && p.col === state.floor.playerCol);
   if (paper) events.push(readPaper(paper));
+  events.push(...ventUnderfoot());
   // First step into a room: its name on a fixed plan, else its theme line.
   const chamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
   if (chamber !== undefined && !state.floor.visitedChambers.has(chamber)) {

@@ -22,6 +22,7 @@ import { placeBeats } from './beats.js';
 import { rollGoals } from './goals.js';
 import { placeRelays } from './relays.js';
 import { placeDesk } from './desk.js';
+import { placeVents } from './vents.js';
 import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
@@ -240,6 +241,10 @@ export function buildFloor() {
     state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
     minionTaken.push(p);
   });
+  // Grates (vents.js): walked over, so nothing is moved for them, but no
+  // stick man starts on one.
+  state.floor.vents = placeVents(layout, placer, minionTaken, state.floor.props);
+  minionTaken.push(...state.floor.vents);
   placeMinions(roomTiles, minionTaken, recipe.minions - beats.minionTiles.length, recipe);
 
   state.floor.darkness = false;
@@ -278,6 +283,7 @@ function clearDanger() {
   f.lastChoiceType = null;
   f.beats = [];
   f.keys = [];
+  f.vents = [];
   f.keysHeld = 0;
   f.keySpots = [];
   f.keyRoute = 0;
