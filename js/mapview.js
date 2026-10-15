@@ -425,6 +425,15 @@ function mapThings() {
       glow: glowAt(BOSS_GLOW, pulse(MAP_ANIMATION_MS.bossPulse)),
     });
   }
+  // Grates lie flat in the floor, seen like the floor round them (vents.js).
+  // A held room's grates are sealed (relays.js).
+  f.vents.forEach(v => {
+    const lit = isLit(v.row, v.col);
+    const remembered = state.settings.fogEnabled && !lit && !f.darkness && f.exploredSet.has(key(v.row, v.col));
+    if (!lit && !remembered) return;
+    const sealed = f.heldChambers.has(f.chamberAt.get(key(v.row, v.col)));
+    add('vent', v, t('term.vent.symbol'), { size: 'prop', alpha: remembered ? REMEMBERED_ALPHA : 1, sealed });
+  });
   f.props.forEach(p => {
     const lit = isLit(p.row, p.col);
     const remembered = state.settings.fogEnabled && !lit && !f.darkness && f.exploredSet.has(key(p.row, p.col));

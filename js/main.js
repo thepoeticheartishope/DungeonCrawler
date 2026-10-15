@@ -1245,6 +1245,9 @@ function drawEvents(events) {
         break;
       case 'propSearched':
         break;
+      case 'ventStepped':
+        parts.push(t('room.vent.stepped'));
+        break;
       case 'deskHealed':
         parts.push(t('room.desk.healed'));
         break;
