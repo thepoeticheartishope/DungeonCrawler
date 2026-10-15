@@ -66,6 +66,8 @@ export const TEXT = {
   'term.relay.symbol': '¥', // draft. A mast with two arms
   'term.key': 'KEY', // draft (locked core plan)
   'term.key.symbol': 'k', // draft
+  'term.desk': 'REFLECTIVE DESK', // draft
+  'term.desk.symbol': 'Π', // draft. A desk seen from the front
   'term.cell.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
   // The player's glyph (the isometric map draws a stick man in its place).
   'term.player.symbol': '@',
@@ -386,6 +388,10 @@ export const TEXT = {
   'room.relay.sparked': 'The {@term.relay} sparks and dies. The light surges.', // draft
   'room.relay.sparkedDark': 'The {@term.relay} sparks and dies.', // draft
   'room.relay.done': 'The {@term.relay} is spent.', // draft. Bumping a used relay
+  // The reflective desk (desk.js): in the start room, heals to full once a floor.
+  'room.desk.healed': 'You see yourself in the {@term.desk}. You are whole again.', // draft
+  'room.desk.full': 'Your face looks back from the {@term.desk}. You are already whole.', // draft. Full stability: the heal is kept
+  'room.desk.done': 'The {@term.desk} is dull now. It will shine on the next floor.', // draft. Bumping a used desk
 
   // Stairs and floor goals (strategy plan step A). Stepping onto the stairs
   // only asks; SELECT or Enter goes down. All drafts for Timothy.

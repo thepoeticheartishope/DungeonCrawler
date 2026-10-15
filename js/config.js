@@ -913,6 +913,7 @@ export const MAP_ANIMATION_MS = {
   coinBob: 1400,    // the coin lifting and settling
   glow: 1800,       // the stairs' and THE UNFOLDING's glow
   cellBreath: 4000, // an unused energy cell's faint glow swelling and fading (Timothy: eerie, keep it)
+  deskGlow: 6000,   // the unused reflective desk's pool of the player's own light, swelling and fading: slow and calm, it is safe (desk.js)
   mist: 14000,      // the boss mist's slow drift, there and back
   target: 1100,     // the box round the thing being fought
   playerBreath: 2600, // the stick man's chest rising and falling (isometric)

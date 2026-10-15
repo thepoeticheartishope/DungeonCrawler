@@ -1242,6 +1242,12 @@ function drawEvents(events) {
         break;
       case 'propSearched':
         break;
+      case 'deskHealed':
+        parts.push(t('room.desk.healed'));
+        break;
+      case 'deskUntouched':
+        parts.push(t('room.desk.full'));
+        break;
       case 'exchangeOpened':
         parts.push(t('room.exchange.opened'));
         break;
