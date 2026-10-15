@@ -418,8 +418,12 @@ function mapThings() {
     const known = !state.settings.fogEnabled || p.identified || canMakeOut(p.row, p.col);
     // An unused energy cell breathes a faint glow (isoview.js drawEnergyCell).
     const breath = p.kind === 'cell' && !p.searched && !remembered ? pulse(MAP_ANIMATION_MS.cellBreath, phaseOf(p) * MAP_ANIMATION_MS.cellBreath) : null;
+    // An unused reflective desk sits in a pool of the player's own light
+    // (isoview.js drawDeskGlow), remembered ones too: it says "safe" and
+    // calls the player back. Spent, the pool is gone.
+    const deskGlow = p.kind === 'desk' && !p.searched ? pulse(MAP_ANIMATION_MS.deskGlow) : null;
     add(p.kind, p, known ? glyphOf(p) : null, {
-      size: 'prop', colour: p.searched ? colours.muted : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1, breath,
+      size: 'prop', colour: p.searched ? colours.muted : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1, breath, deskGlow,
     });
   });
   if (f.coin && isLit(f.coin.row, f.coin.col)) {

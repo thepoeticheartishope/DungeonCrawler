@@ -58,6 +58,8 @@ const DRUM_ENDS = [[-0.38, 0.1], [0.38, 0.1], [0, -0.42]]; // the round ends on 
 const DRUM_END_SIZE = 0.22;     // a round end's size, as a share of the lid
 const DRUM_BREATH = [0.05, 0.12]; // its breathing glow's strength, faintest and fullest
 const DRUM_BREATH_REACH = 0.55; // how far the glow reaches, in tiles
+const DESK_GLOW = [0.16, 0.26];  // the reflective desk's light pool, faintest and fullest: about the player's own, over less floor
+const DESK_GLOW_RADIUS = 1.3;  // how far it reaches over the floor, in tiles
 const GLYPH_CELL = 0.85;       // the tile size glyphs are sized for (MAP_GLYPH_SIZES)
 const GLYPH_RISE = 0.45;       // a glyph's middle sits this share of its height above the floor
 const CONTACT_SHADOW = 0.2;    // the dark ellipse a glyph stands on, as a share of the diamond
@@ -290,6 +292,9 @@ export function drawIsoScene(ctx, canvasSize, shared) {
     standing.push({ depth: m.row + m.col + 0.5, draw: () => drawForm(ctx, m, m) });
   });
   drawLightPool(ctx);
+  look.things.forEach(thing => {
+    if (thing.look.deskGlow != null && onScreen(thing.at.row, thing.at.col)) drawDeskGlow(ctx, thing);
+  });
   standing.sort((a, b) => a.depth - b.depth).forEach(s => s.draw());
   drawDarkRing(ctx);
   noteTapBoxes();
@@ -1211,6 +1216,30 @@ function drawLightPool(ctx) {
   g.addColorStop(1, glow(0));
   ctx.fillStyle = g;
   ctx.fillRect(-tw * POOL_RADIUS, -tw * POOL_RADIUS, tw * POOL_RADIUS * 2, tw * POOL_RADIUS * 2);
+  ctx.restore();
+}
+
+// The unused reflective desk's pool of light on the floor round it, in
+// the player's own pale colour (not the boss's mist, not the stick men's
+// blue): the room's one safe thing says so without words. It breathes on
+// a slow cycle (mapview.js gives `look.deskGlow`, 0..1; still under
+// reduced motion) and dims with a remembered tile.
+function drawDeskGlow(ctx, thing) {
+  look.keepMoving();
+  const [cx, cy] = centre(thing.at.row, thing.at.col);
+  const a = (DESK_GLOW[0] + (DESK_GLOW[1] - DESK_GLOW[0]) * thing.look.deskGlow) *
+    (thing.look.alpha === undefined ? 1 : thing.look.alpha);
+  const r = tw * DESK_GLOW_RADIUS;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.translate(cx, cy);
+  ctx.scale(1, th / tw);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+  g.addColorStop(0, glow(a));
+  g.addColorStop(0.5, glow(a * 0.45));
+  g.addColorStop(1, glow(0));
+  ctx.fillStyle = g;
+  ctx.fillRect(-r, -r, r * 2, r * 2);
   ctx.restore();
 }
 
