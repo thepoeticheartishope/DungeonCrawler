@@ -333,7 +333,7 @@ export const TEXT = {
   'tut.ring.words': 'dark dim die dark dim die', // draft. The words circling the player in the ring (split on spaces)
   'room.blocked.dark': 'The dark holds you here.', // draft. A step while the tutorial's ring is closed
   'tut.hint.light': 'Your light: V, or tap the middle of the arrows 3 times.', // draft. Room log, only if stuck in the ring
-  'tut.ready': "They'll hunt you after your mistakes. Be ready.", // Timothy's wording (vents and noise plan step D). The kind voice, once the ring breaks; then a stick man comes out of the grate
+  'tut.ready': "They'll be listening. Be ready.", // Timothy's wording (vents and noise plan step D: world-driven, not on the nose; it hints that sound brings them). The kind voice, once the ring breaks; then a stick man comes out of the grate
   'tut.name.q': 'What is your name?', // Timothy: the barrel asks the player's name; any name is right
   // The plain hints show only for a player stuck on a stage (TUTORIAL_STUCK_MS).
   'tut.hint.move': 'Arrows move you.', // draft. Stuck in the dark

@@ -57,7 +57,7 @@
 //      and the barrel; bumping it asks the name, typed; a name closes the
 //      ring of dark ("Die in darkness.", no step out), the kind voice
 //      follows ("Don't let them dim your light."), V breaks it: "They'll
-//      hunt you after your mistakes. Be ready.", the grate shudders a turn
+//      be listening. Be ready.", the grate shudders a turn
 //      later and a stick man drops out of it, shot dead (Auto-win stops the bar);
 //      its key opens the door, and through it the opening rest starts
 //      with the run's numbers fresh (2 energy), the name kept and the toggle off.
@@ -1194,7 +1194,7 @@ async function checkTutorial(page, url) {
   await page.waitForTimeout(200);
   st = await tutorialState(page);
   if (st.stage !== 'fight') return 'the light did not break the ring (stage ' + st.stage + ')';
-  if (!st.sense.includes('hunt you after your mistakes')) return 'no "They\'ll hunt you after your mistakes." once the ring broke: ' + st.sense;
+  if (!st.sense.includes("They'll be listening.")) return 'no "They\'ll be listening." once the ring broke: ' + st.sense;
   if (st.minion) return 'the stick man was on the floor at once, not in the grate';
   // Next turn the grate shudders; the turn after, it drops out.
   await page.keyboard.press('.');
