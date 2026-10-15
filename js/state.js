@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -35,6 +35,7 @@ export const state = {
     eightWays: EIGHT_WAYS,  // the player and minions walk and face 8 ways (true) or the 4 grid ways (false); DEV -> 8 ways flips it
     smoothWalk: SMOOTH_WALK, // every way walks at the same speed on screen and the camera moves with the step (walkpace.js); DEV -> Smooth walk flips it
     lightBattery: LIGHT_BATTERY, // the light goes on and off and runs on a battery (battery.js); DEV -> Light battery flips it (off: always on)
+    noise: NOISE,           // mistakes make a sound stick men hear (noise.js); DEV -> Noise flips it (off: mistakes are quiet)
     gaze: GAZE,             // an eye over a stick man opens in the player's light and it steps closer (gaze.js); DEV -> Gaze flips it
     minigame: 'roll',       // DEV -> Minigame: 'roll' (minigames roll as usual), 'off' (never), or a minigame id (always, when it fits)
     gunCombat: true,        // the gun on the map (gun plan; the default since step 9). DEV -> Combat switches back to classic (minions on the battle screen)

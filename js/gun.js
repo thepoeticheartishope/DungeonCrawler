@@ -24,6 +24,7 @@ import { goldReward } from './moves.js';
 import { tileOccupied, lockOn } from './combat.js';
 import { canPassCorner } from './passage.js';
 import { batteryInPlay, lightOn } from './battery.js';
+import { makeNoise } from './noise.js';
 
 // The category the next reload asks from, as { label, category, pool }.
 // Categories come round in a fixed order (the same groups the battle
@@ -98,8 +99,9 @@ export function reloadOffers() {
 // its MINIGAME_TIER_PAY `energy` (tier 1 one less, never below 1; X one
 // more), except an offer that fills the energy (two modifiers), which
 // fills it at any tier (Timothy); a plain question is '2'.
-// Events: reloaded { energy, total } or jammed { expected, source }, then
-// hauntSilenced / hauntLingers.
+// Events: reloaded { energy, total } or jammed { expected, source } and
+// its noise (noise.js makeNoise: a jam is loud), then hauntSilenced /
+// hauntLingers.
 export function settleReload(isCorrect, offer, box = null, tier = '2') {
   if (box) box.searched = true;
   const q = state.battle.currentQuestion;
@@ -112,7 +114,7 @@ export function settleReload(isCorrect, offer, box = null, tier = '2') {
     events.push({ type: 'reloaded', energy, total: state.run.energy });
   } else {
     state.floor.misses++;
-    events.push({ type: 'jammed', expected: q.meaning, source: q.source });
+    events.push({ type: 'jammed', expected: q.meaning, source: q.source }, ...makeNoise('reload'));
   }
   const haunt = recordHauntAnswer(q, isCorrect);
   if (haunt === 'silenced') events.push({ type: 'hauntSilenced' });
@@ -330,7 +332,8 @@ export function damageZones(minionKind, { extraPenalty = 0 } = {}) {
 // minion with no hp left dies and pays its kind's gold (goldReward, so it
 // doubles in the darkness). Any damage stuns it for MINION_STUN_MOVES of
 // its moves (m.rest), so a minion one step away can't walk straight in.
-// Events: shotGrazed { minion }, shotBackfired { minion, energyLost }, or
+// Events: shotGrazed { minion }, shotBackfired { minion, energyLost } and
+// its noise (noise.js makeNoise), or
 // minionHurt { minion, damage, hpLeft, weakPoint, matched } and maybe limbLost
 // { minion, limbsLeft }; then, on a kill, minionKilled { minion } and
 // goldGained { amount, from: 'kill' }.
@@ -347,7 +350,7 @@ export function settleShot(barPosition) {
   if (zone && zone.tier === 'penalty') {
     const energyLost = Math.min(1, state.run.energy);
     if (energyLost) spendRound();
-    return [{ type: 'shotBackfired', minion: m, energyLost, ...(aim.dark ? { end: aim.end } : {}) }];
+    return [{ type: 'shotBackfired', minion: m, energyLost, ...(aim.dark ? { end: aim.end } : {}) }, ...makeNoise('backfire')];
   }
   if (!m) return [{ type: 'shotIntoDark', end: aim.end }];
   const weakPoint = !!zone && zone.tier === 'weak';
@@ -418,14 +421,15 @@ export function struggleDial() {
 // STRUGGLE_PUSHBACK tiles, no damage to either. Anything else and it
 // strikes, as it would have with energy left.
 // Events: struggleWon { minion } then knockedBack { minion, from } if it
-// had room to go; or struggleLost { minion } then minionStrike's events.
+// had room to go; or struggleLost { minion }, its noise (noise.js
+// makeNoise), then minionStrike's events.
 export function settleStruggle(barPosition) {
   const struggle = state.battle.struggle;
   if (!struggle) return [];
   state.battle.struggle = null;
   const m = struggle.minion;
   if (!state.floor.minions.includes(m)) return [];
-  if (Math.abs(barPosition - 0.5) > struggle.hitHalf) return [{ type: 'struggleLost', minion: m }, ...minionStrike(m)];
+  if (Math.abs(barPosition - 0.5) > struggle.hitHalf) return [{ type: 'struggleLost', minion: m }, ...makeNoise('struggle'), ...minionStrike(m)];
   const events = [{ type: 'struggleWon', minion: m }];
   const from = { row: m.row, col: m.col };
   if (pushBack(m, STRUGGLE_PUSHBACK)) events.push({ type: 'knockedBack', minion: m, from });

@@ -350,7 +350,7 @@ test('a missed Letter Pool is no haunt', () => {
   assert.equal(state.run.haunts.size, 0);
   state.battle.currentQuestion = q;
   const events = settleReload(false, { modifiers: [], energy: RELOAD_ENERGY[0] });
-  assert.deepEqual(events.map(e => e.type), ['jammed']);
+  assert.deepEqual(events.map(e => e.type), ['jammed', 'noiseMade']);
   assert.equal(events[0].expected, 'Acts, Ruth');
 });
 

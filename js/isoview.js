@@ -105,6 +105,9 @@ const DOOR_DEPTH = 0.6;          // draws after a thing standing in the doorway,
 const PAPER_SHEET = [[-0.8, -0.55], [0.75, -0.7], [0.8, 0.55], [-0.75, 0.7]];
 const PAPER_LINES = [-0.3, 0, 0.3];
 const PAPER_SCALE = 0.2;
+const SOUND_INSET = [0.4, 0.1];   // a tile of a mistake's sound opens from this inset to this one (shares of a tile)
+const SOUND_LEVEL = 0.55;         // how bright a tile of the sound is when it first lights
+const HEARD_LIFT = 0.18;          // the '!' over a stick man that heard a sound sits this share of a tile above its eye
 const GRATE_SCALE = 0.19;     // a grate's frame: its corners sit this share of a tile in from the middle (it lies flat, inside its tile)
 const GRATE_BARS = [-0.5, -0.17, 0.17, 0.5]; // where its bars cross it, from -1 to 1
 // The player, drawn as a stick man standing on their tile.
@@ -256,6 +259,7 @@ export function drawIsoScene(ctx, canvasSize, shared) {
   tiles.forEach(({ row, col }) => {
     if (!isWall(row, col) && look.fogOf(row, col) !== 'hidden') drawFloor(ctx, row, col);
   });
+  if (look.sounds.length) drawSounds(ctx, look.sounds);
   const standing = [];
   tiles.forEach(({ row, col }) => {
     if (isWall(row, col)) {
@@ -1373,6 +1377,7 @@ function drawStanding(ctx, thing) {
   if (form) {
     drawForm(ctx, at, form);
     drawGazeEye(ctx, at, form);
+    drawHeardMark(ctx, at, thing.look.heard);
     return;
   }
   const [cx, cy] = centre(at.row, at.col);
@@ -1387,6 +1392,32 @@ function drawStanding(ctx, thing) {
   const [x, y] = glyphPlace(thing);
   look.paintGlyph(ctx, tw * GLYPH_CELL, x, y, thing.glyph, thing.look);
   if (thing.kind === 'minion') drawGazeEye(ctx, at, minionOn(thing.tile));
+  drawHeardMark(ctx, at, thing.look.heard);
+}
+
+// A mistake's sound on the floor (mapview.js soundTilesNow): an outline
+// in each tile it reached, in the player's light (it is their mistake),
+// opening out from the middle and fading.
+function drawSounds(ctx, tiles) {
+  ctx.save();
+  ctx.lineWidth = EDGE_WIDTH * tw;
+  tiles.forEach(({ row, col, strength, spread }) => {
+    if (!onScreen(row, col)) return;
+    const d = diamond(row, col, SOUND_INSET[0] + (SOUND_INSET[1] - SOUND_INSET[0]) * spread);
+    poly(ctx, [d.T, d.R, d.B, d.L]);
+    strokeGlow(ctx, SOUND_LEVEL * strength, FACE_BLUR);
+    glowStroke(ctx);
+  });
+  ctx.restore();
+}
+
+// The '!' over a stick man that heard a mistake (mapview.js heardOnMap),
+// above where its eye would be, in the enemies' cold blue.
+function drawHeardMark(ctx, at, strength) {
+  if (!strength) return;
+  const [x, foot] = centre(at.row, at.col);
+  const y = foot - tw * (STICK_HEIGHT + EYE_LIFT + HEARD_LIFT);
+  look.paintGlyph(ctx, tw * GLYPH_CELL, x, y, '!', { size: 'prop', colour: 'rgb(' + ENEMY_LIGHT.core + ')', alpha: strength });
 }
 
 // The eye over a stick man in the player's cone (gaze.js): shut, a line;

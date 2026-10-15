@@ -72,6 +72,24 @@ export function ventAt(row, col) {
   return state.floor.vents.find(v => v.row === row && v.col === col) || null;
 }
 
+// The index in state.floor.vents of the grate at a tile, or -1.
+export function ventIndexAt(row, col) {
+  return state.floor.vents.findIndex(v => v.row === row && v.col === col);
+}
+
+// A grate in a room held by a relay is sealed: nothing gets through it,
+// sound or stick man, either way.
+export function ventSealed(v) {
+  const f = state.floor;
+  return f.heldChambers.has(f.chamberAt.get(key(v.row, v.col)));
+}
+
+// Whether the duct behind grate `i` is open: neither end is sealed.
+export function ductOpen(i) {
+  const vents = state.floor.vents;
+  return !ventSealed(vents[i]) && !ventSealed(vents[vents[i].pair]);
+}
+
 // Stepping onto a grate says so, as part of the step: the player can't go
 // in (the vents are theirs), but should notice the way they come.
 // Returns [ventStepped] or [].

@@ -35,7 +35,7 @@ import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, limbOffOnMap, deathOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, limbOffOnMap, deathOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
@@ -45,7 +45,7 @@ import { repeatMs, noteStep, heldStepReady, heldStepWait } from './walkpace.js';
 import { aimLook, turnBody, wantsTurn, lookAngle } from './look.js';
 import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
-import { computeVisibility } from './sight.js';
+import { computeVisibility, seesEnemy } from './sight.js';
 import { isoAngleOf } from './isoview.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
@@ -1247,6 +1247,14 @@ function drawEvents(events) {
         break;
       case 'ventStepped':
         parts.push(t('room.vent.stepped'));
+        break;
+      // A mistake's sound (noise.js): drawn on the map only; the mistake's
+      // own line already says what happened.
+      case 'noiseMade':
+        soundOnMap(e.tiles);
+        break;
+      case 'noiseHeard':
+        if (seesEnemy(e.minion)) heardOnMap(e.minion);
         break;
       case 'deskHealed':
         parts.push(t('room.desk.healed'));

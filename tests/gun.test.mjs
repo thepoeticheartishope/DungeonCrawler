@@ -399,7 +399,8 @@ test('the damage bar: a penalty zone backfires, no damage and one more round los
   state.run.energy = 3;
   withRandom(0, () => fire(m));
   const events = settleShot(zoneMiddle('penalty'));
-  assert.deepEqual(events, [{ type: 'shotBackfired', minion: m, energyLost: 1 }]);
+  assert.deepEqual(events[0], { type: 'shotBackfired', minion: m, energyLost: 1 });
+  assert.equal(events[1].type, 'noiseMade', 'a backfire is loud (noise.js)');
   assert.equal(state.run.energy, 1, 'the shot and the backfire');
   assert.equal(m.hpLeft, MINION_KINDS.HUSK.hp);
 
@@ -625,7 +626,7 @@ test('a Struggle lost outside the zone is a strike', () => {
   struggleSetUp();
   advanceMonsters();
   const events = settleStruggle(0.5 + STRUGGLE_HIT_HALF + 0.05);
-  assert.deepEqual(events.slice(0, 2).map(e => e.type), ['struggleLost', 'minionStruck']);
+  assert.deepEqual(events.slice(0, 3).map(e => e.type), ['struggleLost', 'noiseMade', 'minionStruck']);
   assert.equal(state.run.hearts, MAX_HEARTS - MINION_STRIKE_COST);
 });
 
