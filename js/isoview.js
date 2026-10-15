@@ -25,7 +25,7 @@
 // killed one keeps fading where it died until it is gone.
 
 import { state, key } from './state.js';
-import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF, GAZE_MS, TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS } from './config.js';
+import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF, GAZE_MS, TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS } from './config.js';
 import { FACING_VECTORS, canShoot } from './sight.js';
 import { lookAngle, bodyAngle, wrapAngle } from './look.js';
 import { lightOn } from './battery.js';
@@ -33,6 +33,7 @@ import { gazeInPlay, inCone } from './gaze.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
 import { drawStickForm, stickBox, dyingSticks } from './stickforms.js';
+import { answerRingNow, ringLetters } from './swirl.js';
 
 // How bright a lit tile is, by its steps from the player (0 = their own
 // tile): the light fades over the five steps they can see.
@@ -291,6 +292,14 @@ export function drawIsoScene(ctx, canvasSize, shared) {
     if (!onScreen(m.row, m.col)) return;
     standing.push({ depth: m.row + m.col + 0.5, draw: () => drawForm(ctx, m, m) });
   });
+  // The answer ring (swirl.js): its far half just behind what stands on
+  // its tile, its near half just in front, so it goes round the boss.
+  const ring = answerRingNow(look.now);
+  if (ring) {
+    if (!look.still) look.keepMoving();
+    standing.push({ depth: ring.row + ring.col + 0.49, draw: () => drawAnswerRing(ctx, ring, false) });
+    standing.push({ depth: ring.row + ring.col + 0.51, draw: () => drawAnswerRing(ctx, ring, true) });
+  }
   drawLightPool(ctx);
   look.things.forEach(thing => {
     if (thing.look.deskGlow != null && onScreen(thing.at.row, thing.at.col)) drawDeskGlow(ctx, thing);
@@ -948,6 +957,57 @@ function drawDarkRing(ctx) {
     ctx.fillText(word, x, y - th * 0.6);
   });
   ctx.restore();
+}
+
+// One half of the answer ring (answer swirl plan step B): the right answer
+// to a miss going round an oval over its tile, or round the boss at its
+// chest. Only the `near` half (in front) or the far half is drawn, so the
+// boss can stand between them. The answer repeats (swirl.js ringLetters)
+// and reads left to right along the front; letters stay upright, the far
+// ones smaller and dim. It comes in letter by letter, turns once every
+// ANSWER_RING_TURN_MS, and after a move rises a little as it fades. Never
+// shown under reduced motion (the line shows instead), so it always moves.
+function drawAnswerRing(ctx, ring, near) {
+  const letters = ringLetters(ring.text);
+  const n = letters.length;
+  const [cx, foot] = centre(ring.row, ring.col);
+  const size = Math.max(tw * ANSWER_RING.size, ANSWER_RING.minPx * pageScale);
+  const radius = tw * (ring.boss ? ANSWER_RING.bossRadius : ANSWER_RING.radius);
+  const out = ring.fading === null ? 0 : smooth(ring.fading / ANSWER_RING_OUT_MS);
+  const cy = foot - tw * (ring.boss ? ANSWER_RING.bossLift : ANSWER_RING.lift) - out * size * 0.8;
+  const spin = (look.now % ANSWER_RING_TURN_MS) / ANSWER_RING_TURN_MS * Math.PI * 2;
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  letters.forEach((ch, i) => {
+    // Going down the angle reads left to right across the front of the oval.
+    const angle = Math.PI * 0.95 - i * (Math.PI * 2 / n) + spin;
+    const toward = Math.sin(angle); // 1 nearest the player's side of the screen, -1 the far side
+    if ((toward >= 0) !== near) return;
+    const k = (toward + 1) / 2;
+    const comeIn = smooth((ring.since - (i / n) * ANSWER_RING_IN_MS * 0.6) / (ANSWER_RING_IN_MS * 0.4));
+    const level = comeIn * (1 - out) * (ANSWER_RING.backLevel + (1 - ANSWER_RING.backLevel) * Math.pow(k, 1.4));
+    if (level <= 0.01) return;
+    const px = Math.max(6, Math.round(size * (ANSWER_RING.backSize + (1 - ANSWER_RING.backSize) * k)));
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + toward * radius * ANSWER_RING.depth;
+    ctx.font = px + 'px VT323, monospace';
+    if (ch !== ' ') {
+      ctx.fillStyle = 'rgba(0, 0, 0, ' + 0.8 * Math.min(1, level * 1.5) + ')';
+      ctx.fillRect(x - px * 0.3, y - px * 0.46, px * 0.6, px * 0.92);
+    }
+    ctx.fillStyle = 'rgba(' + ENEMY_LIGHT.halo + ', ' + 0.35 * level + ')';
+    ctx.fillText(ch, x, y + px * 0.04);
+    ctx.fillStyle = 'rgba(' + ENEMY_LIGHT.core + ', ' + level + ')';
+    ctx.fillText(ch, x, y);
+  });
+  ctx.restore();
+}
+
+// Eases `x` (0..1, held there) in and out.
+function smooth(x) {
+  const k = Math.max(0, Math.min(1, x));
+  return k * k * (3 - 2 * k);
 }
 
 // The doorway on a tile, if it is one the player has seen with a wall on

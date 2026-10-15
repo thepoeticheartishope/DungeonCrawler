@@ -60,11 +60,13 @@
 //      ready." and a stick man, shot dead (Auto-win stops the bar);
 //      its key opens the door, and through it the opening rest starts
 //      with the run's numbers fresh (2 energy), the name kept and the toggle off.
-//   9. Answer line run (answer swirl plan step A): Reveal on, Auto-win off,
+//   9. Answer line run (answer swirl plan steps A and B): Reveal on, Auto-win off,
 //      minigames off; a reload from an energy cell answered wrong puts the
 //      right answer over the map (#answerNote); a Real-time-free wait
-//      fades it and takes it off the map. Then the same miss with Reveal
-//      off shows nothing.
+//      fades it and takes it off the map. Then the chest bumped and its
+//      question missed: a short answer rings over the chest (swirl.js), a
+//      long one is the line, and a wait fades it. Then the same reload
+//      miss with Reveal off shows nothing.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -1310,13 +1312,81 @@ async function checkAnswerLine(page, url, reveal) {
   const fade = await page.evaluate(async () => (await import('./js/config.js')).ANSWER_LINE_FADE_MS);
   await page.waitForTimeout(fade + 300);
   if ((await answerLine(page)).onMap) return 'the line stayed on the map after its fade';
-  return { detail: `"${right}" showed until a wait, then faded` };
+  const ring = await checkAnswerRing(page);
+  if (typeof ring === 'string') return ring;
+  return { detail: `"${right}" showed until a wait, then faded; ${ring.detail}` };
+}
+
+// The chest's question missed (answer swirl step B): a short answer rings
+// over the chest, a long one shows as the line, and a wait puts it away.
+async function checkAnswerRing(page) {
+  const placed = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { whatBlocks } = await import('./js/passage.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const f = state.floor;
+    const chest = f.chest;
+    if (!chest) return null;
+    // The open side to bump it from, and the number pad key that points at
+    // it (screen up-right = grid north).
+    const sides = [[1, 0, 'N', 0, 'Numpad9'], [-1, 0, 'S', Math.PI, 'Numpad1'], [0, -1, 'E', Math.PI / 2, 'Numpad3'], [0, 1, 'W', -Math.PI / 2, 'Numpad7']];
+    const side = sides.find(([dr, dc]) => !whatBlocks(chest.row + dr, chest.col + dc));
+    if (!side) return null;
+    f.playerRow = chest.row + side[0];
+    f.playerCol = chest.col + side[1];
+    f.facing = side[2];
+    f.look = side[3];
+    computeVisibility();
+    return side[4];
+  });
+  if (!placed) return { detail: 'no chest to bump (ring not checked)' };
+  await page.keyboard.press(placed);
+  await page.waitForSelector('#battleScreen.show', { timeout: 5000 });
+  await page.waitForTimeout(300);
+  const right = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const right = state.battle.currentQuestion.meaning;
+    const wrong = [...document.querySelectorAll('#battleScreen .mc-option')]
+      .find(b => b.offsetParent && b.querySelector('.opt-text').textContent !== right);
+    if (wrong) wrong.click();
+    else {
+      const input = document.getElementById('answerInput');
+      input.value = 'zzzz';
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    }
+    return right;
+  });
+  // A settled fight waits for Continue before the room comes back.
+  await page.click('#continueBtn', { timeout: 5000 });
+  await page.waitForSelector('#roomScreen.show', { timeout: 10000 });
+  await page.waitForTimeout(300);
+  const ringed = () => page.evaluate(async () => {
+    const ring = (await import('./js/swirl.js')).answerRingNow(performance.now());
+    return ring && { text: ring.text, fading: ring.fading !== null };
+  });
+  const fits = await page.evaluate(async (a) => (await import('./js/swirl.js')).ringFits(a), right);
+  const ring = await ringed();
+  const line = await answerLine(page);
+  if (fits) {
+    if (!ring || ring.text !== right) return `no ring for the short answer "${right}"`;
+    if (line.lit) return 'the line showed beside the ring';
+  } else {
+    if (ring) return `the long answer "${right}" rang`;
+    if (!line.lit || line.text !== right) return `no line for the long answer "${right}"`;
+  }
+  await page.keyboard.press('.');
+  await page.waitForTimeout(200);
+  if (fits && !(await ringed())?.fading) return 'a wait did not fade the ring';
+  if (!fits && (await answerLine(page)).lit) return 'a wait did not fade the line';
+  return { detail: `the chest's "${right}" ${fits ? 'rang' : 'showed as the line'} until a wait` };
 }
 
 async function runAnswerLine(browser, url) {
   const results = [];
   for (const reveal of [true, false]) {
-    const page = await browser.newPage();
+    // No service worker: on a first visit it takes over and main.js reloads
+    // the page, which could swallow the start click or the Reveal toggle.
+    const page = await browser.newPage({ serviceWorkers: 'block' });
     const errors = collectErrors(page);
     // A cell may sit where it can't be bumped from the south; a new run
     // lays the floor out again.
