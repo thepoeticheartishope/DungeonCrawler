@@ -10,10 +10,10 @@
 // Rules only — no DOM access here; main.js runs the clock.
 
 import { state, key } from './state.js';
-import { GAZE_MS, MINION_TRACK_TURNS, MINION_TRAIL_LENGTH } from './config.js';
+import { GAZE_MS, MINION_TRAIL_LENGTH } from './config.js';
 import { batteryInPlay } from './battery.js';
 import { inLookCone } from './sight.js';
-import { bfsPath, blockedTilesFor } from './combat.js';
+import { bfsPath, blockedTilesFor, lockOn } from './combat.js';
 
 // Whether the eye is in play at all.
 export function gazeInPlay() {
@@ -49,7 +49,7 @@ export function tickGaze(dt) {
 // way it knows where they are now.
 function gazeStep(m) {
   const f = state.floor;
-  m.track = MINION_TRACK_TURNS;
+  lockOn(m);
   const path = bfsPath({ row: m.row, col: m.col }, { row: f.playerRow, col: f.playerCol }, blockedTilesFor(m));
   const next = path && path[1];
   if (!next || (next.row === f.playerRow && next.col === f.playerCol)) return { type: 'gazeStare', minion: m };

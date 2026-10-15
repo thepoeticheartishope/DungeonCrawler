@@ -14,14 +14,14 @@ import {
   DAMAGE_BAR_DEPTHS, DAMAGE_PENALTY_WIDTH, DAMAGE_ZONE_GAP,
   MINION_KINDS, MINION_STRIKE_COST, MINION_STUN_MOVES, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
   STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
-  MINIGAME_TIER_PAY, PLAYER_CONE_RANGE, MINION_TRACK_TURNS, DARK_SHOT_STEP,
+  MINIGAME_TIER_PAY, PLAYER_CONE_RANGE, DARK_SHOT_STEP,
 } from './config.js';
 import { fightGroups, shuffle } from './quiz.js';
 import { recordHauntAnswer } from './haunts.js';
 import { shootBlock, canShoot, seesEnemy } from './sight.js';
 import { aimLook, angleTo, lookAngle, wantsTurn, wrapAngle } from './look.js';
 import { goldReward } from './moves.js';
-import { tileOccupied } from './combat.js';
+import { tileOccupied, lockOn } from './combat.js';
 import { canPassCorner } from './passage.js';
 import { batteryInPlay, lightOn } from './battery.js';
 
@@ -336,7 +336,7 @@ export function damageZones(minionKind, { extraPenalty = 0 } = {}) {
 // goldGained { amount, from: 'kill' }.
 // A shot in the dark (aim.dark) with nothing there: shotIntoDark { end }
 // unless it backfires (shotBackfired with no minion, `end` where it went).
-// One that hurts a stick man in the dark gives it MINION_TRACK_TURNS: it
+// One that hurts a stick man in the dark locks it on (combat.js lockOn): it
 // knows where the shot came from (minionHurt's `dark`).
 export function settleShot(barPosition) {
   const aim = state.battle.aim;
@@ -357,7 +357,7 @@ export function settleShot(barPosition) {
   const damage = aim.matched ? base * WEAKNESS_DAMAGE_SCALE : base;
   m.hpLeft = Math.max(0, m.hpLeft - damage);
   m.rest = Math.max(m.rest || 0, MINION_STUN_MOVES);
-  if (aim.dark) m.track = MINION_TRACK_TURNS;
+  if (aim.dark) lockOn(m);
   const events = [{ type: 'minionHurt', minion: m, damage, hpLeft: m.hpLeft, weakPoint, matched: aim.matched, ...(aim.dark ? { dark: true } : {}) }];
   if (weakPoint && m.limbs > 0) {
     m.limbs--;

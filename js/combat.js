@@ -193,7 +193,8 @@ export function spawnMinion(spot, minionKind = 'SHARD') {
     hpLeft: stats ? stats.hp : null,
     limbs: stats ? stats.limbs : 0,
     trail: [],
-    track: 0,      // turns it keeps tracking the player with no sight of them (0: never saw them, or lost them); combat.js notice
+    track: 0,      // turns it keeps searching once it reaches lastSeen with no sight of the player (0: never saw them, or lost them); combat.js notice
+    lastSeen: null, // { row, col } where it last knew the player was, walked to while tracking; null once reached (lockOn)
     drawn: false,  // it can see the player's light this turn
     gaze: 0,       // ms of the player's light on it so far, toward GAZE_MS (gaze.js)
   };
@@ -216,13 +217,27 @@ function wanderStep(m, intoPlayer = false) {
   return { row, col };
 }
 
+// A stick man learns where the player is right now: it remembers the tile
+// (`lastSeen`) and its search starts over (`track`). Its sight, a blunder
+// into the player, a full eye (gaze.js) and a hurting dark shot (gun.js:
+// it knows where the shot came from) all call this.
+export function lockOn(m) {
+  m.track = MINION_TRACK_TURNS;
+  m.lastSeen = { row: state.floor.playerRow, col: state.floor.playerCol };
+}
+
 // What a stick man knows (light battery plan step B), worked out each turn
-// before it moves. With the light on, a clear line within
-// MINION_LIGHT_SIGHT tiles to the player or any tile their light is on
-// draws it (`drawn`) and it locks on (`track`). With the light off, one
-// already tracking keeps it up while it can see the player; one that never
-// saw them doesn't notice them, even right beside them. Out of sight,
-// `track` runs down a turn at a time until it has lost them.
+// before it moves. Returns true while it has the player in view this turn.
+// With the light on, a clear line within MINION_LIGHT_SIGHT tiles to the
+// player or any tile their light is on draws it (`drawn`): the light leads
+// back to the player, so it locks on to where they are. With the light
+// off, one already tracking keeps locking on while it can see the player;
+// one that never saw them doesn't notice them, even right beside them.
+// Out of view it walks to `lastSeen` without forgetting (smarter enemies,
+// Timothy 2026-10-15: hiding and breaking the line should work, so it
+// goes where it last saw them, not where they really are). Once there,
+// `track` runs down a turn at a time while it searches, until it has
+// lost them.
 function sees(m, row, col) {
   return Math.hypot(row - m.row, col - m.col) <= MINION_LIGHT_SIGHT && clearLine(m.row, m.col, row, col);
 }
@@ -234,14 +249,32 @@ function notice(m) {
       [...f.sightSet].some(k => { const [row, col] = k.split(',').map(Number); return sees(m, row, col); });
     if (lit) {
       m.drawn = true;
-      m.track = MINION_TRACK_TURNS;
-      return;
+      lockOn(m);
+      return true;
     }
   } else if (m.track > 0 && sees(m, f.playerRow, f.playerCol)) {
-    m.track = MINION_TRACK_TURNS;
-    return;
+    lockOn(m);
+    return true;
   }
-  if (m.track > 0) m.track--;
+  if (m.track > 0 && !m.lastSeen) m.track--;
+  return false;
+}
+
+// Where a tracking stick man that can't see the player goes next: one step
+// along the shortest way to `lastSeen`. Reaching it (or finding no way
+// there, or the spot taken by another) clears `lastSeen`, so it searches
+// round it from then on. Returns the next tile, or null when it searches.
+function towardLastSeen(m) {
+  const spot = m.lastSeen;
+  const path = bfsPath({ row: m.row, col: m.col }, spot, blockedTilesFor(m));
+  const next = path && path[1];
+  const taken = next && next.row === spot.row && next.col === spot.col && tileOccupied(spot.row, spot.col, m);
+  if (!next || taken) {
+    m.lastSeen = null;
+    return null;
+  }
+  if (next.row === spot.row && next.col === spot.col) m.lastSeen = null;
+  return next;
 }
 
 // Advances the room by one turn: the boss light spreads, minions move, and
@@ -285,7 +318,7 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     // What it knows comes first, every turn, even one it won't move on.
     // The hunter keeps its own rule (new call 1): it isn't drawn by the light.
     const noticing = lightRules && m.kind !== 'hunter';
-    if (noticing) notice(m);
+    const inView = noticing && notice(m);
     // A slow kind's off turn comes first, so a rest (a stun) is only used
     // up on a turn it would really have moved.
     const stats = MINION_KINDS[m.minionKind];
@@ -301,14 +334,17 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     const sheltered = keptOut(m).has(key(state.floor.playerRow, state.floor.playerCol));
     const path = sheltered ? null : bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blockedTilesFor(m));
     // In the darkness after the boss falls, every minion hunts, from anywhere.
-    const noticed = noticing ? m.drawn || m.track > 0 : path && path.length - 1 <= MINION_CHASE_RANGE;
+    const noticed = noticing ? inView : path && path.length - 1 <= MINION_CHASE_RANGE;
     // The tutorial's stick man (m.hunts) always comes for the player.
     const chasing = path && (state.floor.darkness || noticed || m.hunts);
-    const next = chasing ? path[1] : wanderStep(m, noticing);
+    // Out of view but tracking: to where it last saw them, then a search
+    // of random steps round there.
+    const tracking = !chasing && noticing && m.lastSeen && !sheltered;
+    const next = chasing ? path[1] : (tracking && towardLastSeen(m)) || wanderStep(m, noticing);
     if (next) {
       const isPlayerTile = next.row === state.floor.playerRow && next.col === state.floor.playerCol;
       // Reaching the player, even by blundering into them, it knows them.
-      if (isPlayerTile && noticing) m.track = MINION_TRACK_TURNS;
+      if (isPlayerTile && noticing) lockOn(m);
 
       const struggles = canStruggle && state.run.energy <= 0 && !state.battle.struggle;
       if (isPlayerTile && gun && struggles) {
