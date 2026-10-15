@@ -450,6 +450,9 @@ export function buildTutorialFloor() {
   f.exchange = null;
   f.exchangeBought = new Set();
   f.coin = null;
+  // The tutorial's grate has no pair: it is its own (vents.js), so sound
+  // and stick men only come out of it.
+  f.vents = [{ row: room.grate.row, col: room.grate.col, pair: 0, known: false }];
 
   f.visibleSet = new Set();
   f.exploredSet = new Set();

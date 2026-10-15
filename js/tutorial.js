@@ -31,16 +31,18 @@ import {
 } from './config.js';
 import { computeVisibility } from './sight.js';
 import { spawnMinion } from './combat.js';
+import { crawlInto } from './vents.js';
 import { addRounds } from './gun.js';
 import { lightOn } from './battery.js';
 
 // The room: '#' wall, '.' floor, 'S' where the player wakes, 'D' the
 // locked door (in the top wall), 'L' the middle of the light from above,
-// 'o' a pillar, 'b' an empty box. Furniture is there to bump into, not to
-// use. The floor inside is 8 tiles each way (Timothy).
+// 'o' a pillar, 'b' an empty box, 'g' a grate (vents and noise plan step
+// D: the stick man comes out of it; it has no pair). Furniture is there to
+// bump into, not to use. The floor inside is 8 tiles each way (Timothy).
 export const TUTORIAL_ROOM = [
   '####D#####',
-  '#........#',
+  '#g.......#',
   '#.o....b.#',
   '#........#',
   '#......L.#',
@@ -52,7 +54,7 @@ export const TUTORIAL_ROOM = [
 ];
 
 // TUTORIAL_ROOM as tiles: { size, walls, roomTiles (Set of keys), start,
-// door, spot, pillars, boxes } (all positions { row, col }). The door is
+// door, spot, grate, pillars, boxes } (all positions { row, col }). The door is
 // floor, not wall: it is shut by passage.js whatBlocks until it opens.
 export function parseTutorialRoom(rows = TUTORIAL_ROOM) {
   const room = { size: rows.length, walls: new Set(), roomTiles: new Set(), pillars: [], boxes: [] };
@@ -63,6 +65,7 @@ export function parseTutorialRoom(rows = TUTORIAL_ROOM) {
     room.roomTiles.add(key(row, col));
     if (ch === 'S') room.start = at;
     if (ch === 'L') room.spot = at;
+    if (ch === 'g') room.grate = at;
     if (ch === 'o') room.pillars.push(at);
     if (ch === 'b') room.boxes.push(at);
   }));
@@ -109,7 +112,8 @@ export function tutorialTurn(events) {
     return [{ type: 'whispered', line: 'tut.trust', tone: 'kind' }, { type: 'barrelAppeared', prop: placeBarrel(tut.spot) }];
   }
   if (tut.stage === 'fight') {
-    if (state.floor.minions.includes(tut.minion)) {
+    // In the grate's duct it is still coming, not dead.
+    if (state.floor.minions.includes(tut.minion) || state.floor.crawling.includes(tut.minion)) {
       tut.minionAt = { row: tut.minion.row, col: tut.minion.col };
       return [];
     }
@@ -179,8 +183,12 @@ export function settleName(raw) {
 
 // The light is on in the ring (main.js, after V or 3 taps on the look
 // stick; in Comfort mode, where it is always on, once the kind voice has
-// spoken): the ring breaks, the energy is filled, and a slow stick man
-// comes from the far side of the room. Events: ringBroken,
+// spoken): the ring breaks, the energy is filled, and the kind voice warns
+// that mistakes bring them (vents and noise plan step D). A slow stick man
+// is already in the grate's duct (vents.js crawlInto, quietly: no line
+// for it going in): next turn the grate shudders, the turn after it climbs
+// out and hunts (crawlTurn). Nothing here follows the name: giving it must
+// never read as a mistake (Timothy). Events: ringBroken,
 // whispered { line: 'tut.ready', tone: 'kind' }; none if the ring isn't
 // closed or the light is still off.
 export function breakRing() {
@@ -188,36 +196,16 @@ export function breakRing() {
   const tut = f.tutorial;
   if (!tut || tut.stage !== 'ring' || !lightOn()) return [];
   if (state.run.energy < ENERGY_MAX) addRounds(ENERGY_MAX - state.run.energy);
-  const m = spawnMinion(farthestTile(), TUTORIAL_MINION_KIND);
+  const grate = f.vents[0];
+  const m = spawnMinion({ row: grate.row, col: grate.col }, TUTORIAL_MINION_KIND);
   m.hpLeft = TUTORIAL_MINION_HP;
   m.hunts = true;
+  crawlInto(m, 0);
+  f.minions.splice(f.minions.indexOf(m), 1);
+  f.crawling.push(m);
   tut.minion = m;
   tut.minionAt = { row: m.row, col: m.col };
   tut.stage = 'fight';
   computeVisibility();
   return [{ type: 'ringBroken' }, { type: 'whispered', line: 'tut.ready', tone: 'kind' }];
-}
-
-// The free room tile the most walkable steps from the player: the other
-// side of the room, wherever they stand.
-function farthestTile() {
-  const f = state.floor;
-  const blocked = k => f.wallSet.has(k) || f.pillarSet.has(k) || f.props.some(p => p.kind !== 'paper' && key(p.row, p.col) === k);
-  const start = key(f.playerRow, f.playerCol);
-  const dist = new Map([[start, 0]]);
-  const queue = [{ row: f.playerRow, col: f.playerCol }];
-  let far = queue[0];
-  while (queue.length) {
-    const cur = queue.shift();
-    const d = dist.get(key(cur.row, cur.col));
-    if (d > dist.get(key(far.row, far.col))) far = cur;
-    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const next = { row: cur.row + dr, col: cur.col + dc };
-      const k = key(next.row, next.col);
-      if (dist.has(k) || blocked(k) || !f.tutorial.roomTiles.has(k)) continue;
-      dist.set(k, d + 1);
-      queue.push(next);
-    }
-  }
-  return far;
 }

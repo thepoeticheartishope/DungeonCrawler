@@ -56,8 +56,9 @@
 //      after 4 waits; walking to it brings "You can do this. I trust you."
 //      and the barrel; bumping it asks the name, typed; a name closes the
 //      ring of dark ("Die in darkness.", no step out), the kind voice
-//      follows ("Don't let them dim your light."), V breaks it: "Be
-//      ready." and a stick man, shot dead (Auto-win stops the bar);
+//      follows ("Don't let them dim your light."), V breaks it: "They'll
+//      hunt you after your mistakes. Be ready.", the grate shudders a turn
+//      later and a stick man drops out of it, shot dead (Auto-win stops the bar);
 //      its key opens the door, and through it the opening rest starts
 //      with the run's numbers fresh (2 energy), the name kept and the toggle off.
 //   9. Answer line run (answer swirl plan steps A and B): Reveal on, Auto-win off,
@@ -1193,7 +1194,17 @@ async function checkTutorial(page, url) {
   await page.waitForTimeout(200);
   st = await tutorialState(page);
   if (st.stage !== 'fight') return 'the light did not break the ring (stage ' + st.stage + ')';
-  if (!st.sense.includes('Be ready')) return 'no "Be ready." once the ring broke: ' + st.sense;
+  if (!st.sense.includes('hunt you after your mistakes')) return 'no "They\'ll hunt you after your mistakes." once the ring broke: ' + st.sense;
+  if (st.minion) return 'the stick man was on the floor at once, not in the grate';
+  // Next turn the grate shudders; the turn after, it drops out.
+  await page.keyboard.press('.');
+  await page.waitForTimeout(100);
+  const shudder = await page.evaluate(() => document.getElementById('roomFeedback').textContent);
+  if (!shudder.includes('The grate shudders.')) return 'no shudder from the tutorial grate: ' + shudder;
+  await page.keyboard.press('.');
+  await page.waitForTimeout(100);
+  st = await tutorialState(page);
+  if (!st.minion) return 'the stick man did not drop out of the grate';
 
   // Face the stick man and shoot; Auto-win stops the damage bar on its weak point.
   await turnOnAutoWin(page);
@@ -1249,7 +1260,7 @@ async function runTutorial(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, stick man, key, door, out to the opening rest', consoleErrors, pageErrors };
+  return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, grate shudders, stick man drops out, key, door, out to the opening rest', consoleErrors, pageErrors };
 }
 
 // Runs one smoke run. A throw (a Playwright timeout, say) becomes that
