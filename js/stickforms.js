@@ -21,11 +21,19 @@
 // still fading. mapview.js calls hurtStick() / loseStickLimb() /
 // killStick() from their drawEvents cases. Those moments are view-only and
 // kept here, not in state. Reads state and never changes it.
+//
+// Downed stick men (downed plan step B, look A of the downed mockup,
+// ideas/downed-crawler-mockup.html outside the repo): one the rules have
+// knocked down (minion.downed) falls from its pose to DOWNED_POSE, propped
+// on its arms, its legs come apart into a trail of letters behind it, and
+// it crawls hand over hand (fallStick, crawlStick, grabStick, finishStick,
+// via mapview.js). The letters it drops on the tiles it leaves
+// (droppedLetters) fade over DOWNED_DROP_TURNS turns.
 
 import { state } from './state.js';
 import { stepsAway } from './passage.js';
 import {
-  MAP_ANIMATION_MS, FORM_TELL_STEPS, MINION_KINDS, ENEMY_LIGHT,
+  MAP_ANIMATION_MS, FORM_TELL_STEPS, MINION_KINDS, ENEMY_LIGHT, CRAWL_REACH, DOWNED_DROP_TURNS,
   TENDRIL_GROW_MS, TENDRIL_HOLD_MS, TENDRIL_BACK_MS, TENDRIL_STEP, TENDRIL_SIZE, TENDRIL_LOOKALIKES, TENDRIL_MIRRORABLE,
 } from './config.js';
 
@@ -240,10 +248,44 @@ export const STICK_POSE_IDS = Object.keys(STICK_POSES);
 // to letters and peel off from their hip end).
 export const TENDRIL_STYLES = ['wound', 'head', 'unravel'];
 
+// The downed pose (downed plan, look A): propped on two arms, reaching
+// toward the player, its legs gone into a trail of letters from the hip.
+// Joints as in STICK_POSES (toward the player is negative x); the hands'
+// y sets them either side of the body on the floor.
+export const DOWNED_POSE = {
+  hip: [0.05, -0.07], sh: [-0.36, -0.3], neck: [-0.4, -0.33], head: [-0.52, -0.45],
+  handF: [-0.62, 0.08], handB: [-0.52, -0.08],
+  heads: [['head', 0.12]],
+  core: ['hip', 'sh'],
+  // Lost limbs keep their tendrils, from the shoulder (it crawls on both arms).
+  limbs: [{ root: 'sh', angle: 2.6 }, { root: 'sh', angle: 2.0 }],
+};
+// Where each downed joint starts its fall: the first of these the pose has
+// (a twin falls from its first body), else the hip.
+const FALL_FROM = { hip: ['hip', 'fork'], sh: ['sh', 'shA'], neck: ['neck', 'neckA'], head: ['head', 'headA'], handF: ['handF', 'handA'], handB: ['handB'] };
+const DOWNED_JOINTS = ['hip', 'sh', 'neck', 'head', 'handF', 'handB'];
+const DOWNED_ARM = 0.23;          // upper arm and forearm, for where the elbows bend
+const TRAIL_LETTERS = 9;          // letters in the trail behind the hips
+const TRAIL_STEP = 0.055;         // their spacing
+const TRAIL_SIZE = [0.17, 0.06];  // the first letter's size, and how much smaller the last is
+const TRAIL_SWAY = 0.006;         // how far each letter sways, times its place in the trail
+const CRAWL_PUSH = 0.7;           // share of a crawl when the trailing hand lifts to catch up
+const CRAWL_CATCH = 0.8;          // share of a crawl when the leading hand moves on with the body
+const CRAWL_LIFT = [0.1, 0.06, 0.08]; // how high a hand lifts: reaching, moving on, catching up
+const CRAWL_SAG = 0.035;          // how far the body sinks as it drags itself up
+const FINISH_SPACING = 0.11;      // letters along a line as a finished one comes apart
+const FINISH_SIZE = 0.15;
+const FINISH_SINK = 0.12;         // how far they settle toward the floor
+const DROP_LETTERS = 2;           // letters left on the tile a crawl leaves
+const DROP_SPREAD = [0.4, 0.2];   // where on the tile, in tile widths across and down
+const DROP_LEVEL = 0.55;          // how bright they start
+
 // Each pose's box round every joint it can reach, at rest (with its idle
 // movement at full stretch) and in its tell: [left, top, right, bottom].
 // Worked out once, so the walls cut in front of a minion never move as it moves.
 const POSE_BOXES = Object.fromEntries(STICK_POSE_IDS.map(id => [id, reachOf(STICK_POSES[id])]));
+// The downed pose's box, its trail and its reach for the player included.
+const DOWNED_BOX = downedReach();
 
 // Each minion's view-only moments: minion -> { seed, pose, style, hitAt,
 // hits, limbsLost, deadAt, tellOn, tellFrom, tellAt, face, faceFrom, faceAt }.
@@ -258,6 +300,9 @@ let font = '';
 let tendrilSource = null;
 let tendrilWords = [];
 let tendrilCache = new Map();
+// Letters dropped by crawling stick men: [{ row, col, letters, turn, floor }].
+let drops = [];
+let dropCount = 0;
 
 // Draws `minion` as its stick man standing on (x, y), the middle of its tile
 // in canvas pixels, with its tendrils. `view` is { tw, height, lineWidth,
@@ -266,9 +311,20 @@ let tendrilCache = new Map();
 // pose leans toward it, tendrils reach for it), the frame time, reduced
 // motion, line(path, level) to stroke a path in the enemies' light at
 // strength `level`, and whether a landed shot on it waits for the damage
-// bar (the weak point limb brightens). Returns the weak point's place as
+// bar (the weak point limb brightens), and centre(row, col), a tile's
+// middle on the canvas (a downed one's crawl reaches across tiles). A
+// downed one is drawn by drawDowned. Returns the weak point's place as
 // [x, y], or null.
 export function drawStickForm(ctx, minion, x, y, view) {
+  const fx = momentsOf(minion);
+  if (minion.downed || fx.downAt !== null) return drawDowned(ctx, minion, x, y, view);
+  return drawUpright(ctx, minion, x, y, view);
+}
+
+// Draws `minion` in its own pose (drawStickForm). `fade` (0..1) dims it all,
+// and `bodyOnly` leaves its tendrils out: while it falls, its pose fades
+// out under the downed one taking its place.
+function drawUpright(ctx, minion, x, y, view, fade = 1, bodyOnly = false) {
   const fx = momentsOf(minion);
   const pose = STICK_POSES[poseOf(minion)];
   const { now, still, tw } = view;
@@ -297,7 +353,7 @@ export function drawStickForm(ctx, minion, x, y, view) {
   ctx.save();
   ctx.beginPath();
   ctx.ellipse(x, y, h * pose.shadow * SHADOW_SIZE[0], h * pose.shadow * SHADOW_SIZE[1], 0, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(0, 0, 0, ' + (pose.shadowLevel || SHADOW_LEVEL) * (1 - dying) + ')';
+  ctx.fillStyle = 'rgba(0, 0, 0, ' + (pose.shadowLevel || SHADOW_LEVEL) * (1 - dying) * fade + ')';
   ctx.fill();
   ctx.restore();
 
@@ -305,7 +361,7 @@ export function drawStickForm(ctx, minion, x, y, view) {
   // limb's bones are gone (unravelled into letters in that style); the
   // weak point limb brightens slowly while a landed shot waits on it; a
   // line fades as it unravels.
-  const level = (1 - dying) * (REST_LEVEL + HIT_BRIGHTEN * hitK);
+  const level = fade * (1 - dying) * (REST_LEVEL + HIT_BRIGHTEN * hitK);
   const weak = view.aiming ? weakLimb(minion) : -1;
   const pulse = still ? 0.5 : 0.5 + 0.5 * Math.sin(now / WEAK_PULSE_MS);
   const groups = new Map();
@@ -337,6 +393,7 @@ export function drawStickForm(ctx, minion, x, y, view) {
       ctx.arc(J[c][0], J[c][1], r * h, start, start + Math.PI * 2 - gap * 2);
     });
   }, level);
+  if (bodyOnly) return null;
 
   ctx.save();
   ctx.textAlign = 'center';
@@ -355,6 +412,223 @@ export function drawStickForm(ctx, minion, x, y, view) {
   return [lerp(J[p][0], J[q][0], 0.5), lerp(J[p][1], J[q][1], 0.5)];
 }
 
+// Draws a downed `minion` on (x, y) (drawStickForm): falling from its own
+// pose (MAP_ANIMATION_MS.downedFall: the pose fades out as the downed body
+// takes its place from the same joints, and the trail of letters comes in),
+// then propped on its arms. A crawl (crawlStick) reaches a hand half a
+// tile, plants it, drags the body up, and brings the other hand after. Its
+// grab (grabStick) holds its front hand on the player's foot. Its hit and
+// lost limb tendrils stay as in its style (unravel grows them from the
+// wound). Dying, a finished one's lines turn into letters that settle and
+// fade (MAP_ANIMATION_MS.downedFinish); a shot one fades with a kill's
+// tendrils. Under reduced motion it is down at once and holds still.
+function drawDowned(ctx, minion, x, y, view) {
+  const fx = momentsOf(minion);
+  const { now, still, tw } = view;
+  const finishMs = fx.finished ? MAP_ANIMATION_MS.downedFinish : MAP_ANIMATION_MS.stickDeath;
+  const dying = fx.deadAt === null ? 0 : Math.min(1, (now - fx.deadAt) / finishMs);
+  if (dying >= 1) return null;
+  const fall = still || fx.downAt === null ? 1 : ease((now - fx.downAt) / MAP_ANIMATION_MS.downedFall);
+  if (fall < 1) drawUpright(ctx, minion, x, y, view, 1 - ease(fall * 2), true);
+  const h = view.height * sizeOf(minion);
+  const face = facing(fx, view.toward[0] < x ? 1 : -1, now, still);
+  const hitAge = now - fx.hitAt;
+  const hitK = !still && hitAge < MAP_ANIMATION_MS.stickHit ? 1 - hitAge / MAP_ANIMATION_MS.stickHit : 0;
+  const t = still ? 0 : now / 1000 + fx.seed;
+
+  // The crawl, once it is down: how far through (1 when still), and how
+  // hard the body is pulling (0 to 1 and back) while it drags.
+  const crawl = fx.crawl && fall >= 1 && !still ? Math.min(1, (now - fx.crawl.at) / MAP_ANIMATION_MS.crawl) : 1;
+  const drag = crawl < 1 ? ease((crawl - CRAWL_REACH) / (1 - CRAWL_REACH)) : 1;
+  const pull = crawl < 1 ? Math.sin(Math.PI * drag) : 0;
+
+  const from = STICK_POSES[poseOf(minion)].rest;
+  const at = (jx, jy) => [x + face * jx * h, y + jy * h];
+  const J = {};
+  DOWNED_JOINTS.forEach(k => {
+    const start = (FALL_FROM[k].map(n => from[n]).find(Boolean)) || from.hip || [0, -0.45];
+    let [jx, jy] = [lerp(start[0], DOWNED_POSE[k][0], fall), lerp(start[1], DOWNED_POSE[k][1], fall)];
+    if (k === 'sh' || k === 'neck' || k === 'head') {
+      jx -= 0.03 * pull;
+      jy += CRAWL_SAG * pull;
+    }
+    J[k] = at(jx, jy);
+  });
+  if (crawl < 1) placeCrawlHands(J, fx, x, y, crawl, view.centre);
+  if (minion.grabbing && fx.grabAt !== null) {
+    const k = still ? 1 : ease((now - fx.grabAt) / MAP_ANIMATION_MS.grab);
+    J.handF = [lerp(J.handF[0], view.toward[0], k), lerp(J.handF[1], view.toward[1], k)];
+  }
+  J.elbowF = elbowOf(J.sh, J.handF, h, fall);
+  J.elbowB = elbowOf(J.sh, J.handB, h, fall);
+
+  // Its shadow: long under its body once it is down.
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(x - face * 0.22 * fall * h, y, h * (0.22 + 0.32 * fall), h * 0.08, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0, 0, 0, ' + SHADOW_LEVEL * (1 - dying) + ')';
+  ctx.fill();
+  ctx.restore();
+
+  const glow = REST_LEVEL + HIT_BRIGHTEN * hitK;
+  const lines = glow * ease(fall * 2) * (1 - ease(dying / (fx.finished ? 0.4 : 1)));
+  if (lines > 0.005) {
+    view.line(() => {
+      ctx.beginPath();
+      ctx.moveTo(J.hip[0], J.hip[1]);
+      ctx.lineTo(J.neck[0], J.neck[1]);
+      [['elbowF', 'handF'], ['elbowB', 'handB']].forEach(([e, hand]) => {
+        ctx.moveTo(J.sh[0], J.sh[1]);
+        ctx.lineTo(J[e][0], J[e][1]);
+        ctx.lineTo(J[hand][0], J[hand][1]);
+      });
+      const r = DOWNED_POSE.heads[0][1] * h;
+      ctx.moveTo(J.head[0] + r, J.head[1]);
+      ctx.arc(J.head[0], J.head[1], r, 0, Math.PI * 2);
+    }, lines);
+  }
+
+  const m = { now, still, t, tellK: 0, dying, tw, side: face < 0 ? -1 : 1, toward: view.toward };
+  const style = styleOf(minion);
+  const head = { at: J.head, angle: angleTo(J.neck, J.head) };
+  head.at = [J.head[0] + Math.cos(head.angle) * DOWNED_POSE.heads[0][1] * h, J.head[1] + Math.sin(head.angle) * DOWNED_POSE.heads[0][1] * h];
+  const core = coreOf(DOWNED_POSE, J);
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  font = '';
+  // The trail: letters from the hip, lying back along the floor away from
+  // the player, stretching as the body drags.
+  const trail = glow * fall * (1 - ease(dying / 0.5));
+  const letters = tendrilLetters(fx.seed * 100 + 20, TRAIL_LETTERS);
+  const stretch = 0.35 * pull;
+  for (let i = 1; i <= TRAIL_LETTERS; i++) {
+    const s = i / TRAIL_LETTERS;
+    const jx = DOWNED_POSE.hip[0] + i * TRAIL_STEP * (1 + stretch * s);
+    const jy = DOWNED_POSE.hip[1] * Math.max(0, 1 - i / 3) + Math.sin(t * 0.7 + i * 0.6 + fx.seed) * TRAIL_SWAY * i;
+    const [lx, ly] = [J.hip[0] + face * (jx - DOWNED_POSE.hip[0]) * h, J.hip[1] + (jy - DOWNED_POSE.hip[1]) * h];
+    drawLetter(ctx, letters[i - 1], lx, ly, h * (TRAIL_SIZE[0] - TRAIL_SIZE[1] * s), trail * (1 - 0.6 * s));
+  }
+  if (fx.finished && dying > 0) {
+    drawFinish(ctx, J, fx, h, dying, still);
+  } else {
+    drawHitTendrils(ctx, style === 'head' ? head.at : core, style === 'head' ? 'head' : 'wound', fx, m, head.angle);
+    drawLimbTendrils(ctx, DOWNED_POSE, J, fx, m);
+    drawDeathTendrils(ctx, style === 'head' ? head.at : core, fx, m);
+  }
+  ctx.restore();
+  if (!view.aiming || dying) return null;
+  return [lerp(J.sh[0], J.elbowF[0], 0.5), lerp(J.sh[1], J.elbowF[1], 0.5)];
+}
+
+// Moves a crawling one's hands, `p` (0..1) through its crawl from tile
+// fx.crawl.from to fx.crawl.to, its body at (x, y) (mapview.js holds the
+// body back until the leading hand plants, CRAWL_REACH in). The leading
+// hand reaches half a tile and plants, waits while the body drags up, then
+// moves on with it; the trailing hand pushes off and catches up last.
+function placeCrawlHands(J, fx, x, y, p, centre) {
+  const [ax, ay] = centre(fx.crawl.from.row, fx.crawl.from.col);
+  const [bx, by] = centre(fx.crawl.to.row, fx.crawl.to.col);
+  const lead = fx.lead ? 'handB' : 'handF';
+  const trail = lead === 'handF' ? 'handB' : 'handF';
+  const hands = crawlHands(p, [ax, ay], [bx, by], [J[lead][0] - x, J[lead][1] - y], [J[trail][0] - x, J[trail][1] - y]);
+  const h = Math.hypot(bx - ax, by - ay);
+  J[lead] = [hands.lead[0], hands.lead[1] - hands.leadLift * h];
+  J[trail] = [hands.trail[0], hands.trail[1] - hands.trailLift * h];
+}
+
+// Where the two hands are `p` (0..1) through a crawl from the tile middle
+// `a` to `b`, each hand held at its offset from the body (`lead`, `trail`).
+// Returns { lead, trail } on the floor and how high each is lifted, as a
+// share of the step (`leadLift`, `trailLift`). An arm reaches only half a
+// tile: reach, plant, pull, then reach again. Exported for the tests.
+export function crawlHands(p, a, b, lead, trail) {
+  const plant = [a[0] + lead[0] + (b[0] - a[0]) / 2, a[1] + lead[1] + (b[1] - a[1]) / 2];
+  const startLead = [a[0] + lead[0], a[1] + lead[1]];
+  const endLead = [b[0] + lead[0], b[1] + lead[1]];
+  let leadAt = plant;
+  let leadLift = 0;
+  if (p < CRAWL_REACH) {
+    const k = ease(p / CRAWL_REACH);
+    leadAt = lerp2(startLead, plant, k);
+    leadLift = Math.sin(Math.PI * p / CRAWL_REACH) * CRAWL_LIFT[0];
+  } else if (p >= CRAWL_CATCH) {
+    const k = ease((p - CRAWL_CATCH) / (1 - CRAWL_CATCH));
+    leadAt = lerp2(plant, endLead, k);
+    leadLift = Math.sin(Math.PI * k) * CRAWL_LIFT[1];
+  }
+  const startTrail = [a[0] + trail[0], a[1] + trail[1]];
+  let trailAt = startTrail;
+  let trailLift = 0;
+  if (p >= CRAWL_PUSH) {
+    const k = ease((p - CRAWL_PUSH) / (1 - CRAWL_PUSH));
+    trailAt = lerp2(startTrail, [b[0] + trail[0], b[1] + trail[1]], k);
+    trailLift = Math.sin(Math.PI * k) * CRAWL_LIFT[2];
+  }
+  return { lead: leadAt, trail: trailAt, leadLift, trailLift };
+}
+
+// A finished one comes apart (drawDowned): each line becomes a row of
+// letters, which brighten as the lines go, then settle toward the floor
+// and fade.
+function drawFinish(ctx, J, fx, h, dying, still) {
+  const a = dying < 0.4 ? ease(dying / 0.4) : 1 - ease((dying - 0.4) / 0.6);
+  const sink = still ? 0 : ease(dying) * FINISH_SINK * h;
+  const parts = [['hip', 'neck'], ['sh', 'elbowF'], ['elbowF', 'handF'], ['sh', 'elbowB'], ['elbowB', 'handB']];
+  let n0 = 0;
+  parts.forEach(([p, q]) => {
+    const n = Math.max(2, Math.round(dist(J[p], J[q]) / (h * FINISH_SPACING)));
+    const letters = tendrilLetters(fx.seed * 100 + 7 + n0, n);
+    for (let i = 0; i < n; i++) {
+      const k = (i + 0.5) / n;
+      drawLetter(ctx, letters[i], lerp(J[p][0], J[q][0], k), lerp(J[p][1], J[q][1], k) + sink, h * FINISH_SIZE, a * 0.9);
+    }
+    n0 += n;
+  });
+}
+
+// Where an arm's elbow is from shoulder `sh` to `hand`: bent up and out
+// when the hand is nearer than a full arm, by `bend` (0: straight, as it
+// was standing, while it falls).
+function elbowOf(sh, hand, h, bend) {
+  const d = dist(sh, hand);
+  const arm = DOWNED_ARM * h;
+  const out = d < 2 * arm ? Math.sqrt(arm * arm - (d / 2) ** 2) : 0;
+  let px = -(hand[1] - sh[1]) / (d || 1);
+  let py = (hand[0] - sh[0]) / (d || 1);
+  if (py > 0) {
+    px = -px;
+    py = -py;
+  }
+  return [(sh[0] + hand[0]) / 2 + px * out * bend, (sh[1] + hand[1]) / 2 + py * out * bend];
+}
+
+// The letters crawling stick men dropped on this floor that still show,
+// for isoview.js: [{ row, col, letters: [{ letter, dx, dy }], level }],
+// dx and dy in tile widths from the tile's middle. Each fades over
+// DOWNED_DROP_TURNS of the player's turns.
+export function droppedLetters() {
+  const turn = state.run.turnCount;
+  drops = drops.filter(d => d.floor === state.run.floorsEntered && turn - d.turn < DOWNED_DROP_TURNS);
+  return drops.map(d => ({ ...d, level: DROP_LEVEL * (1 - (turn - d.turn) / DOWNED_DROP_TURNS) }));
+}
+
+// Draws dropped letters (droppedLetters) on the canvas: `centre(row, col)`
+// is a tile's middle, `shown(row, col)` whether its floor is lit.
+export function drawDroppedLetters(ctx, tw, centre, shown) {
+  const list = droppedLetters().filter(d => shown(d.row, d.col));
+  if (!list.length) return;
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  font = '';
+  list.forEach(d => {
+    const [cx, cy] = centre(d.row, d.col);
+    d.letters.forEach(({ letter, dx, dy }) => drawLetter(ctx, letter, cx + dx * tw, cy + dy * tw, TENDRIL_SIZE * tw, d.level));
+  });
+  ctx.restore();
+}
+
 // The box round `minion`'s stick man standing on (x, y), as [left, top,
 // right, bottom] in pixels, for brackets, taps and the walls cut in front
 // of it. From its pose's fixed reach, never from where it last drew, so
@@ -362,7 +636,7 @@ export function drawStickForm(ctx, minion, x, y, view) {
 // either way round, since it turns to face the player. Tendrils reach past it.
 export function stickBox(minion, x, y, height) {
   const h = height * sizeOf(minion);
-  const [left, top, right] = POSE_BOXES[poseOf(minion)];
+  const [left, top, right] = minion.downed ? DOWNED_BOX : POSE_BOXES[poseOf(minion)];
   const half = Math.max(-left, right) + BOX_MARGIN;
   return [x - half * h, y + (top - BOX_MARGIN) * h, x + half * h, y];
 }
@@ -391,6 +665,38 @@ export function killStick(minion, still) {
   if (still || !minion.minionKind) return;
   momentsOf(minion).deadAt = performance.now();
   dying.push({ minion, floor: state.run.floorsEntered });
+}
+
+// Notes that `minion` just went down: it falls from its pose over
+// MAP_ANIMATION_MS.downedFall (at once under reduced motion, `still`).
+export function fallStick(minion, still) {
+  momentsOf(minion).downAt = still ? -1e9 : performance.now();
+}
+
+// Notes that downed `minion` just crawled from tile `from` to where it is
+// now. Its hands take turns leading. It drops DROP_LETTERS letters on the
+// tile it left, under reduced motion too (they only fade); with `still`
+// the crawl itself isn't played: it is simply on its new tile.
+export function crawlStick(minion, from, still) {
+  const fx = momentsOf(minion);
+  if (!still) fx.crawl = { at: performance.now(), from: { row: from.row, col: from.col }, to: { row: minion.row, col: minion.col } };
+  fx.lead ^= 1;
+  const n = dropCount++;
+  const letters = tendrilLetters(fx.seed * 100 + 400 + n, DROP_LETTERS + 1).filter(l => l.ch !== ' ').slice(0, DROP_LETTERS)
+    .map((letter, i) => ({ letter, dx: (hash(n * 3.7 + i) - 0.5) * DROP_SPREAD[0], dy: (hash(n * 5.1 + i) - 0.5) * DROP_SPREAD[1] }));
+  drops.push({ row: from.row, col: from.col, letters, turn: state.run.turnCount, floor: state.run.floorsEntered });
+}
+
+// Notes that downed `minion` just grabbed the player's ankle: its front
+// hand reaches for their foot over MAP_ANIMATION_MS.grab and stays.
+export function grabStick(minion) {
+  momentsOf(minion).grabAt = performance.now();
+}
+
+// Notes that the player finished downed `minion`: when its kill is drawn
+// (killStick), it comes apart into letters instead of a kill's tendrils.
+export function finishStick(minion) {
+  momentsOf(minion).finished = true;
 }
 
 // The killed minions still fading on this floor, for isoview.js to draw
@@ -429,6 +735,11 @@ function momentsOf(minion) {
       hitAt: -1e9, hits: [], limbsLost: [], deadAt: null,
       tellOn: false, tellFrom: 0, tellAt: -1e9,
       face: null, faceFrom: 0, faceAt: -1e9,
+      downAt: null,   // when it started to fall (fallStick); null while it stands
+      crawl: null,    // its last crawl: { at, from, to } tiles (crawlStick)
+      lead: 0,        // which hand leads the next crawl: they take turns
+      grabAt: null,   // when its hand started for the player's ankle (grabStick)
+      finished: false, // the player finished it (finishStick): it dies into letters
     };
     moments.set(minion, fx);
   }
@@ -745,6 +1056,18 @@ function restAt(pose, t) {
   return J;
 }
 
+// The downed pose's reach for DOWNED_BOX: its joints and head, its hand
+// stretched a crawl's half tile further is left to the tendrils' rule
+// (they reach past the box), and its trail of letters behind it.
+function downedReach() {
+  const xs = DOWNED_JOINTS.map(k => DOWNED_POSE[k][0]);
+  const ys = DOWNED_JOINTS.map(k => DOWNED_POSE[k][1]);
+  const [hx, hy] = DOWNED_POSE.head;
+  const r = DOWNED_POSE.heads[0][1];
+  const tail = DOWNED_POSE.hip[0] + TRAIL_LETTERS * TRAIL_STEP * 1.35 + TRAIL_SIZE[0] / 2;
+  return [Math.min(...xs, hx - r), Math.min(...ys, hy - r), Math.max(...xs, tail), Math.max(...ys)];
+}
+
 // A pose's reach for POSE_BOXES: the box round its joints at rest (pushed
 // both ways by its idle movement) and in its tell, heads included.
 function reachOf(pose) {
@@ -794,6 +1117,11 @@ function ease(x) {
 // The point `k` of the way from `a` to `b`.
 function lerp(a, b, k) {
   return a + (b - a) * k;
+}
+
+// The point `k` of the way from point `a` to point `b`.
+function lerp2(a, b, k) {
+  return [lerp(a[0], b[0], k), lerp(a[1], b[1], k)];
 }
 
 // A number from 0 to 1 that always comes out the same for the same `n`.

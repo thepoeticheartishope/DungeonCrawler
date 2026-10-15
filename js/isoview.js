@@ -32,7 +32,7 @@ import { lightOn } from './battery.js';
 import { gazeInPlay, inCone } from './gaze.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
-import { drawStickForm, stickBox, dyingSticks } from './stickforms.js';
+import { drawStickForm, stickBox, dyingSticks, drawDroppedLetters } from './stickforms.js';
 import { answerRingNow, ringLetters } from './swirl.js';
 
 // How bright a lit tile is, by its steps from the player (0 = their own
@@ -291,6 +291,12 @@ export function drawIsoScene(ctx, canvasSize, shared) {
     if (thing.kind === 'player') drawLookRing(ctx, thing.at);
     standing.push({ depth: thing.at.row + thing.at.col + 0.5, draw: () => drawStanding(ctx, thing) });
   });
+  // Letters a crawling stick man left on the floor (downed plan), only on
+  // lit floor, so they never give one away in the dark. Simple enemies have none.
+  if (!state.settings.simpleEnemies) {
+    const lit = (row, col) => onScreen(row, col) && (!state.settings.fogEnabled || state.floor.visibleSet.has(key(row, col)));
+    drawDroppedLetters(ctx, tw, centre, lit);
+  }
   // The tutorial's light from above (tutorial.js) falls in a column like
   // the stairs' light, over the middle of its spot.
   const tut = state.floor.tutorial;
@@ -1548,7 +1554,7 @@ function drawForm(ctx, at, m) {
   if (!look.still) look.keepMoving();
   const lineWidth = Math.max(1.5, tw * STICK_LINE);
   const weak = drawStickForm(ctx, m, x, y, {
-    tw, height: tw * STICK_HEIGHT, lineWidth, toward: [originX, originY], now: look.now, still: look.still,
+    tw, height: tw * STICK_HEIGHT, lineWidth, toward: [originX, originY], now: look.now, still: look.still, centre,
     line: (path, level) => enemyLine(ctx, path, level, lineWidth),
     aiming: state.battle.aim !== null && state.battle.aim.target === m,
   });

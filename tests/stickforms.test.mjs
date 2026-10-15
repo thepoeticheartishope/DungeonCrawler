@@ -9,8 +9,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { STICK_POSES, almostWord, tendrilLetters } from '../js/stickforms.js';
-import { TENDRIL_LOOKALIKES } from '../js/config.js';
+import { STICK_POSES, almostWord, tendrilLetters, stickBox, crawlHands, DOWNED_POSE } from '../js/stickforms.js';
+import { TENDRIL_LOOKALIKES, MINION_KINDS } from '../js/config.js';
 
 const poses = Object.entries(STICK_POSES);
 
@@ -85,4 +85,50 @@ test('tendril letters are the same for the same seed, and as many as asked for',
   assert.equal(a.length, 17);
   assert.deepEqual(tendrilLetters(42, 17), a);
   assert.ok(a.some(L => L.ch === ' '), 'no gap between words');
+});
+
+// Downed stick men (downed plan step B). A tile 100 px wide; the stick
+// man's height is isoview.js STICK_HEIGHT (0.62) of it.
+const TILE = 100;
+const HEIGHT = 0.62 * TILE;
+
+test('a downed one\'s box stays within a tile either side, and lower than it stood', () => {
+  Object.keys(MINION_KINDS).forEach(minionKind => {
+    const [left, top, right, bottom] = stickBox({ minionKind, downed: true }, 0, 0, HEIGHT);
+    assert.ok(-left <= TILE && right <= TILE, `${minionKind}: ${left}..${right}`);
+    assert.equal(bottom, 0, 'it lies on its tile');
+    const standing = stickBox({ minionKind, downed: false }, 0, 0, HEIGHT);
+    assert.ok(top > standing[1], `${minionKind}: lower than it stood`);
+  });
+});
+
+test('the downed pose holds the joints it is drawn from', () => {
+  ['hip', 'sh', 'neck', 'head', 'handF', 'handB'].forEach(joint => {
+    assert.ok(DOWNED_POSE[joint].every(Number.isFinite), joint);
+  });
+  DOWNED_POSE.limbs.forEach(limb => assert.ok(DOWNED_POSE[limb.root], limb.root));
+});
+
+test('through a crawl, each hand stays within half a tile of the body and ends a tile on', () => {
+  // A step half a tile across and a quarter down: one tile along a floor diagonal.
+  const a = [0, 0];
+  const b = [TILE / 2, TILE / 4];
+  const lead = [-0.62 * HEIGHT, 0.08 * HEIGHT];
+  const trail = [-0.52 * HEIGHT, -0.08 * HEIGHT];
+  const step = Math.hypot(b[0], b[1]);
+  for (let p = 0; p <= 1.0001; p += 0.05) {
+    const hands = crawlHands(p, a, b, lead, trail);
+    // The body is somewhere between its two tiles; each hand stays within
+    // half a step of where it would rest on one of them.
+    const near = (hand, rest) => Math.min(
+      Math.hypot(hand[0] - a[0] - rest[0], hand[1] - a[1] - rest[1]),
+      Math.hypot(hand[0] - b[0] - rest[0], hand[1] - b[1] - rest[1]),
+    );
+    assert.ok(near(hands.lead, lead) <= step / 2 + 1e-9, `lead at ${p.toFixed(2)}`);
+    assert.ok(near(hands.trail, trail) <= step / 2 + 1e-9, `trail at ${p.toFixed(2)}`);
+    assert.ok(hands.leadLift >= 0 && hands.trailLift >= 0);
+  }
+  const end = crawlHands(1, a, b, lead, trail);
+  assert.ok(Math.hypot(end.lead[0] - b[0] - lead[0], end.lead[1] - b[1] - lead[1]) < 1e-9, 'lead ends on the new tile');
+  assert.ok(Math.hypot(end.trail[0] - b[0] - trail[0], end.trail[1] - b[1] - trail[1]) < 1e-9, 'trail ends on the new tile');
 });

@@ -35,7 +35,7 @@ import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, limbOffOnMap, deathOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, limbOffOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
@@ -1340,8 +1340,10 @@ function drawEvents(events) {
       case 'lightCharged':
         parts.push(t('room.ownLight.charged'));
         break;
+      // A downed one crawls (downed plan step B).
       case 'minionMoved':
-        slideOnMap(e.minion, e.from);
+        if (e.minion.downed) crawlOnMap(e.minion, e.from);
+        else slideOnMap(e.minion, e.from);
         break;
       case 'minionEngaged':
         if (!engaged) parts.push(t('room.engage'));
@@ -1452,14 +1454,17 @@ function drawEvents(events) {
         if (e.hpLeft > 0 && !e.minion.downed) parts.push(t('gun.stunned'));
         break;
       // Downed stick men (downed plan): it falls, crawls, grabs, and a bump
-      // finishes it. Step B draws them; for now only the room log says so.
+      // finishes it (its death, minionKilled next, comes apart into letters).
       case 'minionDowned':
+        downOnMap(e.minion);
         parts.push(t('gun.downed'));
         break;
       case 'minionFinished':
+        finishOnMap(e.minion);
         parts.push(t('gun.finished'));
         break;
       case 'ankleGrabbed':
+        grabOnMap(e.minion);
         cls = 'warn-msg';
         parts.push(t('gun.grabbed'));
         break;
