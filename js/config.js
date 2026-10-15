@@ -427,6 +427,11 @@ export const MINION_STUN_MOVES = 1;
 export const MINION_CHASE_RANGE = 4;
 export const MINION_LIGHT_SIGHT = 7;
 export const MINION_TRACK_TURNS = 5;
+// An idle stick man walks to a spot in another room, stands there for a
+// number of turns in this [min, max] range, then picks a new room (smarter
+// enemies step 2, Timothy 2026-10-15: random steps each turn looked like
+// twitching in place).
+export const MINION_LINGER_TURNS = [2, 4];
 export const MINION_MIN_START_DISTANCE = 6; // walkable steps from the player's start
 
 // The intro before the first floor (introview.js): the set's questions type

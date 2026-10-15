@@ -3,7 +3,7 @@
 // that change what's on the map return what changed, and main.js draws it.
 
 import { state, key } from './state.js';
-import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIGHT, MINION_TRACK_TURNS, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS } from './config.js';
+import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIGHT, MINION_TRACK_TURNS, MINION_LINGER_TURNS, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS } from './config.js';
 import { advanceLight } from './light.js';
 import { tickLight, batteryInPlay, lightOn } from './battery.js';
 import { minionStrike, struggleDial } from './gun.js';
@@ -195,6 +195,8 @@ export function spawnMinion(spot, minionKind = 'SHARD') {
     trail: [],
     track: 0,      // turns it keeps searching once it reaches lastSeen with no sight of the player (0: never saw them, or lost them); combat.js notice
     lastSeen: null, // { row, col } where it last knew the player was, walked to while tracking; null once reached (lockOn)
+    goal: null,    // { row, col } in another room it walks to while idle (idleStep); null when it has none
+    linger: 0,     // turns it still stands at the goal it reached before picking the next
     drawn: false,  // it can see the player's light this turn
     gaze: 0,       // ms of the player's light on it so far, toward GAZE_MS (gaze.js)
   };
@@ -224,6 +226,67 @@ function wanderStep(m, intoPlayer = false) {
 export function lockOn(m) {
   m.track = MINION_TRACK_TURNS;
   m.lastSeen = { row: state.floor.playerRow, col: state.floor.playerCol };
+}
+
+// A spot for an idle stick man to walk to: a random room other than the
+// one it stands in, then a random free tile of that room it can reach.
+// Rooms it can't reach (the core behind its gate, a held room) are never
+// picked. A room is picked before a tile, so a big room isn't picked more
+// often. Null if no other room can be reached (the tutorial's one room).
+function pickGoal(m) {
+  const f = state.floor;
+  const blocked = blockedTilesFor(m);
+  const own = f.chamberAt.get(key(m.row, m.col));
+  const rooms = new Map();
+  const seen = new Set([key(m.row, m.col)]);
+  const queue = [{ row: m.row, col: m.col }];
+  while (queue.length) {
+    const cur = queue.shift();
+    for (const [row, col] of neighbors(cur.row, cur.col)) {
+      const k = key(row, col);
+      if (seen.has(k) || blocked.has(k)) continue;
+      seen.add(k);
+      queue.push({ row, col });
+      const room = f.chamberAt.get(k);
+      if (room === undefined || room === own) continue;
+      if (!rooms.has(room)) rooms.set(room, []);
+      rooms.get(room).push({ row, col });
+    }
+  }
+  const choices = [...rooms.values()];
+  if (!choices.length) return null;
+  const tiles = choices[Math.floor(Math.random() * choices.length)];
+  return tiles[Math.floor(Math.random() * tiles.length)];
+}
+
+// An idle stick man's step: along the shortest way to its goal in another
+// room, then it stands there MINION_LINGER_TURNS turns and picks the next.
+// With no goal it can reach it falls back to a random step (wanderStep).
+// Its way may run through the player's tile: with `intoPlayer` (the light
+// battery's rules) it then blunders into them, as a random step can;
+// without, it waits. Returns the next tile, or null to stand still.
+function idleStep(m, intoPlayer) {
+  if (m.linger > 0) {
+    m.linger--;
+    return null;
+  }
+  if (!m.goal) m.goal = pickGoal(m);
+  if (!m.goal) return wanderStep(m, intoPlayer);
+  const path = bfsPath({ row: m.row, col: m.col }, m.goal, blockedTilesFor(m));
+  const next = path && path[1];
+  const atGoal = next && next.row === m.goal.row && next.col === m.goal.col;
+  if (!next || (atGoal && tileOccupied(next.row, next.col, m))) {
+    m.goal = null;
+    return wanderStep(m, intoPlayer);
+  }
+  const intoThem = next.row === state.floor.playerRow && next.col === state.floor.playerCol;
+  if (intoThem && !intoPlayer) return null;
+  if (atGoal) {
+    m.goal = null;
+    const [min, max] = MINION_LINGER_TURNS;
+    m.linger = min + Math.floor(Math.random() * (max - min + 1));
+  }
+  return next;
 }
 
 // What a stick man knows (light battery plan step B), worked out each turn
@@ -340,7 +403,15 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     // Out of view but tracking: to where it last saw them, then a search
     // of random steps round there.
     const tracking = !chasing && noticing && m.lastSeen && !sheltered;
-    const next = chasing ? path[1] : (tracking && towardLastSeen(m)) || wanderStep(m, noticing);
+    // Searching round where it last saw them: random steps. Otherwise idle:
+    // off to another room (idleStep). A chase or a search drops the idle
+    // plan, so it picks a fresh one once it has lost them.
+    const searching = !chasing && noticing && m.track > 0;
+    if (chasing || tracking || searching) {
+      m.goal = null;
+      m.linger = 0;
+    }
+    const next = chasing ? path[1] : (tracking && towardLastSeen(m)) || (searching ? wanderStep(m, noticing) : idleStep(m, noticing));
     if (next) {
       const isPlayerTile = next.row === state.floor.playerRow && next.col === state.floor.playerCol;
       // Reaching the player, even by blundering into them, it knows them.
