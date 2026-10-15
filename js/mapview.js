@@ -14,13 +14,13 @@ import { state, key } from './state.js';
 import { stepsAway } from './passage.js';
 import {
   AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
-  MAP_ANIMATION_MS, FORM_TELL_STEPS, MAP_DRAG_PX,
+  MAP_ANIMATION_MS, FORM_TELL_STEPS, MAP_DRAG_PX, CRAWL_REACH, DOWNED_GLYPH_LEVEL, DOWNED_GLYPH_LIFT,
 } from './config.js';
 import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
 import { t } from './text.js';
 import { drawIsoScene, showShot, isoTileAt, isoGridAt } from './isoview.js';
-import { hurtStick, loseStickLimb, killStick } from './stickforms.js';
+import { hurtStick, loseStickLimb, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
 import { ventSealed } from './vents.js';
 import { setTileArtColour } from './tileart.js';
@@ -119,9 +119,11 @@ export function initMapView(canvasEl) {
 // screen shows the same.
 // With Simple enemies on, a minion is a still 'e', and an 'E' as its
 // strike tell, within FORM_TELL_STEPS of the player (as a form's tell);
-// the hunter is a still 'E', drawn bigger.
+// the hunter is a still 'E', drawn bigger. A downed one is a small 'e'
+// low on its tile (mapThings), and an 'E' only while it holds the player.
 export function glyphOf(thing) {
   if (thing.kind === 'hunter' && state.settings.simpleEnemies) return t('term.hunter.simpleSymbol');
+  if (thing.kind === 'minion' && thing.downed) return t(thing.grabbing ? 'term.minion.tellSymbol' : 'term.minion.downedSymbol');
   if (thing.kind === 'minion' && state.settings.simpleEnemies) {
     const steps = stepsAway(thing.row, thing.col);
     return t(steps <= FORM_TELL_STEPS ? 'term.minion.tellSymbol' : 'term.minion.simpleSymbol');
@@ -139,12 +141,14 @@ export function requestMapDraw() {
 
 // Slides a minion that has just stepped from `from` to its new tile. A minion already sliding starts from
 // where it shows now, so quick turns don't make it jump.
-export function slideOnMap(thing, from, ms = MAP_ANIMATION_MS.slide) {
+// `hold` is the share of `ms` it waits on its old tile before it moves (a
+// crawl: the hand reaches first).
+export function slideOnMap(thing, from, ms = MAP_ANIMATION_MS.slide, hold = 0) {
   if (!canvas || reducedMotion.matches) return;
   const now = performance.now();
   const running = effects.get(thing);
   const start = running && running.kind === 'slide' ? slidePlace(running, now) : from;
-  effects.set(thing, { kind: 'slide', start: now, ms, from: start, to: { row: thing.row, col: thing.col } });
+  effects.set(thing, { kind: 'slide', start: now, ms, hold, from: start, to: { row: thing.row, col: thing.col } });
   requestMapDraw();
 }
 
@@ -209,6 +213,38 @@ export function hurtOnMap(minion, damage) {
 export function limbOffOnMap(minion) {
   loseStickLimb(minion);
   requestMapDraw();
+}
+
+// A minion's stick man goes down (downed plan): it falls from its pose to
+// propped on its arms (at once under reduced motion). With Simple enemies
+// on its 'e' just becomes the small one.
+export function downOnMap(minion) {
+  fallStick(minion, reducedMotion.matches);
+  requestMapDraw();
+}
+
+// A downed minion crawled from `from`: its hand reaches and plants, then
+// its body drags after it (the slide holds back CRAWL_REACH of the crawl),
+// and it drops letters on the tile it left. Under reduced motion, or as
+// Simple enemies' small 'e', it moves tile to tile.
+export function crawlOnMap(minion, from) {
+  if (state.settings.simpleEnemies) return requestMapDraw();
+  crawlStick(minion, from, reducedMotion.matches);
+  slideOnMap(minion, from, MAP_ANIMATION_MS.crawl, CRAWL_REACH);
+  requestMapDraw();
+}
+
+// A downed minion grabbed the player's ankle: its front hand reaches for
+// their foot and stays there.
+export function grabOnMap(minion) {
+  grabStick(minion);
+  requestMapDraw();
+}
+
+// The player finished a downed minion: its death (deathOnMap, next) is
+// letters settling to the floor.
+export function finishOnMap(minion) {
+  finishStick(minion);
 }
 
 // A killed minion's stick man fades where it stood (gone at once under
@@ -581,7 +617,9 @@ function mapThings() {
     // Simple enemies: a still white letter, like a key's k, with no warp,
     // dropout or glow (the hunter's E is bigger, from its glyph size).
     if (state.settings.simpleEnemies) {
-      add(m.kind, shownAt(m, m.row, m.col), glyphOf(m), { size: m.kind, colour: colours.bright, heard: heardMark(m) }, m);
+      // Downed: a smaller, dimmer e low on its tile; E while it holds them.
+      const down = m.downed ? { size: 'downed', alpha: m.grabbing ? 1 : DOWNED_GLYPH_LEVEL, lift: DOWNED_GLYPH_LIFT } : {};
+      add(m.kind, shownAt(m, m.row, m.col), glyphOf(m), { size: m.kind, colour: colours.bright, heard: heardMark(m), ...down }, m);
       return;
     }
     const phase = phaseOf(m);
@@ -680,7 +718,8 @@ function walkAt(now) {
 }
 
 function slidePlace(fx, now) {
-  const s = EASE(Math.min(1, Math.max(0, (now - fx.start) / fx.ms)));
+  const hold = fx.hold || 0;
+  const s = EASE(Math.min(1, Math.max(0, ((now - fx.start) / fx.ms - hold) / (1 - hold))));
   return { row: fx.from.row + (fx.to.row - fx.from.row) * s, col: fx.from.col + (fx.to.col - fx.from.col) * s };
 }
 

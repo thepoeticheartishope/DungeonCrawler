@@ -41,6 +41,7 @@ export const TEXT = {
   'term.minion.symbol': '•',
   'term.minion.simpleSymbol': 'e', // Simple enemies (start screen): every minion on the map is this still letter, like k for a key
   'term.minion.tellSymbol': 'E', // Simple enemies: the strike tell, one step from being next to the player
+  'term.minion.downedSymbol': 'e', // a downed minion (downed plan): Simple enemies draw it small and dim, low on its tile; it is the tell E while it holds the player
   'term.hunter': 'OBSESSION', // draft
   'term.hunter.symbol': 'Ø', // draft
   'term.hunter.simpleSymbol': 'E', // Simple enemies: the hunter is a still big E (Timothy, 2026-10-12)

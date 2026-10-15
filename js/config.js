@@ -422,6 +422,12 @@ export const MINION_STUN_MOVES = 1;
 // DEV -> Downed (DOWNED) switches it off: a 1 HP stick man stays standing.
 export const DOWNED = true;
 export const DOWNED_SLOWDOWN = 2;
+// How much of a crawl (MAP_ANIMATION_MS.crawl) the leading hand takes to
+// reach and plant before the body starts to drag (mapview.js holds the
+// slide back that long), and how many turns the letters it drops on the
+// tile it left take to fade.
+export const CRAWL_REACH = 0.35;
+export const DOWNED_DROP_TURNS = 3;
 // Minions are placed when a room loads (no summoning; how many is in the
 // floor recipe) and roam freely: they wander at random and only chase once
 // the player is within MINION_CHASE_RANGE walkable steps. That is the rule
@@ -929,7 +935,12 @@ export const MAP_MAX_PIXEL_RATIO = 2;
 export const MAP_GLYPH_SIZES = {
   player: 0.84, boss: 1.03, minion: 0.71, hunter: 0.9, coin: 0.65,
   stairs: 0.71, chest: 0.77, prop: 0.77, exchange: 0.9, key: 0.71,
+  downed: 0.45, // Simple enemies: a downed minion's small e
 };
+// Simple enemies: a downed minion's e is this bright (full while it holds
+// the player) and sits this far lower on its tile, in tile widths.
+export const DOWNED_GLYPH_LEVEL = 0.65;
+export const DOWNED_GLYPH_LIFT = -0.08;
 // The isometric map (js/isoview.js, DEV -> View). How many tile widths
 // fit across the map: fewer means bigger tiles. The camera stands on the
 // player, so about half this many tiles show each way along a row.
@@ -996,6 +1007,10 @@ export const MAP_ANIMATION_MS = {
   stickTurn: 700,    // a stick enemy turns to face the player when they pass to its other side
   stickHit: 500,     // a hurt stick enemy's soft brightening and one small push
   stickDeath: 2400,  // a killed stick enemy's lines fading while six tendrils grow, go limp and fade
+  downedFall: 1600, // a stick man going down (downed plan step B): from its pose to propped on its arms, legs coming apart into letters
+  crawl: 1000,       // a downed one's move: a hand reaches and plants, the body drags up, the other hand catches up
+  grab: 900,         // a downed one's hand reaching for the player's ankle
+  downedFinish: 2000, // a finished one: each line turns to letters that settle to the floor and fade
 };
 // The minimap (minimapview.js): a tile is at most MINIMAP_MAX_UNIT CSS px
 // from its centre to its side point, and the plan keeps MINIMAP_PAD px
