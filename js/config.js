@@ -421,8 +421,9 @@ export const MINION_STUN_MOVES = 1;
 // in Comfort mode and with DEV -> Light battery off; with the battery in
 // play (light battery plan step B, combat.js notice) a stick man chases
 // once it has a clear line, within MINION_LIGHT_SIGHT tiles, to the player
-// or a tile their light is on (with the light on), and keeps tracking them
-// in the dark until MINION_TRACK_TURNS turns pass with no sight of them.
+// or a tile their light is on (with the light on). Out of view it walks to
+// where it last saw them, then searches round there for MINION_TRACK_TURNS
+// turns before it loses them.
 export const MINION_CHASE_RANGE = 4;
 export const MINION_LIGHT_SIGHT = 7;
 export const MINION_TRACK_TURNS = 5;

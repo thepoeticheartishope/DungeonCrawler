@@ -20,7 +20,7 @@ import { tickGaze } from '../js/gaze.js';
 import { fire, fireBlock, settleShot, darkShotPath } from '../js/gun.js';
 import { freshLight, lightOn, tickLight, toggleLight, turnsToFull } from '../js/battery.js';
 import { computeVisibility, inLookCone, shootBlock } from '../js/sight.js';
-import { advanceMonsters, spawnMinion } from '../js/combat.js';
+import { advanceMonsters, spawnMinion, lockOn } from '../js/combat.js';
 
 function resetFloor(size = 21) {
   state.floor.GRID_SIZE = size;
@@ -164,7 +164,25 @@ test('with the light off, one that never saw the player does not notice them', (
   }
 });
 
-test('tracking in the dark runs down out of sight and refreshes in sight', () => {
+test('out of view it walks to where it last saw the player, not where they are', () => {
+  resetFloor();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  toggleLight();
+  computeVisibility();
+  const m = spawnMinion({ row: pr - 10, col: pc - 10 });
+  // It saw the player 4 tiles up and 6 left of them; they moved on since.
+  state.floor.playerRow = pr - 4; state.floor.playerCol = pc - 6;
+  lockOn(m);
+  state.floor.playerRow = pr; state.floor.playerCol = pc;
+  for (let i = 0; i < 6; i++) {
+    advanceMonsters();
+    assert.equal(m.track, MINION_TRACK_TURNS, 'on its way, it does not forget');
+  }
+  assert.deepEqual(at(m), { row: pr - 4, col: pc - 6 }, 'it reached the spot');
+  assert.equal(m.lastSeen, null, 'now it searches');
+});
+
+test('once at the spot it searches, runs down, and loses them; sight refreshes it', () => {
   resetFloor();
   const { playerRow: pr, playerCol: pc } = state.floor;
   toggleLight();
@@ -172,13 +190,14 @@ test('tracking in the dark runs down out of sight and refreshes in sight', () =>
   const m = spawnMinion({ row: pr - 10, col: pc - 10 });
   m.track = MINION_TRACK_TURNS;
   advanceMonsters();
-  assert.equal(m.track, MINION_TRACK_TURNS - 1, 'out of sight, one turn less');
-  assert.ok(Math.max(Math.abs(m.row - pr), Math.abs(m.col - pc)) === 9, 'still coming in the dark');
+  assert.equal(m.track, MINION_TRACK_TURNS - 1, 'searching, one turn less');
   m.row = pr; m.col = pc + 3;
   advanceMonsters();
   assert.equal(m.track, MINION_TRACK_TURNS, 'sees the player: refreshed');
+  assert.deepEqual(m.lastSeen, { row: pr, col: pc }, 'and remembers where');
   assert.equal(m.drawn, false, 'no light to be drawn by');
   m.row = pr - 10; m.col = pc - 10;
+  m.lastSeen = null;
   for (let i = 0; i < MINION_TRACK_TURNS; i++) advanceMonsters();
   assert.equal(m.track, 0, 'lost them');
 });
