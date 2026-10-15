@@ -684,6 +684,11 @@ export const TEXT = {
   'gun.struck': 'It strikes. -{cost} {@term.hp}.', // draft. A minion reached the player
   'gun.hunterStruck': 'The {@term.hunter} strikes. -{cost} {@term.hp}.', // draft. The hunter reached the player (gun on)
   'gun.hunterStaggered': 'The {@term.hunter} staggers.', // draft. A landed shot on the hunter
+  // Downed stick men (downed plan): a shot left it on 1 HP.
+  'gun.downed': 'It goes down. It keeps coming.', // draft. It falls and crawls on its arms
+  'gun.finished': 'You finish it.', // draft. The player walked into a downed one
+  'gun.grabbed': 'It has your ankle.', // draft. A downed one reached the player
+  'gun.heldFast': 'It holds on. Finish it.', // draft. A step away while it holds the player's ankle
 };
 
 // Per-room overrides, keyed by room number (1 = the first room). List only

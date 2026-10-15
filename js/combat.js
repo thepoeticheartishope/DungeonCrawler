@@ -3,7 +3,7 @@
 // that change what's on the map return what changed, and main.js draws it.
 
 import { state, key } from './state.js';
-import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIGHT, MINION_TRACK_TURNS, MINION_LINGER_TURNS, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS } from './config.js';
+import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIGHT, MINION_TRACK_TURNS, MINION_LINGER_TURNS, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS, DOWNED_SLOWDOWN } from './config.js';
 import { advanceLight } from './light.js';
 import { tickLight, batteryInPlay, lightOn } from './battery.js';
 import { minionStrike, struggleDial } from './gun.js';
@@ -200,9 +200,21 @@ export function spawnMinion(spot, minionKind = 'SHARD') {
     linger: 0,     // turns it still stands at the goal it reached before picking the next
     drawn: false,  // it can see the player's light this turn
     gaze: 0,       // ms of the player's light on it so far, toward GAZE_MS (gaze.js)
+    downed: false, // a shot left it on 1 HP: it crawls at half speed and a bump finishes it (gun.js settleShot)
+    grabbing: false, // downed, it reached the player and holds their ankle: they can't step away until it dies
   };
   state.floor.minions.push(m);
   return m;
+}
+
+// How many turns apart `m` moves with the gun on: its kind's moveEvery
+// (the hunter every turn), DOWNED_SLOWDOWN times that while it is down.
+// The turn advance and the "I see you." warning both read it, so the
+// warning waits for a downed one's real move.
+export function movesEvery(m) {
+  const stats = MINION_KINDS[m.minionKind];
+  const every = stats ? stats.moveEvery : 1;
+  return m.downed ? every * DOWNED_SLOWDOWN : every;
 }
 
 // A random free neighbouring floor tile for a wandering minion, or null if
@@ -368,7 +380,9 @@ function towardLastSeen(m) {
 // minion, hitHalf, sweepMs, count }: gun.js struggleDial, harder each time
 // on a floor; settled by gun.js settleStruggle), unless `canStruggle` is
 // false (a reload question already open over the map, in real time):
-// then it strikes as usual. Stick men in a duct come first (vents.js
+// then it strikes as usual. A downed one (downed plan) that reaches the
+// player neither strikes nor struggles: it grabs their ankle
+// ({ type: 'ankleGrabbed', minion }) and holds on where it is. Stick men in a duct come first (vents.js
 // crawlTurn: ventRattled, ventDropped), and a hunting one that fits may go
 // into one (crawlInto: ventEntered). Last, { type: 'presenceSensed',
 // minion } for each unseen one about to get next to the player
@@ -412,8 +426,11 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     if (!noticing && m.track > 0 && !m.lastSeen) m.track--;
     // A slow kind's off turn comes first, so a rest (a stun) is only used
     // up on a turn it would really have moved.
-    const stats = MINION_KINDS[m.minionKind];
-    if (gun && stats && state.run.turnCount % stats.moveEvery !== 0) continue;
+    // One holding the player's ankle stays put until it dies; one the
+    // player is somehow no longer beside lets go.
+    if (m.grabbing && isAdjacentToPlayer(m)) continue;
+    m.grabbing = false;
+    if (gun && state.run.turnCount % movesEvery(m) !== 0) continue;
     if (m.rest > 0) {
       m.rest--;
       continue;
@@ -454,7 +471,10 @@ export function advanceMonsters({ canStruggle = true } = {}) {
       if (isPlayerTile && noticing) lockOn(m);
 
       const struggles = canStruggle && state.run.energy <= 0 && !state.battle.struggle;
-      if (isPlayerTile && gun && struggles) {
+      if (isPlayerTile && m.downed) {
+        m.grabbing = true;
+        events.push({ type: 'ankleGrabbed', minion: m });
+      } else if (isPlayerTile && gun && struggles) {
         state.battle.struggle = { minion: m, ...struggleDial() };
         events.push({ type: 'struggleStarted', ...state.battle.struggle });
       } else if (isPlayerTile && gun) {
@@ -505,8 +525,7 @@ function senseUnseen() {
       continue;
     }
     if (m.sensed || m.rest > 0) continue;
-    const stats = MINION_KINDS[m.minionKind];
-    if (gun && stats && (state.run.turnCount + 1) % stats.moveEvery !== 0) continue;
+    if (gun && (state.run.turnCount + 1) % movesEvery(m) !== 0) continue;
     m.sensed = true;
     events.push({ type: 'presenceSensed', minion: m });
   }

@@ -415,6 +415,13 @@ export const MINION_STRIKE_COST = 1;
 // MINION_STUN_MOVES moves, so it can't walk into the player straight after
 // (Timothy). A graze or a backfire doesn't stun.
 export const MINION_STUN_MOVES = 1;
+// Downed stick men (downed plan, Timothy 2026-10-15): a damaging shot that
+// leaves a stick man on 1 HP knocks it down. It crawls toward the player
+// on its arms, moving DOWNED_SLOWDOWN times less often than it did
+// standing, grabs their ankle if it reaches them, and a bump finishes it.
+// DEV -> Downed (DOWNED) switches it off: a 1 HP stick man stays standing.
+export const DOWNED = true;
+export const DOWNED_SLOWDOWN = 2;
 // Minions are placed when a room loads (no summoning; how many is in the
 // floor recipe) and roam freely: they wander at random and only chase once
 // the player is within MINION_CHASE_RANGE walkable steps. That is the rule

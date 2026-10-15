@@ -10,6 +10,7 @@ import { ventUnderfoot } from './vents.js';
 import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
 import { followBody, waysInUse } from './look.js';
+import { finishDowned } from './gun.js';
 import { DARK_GOLD_MULTIPLIER, BOX_GOLD } from './config.js';
 
 // Gold pays DARK_GOLD_MULTIPLIER times as much in the darkness after the boss.
@@ -64,7 +65,12 @@ function takeKey(index) {
 // (stepped into the tutorial's open door), exchangeOpened
 // (bumped THE UNFOLDING; main.js opens its screen), itemReached { thing }
 // (bumped the chest; main.js opens the battle screen) and
-// the box events from examineProp. A turn is spent only by `stepped`, `propSearched` or `bodyTurned`.
+// the box events from examineProp. Walking into a downed stick man
+// finishes it (gun.js finishDowned: minionFinished, minionKilled,
+// goldGained). While one holds the player's ankle a step onto another tile
+// is refused, heldFast { minion }, no turn spent (with free look, then
+// bodyTurned { bumped: true } if the press turned the body, as a bump).
+// A turn is spent only by `stepped`, `propSearched`, `bodyTurned` or `minionFinished`.
 export function stepPlayer(dRow, dCol) {
   const events = [];
   const facing = facingOf(dRow, dCol);
@@ -101,10 +107,22 @@ export function stepPlayer(dRow, dCol) {
     events.push(reachItem(block));
     return events;
   }
+  if (block && block.kind === 'minion' && block.thing.downed) {
+    events.push(...finishDowned(block.thing));
+    return events;
+  }
   if (block) {
     events.push({ type: 'blocked', kind: block.kind, thing: block.thing });
     // With free look, turning costs a turn, so a bump that turned the body
     // isn't a free turn: it's spent like one (free look plan, call 1).
+    if (turned && state.settings.freeLook) events.push({ type: 'bodyTurned', facing, bumped: true });
+    return events;
+  }
+  // A downed one has the player's ankle: they can turn, shoot, wait or
+  // finish it, but not walk away (downed plan, call 2).
+  const holder = state.floor.minions.find(m => m.grabbing);
+  if (holder) {
+    events.push({ type: 'heldFast', minion: holder });
     if (turned && state.settings.freeLook) events.push({ type: 'bodyTurned', facing, bumped: true });
     return events;
   }
