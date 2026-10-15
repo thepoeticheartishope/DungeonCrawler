@@ -392,7 +392,7 @@ export const TEXT = {
   'room.relay.done': 'The {@term.relay} is spent.', // draft. Bumping a used relay
   // Grates (vents.js): stepping onto one, as part of the step.
   'room.vent.stepped': 'A grate. Air moves through it.', // draft (Timothy's plan call 1)
-  'room.vent.entered': 'Something crawls into a grate.', // draft. A stick man in sight goes into a duct (vents.js)
+  'room.vent.entered': 'Something crawls into a grate.', // draft. A stick man goes into a duct, seen or not: always logged (Timothy: dread) (vents.js)
   'room.vent.rattle': 'The grate shudders.', // draft. Something will drop out of it next turn
   'room.vent.dropped': 'Something drops out of the grate.', // draft. Seen: now the player knows where its pair leads
   // The reflective desk (desk.js): in the start room, heals to full once a floor.

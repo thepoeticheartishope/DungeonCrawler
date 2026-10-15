@@ -1256,11 +1256,12 @@ function drawEvents(events) {
       case 'noiseHeard':
         if (seesEnemy(e.minion)) heardOnMap(e.minion);
         break;
-      // The ducts (vents.js): a line only for what the player sees or
-      // hears; the shudder shakes the grate (none under reduced motion or
-      // Comfort mode), the drop slides out of it.
+      // The ducts (vents.js): one going in is always in the log, seen or
+      // not (Timothy: it builds dread); the shudder only when heard, and it
+      // shakes the grate (none under reduced motion or Comfort mode); the
+      // drop slides out of it, its line only when seen.
       case 'ventEntered':
-        if (e.seen) parts.push(t('room.vent.entered'));
+        parts.push(t('room.vent.entered'));
         break;
       case 'ventRattled':
         if (!e.heard) break;

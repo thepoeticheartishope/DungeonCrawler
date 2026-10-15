@@ -176,13 +176,12 @@ export function ductStep(m, target) {
 // it): it is in the duct for VENT_TURNS turns, out of play. combat.js
 // takes it off the floor's minions once every one has moved (crawlTurn
 // brings it back). It stops being a target.
-// Event: ventEntered { minion, from, vent, seen } (`seen`: the player
-// could see it go in).
+// Event: ventEntered { minion, from, vent } (always in the room log, seen
+// or not: Timothy, it builds dread).
 export function crawlInto(m, i) {
   const f = state.floor;
   const grate = f.vents[i];
   const from = { row: m.row, col: m.col };
-  const seen = f.visibleSet.has(key(from.row, from.col)) || f.visibleSet.has(key(grate.row, grate.col));
   m.row = grate.row;
   m.col = grate.col;
   m.vent = { from: i, to: grate.pair, left: VENT_TURNS };
@@ -191,7 +190,7 @@ export function crawlInto(m, i) {
   m.trail = [];
   if (f.gunTarget === m) f.gunTarget = null;
   if (state.battle.selectedTarget === m) state.battle.selectedTarget = null;
-  return [{ type: 'ventEntered', minion: m, from, vent: grate, seen }];
+  return [{ type: 'ventEntered', minion: m, from, vent: grate }];
 }
 
 // One turn for every stick man in a duct, before the others move. On its
