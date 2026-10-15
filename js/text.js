@@ -335,6 +335,7 @@ export const TEXT = {
   'room.blocked.dark': 'The dark holds you here.', // draft. A step while the tutorial's ring is closed
   'tut.hint.light': 'Your light: V, or tap the middle of the arrows 3 times.', // draft. Room log, only if stuck in the ring
   'tut.ready': "They'll be listening. Be ready.", // Timothy's wording (vents and noise plan step D: world-driven, not on the nose; it hints that sound brings them). The kind voice, once the ring breaks; then a stick man comes out of the grate
+  'tut.finish': 'Finish it.', // draft (downed plan step C). The kind voice, when the tutorial's stick man goes down: a bump finishes it
   'tut.name.q': 'What is your name?', // Timothy: the barrel asks the player's name; any name is right
   // The plain hints show only for a player stuck on a stage (TUTORIAL_STUCK_MS).
   'tut.hint.move': 'Arrows move you.', // draft. Stuck in the dark

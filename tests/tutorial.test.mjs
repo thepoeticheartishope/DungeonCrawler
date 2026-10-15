@@ -22,6 +22,7 @@ import { stepPlayer } from '../js/moves.js';
 import { whatBlocks } from '../js/passage.js';
 import { lightOn, tickLight, toggleLight } from '../js/battery.js';
 import { advanceMonsters } from '../js/combat.js';
+import { fire, settleShot } from '../js/gun.js';
 
 function resetRun() {
   state.settings.fogEnabled = true;
@@ -220,4 +221,32 @@ test('the stick man gone leaves a key; taking it opens the door; the door is the
 
   f.playerRow = door.row + 1; f.playerCol = door.col; f.facing = 'N';
   assert.deepEqual(stepPlayer(-1, 0).map(e => e.type).slice(-1), ['tutorialLeft']);
+});
+
+test('a shot drops the stick man; the kind voice says "Finish it."; a bump finishes it and the key drops', () => {
+  resetRun();
+  state.settings.downed = true;
+  passTurns(TUTORIAL_SPOT_TURNS);
+  walkToSpot();
+  tutorialTurn([]);
+  settleName('Ada');
+  toggleLight();
+  breakRing();
+  advanceMonsters();
+  advanceMonsters();
+  const f = state.floor;
+  const m = f.minions[0];
+  // Beside the player, north, in their light.
+  m.row = f.playerRow - 1; m.col = f.playerCol;
+  f.facing = 'N'; f.look = null;
+  fire(m);
+  const zone = state.battle.aim.zones.find(z => z.tier === 'hit');
+  const shot = settleShot((zone.from + zone.to) / 2);
+  assert.ok(shot.some(e => e.type === 'minionDowned'), 'one hit leaves the 2 HP stick man on 1 HP: down');
+  assert.deepEqual(tutorialTurn(shot), [{ type: 'whispered', line: 'tut.finish', tone: 'kind' }]);
+  assert.deepEqual(tutorialTurn([]), [], 'said once');
+
+  const finish = stepPlayer(-1, 0);
+  assert.ok(finish.some(e => e.type === 'minionFinished'));
+  assert.deepEqual(tutorialTurn(finish), [{ type: 'keyDropped', row: m.row, col: m.col }]);
 });

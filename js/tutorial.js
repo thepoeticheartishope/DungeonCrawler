@@ -14,6 +14,8 @@
 //          teach without hand holding)
 //   fight  "Be ready." A slow stick man comes from the far side of the
 //          room, always for the player
+//          A shot drops it to 1 HP and it goes down (downed plan): the
+//          kind voice says "Finish it.", and a bump finishes it
 //   key    it falls and leaves a key
 //   open   the key opens the door at the top; through it, the run begins
 // It shows the game's central mechanics, so when a core mechanic is added,
@@ -91,7 +93,9 @@ function stepsTo(p) {
 // Moves the tutorial on after a spent turn (`events` are the turn's).
 // Returns the events that adds, in order: spotLit; then whispered
 // { line, tone } and barrelAppeared { prop } once the player walks toward the
-// light; keyDropped { row, col } once the stick man is gone (shot, or
+// light; whispered { line: 'tut.finish', tone: 'kind' } once the stick man
+// goes down (downed plan step C: its minionDowned is in `events`), so the
+// player learns a bump finishes it; keyDropped { row, col } once the stick man is gone (shot, or
 // cleared in classic combat); doorUnlocked once the key is taken. None
 // off the tutorial. In the fight the energy is filled again every turn,
 // so a miss never leaves the player with nothing to shoot (Timothy).
@@ -115,7 +119,8 @@ export function tutorialTurn(events) {
     // In the grate's duct it is still coming, not dead.
     if (state.floor.minions.includes(tut.minion) || state.floor.crawling.includes(tut.minion)) {
       tut.minionAt = { row: tut.minion.row, col: tut.minion.col };
-      return [];
+      const downed = events.some(e => e.type === 'minionDowned' && e.minion === tut.minion);
+      return downed ? [{ type: 'whispered', line: 'tut.finish', tone: 'kind' }] : [];
     }
     const at = tut.minionAt;
     state.floor.keys.push({ row: at.row, col: at.col });
