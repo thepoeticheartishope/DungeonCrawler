@@ -11,6 +11,7 @@ import { keptOut } from './relays.js';
 import { canPassCorner } from './passage.js';
 import { computeVisibility, clearLine, seesEnemy, FACING_VECTORS } from './sight.js';
 import { waysInUse } from './look.js';
+import { ductStep, crawlInto, crawlTurn } from './vents.js';
 
 // True if `entity` stands on one of the tiles around the player: the 8
 // around them (eight ways plan, call 4), apart from a diagonal a corner
@@ -367,8 +368,11 @@ function towardLastSeen(m) {
 // minion, hitHalf, sweepMs, count }: gun.js struggleDial, harder each time
 // on a floor; settled by gun.js settleStruggle), unless `canStruggle` is
 // false (a reload question already open over the map, in real time):
-// then it strikes as usual. Last, { type: 'presenceSensed', minion } for
-// each unseen one about to get next to the player (senseUnseen).
+// then it strikes as usual. Stick men in a duct come first (vents.js
+// crawlTurn: ventRattled, ventDropped), and a hunting one that fits may go
+// into one (crawlInto: ventEntered). Last, { type: 'presenceSensed',
+// minion } for each unseen one about to get next to the player
+// (senseUnseen).
 export function advanceMonsters({ canStruggle = true } = {}) {
   state.run.turnCount++;
   advanceLight();
@@ -392,7 +396,13 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     const hunter = !state.floor.hunter && state.floor.darkTurns >= HUNTER_SPAWN_DELAY ? wakeHunter() : null;
     if (hunter) events.push({ type: 'hunterWoke', hunter });
   }
+  // Stick men in a duct first (vents.js): the shudder, then the drop.
+  // One that drops out moves from next turn.
+  const dropped = crawlTurn();
+  events.push(...dropped);
+  const justOut = new Set(dropped.filter(e => e.type === 'ventDropped').map(e => e.minion));
   for (const m of state.floor.minions) {
+    if (justOut.has(m)) continue;
     // What it knows comes first, every turn, even one it won't move on.
     // The hunter keeps its own rule (new call 1): it isn't drawn by the light.
     const noticing = lightRules && m.kind !== 'hunter';
@@ -429,7 +439,15 @@ export function advanceMonsters({ canStruggle = true } = {}) {
       m.goal = null;
       m.linger = 0;
     }
-    const next = chasing ? path[1] : (tracking && towardLastSeen(m)) || (searching ? wanderStep(m, noticing) : idleStep(m, noticing));
+    // Hunting, one that fits takes a duct when it is quicker (vents.js):
+    // into a grate now, or a step on the way to one.
+    const duct = chasing ? ductStep(m, { row: state.floor.playerRow, col: state.floor.playerCol }) : tracking ? ductStep(m, m.lastSeen) : null;
+    if (duct && duct.enter !== undefined) {
+      events.push(...crawlInto(m, duct.enter));
+      continue;
+    }
+    if (duct && m.lastSeen && duct.step.row === m.lastSeen.row && duct.step.col === m.lastSeen.col) m.lastSeen = null;
+    const next = duct ? duct.step : chasing ? path[1] : (tracking && towardLastSeen(m)) || (searching ? wanderStep(m, noticing) : idleStep(m, noticing));
     if (next) {
       const isPlayerTile = next.row === state.floor.playerRow && next.col === state.floor.playerCol;
       // Reaching the player, even by blundering into them, it knows them.
@@ -455,6 +473,12 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     }
     // If next is null, this minion has no route around current
     // obstacles this turn — it waits rather than overlapping anything.
+  }
+  // The ones that went into a duct leave the floor until they drop out.
+  const gone = state.floor.minions.filter(m => m.vent);
+  if (gone.length) {
+    state.floor.minions = state.floor.minions.filter(m => !m.vent);
+    state.floor.crawling.push(...gone);
   }
 
   computeVisibility();

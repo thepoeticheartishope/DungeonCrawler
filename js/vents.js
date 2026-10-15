@@ -3,12 +3,16 @@
 // Dead Space). Each floor gets up to VENT_PAIRS pairs of grates, each pair
 // joining two rooms far apart on foot. The ducts belong to the stick men:
 // the player walks over a grate but can't go in. floor.js buildFloor()
-// calls placeVents(); moves.js stepPlayer() calls ventUnderfoot(). Later
-// steps send noise and stick men through the ducts. No DOM access here.
+// calls placeVents(); moves.js stepPlayer() calls ventUnderfoot(); noise.js
+// sends sound through open ducts. Step C: hunting stick men that fit crawl
+// through them (combat.js advanceMonsters calls ductStep, crawlInto and
+// crawlTurn). No DOM access here.
 
 import { state, key } from './state.js';
-import { VENT_PAIRS, VENT_MIN_APART } from './config.js';
+import { VENT_PAIRS, VENT_MIN_APART, VENT_TURNS, VENT_RATTLE_HEARD, MINION_KINDS } from './config.js';
 import { shuffle } from './quiz.js';
+import { neighbors, blockedTilesFor, tileOccupied } from './combat.js';
+import { keptOut } from './relays.js';
 
 const STEPS = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
 
@@ -95,4 +99,145 @@ export function ductOpen(i) {
 // Returns [ventStepped] or [].
 export function ventUnderfoot() {
   return ventAt(state.floor.playerRow, state.floor.playerCol) ? [{ type: 'ventStepped' }] : [];
+}
+
+// Whether a stick man can crawl through the ducts: SHARDs and STALKERs
+// (MINION_KINDS `vents`) and the hunter (Timothy); HUSKs are too big.
+// Never with DEV -> Noise off: then grates are just floor.
+export function fitsVents(m) {
+  if (!state.settings.noise) return false;
+  return m.kind === 'hunter' || !!(MINION_KINDS[m.minionKind] && MINION_KINDS[m.minionKind].vents);
+}
+
+// The cheapest way for `m` to `target` with the ducts: a step costs 1,
+// and an open duct from a grate to its pair VENT_TURNS (one more than the
+// turns it really takes, so a walk that ties always wins). Other stick
+// men, walls and furniture block it as on foot (combat.js
+// blockedTilesFor); the target itself never does. Returns the tiles from
+// where it stands to the target, or null if it can't get there.
+function ductRoute(m, target) {
+  const f = state.floor;
+  const blocked = blockedTilesFor(m);
+  const start = key(m.row, m.col);
+  const goal = key(target.row, target.col);
+  const dist = new Map([[start, 0]]);
+  const prev = new Map();
+  const tiles = new Map([[start, { row: m.row, col: m.col }]]);
+  const buckets = [[start]];
+  const relax = (row, col, d, from) => {
+    const k = key(row, col);
+    if (dist.has(k) && dist.get(k) <= d) return;
+    dist.set(k, d);
+    prev.set(k, from);
+    tiles.set(k, { row, col });
+    (buckets[d] = buckets[d] || []).push(k);
+  };
+  for (let d = 0; d < buckets.length && !dist.has(goal); d++) {
+    for (const ck of buckets[d] || []) {
+      if (dist.get(ck) !== d) continue;
+      const cur = tiles.get(ck);
+      neighbors(cur.row, cur.col).forEach(([row, col]) => {
+        if (key(row, col) !== goal && blocked.has(key(row, col))) return;
+        relax(row, col, d + 1, ck);
+      });
+      const v = ventIndexAt(cur.row, cur.col);
+      if (v === -1 || !ductOpen(v)) continue;
+      const far = f.vents[f.vents[v].pair];
+      relax(far.row, far.col, d + VENT_TURNS, ck);
+    }
+  }
+  if (!dist.has(goal)) return null;
+  const path = [];
+  for (let k = goal; k !== undefined; k = prev.get(k)) path.unshift(tiles.get(k));
+  return path;
+}
+
+// What a hunting stick man that fits does about the ducts on its way to
+// `target` (the player it chases, or the spot it last knew them at): null
+// when walking is as quick (it walks as before); { enter } (a grate's
+// index) to go in now, from the grate it stands on or the one it steps
+// onto; or { step } (a tile) on the way to a grate.
+export function ductStep(m, target) {
+  if (!state.floor.vents.length || !fitsVents(m)) return null;
+  const path = ductRoute(m, target);
+  if (!path) return null;
+  const vents = state.floor.vents;
+  const hop = path.findIndex((tile, i) => {
+    const v = ventIndexAt(tile.row, tile.col);
+    const next = path[i + 1];
+    return v !== -1 && !!next && vents[vents[v].pair].row === next.row && vents[vents[v].pair].col === next.col;
+  });
+  if (hop === -1) return null;
+  if (hop <= 1) return { enter: ventIndexAt(path[hop].row, path[hop].col) };
+  return { step: path[1] };
+}
+
+// `m` goes into grate `i` (stepping onto it first if it stands beside
+// it): it is in the duct for VENT_TURNS turns, out of play. combat.js
+// takes it off the floor's minions once every one has moved (crawlTurn
+// brings it back). It stops being a target.
+// Event: ventEntered { minion, from, vent, seen } (`seen`: the player
+// could see it go in).
+export function crawlInto(m, i) {
+  const f = state.floor;
+  const grate = f.vents[i];
+  const from = { row: m.row, col: m.col };
+  const seen = f.visibleSet.has(key(from.row, from.col)) || f.visibleSet.has(key(grate.row, grate.col));
+  m.row = grate.row;
+  m.col = grate.col;
+  m.vent = { from: i, to: grate.pair, left: VENT_TURNS };
+  m.goal = null;
+  m.linger = 0;
+  m.trail = [];
+  if (f.gunTarget === m) f.gunTarget = null;
+  if (state.battle.selectedTarget === m) state.battle.selectedTarget = null;
+  return [{ type: 'ventEntered', minion: m, from, vent: grate, seen }];
+}
+
+// One turn for every stick man in a duct, before the others move. On its
+// first turn in, the far grate shudders; on the next it climbs out onto a
+// free tile beside that grate, the one nearest where it is going (where
+// it last knew the player was, else the player). If that end has been
+// sealed meanwhile (its room held), it comes back out the way it went in.
+// With no free tile it waits a turn. Seen coming out, the pair is known.
+// Events: ventRattled { vent, heard } (`heard`: in sight or within
+// VENT_RATTLE_HEARD tiles), ventDropped { minion, vent, seen }.
+export function crawlTurn() {
+  const f = state.floor;
+  const events = [];
+  f.crawling.slice().forEach(m => {
+    m.vent.left--;
+    const exit = f.vents[ductOpen(m.vent.from) ? m.vent.to : m.vent.from];
+    if (m.vent.left === 1) {
+      events.push({ type: 'ventRattled', vent: exit, heard: playerHears(exit) });
+      return;
+    }
+    if (m.vent.left > 0) return;
+    const aim = m.lastSeen || { row: f.playerRow, col: f.playerCol };
+    const out = keptOut(m);
+    const spots = neighbors(exit.row, exit.col)
+      .filter(([row, col]) => !f.wallSet.has(key(row, col)) && !out.has(key(row, col)) && !tileOccupied(row, col, m))
+      .sort((a, b) => Math.hypot(a[0] - aim.row, a[1] - aim.col) - Math.hypot(b[0] - aim.row, b[1] - aim.col));
+    if (!spots.length) {
+      m.vent.left = 1;
+      return;
+    }
+    const seen = f.visibleSet.has(key(exit.row, exit.col));
+    if (seen) {
+      exit.known = true;
+      f.vents[exit.pair].known = true;
+    }
+    [m.row, m.col] = spots[0];
+    delete m.vent;
+    f.crawling.splice(f.crawling.indexOf(m), 1);
+    f.minions.push(m);
+    events.push({ type: 'ventDropped', minion: m, vent: exit, seen });
+  });
+  return events;
+}
+
+// Whether the player hears a grate shudder: it is in their light, or near.
+function playerHears(v) {
+  const f = state.floor;
+  return f.visibleSet.has(key(v.row, v.col)) || Math.hypot(v.row - f.playerRow, v.col - f.playerCol) <= VENT_RATTLE_HEARD;
 }

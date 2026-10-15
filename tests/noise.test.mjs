@@ -105,7 +105,8 @@ test('a held room seals its grate: no sound gets through either way', () => {
 test('a stick man the sound reaches goes to where it was made and searches', () => {
   resetFloor();
   state.floor.playerRow = 5;
-  const m = spawnMinion({ row: 3, col: 17 }, 'SHARD');
+  // A HUSK: too big for the ducts (step C), so it walks.
+  const m = spawnMinion({ row: 3, col: 17 }, 'HUSK');
   m.goal = { row: 10, col: 19 };
   const events = makeNoise('reload');
   assert.equal(events[0].type, 'noiseMade');

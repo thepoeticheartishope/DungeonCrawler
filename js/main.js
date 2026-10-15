@@ -7,7 +7,7 @@ import {
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
   LOOK_NUDGE, LOOK_POINTER_DEAD, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
-  TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS,
+  TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS,
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -35,7 +35,7 @@ import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, limbOffOnMap, deathOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, limbOffOnMap, deathOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
@@ -1255,6 +1255,21 @@ function drawEvents(events) {
         break;
       case 'noiseHeard':
         if (seesEnemy(e.minion)) heardOnMap(e.minion);
+        break;
+      // The ducts (vents.js): a line only for what the player sees or
+      // hears; the shudder shakes the grate (none under reduced motion or
+      // Comfort mode), the drop slides out of it.
+      case 'ventEntered':
+        if (e.seen) parts.push(t('room.vent.entered'));
+        break;
+      case 'ventRattled':
+        if (!e.heard) break;
+        rattleOnMap(e.vent);
+        parts.push(t('room.vent.rattle'));
+        break;
+      case 'ventDropped':
+        if (!state.settings.simpleEnemies) slideOnMap(e.minion, e.vent, MAP_ANIMATION_MS.ventDrop);
+        if (e.seen) parts.push(t('room.vent.dropped'));
         break;
       case 'deskHealed':
         parts.push(t('room.desk.healed'));

@@ -45,7 +45,7 @@ export function whatBlocks(row, col) {
   // The tutorial's ring of dark holds the player where they stand.
   if (tut && tut.stage === 'ring' && !at({ row: state.floor.playerRow, col: state.floor.playerCol })) return { kind: 'dark' };
   if (at(state.floor.boss)) return { kind: 'boss' };
-  if (at(state.floor.hunter)) return { kind: 'hunter' };
+  if (at(state.floor.hunter) && !state.floor.hunter.vent) return { kind: 'hunter' };
   const minion = state.floor.minions.find(at);
   if (minion) return { kind: 'minion', thing: minion };
   if (at(state.floor.chest)) return { kind: 'chest' };

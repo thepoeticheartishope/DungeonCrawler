@@ -247,7 +247,7 @@ function soundTilesNow(now) {
   const vents = state.floor.vents;
   const out = [];
   sounds.forEach(sound => sound.tiles.forEach(tile => {
-    if (tile.through.some(i => !vents[i] || !vents[i].known)) return;
+    if (!state.settings.showDucts && tile.through.some(i => !vents[i] || !vents[i].known)) return;
     if (fogOf(tile.row, tile.col) === 'hidden') return;
     const age = still ? 0 : now - sound.start - tile.d * MAP_ANIMATION_MS.soundStep;
     if (age < 0 || age > MAP_ANIMATION_MS.soundFade) return;
@@ -256,6 +256,29 @@ function soundTilesNow(now) {
   }));
   if (!still) looping = true;
   return out;
+}
+
+// A grate shudders, the turn before something drops out of it (vents.js
+// ventRattled): the grate wobbles slowly over MAP_ANIMATION_MS.ventRattle.
+// None under reduced motion or in Comfort mode: the line says it.
+const rattles = new Map(); // grate -> when it started shaking
+export function rattleOnMap(vent) {
+  if (reducedMotion.matches || state.settings.simpleEnemies) return;
+  rattles.set(vent, performance.now());
+  requestMapDraw();
+}
+
+// How far a grate's shudder has got, 0..1, or null when it isn't shaking.
+function rattleOf(vent) {
+  const at = rattles.get(vent);
+  if (at === undefined) return null;
+  const age = frameNow - at;
+  if (age >= MAP_ANIMATION_MS.ventRattle) {
+    rattles.delete(vent);
+    return null;
+  }
+  looping = true;
+  return age / MAP_ANIMATION_MS.ventRattle;
 }
 
 // A stick man the player can see heard the sound (noise.js noiseHeard): a
@@ -494,7 +517,7 @@ function mapThings() {
     const lit = isLit(v.row, v.col);
     const remembered = state.settings.fogEnabled && !lit && !f.darkness && f.exploredSet.has(key(v.row, v.col));
     if (!lit && !remembered) return;
-    add('vent', v, t('term.vent.symbol'), { size: 'prop', alpha: remembered ? REMEMBERED_ALPHA : 1, sealed: ventSealed(v) });
+    add('vent', v, t('term.vent.symbol'), { size: 'prop', alpha: remembered ? REMEMBERED_ALPHA : 1, sealed: ventSealed(v), rattle: rattleOf(v) });
   });
   f.props.forEach(p => {
     const lit = isLit(p.row, p.col);
@@ -545,6 +568,11 @@ function mapThings() {
   });
   add('player', shownAt(PLAYER, f.playerRow, f.playerCol), t('term.player.symbol'), { size: 'player' },
     { row: f.playerRow, col: f.playerCol });
+  // DEV -> Show ducts: a stick man in a duct shows dimly on the grate it
+  // will come out of.
+  if (state.settings.showDucts) f.crawling.forEach(m => {
+    add(m.kind, f.vents[m.vent.to], glyphOf(m), { size: m.kind, colour: colours.muted, alpha: REMEMBERED_ALPHA }, f.vents[m.vent.to]);
+  });
   f.minions.forEach(m => {
     // An enemy shows only while made out (or lit by a dark shot), never
     // as a '?' to follow round the dark.
