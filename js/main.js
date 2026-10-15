@@ -1153,7 +1153,7 @@ setInterval(gazeTick, GAZE_POLL_MS);
 // and targeting once. Returns the room note the events add up to
 // ({ cls, text }, text in event order); the caller decides whether to show it.
 // The events that mean the player moved: they put the answer (line or ring) away.
-const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched']);
+const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched', 'minionFinished', 'heldFast']);
 
 function drawEvents(events) {
   const parts = [];
@@ -1449,7 +1449,24 @@ function drawEvents(events) {
         hurtOnMap(e.minion, e.damage);
         parts.push(t(e.weakPoint ? 'gun.weakPoint' : 'gun.hit'));
         if (e.matched) parts.push(t('gun.matched', { damage: e.damage }));
-        if (e.hpLeft > 0) parts.push(t('gun.stunned'));
+        if (e.hpLeft > 0 && !e.minion.downed) parts.push(t('gun.stunned'));
+        break;
+      // Downed stick men (downed plan): it falls, crawls, grabs, and a bump
+      // finishes it. Step B draws them; for now only the room log says so.
+      case 'minionDowned':
+        parts.push(t('gun.downed'));
+        break;
+      case 'minionFinished':
+        parts.push(t('gun.finished'));
+        break;
+      case 'ankleGrabbed':
+        cls = 'warn-msg';
+        parts.push(t('gun.grabbed'));
+        break;
+      case 'heldFast':
+        bumpOnMap(state.floor.facing);
+        cls = 'block-msg';
+        parts.push(t('gun.heldFast'));
         break;
       case 'weaknessFound':
         parts.push(t('gun.weakFound', { kind: t('minionKind.' + e.minionKind), group: e.label }));
@@ -1536,7 +1553,8 @@ let lastWalkAt = -Infinity;
 // One arrow press (stepPlayer in moves.js). A step or a first look in a
 // box spends a turn; a step onto the stairs only asks (goDown takes them); a trapped box or the
 // chest opens the battle screen; an energy cell opens the
-// reload panel (its answer is the turn); a turn to a new direction or a
+// reload panel (its answer is the turn); walking into a downed stick man
+// finishes it, a turn like a step; a turn to a new direction or a
 // bump only draws, except that with free look a bump that turned the body
 // is a turn (bodyTurned). With Real time
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
@@ -1550,7 +1568,7 @@ function movePlayer(dRow, dCol) {
     lastWalkAt = performance.now();
     noteStep(dRow, dCol, lastWalkAt);
   }
-  if (has('stepped') || has('propSearched') || has('bodyTurned')) {
+  if (has('stepped') || has('propSearched') || has('bodyTurned') || has('minionFinished')) {
     applyTurnOutcome(events);
   } else {
     const note = drawEvents(events);

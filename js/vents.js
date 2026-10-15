@@ -103,9 +103,10 @@ export function ventUnderfoot() {
 
 // Whether a stick man can crawl through the ducts: SHARDs and STALKERs
 // (MINION_KINDS `vents`) and the hunter (Timothy); HUSKs are too big.
-// Never with DEV -> Noise off: then grates are just floor.
+// Never with DEV -> Noise off: then grates are just floor. Never a downed
+// one (downed plan): crawling on its arms, it stays on the floor.
 export function fitsVents(m) {
-  if (!state.settings.noise) return false;
+  if (!state.settings.noise || m.downed) return false;
   return m.kind === 'hunter' || !!(MINION_KINDS[m.minionKind] && MINION_KINDS[m.minionKind].vents);
 }
 

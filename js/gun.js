@@ -332,11 +332,15 @@ export function damageZones(minionKind, { extraPenalty = 0 } = {}) {
 // minion with no hp left dies and pays its kind's gold (goldReward, so it
 // doubles in the darkness). Any damage stuns it for MINION_STUN_MOVES of
 // its moves (m.rest), so a minion one step away can't walk straight in.
+// A hit that leaves a standing stick man on 1 HP knocks it down (downed
+// plan, DEV -> Downed): it crawls at half speed and a bump finishes it
+// (finishDowned), so one shot and one bump can do what two shots did.
+// The stun still holds: the fall takes its next move.
 // Events: shotGrazed { minion }, shotBackfired { minion, energyLost } and
 // its noise (noise.js makeNoise), or
 // minionHurt { minion, damage, hpLeft, weakPoint, matched } and maybe limbLost
-// { minion, limbsLeft }; then, on a kill, minionKilled { minion } and
-// goldGained { amount, from: 'kill' }.
+// { minion, limbsLeft }; then minionDowned { minion } if it went down, or,
+// on a kill, minionKilled { minion } and goldGained { amount, from: 'kill' }.
 // A shot in the dark (aim.dark) with nothing there: shotIntoDark { end }
 // unless it backfires (shotBackfired with no minion, `end` where it went).
 // One that hurts a stick man in the dark locks it on (combat.js lockOn): it
@@ -366,15 +370,36 @@ export function settleShot(barPosition) {
     m.limbs--;
     events.push({ type: 'limbLost', minion: m, limbsLeft: m.limbs });
   }
+  if (m.hpLeft === 1 && state.settings.downed && !m.downed) {
+    m.downed = true;
+    events.push({ type: 'minionDowned', minion: m });
+  }
   if (m.hpLeft > 0) return events;
+  events.push(...killMinion(m));
+  return events;
+}
 
+// The player walked into a downed stick man (moves.js): it dies, for no
+// energy and no damage bar, and pays its kind's gold as a kill. The caller
+// spends the turn, like a step.
+// Events: minionFinished { minion }, minionKilled { minion },
+// goldGained { amount, from: 'kill' }.
+export function finishDowned(m) {
+  m.hpLeft = 0;
+  return [{ type: 'minionFinished', minion: m }, ...killMinion(m)];
+}
+
+// Takes a dead minion off the floor, drops it as a target, and pays its
+// kind's gold (goldReward, so it doubles in the darkness). A shot's kill
+// and a finish both end here.
+// Events: minionKilled { minion }, goldGained { amount, from: 'kill' }.
+function killMinion(m) {
   state.floor.minions = state.floor.minions.filter(x => x !== m);
   if (state.battle.selectedTarget === m) state.battle.selectedTarget = null;
   if (state.floor.gunTarget === m) state.floor.gunTarget = null;
   const gold = goldReward(MINION_KINDS[m.minionKind].gold);
   state.run.coinsTotal += gold;
-  events.push({ type: 'minionKilled', minion: m }, { type: 'goldGained', amount: gold, from: 'kill' });
-  return events;
+  return [{ type: 'minionKilled', minion: m }, { type: 'goldGained', amount: gold, from: 'kill' }];
 }
 
 // A minion that reached the player strikes: MINION_STRIKE_COST stability,

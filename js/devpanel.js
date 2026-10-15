@@ -21,6 +21,7 @@ const devFreeLookBtn = document.getElementById('devFreeLookBtn');
 const devEightWaysBtn = document.getElementById('devEightWaysBtn');
 const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
 const devGazeBtn = document.getElementById('devGazeBtn');
+const devDownedBtn = document.getElementById('devDownedBtn');
 const devNoiseBtn = document.getElementById('devNoiseBtn');
 const devShowDuctsBtn = document.getElementById('devShowDuctsBtn');
 const dpadEl = document.getElementById('dpad');
@@ -159,6 +160,15 @@ export function initDevPanel({
     devShowDuctsBtn.textContent = state.settings.showDucts ? 'Show ducts: ON (dev)' : 'Show ducts: OFF (dev)';
     devShowDuctsBtn.setAttribute('aria-pressed', String(state.settings.showDucts));
     requestMapDraw();
+  });
+
+  // Dev tool (downed plan step A): a shot that leaves a stick man on 1 HP
+  // knocks it down, or it stays standing, as before. Only later shots
+  // change: one already down stays down.
+  devDownedBtn.addEventListener('click', () => {
+    state.settings.downed = !state.settings.downed;
+    devDownedBtn.textContent = state.settings.downed ? 'Downed: ON (dev)' : 'Downed: OFF (dev)';
+    devDownedBtn.setAttribute('aria-pressed', String(state.settings.downed));
   });
 
   // Dev tool (light battery plan step E): the eye over a stick man in the

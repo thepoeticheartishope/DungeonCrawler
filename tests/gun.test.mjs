@@ -53,6 +53,7 @@ function resetFloor(size = 21) {
   state.settings.fogEnabled = true;
   state.settings.activeData = SET;
   state.settings.gunCombat = false;
+  state.settings.downed = false; // downed.test.mjs checks stick men going down
   state.floor.darkness = false;
   state.floor.light = freshLight();
   state.floor.wallSet = new Set();
