@@ -5,6 +5,7 @@
 
 import { state, key } from './state.js';
 import { reachGate } from './gate.js';
+import { useDesk } from './desk.js';
 import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
 import { followBody, waysInUse } from './look.js';
@@ -180,15 +181,17 @@ function reachItem(block) {
 // answer is the turn (gun.js settleReload uses the cell up). A relay is
 // the same: main.js asks its question, relays.js settleRelay settles it.
 // The tutorial's barrel asks the player's name instead (tutorial.js; main.js
-// opens the ask screen, settleName settles it).
-// Events: blocked, boxSprung, cellFound { prop }, relayFound { prop }, nameAsked { prop }, or propSearched then
-// boxOpened.
+// opens the ask screen, settleName settles it). The reflective desk heals
+// (desk.js useDesk), no turn spent.
+// Events: blocked, boxSprung, cellFound { prop }, relayFound { prop }, nameAsked { prop },
+// deskUntouched, deskHealed { healed }, or propSearched then boxOpened.
 function examineProp(prop) {
   if (prop.searched) return [{ type: 'blocked', kind: 'prop', thing: prop }];
   prop.identified = true;
   if (prop.asks === 'name') return [{ type: 'nameAsked', prop }];
   if (prop.kind === 'cell') return [{ type: 'cellFound', prop }];
   if (prop.kind === 'relay') return [{ type: 'relayFound', prop }];
+  if (prop.kind === 'desk') return useDesk(prop);
   if (prop.kind === 'box' && prop.trapped) {
     prop.sprung = true;
     state.battle.selectedTarget = prop;
