@@ -433,6 +433,20 @@ export const MINION_TRACK_TURNS = 5;
 // room or the core).
 export const VENT_PAIRS = 2;
 export const VENT_MIN_APART = 12;
+// Noise (vents and noise plan step B, noise.js): a mistake makes a sound
+// that spreads this many walking steps from the player (walls stop it,
+// doorways carry it, a grate passes it to its pair). Only mistakes are
+// loud (Timothy): shots and steps are quiet, and a wrong answer in a fight
+// makes no noise.
+export const NOISE_RANGES = {
+  reload: 6,   // a wrong reload answer: the gun jams
+  relay: 8,    // a wrong relay answer: it sparks
+  backfire: 5, // the damage bar stopped in a penalty zone
+  struggle: 4, // a lost Struggle
+  gate: 10,    // a wrong answer at the gate
+};
+// Noise is on by default; DEV -> Noise switches it off (mistakes are quiet).
+export const NOISE = true;
 // An idle stick man walks to a spot in another room, stands there for a
 // number of turns in this [min, max] range, then picks a new room (smarter
 // enemies step 2, Timothy 2026-10-15: random steps each turn looked like
@@ -951,6 +965,9 @@ export const MAP_ANIMATION_MS = {
   playerGlance: 5200, // once idle, one glance to the side and back in each of these
   gunShot: 260,     // the shot's flash from the gun to where it went, fading (gun plan)
   gunMiss: 900,     // MISS floating up over a minion the shot missed, fading
+  soundStep: 110,   // a mistake's sound reaches one walking step further (noise.js); all at once under reduced motion
+  soundFade: 1100,  // each tile of the sound fading once reached
+  heardMark: 1800,  // the small '!' over a stick man that heard it, fading
   darkFlash: 700,   // a stick man hit in the dark, shown in the shot's flash (light battery plan step C)
   gunRecoil: 120,   // the gun kicking back toward the player as it fires
   lookEase: 70,     // the drawn look (ring tick, cone edges, the stick man's gaze) easing toward where the player aims (free look)

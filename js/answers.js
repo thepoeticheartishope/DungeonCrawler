@@ -10,6 +10,7 @@ import { DARK_MISS_COST, MINIGAME_TIER_PAY } from './config.js';
 import { recordHauntAnswer } from './haunts.js';
 import { sealGate, breakGate } from './gate.js';
 import { repelHunter } from './combat.js';
+import { makeNoise } from './noise.js';
 import { goldReward, openBox } from './moves.js';
 
 // One answer to the current question against state.battle.selectedTarget. The
@@ -73,10 +74,11 @@ function settleWager(isCorrect) {
 // plain answer; bossHit) and the caller asks the next, until it falls
 // (gate.js breakGate: bossDefeated, then darknessFell). A miss ends the
 // fight: the gate seals until the next key and the light gains turns
-// (bossHeld, then gate.js sealGate's gateSealed).
+// (bossHeld, then gate.js sealGate's gateSealed), and the gate booms
+// (noise.js makeNoise).
 function resolveBossAnswer(isCorrect, pay) {
   const boss = state.floor.boss;
-  if (!isCorrect) return [{ type: 'bossHeld' }, sealGate()];
+  if (!isCorrect) return [{ type: 'bossHeld' }, sealGate(), ...makeNoise('gate')];
   boss.hp = Math.max(0, boss.hp - pay.bossDamage);
   if (boss.hp > 0) return [{ type: 'bossHit', hp: boss.hp, max: boss.max }];
   return breakGate();

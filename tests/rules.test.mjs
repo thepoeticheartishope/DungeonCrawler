@@ -671,7 +671,7 @@ test('a wrong answer at the gate feeds the light and seals it until the next key
   stepPlayer(-1, 0);
   const before = state.floor.lightTurns;
   const events = settleAnswer(false, false, 'Moses');
-  assert.deepEqual(types(events), ['answerGiven', 'rejected', 'bossHeld', 'gateSealed']);
+  assert.deepEqual(types(events), ['answerGiven', 'rejected', 'bossHeld', 'gateSealed', 'noiseMade']);
   assert.equal(state.floor.lightTurns, before + GATE_WRONG_TURNS);
   assert.equal(state.floor.gateSealed, true);
   assert.equal(events[1].cost, 0, 'a gate miss costs no heart');

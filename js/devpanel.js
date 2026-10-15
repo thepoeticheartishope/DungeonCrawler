@@ -21,6 +21,7 @@ const devFreeLookBtn = document.getElementById('devFreeLookBtn');
 const devEightWaysBtn = document.getElementById('devEightWaysBtn');
 const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
 const devGazeBtn = document.getElementById('devGazeBtn');
+const devNoiseBtn = document.getElementById('devNoiseBtn');
 const dpadEl = document.getElementById('dpad');
 const devCameraBtn = document.getElementById('devCameraBtn');
 const devSmoothWalkBtn = document.getElementById('devSmoothWalkBtn');
@@ -140,6 +141,14 @@ export function initDevPanel({
     if (state.settings.gunCombat) refreshGunTarget();
     renderHud();
     requestMapDraw();
+  });
+
+  // Dev tool (vents and noise plan step B): mistakes make a sound stick
+  // men hear, or are quiet, as before.
+  devNoiseBtn.addEventListener('click', () => {
+    state.settings.noise = !state.settings.noise;
+    devNoiseBtn.textContent = state.settings.noise ? 'Noise: ON (dev)' : 'Noise: OFF (dev)';
+    devNoiseBtn.setAttribute('aria-pressed', String(state.settings.noise));
   });
 
   // Dev tool (light battery plan step E): the eye over a stick man in the

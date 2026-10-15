@@ -304,23 +304,38 @@ function idleStep(m, intoPlayer) {
 function sees(m, row, col) {
   return Math.hypot(row - m.row, col - m.col) <= MINION_LIGHT_SIGHT && clearLine(m.row, m.col, row, col);
 }
-function notice(m) {
+function inView(m) {
   const f = state.floor;
+  if (!lightOn()) return m.track > 0 && sees(m, f.playerRow, f.playerCol);
+  return sees(m, f.playerRow, f.playerCol) ||
+    [...f.sightSet].some(k => { const [row, col] = k.split(',').map(Number); return sees(m, row, col); });
+}
+function notice(m) {
   m.drawn = false;
-  if (lightOn()) {
-    const lit = sees(m, f.playerRow, f.playerCol) ||
-      [...f.sightSet].some(k => { const [row, col] = k.split(',').map(Number); return sees(m, row, col); });
-    if (lit) {
-      m.drawn = true;
-      lockOn(m);
-      return true;
-    }
-  } else if (m.track > 0 && sees(m, f.playerRow, f.playerCol)) {
+  if (inView(m)) {
+    m.drawn = lightOn();
     lockOn(m);
     return true;
   }
   if (m.track > 0 && !m.lastSeen) m.track--;
   return false;
+}
+
+// A mistake's sound reached `m` (noise.js makeNoise): like being seen, it
+// goes to where the sound was made (`origin`) and searches round there for
+// MINION_TRACK_TURNS turns. One that has the player in view ignores it:
+// seeing them wins. The hunter and the tutorial's stick man already come
+// straight for the player, so they don't need to hear. Works in Comfort
+// mode too (the rules stay, only the look is plain). Returns true if it
+// heard.
+export function hearNoise(m, origin) {
+  if (m.kind === 'hunter' || m.hunts) return false;
+  if (batteryInPlay() && inView(m)) return false;
+  m.lastSeen = { row: origin.row, col: origin.col };
+  m.track = MINION_TRACK_TURNS;
+  m.goal = null;
+  m.linger = 0;
+  return true;
 }
 
 // Where a tracking stick man that can't see the player goes next: one step
@@ -381,7 +396,10 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     // What it knows comes first, every turn, even one it won't move on.
     // The hunter keeps its own rule (new call 1): it isn't drawn by the light.
     const noticing = lightRules && m.kind !== 'hunter';
-    const inView = noticing && notice(m);
+    const seen = noticing && notice(m);
+    // Without the light's rules only a sound sets a stick man searching
+    // (hearNoise): its search runs down the same way.
+    if (!noticing && m.track > 0 && !m.lastSeen) m.track--;
     // A slow kind's off turn comes first, so a rest (a stun) is only used
     // up on a turn it would really have moved.
     const stats = MINION_KINDS[m.minionKind];
@@ -397,16 +415,16 @@ export function advanceMonsters({ canStruggle = true } = {}) {
     const sheltered = keptOut(m).has(key(state.floor.playerRow, state.floor.playerCol));
     const path = sheltered ? null : bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blockedTilesFor(m));
     // In the darkness after the boss falls, every minion hunts, from anywhere.
-    const noticed = noticing ? inView : path && path.length - 1 <= MINION_CHASE_RANGE;
+    const noticed = noticing ? seen : path && path.length - 1 <= MINION_CHASE_RANGE;
     // The tutorial's stick man (m.hunts) always comes for the player.
     const chasing = path && (state.floor.darkness || noticed || m.hunts);
-    // Out of view but tracking: to where it last saw them, then a search
-    // of random steps round there.
-    const tracking = !chasing && noticing && m.lastSeen && !sheltered;
+    // Out of view but tracking: to where it last saw them (or heard a
+    // mistake, noise.js), then a search of random steps round there.
+    const tracking = !chasing && m.kind !== 'hunter' && m.lastSeen && !sheltered;
     // Searching round where it last saw them: random steps. Otherwise idle:
     // off to another room (idleStep). A chase or a search drops the idle
     // plan, so it picks a fresh one once it has lost them.
-    const searching = !chasing && noticing && m.track > 0;
+    const searching = !chasing && m.kind !== 'hunter' && m.track > 0;
     if (chasing || tracking || searching) {
       m.goal = null;
       m.linger = 0;

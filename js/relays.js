@@ -12,6 +12,7 @@ import { RELAYS_PER_FLOOR, RELAY_TURNS_BACK, RELAY_TURNS_CAP, RELAY_WRONG_TURNS 
 import { shuffle } from './quiz.js';
 import { updateBossLit } from './light.js';
 import { recordHauntAnswer } from './haunts.js';
+import { makeNoise } from './noise.js';
 
 // The floor's relays, one each in RELAYS_PER_FLOOR [min, max] rooms, never
 // in the boss's room or the room the player starts in (holding those would
@@ -48,8 +49,8 @@ export function keptOut(minion) {
 // RELAY_TURNS_BACK turns (less once the floor has won RELAY_TURNS_CAP).
 // Wrong: the light gains RELAY_WRONG_TURNS. With the boss already down the
 // light is out, so only the room changes. The relay is used up either way.
-// Events: relayHeld { turns } or relaySparked { turns, expected, source },
-// then hauntSilenced / hauntLingers.
+// Events: relayHeld { turns } or relaySparked { turns, expected, source }
+// and its noise (noise.js makeNoise), then hauntSilenced / hauntLingers.
 export function settleRelay(isCorrect, relay) {
   const f = state.floor;
   const q = state.battle.currentQuestion;
@@ -66,7 +67,7 @@ export function settleRelay(isCorrect, relay) {
     f.misses++;
     const turns = f.boss ? RELAY_WRONG_TURNS : 0;
     f.lightTurns += turns;
-    events.push({ type: 'relaySparked', turns, expected: q.meaning, source: q.source });
+    events.push({ type: 'relaySparked', turns, expected: q.meaning, source: q.source }, ...makeNoise('relay'));
   }
   updateBossLit();
   const haunt = recordHauntAnswer(q, isCorrect);
