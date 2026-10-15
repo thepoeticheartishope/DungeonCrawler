@@ -139,7 +139,7 @@ test('any name is right: it is kept and the ring of dark closes, holding the pla
   assert.equal(f.minions.length, 0);
 });
 
-test('switching the light on breaks the ring: energy fills and a slow stick man hunts', () => {
+test('switching the light on breaks the ring: energy fills, the grate shudders, a slow stick man drops out and hunts', () => {
   resetRun();
   passTurns(TUTORIAL_SPOT_TURNS);
   walkToSpot();
@@ -154,13 +154,24 @@ test('switching the light on breaks the ring: energy fills and a slow stick man 
   assert.deepEqual(tickLight(), [], 'the light stays on: no battery in the tutorial');
   assert.equal(state.floor.light.on, true);
   assert.equal(state.run.energy, ENERGY_MAX);
-  const [m] = state.floor.minions;
+  // It starts in the grate's duct (vents and noise plan step D).
+  assert.equal(state.floor.minions.length, 0, 'nothing on the floor yet');
+  const [m] = state.floor.crawling;
   assert.equal(m.minionKind, TUTORIAL_MINION_KIND);
   assert.equal(m.hpLeft, TUTORIAL_MINION_HP);
   assert.ok(m.hunts);
-  // It starts on the other side of the room and comes closer.
+  assert.deepEqual(tutorialTurn([]), [], 'in the duct it is still coming, no key');
+  const grate = state.floor.vents[0];
+  const rattle = advanceMonsters();
+  assert.ok(rattle.some(e => e.type === 'ventRattled' && e.heard), 'the grate shudders next turn, always heard here');
+  assert.ok(state.floor.crawling.includes(m));
+  const drop = advanceMonsters();
+  assert.ok(drop.some(e => e.type === 'ventDropped' && e.minion === m), 'and it drops out the turn after');
+  assert.ok(state.floor.minions.includes(m));
+  assert.equal(Math.max(Math.abs(m.row - grate.row), Math.abs(m.col - grate.col)), 1, 'beside the grate');
+  // It comes out on the far side of the room and comes closer.
   const far = Math.abs(m.row - state.floor.playerRow) + Math.abs(m.col - state.floor.playerCol);
-  assert.ok(far >= 6, 'far from the player');
+  assert.ok(far >= 5, 'far from the player');
   for (let i = 0; i < 4; i++) advanceMonsters();
   const near = Math.abs(m.row - state.floor.playerRow) + Math.abs(m.col - state.floor.playerCol);
   assert.ok(near < far, 'it came for the player');
@@ -190,6 +201,8 @@ test('the stick man gone leaves a key; taking it opens the door; the door is the
   toggleLight();
   breakRing();
   const f = state.floor;
+  advanceMonsters();
+  advanceMonsters();
   const m = f.minions[0];
   m.row = 3; m.col = 3;
   tutorialTurn([]);

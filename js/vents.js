@@ -238,5 +238,7 @@ export function crawlTurn() {
 // Whether the player hears a grate shudder: it is in their light, or near.
 function playerHears(v) {
   const f = state.floor;
+  // The tutorial's one room: the shudder is the lesson, always heard.
+  if (f.tutorial) return true;
   return f.visibleSet.has(key(v.row, v.col)) || Math.hypot(v.row - f.playerRow, v.col - f.playerCol) <= VENT_RATTLE_HEARD;
 }
