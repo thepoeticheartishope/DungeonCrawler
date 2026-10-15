@@ -58,8 +58,9 @@
 //      ring of dark ("Die in darkness.", no step out), the kind voice
 //      follows ("Don't let them dim your light."), V breaks it: "They'll
 //      be listening. Be ready.", the grate shudders a turn
-//      later and a stick man drops out of it, shot dead (Auto-win stops the bar);
-//      its key opens the door, and through it the opening rest starts
+//      later and a stick man drops out of it; one shot (Auto-win stops the
+//      bar on a plain hit) drops it ("Finish it.", downed plan) and a bump
+//      finishes it; its key opens the door, and through it the opening rest starts
 //      with the run's numbers fresh (2 energy), the name kept and the toggle off.
 //   9. Answer line run (answer swirl plan steps A and B): Reveal on, Auto-win off,
 //      minigames off; a reload from an energy cell answered wrong puts the
@@ -1206,10 +1207,11 @@ async function checkTutorial(page, url) {
   st = await tutorialState(page);
   if (!st.minion) return 'the stick man did not drop out of the grate';
 
-  // Face the stick man and shoot; Auto-win stops the damage bar on its weak point.
-  await turnOnAutoWin(page);
-  await page.click('#devToggleBtn');
-  for (let i = 0; i < 40 && st.stage === 'fight'; i++) {
+  // Face the stick man and shoot. Its weak point would kill it outright
+  // (2 HP), so the bar loses its weak zones and Auto-win stops it on a
+  // plain hit: one hit leaves it on 1 HP and it goes down (downed plan).
+  let downed = false;
+  for (let i = 0; i < 40 && !downed; i++) {
     // Out of reach, wait for it to come (a blocked shot spends no turn).
     const canShoot = await page.evaluate(async () => {
       const { state } = await import('/js/state.js');
@@ -1228,11 +1230,32 @@ async function checkTutorial(page, url) {
       return !shootBlock(m);
     });
     await page.keyboard.press(canShoot ? 'f' : '.');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(100);
+    const aiming = await page.evaluate(async () => {
+      const { state } = await import('/js/state.js');
+      const aim = state.battle.aim;
+      if (aim) aim.zones = aim.zones.filter(z => z.tier !== 'weak');
+      return !!aim;
+    });
+    if (aiming) {
+      await turnOnAutoWin(page);
+      await page.click('#devToggleBtn');
+      await page.waitForTimeout(500);
+      await page.click('#devToggleBtn');
+      await page.click('#devAutoWinBtn');
+      await page.click('#devToggleBtn');
+    }
     st = await tutorialState(page);
     if (st.hearts <= 0) return 'the stick man won the tutorial fight';
+    downed = await page.evaluate(async () => {
+      const { state } = await import('/js/state.js');
+      return !!state.floor.minions[0] && state.floor.minions[0].downed;
+    });
   }
-  if (st.stage !== 'key') return 'the stick man was not killed, or left no key (stage ' + st.stage + ')';
+  if (!downed) return 'one shot did not drop the tutorial stick man (stage ' + st.stage + ')';
+  if (!st.sense.includes('Finish it.')) return 'no "Finish it." when the stick man went down: ' + st.sense;
+  st = await walkUntil(page, s => s.minion, s => s.stage !== 'fight' || s.hearts <= 0);
+  if (!st || st.stage !== 'key') return 'a bump did not finish the downed stick man, or it left no key (stage ' + (st && st.stage) + ')';
 
   st = await walkUntil(page, st.key, s => s.stage === 'open');
   if (!st) return 'taking the key did not open the door';
@@ -1260,7 +1283,7 @@ async function runTutorial(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, grate shudders, stick man drops out, key, door, out to the opening rest', consoleErrors, pageErrors };
+  return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, grate shudders, stick man drops out, one shot drops it ("Finish it."), a bump finishes it, key, door, out to the opening rest', consoleErrors, pageErrors };
 }
 
 // Runs one smoke run. A throw (a Playwright timeout, say) becomes that
