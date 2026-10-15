@@ -21,6 +21,7 @@ import { initBossLight } from './light.js';
 import { placeBeats } from './beats.js';
 import { rollGoals } from './goals.js';
 import { placeRelays } from './relays.js';
+import { placeDesk } from './desk.js';
 import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
@@ -227,6 +228,12 @@ export function buildFloor() {
       state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
       minionTaken.push(p);
     });
+  }
+  // The reflective desk (desk.js): one heal to full, in the start room.
+  const desk = placeDesk(layout, placer, minionTaken);
+  if (desk) {
+    state.floor.props.push({ ...desk, identified: false, searched: false, sprung: false });
+    minionTaken.push(desk);
   }
   // Relays (relays.js), with either kind of combat.
   placeRelays(layout, placer, minionTaken).forEach(p => {

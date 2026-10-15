@@ -98,7 +98,7 @@ export function initMapView(canvasEl) {
   const read = name => css.getPropertyValue(name).trim();
   colours = {
     text: read('--text'), muted: read('--muted'), torch: read('--torch'), bright: read('--torch-bright'),
-    glowRgb: read('--glow-rgb'), bossFogRgb: read('--boss-fog-rgb'), bossLightRgb: read('--boss-light-rgb'),
+    glowRgb: read('--glow-rgb'), kindRgb: read('--kind-rgb'), bossFogRgb: read('--boss-fog-rgb'), bossLightRgb: read('--boss-light-rgb'),
   };
   setTileArtColour(colours.glowRgb);
   // The canvas's size is noted here, when it changes, instead of read each
@@ -435,8 +435,12 @@ function mapThings() {
     const known = !state.settings.fogEnabled || p.identified || canMakeOut(p.row, p.col);
     // An unused energy cell breathes a faint glow (isoview.js drawEnergyCell).
     const breath = p.kind === 'cell' && !p.searched && !remembered ? pulse(MAP_ANIMATION_MS.cellBreath, phaseOf(p) * MAP_ANIMATION_MS.cellBreath) : null;
+    // An unused reflective desk sits in a pool of the kind voice's warm
+    // light (isoview.js drawDeskGlow), remembered ones too: it says "safe"
+    // and calls the player back. Spent, the pool is gone.
+    const deskGlow = p.kind === 'desk' && !p.searched ? pulse(MAP_ANIMATION_MS.deskGlow) : null;
     add(p.kind, p, known ? glyphOf(p) : null, {
-      size: 'prop', colour: p.searched ? colours.muted : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1, breath,
+      size: 'prop', colour: p.searched ? colours.muted : deskGlow !== null ? 'rgb(' + colours.kindRgb + ')' : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1, breath, deskGlow,
     });
   });
   if (f.coin && isLit(f.coin.row, f.coin.col)) {

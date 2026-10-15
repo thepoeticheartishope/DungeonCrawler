@@ -57,6 +57,7 @@
        the thing that ends the run (Timothy's call; everything else stays
        monochrome). */
     --boss-light-rgb: 120, 170, 255;
+    --kind-rgb: 255, 232, 196;     /* the kind voice (tutorial lines) and the reflective desk's light: safe */
     --boss-fog-rgb: 195, 218, 255; /* paler, for the fog over lit floor */
   }
 
@@ -798,8 +799,8 @@
   .sense-note.slow { transition: opacity 3.2s ease; }
   .sense-note.slow.show { transition: opacity 1.6s ease; }
   .sense-note.kind {
-    color: rgb(255, 232, 196);
-    text-shadow: 0 0 10px rgba(255, 232, 196, 0.45);
+    color: rgb(var(--kind-rgb));
+    text-shadow: 0 0 10px rgba(var(--kind-rgb), 0.45);
   }
   @media (prefers-reduced-motion: reduce) {
     .sense-note, .sense-note.show, .sense-note.slow, .sense-note.slow.show { transition: none; }
