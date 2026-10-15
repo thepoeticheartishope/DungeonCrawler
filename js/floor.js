@@ -128,6 +128,7 @@ export function buildFloor() {
   state.run.loreQueue.push(...(recipe.lore || []));
 
   state.floor.minions = [];
+  state.floor.crawling = [];
   state.floor.hunter = null;
   state.floor.gunTarget = null;
   state.battle.struggle = null; // a Struggle never carries over to a new floor
@@ -267,6 +268,7 @@ function clearDanger() {
   const f = state.floor;
   f.boss = null;
   f.minions = [];
+  f.crawling = [];
   f.hunter = null;
   f.gunTarget = null;
   state.battle.struggle = null;

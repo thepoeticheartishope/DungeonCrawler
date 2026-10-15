@@ -22,6 +22,7 @@ const devEightWaysBtn = document.getElementById('devEightWaysBtn');
 const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
 const devGazeBtn = document.getElementById('devGazeBtn');
 const devNoiseBtn = document.getElementById('devNoiseBtn');
+const devShowDuctsBtn = document.getElementById('devShowDuctsBtn');
 const dpadEl = document.getElementById('dpad');
 const devCameraBtn = document.getElementById('devCameraBtn');
 const devSmoothWalkBtn = document.getElementById('devSmoothWalkBtn');
@@ -149,6 +150,15 @@ export function initDevPanel({
     state.settings.noise = !state.settings.noise;
     devNoiseBtn.textContent = state.settings.noise ? 'Noise: ON (dev)' : 'Noise: OFF (dev)';
     devNoiseBtn.setAttribute('aria-pressed', String(state.settings.noise));
+  });
+
+  // Dev tool (vents and noise plan step C): see who is in a duct and where
+  // every pair of grates leads, to check the crawling in play.
+  devShowDuctsBtn.addEventListener('click', () => {
+    state.settings.showDucts = !state.settings.showDucts;
+    devShowDuctsBtn.textContent = state.settings.showDucts ? 'Show ducts: ON (dev)' : 'Show ducts: OFF (dev)';
+    devShowDuctsBtn.setAttribute('aria-pressed', String(state.settings.showDucts));
+    requestMapDraw();
   });
 
   // Dev tool (light battery plan step E): the eye over a stick man in the

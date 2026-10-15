@@ -108,6 +108,8 @@ const PAPER_SCALE = 0.2;
 const SOUND_INSET = [0.4, 0.1];   // a tile of a mistake's sound opens from this inset to this one (shares of a tile)
 const SOUND_LEVEL = 0.55;         // how bright a tile of the sound is when it first lights
 const HEARD_LIFT = 0.18;          // the '!' over a stick man that heard a sound sits this share of a tile above its eye
+const GRATE_RATTLE = 0.03;   // how far a shuddering grate sways, as a share of a tile
+const GRATE_RATTLE_SWAYS = 3; // side to side this many times while it shudders
 const GRATE_SCALE = 0.19;     // a grate's frame: its corners sit this share of a tile in from the middle (it lies flat, inside its tile)
 const GRATE_BARS = [-0.5, -0.17, 0.17, 0.5]; // where its bars cross it, from -1 to 1
 // The player, drawn as a stick man standing on their tile.
@@ -1139,7 +1141,10 @@ function drawPaper(ctx, at) {
 // across it, lit like the floor round it. A sealed one (its room held by
 // a relay) has its bars crossed out.
 function drawGrate(ctx, thing) {
-  const [cx, cy] = centre(thing.at.row, thing.at.col);
+  const [x, cy] = centre(thing.at.row, thing.at.col);
+  // Shuddering (vents.js ventRattled): a slow side to side, dying away.
+  const r = thing.look.rattle;
+  const cx = r === null || r === undefined ? x : x + Math.sin(r * Math.PI * GRATE_RATTLE_SWAYS * 2) * (1 - r) * tw * GRATE_RATTLE;
   const level = floorLevel(thing.at.row, thing.at.col) * (thing.look.alpha === undefined ? 1 : thing.look.alpha);
   const p = ([u, v]) => [cx + (u - v) * tw * GRATE_SCALE, cy + (u + v) * th * GRATE_SCALE];
   const frame = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(p);

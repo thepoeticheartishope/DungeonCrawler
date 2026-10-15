@@ -398,9 +398,9 @@ export const GATE_WRONG_TURNS = 4;
 // Starting values from the reload-and-fire mockup, for Timothy to tune
 // (gold is new: tougher kinds pay more).
 export const MINION_KINDS = {
-  SHARD: { hp: 2, moveEvery: 1, hitWidth: 0.14, weakWidth: 0.07, size: 0.85, limbs: 2, gold: 1 },
+  SHARD: { hp: 2, moveEvery: 1, hitWidth: 0.14, weakWidth: 0.07, size: 0.85, limbs: 2, gold: 1, vents: true },
   HUSK: { hp: 5, moveEvery: 2, hitWidth: 0.18, weakWidth: 0.1, size: 1.15, limbs: 2, gold: 3 },
-  STALKER: { hp: 3, moveEvery: 1, hitWidth: 0.12, weakWidth: 0.05, size: 1.0, limbs: 2, gold: 2 },
+  STALKER: { hp: 3, moveEvery: 1, hitWidth: 0.12, weakWidth: 0.05, size: 1.0, limbs: 2, gold: 2, vents: true },
 };
 // The order kinds come in on a floor whose recipe names none (or too few).
 export const MINION_KIND_ORDER = ['SHARD', 'STALKER', 'HUSK'];
@@ -433,6 +433,14 @@ export const MINION_TRACK_TURNS = 5;
 // room or the core).
 export const VENT_PAIRS = 2;
 export const VENT_MIN_APART = 12;
+// The ducts (vents and noise plan step C, vents.js): a hunting stick man
+// that fits (MINION_KINDS `vents`: SHARDs and STALKERs, and the hunter;
+// HUSKs are too big) is in a duct VENT_TURNS turns. On the first the far
+// grate shudders, on the next it drops out beside it: one turn of warning.
+// The player hears the shudder when the grate is in sight or within
+// VENT_RATTLE_HEARD tiles.
+export const VENT_TURNS = 2;
+export const VENT_RATTLE_HEARD = 6;
 // Noise (vents and noise plan step B, noise.js): a mistake makes a sound
 // that spreads this many walking steps from the player (walls stop it,
 // doorways carry it, a grate passes it to its pair). Only mistakes are
@@ -447,6 +455,8 @@ export const NOISE_RANGES = {
 };
 // Noise is on by default; DEV -> Noise switches it off (mistakes are quiet).
 export const NOISE = true;
+// DEV -> Show ducts: who is in a duct, and every pair known. Off by default.
+export const SHOW_DUCTS = false;
 // An idle stick man walks to a spot in another room, stands there for a
 // number of turns in this [min, max] range, then picks a new room (smarter
 // enemies step 2, Timothy 2026-10-15: random steps each turn looked like
@@ -968,6 +978,8 @@ export const MAP_ANIMATION_MS = {
   soundStep: 110,   // a mistake's sound reaches one walking step further (noise.js); all at once under reduced motion
   soundFade: 1100,  // each tile of the sound fading once reached
   heardMark: 1800,  // the small '!' over a stick man that heard it, fading
+  ventRattle: 900,  // a grate shuddering, slowly, the turn before something drops out (vents.js); still under reduced motion and Comfort mode
+  ventDrop: 260,    // a stick man climbing out of a grate onto the tile beside it
   darkFlash: 700,   // a stick man hit in the dark, shown in the shot's flash (light battery plan step C)
   gunRecoil: 120,   // the gun kicking back toward the player as it fires
   lookEase: 70,     // the drawn look (ring tick, cone edges, the stick man's gaze) easing toward where the player aims (free look)

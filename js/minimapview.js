@@ -113,7 +113,7 @@ export function refreshMinimap() {
   ctx.lineWidth = 1;
   ctx.setLineDash([2, 4]);
   f.vents.forEach((v, i) => {
-    if (!v.known || i > v.pair) return;
+    if ((!v.known && !state.settings.showDucts) || i > v.pair) return;
     ctx.beginPath();
     ctx.moveTo(...at(v));
     ctx.lineTo(...at(f.vents[v.pair]));

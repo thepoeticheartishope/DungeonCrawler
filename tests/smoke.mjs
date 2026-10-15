@@ -67,6 +67,12 @@
 //      question missed: a short answer rings over the chest (swirl.js), a
 //      long one is the line, and a wait fades it. Then the same reload
 //      miss with Reveal off shows nothing.
+//  10. Vents run (vents and noise plan steps B and C): on the first depth
+//      the player stands beside a grate and a STALKER beside its pair;
+//      a mistake's sound (noise.js makeNoise, called in the page) reaches
+//      it through the duct, and waits play it in, the far grate's shudder
+//      ("The grate shudders." in the room log), then out beside the
+//      player's grate.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -1404,6 +1410,68 @@ async function runAnswerLine(browser, url) {
   return { ok: true, detail: results.join('; '), consoleErrors: [], pageErrors: [] };
 }
 
+async function runVents(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  await loadPageAndSet(page, url);
+  await startGameAndWaitForRoom(page);
+  await page.click('#devToggleBtn');
+  await page.waitForSelector('#devPanel.show', { timeout: 5000 });
+  await page.click('#devSkipBtn');
+  await page.click('#devToggleBtn');
+  await page.waitForTimeout(300);
+
+  // Set the scene through the game's own modules (the page's copies).
+  const setUp = await page.evaluate(async () => {
+    const { state, key } = await import('/js/state.js');
+    const { spawnMinion, neighbors, tileOccupied } = await import('/js/combat.js');
+    const { makeNoise } = await import('/js/noise.js');
+    const f = state.floor;
+    if (f.vents.length < 2) return { error: 'no grates on the first depth' };
+    const free = v => neighbors(v.row, v.col).map(([row, col]) => ({ row, col }))
+      .find(t => !f.wallSet.has(key(t.row, t.col)) && !tileOccupied(t.row, t.col) && !f.vents.some(o => o.row === t.row && o.col === t.col));
+    const near = f.vents[0];
+    const far = f.vents[near.pair];
+    const stand = free(near);
+    if (!stand) return { error: 'no free tile beside the grate' };
+    f.playerRow = stand.row;
+    f.playerCol = stand.col;
+    f.minions = [];
+    const spot = free(far);
+    if (!spot) return { error: 'no free tile beside its pair' };
+    const m = spawnMinion(spot, 'STALKER');
+    const heard = makeNoise('gate').some(e => e.type === 'noiseHeard' && e.minion === m);
+    return { heard };
+  });
+  if (setUp.error) return { ok: false, reason: setUp.error, consoleErrors, pageErrors };
+  if (!setUp.heard) return { ok: false, reason: 'the STALKER beside the far grate did not hear the sound', consoleErrors, pageErrors };
+
+  const seen = [];
+  for (let i = 0; i < 4; i++) {
+    await page.keyboard.press('.');
+    await page.waitForTimeout(120);
+    seen.push(await page.evaluate(async () => {
+      const { state } = await import('/js/state.js');
+      return state.floor.crawling.length ? 'duct' : 'floor';
+    }));
+  }
+  const log = await page.evaluate(() => document.getElementById('roomFeedback').textContent);
+  const out = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const f = state.floor;
+    const near = f.vents[0];
+    const m = f.minions[0];
+    return !!m && Math.max(Math.abs(m.row - near.row), Math.abs(m.col - near.col)) <= 2;
+  });
+  await context.close();
+  if (!seen.includes('duct')) return { ok: false, reason: 'the STALKER never went into the duct: ' + seen.join(' '), consoleErrors, pageErrors };
+  if (!log.includes('The grate shudders.')) return { ok: false, reason: 'no shudder in the room log: ' + log, consoleErrors, pageErrors };
+  if (!out) return { ok: false, reason: 'the STALKER did not come out by the player\'s grate', consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) return { ok: false, reason: 'errors on the page', consoleErrors, pageErrors };
+  return { ok: true, detail: 'a sound by a grate brought a STALKER through the duct: in, a shudder, out beside the player (' + seen.join(' ') + ')', consoleErrors, pageErrors };
+}
+
 async function guarded(run, browser, url) {
   try {
     return await run(browser, url);
@@ -1443,11 +1511,12 @@ async function main() {
       const lightBatteryResult = await guarded(runLightBattery, browser, url);
       const tutorialResult = await guarded(runTutorial, browser, url);
       const answerLineResult = await guarded(runAnswerLine, browser, url);
+      const ventsResult = await guarded(runVents, browser, url);
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult], ['tutorial', tutorialResult], ['answer line', answerLineResult]]) {
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult], ['tutorial', tutorialResult], ['answer line', answerLineResult], ['vents', ventsResult]]) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {
