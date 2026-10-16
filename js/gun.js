@@ -283,7 +283,8 @@ function fireDark() {
     events.push(...staggerHunter(target));
     return events;
   }
-  const dark = Math.random() < 0.5 ? 'fast' : 'x';
+  // The tutorial's dark shot is no harder (Timothy, 2026-10-16: a plain fight there).
+  const dark = state.floor.tutorial ? 'plain' : Math.random() < 0.5 ? 'fast' : 'x';
   const kind = MINION_KIND_ORDER[Math.floor(Math.random() * MINION_KIND_ORDER.length)];
   const round = state.run.rounds[0];
   const matched = !!target && !!round && round === weaknessOf(target.minionKind);
@@ -301,21 +302,29 @@ function fireDark() {
 // any lap limit, the kind its traits (MINION_KINDS dial). `faster` (a fast
 // dark shot) takes DARK_SWEEP_SCALE off the lap; no lap is ever quicker
 // than DIAL_LAP_LIMIT_MS. The dark arc shows on a dark shot or a low
-// battery (battery.js lowBattery).
+// battery (battery.js lowBattery). In the tutorial room the dial is plain
+// (Timothy, 2026-10-16): the first DIAL_DEPTHS row, none of the kind's
+// traits, no extra harmful zone, no faster lap and no dark arc.
 function dialFor(minionKind, { matched = false, extraHarm = 0, faster = false, darkArc = false } = {}) {
+  const plain = !!state.floor.tutorial;
   const depth = dialDepth();
-  const lap = DIAL_LAP_MS[depth.speed] * (faster ? DARK_SWEEP_SCALE : 1);
+  const lap = DIAL_LAP_MS[depth.speed] * (faster && !plain ? DARK_SWEEP_SCALE : 1);
   return {
-    zones: dialZones(minionKind, { matched, extraHarm }),
+    zones: dialZones(minionKind, { matched, extraHarm: plain ? 0 : extraHarm }),
     lapMs: Math.max(DIAL_LAP_LIMIT_MS, Math.round(lap)),
     lapLimit: depth.lapLimit,
-    traits: { ...MINION_KINDS[minionKind].dial },
-    darkArc: darkArc || lowBattery(),
+    traits: plain ? { ...PLAIN_DIAL_TRAITS } : { ...MINION_KINDS[minionKind].dial },
+    darkArc: !plain && (darkArc || lowBattery()),
   };
 }
 
-// This danger depth's row of DIAL_DEPTHS (the last row carries on).
+// A dial with none of the kinds' traits (the tutorial's).
+const PLAIN_DIAL_TRAITS = { spin: 'still', turnBack: false, surge: false };
+
+// This danger depth's row of DIAL_DEPTHS (the last row carries on); the
+// first row in the tutorial room.
 function dialDepth() {
+  if (state.floor.tutorial) return DIAL_DEPTHS[0];
   return DIAL_DEPTHS[Math.min(state.run.roomIndex, DIAL_DEPTHS.length - 1)];
 }
 
