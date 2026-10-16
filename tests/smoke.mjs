@@ -1211,8 +1211,10 @@ async function checkTutorial(page, url) {
 
   // Face the stick man and shoot. Its kill zone would kill it outright, so
   // the dial loses its kill zone and Auto-win stops it in the maim zone:
-  // a maim drops it (no guard in the tutorial; downed plan).
+  // a maim drops it (no guard in the tutorial; downed plan). The first
+  // shot plays the dial for real first (checkTutorialDial).
   let downed = false;
+  let dialChecked = false;
   for (let i = 0; i < 40 && !downed; i++) {
     // Out of reach, wait for it to come (a blocked shot spends no turn).
     const canShoot = await page.evaluate(async () => {
@@ -1239,7 +1241,11 @@ async function checkTutorial(page, url) {
       if (aim) aim.zones = aim.zones.filter(z => z.tier !== 'kill');
       return !!aim;
     });
-    if (aiming) {
+    if (aiming && !dialChecked) {
+      dialChecked = true;
+      const reason = await checkTutorialDial(page);
+      if (reason) return reason;
+    } else if (aiming) {
       await turnOnAutoWin(page);
       await page.click('#devToggleBtn');
       await page.waitForTimeout(500);
@@ -1275,6 +1281,56 @@ async function checkTutorial(page, url) {
   return null;
 }
 
+// The tutorial's first shot (kill or maim plan step C), with the dial at
+// READY: only READY and BACK show, and the kind voice says "Breathe.";
+// BACK (Escape) puts the gun down with no energy spent and no turn; F
+// again opens it, F starts it: the circle shows, the marker goes round,
+// and the voice gives the key; F stops it (a maim or a miss) and the
+// result fades out.
+async function checkTutorialDial(page) {
+  const view = () => page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    return {
+      panel: !document.getElementById('aimPanel').hidden,
+      ready: !document.getElementById('dialButtons').hidden,
+      canvas: !document.getElementById('dialCanvas').hidden,
+      sense: document.getElementById('senseNote').textContent,
+      energy: state.run.energy,
+      turn: state.run.turnCount,
+      phase: state.battle.aim && state.battle.aim.phase,
+    };
+  });
+  let v = await view();
+  if (!v.panel || !v.ready || v.canvas) return 'the dial did not open at READY alone';
+  if (!v.sense.includes('Breathe.')) return 'no "Breathe." at READY: ' + v.sense;
+  const before = v;
+  await page.keyboard.press('Escape');
+  await roomIdle(page);
+  v = await view();
+  if (v.energy !== before.energy || v.turn !== before.turn) return 'BACK before READY spent energy or a turn';
+  await page.keyboard.press('f');
+  await page.waitForSelector('#aimPanel:not([hidden])', { timeout: 5000 });
+  // Without its kill zone, as the caller's shots: a kill would skip "Finish it.".
+  await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    state.battle.aim.zones = state.battle.aim.zones.filter(z => z.tier !== 'kill');
+  });
+  await page.keyboard.press('f'); // READY
+  await page.waitForTimeout(100);
+  v = await view();
+  if (v.ready || !v.canvas || v.phase !== 'run') return 'READY did not show and start the dial';
+  if (v.energy !== before.energy - 1) return 'READY did not spend the round';
+  if (!v.sense.includes('Stop on K')) return 'no key line once the dial ran: ' + v.sense;
+  const spin = await page.evaluate(() => document.getElementById('dialCanvas').toDataURL());
+  await page.waitForTimeout(200);
+  if (spin === await page.evaluate(() => document.getElementById('dialCanvas').toDataURL())) return 'the dial\'s marker did not move';
+  await page.keyboard.press('f'); // stop
+  await page.waitForSelector('#aimPanel.fading', { timeout: 2000 });
+  await page.waitForSelector('#aimPanel:not(.fading)', { state: 'attached', timeout: 5000 });
+  await roomIdle(page);
+  return null;
+}
+
 async function runTutorial(browser, url) {
   const context = await browser.newContext({ serviceWorkers: 'block' });
   const page = await context.newPage();
@@ -1285,7 +1341,7 @@ async function runTutorial(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, grate shudders, stick man drops out, one shot drops it ("Finish it."), a bump finishes it, key, door, out to the opening rest', consoleErrors, pageErrors };
+  return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, grate shudders, stick man drops out, the first shot at READY ("Breathe.", BACK spent nothing, the dial ran with its key line), one shot drops it ("Finish it."), a bump finishes it, key, door, out to the opening rest', consoleErrors, pageErrors };
 }
 
 // Runs one smoke run. A throw (a Playwright timeout, say) becomes that

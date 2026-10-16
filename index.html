@@ -1441,6 +1441,9 @@
     pointer-events: auto;
     cursor: pointer;
   }
+  /* The tutorial's kind voice talks over the dial (tutorial.js
+     tutorialDial), so its line sits above the veil. */
+  #mapWrap:has(.dial-veil:not([hidden])) .map-notes { z-index: 6; }
   #mapWrap:has(.dial-veil:not([hidden])) .feedback,
   #mapWrap:has(.dial-veil.fading) .feedback,
   #mapWrap:has(.minimap:not([hidden])) .feedback { display: none; }

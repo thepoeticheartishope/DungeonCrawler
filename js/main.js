@@ -1,6 +1,6 @@
 import { state, key } from './state.js';
 import { buildFloor, buildRestFloor, buildTutorialFloor } from './floor.js';
-import { tutorialTurn, settleName, breakRing } from './tutorial.js';
+import { tutorialTurn, tutorialDial, settleName, breakRing } from './tutorial.js';
 import { nextFloor } from './run.js';
 import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX, TUTORIAL_EXIT_ENERGY,
@@ -331,7 +331,7 @@ function fireGun() {
   gunTest = false;
   state.run.turnLocked = true;
   if (state.battle.aim) {
-    const note = drawEvents(events);
+    const note = drawEvents(events.concat(tutorialDial(events)));
     if (note.text) showRoomNote(note.cls, note.text);
     showDamageBar(state.battle.aim);
     return;
@@ -388,7 +388,7 @@ function readyDial(mode) {
   }
   const events = readyShot();
   if (!events.length) return;
-  const note = drawEvents(events);
+  const note = drawEvents(events.concat(tutorialDial(events)));
   if (note.text) showRoomNote(note.cls, note.text);
   runDamageBar(state.battle.aim);
 }
