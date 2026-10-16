@@ -693,6 +693,37 @@ export const HARM_WIDTH = 0.08;
 // battery: LOW_BATTERY_CHARGE charge left with the light on) hides.
 export const DIAL_DARK_ARC = 0.25;
 export const LOW_BATTERY_CHARGE = 1;
+// How the dial shows (dialview.js, gunpanels.js; kill or maim plan step B):
+// a veil over the map fades in over DIAL_FADE_IN_MS with READY in its
+// middle, and after a stop the result holds DIAL_RESULT_MS, then fades out
+// over DIAL_FADE_OUT_MS. The dial is DIAL_SIZE_SHARE of the map's shorter
+// side. Drafts for Timothy to tune.
+export const DIAL_FADE_IN_MS = 700;
+export const DIAL_RESULT_MS = 900;
+export const DIAL_FADE_OUT_MS = 500;
+export const DIAL_SIZE_SHARE = 0.9;
+// The kind traits as the dial plays them (MINION_KINDS dial):
+// - drift (spin 'with', the HUSK): the zones turn DIAL_DRIFT_LAPS a second
+//   the way the marker goes (none under reduced motion);
+// - surge (the SHARD): round DIAL_SURGE_AT (0 = top, clockwise; 0.75 is
+//   the left side) the marker goes up to 1 + DIAL_SURGE_BOOST times as fast;
+// - turn back (the STALKER): the marker stops DIAL_TURN_PAUSE_MS (the
+//   tell; DIAL_TURN_PAUSE_REDUCED_MS under reduced motion) and goes back the
+//   other way, first after DIAL_TURN_FIRST_MS, then every DIAL_TURN_EVERY_MS
+//   (a random time between the two numbers).
+export const DIAL_DRIFT_LAPS = 0.12;
+export const DIAL_SURGE_AT = 0.75;
+export const DIAL_SURGE_BOOST = 1.3;
+export const DIAL_TURN_PAUSE_MS = 280;
+export const DIAL_TURN_PAUSE_REDUCED_MS = 500;
+export const DIAL_TURN_FIRST_MS = [600, 1600];
+export const DIAL_TURN_EVERY_MS = [900, 2500];
+// Where the dark arc sits on the dial: centred here (0.5 = the bottom),
+// DIAL_DARK_ARC wide. It stays put; drifting zones pass through it.
+export const DIAL_DARK_AT = 0.5;
+// The guard ring's letters (dialview.js) go round once in this many ms
+// (still under reduced motion).
+export const DIAL_GUARD_TURN_MS = 9000;
 // Energy cells (drawn as a drum on the map; decor.js placeEnergyCells):
 // each room of a floor gets one at this chance, then rooms without one are topped up
 // until the floor has at least ENERGY_CELLS_MIN. Bumping one opens the

@@ -672,26 +672,6 @@
     touch-action: none;
   }
 
-  /* The dial and the Struggle dial (js/gunpanels.js): a strip on
-     the map's bottom edge, over the room log's place, so the minion and
-     everything round the player stay in view. Above the edge glows. */
-  .map-panel {
-    position: absolute;
-    left: 1px;
-    right: 1px;
-    bottom: 1px;
-    z-index: 5;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 6px 10px 8px;
-    background: rgba(0, 0, 0, 0.85);
-    border-top: 1px solid var(--line);
-    text-align: left;
-    font-size: 18px;
-  }
-  .map-panel[hidden] { display: none; }
-
   /* The ask screen (js/gunpanels.js): a reload's offers and question, or
      a relay's, in place of the map and the controls, like the battle
      screen. The HUD stays above it. */
@@ -703,54 +683,69 @@
   .ask-cancel { align-self: flex-start; }
   .choice-option .reload-room { color: var(--muted); margin-left: 8px; }
 
-  /* The dial (kill or maim plan), laid flat until it becomes a circle:
-     READY, then the marker sweeps across; where it stops decides the shot.
-     Its zones sit at new spots each shot (gun.js dialZones), each marked
-     with what it does: K (kill), M (maim), X / N / > (harmful). */
-  .damage-bar {
-    position: relative;
-    height: 28px;
-    border: 1px solid var(--muted);
-  }
-  .damage-zone {
+  /* The dial (kill or maim plan step B; js/gunpanels.js, drawn by
+     js/dialview.js): a veil over the whole map, fading in over
+     DIAL_FADE_IN_MS with READY in its middle, then the circle, its key
+     under it. After a stop it is already `hidden` to the game (input is
+     free) but `.fading` keeps it on screen while the result holds and it
+     fades out. Opacity only, so the fades stay under reduced motion. */
+  .dial-veil {
     position: absolute;
-    top: 0;
-    bottom: 0;
+    inset: 1px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.78);
+    text-align: center;
+    font-size: 18px;
+    opacity: 0;
+    transition: opacity var(--dial-fade, 700ms) ease;
+  }
+  .dial-veil.on { opacity: 1; }
+  .dial-veil[hidden]:not(.fading) { display: none; }
+  .dial-veil.fading { pointer-events: none; }
+  .dial-prompt { color: var(--muted); }
+  /* The circle's room: what the prompt and the key leave. gunpanels.js
+     sizes the canvas to DIAL_SIZE_SHARE of its shorter side. */
+  .dial-stage {
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    font-size: 18px;
-    color: var(--text);
   }
-  .damage-maim {
-    background: rgba(var(--glow-rgb), 0.12);
-    border-left: 1px dashed var(--muted);
-    border-right: 1px dashed var(--muted);
-  }
-  .damage-kill { background: rgba(var(--glow-rgb), 0.6); color: var(--ink); }
-  /* A harmful zone: hatched, so it reads as "keep off" without colour. */
-  .damage-harm {
-    background: repeating-linear-gradient(45deg, rgba(var(--glow-rgb), 0.28) 0 3px, transparent 3px 7px);
-    border-left: 1px solid var(--muted);
-    border-right: 1px solid var(--muted);
-  }
-  .damage-marker {
+  .dial-canvas { display: block; }
+  .dial-canvas[hidden] { display: none; }
+  /* READY in the middle while nothing of the dial shows, BACK under it. */
+  .dial-buttons {
     position: absolute;
-    top: -6px;
-    bottom: -6px;
-    width: 3px;
-    margin-left: -1px;
-    background: var(--torch-bright);
-    box-shadow: 0 0 8px var(--torch-bright);
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
   }
-  .damage-legend { display: flex; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 14px; text-transform: uppercase; }
-  .damage-legend[hidden], .damage-zone[hidden] { display: none; }
-  /* The Struggle dial (gun.js settleStruggle): the same bar, its prompt in
-     inverse video and a brighter frame, so it reads as danger at a glance.
-     Nothing flashes: the speed of the marker is the pressure. */
-  .map-panel.struggle .term-line { background: var(--torch-bright); color: var(--ink); padding: 0 6px; width: fit-content; }
-  .map-panel.struggle .damage-bar { border-color: var(--torch-bright); }
+  .dial-buttons[hidden], .dial-back[hidden] { display: none; }
+  .dial-ready {
+    font-size: 40px;
+    padding: 6px 28px;
+    border: 2px solid var(--torch-bright);
+    color: var(--torch-bright);
+    letter-spacing: 0.08em;
+  }
+  .damage-legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; color: var(--muted); font-size: 14px; text-transform: uppercase; }
+  .damage-legend[hidden] { display: none; }
+  /* The Struggle dial: its prompt in inverse video and a brighter ring
+     (dialview.js), so it reads as danger at a glance. Nothing flashes:
+     the speed of the marker is the pressure. */
+  .dial-veil.struggle .dial-prompt { background: var(--torch-bright); color: var(--ink); padding: 0 6px; }
 
   /* Edge glows toward an off-screen boss. Opacity is set per edge by
      render.js renderLightHint, over the map; they never catch clicks. */
@@ -1446,7 +1441,8 @@
     pointer-events: auto;
     cursor: pointer;
   }
-  #mapWrap:has(.map-panel:not([hidden])) .feedback,
+  #mapWrap:has(.dial-veil:not([hidden])) .feedback,
+  #mapWrap:has(.dial-veil.fading) .feedback,
   #mapWrap:has(.minimap:not([hidden])) .feedback { display: none; }
   /* The light's battery (render.js renderBattery): small, in the map's
      bottom-right corner; the room log's lines stop short of it. Hidden
@@ -1466,7 +1462,8 @@
   }
   .light-battery.battery-off { color: var(--muted); text-shadow: none; }
   #mapWrap:has(.light-battery:not([hidden])) .feedback:not(.open) { padding-right: 9.5em; }
-  #mapWrap:has(.map-panel:not([hidden])) .light-battery,
+  #mapWrap:has(.dial-veil:not([hidden])) .light-battery,
+  #mapWrap:has(.dial-veil.fading) .light-battery,
   #mapWrap:has(.minimap:not([hidden])) .light-battery,
   #mapWrap:has(.feedback.open) .light-battery { display: none; }
   @media (prefers-reduced-motion: reduce) { .feedback { transition: none; } }
@@ -1815,16 +1812,19 @@
       <!-- The minimap (js/minimapview.js): MAP or M lays it over the map. -->
       <canvas class="minimap" id="minimap" role="img" hidden></canvas>
 
-      <!-- The dial and the Struggle dial (js/gunpanels.js): a strip
-           on the map's bottom edge, so the minion stays in view. -->
-      <div class="map-panel" id="aimPanel" hidden>
-        <div class="term-line" id="aimPrompt" data-t="gun.dial.prompt"></div>
-        <div class="damage-bar" id="damageBar" role="img">
-          <!-- The Struggle dial's one zone; the dial's zones are added by gunpanels.js. -->
-          <div class="damage-zone damage-maim" id="damageHit"></div>
-          <div class="damage-marker" id="damageMarker"></div>
+      <!-- The dial and the Struggle dial (js/gunpanels.js, drawn by
+           js/dialview.js): a veil over the map with READY in its middle,
+           then the circle and its key. -->
+      <div class="dial-veil" id="aimPanel" hidden>
+        <div class="term-line dial-prompt" id="aimPrompt" data-t="gun.dial.prompt"></div>
+        <div class="dial-stage" id="dialStage">
+          <canvas class="dial-canvas" id="dialCanvas" role="img"></canvas>
+          <div class="dial-buttons" id="dialButtons">
+            <button type="button" class="dial-ready" id="dialReady" data-t="gun.dial.readyButton"></button>
+            <button type="button" class="dial-back" id="dialBack" data-t="gun.dial.back"></button>
+          </div>
         </div>
-        <!-- What each zone does, filled in by gunpanels.js showDamageBar. -->
+        <!-- What each zone does, filled in by gunpanels.js runDamageBar. -->
         <div class="damage-legend" id="damageLegend"></div>
       </div>
     </div>

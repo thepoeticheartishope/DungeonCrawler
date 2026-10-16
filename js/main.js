@@ -37,7 +37,7 @@ import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
-import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, mapPanelShown, pressBar } from './gunpanels.js';
+import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, SCREEN_WAYS, screenStep, arrowChord } from './dpad.js';
@@ -398,18 +398,32 @@ function readyDial(mode) {
 function lowerGun() {
   const events = cancelShot();
   if (!events.length) return;
-  closeMapPanels();
+  fadeDial(null);
   gunTest = false;
   state.run.turnLocked = false;
   const note = drawEvents(events);
   if (note.text) showRoomNote(note.cls, note.text);
 }
 
-// The player stopped the dial at `barPosition`: what the shot did.
+// The player stopped the dial at `barPosition`: what the shot did, shown
+// in the dial's middle while it fades out.
 function stopDamageBar(barPosition) {
-  closeMapPanels();
-  finishGunAction(settleShot(barPosition));
+  const events = settleShot(barPosition);
+  fadeDial(dialResult(events));
+  finishGunAction(events);
   state.run.turnLocked = false;
+}
+
+// The word a stopped dial shows for what happened (the first event that
+// says), or '' if none does.
+const DIAL_RESULTS = {
+  minionFinished: 'finished', minionKilled: 'kill', minionDowned: 'down', guardBroken: 'guard',
+  minionReels: 'hit', shotMissed: 'miss', shotIntoDark: 'miss', shotJammed: 'jam', shotLoud: 'loud',
+  shotLunged: 'lunge', struggleWon: 'shoved', struggleLost: 'lost',
+};
+function dialResult(events) {
+  const found = events.find(e => DIAL_RESULTS[e.type]);
+  return found ? t('gun.dial.result.' + DIAL_RESULTS[found.type]) : '';
 }
 
 // DEV -> Test reload: the real reload through the ask screen,
@@ -591,8 +605,9 @@ function bestSpot(aim) {
 // minion is shoved away or strikes. The world's turn that brought it here
 // already happened, so this only draws and checks the run.
 function stopStruggleBar(barPosition) {
-  closeMapPanels();
-  applyTurnOutcome(settleStruggle(barPosition), false);
+  const events = settleStruggle(barPosition);
+  fadeDial(dialResult(events));
+  applyTurnOutcome(events, false);
 }
 
 function nextQuestion() {
