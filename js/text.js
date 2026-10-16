@@ -597,9 +597,25 @@ export const TEXT = {
   'gun.reload.offer': '+{energy} ENERGY', // draft
   'gun.reload.room': 'room for {room}', // draft. When less energy fits under the most you can hold than the offer gives
   'gun.reload.cancel': 'CANCEL', // draft
-  'gun.bar.prompt': 'PRESS SELECT', // draft. Over the damage bar
-  'gun.bar.dark.fast': 'DARK SHOT · FASTER', // draft. Over the damage bar of a shot in the dark that sweeps faster (light battery plan)
-  'gun.bar.dark.x': 'DARK SHOT · ONE MORE X', // draft. Over the damage bar of a shot in the dark with one more penalty zone
+  // The dial (kill or maim plan): READY first, then the marker runs; zones K / M and harmful ones.
+  'gun.dial.ready': 'READY · PRESS SELECT', // draft. Before the dial starts: nothing of it shows yet
+  'gun.dial.prompt': 'PRESS SELECT', // draft. While the dial runs
+  'gun.dial.dark.fast': 'DARK SHOT · FASTER', // draft. A shot in the dark whose dial goes round faster (light battery plan)
+  'gun.dial.dark.x': 'DARK SHOT · ONE MORE HARMFUL ZONE', // draft. A shot in the dark with one more harmful zone
+  'gun.dial.label': 'Dial. Press SELECT, Space or F to start it, then again to fire. Escape puts the gun down before it starts.', // draft. Read out by screen readers
+  'gun.dial.zone.kill': 'K', // draft. Marked on the kill zone
+  'gun.dial.zone.maim': 'M', // draft. Marked on the maim zone
+  'gun.dial.zone.jam': 'X', // draft. Marked on a jam zone
+  'gun.dial.zone.loud': 'N', // draft. Marked on a loud zone
+  'gun.dial.zone.lunge': '>', // draft. Marked on a lunge zone
+  'gun.dial.key.kill': 'K = kill', // draft. The dial's key, one entry per kind of zone on it
+  'gun.dial.key.maim': 'M = maim', // draft
+  'gun.dial.key.guard': 'K / M = break its guard', // draft. On a guarded one (the HUSK)
+  'gun.dial.key.finish': 'K / M = finish it', // draft. On a downed one
+  'gun.dial.key.jam': 'X = jam, lose 1 energy', // draft
+  'gun.dial.key.loud': 'N = loud', // draft
+  'gun.dial.key.lunge': '> = it lunges', // draft
+  'gun.dial.key.miss': 'else miss', // draft
   'gun.dark.nothing': 'The shot goes into the dark. Nothing there.', // draft. A shot in the dark that found nothing
   'map.btn': 'MAP', // draft. The minimap button (M on a keyboard)
   'ask.title.reload': 'RELOAD.SYS', // draft. The ask screen's title for a reload (its offers, then its question)
@@ -640,53 +656,50 @@ export const TEXT = {
   'plan.observatory.plateStore': 'Plate store', // draft
   'plan.observatory.clockRoom': 'Clock room', // draft
   'plan.observatory.boilerRoom': 'Boiler room', // draft
-  'gun.struggle.prompt': 'STRUGGLE: PRESS SELECT', // draft. Over the Struggle dial (no energy, a minion reached the player)
-  'gun.struggle.promptAgain': 'STRUGGLE {count}: PRESS SELECT', // draft. The same, for a later Struggle on this floor (faster, smaller zone)
-  'gun.struggle.label': 'Struggle dial. Press SELECT, Space or F in the middle to push it back.', // draft. Read out by screen readers
+  'gun.struggle.ready': 'STRUGGLE · READY · PRESS SELECT', // draft. Before the Struggle dial starts (no energy, a minion reached the player)
+  'gun.struggle.readyAgain': 'STRUGGLE {count} · READY · PRESS SELECT', // draft. The same, for a later Struggle on this floor (faster, smaller zone)
+  'gun.struggle.prompt': 'STRUGGLE: PRESS SELECT', // draft. While the Struggle dial runs
+  'gun.struggle.promptAgain': 'STRUGGLE {count}: PRESS SELECT', // draft. The same, for a later Struggle on this floor
+  'gun.struggle.label': 'Struggle dial. Press SELECT, Space or F to start it, then again in its zone to push it back.', // draft. Read out by screen readers
   'gun.struggle.start': 'Empty. It is on you.', // draft. A minion reached the player with no energy
   'gun.struggle.won': 'You shove it away.', // draft. The Struggle dial stopped in the zone
   'gun.struggle.lost': 'It gets through.', // draft. The Struggle dial missed; the strike line follows
-  'gun.bar.label': 'Damage bar. Press SELECT, Space or F to fire.', // draft. Read out by screen readers
-  'gun.bar.zone.hit': '1', // draft. Marked on a hit zone of the damage bar
-  'gun.bar.zone.weak': '2', // draft. Marked on a weak point zone
-  'gun.bar.zone.penalty': 'X', // draft. Marked on a penalty zone
-  'gun.bar.key.hit': '1 = hit', // draft. The damage bar's key, one entry per kind of zone on the bar
-  'gun.bar.key.weak': '2 = weak point', // draft
-  'gun.bar.key.penalty': 'X = lose 1 energy', // draft
-  'gun.bar.key.graze': 'else graze', // draft
   'gun.reloaded': '+{energy} energy.', // draft. A right reload answer
   'gun.jammed': 'The cell fizzles. No energy.', // draft. A wrong reload answer
   // Gun combat on the map (gun plan step 6): the buttons by the d-pad, the
   // HUD, and the room notes a shot or a strike adds up to.
-  'gun.btn.select': 'SELECT', // draft. The gun's one button, by the d-pad (key F): fires at the target, or stops the damage bar
+  'gun.btn.select': 'SELECT', // draft. The gun's one button, by the d-pad (key F): fires at the target, or starts and stops the dial
   'stat.energy': 'ENERGY', // draft. HUD: energy held, # each and - for room left
   'stat.battery': 'LIGHT {cells} {state}', // draft. Foot of the map: the light's battery, # a turn of charge and - spent, then its state
   'stat.battery.on': 'ON', // draft
   'stat.battery.off': 'OFF', // draft
   'stat.battery.empty': 'EMPTY', // draft. Ran empty: locked off until full
-  'stat.target': 'TARGET', // draft. HUD: the gun's target and its hp, # left and - lost
+  'stat.target': 'TARGET', // draft. HUD: the gun's target, and its guard while it has one
+  'stat.guard': '[GUARD]', // draft. HUD and over the target: a minion whose guard is still whole (the HUSK)
   'stat.noTarget': '-', // the HUD's target with nothing targeted
   'stat.goals': 'GOALS', // draft. HUD: the floor's goals, [x] kept / [-] lost / [ ] not yet
   'stat.clock': 'NEXT', // draft. HUD, Real time only: a meter that reaches its end as the dark next moves
   'minionKind.SHARD': 'SHARD', // draft. A minion kind's name (config.js MINION_KINDS), in the HUD
   'minionKind.HUSK': 'HUSK', // draft
   'minionKind.STALKER': 'STALKER', // draft
-  'gun.grazed': 'A graze. It keeps coming.', // draft
-  'gun.backfired': 'Backfire. 1 energy lost.', // draft. The damage bar stopped on a penalty zone
-  'gun.backfiredEmpty': 'Backfire.', // draft. The same, with no energy left to lose
-  'gun.hit': 'Hit.', // draft
-  'gun.weakPoint': 'Weak point.', // draft
-  'gun.stunned': 'It reels.', // draft. A shot that does damage: the minion skips its next move
+  'gun.missed': 'Miss. It keeps coming.', // draft. The dial stopped outside every zone
+  'gun.cleanKill': 'Clean kill.', // draft. The dial stopped in the kill zone
+  'gun.shotJammed': 'Jammed. 1 energy lost.', // draft. The dial stopped in a jam zone
+  'gun.shotJammedEmpty': 'Jammed.', // draft. The same, with no energy left to lose
+  'gun.shotLoud': 'Too loud. It carries.', // draft. The dial stopped in a loud zone
+  'gun.shotLunged': 'It lunges.', // draft. The dial stopped in a lunge zone: it steps closer
+  'gun.guardBroken': 'The guard breaks. It reels.', // draft. A hit on a guard (the HUSK's)
+  'gun.lowered': 'You lower the gun.', // draft. BACK before READY: nothing spent
+  'gun.stunned': 'It reels.', // draft. A maim with DEV -> Downed off: the minion skips its next move
   // Category weaknesses (strategy plan step D): {group} is a reload group's label.
-  'gun.matched': 'The round was made for it: {damage} damage.', // draft. A round from the group the minion is weak to
+  'gun.matched': 'The round was made for it.', // draft. A round from the group the minion is weak to (its kill zone was wider)
   'gun.weakFound': 'The {kind} flinches. It is weak to {group}.', // draft. First landed shot on a kind
   'stat.weakUnknown': '?', // draft. HUD target: a minion kind whose weakness isn't found yet
-  'gun.limbLost': 'A limb comes away.', // draft
   'gun.killed': 'It comes apart. {gold} {@term.gold}.', // draft. A kill and the gold it paid
   'gun.struck': 'It strikes. -{cost} {@term.hp}.', // draft. A minion reached the player
   'gun.hunterStruck': 'The {@term.hunter} strikes. -{cost} {@term.hp}.', // draft. The hunter reached the player (gun on)
   'gun.hunterStaggered': 'The {@term.hunter} staggers.', // draft. A landed shot on the hunter
-  // Downed stick men (downed plan): a shot left it on 1 HP.
+  // Downed stick men (downed plan): a shot in the dial's maim zone.
   'gun.downed': 'It goes down. It keeps coming.', // draft. It falls and crawls on its arms
   'gun.finished': 'You finish it.', // draft. The player walked into a downed one
   'gun.grabbed': 'It has your ankle.', // draft. A downed one reached the player

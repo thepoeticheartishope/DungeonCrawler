@@ -106,7 +106,6 @@ test('the downed pose holds the joints it is drawn from', () => {
   ['hip', 'sh', 'neck', 'head', 'handF', 'handB'].forEach(joint => {
     assert.ok(DOWNED_POSE[joint].every(Number.isFinite), joint);
   });
-  DOWNED_POSE.limbs.forEach(limb => assert.ok(DOWNED_POSE[limb.root], limb.root));
 });
 
 test('through a crawl, each hand stays within half a tile of the body and ends a tile on', () => {

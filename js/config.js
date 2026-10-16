@@ -352,8 +352,9 @@ export const FLOOR_GOALS = [
 export const GOALS_PER_FLOOR = 2;
 // Category weaknesses (strategy plan step D, gun.js): each minion kind is
 // weak to one reload group, rolled per run. A round loaded from that group
-// does WEAKNESS_DAMAGE_SCALE times the damage bar's damage to it.
-export const WEAKNESS_DAMAGE_SCALE = 2;
+// makes the dial's kill zone MATCH_KILL_SCALE times as wide (kill or maim
+// plan: there is no damage left to double).
+export const MATCH_KILL_SCALE = 1.5;
 // The locked core (locked core plan, step A; dungeon.js, floor.js): every
 // danger depth hides CORE_KEYS keys, one each in that many rooms picked at
 // random (never the start room or the core). Stepping on one takes it.
@@ -385,23 +386,27 @@ export const GATE_MODIFIERS = [2, 1, 0, 0];
 export const GATE_WRONG_TURNS = 4;
 // The kinds of minion (gun combat plan, step 1). Each minion is one of
 // these (`minionKind`); the floor recipe can name which (floors.js
-// `minionKinds`). Until the gun arrives a fight still settles in one
-// answer, so only the map's later steps read these numbers:
-//   hp         hits a minion of this kind takes before it falls
+// `minionKinds`). With the gun on:
 //   moveEvery  it moves every this many turns (1 = every turn)
-//   hitWidth   width of each of its hit (1) zones on the damage bar, which
-//              runs 0 to 1 (0.14 = 14% of the bar)
-//   weakWidth  width of each of its weak point (2) zones on the bar
 //   size       how big it is drawn, against a tile
-//   limbs      limbs a weak-point shot can cut off
 //   gold       gold for killing it, before the darkness multiplier
-// Starting values from the reload-and-fire mockup, for Timothy to tune
-// (gold is new: tougher kinds pay more).
+//   killWidth  the dial's kill zone, a share of the circle (kill or maim plan)
+//   maimWidth  the dial's maim zone (a maim knocks it down)
+//   guard      the first hit only breaks its guard (GUARD_STUN_MOVES)
+//   dial       its dial's traits (Timothy, 2026-10-15: the kind tells you
+//              what the dial will do): spin 'still' or 'with' (its zones
+//              drift along with the marker), turnBack (the marker stops and
+//              turns back at random), surge (one side of the dial is faster)
+// No health (kill or maim plan, Timothy 2026-10-15): one good hit kills,
+// the HUSK's guard takes one more. Widths are drafts for Timothy to tune.
 export const MINION_KINDS = {
-  SHARD: { hp: 2, moveEvery: 1, hitWidth: 0.14, weakWidth: 0.07, size: 0.85, limbs: 2, gold: 1, vents: true },
-  HUSK: { hp: 5, moveEvery: 2, hitWidth: 0.18, weakWidth: 0.1, size: 1.15, limbs: 2, gold: 3 },
-  STALKER: { hp: 3, moveEvery: 1, hitWidth: 0.12, weakWidth: 0.05, size: 1.0, limbs: 2, gold: 2, vents: true },
+  SHARD: { moveEvery: 1, killWidth: 0.10, maimWidth: 0.18, size: 0.85, gold: 1, vents: true, dial: { spin: 'still', turnBack: false, surge: true } },
+  HUSK: { moveEvery: 2, killWidth: 0.09, maimWidth: 0.20, guard: true, size: 1.15, gold: 3, dial: { spin: 'with', turnBack: false, surge: false } },
+  STALKER: { moveEvery: 1, killWidth: 0.07, maimWidth: 0.14, size: 1.0, gold: 2, vents: true, dial: { spin: 'still', turnBack: true, surge: false } },
 };
+// A hit on a guard breaks it and stuns its minion: longer from the kill
+// zone than the maim zone, so the kill zone is still worth aiming for.
+export const GUARD_STUN_MOVES = { kill: 2, maim: 1 };
 // The order kinds come in on a floor whose recipe names none (or too few).
 export const MINION_KIND_ORDER = ['SHARD', 'STALKER', 'HUSK'];
 // How many of its last tiles a minion remembers, newest last. A strike
@@ -411,12 +416,12 @@ export const MINION_TRAIL_LENGTH = 3;
 // stability (DARK_MISS_COST in the darkness, like a miss) and is knocked
 // back along its trail, up to MINION_TRAIL_LENGTH tiles.
 export const MINION_STRIKE_COST = 1;
-// A shot that does damage stuns the minion: it skips its next
+// A shot that hits (kill or maim zone) stuns the minion: it skips its next
 // MINION_STUN_MOVES moves, so it can't walk into the player straight after
-// (Timothy). A graze or a backfire doesn't stun.
+// (Timothy). A miss or a harmful zone doesn't stun.
 export const MINION_STUN_MOVES = 1;
-// Downed stick men (downed plan, Timothy 2026-10-15): a damaging shot that
-// leaves a stick man on 1 HP knocks it down. It crawls toward the player
+// Downed stick men (downed plan, Timothy 2026-10-15): a shot in the dial's
+// maim zone knocks a stick man down. It crawls toward the player
 // on its arms, moving DOWNED_SLOWDOWN times less often than it did
 // standing, grabs their ankle if it reaches them, and a bump finishes it.
 // DEV -> Downed (DOWNED) switches it off: a 1 HP stick man stays standing.
@@ -462,7 +467,7 @@ export const VENT_RATTLE_HEARD = 6;
 export const NOISE_RANGES = {
   reload: 6,   // a wrong reload answer: the gun jams
   relay: 8,    // a wrong relay answer: it sparks
-  backfire: 5, // the damage bar stopped in a penalty zone
+  loud: 5,     // the dial stopped in a loud zone
   struggle: 4, // a lost Struggle
   gate: 10,    // a wrong answer at the gate
 };
@@ -518,8 +523,9 @@ export const LIGHT_BATTERY_MAX = 4;
 export const LIGHT_BATTERY = true;
 // Shots in the dark (light battery plan step C, gun.js fireDark): the shot
 // goes along the aim, checked every DARK_SHOT_STEP tiles for the first
-// thing in the way. Its damage bar is one step harder at random: it sweeps
-// in DARK_SWEEP_SCALE of the time (faster), or has one more penalty zone.
+// thing in the way. Its dial always hides DIAL_DARK_ARC of the circle, and
+// is one step harder at random: a lap in DARK_SWEEP_SCALE of the time
+// (faster, never past DIAL_LAP_LIMIT_MS), or one more harmful zone.
 export const DARK_SHOT_STEP = 0.25;
 export const DARK_SWEEP_SCALE = 0.65;
 // The eye (light battery plan step E, gaze.js): GAZE_MS of the player's
@@ -620,10 +626,9 @@ export const TUTORIAL_SPOT_TURNS = 4;
 export const TUTORIAL_SPOT_RADIUS = 1;
 // How close to the light's middle (in steps) counts as walking to it: the kind voice speaks and the barrel appears.
 export const TUTORIAL_SPOT_NEAR = 2;
-// The stick man that comes after the name: a slow kind (moves every other turn)...
+// The stick man that comes after the name: a slow kind (moves every other
+// turn), without its guard (tutorial.js), so a maim drops it and a kill ends it.
 export const TUTORIAL_MINION_KIND = 'HUSK';
-// ...with only this much hp, so a first fight is short.
-export const TUTORIAL_MINION_HP = 2;
 // How long a tutorial line stays on the map before it fades (slowly: render.js showWhisper).
 export const TUTORIAL_WHISPER_MS = 5000;
 // After "Die in darkness.", how long until the kind voice: "Don't let them dim your light."
@@ -657,22 +662,37 @@ export const ENERGY_START = 1;
 export const TUTORIAL_EXIT_ENERGY = 2;
 export const GUN_RELOAD_MODIFIERS = ['blind', 'flip', 'timer'];
 export const RELOAD_ENERGY = [2, 3, ENERGY_MAX];
-// A landed shot's damage bar (Timothy, 2026-10-11): the bar holds zones
-// at new random spots every shot (gun.js damageZones): hit zones (1
-// damage) and weak points (2 and a limb), sized by the minion kind
-// (MINION_KINDS hitWidth / weakWidth), and from depth 2 penalty zones
-// (DAMAGE_PENALTY_WIDTH wide; stopping on one loses 1 more energy).
-// Anywhere else grazes for 0. DAMAGE_BAR_DEPTHS says how many of each per
-// danger depth (the last row carries on past the table). Zones keep
-// DAMAGE_ZONE_GAP from each other and from the bar's ends. Drafts for
-// Timothy to tune.
-export const DAMAGE_BAR_DEPTHS = [
-  { hits: 2, weaks: 1, penalties: 0 },
-  { hits: 2, weaks: 1, penalties: 1 },
-  { hits: 1, weaks: 1, penalties: 2 },
+// A landed shot's dial (kill or maim plan, Timothy 2026-10-15; replaces the
+// damage bar): a circle with one kill zone and one maim zone sized by the
+// minion kind (MINION_KINDS killWidth / maimWidth), and harmful zones
+// (HARM_WIDTH each, a random HARM_KINDS kind) at new spots each shot
+// (gun.js dialZones). Anywhere else misses. DIAL_DEPTHS, per danger depth
+// (the last row carries on past the table): `scale` for the kill and maim
+// zones, `harms` (how many harmful zones), `speed` (a DIAL_LAP_MS name)
+// and `lapLimit` (laps before it fires by itself; 0 = none). Zones keep
+// DIAL_ZONE_GAP from each other. Drafts for Timothy to tune.
+export const DIAL_DEPTHS = [
+  { scale: 1, harms: 0, speed: 'normal', lapLimit: 0 },
+  { scale: 0.9, harms: 1, speed: 'normal', lapLimit: 0 },
+  { scale: 0.8, harms: 2, speed: 'fast', lapLimit: 3 },
 ];
-export const DAMAGE_PENALTY_WIDTH = 0.08;
-export const DAMAGE_ZONE_GAP = 0.04;
+export const DIAL_ZONE_GAP = 0.04;
+// Speed is a lever with a limit (Timothy): ms for the marker to go once
+// round at each speed, and DIAL_LAP_LIMIT_MS, the fastest any dial may go
+// (the Struggle included). Reduced motion makes every lap DIAL_REDUCED_SCALE
+// times as long (gunpanels.js).
+export const DIAL_LAP_MS = { slow: 3000, normal: 2000, fast: 1500 };
+export const DIAL_LAP_LIMIT_MS = 1100;
+export const DIAL_REDUCED_SCALE = 2;
+// Harmful zones (Timothy: three kinds): jam loses 1 more energy, loud
+// makes a noise (NOISE_RANGES.loud), lunge brings the minion one step
+// closer at once (combat.js lungeAt).
+export const HARM_KINDS = ['jam', 'loud', 'lunge'];
+export const HARM_WIDTH = 0.08;
+// The dark arc: the share of the dial a shot in the dark (or on a low
+// battery: LOW_BATTERY_CHARGE charge left with the light on) hides.
+export const DIAL_DARK_ARC = 0.25;
+export const LOW_BATTERY_CHARGE = 1;
 // Energy cells (drawn as a drum on the map; decor.js placeEnergyCells):
 // each room of a floor gets one at this chance, then rooms without one are topped up
 // until the floor has at least ENERGY_CELLS_MIN. Bumping one opens the
@@ -680,24 +700,22 @@ export const DAMAGE_ZONE_GAP = 0.04;
 // Drafts for Timothy to tune.
 export const ENERGY_CELL_ROOM_CHANCE = 0.35;
 // Struggle (Timothy's design): a minion or the hunter that reaches the
-// player while they have no energy doesn't just strike. A dial sweeps
-// fast, STRUGGLE_SWEEP_MS end to end (STRUGGLE_SLOW_SWEEP_MS under reduced
-// motion); SELECT inside STRUGGLE_HIT_HALF of the centre pushes it back
-// STRUGGLE_PUSHBACK tiles with no damage to it, anything else and it
-// strikes as usual. Drafts for Timothy to tune.
+// player while they have no energy doesn't just strike. It gets a dial of
+// its own (kill or maim plan: the same dial as a shot): one zone
+// STRUGGLE_ZONE_WIDTH of the circle at a random spot, a lap in
+// STRUGGLE_LAP_MS; stopping in it pushes the minion back STRUGGLE_PUSHBACK
+// tiles with no damage to it, anything else and it strikes as usual.
 // Each Struggle after the first on the same floor is harder (Timothy:
-// relying on it shouldn't stay easy): the dial sweeps
-// STRUGGLE_SPEEDUP_MS faster and its zone is STRUGGLE_SHRINK narrower,
-// never past STRUGGLE_MIN_SWEEP_MS and STRUGGLE_MIN_HIT_HALF. A new floor
-// starts again from the first.
-export const STRUGGLE_SWEEP_MS = 500;
-export const STRUGGLE_SLOW_SWEEP_MS = 1000;
-export const STRUGGLE_HIT_HALF = 0.22;
+// relying on it shouldn't stay easy): a lap STRUGGLE_SPEEDUP_MS faster,
+// never past DIAL_LAP_LIMIT_MS, and a zone STRUGGLE_SHRINK narrower, never
+// under STRUGGLE_MIN_WIDTH. A new floor starts again from the first.
+// Drafts for Timothy to tune.
+export const STRUGGLE_ZONE_WIDTH = 0.2;
+export const STRUGGLE_LAP_MS = 1500;
 export const STRUGGLE_PUSHBACK = 3;
-export const STRUGGLE_SPEEDUP_MS = 50;
-export const STRUGGLE_SHRINK = 0.03;
-export const STRUGGLE_MIN_SWEEP_MS = 300;
-export const STRUGGLE_MIN_HIT_HALF = 0.1;
+export const STRUGGLE_SPEEDUP_MS = 100;
+export const STRUGGLE_SHRINK = 0.02;
+export const STRUGGLE_MIN_WIDTH = 0.1;
 export const ENERGY_CELLS_MIN = 3;
 
 // The boss gives off light that spreads through the floor at a steady
@@ -1022,12 +1040,6 @@ export const MINIMAP_PAD = 12;
 // MINIMAP_TITLE_PX text in its top-left corner. CSS px.
 export const MINIMAP_LABEL_PX = 15;
 export const MINIMAP_TITLE_PX = 22;
-// The damage bar (gunpanels.js): ms for its marker to sweep from one end
-// to the other (then it comes back). Under reduced motion the marker
-// still has to move, since its timing is the shot, so it sweeps at half
-// speed instead (the mockup's "slower sweep").
-export const DAMAGE_BAR_SWEEP_MS = 1300;
-export const DAMAGE_BAR_SLOW_SWEEP_MS = 2600;
 // A stick enemy shows its strike tell (easing into its tell pose; with
 // Simple enemies, 'e' becomes 'E') when it is this many steps from the player or nearer: one more step brings it
 // next to them. Straight steps (rows + columns), like shootBlock's range.

@@ -8,7 +8,7 @@
 // leave the light always on, as it was. Rules only — no DOM access here.
 
 import { state } from './state.js';
-import { LIGHT_BATTERY_MAX } from './config.js';
+import { LIGHT_BATTERY_MAX, LOW_BATTERY_CHARGE } from './config.js';
 
 // A full battery with the light on, for a new floor (every floor, rest
 // floors too, starts full: mockup call 6).
@@ -25,6 +25,13 @@ export function batteryInPlay() {
 // out of play.
 export function lightOn() {
   return !batteryInPlay() || state.floor.light.on;
+}
+
+// Whether the battery is low (kill or maim plan): in play, the light on,
+// and LOW_BATTERY_CHARGE charge or less left. A shot's dial then hides its
+// dark arc, as a shot in the dark does.
+export function lowBattery() {
+  return batteryInPlay() && state.floor.light.on && state.floor.light.charge <= LOW_BATTERY_CHARGE;
 }
 
 // One turn of the battery, from combat.js advanceMonsters before anything

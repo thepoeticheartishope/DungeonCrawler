@@ -1,7 +1,8 @@
 // The gun (gun combat plan, step 3): reloading by answering a question,
 // picking a target on the map, firing at a minion in the player's light,
-// the damage bar, a minion's strike when it reaches the player, and a
-// landed shot staggering the hunter. Played with DEV -> Combat on gun
+// the dial (kill or maim plan: READY, then kill, maim or harmful zones), a
+// minion's strike when it reaches the player, and a landed shot staggering
+// the hunter. Played with DEV -> Combat on gun
 // (state.settings.gunCombat): main.js runs reload and fire as turns, and
 // combat.js advanceMonsters calls minionStrike. Each rule changes state and returns an events list
 // in the order things happened, for main.js drawEvents() to draw.
@@ -10,10 +11,10 @@
 
 import { state, key } from './state.js';
 import {
-  BATTLE_CHOICE_COUNT, ENERGY_MAX, GUN_RELOAD_MODIFIERS, RELOAD_ENERGY, WEAKNESS_DAMAGE_SCALE, MINION_KIND_ORDER,
-  DAMAGE_BAR_DEPTHS, DAMAGE_PENALTY_WIDTH, DAMAGE_ZONE_GAP,
-  MINION_KINDS, MINION_STRIKE_COST, MINION_STUN_MOVES, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
-  STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
+  BATTLE_CHOICE_COUNT, ENERGY_MAX, GUN_RELOAD_MODIFIERS, RELOAD_ENERGY, MATCH_KILL_SCALE, MINION_KIND_ORDER,
+  DIAL_DEPTHS, DIAL_ZONE_GAP, DIAL_LAP_MS, DIAL_LAP_LIMIT_MS, HARM_KINDS, HARM_WIDTH, GUARD_STUN_MOVES, DARK_SWEEP_SCALE,
+  MINION_KINDS, MINION_STRIKE_COST, MINION_STUN_MOVES, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_PUSHBACK,
+  STRUGGLE_ZONE_WIDTH, STRUGGLE_LAP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_WIDTH,
   MINIGAME_TIER_PAY, PLAYER_CONE_RANGE, DARK_SHOT_STEP,
 } from './config.js';
 import { fightGroups, shuffle } from './quiz.js';
@@ -21,9 +22,9 @@ import { recordHauntAnswer } from './haunts.js';
 import { shootBlock, canShoot, seesEnemy } from './sight.js';
 import { aimLook, angleTo, lookAngle, wantsTurn, wrapAngle } from './look.js';
 import { goldReward } from './moves.js';
-import { tileOccupied, lockOn } from './combat.js';
+import { tileOccupied, lockOn, lungeAt } from './combat.js';
 import { canPassCorner } from './passage.js';
-import { batteryInPlay, lightOn } from './battery.js';
+import { batteryInPlay, lightOn, lowBattery } from './battery.js';
 import { makeNoise } from './noise.js';
 
 // The category the next reload asks from, as { label, category, pool }.
@@ -234,15 +235,16 @@ export function fireBlock(target) {
   return shootBlock(target);
 }
 
-// Fires at `target`, for 1 energy: a round from the group the target is
-// weak to when one is held, so the player never wastes a match. A shot
-// that can be taken always lands. On a minion it waits for the damage bar
-// (state.battle.aim; settleShot finishes it); one on the hunter staggers
-// it, since it can't be hurt. A blocked shot spends nothing.
+// Fires at `target`. A shot that can be taken always lands. On a minion
+// it opens the dial (kill or maim plan) at READY (state.battle.aim, phase
+// 'ready'): nothing is spent until the player presses READY (readyShot),
+// so BACK (cancelShot) is free. The round it will spend is picked now, one
+// from the group the target is weak to when one is held, so the player
+// never wastes a match, and a match widens the kill zone. A shot on the
+// hunter spends its round at once and staggers it, since it can't be hurt.
+// A blocked shot spends nothing.
 // Events: fireBlocked { target, reason }, or shotFired { target } then
-// aimStarted { target, zones, matched } or
-// hunterStaggered { hunter }; a landed shot on a minion whose kind's
-// weakness wasn't known yet adds weaknessFound { minionKind, label }.
+// aimStarted { target, zones, matched, ... } or hunterStaggered { hunter }.
 export function fire(target) {
   const reason = fireBlock(target);
   if (reason) return [{ type: 'fireBlocked', target, reason }];
@@ -250,142 +252,212 @@ export function fire(target) {
   // Combat with it has begun: its eye shuts (gaze.js).
   if (target) target.gaze = 0;
   const weak = weaknessOf(target.minionKind);
-  const round = spendRound(weak);
   const events = [{ type: 'shotFired', target }];
   if (target.kind === 'hunter') {
+    spendRound(weak);
     events.push(...staggerHunter(target));
     return events;
   }
-  state.battle.aim = { target, zones: damageZones(target.minionKind), matched: !!weak && round === weak };
+  const matched = !!weak && state.run.rounds.includes(weak);
+  state.battle.aim = { target, ...dialFor(target.minionKind, { matched }), matched, prefer: weak, phase: 'ready' };
   events.push({ type: 'aimStarted', ...state.battle.aim });
-  // Timothy: a landed shot shows the kind's weakness, for the rest of the run.
-  if (weak && !state.run.weakKnown.has(target.minionKind)) {
-    state.run.weakKnown.add(target.minionKind);
-    events.push({ type: 'weaknessFound', minionKind: target.minionKind, label: weak });
-  }
   return events;
 }
 
-// A shot in the dark (light battery plan step C), for 1 energy: it goes
-// along the aim (darkShotPath) and the damage bar always opens, even with
-// nothing there, so firing gives nothing away (mockup call 3). The bar is
-// one step harder, at random: `dark` 'fast' (it sweeps faster,
-// gunpanels.js) or 'x' (one more penalty zone). Its zones are sized for a
-// kind picked at random, not the target's, for the same reason. The
-// oldest round goes, matched only by luck, and no weakness is found. On
-// the hunter it staggers it, as in the light.
+// A shot in the dark (light battery plan step C): it goes along the aim
+// (darkShotPath) and the dial always opens, even with nothing there, so
+// firing gives nothing away (mockup call 3). Its dial hides its dark arc
+// and is one step harder, at random: `dark` 'fast' (a faster lap) or 'x'
+// (one more harmful zone). Its zones and traits are a kind picked at
+// random, not the target's, for the same reason. It will spend the oldest
+// round, matched only by luck, and no weakness is found. On the hunter it
+// spends the round at once and staggers it, as in the light.
 // Events: shotFired { target, dark: true, end } then aimStarted, or
 // hunterStaggered.
 function fireDark() {
   const { target, end } = darkShotPath();
   if (target) target.gaze = 0;
-  const round = spendRound();
   const events = [{ type: 'shotFired', target, dark: true, end }];
   if (target && target.kind === 'hunter') {
+    spendRound();
     events.push(...staggerHunter(target));
     return events;
   }
   const dark = Math.random() < 0.5 ? 'fast' : 'x';
   const kind = MINION_KIND_ORDER[Math.floor(Math.random() * MINION_KIND_ORDER.length)];
+  const round = state.run.rounds[0];
+  const matched = !!target && !!round && round === weaknessOf(target.minionKind);
   state.battle.aim = {
     target, end, dark,
-    zones: damageZones(kind, { extraPenalty: dark === 'x' ? 1 : 0 }),
-    matched: !!target && !!round && round === weaknessOf(target.minionKind),
+    ...dialFor(kind, { matched, extraHarm: dark === 'x' ? 1 : 0, faster: dark === 'fast', darkArc: true }),
+    matched, prefer: null, phase: 'ready',
   };
   events.push({ type: 'aimStarted', ...state.battle.aim });
   return events;
 }
 
-// The damage bar's zones for a landed shot on a minion of `minionKind`:
-// [{ tier, from, to }], left to right, tier 'hit', 'weak' or 'penalty'.
-// How many of each comes from the depth (DAMAGE_BAR_DEPTHS), how wide
-// from the kind (hit and weak) or DAMAGE_PENALTY_WIDTH. They land in a new
-// order at new spots each shot, so the player reads the bar instead of
-// learning one timing: the spare room is shared out at random between the
-// gaps, each at least DAMAGE_ZONE_GAP, so zones never touch.
-// A dark shot's 'x' asks for `extraPenalty` more penalty zones.
-export function damageZones(minionKind, { extraPenalty = 0 } = {}) {
-  const counts = DAMAGE_BAR_DEPTHS[Math.min(state.run.roomIndex, DAMAGE_BAR_DEPTHS.length - 1)];
+// The dial for a shot on a minion of `minionKind`: { zones, lapMs,
+// lapLimit, traits, darkArc }. The depth (DIAL_DEPTHS) sets the speed and
+// any lap limit, the kind its traits (MINION_KINDS dial). `faster` (a fast
+// dark shot) takes DARK_SWEEP_SCALE off the lap; no lap is ever quicker
+// than DIAL_LAP_LIMIT_MS. The dark arc shows on a dark shot or a low
+// battery (battery.js lowBattery).
+function dialFor(minionKind, { matched = false, extraHarm = 0, faster = false, darkArc = false } = {}) {
+  const depth = dialDepth();
+  const lap = DIAL_LAP_MS[depth.speed] * (faster ? DARK_SWEEP_SCALE : 1);
+  return {
+    zones: dialZones(minionKind, { matched, extraHarm }),
+    lapMs: Math.max(DIAL_LAP_LIMIT_MS, Math.round(lap)),
+    lapLimit: depth.lapLimit,
+    traits: { ...MINION_KINDS[minionKind].dial },
+    darkArc: darkArc || lowBattery(),
+  };
+}
+
+// This danger depth's row of DIAL_DEPTHS (the last row carries on).
+function dialDepth() {
+  return DIAL_DEPTHS[Math.min(state.run.roomIndex, DIAL_DEPTHS.length - 1)];
+}
+
+// The dial's zones for a shot on a minion of `minionKind`: [{ tier, from,
+// to }] round the circle (0 to 1, none crossing 1), tier 'kill', 'maim' or
+// 'harm' (with `harm`, one of HARM_KINDS). One kill zone and one maim zone
+// sized by the kind (MINION_KINDS killWidth / maimWidth) and the depth
+// (DIAL_DEPTHS scale), the kill zone MATCH_KILL_SCALE wider for a
+// `matched` round; the depth's harmful zones, plus `extraHarm` (a dark
+// shot's 'x'). They land in a new order at new spots each shot, so the
+// player reads the dial instead of learning one timing: the spare room is
+// shared out at random between the gaps, each at least DIAL_ZONE_GAP, so
+// zones never touch.
+export function dialZones(minionKind, { matched = false, extraHarm = 0 } = {}) {
+  const depth = dialDepth();
   const kind = MINION_KINDS[minionKind];
+  const harms = Array.from({ length: depth.harms + extraHarm }, () =>
+    ({ tier: 'harm', harm: HARM_KINDS[Math.floor(Math.random() * HARM_KINDS.length)], width: HARM_WIDTH }));
   const zones = shuffle([
-    ...Array(counts.hits).fill({ tier: 'hit', width: kind.hitWidth }),
-    ...Array(counts.weaks).fill({ tier: 'weak', width: kind.weakWidth }),
-    ...Array(counts.penalties + extraPenalty).fill({ tier: 'penalty', width: DAMAGE_PENALTY_WIDTH }),
+    { tier: 'kill', width: kind.killWidth * depth.scale * (matched ? MATCH_KILL_SCALE : 1) },
+    { tier: 'maim', width: kind.maimWidth * depth.scale },
+    ...harms,
   ]);
-  const spare = 1 - zones.reduce((sum, z) => sum + z.width, 0) - DAMAGE_ZONE_GAP * (zones.length + 1);
-  const shares = [...zones, null].map(() => Math.random());
-  const total = shares.reduce((sum, s) => sum + s, 0) || 1;
+  const spare = 1 - zones.reduce((sum, z) => sum + z.width, 0) - DIAL_ZONE_GAP * zones.length;
+  const shares = zones.map(() => Math.random());
+  const total = shares.reduce((sum, x) => sum + x, 0) || 1;
   let at = 0;
   return zones.map((z, i) => {
-    const from = at + DAMAGE_ZONE_GAP + Math.max(0, spare) * shares[i] / total;
+    const from = at + DIAL_ZONE_GAP + Math.max(0, spare) * shares[i] / total;
     at = from + z.width;
-    return { tier: z.tier, from, to: at };
+    return { tier: z.tier, ...(z.harm ? { harm: z.harm } : {}), from, to: at };
   });
 }
 
-// The player stopped the damage bar at `barPosition` (0 to 1) for the
-// shot in state.battle.aim. Inside a weak point: 2 damage and a limb comes
-// off, if any are left. Inside a hit zone: 1. Inside a penalty zone the
-// shot backfires: no damage, and 1 more energy is lost, if there is any
-// left. Anywhere else grazes for 0. A round from the group the minion is
-// weak to (aim.matched) does WEAKNESS_DAMAGE_SCALE times the damage. A
-// minion with no hp left dies and pays its kind's gold (goldReward, so it
-// doubles in the darkness). Any damage stuns it for MINION_STUN_MOVES of
-// its moves (m.rest), so a minion one step away can't walk straight in.
-// A hit that leaves a standing stick man on 1 HP knocks it down (downed
-// plan, DEV -> Downed): it crawls at half speed and a bump finishes it
-// (finishDowned), so one shot and one bump can do what two shots did.
-// The stun still holds: the fall takes its next move.
-// Events: shotGrazed { minion }, shotBackfired { minion, energyLost } and
-// its noise (noise.js makeNoise), or
-// minionHurt { minion, damage, hpLeft, weakPoint, matched } and maybe limbLost
-// { minion, limbsLeft }; then minionDowned { minion } if it went down, or,
-// on a kill, minionKilled { minion } and goldGained { amount, from: 'kill' }.
-// A shot in the dark (aim.dark) with nothing there: shotIntoDark { end }
-// unless it backfires (shotBackfired with no minion, `end` where it went).
-// One that hurts a stick man in the dark locks it on (combat.js lockOn): it
-// knows where the shot came from (minionHurt's `dark`).
-export function settleShot(barPosition) {
+// The player pressed READY on the dial waiting in state.battle.aim: its
+// round is spent and the marker starts (the view runs it). A lit shot on a
+// kind whose weakness isn't known yet shows it, for the rest of the run
+// (Timothy: a landed shot shows the kind's weakness).
+// Events: shotReady, then maybe weaknessFound { minionKind, label }.
+export function readyShot() {
   const aim = state.battle.aim;
-  if (!aim) return [];
-  state.battle.aim = null;
-  const m = aim.target;
-  const zone = aim.zones.find(z => barPosition >= z.from && barPosition <= z.to);
-  if (zone && zone.tier === 'penalty') {
-    const energyLost = Math.min(1, state.run.energy);
-    if (energyLost) spendRound();
-    return [{ type: 'shotBackfired', minion: m, energyLost, ...(aim.dark ? { end: aim.end } : {}) }, ...makeNoise('backfire')];
+  if (!aim || aim.phase !== 'ready') return [];
+  spendRound(aim.prefer);
+  aim.phase = 'run';
+  const events = [{ type: 'shotReady' }];
+  const kind = aim.target && !aim.dark ? aim.target.minionKind : null;
+  const weak = weaknessOf(kind);
+  if (weak && !state.run.weakKnown.has(kind)) {
+    state.run.weakKnown.add(kind);
+    events.push({ type: 'weaknessFound', minionKind: kind, label: weak });
   }
-  if (!m) return [{ type: 'shotIntoDark', end: aim.end }];
-  const weakPoint = !!zone && zone.tier === 'weak';
-  const base = !zone ? 0 : weakPoint ? 2 : 1;
-  if (base === 0) return [{ type: 'shotGrazed', minion: m, ...(aim.dark ? { dark: true } : {}) }];
-
-  const damage = aim.matched ? base * WEAKNESS_DAMAGE_SCALE : base;
-  m.hpLeft = Math.max(0, m.hpLeft - damage);
-  m.rest = Math.max(m.rest || 0, MINION_STUN_MOVES);
-  if (aim.dark) lockOn(m);
-  const events = [{ type: 'minionHurt', minion: m, damage, hpLeft: m.hpLeft, weakPoint, matched: aim.matched, ...(aim.dark ? { dark: true } : {}) }];
-  if (weakPoint && m.limbs > 0) {
-    m.limbs--;
-    events.push({ type: 'limbLost', minion: m, limbsLeft: m.limbs });
-  }
-  if (m.hpLeft === 1 && state.settings.downed && !m.downed) {
-    m.downed = true;
-    events.push({ type: 'minionDowned', minion: m });
-  }
-  if (m.hpLeft > 0) return events;
-  events.push(...killMinion(m));
   return events;
 }
 
-// The player walked into a downed stick man (moves.js): it dies, for no
-// energy and no damage bar, and pays its kind's gold as a kill. The caller
+// BACK before READY: the gun goes down. Nothing was spent, and it is no
+// turn. Events: shotCancelled.
+export function cancelShot() {
+  const aim = state.battle.aim;
+  if (!aim || aim.phase !== 'ready') return [];
+  state.battle.aim = null;
+  return [{ type: 'shotCancelled' }];
+}
+
+// The player stopped the running dial at `position` (0 to 1, in the
+// zones' own frame: the view takes off any drift) for the shot in
+// state.battle.aim. No health (kill or maim plan):
+// - kill zone: it dies and pays its kind's gold (goldReward, so it doubles
+//   in the darkness);
+// - maim zone: it goes down (downed plan: it crawls at half speed and a
+//   bump finishes it; with DEV -> Downed off it only reels);
+// - a guard (the HUSK's) takes the first hit of either kind instead and
+//   breaks, stunning it GUARD_STUN_MOVES (more for a kill-zone hit);
+// - a downed one dies from either;
+// - a harmful zone: jam (1 more energy lost), loud (a noise) or lunge (it
+//   steps closer at once, combat.js lungeAt);
+// - anywhere else misses.
+// Any hit stuns it for MINION_STUN_MOVES of its moves (m.rest), so a
+// minion one step away can't walk straight in.
+// Events: shotMissed { minion }; shotJammed { minion, energyLost },
+// shotLoud { minion } and its noise (noise.js makeNoise), or shotLunged
+// { minion } and lungeAt's; or minionHit { minion, tier, matched } then
+// guardBroken { minion, stun }, minionReels { minion }, minionDowned
+// { minion }, or the kill's (minionFinished for a downed one, then
+// minionKilled, goldGained). A shot in the dark (aim.dark) with nothing
+// there: shotIntoDark { end }, unless it jams or is loud (with no minion,
+// `end` where it went). One that hits a stick man in the dark locks it on
+// (combat.js lockOn): it knows where the shot came from (`dark` on the
+// event).
+export function settleShot(position) {
+  const aim = state.battle.aim;
+  if (!aim || aim.phase !== 'run') return [];
+  state.battle.aim = null;
+  const m = aim.target;
+  const dark = aim.dark ? { dark: true } : {};
+  const zone = aim.zones.find(z => position >= z.from && position <= z.to);
+  if (zone && zone.tier === 'harm') return settleHarm(zone.harm, aim);
+  if (!m) return [{ type: 'shotIntoDark', end: aim.end }];
+  if (!zone) return [{ type: 'shotMissed', minion: m, ...dark }];
+
+  m.rest = Math.max(m.rest || 0, MINION_STUN_MOVES);
+  if (aim.dark) lockOn(m);
+  const events = [{ type: 'minionHit', minion: m, tier: zone.tier, matched: aim.matched, ...dark }];
+  if (m.guard) {
+    const stun = GUARD_STUN_MOVES[zone.tier];
+    m.guard = false;
+    m.rest = Math.max(m.rest, stun);
+    return [...events, { type: 'guardBroken', minion: m, stun }];
+  }
+  if (m.downed) return [...events, ...finishDowned(m)];
+  if (zone.tier === 'kill') return [...events, ...killMinion(m)];
+  if (!state.settings.downed) return [...events, { type: 'minionReels', minion: m }];
+  m.downed = true;
+  return [...events, { type: 'minionDowned', minion: m }];
+}
+
+// A dial stopped in a harmful zone of kind `harm` (HARM_KINDS) for `aim`.
+// Jam: 1 more energy lost, if there is any. Loud: a noise (noise.js
+// makeNoise), as loud as the old backfire. Lunge: the minion takes a step
+// toward the player at once (combat.js lungeAt), which can bring it onto
+// them; a lunge in the dark with nothing there is just a shot into the dark.
+// Events: shotJammed { minion, energyLost }, shotLoud { minion } then
+// noiseMade / noiseHeard, shotLunged { minion } then lungeAt's, or
+// shotIntoDark { end }. In the dark the first carries `end`, where the shot went.
+function settleHarm(harm, aim) {
+  const m = aim.target;
+  const at = aim.dark ? { end: aim.end } : {};
+  if (harm === 'jam') {
+    const energyLost = Math.min(1, state.run.energy);
+    if (energyLost) spendRound();
+    return [{ type: 'shotJammed', minion: m, energyLost, ...at }];
+  }
+  if (harm === 'loud') return [{ type: 'shotLoud', minion: m, ...at }, ...makeNoise('loud')];
+  if (!m) return [{ type: 'shotIntoDark', end: aim.end }];
+  return [{ type: 'shotLunged', minion: m, ...(aim.dark ? { dark: true } : {}) }, ...lungeAt(m)];
+}
+
+// The player walked into a downed stick man (moves.js), or shot one: it
+// dies, for no energy and no dial when bumped, and pays its kind's gold as a kill. The caller
 // spends the turn, like a step.
 // Events: minionFinished { minion }, minionKilled { minion },
 // goldGained { amount, from: 'kill' }.
 export function finishDowned(m) {
-  m.hpLeft = 0;
   return [{ type: 'minionFinished', minion: m }, ...killMinion(m)];
 }
 
@@ -425,36 +497,51 @@ export function minionStrike(m) {
   return events;
 }
 
-// The Struggle dial for the floor's next Struggle: { hitHalf, sweepMs,
-// count }, count being which Struggle on this floor it is (1 for the
-// first). Each one after the first sweeps STRUGGLE_SPEEDUP_MS faster with
-// a zone STRUGGLE_SHRINK narrower, down to STRUGGLE_MIN_SWEEP_MS and
-// STRUGGLE_MIN_HIT_HALF, so leaning on it gets harder. Counts the Struggle
-// (state.floor.struggles); a new floor resets it (floor.js).
+// The Struggle dial for the floor's next Struggle (kill or maim plan: the
+// same dial as a shot): { zone: { from, to }, lapMs, count, phase }, one
+// zone at a random spot round the circle, count being which Struggle on
+// this floor it is (1 for the first), phase 'ready' until READY
+// (readyStruggle). Each one after the first goes round STRUGGLE_SPEEDUP_MS
+// faster, never past DIAL_LAP_LIMIT_MS, with a zone STRUGGLE_SHRINK
+// narrower, never under STRUGGLE_MIN_WIDTH, so leaning on it gets harder.
+// Counts the Struggle (state.floor.struggles); a new floor resets it
+// (floor.js).
 export function struggleDial() {
   const before = state.floor.struggles++;
+  const width = Math.max(STRUGGLE_MIN_WIDTH, STRUGGLE_ZONE_WIDTH - before * STRUGGLE_SHRINK);
+  const from = Math.random() * (1 - width);
   return {
-    hitHalf: Math.max(STRUGGLE_MIN_HIT_HALF, STRUGGLE_HIT_HALF - before * STRUGGLE_SHRINK),
-    sweepMs: Math.max(STRUGGLE_MIN_SWEEP_MS, STRUGGLE_SWEEP_MS - before * STRUGGLE_SPEEDUP_MS),
+    zone: { from, to: from + width },
+    lapMs: Math.max(DIAL_LAP_LIMIT_MS, STRUGGLE_LAP_MS - before * STRUGGLE_SPEEDUP_MS),
     count: before + 1,
+    phase: 'ready',
   };
 }
 
-// The Struggle dial stopped at `barPosition` (0 to 1, centre 0.5) for the
-// minion waiting in state.battle.struggle. Inside the dial's hitHalf
-// (struggleDial) of the centre the player shoves it away:
-// STRUGGLE_PUSHBACK tiles, no damage to either. Anything else and it
-// strikes, as it would have with energy left.
+// The player pressed READY on the Struggle dial: the marker starts. There
+// is no BACK: it already has them. Events: struggleReady.
+export function readyStruggle() {
+  const struggle = state.battle.struggle;
+  if (!struggle || struggle.phase !== 'ready') return [];
+  struggle.phase = 'run';
+  return [{ type: 'struggleReady' }];
+}
+
+// The Struggle dial stopped at `position` (0 to 1 round the circle) for
+// the minion waiting in state.battle.struggle. Inside its zone the player
+// shoves it away: STRUGGLE_PUSHBACK tiles, no damage to either. Anything
+// else and it strikes, as it would have with energy left.
 // Events: struggleWon { minion } then knockedBack { minion, from } if it
 // had room to go; or struggleLost { minion }, its noise (noise.js
 // makeNoise), then minionStrike's events.
-export function settleStruggle(barPosition) {
+export function settleStruggle(position) {
   const struggle = state.battle.struggle;
   if (!struggle) return [];
   state.battle.struggle = null;
   const m = struggle.minion;
   if (!state.floor.minions.includes(m)) return [];
-  if (Math.abs(barPosition - 0.5) > struggle.hitHalf) return [{ type: 'struggleLost', minion: m }, ...makeNoise('struggle'), ...minionStrike(m)];
+  const { from: start, to: end } = struggle.zone;
+  if (position < start || position > end) return [{ type: 'struggleLost', minion: m }, ...makeNoise('struggle'), ...minionStrike(m)];
   const events = [{ type: 'struggleWon', minion: m }];
   const from = { row: m.row, col: m.col };
   if (pushBack(m, STRUGGLE_PUSHBACK)) events.push({ type: 'knockedBack', minion: m, from });

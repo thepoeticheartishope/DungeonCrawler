@@ -2,7 +2,7 @@
 // the world takes its turn every REALTIME_STEP_MS instead of after each of
 // the player's actions. main.js polls it every REALTIME_POLL_MS and tells
 // it whether it may run; time only counts while it may, so a pause (the
-// damage bar, the battle screen, a menu) never ends in a tick the moment it
+// dial, the battle screen, a menu) never ends in a tick the moment it
 // lifts. No DOM access here, and no timers: main.js owns the poll.
 
 import { REALTIME_STEP_MS, REALTIME_POLL_MS } from './config.js';

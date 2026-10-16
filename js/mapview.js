@@ -5,7 +5,7 @@
 //
 // main.js calls initMapView() once, requestMapDraw() after anything on
 // the map may have changed, slideOnMap() / bumpOnMap() / shotOnMap() and a
-// minion's hurtOnMap() / limbOffOnMap() / deathOnMap() from their drawEvents cases, and onMapPointer() to hear taps and aiming on the map. This file reads state and never changes it.
+// minion's hurtOnMap() / deathOnMap() from their drawEvents cases, and onMapPointer() to hear taps and aiming on the map. This file reads state and never changes it.
 //
 // Everything is drawn into one canvas (the "phosphor"), so a later CRT
 // pass (curved glass, bloom) can read that canvas and draw on top of it.
@@ -20,7 +20,7 @@ import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
 import { t } from './text.js';
 import { drawIsoScene, showShot, isoTileAt, isoGridAt } from './isoview.js';
-import { hurtStick, loseStickLimb, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
+import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
 import { ventSealed } from './vents.js';
 import { setTileArtColour } from './tileart.js';
@@ -200,18 +200,11 @@ function inFlash(m) {
   return !!flashSeen && flashSeen.minion === m && performance.now() < flashSeen.until;
 }
 
-// A minion's stick man (stickforms.js) reacts to a landed shot for
-// `damage`: a soft brightening, one small push and a hit's tendrils (one
-// stays out when it did damage).
-export function hurtOnMap(minion, damage) {
-  hurtStick(minion, damage);
-  requestMapDraw();
-}
-
-// A minion's stick man loses the limb it just lost: its bones are gone and
-// a tendril grows where it was.
-export function limbOffOnMap(minion) {
-  loseStickLimb(minion);
+// A minion's stick man (stickforms.js) reacts to a landed shot: a soft
+// brightening, one small push and a hit's tendrils (one stays out when it
+// was a hit, `stays`, not a miss).
+export function hurtOnMap(minion, stays) {
+  hurtStick(minion, stays);
   requestMapDraw();
 }
 

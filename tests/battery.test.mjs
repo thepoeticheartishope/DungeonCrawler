@@ -15,9 +15,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
-import { LIGHT_BATTERY_MAX, PLAYER_LIGHT_RADIUS, MINION_TRACK_TURNS, DAMAGE_BAR_DEPTHS, GAZE_MS } from '../js/config.js';
+import { LIGHT_BATTERY_MAX, PLAYER_LIGHT_RADIUS, MINION_TRACK_TURNS, GAZE_MS, DIAL_DEPTHS, DIAL_LAP_MS, DIAL_LAP_LIMIT_MS, DARK_SWEEP_SCALE, LOW_BATTERY_CHARGE } from '../js/config.js';
 import { tickGaze } from '../js/gaze.js';
-import { fire, fireBlock, settleShot, darkShotPath } from '../js/gun.js';
+import { fire, fireBlock, readyShot, settleShot, darkShotPath } from '../js/gun.js';
 import { freshLight, lightOn, tickLight, toggleLight, turnsToFull } from '../js/battery.js';
 import { computeVisibility, inLookCone, shootBlock } from '../js/sight.js';
 import { advanceMonsters, spawnMinion, lockOn } from '../js/combat.js';
@@ -279,40 +279,63 @@ test('a dark shot goes along the aim to the first stick man in the way, and stop
   assert.deepEqual(darkShotPath(), { target: null, end: { row: pr, col: pc } });
 });
 
-test('a dark shot with nothing there still costs 1 energy and opens the bar', () => {
+test('a dark shot with nothing there still costs 1 energy at READY and opens the dial', () => {
   darkWithGun();
   assert.equal(fireBlock(null), null, 'no target needed in the dark');
   const events = fire(null);
   assert.deepEqual(events.map(e => e.type), ['shotFired', 'aimStarted']);
-  assert.equal(state.run.energy, 1);
+  assert.equal(state.run.energy, 2, 'nothing spent before READY');
   assert.equal(state.battle.aim.target, null);
   assert.ok(['fast', 'x'].includes(state.battle.aim.dark));
-  assert.deepEqual(settleShot(0).map(e => e.type), ['shotIntoDark']);
+  assert.equal(state.battle.aim.darkArc, true, 'a dark shot hides its dark arc');
+  readyShot();
+  assert.equal(state.run.energy, 1);
+  const gap = state.battle.aim.zones[0].from / 2;
+  assert.deepEqual(settleShot(gap).map(e => e.type), ['shotIntoDark']);
   state.run.energy = 0;
   assert.equal(fireBlock(null), 'noEnergy');
 });
 
-test('the dark bar is one step harder: one more X, or faster', () => {
+test('the dark dial is one step harder: one more harmful zone, or faster (never past the limit)', () => {
   darkWithGun();
-  const base = DAMAGE_BAR_DEPTHS[0].penalties;
+  const depth = DIAL_DEPTHS[0];
   withRandom(0.9, () => fire(null));
   assert.equal(state.battle.aim.dark, 'x');
-  assert.equal(state.battle.aim.zones.filter(z => z.tier === 'penalty').length, base + 1);
-  settleShot(0);
+  assert.equal(state.battle.aim.zones.filter(z => z.tier === 'harm').length, depth.harms + 1);
+  assert.equal(state.battle.aim.lapMs, DIAL_LAP_MS[depth.speed]);
+  state.battle.aim = null;
   withRandom(0.1, () => fire(null));
   assert.equal(state.battle.aim.dark, 'fast');
-  assert.equal(state.battle.aim.zones.filter(z => z.tier === 'penalty').length, base);
+  assert.equal(state.battle.aim.zones.filter(z => z.tier === 'harm').length, depth.harms);
+  assert.equal(state.battle.aim.lapMs, Math.max(DIAL_LAP_LIMIT_MS, Math.round(DIAL_LAP_MS[depth.speed] * DARK_SWEEP_SCALE)));
 });
 
-test('a dark shot that hurts a stick man sets it tracking the player', () => {
+test('a low battery hides the dark arc on a lit shot too', () => {
+  darkWithGun();
+  toggleLight();
+  const { playerRow: pr, playerCol: pc } = state.floor;
+  const m = spawnMinion({ row: pr - 1, col: pc });
+  state.floor.facing = 'N';
+  computeVisibility();
+  state.floor.light.charge = LOW_BATTERY_CHARGE + 1;
+  fire(m);
+  assert.equal(state.battle.aim.darkArc, false);
+  state.battle.aim = null;
+  state.floor.light.charge = LOW_BATTERY_CHARGE;
+  fire(m);
+  assert.equal(state.battle.aim.darkArc, true);
+});
+
+test('a dark shot that hits a stick man sets it tracking the player', () => {
   darkWithGun();
   const { playerRow: pr, playerCol: pc } = state.floor;
   const m = spawnMinion({ row: pr - 3, col: pc });
   fire(null);
   assert.equal(state.battle.aim.target, m);
-  const hit = state.battle.aim.zones.find(z => z.tier === 'hit');
+  readyShot();
+  const hit = state.battle.aim.zones.find(z => z.tier === 'maim');
   const events = settleShot((hit.from + hit.to) / 2);
-  const hurt = events.find(e => e.type === 'minionHurt');
+  const hurt = events.find(e => e.type === 'minionHit');
   assert.equal(hurt.dark, true);
   assert.equal(m.track, MINION_TRACK_TURNS);
 });

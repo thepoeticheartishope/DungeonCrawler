@@ -335,7 +335,7 @@ test('every minion has a kind, in the order its recipe names them', () => {
     f.minions.forEach((m, i) => {
       const expected = named[i] || MINION_KIND_ORDER[i % MINION_KIND_ORDER.length];
       assert.equal(m.minionKind, expected, `floor ${roomIndex + 1}, minion ${i + 1}`);
-      assert.equal(m.hpLeft, MINION_KINDS[expected].hp);
+      assert.equal(m.guard, !!MINION_KINDS[expected].guard);
     });
   });
 });

@@ -7,7 +7,7 @@
 // of each one threading them through as parameters.
 
 import { state } from './state.js';
-import { ENERGY_MAX, MINION_KINDS, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS } from './config.js';
+import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS } from './config.js';
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
 import { whatBlocks, canPassCorner } from './passage.js';
@@ -234,7 +234,7 @@ export function renderClock(running) {
 }
 
 // The gun's part of the HUD (gun plan step 6), shown only with DEV ->
-// Combat on gun: energy held, the target and its hp, and whether SELECT
+// Combat on gun: energy held, the target and its guard, and whether SELECT
 // can be pressed. Part of renderHud, the one writer of the HUD.
 function renderGunHud() {
   const on = state.settings.gunCombat;
@@ -251,17 +251,17 @@ function renderGunHud() {
   els.energyCount.textContent = held + '-'.repeat(Math.max(ENERGY_MAX - energy, 0));
   els.gunTarget.textContent = target ? gunTargetName(target) : t('stat.noTarget');
   // SELECT stays pressable with no energy: it says so, and it must
-  // still stop a damage bar opened by the last shot.
+  // still answer a dial opened by the last shot.
   els.btnSelect.disabled = state.run.runEnded;
 }
 
-// The HUD's name for the gun's target: a minion's kind, its hp (# left,
-// - lost) and its weakness (strategy plan step D: the reload group, or ?
-// until a shot has landed on that kind), or the hunter, which has no hp.
+// The HUD's name for the gun's target: a minion's kind, its guard while it
+// has one (kill or maim plan: no health to count) and its weakness
+// (strategy plan step D: the reload group, or ? until a shot has landed on
+// that kind), or the hunter.
 function gunTargetName(target) {
   if (target.kind === 'hunter') return t('term.hunter');
-  const hp = MINION_KINDS[target.minionKind].hp;
-  const name = t('minionKind.' + target.minionKind) + ' ' + '#'.repeat(target.hpLeft) + '-'.repeat(hp - target.hpLeft);
+  const name = t('minionKind.' + target.minionKind) + (target.guard ? ' ' + t('stat.guard') : '');
   const weak = state.run.weakTo[target.minionKind];
   if (!weak) return name;
   return name + ' /' + (state.run.weakKnown.has(target.minionKind) ? weak : t('stat.weakUnknown'));

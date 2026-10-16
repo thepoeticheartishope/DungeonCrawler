@@ -359,14 +359,14 @@ test('a minion within chase range steps toward the player and is reported as mov
   assert.equal(state.run.turnCount, 1);
 });
 
-test('a minion starts with its kind\'s hp and limbs and an empty trail', () => {
+test('a minion starts with its kind\'s guard (no health) and an empty trail', () => {
   resetFloor(21);
   for (const [name, stats] of Object.entries(MINION_KINDS)) {
     const m = spawnMinion({ row: 0, col: 0 }, name);
     assert.equal(m.kind, 'minion');
     assert.equal(m.minionKind, name);
-    assert.equal(m.hpLeft, stats.hp);
-    assert.equal(m.limbs, stats.limbs);
+    assert.equal(m.guard, !!stats.guard);
+    assert.equal(m.hpLeft, undefined, 'no health');
     assert.deepEqual(m.trail, []);
   }
 });
@@ -432,8 +432,7 @@ test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the 
   assert.equal(state.floor.hunter, hunter);
   assert.equal(hunter.kind, 'hunter');
   assert.equal(hunter.minionKind, null, 'the hunter has no minion kind');
-  assert.equal(hunter.hpLeft, null);
-  assert.equal(hunter.limbs, 0);
+  assert.equal(hunter.guard, false);
   assert.ok(state.floor.minions.includes(hunter));
   // Woke in a corner, so it's still far off after its first step (10
   // steps on a 21 floor, walking 8 ways).

@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import {
-  TUTORIAL_SPOT_TURNS, TUTORIAL_SPOT_NEAR, TUTORIAL_MINION_HP, TUTORIAL_MINION_KIND, ENERGY_MAX,
+  TUTORIAL_SPOT_TURNS, TUTORIAL_SPOT_NEAR, TUTORIAL_MINION_KIND, ENERGY_MAX,
 } from '../js/config.js';
 import { buildTutorialFloor } from '../js/floor.js';
 import { TUTORIAL_ROOM, parseTutorialRoom, tutorialTurn, settleName, breakRing } from '../js/tutorial.js';
@@ -22,7 +22,7 @@ import { stepPlayer } from '../js/moves.js';
 import { whatBlocks } from '../js/passage.js';
 import { lightOn, tickLight, toggleLight } from '../js/battery.js';
 import { advanceMonsters } from '../js/combat.js';
-import { fire, settleShot } from '../js/gun.js';
+import { fire, readyShot, settleShot } from '../js/gun.js';
 
 function resetRun() {
   state.settings.fogEnabled = true;
@@ -159,7 +159,7 @@ test('switching the light on breaks the ring: energy fills, the grate shudders, 
   assert.equal(state.floor.minions.length, 0, 'nothing on the floor yet');
   const [m] = state.floor.crawling;
   assert.equal(m.minionKind, TUTORIAL_MINION_KIND);
-  assert.equal(m.hpLeft, TUTORIAL_MINION_HP);
+  assert.equal(m.guard, false, 'no guard: a maim drops it (kill or maim plan call 7)');
   assert.ok(m.hunts);
   assert.deepEqual(tutorialTurn([]), [], 'in the duct it is still coming, no key');
   const grate = state.floor.vents[0];
@@ -223,7 +223,7 @@ test('the stick man gone leaves a key; taking it opens the door; the door is the
   assert.deepEqual(stepPlayer(-1, 0).map(e => e.type).slice(-1), ['tutorialLeft']);
 });
 
-test('a shot drops the stick man; the kind voice says "Finish it."; a bump finishes it and the key drops', () => {
+test('a maim drops the stick man; the kind voice says "Finish it."; a bump finishes it and the key drops', () => {
   resetRun();
   state.settings.downed = true;
   passTurns(TUTORIAL_SPOT_TURNS);
@@ -240,9 +240,10 @@ test('a shot drops the stick man; the kind voice says "Finish it."; a bump finis
   m.row = f.playerRow - 1; m.col = f.playerCol;
   f.facing = 'N'; f.look = null;
   fire(m);
-  const zone = state.battle.aim.zones.find(z => z.tier === 'hit');
+  readyShot();
+  const zone = state.battle.aim.zones.find(z => z.tier === 'maim');
   const shot = settleShot((zone.from + zone.to) / 2);
-  assert.ok(shot.some(e => e.type === 'minionDowned'), 'one hit leaves the 2 HP stick man on 1 HP: down');
+  assert.ok(shot.some(e => e.type === 'minionDowned'), 'a maim drops it: no guard here');
   assert.deepEqual(tutorialTurn(shot), [{ type: 'whispered', line: 'tut.finish', tone: 'kind' }]);
   assert.deepEqual(tutorialTurn([]), [], 'said once');
 

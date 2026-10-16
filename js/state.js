@@ -150,7 +150,7 @@ export const state = {
     battleTarget: null,    // whichever target the battle screen last set up a turn for
     battlePhase: 'answering', // 'choosing' (pick a category) | 'answering' (question showing) | 'ended' (settled, awaiting continue)
     categoryChoices: [],   // [{ label, pool }] offered while battlePhase is 'choosing'
-    aim: null,             // a gun shot that landed and waits for the damage bar: { target, zones: [{ tier, from, to }], matched } (gun.js damageZones; matched: the round was from the group the target is weak to)
-    struggle: null,        // a minion (or the hunter) that reached the player with no energy, waiting on the Struggle dial: { minion, hitHalf, sweepMs, count } (gun.js struggleDial)
+    aim: null,             // a gun shot that landed and waits on its dial (kill or maim plan): { target, zones: [{ tier, harm?, from, to }], lapMs, lapLimit, traits, darkArc, matched, prefer, phase: 'ready' | 'run' } (gun.js fire / dialZones; matched: the round it spends is from the group the target is weak to, prefer: that group; the round goes at READY, readyShot)
+    struggle: null,        // a minion (or the hunter) that reached the player with no energy, waiting on the Struggle dial: { minion, zone: { from, to }, lapMs, count, phase: 'ready' | 'run' } (gun.js struggleDial)
   },
 };

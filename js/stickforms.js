@@ -12,13 +12,13 @@
 //
 // The calm rule (Timothy): everything moves slowly and nothing flashes. The
 // tell eases into its pose and back out, a hit is a soft brightening and
-// one small push, a lost limb's bones are gone, and a killed one's lines
+// one small push, and a killed one's lines
 // fade. With reduced motion everything holds still (the tell pose is shown
 // still, so the warning isn't lost).
 //
 // isoview.js calls drawStickForm() for a minion it has made out, stickBox()
 // for its brackets, taps and wall cuts, and dyingSticks() for killed ones
-// still fading. mapview.js calls hurtStick() / loseStickLimb() /
+// still fading. mapview.js calls hurtStick() /
 // killStick() from their drawEvents cases. Those moments are view-only and
 // kept here, not in state. Reads state and never changes it.
 //
@@ -41,7 +41,8 @@ import {
 const HIT_PUSH = 0.08;       // a hit's one small push, away from the player
 const HIT_BRIGHTEN = 0.15;   // how much brighter a hit makes its lines
 const REST_LEVEL = 0.85;     // its lines' strength at rest
-const WEAK_PULSE = 0.25;     // how much the weak point limb brightens while a landed shot waits
+const WEAK_PULSE = 0.25;     // how much the maim point limb brightens while a landed shot waits
+const MAIM_LIMB = 0;         // the limb that brightens: where a maim takes it down
 const WEAK_PULSE_MS = 750;   // that brightening's slow cycle
 const SHADOW_SIZE = [1.3, 0.5]; // its shadow's ellipse, as multiples of the pose's shadow half-width
 const SHADOW_LEVEL = 0.85;   // the shadow's darkness, unless the pose says otherwise
@@ -56,12 +57,11 @@ const WOUND_AWAY = -0.5;              // where the third points, away from the p
 const HEAD_REACH = [0.9, 0.25];       // a hit's three head tendrils: this long, plus up to this much more
 const HEAD_FAN = 0.45;                // how far apart they spread from the head's top
 const HEAD_GAP = 0.9;                 // how far the head opens where they come out, in radians each way
-const LIMB_REACH = 1.1;               // the tendril where a lost limb was
 const DEATH_REACH = [1.0, 0.4];       // a kill's six tendrils: this long, plus up to this much more
 const DEATH_TENDRILS = 6;
 const DEATH_FAN = 0.7;                // how far apart they spread, all round its top
 const STAGGER_MS = { wound: 160, head: 200 }; // each of a hit's tendrils starts this much after the last
-const PULL = { reach: 0.3, head: 0.15, limb: 0.4, unravel: 0.5, tell: 0.8 }; // how hard tendrils lean toward the player (more in its tell)
+const PULL = { reach: 0.3, head: 0.15, unravel: 0.5, tell: 0.8 }; // how hard tendrils lean toward the player (more in its tell)
 const UNRAVEL_SPACING = 0.058;        // letters along a line as it unravels, in tile widths
 const UNRAVEL_LONGER = 2.5;           // peeled off, the line's tendril is this many times its letters
 const UNRAVEL_AWAY = 0.8;             // a peeled line leaves this far off its own direction (sides alternate)
@@ -77,7 +77,7 @@ const MIN_LETTER_PX = 6;              // the smallest a letter is drawn
 // (or only its upper half with `lift`, a step that lifts and sets down).
 // `bones` join two joints; `heads` are [joint, radius]; `core` is the two
 // joints whose middle hit tendrils will grow from (step C); `limbs` are the
-// two the weak point takes, each its bones (indexes into `bones`), the
+// two arms or legs (the first brightens as the maim point), each its bones (indexes into `bones`), the
 // joint it grows from and the angle its tendril leaves at (step C);
 // `shadow` is the half-width of its shadow.
 export const STICK_POSES = {
@@ -257,8 +257,6 @@ export const DOWNED_POSE = {
   handF: [-0.62, 0.08], handB: [-0.52, -0.08],
   heads: [['head', 0.12]],
   core: ['hip', 'sh'],
-  // Lost limbs keep their tendrils, from the shoulder (it crawls on both arms).
-  limbs: [{ root: 'sh', angle: 2.6 }, { root: 'sh', angle: 2.0 }],
 };
 // Where each downed joint starts its fall: the first of these the pose has
 // (a twin falls from its first body), else the hip.
@@ -288,7 +286,7 @@ const POSE_BOXES = Object.fromEntries(STICK_POSE_IDS.map(id => [id, reachOf(STIC
 const DOWNED_BOX = downedReach();
 
 // Each minion's view-only moments: minion -> { seed, pose, style, hitAt,
-// hits, limbsLost, deadAt, tellOn, tellFrom, tellAt, face, faceFrom, faceAt }.
+// hits, deadAt, tellOn, tellFrom, tellAt, face, faceFrom, faceAt }.
 const moments = new WeakMap();
 let seedCount = 0;
 // Killed minions still fading: [{ minion, floor }].
@@ -310,10 +308,10 @@ let dropCount = 0;
 // man height in pixels, its line width, the player's place on screen (the
 // pose leans toward it, tendrils reach for it), the frame time, reduced
 // motion, line(path, level) to stroke a path in the enemies' light at
-// strength `level`, and whether a landed shot on it waits for the damage
-// bar (the weak point limb brightens), and centre(row, col), a tile's
+// strength `level`, and whether a landed shot on it waits for the dial
+// (its maim point limb brightens), and centre(row, col), a tile's
 // middle on the canvas (a downed one's crawl reaches across tiles). A
-// downed one is drawn by drawDowned. Returns the weak point's place as
+// downed one is drawn by drawDowned. Returns the maim point's place as
 // [x, y], or null.
 export function drawStickForm(ctx, minion, x, y, view) {
   const fx = momentsOf(minion);
@@ -357,17 +355,15 @@ function drawUpright(ctx, minion, x, y, view, fade = 1, bodyOnly = false) {
   ctx.fill();
   ctx.restore();
 
-  // The bones, grouped by strength so each group is one stroke. A lost
-  // limb's bones are gone (unravelled into letters in that style); the
-  // weak point limb brightens slowly while a landed shot waits on it; a
-  // line fades as it unravels.
+  // The bones, grouped by strength so each group is one stroke. The maim
+  // point limb brightens slowly while a landed shot waits on it; a line
+  // fades as it unravels.
   const level = fade * (1 - dying) * (REST_LEVEL + HIT_BRIGHTEN * hitK);
-  const weak = view.aiming ? weakLimb(minion) : -1;
+  const weak = view.aiming ? MAIM_LIMB : -1;
   const pulse = still ? 0.5 : 0.5 + 0.5 * Math.sin(now / WEAK_PULSE_MS);
   const groups = new Map();
   pose.bones.forEach((bone, i) => {
     const limb = pose.limbs.findIndex(l => l.bones.includes(i));
-    if (limb >= 0 && !hasLimb(minion, limb) && !unravel) return;
     let a = level * (limb >= 0 && limb === weak ? 1 + WEAK_PULSE * pulse : 1);
     if (unravel) a *= 1 - ease(unravel[i] * 3);
     a = Math.round(Math.min(1, a) * 100) / 100;
@@ -403,7 +399,6 @@ function drawUpright(ctx, minion, x, y, view, fade = 1, bodyOnly = false) {
     drawUnravel(ctx, pose, J, unravel, fx, m);
   } else {
     drawHitTendrils(ctx, style === 'wound' ? coreOf(pose, J) : head.at, style, fx, m, head.angle);
-    drawLimbTendrils(ctx, pose, J, fx, m);
     drawDeathTendrils(ctx, style === 'wound' ? coreOf(pose, J) : head.at, fx, m);
   }
   ctx.restore();
@@ -513,7 +508,6 @@ function drawDowned(ctx, minion, x, y, view) {
     drawFinish(ctx, J, fx, h, dying, still);
   } else {
     drawHitTendrils(ctx, style === 'head' ? head.at : core, style === 'head' ? 'head' : 'wound', fx, m, head.angle);
-    drawLimbTendrils(ctx, DOWNED_POSE, J, fx, m);
     drawDeathTendrils(ctx, style === 'head' ? head.at : core, fx, m);
   }
   ctx.restore();
@@ -641,21 +635,14 @@ export function stickBox(minion, x, y, height) {
   return [x - half * h, y + (top - BOX_MARGIN) * h, x + half * h, y];
 }
 
-// Notes that `minion` was hurt for `damage`: a soft brightening, one small
-// push, and a hit's tendrils. A hit that does damage leaves one of them
-// out for good (Timothy's call: from the first damaging hit on); a graze
-// (0 damage) pulls them all back.
-export function hurtStick(minion, damage) {
+// Notes that a shot reached `minion`: a soft brightening, one small push,
+// and a hit's tendrils. A hit (`stays`: the kill or maim zone, or its
+// guard) leaves one of them out for good (Timothy's call: from the first
+// hit on); a miss pulls them all back.
+export function hurtStick(minion, stays) {
   const fx = momentsOf(minion);
   fx.hitAt = performance.now();
-  fx.hits.push({ at: fx.hitAt, stays: damage > 0 });
-}
-
-// Notes that `minion` just lost a limb (its limbs field has already gone
-// down: limb 0 goes first). Its bones are gone, and a tendril grows where
-// it was and stays (in the unravel style, the limb itself unravels).
-export function loseStickLimb(minion) {
-  momentsOf(minion).limbsLost.push({ at: performance.now(), limb: minion.limbs === 1 ? 0 : 1 });
+  fx.hits.push({ at: fx.hitAt, stays });
 }
 
 // Notes that `minion` was killed. The rules have taken it off the floor,
@@ -732,7 +719,7 @@ function momentsOf(minion) {
       seed: (n * 37.3) % 100,
       pose: STICK_POSE_IDS[Math.floor(hash(n) * STICK_POSE_IDS.length)],
       style: TENDRIL_STYLES[Math.floor(hash(n * 7.3 + 11) * TENDRIL_STYLES.length)],
-      hitAt: -1e9, hits: [], limbsLost: [], deadAt: null,
+      hitAt: -1e9, hits: [], deadAt: null,
       tellOn: false, tellFrom: 0, tellAt: -1e9,
       face: null, faceFrom: 0, faceAt: -1e9,
       downAt: null,   // when it started to fall (fallStick); null while it stands
@@ -801,16 +788,6 @@ function drawHitTendrils(ctx, from, style, fx, m, up) {
   });
 }
 
-// Draws a tendril from where each lost limb grew. It grows and stays.
-function drawLimbTendrils(ctx, pose, J, fx, m) {
-  fx.limbsLost.forEach(lost => {
-    const limb = pose.limbs[lost.limb];
-    const from = J[limb.root];
-    const out = reach(m, lost.at, true) * (1 - m.dying);
-    drawTendril(ctx, from, mirror(limb.angle, m.side), LIMB_REACH, out, fx.seed * 100 + 70 + lost.limb, m, angleTo(from, m.toward), PULL.limb);
-  });
-}
-
 // A kill's six tendrils from `from`, all round its top: they grow, go limp
 // and fade with the lines.
 function drawDeathTendrils(ctx, from, fx, m) {
@@ -827,19 +804,13 @@ function drawDeathTendrils(ctx, from, fx, m) {
 
 // How far each of the pose's bones is unravelled (0..1), by bone. Each
 // hit unravels the next of its body's bones (not its limbs) in turn; a
-// lost limb's bones unravel and stay; a kill unravels everything.
+// kill unravels everything.
 function unravelled(fx, pose, minion, m) {
   const u = pose.bones.map(() => 0);
   const body = pose.bones.map((bone, i) => i).filter(i => !pose.limbs.some(l => l.bones.includes(i)));
   fx.hits.forEach((hit, k) => {
     const i = body[k % body.length];
     u[i] = Math.max(u[i], reach(m, hit.at, hit.stays));
-  });
-  pose.limbs.forEach((limb, l) => {
-    if (hasLimb(minion, l)) return;
-    const lost = fx.limbsLost.find(x => x.limb === l);
-    const k = lost ? reach(m, lost.at, true) : 1;
-    limb.bones.forEach(i => { u[i] = Math.max(u[i], k); });
   });
   if (m.dying) u.forEach((k, i) => { u[i] = Math.max(k, ease(m.dying * 2.2)); });
   return u;
@@ -1091,16 +1062,6 @@ function reachOf(pose) {
 // How big a minion of its kind stands, as a share of the player's height.
 function sizeOf(minion) {
   return (MINION_KINDS[minion.minionKind] || {}).size || 1;
-}
-
-// Whether `minion` still has limb `i`: the weak point takes limb 0 first, then limb 1.
-function hasLimb(minion, i) {
-  return minion.limbs === 2 || (minion.limbs === 1 && i === 1);
-}
-
-// The limb a weak point hit would take next, or -1 with none left.
-function weakLimb(minion) {
-  return minion.limbs === 2 ? 0 : minion.limbs === 1 ? 1 : -1;
 }
 
 // From `from` toward `to`, `age` ms into an ease of `ms`.
