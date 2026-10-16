@@ -2,15 +2,17 @@
 // (the one question panel from questionview.js, moved here) on the ask
 // screen, which takes the map's and the controls' place, like the battle
 // screen (a relay's question shows there too); and the dial (kill or
-// maim plan; the Struggle's too), for now laid flat as a strip on the
-// map's bottom edge, so the minion stays in view: READY first, then one
-// lap is one sweep across. One shows at a time. main.js opens them and
-// passes in the actions they call (pickReload, cancelReload, readyBar,
-// backBar, stopBar, stopStruggle), like exchangeview.js. What a reload
-// offers is gun.js reloadOffers(); what a stopped dial does is gun.js
-// settleShot() (or settleStruggle()); this only draws and listens.
+// maim plan step B; the Struggle's too), a veil over the map that fades in
+// with READY in its middle, then the circle (drawn by dialview.js), and
+// after a stop holds the result and fades out. One shows at a time.
+// main.js opens them and passes in the actions they call (pickReload,
+// cancelReload, readyBar, backBar, stopBar, stopStruggle), like
+// exchangeview.js. What a reload offers is gun.js reloadOffers(); what a
+// stopped dial does is gun.js settleShot() (or settleStruggle()); this
+// only draws and listens.
 
-import { TIMER_SECONDS, DIAL_REDUCED_SCALE } from './config.js';
+import { TIMER_SECONDS, DIAL_FADE_IN_MS, DIAL_FADE_OUT_MS, DIAL_RESULT_MS } from './config.js';
+import { initDialView, sizeDial, startDial, stopDial, dialRunning, showDialResult, clearDial } from './dialview.js';
 import { maxWager } from './modifiers.js';
 import { escapeHtml } from './quiz.js';
 import { mountQuestionPanel } from './questionview.js';
@@ -18,20 +20,18 @@ import { t } from './text.js';
 
 const els = {};
 let actions = {};
-// The dial's marker while it runs: { start, period, laps, x, frame }
-// (laps: how many before it stops by itself, 0 for no limit). View-only,
-// like the map's animation clocks, so not in state.
-let sweep = null;
-// What the bar is for while it shows: 'aim' (a shot's dial) or 'struggle'.
+// What the dial is for while it shows: 'aim' (a shot's dial) or 'struggle'.
 let barMode = null;
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+// The fade-out's timers (view-only, like the dial's clock).
+let fadeTimers = [];
 
 // Looks up the panels and hooks up their buttons and keys: 1-3 pick a
 // reload, Escape cancels it; Space or F starts the dial at READY and stops
-// it once it runs, as does the SELECT button (main.js, via pressBar);
-// Escape before READY puts the gun down (backBar). A tap on the running
-// dial does nothing: a finger landing somewhere new each time stopped it
-// unevenly and hid the marker. Call once, from main.js.
+// it once it runs, as does the SELECT button (main.js, via pressBar), and
+// a tap on READY starts it; Escape or BACK before READY puts the gun down
+// (backBar). A tap on the running dial does nothing: a finger landing
+// somewhere new each time stopped it unevenly and hid the marker. Call
+// once, from main.js.
 export function initGunPanels({ pickReload, cancelReload, readyBar, backBar, stopBar, stopStruggle }) {
   actions = { pickReload, cancelReload, readyBar, backBar, stopBar, stopStruggle };
   els.reload = document.getElementById('reloadPanel');
@@ -44,20 +44,25 @@ export function initGunPanels({ pickReload, cancelReload, readyBar, backBar, sto
   els.question = document.getElementById('askQuestionPanel');
   els.questionSlot = document.getElementById('askQuestionSlot');
   els.aim = document.getElementById('aimPanel');
-  els.bar = document.getElementById('damageBar');
-  els.hit = document.getElementById('damageHit');
-  els.marker = document.getElementById('damageMarker');
+  els.stage = document.getElementById('dialStage');
+  els.canvas = document.getElementById('dialCanvas');
+  els.buttons = document.getElementById('dialButtons');
+  els.ready = document.getElementById('dialReady');
+  els.back = document.getElementById('dialBack');
   els.prompt = document.getElementById('aimPrompt');
   els.legend = document.getElementById('damageLegend');
+  initDialView(els.canvas);
 
-  els.bar.setAttribute('aria-label', t('gun.dial.label'));
+  els.ready.addEventListener('click', () => pressBar());
+  els.back.addEventListener('click', () => actions.backBar());
+  addEventListener('resize', () => { if (!els.aim.hidden || els.aim.classList.contains('fading')) fitDial(); });
   els.reloadCancel.addEventListener('click', () => actions.cancelReload());
   document.addEventListener('keydown', (e) => {
     const shown = mapPanelShown();
     if ((shown === 'aim' || shown === 'struggle') && (e.key === ' ' || e.key === 'f' || e.key === 'F')) {
       e.preventDefault();
       pressBar();
-    } else if (shown === 'aim' && !sweep && e.key === 'Escape') {
+    } else if (shown === 'aim' && !dialRunning() && e.key === 'Escape') {
       e.preventDefault();
       actions.backBar();
     } else if (shown === 'reload' && e.key === 'Escape') {
@@ -71,8 +76,9 @@ export function initGunPanels({ pickReload, cancelReload, readyBar, backBar, sto
 }
 
 // Which panel shows: 'reload' or 'question' (on the ask screen), 'aim'
-// (a shot's dial over the map), 'struggle' (the same bar as the
-// Struggle dial), or null.
+// (a shot's dial over the map), 'struggle' (the same veil as the
+// Struggle dial), or null. A dial fading out after its stop no longer
+// counts: the player can move on.
 export function mapPanelShown() {
   if (!els.reload) return null;
   if (!els.reload.hidden) return 'reload';
@@ -127,26 +133,18 @@ export function showQuestionScreen(answers, kind) {
 }
 
 // Opens the dial for the landed shot waiting in state.battle.aim, at
-// READY (kill or maim plan): nothing of the dial shows yet, so the player
-// can settle but not study it. A shot in the dark (gun.js fireDark) says
-// which way it is harder.
+// READY (kill or maim plan): the veil fades in with READY and BACK in its
+// middle and nothing of the dial, so the player can settle but not study
+// it. A shot in the dark (gun.js fireDark) says which way it is harder.
 export function showDamageBar(aim) {
   openReady('aim', aim.dark ? t('gun.dial.dark.' + aim.dark) + ' · ' + t('gun.dial.ready') : t('gun.dial.ready'));
 }
 
-// READY was pressed (gun.js readyShot): the dial's zones show, each marked
-// with what it does, a key for the kinds on it, and the marker starts,
-// one lap of `aim.lapMs` a sweep across (DIAL_REDUCED_SCALE times as long
-// under reduced motion). At its lap limit it stops by itself.
+// READY was pressed (gun.js readyShot): the circle shows with its zones,
+// each marked with what it does, a key for the kinds on it, and the marker
+// already going round (the kind's traits with it, dialview.js). At its lap
+// limit it stops by itself.
 export function runDamageBar(aim) {
-  aim.zones.forEach(zone => {
-    const el = document.createElement('div');
-    el.className = 'damage-zone damage-' + zone.tier + ' rolled';
-    el.style.left = zone.from * 100 + '%';
-    el.style.width = (zone.to - zone.from) * 100 + '%';
-    el.textContent = t('gun.dial.zone.' + (zone.harm || zone.tier));
-    els.bar.insertBefore(el, els.marker);
-  });
   const m = aim.target;
   const hits = m && m.guard ? ['guard'] : m && m.downed ? ['finish'] : ['kill', 'maim'];
   const harms = ['jam', 'loud', 'lunge'].filter(harm => aim.zones.some(z => z.harm === harm));
@@ -158,15 +156,10 @@ export function runDamageBar(aim) {
   });
   els.legend.hidden = false;
   els.prompt.textContent = aim.dark ? t('gun.dial.dark.' + aim.dark) : t('gun.dial.prompt');
-  startBar('aim', aim.lapMs, aim.lapLimit);
+  runDial({ zones: aim.zones, lapMs: aim.lapMs, lapLimit: aim.lapLimit, traits: aim.traits, darkArc: aim.darkArc, guard: !!(m && m.guard) });
 }
 
-// Takes the last dial's zones off the bar.
-function clearZones() {
-  els.bar.querySelectorAll('.rolled').forEach(el => el.remove());
-}
-
-// Opens the Struggle dial on the same bar at READY (no BACK: it already
+// Opens the Struggle dial on the same veil at READY (no BACK: it already
 // has the player). `count` above 1 shows in the prompt, so the player
 // sees why this one is harder. A minion has reached the player with no
 // energy left (gun.js struggleDial).
@@ -175,75 +168,95 @@ export function showStruggleBar({ count }) {
 }
 
 // READY on the Struggle dial (gun.js readyStruggle): its one zone shows
-// and the marker starts, one lap of `lapMs` a sweep across.
+// and the marker starts, one lap in `lapMs`.
 export function runStruggleBar({ zone, lapMs, count }) {
-  els.hit.hidden = false;
-  els.hit.style.left = zone.from * 100 + '%';
-  els.hit.style.width = (zone.to - zone.from) * 100 + '%';
   els.prompt.textContent = count > 1 ? t('gun.struggle.promptAgain', { count }) : t('gun.struggle.prompt');
-  startBar('struggle', lapMs, 0);
+  runDial({ zones: [zone], lapMs, lapLimit: 0, struggle: true });
 }
 
-// Shows the bar for `mode` at READY: empty, no marker, `prompt` over it.
+// Shows the veil for `mode` at READY, fading in: READY (and BACK for a
+// shot) in its middle, `prompt` over it.
 function openReady(mode, prompt) {
-  clearZones();
-  els.hit.hidden = true;
+  endFade();
+  clearDial();
   els.legend.hidden = true;
-  els.marker.hidden = true;
+  els.canvas.hidden = true;
+  els.buttons.hidden = false;
+  els.back.hidden = mode === 'struggle';
   els.prompt.textContent = prompt;
   barMode = mode;
-  els.bar.setAttribute('aria-label', t(mode === 'struggle' ? 'gun.struggle.label' : 'gun.dial.label'));
+  els.canvas.setAttribute('aria-label', t(mode === 'struggle' ? 'gun.struggle.label' : 'gun.dial.label'));
   els.aim.classList.toggle('struggle', mode === 'struggle');
-  cancelAnimationFrame(sweep && sweep.frame);
-  sweep = null;
+  els.aim.classList.remove('on');
+  els.aim.style.setProperty('--dial-fade', DIAL_FADE_IN_MS + 'ms');
   showOnly(els.aim);
+  void els.aim.offsetWidth;
+  els.aim.classList.add('on');
+  els.ready.focus();
 }
 
-// Starts the marker on the bar already showing for `mode`: one end to the
-// other every `lapMs` (DIAL_REDUCED_SCALE times as long under reduced
-// motion), stopping by itself after `laps` sweeps (0: never).
-function startBar(mode, lapMs, laps) {
-  const period = lapMs * (reducedMotion.matches ? DIAL_REDUCED_SCALE : 1);
-  els.marker.hidden = false;
-  cancelAnimationFrame(sweep && sweep.frame);
-  sweep = { start: performance.now(), period, laps, x: 0, frame: 0 };
-  moveMarker(sweep.start);
+// Swaps READY for the circle and starts its marker.
+function runDial(spec) {
+  els.buttons.hidden = true;
+  els.canvas.hidden = false;
+  fitDial();
+  startDial(spec, stopSweep);
 }
 
-// One frame of the sweep: there and back, at an even speed, so the
-// player can learn its timing. Past its lap limit it fires where it is.
-function moveMarker(now) {
-  if (!sweep) return;
-  const u = (now - sweep.start) / sweep.period;
-  if (sweep.laps && u >= sweep.laps) { stopSweep(); return; }
-  const v = u % 2;
-  sweep.x = v < 1 ? v : 2 - v;
-  els.marker.style.left = sweep.x * 100 + '%';
-  sweep.frame = requestAnimationFrame(moveMarker);
+// Sizes the circle to the room the veil leaves it.
+function fitDial() {
+  sizeDial(els.stage.clientWidth, els.stage.clientHeight);
 }
 
-// SELECT, Space or F on the dial: at READY it starts it (main.js readyBar
-// runs the rule, then runDamageBar or runStruggleBar); running, it stops it.
+// SELECT, Space, F or a tap on READY: at READY it starts the dial (main.js
+// readyBar runs the rule, then runDamageBar or runStruggleBar); running,
+// it stops it.
 export function pressBar() {
-  if (sweep) stopSweep();
-  else actions.readyBar(barMode);
+  if (dialRunning()) stopSweep();
+  else if (!els.buttons.hidden) actions.readyBar(barMode);
 }
 
-// The player stopped the dial: the marker holds where it stopped, and the
-// position (0 to 1) goes to stopBar, or to stopStruggle for the Struggle
-// dial. Only once per dial.
+// The dial stopped (the player, or its lap limit): the position in the
+// zones' frame (0 to 1) goes to stopBar, or to stopStruggle for the
+// Struggle dial. Only once per dial.
 function stopSweep() {
-  if (!sweep) return;
-  cancelAnimationFrame(sweep.frame);
-  const x = sweep.x;
-  sweep = null;
-  if (barMode === 'struggle') actions.stopStruggle(x);
-  else actions.stopBar(x);
+  const position = stopDial();
+  if (position === null) return;
+  if (barMode === 'struggle') actions.stopStruggle(position);
+  else actions.stopBar(position);
 }
 
-// Hides every panel and stops the dial.
+// After a stop: the dial is done for the game at once (mapPanelShown says
+// null, input is free), but the veil stays, with `word` (what the shot
+// did) in the circle's middle, for DIAL_RESULT_MS, then fades out over
+// DIAL_FADE_OUT_MS. With no word (BACK) it fades out straight away.
+export function fadeDial(word) {
+  if (els.aim.hidden) return;
+  endFade();
+  showDialResult(word);
+  els.aim.classList.add('fading');
+  showOnly(null);
+  const hold = word ? DIAL_RESULT_MS : 0;
+  els.aim.style.setProperty('--dial-fade', DIAL_FADE_OUT_MS + 'ms');
+  fadeTimers = [
+    setTimeout(() => els.aim.classList.remove('on'), hold),
+    setTimeout(endFade, hold + DIAL_FADE_OUT_MS),
+  ];
+}
+
+// Ends a fade-out at once: the veil goes and the dial is cleared.
+function endFade() {
+  fadeTimers.forEach(clearTimeout);
+  fadeTimers = [];
+  if (!els.aim.classList.contains('fading')) return;
+  els.aim.classList.remove('fading', 'on');
+  clearDial();
+}
+
+// Hides every panel and stops the dial at once.
 export function closeMapPanels() {
-  if (sweep) cancelAnimationFrame(sweep.frame);
-  sweep = null;
+  endFade();
+  clearDial();
+  els.aim.classList.remove('on');
   showOnly(null);
 }

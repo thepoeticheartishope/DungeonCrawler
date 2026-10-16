@@ -598,11 +598,28 @@ export const TEXT = {
   'gun.reload.room': 'room for {room}', // draft. When less energy fits under the most you can hold than the offer gives
   'gun.reload.cancel': 'CANCEL', // draft
   // The dial (kill or maim plan): READY first, then the marker runs; zones K / M and harmful ones.
-  'gun.dial.ready': 'READY · PRESS SELECT', // draft. Before the dial starts: nothing of it shows yet
+  'gun.dial.ready': 'SELECT WHEN READY', // draft. Over the veil before the dial starts: nothing of it shows yet
+  'gun.dial.readyButton': 'READY', // draft. The button in the middle of the veil; it starts the dial
+  'gun.dial.back': 'BACK', // draft. Under READY: puts the gun down, nothing spent
+  'gun.dial.stop': 'STOP', // draft. In the middle of a running dial with no lap limit
+  'gun.dial.lap': 'LAP {lap}/{of}', // draft. In the middle of a running dial with a lap limit (depth 3)
+  'gun.dial.darkArc': 'dark', // draft. Under the dark arc (a dark shot or a low battery)
+  'gun.dial.guardRing': 'GUARD · ', // draft. Repeated round the inside of a guarded one's dial
+  'gun.dial.result.kill': 'KILL', // draft. In the dial's middle after the stop, while it fades
+  'gun.dial.result.down': 'DOWN', // draft. A maim dropped it
+  'gun.dial.result.finished': 'FINISHED', // draft. A downed one finished
+  'gun.dial.result.guard': 'GUARD BROKEN', // draft
+  'gun.dial.result.hit': 'HIT', // draft. A maim with DEV -> Downed off: it only reels
+  'gun.dial.result.miss': 'MISS', // draft
+  'gun.dial.result.jam': 'JAMMED', // draft
+  'gun.dial.result.loud': 'LOUD', // draft
+  'gun.dial.result.lunge': 'LUNGE', // draft
+  'gun.dial.result.shoved': 'SHOVED', // draft. The Struggle dial stopped in its zone
+  'gun.dial.result.lost': 'LOST', // draft. The Struggle dial missed
   'gun.dial.prompt': 'PRESS SELECT', // draft. While the dial runs
   'gun.dial.dark.fast': 'DARK SHOT · FASTER', // draft. A shot in the dark whose dial goes round faster (light battery plan)
   'gun.dial.dark.x': 'DARK SHOT · ONE MORE HARMFUL ZONE', // draft. A shot in the dark with one more harmful zone
-  'gun.dial.label': 'Dial. Press SELECT, Space or F to start it, then again to fire. Escape puts the gun down before it starts.', // draft. Read out by screen readers
+  'gun.dial.label': 'Dial. Press SELECT, Space, F or READY to start it, then SELECT, Space or F to fire. Escape or BACK puts the gun down before it starts.', // draft. Read out by screen readers
   'gun.dial.zone.kill': 'K', // draft. Marked on the kill zone
   'gun.dial.zone.maim': 'M', // draft. Marked on the maim zone
   'gun.dial.zone.jam': 'X', // draft. Marked on a jam zone
@@ -656,8 +673,8 @@ export const TEXT = {
   'plan.observatory.plateStore': 'Plate store', // draft
   'plan.observatory.clockRoom': 'Clock room', // draft
   'plan.observatory.boilerRoom': 'Boiler room', // draft
-  'gun.struggle.ready': 'STRUGGLE · READY · PRESS SELECT', // draft. Before the Struggle dial starts (no energy, a minion reached the player)
-  'gun.struggle.readyAgain': 'STRUGGLE {count} · READY · PRESS SELECT', // draft. The same, for a later Struggle on this floor (faster, smaller zone)
+  'gun.struggle.ready': 'STRUGGLE · SELECT WHEN READY', // draft. Before the Struggle dial starts (no energy, a minion reached the player)
+  'gun.struggle.readyAgain': 'STRUGGLE {count} · SELECT WHEN READY', // draft. The same, for a later Struggle on this floor (faster, smaller zone)
   'gun.struggle.prompt': 'STRUGGLE: PRESS SELECT', // draft. While the Struggle dial runs
   'gun.struggle.promptAgain': 'STRUGGLE {count}: PRESS SELECT', // draft. The same, for a later Struggle on this floor
   'gun.struggle.label': 'Struggle dial. Press SELECT, Space or F to start it, then again in its zone to push it back.', // draft. Read out by screen readers
