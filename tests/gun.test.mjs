@@ -249,6 +249,25 @@ test('a landed shot waits on a dial sized by the kind, with its traits, and the 
   assert.equal(aim.darkArc, false);
 });
 
+test('in the tutorial room the dial is plain: no kind traits, no harmful zones, the first depth\'s speed', () => {
+  resetFloor();
+  state.run.roomIndex = DIAL_DEPTHS.length - 1;
+  state.floor.tutorial = { stage: 'fight' };
+  try {
+    const m = minionAt(-1, 0, 'HUSK');
+    withRandom(0.5, () => fire(m));
+    const aim = state.battle.aim;
+    assert.deepEqual(aim.traits, { spin: 'still', turnBack: false, surge: false });
+    assert.deepEqual(aim.zones.map(z => z.tier).sort(), ['kill', 'maim']);
+    assert.equal(aim.lapMs, DIAL_LAP_MS[DIAL_DEPTHS[0].speed]);
+    assert.equal(aim.lapLimit, DIAL_DEPTHS[0].lapLimit);
+    assert.equal(aim.darkArc, false);
+  } finally {
+    state.floor.tutorial = null;
+    state.run.roomIndex = 0;
+  }
+});
+
 test('dial zones: one kill, one maim and the depth\'s harmful ones, never touching, inside the circle, at new spots each shot', () => {
   resetFloor();
   const layouts = new Set();

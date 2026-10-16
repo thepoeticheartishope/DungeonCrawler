@@ -620,6 +620,7 @@ export const TEXT = {
   'gun.dial.result.lost': 'LOST', // draft. The Struggle dial missed
   'gun.dial.prompt': 'PRESS SELECT', // draft. While the dial runs
   'gun.dial.dark.fast': 'DARK SHOT · FASTER', // draft. A shot in the dark whose dial goes round faster (light battery plan)
+  'gun.dial.dark.plain': 'DARK SHOT', // draft. A shot in the dark in the tutorial room, no harder than a lit one
   'gun.dial.dark.x': 'DARK SHOT · ONE MORE HARMFUL ZONE', // draft. A shot in the dark with one more harmful zone
   'gun.dial.label': 'Dial. Press SELECT, Space, F or READY to start it, then SELECT, Space or F to fire. Escape or BACK puts the gun down before it starts.', // draft. Read out by screen readers
   'gun.dial.zone.kill': 'K', // draft. Marked on the kill zone

@@ -296,6 +296,25 @@ test('a dark shot with nothing there still costs 1 energy at READY and opens the
   assert.equal(fireBlock(null), 'noEnergy');
 });
 
+test('a dark shot in the tutorial room is no harder: plain dial, no dark arc', () => {
+  darkWithGun();
+  state.floor.tutorial = { stage: 'fight' };
+  try {
+    for (const r of [0.1, 0.9]) {
+      state.battle.aim = null;
+      withRandom(r, () => fire(null));
+      const aim = state.battle.aim;
+      assert.equal(aim.dark, 'plain');
+      assert.deepEqual(aim.traits, { spin: 'still', turnBack: false, surge: false });
+      assert.deepEqual(aim.zones.map(z => z.tier).sort(), ['kill', 'maim']);
+      assert.equal(aim.lapMs, DIAL_LAP_MS[DIAL_DEPTHS[0].speed]);
+      assert.equal(aim.darkArc, false);
+    }
+  } finally {
+    state.floor.tutorial = null;
+  }
+});
+
 test('the dark dial is one step harder: one more harmful zone, or faster (never past the limit)', () => {
   darkWithGun();
   const depth = DIAL_DEPTHS[0];
