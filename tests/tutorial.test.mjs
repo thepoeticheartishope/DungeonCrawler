@@ -17,12 +17,12 @@ import {
   TUTORIAL_SPOT_TURNS, TUTORIAL_SPOT_NEAR, TUTORIAL_MINION_KIND, ENERGY_MAX,
 } from '../js/config.js';
 import { buildTutorialFloor } from '../js/floor.js';
-import { TUTORIAL_ROOM, parseTutorialRoom, tutorialTurn, settleName, breakRing } from '../js/tutorial.js';
+import { TUTORIAL_ROOM, parseTutorialRoom, tutorialTurn, tutorialDial, settleName, breakRing } from '../js/tutorial.js';
 import { stepPlayer } from '../js/moves.js';
 import { whatBlocks } from '../js/passage.js';
 import { lightOn, tickLight, toggleLight } from '../js/battery.js';
 import { advanceMonsters } from '../js/combat.js';
-import { fire, readyShot, settleShot } from '../js/gun.js';
+import { fire, readyShot, cancelShot, settleShot } from '../js/gun.js';
 
 function resetRun() {
   state.settings.fogEnabled = true;
@@ -250,4 +250,34 @@ test('a maim drops the stick man; the kind voice says "Finish it."; a bump finis
   const finish = stepPlayer(-1, 0);
   assert.ok(finish.some(e => e.type === 'minionFinished'));
   assert.deepEqual(tutorialTurn(finish), [{ type: 'keyDropped', row: m.row, col: m.col }]);
+});
+
+test('the first shot\'s dial: the kind voice at READY and once it runs, once each, only in the fight', () => {
+  resetRun();
+  assert.deepEqual(tutorialDial([{ type: 'aimStarted' }]), [], 'not before the fight');
+  passTurns(TUTORIAL_SPOT_TURNS);
+  walkToSpot();
+  tutorialTurn([]);
+  settleName('Ada');
+  toggleLight();
+  breakRing();
+  advanceMonsters();
+  advanceMonsters();
+  const f = state.floor;
+  const m = f.minions[0];
+  m.row = f.playerRow - 1; m.col = f.playerCol;
+  f.facing = 'N'; f.look = null;
+  state.run.energy = 0;
+  tutorialTurn([]);
+  const energy = state.run.energy;
+
+  const opened = fire(m);
+  assert.deepEqual(tutorialDial(opened), [{ type: 'whispered', line: 'tut.breathe', tone: 'kind' }]);
+  assert.ok(cancelShot().length, 'BACK before READY');
+  assert.equal(state.run.energy, energy, 'BACK spends nothing');
+  assert.deepEqual(tutorialDial(fire(m)), [], 'said once');
+  const ready = readyShot();
+  assert.equal(state.run.energy, energy - 1, 'READY spends the round');
+  assert.deepEqual(tutorialDial(ready), [{ type: 'whispered', line: 'tut.dial', tone: 'kind' }]);
+  assert.deepEqual(tutorialDial(ready), [], 'said once');
 });

@@ -14,8 +14,10 @@
 //          teach without hand holding)
 //   fight  "Be ready." A slow stick man comes from the far side of the
 //          room, always for the player
-//          A shot drops it to 1 HP and it goes down (downed plan): the
-//          kind voice says "Finish it.", and a bump finishes it
+//          The first shot's dial (kill or maim plan step C): at READY
+//          "Breathe. Then READY.", once it runs "Stop on K to kill. M
+//          drops it." It has no guard, so a maim drops it (downed plan):
+//          the kind voice says "Finish it.", and a bump finishes it
 //   key    it falls and leaves a key
 //   open   the key opens the door at the top; through it, the run begins
 // It shows the game's central mechanics, so when a core mechanic is added,
@@ -76,7 +78,7 @@ export function parseTutorialRoom(rows = TUTORIAL_ROOM) {
 
 // A fresh tutorial's own state, for state.floor.tutorial.
 export function freshTutorial(room) {
-  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, minion: null, minionAt: null };
+  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, minion: null, minionAt: null, toldReady: false, toldDial: false };
 }
 
 // The light that won't come on: off, locked and steady (battery.js: a
@@ -88,6 +90,26 @@ export function darkLight() {
 // Chebyshev steps from the player to (row, col).
 function stepsTo(p) {
   return Math.max(Math.abs(p.row - state.floor.playerRow), Math.abs(p.col - state.floor.playerCol));
+}
+
+// The fight's first shot (kill or maim plan step C): the kind voice talks
+// the player through the dial once, a line as it opens at READY and one
+// once it runs. `events` are fire()'s or readyShot()'s. Returns whispered
+// { line: 'tut.breathe', tone: 'kind' } on the first aimStarted,
+// whispered { line: 'tut.dial', tone: 'kind' } on the first shotReady,
+// else none (and none off the tutorial's fight).
+export function tutorialDial(events) {
+  const tut = state.floor.tutorial;
+  if (!tut || tut.stage !== 'fight') return [];
+  if (!tut.toldReady && events.some(e => e.type === 'aimStarted')) {
+    tut.toldReady = true;
+    return [{ type: 'whispered', line: 'tut.breathe', tone: 'kind' }];
+  }
+  if (!tut.toldDial && events.some(e => e.type === 'shotReady')) {
+    tut.toldDial = true;
+    return [{ type: 'whispered', line: 'tut.dial', tone: 'kind' }];
+  }
+  return [];
 }
 
 // Moves the tutorial on after a spent turn (`events` are the turn's).
