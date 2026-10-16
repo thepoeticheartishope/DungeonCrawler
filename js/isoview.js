@@ -15,7 +15,7 @@
 //
 // With DEV -> Combat on gun (state.settings.gunCombat) it also draws the
 // gun (gun plan step 4a): the stick man holds it (raised while a landed
-// shot waits for the damage bar), the tiles it reaches are lit faintly,
+// shot waits for the dial), the tiles it reaches are lit faintly,
 // corner brackets mark what can be shot, a
 // dashed laser runs to the target, and showShot() plays a shot or a MISS.
 // isoTileAt() turns a tap on the map back into a tile.
@@ -25,7 +25,7 @@
 // killed one keeps fading where it died until it is gone.
 
 import { state, key } from './state.js';
-import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, MINION_KINDS, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF, GAZE_MS, TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS } from './config.js';
+import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF, GAZE_MS, TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS } from './config.js';
 import { FACING_VECTORS, canShoot } from './sight.js';
 import { lookAngle, bodyAngle, wrapAngle } from './look.js';
 import { lightOn } from './battery.js';
@@ -142,7 +142,7 @@ const GUN_REACH = 0.22;          // the gun hand, out from the shoulder toward w
 const GUN_DROP = 0.16;           // and down from the shoulder
 const GUN_LENGTH = 0.3;          // grip to muzzle
 const GUN_GRIP = 0.09;           // the grip, hanging under the gun hand
-const GUN_RAISE = 0.08;          // how far the gun lifts while a landed shot waits for the damage bar
+const GUN_RAISE = 0.08;          // how far the gun lifts while a landed shot waits for the dial
 const GUN_KICK = 0.08;           // how far it kicks back on a shot
 const GUN_LINE = 1.2;            // its line, as a share of the stick man's
 const REACH_FILL = 0.15;         // a reached tile's fill strength
@@ -150,8 +150,8 @@ const BRACKET_ARM = 0.12;        // a corner bracket's arms, as a share of a til
 const BRACKET_HALF = 0.32;       // the narrowest a bracket box is, half its width as a share of a tile's
 const BRACKET_LEVEL = [0.4, 0.95]; // a shootable thing's brackets, then the target's
 const BRACKET_PULSE = 0.025;     // how far the target's brackets breathe out, as a share of a tile's width
-const BRACKET_TEXT_SIZE = 0.26;  // the target's hp over its brackets, as a share of a tile's width
-const BRACKET_HP_GAP = 0.1;      // the target's hp (# left, - lost) sits this far over its brackets, as a share of a tile's height
+const BRACKET_TEXT_SIZE = 0.26;  // the target's guard over its brackets, as a share of a tile's width
+const BRACKET_HP_GAP = 0.1;      // the target's guard sits this far over its brackets, as a share of a tile's height
 const LASER_LEVEL = [0.45, 0.8]; // the laser's strength, then while a landed shot waits
 const LASER_DASH = [0.06, 0.1];  // its dash and gap, in tile widths
 const SHOT_RISE = 0.3;           // where a shot ends above its tile, as a share of a tile's width
@@ -160,7 +160,7 @@ const MISS_PAST = 0.6;           // how far past the minion a missed shot goes, 
 const MISS_SIDE = 0.5;           // and how far to one side
 const MISS_TEXT_SIZE = 0.36;     // MISS's height, as a share of a tile's width
 const MISS_RISE = [1.15, 0.25];  // where MISS starts above its tile, then how far it floats up, in tile widths (slow: the calm rule)
-const WEAK_RING = 0.12;          // the ring on a stick enemy's weak point while a landed shot waits, its radius in tile widths
+const WEAK_RING = 0.12;          // the ring on a stick enemy's maim point while a landed shot waits, its radius in tile widths
 const WEAK_RING_LEVEL = 0.7;     // and its strength
 // Walls in front of the camera, cut away (Timothy chose this over see-through glass).
 const WALL_STUB = 0.22;          // a cut-away wall's stub, as a share of its height
@@ -1547,7 +1547,7 @@ function formOf(thing) {
 
 // Draws minion `m` as its stick man standing at `at` (its tile, or part
 // way through a slide), facing the player. While a landed shot on it
-// waits for the damage bar, its weak point gets a glowing ring. Stick men
+// waits for the dial, its maim point gets a glowing ring. Stick men
 // never stop moving, so frames go on (not under reduced motion).
 function drawForm(ctx, at, m) {
   const [x, y] = centre(at.row, at.col);
@@ -1694,7 +1694,7 @@ function drawTarget(ctx) {
 
 // Where the stick man's hands and gun go, from its shoulder: the gun hand
 // out toward where it looks (on screen), the other hand under it, the gun
-// raised while a landed shot waits for the damage bar (state.battle.aim)
+// raised while a landed shot waits for the dial (state.battle.aim)
 // and kicked back for a moment after a shot. `h` is the stick man's
 // height, `side` which way it looks across the screen, and (fr, fc) one
 // grid step where it looks.
@@ -1797,7 +1797,8 @@ function noteTapBoxes() {
 }
 
 // Corner brackets round everything the gun can shoot right now, faint,
-// and round the target, bright and slowly breathing, with its hp over it.
+// and round the target, bright and slowly breathing, with its guard over
+// it while it has one.
 // A shot that can be taken always lands, so there is no aim % to show.
 function drawBrackets(ctx) {
   const target = liveTarget();
@@ -1832,23 +1833,21 @@ function drawBrackets(ctx) {
       ctx.font = Math.round(tw * BRACKET_TEXT_SIZE) + 'px VT323, monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
-      const hp = hpPips(m);
-      if (hp) ctx.fillText(hp, (l + r) / 2, top - breathe - th * BRACKET_HP_GAP);
+      const mark = guardMark(m);
+      if (mark) ctx.fillText(mark, (l + r) / 2, top - breathe - th * BRACKET_HP_GAP);
     }
     ctx.restore();
   });
 }
 
-// A minion's hp as # left and - lost, as the HUD shows it. The hunter
-// has no hp, so it gets none ('').
-function hpPips(m) {
-  if (m.kind === 'hunter' || !MINION_KINDS[m.minionKind]) return '';
-  const hp = MINION_KINDS[m.minionKind].hp;
-  return '#'.repeat(m.hpLeft) + '-'.repeat(Math.max(hp - m.hpLeft, 0));
+// What shows over the target (kill or maim plan: no health): its guard,
+// as the HUD shows it, while it has one; else nothing ('').
+function guardMark(m) {
+  return m.guard ? t('stat.guard') : '';
 }
 
 // The dashed laser from the gun's muzzle to the target, while it can be
-// shot; brighter while a landed shot waits for the damage bar.
+// shot; brighter while a landed shot waits for the dial.
 function drawLaser(ctx) {
   const target = liveTarget();
   if (!target || !muzzle || !canShoot(target)) return;

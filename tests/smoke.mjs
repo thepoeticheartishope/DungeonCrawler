@@ -19,7 +19,7 @@
 //      the game is back on the room screen afterward (classic combat).
 //   3. Gun run (the default combat), walks toward the nearest minion, bumping an
 //      energy cell to reload and pressing F (SELECT) to fire (Auto-win answers
-//      the reload and stops the damage bar on the weak point) until a
+//      the reload and starts and stops the dial in its kill zone) until a
 //      reload gave energy and a shot killed a minion. Then DEV -> Look
 //      forces each stick enemy pose in turn (stickforms.js), drawing each,
 //      and DEV -> Tendrils each tendril style.
@@ -423,7 +423,7 @@ async function bumpEnergyCell(page) {
 }
 
 // One attempt: a fresh run with the gun (the default) and Auto-win on (it
-// answers reloads right and stops the damage bar on the weak point). Wander
+// answers reloads right and starts and stops the dial in its kill zone). Wander
 // as the battle run does; press F (SELECT) whenever the target can be shot,
 // and bump an energy cell every few steps while energy isn't full,
 // until a reload loaded and a shot killed a minion.
@@ -1018,13 +1018,15 @@ async function checkLightBattery(page, url) {
   const known = await page.evaluate(async () => (await import('./js/state.js')).state.floor.minions
     .every(m => m.kind === 'hunter' || (typeof m.track === 'number' && typeof m.drawn === 'boolean')));
   if (!known) return 'a stick man has no track / drawn';
-  // The light is off: F fires into the dark, and the bar opens, harder.
+  // The light is off: F fires into the dark, and the dial opens at READY, harder.
   if (await batteryShown(page) !== 'LIGHT #### OFF') return `before the dark shot the battery read ${await batteryShown(page)}`;
   await page.keyboard.press('f');
   await page.waitForSelector('#aimPanel:not([hidden])', { timeout: 5000 });
   const prompt = await page.locator('#aimPrompt').textContent();
-  if (!prompt.startsWith('DARK SHOT')) return `the dark shot's bar said "${prompt}"`;
-  await page.keyboard.press('f');
+  if (!prompt.startsWith('DARK SHOT')) return `the dark shot's dial said "${prompt}"`;
+  await page.keyboard.press('f'); // READY
+  await page.waitForTimeout(150);
+  await page.keyboard.press('f'); // stop
   await roomIdle(page);
 
   // The eye: the light back on and one stick man alone in the cone, 3 tiles
@@ -1207,9 +1209,9 @@ async function checkTutorial(page, url) {
   st = await tutorialState(page);
   if (!st.minion) return 'the stick man did not drop out of the grate';
 
-  // Face the stick man and shoot. Its weak point would kill it outright
-  // (2 HP), so the bar loses its weak zones and Auto-win stops it on a
-  // plain hit: one hit leaves it on 1 HP and it goes down (downed plan).
+  // Face the stick man and shoot. Its kill zone would kill it outright, so
+  // the dial loses its kill zone and Auto-win stops it in the maim zone:
+  // a maim drops it (no guard in the tutorial; downed plan).
   let downed = false;
   for (let i = 0; i < 40 && !downed; i++) {
     // Out of reach, wait for it to come (a blocked shot spends no turn).
@@ -1234,7 +1236,7 @@ async function checkTutorial(page, url) {
     const aiming = await page.evaluate(async () => {
       const { state } = await import('/js/state.js');
       const aim = state.battle.aim;
-      if (aim) aim.zones = aim.zones.filter(z => z.tier !== 'weak');
+      if (aim) aim.zones = aim.zones.filter(z => z.tier !== 'kill');
       return !!aim;
     });
     if (aiming) {

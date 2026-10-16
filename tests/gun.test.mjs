@@ -13,9 +13,10 @@ import assert from 'node:assert/strict';
 import { freshLight } from '../js/battery.js';
 import { state, key } from '../js/state.js';
 import {
-  ENERGY_MAX, RELOAD_ENERGY, WEAKNESS_DAMAGE_SCALE, MINION_KINDS, DAMAGE_BAR_DEPTHS, DAMAGE_ZONE_GAP, MINION_STRIKE_COST, MINION_STUN_MOVES,
-  DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS, STRUGGLE_HIT_HALF, STRUGGLE_PUSHBACK,
-  STRUGGLE_SWEEP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_SWEEP_MS, STRUGGLE_MIN_HIT_HALF,
+  ENERGY_MAX, RELOAD_ENERGY, MATCH_KILL_SCALE, MINION_KINDS, DIAL_DEPTHS, DIAL_ZONE_GAP, DIAL_LAP_MS, DIAL_LAP_LIMIT_MS,
+  HARM_KINDS, GUARD_STUN_MOVES, MINION_STRIKE_COST, MINION_STUN_MOVES,
+  DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS, STRUGGLE_PUSHBACK,
+  STRUGGLE_ZONE_WIDTH, STRUGGLE_LAP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_WIDTH,
 } from '../js/config.js';
 import { computeVisibility, seesEnemy } from '../js/sight.js';
 import { spawnMinion, advanceMonsters, findAdjacentEnemies } from '../js/combat.js';
@@ -25,8 +26,8 @@ import { whatBlocks } from '../js/passage.js';
 import { buildFloor } from '../js/floor.js';
 import { aimLook } from '../js/look.js';
 import {
-  reloadCategory, reloadOffers, settleReload, pickTarget, refreshGunTarget, cycleTarget, fireBlock, fire, settleShot,
-  minionStrike, staggerHunter, settleStruggle, damageZones, rollWeaknesses, addRounds, weaknessOf,
+  reloadCategory, reloadOffers, settleReload, pickTarget, refreshGunTarget, cycleTarget, fireBlock, fire, readyShot, cancelShot, settleShot,
+  minionStrike, staggerHunter, readyStruggle, settleStruggle, dialZones, rollWeaknesses, addRounds, weaknessOf,
 } from '../js/gun.js';
 
 const SET = [
@@ -205,48 +206,94 @@ test('fire is blocked with no energy, at the boss, or out of the light', () => {
   assert.equal(state.run.energy, 1, 'a blocked shot spends nothing');
 });
 
-test('a shot that can be taken always lands, however far', () => {
+test('a shot that can be taken always lands, however far; nothing is spent until READY', () => {
   resetFloor();
   const m = minionAt(-4, 0);
   const events = withRandom(0.99, () => fire(m));
   assert.deepEqual(events.map(e => e.type), ['shotFired', 'aimStarted']);
-  assert.equal(state.run.energy, 0);
   assert.equal(state.battle.aim.target, m);
+  assert.equal(state.battle.aim.phase, 'ready');
+  assert.equal(state.run.energy, 1, 'nothing spent before READY');
+  assert.deepEqual(readyShot().map(e => e.type), ['shotReady']);
+  assert.equal(state.battle.aim.phase, 'run');
+  assert.equal(state.run.energy, 0);
+  assert.deepEqual(readyShot(), [], 'READY only once');
 });
 
-test('a shot that lands waits for the damage bar with zones sized by the kind', () => {
+test('BACK before READY puts the gun down for free; once it runs there is no BACK', () => {
+  resetFloor();
+  const m = minionAt(-1, 0);
+  fire(m);
+  assert.deepEqual(settleShot(0.5), [], 'a dial at READY can\'t be stopped');
+  assert.deepEqual(cancelShot(), [{ type: 'shotCancelled' }]);
+  assert.equal(state.battle.aim, null);
+  assert.equal(state.run.energy, 1);
+  fire(m);
+  readyShot();
+  assert.deepEqual(cancelShot(), []);
+  assert.ok(state.battle.aim);
+});
+
+test('a landed shot waits on a dial sized by the kind, with its traits, and the depth\'s speed and lap limit', () => {
   resetFloor();
   const m = minionAt(-1, 0, 'HUSK');
-  const events = withRandom(0.5, () => fire(m));
-  assert.deepEqual(events.map(e => e.type), ['shotFired', 'aimStarted']);
-  assert.equal(state.battle.aim.target, m);
-  const width = tier => state.battle.aim.zones.filter(z => z.tier === tier).map(z => +(z.to - z.from).toFixed(6));
-  assert.deepEqual(width('hit'), Array(DAMAGE_BAR_DEPTHS[0].hits).fill(MINION_KINDS.HUSK.hitWidth));
-  assert.deepEqual(width('weak'), Array(DAMAGE_BAR_DEPTHS[0].weaks).fill(MINION_KINDS.HUSK.weakWidth));
-  assert.deepEqual(width('penalty'), [], 'no penalty zones on the first depth');
+  withRandom(0.5, () => fire(m));
+  const aim = state.battle.aim;
+  const width = tier => aim.zones.filter(z => z.tier === tier).map(z => +(z.to - z.from).toFixed(6));
+  assert.deepEqual(width('kill'), [MINION_KINDS.HUSK.killWidth]);
+  assert.deepEqual(width('maim'), [MINION_KINDS.HUSK.maimWidth]);
+  assert.deepEqual(width('harm'), [], 'no harmful zones on the first depth');
+  assert.deepEqual(aim.traits, MINION_KINDS.HUSK.dial);
+  assert.equal(aim.lapMs, DIAL_LAP_MS[DIAL_DEPTHS[0].speed]);
+  assert.equal(aim.lapLimit, DIAL_DEPTHS[0].lapLimit);
+  assert.equal(aim.darkArc, false);
 });
 
-test('damage zones: counts by depth, never touching, inside the bar, at new spots each shot', () => {
+test('dial zones: one kill, one maim and the depth\'s harmful ones, never touching, inside the circle, at new spots each shot', () => {
   resetFloor();
   const layouts = new Set();
-  DAMAGE_BAR_DEPTHS.forEach((counts, depth) => {
-    state.run.roomIndex = depth;
-    for (let i = 0; i < 50; i++) {
-      for (const kind of Object.keys(MINION_KINDS)) {
-        const zones = damageZones(kind);
+  DIAL_DEPTHS.forEach((depth, i) => {
+    state.run.roomIndex = i;
+    for (let n = 0; n < 50; n++) {
+      for (const [kind, stats] of Object.entries(MINION_KINDS)) {
+        const zones = dialZones(kind);
         const count = tier => zones.filter(z => z.tier === tier).length;
-        assert.deepEqual([count('hit'), count('weak'), count('penalty')], [counts.hits, counts.weaks, counts.penalties]);
-        assert.ok(zones[0].from >= DAMAGE_ZONE_GAP - 1e-9);
-        assert.ok(zones[zones.length - 1].to <= 1 - DAMAGE_ZONE_GAP + 1e-9);
-        zones.slice(1).forEach((z, j) => assert.ok(z.from - zones[j].to >= DAMAGE_ZONE_GAP - 1e-9));
+        assert.deepEqual([count('kill'), count('maim'), count('harm')], [1, 1, depth.harms]);
+        const size = tier => { const z = zones.find(x => x.tier === tier); return z.to - z.from; };
+        assert.ok(Math.abs(size('kill') - stats.killWidth * depth.scale) < 1e-9);
+        assert.ok(Math.abs(size('maim') - stats.maimWidth * depth.scale) < 1e-9);
+        zones.filter(z => z.tier === 'harm').forEach(z => assert.ok(HARM_KINDS.includes(z.harm)));
+        // The gap across the top of the circle counts too: from 0 to the first, the last to 1.
+        assert.ok(zones[0].from >= DIAL_ZONE_GAP - 1e-9);
+        assert.ok(zones[zones.length - 1].to <= 1 + 1e-9);
+        zones.slice(1).forEach((z, j) => assert.ok(z.from - zones[j].to >= DIAL_ZONE_GAP - 1e-9));
         layouts.add(zones.map(z => z.tier + z.from.toFixed(3)).join());
       }
     }
   });
-  state.run.roomIndex = DAMAGE_BAR_DEPTHS.length + 2;
-  assert.equal(damageZones('SHARD').length, Object.values(DAMAGE_BAR_DEPTHS.at(-1)).reduce((a, b) => a + b), 'past the table, the last row');
+  state.run.roomIndex = DIAL_DEPTHS.length + 2;
+  assert.equal(dialZones('SHARD').length, 2 + DIAL_DEPTHS.at(-1).harms, 'past the table, the last row');
   state.run.roomIndex = 0;
   assert.ok(layouts.size > 100, 'zones move from shot to shot');
+});
+
+test('every harmful kind turns up', () => {
+  resetFloor();
+  state.run.roomIndex = DIAL_DEPTHS.length - 1;
+  const seen = new Set();
+  for (let n = 0; n < 200; n++) dialZones('SHARD').forEach(z => z.harm && seen.add(z.harm));
+  assert.deepEqual([...seen].sort(), [...HARM_KINDS].sort());
+  state.run.roomIndex = 0;
+});
+
+test('speed is a lever with a limit: the deepest depth is fast with a lap limit, and no lap is under DIAL_LAP_LIMIT_MS', () => {
+  resetFloor();
+  state.run.roomIndex = DIAL_DEPTHS.length - 1;
+  fire(minionAt(-1, 0));
+  assert.equal(state.battle.aim.lapMs, DIAL_LAP_MS.fast);
+  assert.equal(state.battle.aim.lapLimit, 3);
+  Object.values(DIAL_LAP_MS).forEach(ms => assert.ok(ms >= DIAL_LAP_LIMIT_MS));
+  state.run.roomIndex = 0;
 });
 
 test('a landed shot staggers the hunter where it stands', () => {
@@ -256,6 +303,7 @@ test('a landed shot staggers the hunter where it stands', () => {
   h.minionKind = null;
   const events = withRandom(0, () => fire(h));
   assert.deepEqual(events.map(e => e.type), ['shotFired', 'hunterStaggered']);
+  assert.equal(state.run.energy, 0, 'no dial: the round goes at once');
   assert.equal(h.rest, HUNTER_REST_TURNS);
   assert.equal(state.battle.aim, null);
   assert.equal(state.floor.minions.length, 1, 'the hunter never dies');
@@ -334,48 +382,86 @@ test('with two in the cone, the one nearer the aim is the target even when furth
 
 // --- settleShot ---
 
-// The middle of the waiting aim's first zone of `tier`.
-function zoneMiddle(tier) {
-  const zone = state.battle.aim.zones.find(z => z.tier === tier);
+// Fires at `m` with Math.random at 0 (the zones packed from the top in a
+// fixed order, so 0.995 is past them all) and presses READY.
+function aimAt(m) {
+  withRandom(0, () => fire(m));
+  readyShot();
+}
+
+// The middle of the running aim's first zone of `tier` (and `harm`).
+function zoneMiddle(tier, harm = null) {
+  const zone = state.battle.aim.zones.find(z => z.tier === tier && (!harm || z.harm === harm));
   return (zone.from + zone.to) / 2;
 }
 
-test('the damage bar: graze outside the zones, 1 in a hit zone, 2 and a limb at a weak point', () => {
+// A harmful zone of kind `harm` put on the running aim, over its first gap.
+function harmZone(harm) {
+  const zone = { tier: 'harm', harm, from: 0.001, to: state.battle.aim.zones[0].from - 0.001 };
+  state.battle.aim.zones.push(zone);
+  return (zone.from + zone.to) / 2;
+}
+
+test('the dial: a miss outside the zones; a kill in the kill zone; a maim (DEV -> Downed off) only makes it reel', () => {
   resetFloor();
-  const m = minionAt(-1, 0, 'HUSK');
-  withRandom(0, () => fire(m));
-  assert.deepEqual(settleShot(0.995).map(e => e.type), ['shotGrazed']);
-  assert.equal(m.hpLeft, MINION_KINDS.HUSK.hp);
+  const m = minionAt(-1, 0, 'STALKER');
+  state.run.energy = 3;
+  aimAt(m);
+  assert.deepEqual(settleShot(0.995), [{ type: 'shotMissed', minion: m }]);
+  assert.ok(state.floor.minions.includes(m));
 
-  state.run.energy = 2;
-  withRandom(0, () => fire(m));
-  const hit = settleShot(zoneMiddle('hit'));
-  assert.deepEqual(hit, [{ type: 'minionHurt', minion: m, damage: 1, hpLeft: 4, weakPoint: false, matched: false }]);
+  aimAt(m);
+  assert.deepEqual(settleShot(zoneMiddle('maim')).map(e => e.type), ['minionHit', 'minionReels']);
+  assert.ok(state.floor.minions.includes(m));
 
-  withRandom(0, () => fire(m));
-  const weak = settleShot(zoneMiddle('weak'));
-  assert.deepEqual(weak.map(e => e.type), ['minionHurt', 'limbLost']);
-  assert.equal(m.hpLeft, 2);
-  assert.equal(m.limbs, MINION_KINDS.HUSK.limbs - 1);
+  aimAt(m);
+  const kill = settleShot(zoneMiddle('kill'));
+  assert.deepEqual(kill[0], { type: 'minionHit', minion: m, tier: 'kill', matched: false });
+  assert.deepEqual(kill.slice(1).map(e => e.type), ['minionKilled', 'goldGained']);
+  assert.ok(!state.floor.minions.includes(m));
 });
 
-test('a shot that does damage stuns the minion: it skips its next move, then comes on', () => {
+test('a HUSK\'s guard takes the first hit and breaks: stun 2 from the kill zone, 1 from the maim zone', () => {
+  resetFloor();
+  state.run.energy = 3;
+  const a = minionAt(-1, 0, 'HUSK');
+  assert.equal(a.guard, true);
+  aimAt(a);
+  assert.deepEqual(settleShot(zoneMiddle('kill')), [
+    { type: 'minionHit', minion: a, tier: 'kill', matched: false },
+    { type: 'guardBroken', minion: a, stun: GUARD_STUN_MOVES.kill },
+  ]);
+  assert.equal(a.guard, false);
+  assert.equal(a.rest, GUARD_STUN_MOVES.kill);
+  assert.ok(state.floor.minions.includes(a), 'the guard took it');
+
+  aimAt(a);
+  assert.deepEqual(settleShot(zoneMiddle('kill')).map(e => e.type), ['minionHit', 'minionKilled', 'goldGained'], 'then like any other');
+
+  const b = minionAt(-1, 0, 'HUSK');
+  aimAt(b);
+  settleShot(zoneMiddle('maim'));
+  assert.equal(b.guard, false);
+  assert.equal(b.rest, Math.max(MINION_STUN_MOVES, GUARD_STUN_MOVES.maim));
+});
+
+test('a hit stuns the minion: it skips its next move, then comes on', () => {
   resetFloor();
   state.settings.gunCombat = true;
   const m = minionAt(-1, 0, 'SHARD');
   state.run.energy = 2;
-  withRandom(0, () => fire(m));
-  settleShot(zoneMiddle('hit'));
+  aimAt(m);
+  settleShot(zoneMiddle('maim'));
   assert.equal(m.rest, MINION_STUN_MOVES);
   assert.deepEqual(advanceMonsters().filter(e => e.minion === m), [], 'stunned: no strike');
   assert.equal(state.run.hearts, MAX_HEARTS);
   assert.equal(advanceMonsters()[0].type, 'minionStruck', 'then it strikes');
 });
 
-test('a graze does not stun', () => {
+test('a miss does not stun', () => {
   resetFloor();
   const m = minionAt(-1, 0, 'SHARD');
-  withRandom(0, () => fire(m));
+  aimAt(m);
   settleShot(0.995);
   assert.ok(!(m.rest > 0));
 });
@@ -393,23 +479,46 @@ test('a slow minion\'s stun is spent on a turn it would have moved', () => {
   assert.equal(state.run.hearts, MAX_HEARTS);
 });
 
-test('the damage bar: a penalty zone backfires, no damage and one more round lost', () => {
+test('a jam zone loses one more round, and nothing else', () => {
   resetFloor();
-  state.run.roomIndex = 1;
-  const m = minionAt(-1, 0, 'HUSK');
+  const m = minionAt(-1, 0, 'SHARD');
   state.run.energy = 3;
-  withRandom(0, () => fire(m));
-  const events = settleShot(zoneMiddle('penalty'));
-  assert.deepEqual(events[0], { type: 'shotBackfired', minion: m, energyLost: 1 });
-  assert.equal(events[1].type, 'noiseMade', 'a backfire is loud (noise.js)');
-  assert.equal(state.run.energy, 1, 'the shot and the backfire');
-  assert.equal(m.hpLeft, MINION_KINDS.HUSK.hp);
+  aimAt(m);
+  assert.deepEqual(settleShot(harmZone('jam')), [{ type: 'shotJammed', minion: m, energyLost: 1 }]);
+  assert.equal(state.run.energy, 1, 'the shot and the jam');
+  assert.ok(state.floor.minions.includes(m));
 
   state.run.energy = 1;
-  withRandom(0, () => fire(m));
-  assert.equal(settleShot(zoneMiddle('penalty'))[0].energyLost, 0, 'nothing left to lose');
+  aimAt(m);
+  assert.equal(settleShot(harmZone('jam'))[0].energyLost, 0, 'nothing left to lose');
   assert.equal(state.run.energy, 0);
-  state.run.roomIndex = 0;
+});
+
+test('a loud zone makes a noise', () => {
+  resetFloor();
+  const m = minionAt(-1, 0, 'SHARD');
+  aimAt(m);
+  const events = settleShot(harmZone('loud'));
+  assert.deepEqual(events[0], { type: 'shotLoud', minion: m });
+  assert.equal(events[1].type, 'noiseMade', 'loud (noise.js)');
+  assert.equal(events[1].kind, 'loud');
+});
+
+test('a lunge zone brings it one step closer at once; next to the player, it strikes', () => {
+  resetFloor();
+  state.settings.gunCombat = true;
+  const m = minionAt(-3, 0, 'SHARD');
+  state.run.energy = 3; // energy left after both shots, so no Struggle
+  aimAt(m);
+  const events = settleShot(harmZone('lunge'));
+  assert.deepEqual(events.map(e => e.type), ['shotLunged', 'minionMoved']);
+  assert.equal(m.row, state.floor.playerRow - 2);
+
+  m.row = state.floor.playerRow - 1;
+  computeVisibility();
+  aimAt(m);
+  assert.deepEqual(settleShot(harmZone('lunge')).slice(0, 2).map(e => e.type), ['shotLunged', 'minionStruck']);
+  assert.equal(state.run.hearts, MAX_HEARTS - MINION_STRIKE_COST);
 });
 
 test('a kill takes the minion off the floor and pays its gold, doubled in the darkness', () => {
@@ -418,8 +527,8 @@ test('a kill takes the minion off the floor and pays its gold, doubled in the da
   const m = minionAt(-1, 0, 'SHARD');
   state.battle.selectedTarget = m;
   state.floor.gunTarget = m;
-  withRandom(0, () => fire(m));
-  const events = settleShot(zoneMiddle('weak'));
+  aimAt(m);
+  const events = settleShot(zoneMiddle('kill'));
   const gold = MINION_KINDS.SHARD.gold * DARK_GOLD_MULTIPLIER;
   assert.deepEqual(events.slice(-2), [{ type: 'minionKilled', minion: m }, { type: 'goldGained', amount: gold, from: 'kill' }]);
   assert.equal(state.floor.minions.length, 0);
@@ -601,16 +710,26 @@ test('with a reload open over the map, a minion strikes even with no energy', ()
   assert.equal(state.battle.struggle, null);
 });
 
-test('a Struggle won pushes the minion STRUGGLE_PUSHBACK tiles straight away, with no damage', () => {
+// The middle of the waiting Struggle's zone, after READY.
+function struggleMiddle() {
+  readyStruggle();
+  const { from, to } = state.battle.struggle.zone;
+  return (from + to) / 2;
+}
+
+test('a Struggle waits for READY (no BACK), then a win pushes the minion STRUGGLE_PUSHBACK tiles straight away', () => {
   const m = struggleSetUp();
-  const hp = m.hpLeft;
   advanceMonsters();
+  assert.equal(state.battle.struggle.phase, 'ready');
+  assert.deepEqual(readyStruggle(), [{ type: 'struggleReady' }]);
+  assert.equal(state.battle.struggle.phase, 'run');
   const before = m.row;
-  const events = settleStruggle(0.5);
+  const { from, to } = state.battle.struggle.zone;
+  const events = settleStruggle((from + to) / 2);
   assert.deepEqual(events.map(e => e.type), ['struggleWon', 'knockedBack']);
   assert.equal(m.row, before - STRUGGLE_PUSHBACK);
   assert.equal(m.col, state.floor.playerCol);
-  assert.equal(m.hpLeft, hp);
+  assert.ok(state.floor.minions.includes(m));
   assert.equal(state.run.hearts, MAX_HEARTS);
   assert.equal(state.battle.struggle, null);
 });
@@ -619,19 +738,22 @@ test('a Struggle push stops at a wall', () => {
   const m = struggleSetUp();
   advanceMonsters();
   state.floor.wallSet.add(key(m.row - 2, m.col));
-  settleStruggle(0.5);
+  settleStruggle(struggleMiddle());
   assert.equal(m.row, state.floor.playerRow - 2, 'one tile back, then the wall');
 });
 
 test('a Struggle lost outside the zone is a strike', () => {
   struggleSetUp();
   advanceMonsters();
-  const events = settleStruggle(0.5 + STRUGGLE_HIT_HALF + 0.05);
+  readyStruggle();
+  const { from, to } = state.battle.struggle.zone;
+  const outside = from > 0.05 ? from / 2 : (to + 1) / 2;
+  const events = settleStruggle(outside);
   assert.deepEqual(events.slice(0, 3).map(e => e.type), ['struggleLost', 'noiseMade', 'minionStruck']);
   assert.equal(state.run.hearts, MAX_HEARTS - MINION_STRIKE_COST);
 });
 
-test('each Struggle on a floor is faster with a smaller zone, down to the floor values', () => {
+test('each Struggle on a floor is faster with a smaller zone, never past the speed limit or under the smallest zone', () => {
   const dials = [];
   for (let i = 0; i < 10; i++) {
     struggleSetUp();
@@ -639,21 +761,15 @@ test('each Struggle on a floor is faster with a smaller zone, down to the floor 
     advanceMonsters();
     dials.push(state.battle.struggle);
   }
+  const width = d => d.zone.to - d.zone.from;
   assert.deepEqual(dials.slice(0, 2).map(d => d.count), [1, 2]);
-  assert.equal(dials[0].hitHalf, STRUGGLE_HIT_HALF);
-  assert.equal(dials[0].sweepMs, STRUGGLE_SWEEP_MS);
-  assert.ok(Math.abs(dials[1].hitHalf - (STRUGGLE_HIT_HALF - STRUGGLE_SHRINK)) < 1e-9);
-  assert.equal(dials[1].sweepMs, STRUGGLE_SWEEP_MS - STRUGGLE_SPEEDUP_MS);
-  assert.equal(dials[9].hitHalf, STRUGGLE_MIN_HIT_HALF);
-  assert.equal(dials[9].sweepMs, STRUGGLE_MIN_SWEEP_MS);
-});
-
-test('a later Struggle is lost where the first would have been won', () => {
-  struggleSetUp();
-  state.floor.struggles = 3;
-  advanceMonsters();
-  const events = settleStruggle(0.5 + STRUGGLE_HIT_HALF - 0.01);
-  assert.equal(events[0].type, 'struggleLost');
+  assert.ok(Math.abs(width(dials[0]) - STRUGGLE_ZONE_WIDTH) < 1e-9);
+  assert.equal(dials[0].lapMs, STRUGGLE_LAP_MS);
+  assert.ok(Math.abs(width(dials[1]) - (STRUGGLE_ZONE_WIDTH - STRUGGLE_SHRINK)) < 1e-9);
+  assert.equal(dials[1].lapMs, STRUGGLE_LAP_MS - STRUGGLE_SPEEDUP_MS);
+  assert.ok(Math.abs(width(dials[9]) - STRUGGLE_MIN_WIDTH) < 1e-9);
+  assert.equal(dials[9].lapMs, DIAL_LAP_LIMIT_MS);
+  dials.forEach(d => assert.ok(d.zone.from >= 0 && d.zone.to <= 1));
 });
 
 test('a new floor resets the Struggle count', () => {
@@ -704,25 +820,29 @@ test('a reload\'s rounds keep its group; firing spends a matching round first', 
   const m = minionAt(-1, 0, 'HUSK');
   state.run.weakTo = { HUSK: 'other' };
   withRandom(0, () => fire(m));
+  readyShot();
   assert.deepEqual(state.run.rounds, [group, group], 'the matching round went first');
   assert.equal(state.run.energy, 2);
   assert.ok(state.battle.aim.matched);
 });
 
-test('a matched round multiplies the damage, and a landed shot reveals the weakness once', () => {
+test('a matched round widens the kill zone, and READY on a landed shot reveals the weakness once', () => {
   resetFloor();
-  const m = minionAt(-1, 0, 'HUSK');
-  state.run.weakTo = { HUSK: 'OT' };
+  const m = minionAt(-1, 0, 'STALKER');
+  state.run.weakTo = { STALKER: 'OT' };
   state.run.rounds = ['OT'];
   const fired = withRandom(0, () => fire(m));
-  assert.deepEqual(fired.filter(e => e.type === 'weaknessFound'), [{ type: 'weaknessFound', minionKind: 'HUSK', label: 'OT' }]);
-  const hurt = settleShot(zoneMiddle('hit'));
-  assert.equal(hurt[0].damage, WEAKNESS_DAMAGE_SCALE);
-  assert.ok(hurt[0].matched);
+  assert.ok(!fired.some(e => e.type === 'weaknessFound'), 'not before READY');
+  assert.ok(state.battle.aim.matched);
+  const kill = state.battle.aim.zones.find(z => z.tier === 'kill');
+  assert.ok(Math.abs(kill.to - kill.from - MINION_KINDS.STALKER.killWidth * MATCH_KILL_SCALE) < 1e-9);
+  assert.deepEqual(readyShot().filter(e => e.type === 'weaknessFound'), [{ type: 'weaknessFound', minionKind: 'STALKER', label: 'OT' }]);
+  const hit = settleShot(zoneMiddle('maim'));
+  assert.ok(hit[0].matched);
 
   state.run.energy = 1;
   state.run.rounds = ['NT'];
-  const again = withRandom(0, () => fire(m));
-  assert.ok(!again.some(e => e.type === 'weaknessFound'), 'already known');
-  assert.equal(settleShot(zoneMiddle('hit'))[0].damage, 1, 'a round from another group does plain damage');
+  withRandom(0, () => fire(m));
+  assert.ok(!state.battle.aim.matched, 'a round from another group is plain');
+  assert.ok(!readyShot().some(e => e.type === 'weaknessFound'), 'already known');
 });

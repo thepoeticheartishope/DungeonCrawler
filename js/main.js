@@ -35,9 +35,9 @@ import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, limbOffOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap } from './mapview.js';
-import { pickTarget, refreshGunTarget, cycleTarget, fire, settleShot, reloadCategory, reloadOffers, settleReload, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
-import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, showStruggleBar, closeMapPanels, mapPanelShown, stopBarSweep } from './gunpanels.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap } from './mapview.js';
+import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
+import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, mapPanelShown, pressBar } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, SCREEN_WAYS, screenStep, arrowChord } from './dpad.js';
@@ -142,7 +142,7 @@ onMapPointer({ aim: aimAtPoint, tap: tapMap });
 
 initDataView({ backScreen: document.getElementById('workshopScreen') });
 initExchangeView({ buyItem, leaveExchange });
-initGunPanels({ pickReload, cancelReload: () => endReload(), stopBar: stopDamageBar, stopStruggle: stopStruggleBar });
+initGunPanels({ pickReload, cancelReload: () => endReload(), readyBar: readyDial, backBar: lowerGun, stopBar: stopDamageBar, stopStruggle: stopStruggleBar });
 initMinimap();
 
 applyStaticText();
@@ -303,22 +303,23 @@ function finishGunAction(events) {
   if (note.text) showRoomNote(note.cls, note.text);
 }
 
-// SELECT (button or F), the gun's one button: while the damage bar
-// sweeps, it stops the bar; otherwise it fires at the target. One button
+// SELECT (button or F), the gun's one button: on a dial it presses READY,
+// then stops it; otherwise it fires at the target. One button
 // in one place, so the thumb stays put and the eyes stay on the marker.
 // Energy comes only from energy cells: there is no reloading at will.
 // Standing on the stairs, SELECT goes down instead of firing.
 function pressSelect() {
   const shown = mapPanelShown();
-  if (shown === 'aim' || shown === 'struggle') { stopBarSweep(); return; }
+  if (shown === 'aim' || shown === 'struggle') { pressBar(); return; }
   if (!shown && onStairs()) { goDown(); return; }
   fireGun();
 }
 
-// Fires (SELECT with no bar showing): shoots the gun's target
-// (gun.js fire). A blocked shot only says why and costs nothing; a miss,
-// or a landed shot on the hunter, is the turn; a landed shot on a minion
-// opens the damage bar first, and the turn is spent when it stops.
+// Fires (SELECT with no dial showing): shoots the gun's target
+// (gun.js fire). A blocked shot only says why and costs nothing; a landed
+// shot on the hunter is the turn; one on a minion opens the dial at READY
+// first, and the turn is spent when it stops (BACK before READY spends
+// nothing: lowerGun).
 function fireGun() {
   if (!gunReady()) return;
   const events = fire(state.floor.gunTarget);
@@ -330,7 +331,6 @@ function fireGun() {
   gunTest = false;
   state.run.turnLocked = true;
   if (state.battle.aim) {
-    // The only line a landed shot can have yet: a weakness just found.
     const note = drawEvents(events);
     if (note.text) showRoomNote(note.cls, note.text);
     showDamageBar(state.battle.aim);
@@ -377,7 +377,35 @@ function devTestShot() {
   showDamageBar(state.battle.aim);
 }
 
-// The player stopped the damage bar at `barPosition`: the shot's damage.
+// READY on the dial showing for `mode` ('aim' or 'struggle'): the rule
+// starts it (gun.js readyShot spends the shot's round and may find a
+// weakness; readyStruggle), then the dial runs.
+function readyDial(mode) {
+  if (mode === 'struggle') {
+    if (!readyStruggle().length) return;
+    runStruggleBar(state.battle.struggle);
+    return;
+  }
+  const events = readyShot();
+  if (!events.length) return;
+  const note = drawEvents(events);
+  if (note.text) showRoomNote(note.cls, note.text);
+  runDamageBar(state.battle.aim);
+}
+
+// BACK (Escape) before READY (gun.js cancelShot): the gun goes down,
+// nothing is spent and it is no turn.
+function lowerGun() {
+  const events = cancelShot();
+  if (!events.length) return;
+  closeMapPanels();
+  gunTest = false;
+  state.run.turnLocked = false;
+  const note = drawEvents(events);
+  if (note.text) showRoomNote(note.cls, note.text);
+}
+
+// The player stopped the dial at `barPosition`: what the shot did.
 function stopDamageBar(barPosition) {
   closeMapPanels();
   finishGunAction(settleShot(barPosition));
@@ -523,7 +551,7 @@ function endReload(settle) {
 }
 
 // DEV -> Combat back to classic: close whatever gun panel is open, and
-// drop a shot waiting for the damage bar.
+// drop a shot waiting for the dial.
 function endGunTests() {
   if (!mapPanelShown()) return;
   endReload();
@@ -535,22 +563,28 @@ function gunCombatChanged() {
 }
 
 // DEV -> Auto-win, with a gun panel open: picks the first reload, answers
-// its question right (a minigame at X), and stops the damage bar on the
-// weak point. Walking, reloading and firing stay the player's.
+// its question right (a minigame at X), and starts and stops the dial in its
+// kill zone (a Struggle's in its zone). Walking, reloading and firing stay the player's.
 function autoWinGun() {
   const shown = mapPanelShown();
   if (shown === 'reload') pickReload(reloadOffers().offers[0], reloadCategory());
   else if (shown === 'question' && askAnswers && state.battle.minigame) playMinigameOut();
   else if (shown === 'question' && askAnswers) askAnswers.onChoice(state.battle.currentQuestion.meaning);
-  else if (shown === 'aim') stopDamageBar(bestSpot(state.battle.aim));
-  else if (shown === 'struggle') stopStruggleBar(0.5);
+  else if (shown === 'aim') {
+    if (state.battle.aim.phase === 'ready') readyDial('aim');
+    stopDamageBar(bestSpot(state.battle.aim));
+  } else if (shown === 'struggle') {
+    if (state.battle.struggle.phase === 'ready') readyDial('struggle');
+    const zone = state.battle.struggle.zone;
+    stopStruggleBar((zone.from + zone.to) / 2);
+  }
 }
 
-// The middle of the aim's weak point (its best zone, for Auto-win), or
-// the bar's middle if it has none.
+// The middle of the aim's kill zone (its best zone, for Auto-win), or its
+// maim zone with no kill zone (the smoke test takes it away).
 function bestSpot(aim) {
-  const zone = aim.zones.find(z => z.tier === 'weak') || aim.zones.find(z => z.tier === 'hit');
-  return zone ? (zone.from + zone.to) / 2 : 0.5;
+  const zone = aim.zones.find(z => z.tier === 'kill') || aim.zones.find(z => z.tier === 'maim');
+  return (zone.from + zone.to) / 2;
 }
 
 // The Struggle dial stopped at `barPosition` (gun.js settleStruggle): the
@@ -1104,7 +1138,7 @@ function closeReloadOnRunEnd() {
 // Whether the real-time clock may run: Real time on, a run going, the
 // room screen up with nothing paused over it. It stops for the ask screen
 // (a reload or a relay: Timothy chose a screen of its own over the
-// pressure of a clock running under the question), the damage bar (the
+// pressure of a clock running under the question), the dial (the
 // shot's timing is the player's), the battle screen, THE UNFOLDING, the
 // DEV panel, the end screens and a hidden tab.
 function clockMayRun() {
@@ -1423,35 +1457,57 @@ function drawEvents(events) {
         logLine(t(e.from === 'chest' ? 'log.chest.opened' : 'log.box.gold', { gold: e.amount }), 'bright');
         break;
       // The gun (gun plan): room notes, and the map's effects. A landed
-      // shot flies once the damage bar stops.
+      // shot flies once the dial stops.
       case 'fireBlocked':
       case 'targetBlocked':
         cls = 'block-msg';
         parts.push(t('gun.block.' + e.reason));
         break;
-      case 'shotGrazed':
+      // The dial (kill or maim plan): BACK before READY, then what a
+      // stopped dial did.
+      case 'shotCancelled':
+        parts.push(t('gun.lowered'));
+        break;
+      case 'shotMissed':
         shotOnMap(e.minion, false);
         if (e.dark) revealInFlash(e.minion);
-        parts.push(t('gun.grazed'));
+        hurtOnMap(e.minion, false);
+        parts.push(t('gun.missed'));
         break;
-      case 'shotBackfired':
+      case 'shotJammed':
         cls = 'warn-msg';
         shotOnMap(e.minion || e.end, true);
-        parts.push(t(e.energyLost ? 'gun.backfired' : 'gun.backfiredEmpty'));
+        parts.push(t(e.energyLost ? 'gun.shotJammed' : 'gun.shotJammedEmpty'));
+        break;
+      case 'shotLoud':
+        cls = 'warn-msg';
+        shotOnMap(e.minion || e.end, true);
+        parts.push(t('gun.shotLoud'));
+        break;
+      case 'shotLunged':
+        cls = 'warn-msg';
+        shotOnMap(e.minion, true);
+        if (e.dark) revealInFlash(e.minion);
+        parts.push(t('gun.shotLunged'));
         break;
       // A shot in the dark with nothing there (light battery plan step C).
       case 'shotIntoDark':
         shotOnMap(e.end, false);
         parts.push(t('gun.dark.nothing'));
         break;
-      case 'minionHurt':
+      case 'minionHit':
         shotOnMap(e.minion, false);
         // In the dark, the shot's flash shows it for a moment.
         if (e.dark) revealInFlash(e.minion);
-        hurtOnMap(e.minion, e.damage);
-        parts.push(t(e.weakPoint ? 'gun.weakPoint' : 'gun.hit'));
-        if (e.matched) parts.push(t('gun.matched', { damage: e.damage }));
-        if (e.hpLeft > 0 && !e.minion.downed) parts.push(t('gun.stunned'));
+        hurtOnMap(e.minion, true);
+        if (e.matched) parts.push(t('gun.matched'));
+        if (e.tier === 'kill' && !e.minion.downed && !state.floor.minions.includes(e.minion)) parts.push(t('gun.cleanKill'));
+        break;
+      case 'guardBroken':
+        parts.push(t('gun.guardBroken'));
+        break;
+      case 'minionReels':
+        parts.push(t('gun.stunned'));
         break;
       // Downed stick men (downed plan): it falls, crawls, grabs, and a bump
       // finishes it (its death, minionKilled next, comes apart into letters).
@@ -1475,10 +1531,6 @@ function drawEvents(events) {
         break;
       case 'weaknessFound':
         parts.push(t('gun.weakFound', { kind: t('minionKind.' + e.minionKind), group: e.label }));
-        break;
-      case 'limbLost':
-        limbOffOnMap(e.minion);
-        parts.push(t('gun.limbLost'));
         break;
       case 'minionKilled':
         deathOnMap(e.minion);
@@ -1511,8 +1563,8 @@ function drawEvents(events) {
         parts.push(t('gun.jammed'));
         break;
       // No energy and a minion on the player: the Struggle dial opens over
-      // the map. Moving, waiting and the real-time clock all hold until
-      // SELECT stops it (stopStruggleBar).
+      // the map at READY. Moving, waiting and the real-time clock all hold
+      // until SELECT starts it and stops it (readyDial, stopStruggleBar).
       case 'struggleStarted':
         cls = 'warn-msg';
         parts.push(t('gun.struggle.start'));
@@ -1715,7 +1767,7 @@ mountBattleQuestion();
 continueBtn.addEventListener('click', leaveEncounter);
 // SELECT acts the moment a finger or mouse goes down, not on the click
 // that comes when it lifts: a tap is held for about a tenth of a second,
-// and on release the damage bar's marker had already moved on (Timothy
+// and on release the dial's marker had already moved on (Timothy
 // felt the lag). The click a press ends with is skipped; a click with no
 // pointer behind it (Enter or Space on the focused button) still counts,
 // the same way the d-pad does it.
@@ -1786,7 +1838,7 @@ window.addEventListener('blur', () => arrows.reset());
 // On the stairs, Enter goes down (so does SELECT).
 // Letter and number keys answer a question on the ask screen, unless the
 // gun panels already used the key (picking a reload with 1-3, or F / Space
-// stopping the damage bar).
+// stopping the dial).
 document.addEventListener('keydown', (e) => {
   if (document.activeElement === answerInput || e.defaultPrevented) return;
   if (!roomScreen.classList.contains('show')) return;

@@ -185,14 +185,13 @@ export function repelHunter(m, answeredRight) {
 // Places a minion of `minionKind` (a MINION_KINDS name) on `spot` (a free
 // floor tile) — buildFloor picks the tiles and kinds. The map draws it from
 // state (mapview.js). The hunter is made here too, with no kind: it can't
-// be killed and has no limbs to lose, so it gets no hp and no limbs.
+// be killed, so it gets no guard.
 export function spawnMinion(spot, minionKind = 'SHARD') {
   const stats = MINION_KINDS[minionKind];
   const m = {
     row: spot.row, col: spot.col, kind: 'minion',
     minionKind: stats ? minionKind : null,
-    hpLeft: stats ? stats.hp : null,
-    limbs: stats ? stats.limbs : 0,
+    guard: !!(stats && stats.guard), // the HUSK's: the first hit only breaks it (gun.js settleShot)
     trail: [],
     track: 0,      // turns it keeps searching once it reaches lastSeen with no sight of the player (0: never saw them, or lost them); combat.js notice
     lastSeen: null, // { row, col } where it last knew the player was, walked to while tracking; null once reached (lockOn)
@@ -200,7 +199,7 @@ export function spawnMinion(spot, minionKind = 'SHARD') {
     linger: 0,     // turns it still stands at the goal it reached before picking the next
     drawn: false,  // it can see the player's light this turn
     gaze: 0,       // ms of the player's light on it so far, toward GAZE_MS (gaze.js)
-    downed: false, // a shot left it on 1 HP: it crawls at half speed and a bump finishes it (gun.js settleShot)
+    downed: false, // a shot in the dial's maim zone: it crawls at half speed and a bump finishes it (gun.js settleShot)
     grabbing: false, // downed, it reached the player and holds their ankle: they can't step away until it dies
   };
   state.floor.minions.push(m);
@@ -377,7 +376,7 @@ function towardLastSeen(m) {
 // instead, the hunter's too (gun.js minionStrike: minionStruck,
 // knockedBack, signalLost). With no energy left, the first one to reach
 // the player this turn starts a Struggle instead ({ type: 'struggleStarted',
-// minion, hitHalf, sweepMs, count }: gun.js struggleDial, harder each time
+// minion, zone, lapMs, count, phase }: gun.js struggleDial, harder each time
 // on a floor; settled by gun.js settleStruggle), unless `canStruggle` is
 // false (a reload question already open over the map, in real time):
 // then it strikes as usual. A downed one (downed plan) that reaches the
@@ -470,19 +469,8 @@ export function advanceMonsters({ canStruggle = true } = {}) {
       // Reaching the player, even by blundering into them, it knows them.
       if (isPlayerTile && noticing) lockOn(m);
 
-      const struggles = canStruggle && state.run.energy <= 0 && !state.battle.struggle;
-      if (isPlayerTile && m.downed) {
-        m.grabbing = true;
-        events.push({ type: 'ankleGrabbed', minion: m });
-      } else if (isPlayerTile && gun && struggles) {
-        state.battle.struggle = { minion: m, ...struggleDial() };
-        events.push({ type: 'struggleStarted', ...state.battle.struggle });
-      } else if (isPlayerTile && gun) {
-        events.push(...minionStrike(m));
-      } else if (isPlayerTile) {
-        // Engage from where it stands, never occupying the player's tile.
-        if (!state.battle.selectedTarget) state.battle.selectedTarget = m;
-        events.push({ type: 'minionEngaged', minion: m });
+      if (isPlayerTile) {
+        events.push(...reachPlayer(m, { canStruggle }));
       } else {
         const from = { row: m.row, col: m.col };
         m.row = next.row;
@@ -505,6 +493,51 @@ export function advanceMonsters({ canStruggle = true } = {}) {
   refreshTargetValidity();
   if (state.run.hearts > 0) events.push(...senseUnseen());
   return events;
+}
+
+// What `m` does on reaching the player's tile (it never takes the tile):
+// a downed one grabs their ankle and holds on where it is; with the gun on,
+// the first one to reach a player with no energy starts a Struggle (unless
+// `canStruggle` is false), any other strikes (gun.js minionStrike); in
+// classic combat it engages from where it stands. The turn advance and a
+// lunge (lungeAt) both end here.
+// Events: ankleGrabbed { minion }, struggleStarted { minion, zone, lapMs,
+// count, phase }, minionStrike's, or minionEngaged { minion }.
+export function reachPlayer(m, { canStruggle = true } = {}) {
+  if (m.downed) {
+    m.grabbing = true;
+    return [{ type: 'ankleGrabbed', minion: m }];
+  }
+  if (!state.settings.gunCombat) {
+    if (!state.battle.selectedTarget) state.battle.selectedTarget = m;
+    return [{ type: 'minionEngaged', minion: m }];
+  }
+  if (canStruggle && state.run.energy <= 0 && !state.battle.struggle) {
+    state.battle.struggle = { minion: m, ...struggleDial() };
+    return [{ type: 'struggleStarted', ...state.battle.struggle }];
+  }
+  return minionStrike(m);
+}
+
+// A lunge (kill or maim plan: the dial stopped in a lunge zone, gun.js):
+// `m` takes one step toward the player at once, out of turn, along the
+// way it would chase them. A step onto the player is reaching them
+// (reachPlayer). It goes nowhere with no way through, from outside a room
+// a relay holds the player in, or while it already holds their ankle.
+// Events: minionMoved { minion, from }, reachPlayer's, or none.
+export function lungeAt(m) {
+  const player = { row: state.floor.playerRow, col: state.floor.playerCol };
+  if (m.grabbing || keptOut(m).has(key(player.row, player.col))) return [];
+  const path = bfsPath({ row: m.row, col: m.col }, player, blockedTilesFor(m));
+  if (!path || path.length < 2) return [];
+  const next = path[1];
+  if (next.row === player.row && next.col === player.col) return reachPlayer(m);
+  const from = { row: m.row, col: m.col };
+  m.row = next.row;
+  m.col = next.col;
+  m.trail = [...m.trail, from].slice(-MINION_TRAIL_LENGTH);
+  computeVisibility();
+  return [{ type: 'minionMoved', minion: m, from }];
 }
 
 // The warning that lets a press turn and step at once: a minion or the

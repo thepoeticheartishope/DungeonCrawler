@@ -28,7 +28,7 @@
 
 import { state, key } from './state.js';
 import {
-  ENERGY_MAX, LIGHT_BATTERY_MAX, PLAYER_NAME_MAX_LENGTH, TUTORIAL_MINION_HP, TUTORIAL_MINION_KIND,
+  ENERGY_MAX, LIGHT_BATTERY_MAX, PLAYER_NAME_MAX_LENGTH, TUTORIAL_MINION_KIND,
   TUTORIAL_SPOT_NEAR, TUTORIAL_SPOT_RADIUS, TUTORIAL_SPOT_TURNS,
 } from './config.js';
 import { computeVisibility } from './sight.js';
@@ -203,7 +203,8 @@ export function breakRing() {
   if (state.run.energy < ENERGY_MAX) addRounds(ENERGY_MAX - state.run.energy);
   const grate = f.vents[0];
   const m = spawnMinion({ row: grate.row, col: grate.col }, TUTORIAL_MINION_KIND);
-  m.hpLeft = TUTORIAL_MINION_HP;
+  // No guard here (kill or maim plan call 7): a maim drops it, a kill ends it.
+  m.guard = false;
   m.hunts = true;
   crawlInto(m, 0);
   f.minions.splice(f.minions.indexOf(m), 1);
