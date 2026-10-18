@@ -109,6 +109,33 @@ test('walking toward the light brings the kind voice and the barrel', () => {
   assert.ok(state.floor.spotSet.has(key(barrel.row, barrel.col)), 'the barrel is in the light');
 });
 
+test('standing in the light the kind voice says "Look up." once, only in the shoulder view', () => {
+  resetRun();
+  state.settings.view = 'shoulder';
+  passTurns(TUTORIAL_SPOT_TURNS);
+  const spot = state.floor.tutorial.spot;
+  state.floor.playerRow = spot.row + TUTORIAL_SPOT_NEAR;
+  state.floor.playerCol = spot.col;
+  assert.ok(!tutorialTurn([]).some(e => e.line === 'tut.lookUp'), 'near the light, not in it yet');
+  walkToSpot();
+  const events = tutorialTurn([]);
+  assert.deepEqual(events.map(e => [e.type, e.line, e.tone, e.wait]), [['whispered', 'tut.lookUp', 'kind', true]]);
+  assert.deepEqual(tutorialTurn([]), [], 'only once');
+  // Walking straight into the light says it with "I trust you." (held back a moment).
+  resetRun();
+  passTurns(TUTORIAL_SPOT_TURNS);
+  walkToSpot();
+  assert.deepEqual(tutorialTurn([]).map(e => e.line || e.type), ['tut.trust', 'barrelAppeared', 'tut.lookUp']);
+  // The isometric view has no sky.
+  resetRun();
+  state.settings.view = 'iso';
+  passTurns(TUTORIAL_SPOT_TURNS);
+  walkToSpot();
+  assert.ok(!tutorialTurn([]).some(e => e.line === 'tut.lookUp'));
+  assert.deepEqual(tutorialTurn([]), []);
+  state.settings.view = 'shoulder';
+});
+
 test('bumping the barrel asks the name; a blank answer does nothing', () => {
   resetRun();
   passTurns(TUTORIAL_SPOT_TURNS);

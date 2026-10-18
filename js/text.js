@@ -331,6 +331,7 @@ export const TEXT = {
   // whisper, then the kind voice, then the barrel's question.
   'tut.cantLeave': "You can't leave. Don't try.", // Timothy's wording. Fades on waking, in "I see you."'s style
   'tut.trust': 'You can do this. I trust you.', // Timothy's wording. The kind voice, walking toward the light
+  'tut.lookUp': 'Look up.', // draft (sky eye plan step B). The kind voice, the first time the player stands in the light from above, shoulder view only
   'tut.die': 'Die in darkness.', // Timothy's wording. The dungeon, as the ring of dark closes after the name
   'tut.dimLight': "Don't let them dim your light.", // Timothy's wording. The kind voice, a moment later: the only hint
   'tut.ring.words': 'dark dim die dark dim die', // draft. The words circling the player in the ring (split on spaces)
@@ -359,8 +360,8 @@ export const TEXT = {
   'room.stickTaps.plain': 'Hold to wait.', // draft. The same in Comfort mode, where there is no light to switch
   'dpad.stick.wait': 'Look stick: drag to aim, hold to wait, tap 3 times for your light', // draft. The d-pad centre's label
   'dpad.stick.wait.plain': 'Look stick: drag to aim, hold to wait', // draft. Its label in Comfort mode
-  'dpad.stick.wait.shoulder': 'Look stick: push sideways to sweep your light, hold to wait, tap 3 times for your light', // draft. Its label in the shoulder view
-  'dpad.stick.wait.plain.shoulder': 'Look stick: push sideways to sweep your light, hold to wait', // draft. The same in Comfort mode
+  'dpad.stick.wait.shoulder': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait, tap 3 times for your light', // draft. Its label in the shoulder view
+  'dpad.stick.wait.plain.shoulder': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait', // draft. The same in Comfort mode
   'dpad.stick.turn': 'Look stick: tap to turn and face your aim', // draft. Its label while the aim is past the arc
   'room.turn': 'You turn.', // draft. Free look: turning the body to look further round costs a turn
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft

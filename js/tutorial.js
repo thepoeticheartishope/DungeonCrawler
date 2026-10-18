@@ -78,7 +78,7 @@ export function parseTutorialRoom(rows = TUTORIAL_ROOM) {
 
 // A fresh tutorial's own state, for state.floor.tutorial.
 export function freshTutorial(room) {
-  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, minion: null, minionAt: null, toldReady: false, toldDial: false };
+  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, minion: null, minionAt: null, toldReady: false, toldDial: false, toldLookUp: false };
 }
 
 // The light that won't come on: off, locked and steady (battery.js: a
@@ -115,7 +115,8 @@ export function tutorialDial(events) {
 // Moves the tutorial on after a spent turn (`events` are the turn's).
 // Returns the events that adds, in order: spotLit; then whispered
 // { line, tone } and barrelAppeared { prop } once the player walks toward the
-// light; whispered { line: 'tut.finish', tone: 'kind' } once the stick man
+// light; whispered { line: 'tut.lookUp', tone: 'kind', wait: true } the
+// first time they stand in it (see lookUpLine); whispered { line: 'tut.finish', tone: 'kind' } once the stick man
 // goes down (downed plan step C: its minionDowned is in `events`), so the
 // player learns a bump finishes it; keyDropped { row, col } once the stick man is gone (shot, or
 // cleared in classic combat); doorUnlocked once the key is taken. None
@@ -135,8 +136,9 @@ export function tutorialTurn(events) {
   if (tut.stage === 'spot') {
     if (stepsTo(tut.spot) > TUTORIAL_SPOT_NEAR) return [];
     tut.stage = 'name';
-    return [{ type: 'whispered', line: 'tut.trust', tone: 'kind' }, { type: 'barrelAppeared', prop: placeBarrel(tut.spot) }];
+    return [{ type: 'whispered', line: 'tut.trust', tone: 'kind' }, { type: 'barrelAppeared', prop: placeBarrel(tut.spot) }, ...lookUpLine(tut)];
   }
+  if (tut.stage === 'name') return lookUpLine(tut);
   if (tut.stage === 'fight') {
     // In the grate's duct it is still coming, not dead.
     if (state.floor.minions.includes(tut.minion) || state.floor.crawling.includes(tut.minion)) {
@@ -157,6 +159,20 @@ export function tutorialTurn(events) {
 }
 
 // The light from above: every room tile within TUTORIAL_SPOT_RADIUS of
+// The kind voice's "Look up." (sky eye plan step B: a new way to see gets
+// a tutorial beat), once, the first time the player stands in the light
+// from above, and only in the shoulder view, the one with a sky: looking
+// up there shows the eye, shut (no boss's light here), or in Comfort mode
+// "no light here". `wait` asks main.js to hold it a moment, so it doesn't
+// cut off "You can do this. I trust you." Returns that whispered event,
+// or none.
+function lookUpLine(tut) {
+  if (tut.toldLookUp || state.settings.view !== 'shoulder') return [];
+  if (!state.floor.spotSet.has(key(state.floor.playerRow, state.floor.playerCol))) return [];
+  tut.toldLookUp = true;
+  return [{ type: 'whispered', line: 'tut.lookUp', tone: 'kind', wait: true }];
+}
+
 // `spot` is lit (state.floor.spotSet; sight.js adds it to what is seen).
 function lightSpot(spot) {
   const f = state.floor;
