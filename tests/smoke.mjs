@@ -76,7 +76,9 @@
 //      ("The grate shudders." in the room log), then out beside the
 //      player's grate.
 //  11. Shoulder view run (shoulder view plan steps A and B): a phone-sized
-//      page with ?view=shoulder shows its comfort settings on the start
+//      page with no ?view (the shoulder view is the default since step G):
+//      the start screen's Isometric view box hides the comfort settings and
+//      is remembered; off, it shows its comfort settings on the start
 //      screen (step F) and starts a run in the shoulder view (DEV ->
 //      View says so); up steps the way the body faces; holding right sweeps
 //      the light round, spending one turn per body turn; E steps ahead at a
@@ -87,6 +89,10 @@
 //      and aimed at it, DEV -> Test shot with Auto-win kills it in this
 //      view (saved as noesis-shoulder-shot.png). The map is saved as noesis-shoulder-*.png
 //      in the system's temp folder. DEV -> View back to iso still draws.
+//
+// Runs 1-10 play the isometric view (?view=iso); run 1 plays again in the
+// shoulder view, the default (shoulder view plan step G), and run 11 is
+// the shoulder view's own.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -183,7 +189,9 @@ async function runSkipRoom(browser, url) {
   const { consoleErrors, pageErrors } = collectErrors(page);
 
   await loadPageAndSet(page, url);
-  if (!await page.isHidden('#shoulderOptions')) return { ok: false, reason: 'the shoulder view\'s comfort settings showed without the shoulder view', consoleErrors, pageErrors };
+  const shoulder = !url.includes('view=iso');
+  if (await page.isHidden('#shoulderOptions') === shoulder) return { ok: false, reason: `the shoulder view's comfort settings were ${shoulder ? 'hidden in' : 'shown without'} the shoulder view`, consoleErrors, pageErrors };
+  if (await page.isChecked('#isoViewToggle') === shoulder) return { ok: false, reason: 'the Isometric view box did not match the view', consoleErrors, pageErrors };
   await startGameAndWaitForRoom(page);
 
   // Walk one step.
@@ -1590,7 +1598,15 @@ async function guarded(run, browser, url) {
 
 // The checks listed in the header. Returns what failed ('' when all held).
 async function checkShoulderView(page, url) {
-  await loadPageAndSet(page, url + '&view=shoulder');
+  // The start screen's Isometric view box switches to the old map and is
+  // remembered (step G); off again for the rest of the run.
+  await loadPageAndSet(page, url);
+  await page.check('#isoViewToggle');
+  if (!await page.isHidden('#shoulderOptions')) return 'the comfort settings stayed with Isometric view on';
+  await loadPageAndSet(page, url);
+  if (!await page.isChecked('#isoViewToggle')) return 'Isometric view was not remembered';
+  if (await page.evaluate(async () => (await import('./js/state.js')).state.settings.view) !== 'iso') return 'a remembered Isometric view did not pick the iso view';
+  await page.uncheck('#isoViewToggle');
   if (await page.isHidden('#shoulderOptions')) return 'the shoulder view\'s comfort settings were hidden on the start screen';
   await startGameAndWaitForRoom(page);
   await roomIdle(page);
@@ -1767,27 +1783,32 @@ async function main() {
   try {
     // ?dev: the DEV tools these runs use are hidden without it.
     const url = `http://127.0.0.1:${port}/?dev`;
+    // The runs written for the isometric view keep it (?view=iso); the
+    // shoulder view, the default since shoulder view plan step G, gets
+    // the plain address.
+    const isoUrl = url + '&view=iso';
     await waitForServer(url);
 
     const browser = await chromium.launch();
     try {
-      const skipRoomResult = await guarded(runSkipRoom, browser, url);
-      const battleResult = await guarded(runBattle, browser, url);
-      const gunResult = await guarded(runGun, browser, url);
-      const realTimeResult = await guarded(runRealTime, browser, url);
-      const simpleResult = await guarded(runSimpleEnemies, browser, url);
-      const freeLookResult = await guarded(runFreeLook, browser, url);
-      const eightWaysResult = await guarded(runEightWays, browser, url);
-      const lightBatteryResult = await guarded(runLightBattery, browser, url);
-      const tutorialResult = await guarded(runTutorial, browser, url);
-      const answerLineResult = await guarded(runAnswerLine, browser, url);
-      const ventsResult = await guarded(runVents, browser, url);
+      const skipRoomResult = await guarded(runSkipRoom, browser, isoUrl);
+      const battleResult = await guarded(runBattle, browser, isoUrl);
+      const gunResult = await guarded(runGun, browser, isoUrl);
+      const realTimeResult = await guarded(runRealTime, browser, isoUrl);
+      const simpleResult = await guarded(runSimpleEnemies, browser, isoUrl);
+      const freeLookResult = await guarded(runFreeLook, browser, isoUrl);
+      const eightWaysResult = await guarded(runEightWays, browser, isoUrl);
+      const lightBatteryResult = await guarded(runLightBattery, browser, isoUrl);
+      const tutorialResult = await guarded(runTutorial, browser, isoUrl);
+      const answerLineResult = await guarded(runAnswerLine, browser, isoUrl);
+      const ventsResult = await guarded(runVents, browser, isoUrl);
+      const skipShoulderResult = await guarded(runSkipRoom, browser, url);
       const shoulderResult = await guarded(runShoulderView, browser, url);
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult], ['tutorial', tutorialResult], ['answer line', answerLineResult], ['vents', ventsResult], ['shoulder view', shoulderResult]]) {
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult], ['tutorial', tutorialResult], ['answer line', answerLineResult], ['vents', ventsResult], ['skip-room, shoulder view', skipShoulderResult], ['shoulder view', shoulderResult]]) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {

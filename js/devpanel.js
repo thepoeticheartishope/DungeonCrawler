@@ -49,17 +49,19 @@ export function initDevPanel({
     const open = devPanel.classList.toggle('show');
     devToggleBtn.setAttribute('aria-expanded', String(open));
     showFrameTimes();
+    showView();
   });
 
-  // The shoulder view (shoulder view plan): ?view=shoulder on the address
-  // starts in it, so Timothy can try each step on his phone from main
-  // (GitHub Pages) while everyone else keeps the isometric map.
-  if (params.get('view') === 'shoulder') state.settings.view = 'shoulder';
-  const showView = () => {
+  // The view (shoulder view plan): ?view=iso or ?view=shoulder on the
+  // address picks it for this visit, over the start screen's saved choice
+  // (the smoke tests run both).
+  if (['iso', 'shoulder'].includes(params.get('view'))) state.settings.view = params.get('view');
+  // The View button says the view in play (the start screen can change it too).
+  function showView() {
     const shoulder = state.settings.view === 'shoulder';
     devViewBtn.textContent = shoulder ? 'View: shoulder (dev)' : 'View: iso (dev)';
     devViewBtn.setAttribute('aria-pressed', String(shoulder));
-  };
+  }
   showView();
   devViewBtn.addEventListener('click', () => {
     state.settings.view = state.settings.view === 'shoulder' ? 'iso' : 'shoulder';
