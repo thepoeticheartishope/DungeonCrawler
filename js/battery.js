@@ -57,12 +57,14 @@ export function tickLight() {
 }
 
 // Switch the light (no turn spent). Returns what happened: 'on', 'off',
-// 'locked' (empty and not full again yet, so it stays off) or null with
-// the battery out of play.
+// 'locked' (empty and not full again yet, so it stays off), 'held' (on in
+// the tutorial's fight, so it stays on: no dark shot there, Timothy
+// 2026-10-17) or null with the battery out of play.
 export function toggleLight() {
   if (!batteryInPlay()) return null;
   const light = state.floor.light;
   if (!light.on && light.locked) return 'locked';
+  if (light.on && state.floor.tutorial && state.floor.tutorial.stage === 'fight') return 'held';
   light.on = !light.on;
   return light.on ? 'on' : 'off';
 }

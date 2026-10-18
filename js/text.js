@@ -346,6 +346,7 @@ export const TEXT = {
   'tut.key.dropped': 'It falls. Something is left where it stood.', // draft. The stick man is gone and left the key
   'tut.door.open': 'The door at the top unlocks.', // draft. Key taken
   'tut.light.none': 'Your light will not come on.', // draft. V in the tutorial's dark
+  'tut.light.held': 'Keep your light on.', // draft. V in the tutorial's fight: the light stays on there
   'tut.name.kept': 'Your name is {name}.', // draft. After the barrel's answer
   'room.blocked.door': 'The door is locked.', // draft. The tutorial's door before its key
   'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)

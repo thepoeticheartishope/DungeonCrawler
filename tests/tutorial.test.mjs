@@ -193,6 +193,20 @@ test('in the fight the energy fills again every turn, so a miss never empties it
   assert.equal(state.run.rounds.length, ENERGY_MAX);
 });
 
+test('in the fight the light stays on (no dark shot there); after it, it switches off again', () => {
+  resetRun();
+  passTurns(TUTORIAL_SPOT_TURNS);
+  walkToSpot();
+  tutorialTurn([]);
+  settleName('Ada');
+  toggleLight();
+  breakRing();
+  assert.equal(toggleLight(), 'held');
+  assert.ok(lightOn(), 'still on');
+  state.floor.tutorial.stage = 'key';
+  assert.equal(toggleLight(), 'off');
+});
+
 test('the stick man gone leaves a key; taking it opens the door; the door is the way out', () => {
   resetRun();
   passTurns(TUTORIAL_SPOT_TURNS);
