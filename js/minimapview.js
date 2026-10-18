@@ -14,7 +14,8 @@
 
 import { state, key } from './state.js';
 import { t } from './text.js';
-import { MINIMAP_MAX_UNIT, MINIMAP_PAD, MINIMAP_LABEL_PX, MINIMAP_TITLE_PX } from './config.js';
+import { MINIMAP_MAX_UNIT, MINIMAP_PAD, MINIMAP_LABEL_PX, MINIMAP_TITLE_PX, MINIMAP_ARROW } from './config.js';
+import { lookAngle } from './look.js';
 
 const els = {};
 // The page's colours, read once from the CSS variables.
@@ -133,6 +134,31 @@ export function refreshMinimap() {
   const player = { row: f.playerRow, col: f.playerCol };
   ctx.beginPath();
   ctx.arc(left + across(player) * unit, top + down(player) * unit, Math.max(3, unit * 0.45), 0, Math.PI * 2);
+  ctx.fillStyle = colours.player;
+  ctx.fill();
+  if (state.settings.view === 'shoulder') drawFacing(ctx, at(player), unit);
+}
+
+// In the shoulder view (shoulder view plan step E, call 3) the minimap
+// stays still while the camera turns, so an arrow from the player's dot
+// shows where the light points, laid out on the diamond like the map.
+function drawFacing(ctx, [x, y], unit) {
+  const angle = lookAngle();
+  const dc = Math.sin(angle);
+  const dr = -Math.cos(angle);
+  const ax = dc - dr;
+  const ay = (dc + dr) / 2;
+  const length = Math.hypot(ax, ay);
+  const [ux, uy] = [ax / length, ay / length];
+  const reach = Math.max(16, unit * MINIMAP_ARROW[0]);
+  const half = Math.max(5, unit * MINIMAP_ARROW[1]);
+  const tip = [x + ux * reach, y + uy * reach];
+  const base = [x + ux * reach * 0.45, y + uy * reach * 0.45];
+  ctx.beginPath();
+  ctx.moveTo(...tip);
+  ctx.lineTo(base[0] - uy * half, base[1] + ux * half);
+  ctx.lineTo(base[0] + uy * half, base[1] - ux * half);
+  ctx.closePath();
   ctx.fillStyle = colours.player;
   ctx.fill();
 }

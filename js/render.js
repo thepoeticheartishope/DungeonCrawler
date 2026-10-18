@@ -6,14 +6,14 @@
 // here — it stores the DOM references every other function needs instead
 // of each one threading them through as parameters.
 
-import { state } from './state.js';
-import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS } from './config.js';
+import { state, key } from './state.js';
+import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, SHOULDER_CAMERA } from './config.js';
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
 import { whatBlocks, canPassCorner } from './passage.js';
 import { SCREEN_WAYS, screenStep, shoulderStep } from './dpad.js';
 import { FACING_VECTORS } from './sight.js';
-import { waysInUse } from './look.js';
+import { waysInUse, lookAngle, angleTo, wrapAngle } from './look.js';
 import { isoScreenShare, isoScreenOffset } from './isoview.js';
 import { clockReading } from './realclock.js';
 import { goalMark } from './goals.js';
@@ -135,7 +135,7 @@ function renderMoveHints() {
 // brighter as its light spreads — so the player always has a sense of
 // where it is. A diagonal boss lights two edges. The edges are screen
 // edges, so they follow where the diamond puts it (grid north is up and
-// to the right).
+// to the right); in the shoulder view, its way round the player.
 //
 // After the boss, the same edges point at the hunter instead (in white,
 // not the boss's blue), brighter the closer it gets.
@@ -160,8 +160,19 @@ function renderLightHint() {
 
 // Where a thing is on the map compared with the player, by its place on
 // the diamond: dx right and dy down (any unit, only the direction is
-// used), and whether it is off the map.
+// used), and whether it is off the map. In the shoulder view (shoulder
+// view plan step E) it goes by its way round the player from where the
+// light points instead: ahead is the top edge, behind the bottom, left and
+// right the sides; it counts as on screen while it is in the player's
+// own sight (walls hide it here, its light alone doesn't show it) and
+// inside the camera's field of view.
 function placeOnScreen(thing) {
+  if (state.settings.view === 'shoulder') {
+    const off = wrapAngle(angleTo(thing.row, thing.col) - lookAngle());
+    const seen = !state.settings.fogEnabled || state.floor.sightSet.has(key(thing.row, thing.col));
+    const inView = Math.abs(off) <= SHOULDER_CAMERA.fov * Math.PI / 360;
+    return { dx: Math.sin(off), dy: -Math.cos(off), offScreen: !(seen && inView) };
+  }
   const at = isoScreenShare(thing.row, thing.col);
   const { x, y } = isoScreenOffset(thing.row - state.floor.playerRow, thing.col - state.floor.playerCol);
   return { dx: x, dy: y, offScreen: at.x < 0 || at.x > 1 || at.y < 0 || at.y > 1 };
