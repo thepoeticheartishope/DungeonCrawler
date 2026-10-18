@@ -1,14 +1,15 @@
 // Unit tests for the d-pad's rules (js/dpad.js, eight ways plan step B):
 // which grid step each screen way walks, with 8 ways and with 4, and the
 // arrow keys' chord (two arrows together walk a diagonal), and the look
-// stick's taps and holds (light battery plan step D).
+// stick's taps and holds (light battery plan step D), and the shoulder
+// view's meanings and sweep (shoulder view plan step B).
 //
 // Run: node --test tests/*.test.mjs
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { SCREEN_WAYS, screenStep, arrowChord, stickGestures } from '../js/dpad.js';
+import { SCREEN_WAYS, screenStep, arrowChord, stickGestures, shoulderStep, sweepHold } from '../js/dpad.js';
 
 test('8 ways: each arrow walks that way on screen', () => {
   // Grid north is up and to the right on screen, so screen up is grid NW.
@@ -216,4 +217,84 @@ test('Enter on the focused stick taps', () => {
   const s = stick();
   s.g.tap(); s.g.tap(); s.g.tap();
   assert.deepEqual(s.actions(), ['count1', 'count2', 'light']);
+});
+
+// ---- The shoulder view (shoulder view plan step B) ----
+
+const EIGHT = ['N', 'E', 'S', 'W', 'NE', 'SE', 'SW', 'NW'];
+const FOUR = ['N', 'E', 'S', 'W'];
+
+test('shoulder view: up walks ahead, down behind, the upper corners at a slant', () => {
+  assert.equal(shoulderStep(0, -1, 'NE', EIGHT), 'NE');
+  assert.equal(shoulderStep(0, 1, 'NE', EIGHT), 'SW');
+  assert.equal(shoulderStep(-1, -1, 'NE', EIGHT), 'N');
+  assert.equal(shoulderStep(1, -1, 'NE', EIGHT), 'E');
+  assert.equal(shoulderStep(1, -1, 'NW', EIGHT), 'N', 'round past north');
+});
+
+test('shoulder view: left and right sweep and the lower corners do nothing', () => {
+  for (const [sx, sy] of [[-1, 0], [1, 0], [-1, 1], [1, 1]]) assert.equal(shoulderStep(sx, sy, 'N', EIGHT), null);
+});
+
+test('shoulder view with 4 ways: the slants are the next grid way round', () => {
+  assert.equal(shoulderStep(0, 1, 'E', FOUR), 'W');
+  assert.equal(shoulderStep(-1, -1, 'N', FOUR), 'W');
+  assert.equal(shoulderStep(1, -1, 'W', FOUR), 'N');
+});
+
+// A hand-run frame clock for sweepHold: run(ms) plays frames 10 ms apart.
+function frameClock() {
+  let queued = null;
+  let now = 0;
+  return {
+    frames: { request: fn => { queued = fn; return 1; }, cancel: () => { queued = null; } },
+    run(ms) {
+      for (let t = 0; t < ms && queued; t += 10) {
+        const fn = queued;
+        queued = null;
+        fn(now += 10);
+      }
+    },
+    idle: () => queued === null,
+  };
+}
+
+test('a held sweep goes at its speed until let go', () => {
+  const clock = frameClock();
+  let swept = 0;
+  const hold = sweepHold(d => { swept += d; }, { speed: 1, tapMin: 0.1, frames: clock.frames });
+  hold.push('key', 1, true);
+  clock.run(510);
+  assert.ok(Math.abs(swept - 0.5) < 1e-9, `swept ${swept}`);
+  hold.release('key');
+  assert.ok(Math.abs(swept - 0.5) < 1e-9, 'a long press sweeps nothing more on release');
+  assert.ok(clock.idle());
+});
+
+test('a quick tap still sweeps the tap minimum, the way it was pressed', () => {
+  const clock = frameClock();
+  let swept = 0;
+  const hold = sweepHold(d => { swept += d; }, { speed: 1, tapMin: 0.1, frames: clock.frames });
+  hold.push('key', -1, true);
+  clock.run(30);
+  hold.release('key');
+  assert.ok(Math.abs(swept + 0.1) < 1e-9, `swept ${swept}`);
+});
+
+test('pushes add up, held between -1 and 1, and the stick has no tap minimum', () => {
+  const clock = frameClock();
+  let swept = 0;
+  const hold = sweepHold(d => { swept += d; }, { speed: 1, tapMin: 0.1, frames: clock.frames });
+  hold.push('stick', 0.5);
+  hold.push('key', 1, true);
+  clock.run(110);
+  assert.ok(Math.abs(swept - 0.1) < 1e-9, `both together sweep at full speed: ${swept}`);
+  hold.release('key');
+  hold.push('stick', -0.5);
+  hold.push('pad', 0.5);
+  swept = 0;
+  clock.run(100);
+  assert.equal(swept, 0, 'opposite pushes cancel');
+  hold.reset();
+  assert.ok(clock.idle());
 });

@@ -1,6 +1,6 @@
 // Unit tests for free look (js/look.js) and the look cone (sight.js
 // inLookCone): the free arc, turning the body, the look recentred on a walk,
-// the bump rule, and the cone matching the old diamond when looking
+// the bump rule, the shoulder view's sweep (one turn per body turn), and the cone matching the old diamond when looking
 // straight along a way.
 //
 // Run: node --test tests/*.test.mjs
@@ -15,7 +15,7 @@ import { freshLight } from '../js/battery.js';
 import { state, key } from '../js/state.js';
 import { LOOK_FREE_ARC, PLAYER_CONE_RANGE } from '../js/config.js';
 import { computeVisibility, inLookCone, FACING_VECTORS } from '../js/sight.js';
-import { BODY_ANGLES, lookAngle, aimLook, wantsTurn, turnBody } from '../js/look.js';
+import { BODY_ANGLES, lookAngle, aimLook, wantsTurn, turnBody, sweepLook } from '../js/look.js';
 import { stepPlayer } from '../js/moves.js';
 
 // An open size x size floor, player in the middle facing north, free look
@@ -169,4 +169,37 @@ test('turnBody picks among 8 ways, or 4 with 8 ways off', () => {
   aimLook(50 * DEG);
   assert.deepEqual(turnBody(), [{ type: 'bodyTurned', facing: 'E' }]);
   state.settings.eightWays = true;
+});
+
+// Sweeps `degrees` in one-degree steps, as the shoulder view's held sweep
+// does frame by frame, and counts the body turns it reported.
+function sweep(degrees) {
+  let turns = 0;
+  for (let i = 0; i < Math.abs(degrees); i++) {
+    turns += sweepLook(Math.sign(degrees) * DEG).filter(e => e.type === 'bodyTurned').length;
+  }
+  return turns;
+}
+
+test('sweeping inside the free arc spends no turn', () => {
+  resetFloor();
+  assert.equal(sweep(25), 0);
+  assert.equal(state.floor.facing, 'N');
+  assert.ok(near(lookAngle(), 25 * DEG));
+});
+
+test('sweeping past the arc spends exactly one turn per body turn', () => {
+  resetFloor();
+  assert.equal(sweep(90), 2);
+  assert.equal(state.floor.facing, 'E');
+  assert.ok(Math.abs(lookAngle() - 90 * DEG) < 1e-6, 'the light swept on without a jump');
+  assert.equal(sweep(-180), 4);
+  assert.equal(state.floor.facing, 'W');
+});
+
+test('with 4 ways the sweep turns the body a quarter round', () => {
+  resetFloor();
+  state.settings.eightWays = false;
+  assert.equal(sweep(31), 1);
+  assert.equal(state.floor.facing, 'E');
 });

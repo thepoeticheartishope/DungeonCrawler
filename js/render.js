@@ -11,7 +11,9 @@ import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS } fro
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
 import { whatBlocks, canPassCorner } from './passage.js';
-import { SCREEN_WAYS, screenStep } from './dpad.js';
+import { SCREEN_WAYS, screenStep, shoulderStep } from './dpad.js';
+import { FACING_VECTORS } from './sight.js';
+import { waysInUse } from './look.js';
 import { isoScreenShare, isoScreenOffset } from './isoview.js';
 import { clockReading } from './realclock.js';
 import { goalMark } from './goals.js';
@@ -101,17 +103,19 @@ export function renderRoomHints() {
 // (pressing it still turns to look that way), and one with a paper or box
 // not yet gone through lights up, since that press reads or examines it;
 // so does THE UNFOLDING, which a press opens. A diagonal that would cut a
-// corner is blocked too (passage.js canPassCorner).
+// corner is blocked too (passage.js canPassCorner). In the shoulder view
+// the arrows walk round the body (dpad.js shoulderStep), so the hints follow
+// it; the side arrows sweep the light and show none.
 function renderMoveHints() {
   const buttons = els.dpadButtons;
   if (!buttons) return;
+  const shoulder = state.settings.view === 'shoulder';
   for (const [dir, [sx, sy]] of Object.entries(SCREEN_WAYS)) {
     const btn = buttons[dir];
-    const step = screenStep(sx, sy, state.settings.eightWays);
-    if (!btn || !step) continue;
-    // The shoulder view's arrows mean other things (shoulder view plan
-    // step A); their hints come with its controls in step B.
-    if (state.settings.view === 'shoulder') {
+    if (!btn) continue;
+    const way = shoulder && shoulderStep(sx, sy, state.floor.facing, waysInUse());
+    const step = shoulder ? way && FACING_VECTORS[way] : screenStep(sx, sy, state.settings.eightWays);
+    if (!step) {
       btn.classList.remove('move-examine', 'move-blocked');
       continue;
     }

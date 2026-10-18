@@ -1,7 +1,8 @@
 // Unit tests for the shoulder view's camera maths (js/shoulderview.js,
 // shoulder view plan step A): a point straight ahead lands mid-screen, a
 // point behind the camera is cut off, and the camera pulls in from a wall
-// (side first, then back) so it never stands in one.
+// (side first, then back) so it never stands in one; a tap's ray finds the
+// floor point under it (step B).
 //
 // Run: node --test tests/*.test.mjs
 
@@ -9,7 +10,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { SHOULDER_CAMERA } from '../js/config.js';
-import { shoulderCamera, pulledIn, toCamera, projectPoint } from '../js/shoulderview.js';
+import { shoulderCamera, pulledIn, toCamera, projectPoint, floorAt } from '../js/shoulderview.js';
 
 const W = 400;
 const H = 600;
@@ -62,4 +63,18 @@ test('a wall behind pulls the camera in close', () => {
 
 test('in the open the camera keeps its full place', () => {
   assert.deepEqual(pulledIn(middle, 1.2, open), { side: SHOULDER_CAMERA.side, back: SHOULDER_CAMERA.back });
+});
+
+test('a tap finds the floor point it shows', () => {
+  const cam = shoulderCamera(middle, 0.7, W, H, open);
+  for (const point of [[10.5, 8.5], [12.2, 7.9], [9.1, 9.6]]) {
+    const [sx, sy] = projectPoint(cam, [...point, 0]);
+    const [x, y] = floorAt(cam, sx, sy);
+    assert.ok(Math.abs(x - point[0]) < 1e-6 && Math.abs(y - point[1]) < 1e-6, `${point} came back as ${x},${y}`);
+  }
+});
+
+test('a tap above the horizon finds no floor', () => {
+  const cam = shoulderCamera(middle, 0, W, H, open);
+  assert.equal(floorAt(cam, W / 2, 0), null);
 });
