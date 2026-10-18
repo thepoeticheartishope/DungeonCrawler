@@ -80,7 +80,10 @@
 //      View says so); up steps the way the body faces; holding right sweeps
 //      the light round, spending one turn per body turn; E steps ahead at a
 //      slant; a tap on the floor aims the light there for no turn; the
-//      d-pad's up button steps too, and the frame meter shows a draw time. The map is saved as noesis-shoulder-*.png
+//      d-pad's up button steps too, and the frame meter shows a draw time.
+//      Then on the first depth (step D), stood two tiles from a stick man
+//      and aimed at it, DEV -> Test shot with Auto-win kills it in this
+//      view (saved as noesis-shoulder-shot.png). The map is saved as noesis-shoulder-*.png
 //      in the system's temp folder. DEV -> View back to iso still draws.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
@@ -1656,12 +1659,61 @@ async function checkShoulderView(page, url) {
   const meter = await page.textContent('#devFrameOut');
   if (!/Draw: [0-9.]+ ms/.test(meter)) return `the frame meter read "${meter}"`;
   if (await page.textContent('#devViewBtn') !== 'View: shoulder (dev)') return 'DEV -> View did not say shoulder';
+  const shotFailure = await shoulderShot(page, map);
+  if (shotFailure) return shotFailure;
   await page.click('#devViewBtn');
   await page.click('#devToggleBtn');
   await page.keyboard.press('.');
   await roomIdle(page);
   await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-back-to-iso.png') });
   console.log('  shoulder view: ' + meter);
+  return '';
+}
+
+// The shoulder view's shot (step D), with the DEV panel open: skips to the
+// first depth, stands the player two tiles from a stick man it can shoot,
+// looking at it, and fires DEV -> Test shot with Auto-win on (it stops the
+// dial in the kill zone). Returns what failed ('' when it was killed).
+async function shoulderShot(page, map) {
+  await page.click('#devSkipBtn');
+  await page.waitForTimeout(300);
+  const placed = await page.evaluate(async () => {
+    const { state, key } = await import('./js/state.js');
+    const { computeVisibility, canShoot } = await import('./js/sight.js');
+    const { refreshGunTarget } = await import('./js/gun.js');
+    const { requestMapDraw } = await import('./js/mapview.js');
+    const f = state.floor;
+    const free = (r, c) => !f.wallSet.has(key(r, c)) && !f.pillarSet.has(key(r, c)) && !f.minions.some(m => m.row === r && m.col === c) && !f.props.some(p => p.row === r && p.col === c);
+    const looks = { N: 0, E: Math.PI / 2, S: Math.PI, W: -Math.PI / 2 };
+    for (const m of f.minions) {
+      for (const [dr, dc, face] of [[2, 0, 'N'], [-2, 0, 'S'], [0, 2, 'W'], [0, -2, 'E']]) {
+        const r = m.row + dr, c = m.col + dc;
+        if (!free(r, c) || !free(m.row + dr / 2, m.col + dc / 2)) continue;
+        f.playerRow = r; f.playerCol = c; f.facing = face; f.look = looks[face];
+        computeVisibility();
+        refreshGunTarget();
+        if (canShoot(m) && f.gunTarget === m) {
+          requestMapDraw();
+          return f.minions.length;
+        }
+      }
+    }
+    return 0;
+  });
+  if (!placed) return 'no stick man on the first depth could be stood beside and shot';
+  await page.waitForTimeout(400);
+  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-aim.png') });
+  await page.click('#devAutoWinBtn');
+  await page.click('#devShotBtn');
+  await page.waitForTimeout(150);
+  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-shot.png') });
+  let left = placed;
+  for (let i = 0; i < 40 && left >= placed; i++) {
+    await page.waitForTimeout(150);
+    left = await page.evaluate(async () => (await import('./js/state.js')).state.floor.minions.length);
+  }
+  await page.click('#devAutoWinBtn');
+  if (left >= placed) return 'Test shot with Auto-win did not kill the stick man in the shoulder view';
   return '';
 }
 
@@ -1676,7 +1728,7 @@ async function runShoulderView(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: '?view=shoulder walked by the body, swept the light one turn per body turn, stepped at a slant, aimed by a tap, showed a draw time and switched back to iso', consoleErrors, pageErrors };
+  return { ok: true, detail: '?view=shoulder walked by the body, swept the light one turn per body turn, stepped at a slant, aimed by a tap, shot a stick man, showed a draw time and switched back to iso', consoleErrors, pageErrors };
 }
 
 async function main() {
