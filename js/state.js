@@ -29,7 +29,7 @@ export const state = {
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
-    view: 'iso',            // the map's view: 'iso' (isoview.js, the default) or 'shoulder' (shoulderview.js, shoulder view plan; ?view=shoulder or DEV -> View)
+    view: 'shoulder',       // the map's view: 'shoulder' (shoulderview.js, the default since shoulder view plan step G) or 'iso' (isoview.js; the start screen's Isometric view, remembered; ?view=iso / ?view=shoulder or DEV -> View for one session)
     shoulderSteps: false,   // start screen comfort setting, shoulder view: left / right turn the light 45° a press instead of sweeping; remembered
     shoulderSlow: false,    // start screen comfort setting, shoulder view: the sweep goes at SHOULDER_SLOW_SHARE of its speed; remembered
     shoulderWide: false,    // start screen comfort setting, shoulder view: a wider field of view (SHOULDER_WIDE_FOV); remembered

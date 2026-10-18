@@ -1576,7 +1576,7 @@
       <button class="dev-skip" id="devDownedBtn" type="button" aria-pressed="true" title="Testing only: a shot that leaves a stick man on 1 HP knocks it down; it crawls at half speed, grabs your ankle if it reaches you, and walking into it finishes it. Off: it stays standing, as before">Downed: ON (dev)</button>
       <button class="dev-skip" id="devGazeBtn" type="button" aria-pressed="true" title="Testing only: an eye over a stick man opens while your light is on it; after 3 seconds in total it steps closer">Gaze: ON (dev)</button>
       <button class="dev-skip" id="devMinigameBtn" type="button" title="Testing only: minigames roll as usual, never, or always (one picked), swapping in a question it fits">Minigame: roll (dev)</button>
-      <button class="dev-skip" id="devViewBtn" type="button" aria-pressed="false" title="Testing only: the map seen from a low camera behind your shoulder (shoulder view plan, a test build), or the isometric map; ?view=shoulder on the address starts in it">View: iso (dev)</button>
+      <button class="dev-skip" id="devViewBtn" type="button" aria-pressed="true" title="Testing only: the map seen from a low camera behind your shoulder (the default), or the old isometric map, for this visit; ?view=iso or ?view=shoulder on the address picks it too">View: shoulder (dev)</button>
       <output class="dev-skip" id="devFrameOut" title="Testing only: how long the map takes to draw, median and slowest of the last 120 frames drawn">Draw: - (dev)</output>
       <button class="dev-skip" id="devCameraBtn" type="button" title="Testing only: in isometric, the camera glides after the player or stays locked to them" aria-pressed="true">Camera: glide (dev)</button>
       <button class="dev-skip" id="devSmoothWalkBtn" type="button" title="Testing only: every way walks at the same speed on screen and the camera moves with the step, or one step time for all as before" aria-pressed="true">Smooth walk: ON (dev)</button>
@@ -1650,6 +1650,13 @@
     <label class="option-toggle">
       <input type="checkbox" id="tutorialToggle" checked>
       <span data-t="start.tutorial"></span>
+    </label>
+
+    <!-- The old isometric map instead of the shoulder view (shoulder view
+         plan step G: kept as an option for a while, call 4). -->
+    <label class="option-toggle">
+      <input type="checkbox" id="isoViewToggle">
+      <span data-t="start.isoView"></span>
     </label>
 
     <!-- The shoulder view's comfort settings (shoulder view plan step F),
