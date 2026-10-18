@@ -2,7 +2,8 @@
 // shoulder view plan step A): a point straight ahead lands mid-screen, a
 // point behind the camera is cut off, and the camera pulls in from a wall
 // (side first, then back) so it never stands in one; a tap's ray finds the
-// floor point under it (step B).
+// floor point under it (step B); every kind of thing on the map has a way
+// to be drawn (step C).
 //
 // Run: node --test tests/*.test.mjs
 
@@ -10,7 +11,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { SHOULDER_CAMERA } from '../js/config.js';
-import { shoulderCamera, pulledIn, toCamera, projectPoint, floorAt } from '../js/shoulderview.js';
+import { readFileSync } from 'node:fs';
+
+import { shoulderCamera, pulledIn, toCamera, projectPoint, floorAt, SHOULDER_DRAWINGS } from '../js/shoulderview.js';
 
 const W = 400;
 const H = 600;
@@ -77,4 +80,17 @@ test('a tap finds the floor point it shows', () => {
 test('a tap above the horizon finds no floor', () => {
   const cam = shoulderCamera(middle, 0, W, H, open);
   assert.equal(floorAt(cam, W / 2, 0), null);
+});
+
+test('every kind of thing the game puts on the map has a shoulder drawing', () => {
+  // Props and the floor's other things are made with a `kind: '...'`
+  // literal in these files; mapview.js mapThings adds the rest.
+  const files = ['decor.js', 'relays.js', 'desk.js', 'tutorial.js', 'floor.js', 'combat.js'];
+  const kinds = new Set(['vent', 'coin', 'key', 'stairs', 'player', 'minion', 'hunter']);
+  files.forEach(file => {
+    const source = readFileSync(new URL('../js/' + file, import.meta.url), 'utf8');
+    for (const [, kind] of source.matchAll(/kind: '([a-z]+)'/g)) kinds.add(kind);
+  });
+  const ways = new Set(['block', 'drum', 'flat', 'glyph', 'form', 'player']);
+  kinds.forEach(kind => assert.ok(ways.has(SHOULDER_DRAWINGS[kind]), `no shoulder drawing for ${kind}`));
 });
