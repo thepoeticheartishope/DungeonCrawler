@@ -52,7 +52,8 @@ export function shoulderStep(sx, sy, facing, ways) {
 // second). Each source holds its own push from -1 to 1 (anticlockwise to
 // clockwise), the pushes add up, held between -1 and 1, and every
 // animation frame calls `sweep(radians)` with how far to go since the last
-// frame. A press marked `tap` that ends before it has swept
+// frame (`speed` may be a function, read each frame, for the Slower sweep
+// setting). A press marked `tap` that ends before it has swept
 // SHOULDER_SWEEP_TAP sweeps the rest at once, so a quick tap still moves
 // the light. `frames` stands in for requestAnimationFrame in tests.
 // Returns { push(source, amount, tap), release(source), reset() }.
@@ -69,7 +70,7 @@ export function sweepHold(sweep, {
     if (!pushes.size) { last = null; return; }
     const dt = last === null ? 0 : Math.min(50, now - last) / 1000;
     last = now;
-    const delta = total() * speed * dt;
+    const delta = total() * (typeof speed === 'function' ? speed() : speed) * dt;
     if (delta) {
       pushes.forEach(p => { p.swept += delta; });
       sweep(delta);

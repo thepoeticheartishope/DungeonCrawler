@@ -1042,6 +1042,17 @@ export const SHOULDER_CAMERA = {
 // Past the free arc each body turn is a turn (look.js sweepLook).
 export const SHOULDER_SWEEP_SPEED = Math.PI * 0.8;
 export const SHOULDER_SWEEP_TAP = Math.PI / 12;
+// The shoulder view's comfort settings (shoulder view plan step F; start
+// screen, remembered): Slower sweep sweeps at this share of the speed;
+// Turn in steps turns the body one way a press (45°, a turn) with the light
+// straight ahead, instead of sweeping (again every SHOULDER_STEP_REPEAT_MS while held; the look
+// stick steps once each time it is pushed past SHOULDER_STEP_STICK of its
+// reach, and again after it comes back under half that); Wider view uses
+// SHOULDER_WIDE_FOV in place of SHOULDER_CAMERA.fov.
+export const SHOULDER_SLOW_SHARE = 0.5;
+export const SHOULDER_STEP_REPEAT_MS = 400;
+export const SHOULDER_STEP_STICK = 0.6;
+export const SHOULDER_WIDE_FOV = 88;
 // How long each map animation takes, in ms. Looping ones stand still
 // under reduced motion.
 export const MAP_ANIMATION_MS = {

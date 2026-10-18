@@ -38,7 +38,7 @@ const devReloadBtn = document.getElementById('devReloadBtn');
 
 export function initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
-  gunCombatChanged, autoWinGun,
+  gunCombatChanged, autoWinGun, viewChanged,
   battleScreen, wagerRow,
 }) {
   // Players never see DEV: it shows only when the address has ?dev
@@ -64,6 +64,7 @@ export function initDevPanel({
   devViewBtn.addEventListener('click', () => {
     state.settings.view = state.settings.view === 'shoulder' ? 'iso' : 'shoulder';
     showView();
+    viewChanged();
     renderRoomHints();
     requestMapDraw();
   });

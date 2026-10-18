@@ -298,3 +298,16 @@ test('pushes add up, held between -1 and 1, and the stick has no tap minimum', (
   hold.reset();
   assert.ok(clock.idle());
 });
+
+test('the sweep speed can be read each frame (Slower sweep)', () => {
+  const clock = frameClock();
+  let swept = 0;
+  let speed = 1;
+  const hold = sweepHold(d => { swept += d; }, { speed: () => speed, tapMin: 0, frames: clock.frames });
+  hold.push('key', 1);
+  clock.run(110);
+  speed = 0.5;
+  clock.run(100);
+  assert.ok(Math.abs(swept - 0.15) < 1e-9, `swept ${swept}`);
+  hold.reset();
+});

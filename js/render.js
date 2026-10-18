@@ -7,7 +7,8 @@
 // of each one threading them through as parameters.
 
 import { state, key } from './state.js';
-import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, SHOULDER_CAMERA } from './config.js';
+import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS } from './config.js';
+import { shoulderFov } from './shoulderview.js';
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
 import { whatBlocks, canPassCorner } from './passage.js';
@@ -170,7 +171,7 @@ function placeOnScreen(thing) {
   if (state.settings.view === 'shoulder') {
     const off = wrapAngle(angleTo(thing.row, thing.col) - lookAngle());
     const seen = !state.settings.fogEnabled || state.floor.sightSet.has(key(thing.row, thing.col));
-    const inView = Math.abs(off) <= SHOULDER_CAMERA.fov * Math.PI / 360;
+    const inView = Math.abs(off) <= shoulderFov() * Math.PI / 360;
     return { dx: Math.sin(off), dy: -Math.cos(off), offScreen: !(seen && inView) };
   }
   const at = isoScreenShare(thing.row, thing.col);

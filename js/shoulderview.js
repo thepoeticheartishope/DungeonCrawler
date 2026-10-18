@@ -25,7 +25,7 @@
 
 import { state, key } from './state.js';
 import {
-  SHOULDER_CAMERA, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH,
+  SHOULDER_CAMERA, SHOULDER_WIDE_FOV, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH,
   ENEMY_LIGHT, MINION_KINDS, GAZE_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS,
   TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS,
 } from './config.js';
@@ -201,7 +201,7 @@ export function drawShoulderScene(ctx, canvasSize, shared) {
   const at = { x: look.walkAt.col + 0.5, y: look.walkAt.row + 0.5 };
   const moving = moveCamera(at);
   if (moving || look.walkAt.row !== state.floor.playerRow || look.walkAt.col !== state.floor.playerCol) look.showPlain();
-  cam = cameraAt(at, shownLook, pulled.side, pulled.back, width, height);
+  cam = cameraAt(at, shownLook, pulled.side, pulled.back, width, height, shoulderFov());
   drawFloor(ctx);
   muzzle = null;
   const boxes = [];
@@ -307,8 +307,9 @@ export function pulledIn(at, angle, solid = isSolid) {
 // The camera for a player at `at` ({ x: col, y: row }, tile middles at
 // .5) looking at `angle`, `side` right of them and `back` behind, on a
 // canvas `w` by `h` pixels: its place, its axes (F ahead, R right, U up)
-// and its focal length in pixels (from the field of view across `w`).
-export function cameraAt(at, angle, side, back, w, h) {
+// and its focal length in pixels (from the field of view `fov` across `w`,
+// in degrees).
+export function cameraAt(at, angle, side, back, w, h, fov = SHOULDER_CAMERA.fov) {
   const [fx, fy] = forwardOf(angle);
   const [rx, ry] = [-fy, fx];
   const z = SHOULDER_CAMERA.height;
@@ -318,8 +319,14 @@ export function cameraAt(at, angle, side, back, w, h) {
   return {
     x: at.x - fx * back + rx * side, y: at.y - fy * back + ry * side, z,
     F: [fx * cp, fy * cp, -sp], R: [rx, ry, 0], U: [fx * sp, fy * sp, cp],
-    focal: (w / 2) / Math.tan(SHOULDER_CAMERA.fov * Math.PI / 360), w, h,
+    focal: (w / 2) / Math.tan(fov * Math.PI / 360), w, h,
   };
+}
+
+// The camera's field of view across the map, in degrees: the Wider view
+// comfort setting (step F) or Timothy's own.
+export function shoulderFov() {
+  return state.settings.shoulderWide ? SHOULDER_WIDE_FOV : SHOULDER_CAMERA.fov;
 }
 
 // The camera for a player at `at` looking at `angle`, pulled in from the
