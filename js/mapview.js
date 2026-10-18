@@ -20,7 +20,7 @@ import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
 import { t } from './text.js';
 import { drawIsoScene, showShot, isoTileAt, isoGridAt } from './isoview.js';
-import { drawShoulderScene, shoulderTileAt, shoulderGridAt } from './shoulderview.js';
+import { drawShoulderScene, shoulderTileAt, shoulderGridAt, showShot as showShoulderShot } from './shoulderview.js';
 import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
 import { ventSealed } from './vents.js';
@@ -179,13 +179,15 @@ export function bumpOnMap(facing) {
   requestMapDraw();
 }
 
-// Plays a gun shot at `target` on the map (isoview.js showShot): a flash
+// Plays a gun shot at `target` on the map (isoview.js showShot, and the
+// shoulder view's, so either view can show it): a flash
 // to it, or past it with MISS over it when it `missed`. One more frame is
 // asked for once MISS is done, so it clears even under reduced motion,
 // where nothing else keeps frames going.
 export function shotOnMap(target, missed) {
   if (!canvas) return;
   showShot(target, missed);
+  showShoulderShot(target, missed);
   requestMapDraw();
   setTimeout(requestMapDraw, MAP_ANIMATION_MS.gunMiss);
 }
