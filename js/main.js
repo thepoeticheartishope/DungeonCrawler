@@ -189,6 +189,10 @@ function switchLight() {
     showRoomNote('block-msg', t('tut.light.none'));
     return;
   }
+  if (result === 'held') {
+    showRoomNote('block-msg', t('tut.light.held'));
+    return;
+  }
   if (result === 'locked') {
     showRoomNote('block-msg', t('room.ownLight.locked', { turns: turnsToFull() }));
     return;
