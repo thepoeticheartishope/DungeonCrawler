@@ -1,6 +1,7 @@
 // Smoke tests for the Noesis Protocol dungeon crawler.
 //
-// Run: node tests/smoke.mjs
+// Run: node tests/smoke.mjs (SMOKE_ONLY=answer,tutorial and SMOKE_REPEAT=20
+// pick runs and repeat them; see main)
 //
 // Starts a static server for this repo, then drives the game in a real
 // browser via Playwright (imported from ~/Repo/codecraft-classroom/node_modules
@@ -63,7 +64,7 @@
 //      finishes it; its key opens the door, and through it the opening rest starts
 //      with the run's numbers fresh (2 energy), the name kept and the toggle off.
 //   9. Answer line run (answer swirl plan steps A and B): Reveal on, Auto-win off,
-//      minigames off; a reload from an energy cell answered wrong puts the
+//      minigames off, the first depth's stick men cleared; a reload from an energy cell answered wrong puts the
 //      right answer over the map (#answerNote); a Real-time-free wait
 //      fades it and takes it off the map. Then the chest bumped and its
 //      question missed: a short answer rings over the chest (swirl.js), a
@@ -1342,9 +1343,12 @@ async function checkTutorialDial(page) {
   if (v.ready || !v.canvas || v.phase !== 'run') return 'READY did not show and start the dial';
   if (v.energy !== before.energy - 1) return 'READY did not spend the round';
   if (!v.sense.includes('Stop on K')) return 'no key line once the dial ran: ' + v.sense;
+  // The marker moves every frame, but a busy machine can draw no frame for
+  // a while: wait up to DIAL_MOVE_WAIT_MS for any change, not a fixed 200 ms.
+  const DIAL_MOVE_WAIT_MS = 2000;
   const spin = await page.evaluate(() => document.getElementById('dialCanvas').toDataURL());
-  await page.waitForTimeout(200);
-  if (spin === await page.evaluate(() => document.getElementById('dialCanvas').toDataURL())) return 'the dial\'s marker did not move';
+  const moved = await page.waitForFunction(first => document.getElementById('dialCanvas').toDataURL() !== first, spin, { timeout: DIAL_MOVE_WAIT_MS, polling: 100 }).then(() => true, () => false);
+  if (!moved) return 'the dial\'s marker did not move';
   await page.keyboard.press('f'); // stop
   await page.waitForSelector('#aimPanel.fading', { timeout: 2000 });
   await page.waitForSelector('#aimPanel:not(.fading)', { state: 'attached', timeout: 5000 });
@@ -1411,7 +1415,16 @@ async function checkAnswerLine(page, url, reveal) {
   await page.click('#devSkipBtn');
   await page.click('#devLightBatteryBtn');
   await page.click('#devToggleBtn');
-  await page.evaluate(async () => { (await import('./js/state.js')).state.settings.minigame = 'off'; });
+  // No stick men on this floor: the run checks the answer line and ring,
+  // and a strike during its waits could leave the player on their last
+  // heart, so the chest's miss ended the run instead (it failed about one
+  // run in fifteen that way).
+  await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    state.settings.minigame = 'off';
+    state.floor.minions = [];
+    state.floor.crawling = [];
+  });
   await page.waitForTimeout(200);
 
   const right = await missReload(page);
@@ -1460,7 +1473,17 @@ async function checkAnswerRing(page) {
   });
   if (!placed) return { detail: 'no chest to bump (ring not checked)' };
   await page.keyboard.press(placed);
-  await page.waitForSelector('#battleScreen.show', { timeout: 5000 });
+  try {
+    await page.waitForSelector('#battleScreen.show', { timeout: 5000 });
+  } catch (err) {
+    return 'bumping the chest did not open the fight: ' + await page.evaluate(async () => {
+      const { state } = await import('./js/state.js');
+      const { mapPanelShown } = await import('./js/gunpanels.js');
+      const f = state.floor;
+      const shown = [...document.querySelectorAll('section.show, .screen.show, [id$=Screen].show')].map(e => e.id);
+      return JSON.stringify({ player: [f.playerRow, f.playerCol, f.facing], chest: f.chest && [f.chest.row, f.chest.col], panel: mapPanelShown(), locked: state.run.turnLocked, ended: state.run.runEnded, hearts: state.run.hearts, grabbed: f.minions.some(m => m.grabbing), screens: shown, log: [...document.querySelectorAll('#roomFeedback > *')].slice(-3).map(e => e.dataset.text) });
+    });
+  }
   await page.waitForTimeout(300);
   const right = await page.evaluate(async () => {
     const { state } = await import('./js/state.js');
@@ -1476,7 +1499,17 @@ async function checkAnswerRing(page) {
     return right;
   });
   // A settled fight waits for Continue before the room comes back.
-  await page.click('#continueBtn', { timeout: 5000 });
+  try {
+    await page.click('#continueBtn', { timeout: 5000 });
+  } catch (err) {
+    return 'no Continue after missing the chest: ' + await page.evaluate(async () => {
+      const { state } = await import('./js/state.js');
+      const b = state.battle;
+      const shown = id => { const el = document.getElementById(id); return el ? !el.hidden && !!el.offsetParent : null; };
+      const options = [...document.querySelectorAll('#battleScreen .mc-option')].map(o => (o.offsetParent ? '' : 'hidden:') + (o.disabled ? 'disabled:' : '') + o.textContent.trim().slice(0, 20));
+      return JSON.stringify({ phase: b.battlePhase, modifier: b.modifier || b.activeModifier, minigame: b.minigame, wager: shown('wagerRow'), input: shown('answerInput'), options, type: b.currentQuestion && b.currentQuestion.answerType });
+    });
+  }
   await page.waitForSelector('#roomScreen.show', { timeout: 10000 });
   await page.waitForTimeout(300);
   const ringed = () => page.evaluate(async () => {
@@ -1791,24 +1824,29 @@ async function main() {
 
     const browser = await chromium.launch();
     try {
-      const skipRoomResult = await guarded(runSkipRoom, browser, isoUrl);
-      const battleResult = await guarded(runBattle, browser, isoUrl);
-      const gunResult = await guarded(runGun, browser, isoUrl);
-      const realTimeResult = await guarded(runRealTime, browser, isoUrl);
-      const simpleResult = await guarded(runSimpleEnemies, browser, isoUrl);
-      const freeLookResult = await guarded(runFreeLook, browser, isoUrl);
-      const eightWaysResult = await guarded(runEightWays, browser, isoUrl);
-      const lightBatteryResult = await guarded(runLightBattery, browser, isoUrl);
-      const tutorialResult = await guarded(runTutorial, browser, isoUrl);
-      const answerLineResult = await guarded(runAnswerLine, browser, isoUrl);
-      const ventsResult = await guarded(runVents, browser, isoUrl);
-      const skipShoulderResult = await guarded(runSkipRoom, browser, url);
-      const shoulderResult = await guarded(runShoulderView, browser, url);
+      const RUNS = [
+        ['skip-room', runSkipRoom, isoUrl], ['battle', runBattle, isoUrl], ['gun', runGun, isoUrl],
+        ['real time', runRealTime, isoUrl], ['simple enemies', runSimpleEnemies, isoUrl],
+        ['free look', runFreeLook, isoUrl], ['eight ways', runEightWays, isoUrl],
+        ['light battery', runLightBattery, isoUrl], ['tutorial', runTutorial, isoUrl],
+        ['answer line', runAnswerLine, isoUrl], ['vents', runVents, isoUrl],
+        ['skip-room, shoulder view', runSkipRoom, url], ['shoulder view', runShoulderView, url],
+      ];
+      // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
+      // of those words, SMOKE_REPEAT=20 runs each that many times: for
+      // chasing a run that fails now and then.
+      const only = (process.env.SMOKE_ONLY || '').split(',').map(w => w.trim()).filter(Boolean);
+      const repeat = Math.max(1, Number(process.env.SMOKE_REPEAT) || 1);
+      const chosen = RUNS.filter(([name]) => !only.length || only.some(w => name.includes(w)));
+      const results = [];
+      for (const [name, run, address] of chosen) {
+        for (let i = 0; i < repeat; i++) results.push([repeat > 1 ? `${name} #${i + 1}` : name, await guarded(run, browser, address)]);
+      }
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult], ['tutorial', tutorialResult], ['answer line', answerLineResult], ['vents', ventsResult], ['skip-room, shoulder view', skipShoulderResult], ['shoulder view', shoulderResult]]) {
+      for (const [name, result] of results) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {
