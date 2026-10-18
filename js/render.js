@@ -109,6 +109,12 @@ function renderMoveHints() {
     const btn = buttons[dir];
     const step = screenStep(sx, sy, state.settings.eightWays);
     if (!btn || !step) continue;
+    // The shoulder view's arrows mean other things (shoulder view plan
+    // step A); their hints come with its controls in step B.
+    if (state.settings.view === 'shoulder') {
+      btn.classList.remove('move-examine', 'move-blocked');
+      continue;
+    }
     const [dr, dc] = step;
     const row = state.floor.playerRow + dr, col = state.floor.playerCol + dc;
     const cornered = !canPassCorner(state.floor.playerRow, state.floor.playerCol, dr, dc);

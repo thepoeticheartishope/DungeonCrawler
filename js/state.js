@@ -29,6 +29,7 @@ export const state = {
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
+    view: 'iso',            // the map's view: 'iso' (isoview.js, the default) or 'shoulder' (shoulderview.js, shoulder view plan; ?view=shoulder or DEV -> View)
     isoCameraGlide: true,   // dev toggle: the isometric camera glides after the player (false: locked to them)
     turnBeforeStep: TURN_BEFORE_STEP, // a press in a new direction only turns (true) or turns and steps (false); DEV -> Turn flips it
     freeLook: FREE_LOOK,    // the light points where the player aims, within look.js's free arc (true), or where the body faces (false); DEV -> Free look flips it

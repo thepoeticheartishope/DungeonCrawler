@@ -20,6 +20,7 @@ import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
 import { t } from './text.js';
 import { drawIsoScene, showShot, isoTileAt, isoGridAt } from './isoview.js';
+import { drawShoulderScene } from './shoulderview.js';
 import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
 import { ventSealed } from './vents.js';
@@ -88,6 +89,9 @@ const effects = new Map();
 // Each minion's place in its warp and dropout cycles, so they don't move in step.
 const phases = new WeakMap();
 let phaseCount = 0;
+// How long the last drawn scenes took, in ms, newest last (DEV panel's frame meter).
+const DRAW_TIMES_KEPT = 120;
+const drawTimes = [];
 
 // Stores the canvas and reads the map colours from the page's CSS
 // variables, so the palette has one source (index.html :root). Redraws
@@ -353,6 +357,7 @@ export function endAnswerRingOnMap() {
 // a finger or pen drags past MAP_DRAG_PX; `tap(tile, pointerType)` with the
 // tile under a press that didn't drag (isoview isoTileAt). A drag never
 // taps, so aiming on a phone can't pick or clear a target by accident.
+// The shoulder view has neither yet (shoulder view plan step B).
 export function onMapPointer({ aim, tap }) {
   let press = null; // { x, y, id, dragged } while a press is down
   const place = e => {
@@ -368,6 +373,7 @@ export function onMapPointer({ aim, tap }) {
     if (press && press.id === e.pointerId && Math.hypot(e.clientX - press.x, e.clientY - press.y) > MAP_DRAG_PX) press.dragged = true;
     const hovering = e.pointerType === 'mouse' && !press;
     if (!hovering && !(press && press.dragged)) return;
+    if (state.settings.view !== 'iso') return;
     const point = isoGridAt(...place(e));
     if (point) aim(point);
   });
@@ -375,7 +381,7 @@ export function onMapPointer({ aim, tap }) {
     if (!press || press.id !== e.pointerId) return;
     const dragged = press.dragged;
     press = null;
-    if (dragged) return;
+    if (dragged || state.settings.view !== 'iso') return;
     const tile = isoTileAt(...place(e));
     if (tile) tap(tile, e.pointerType);
   });
@@ -466,18 +472,32 @@ function makeMistSprite(cell) {
   return sprite;
 }
 
-// Draws the whole map as state has it at `now`, isometric (isoview.js).
-// Notes whether anything drawn keeps moving, so frames go on.
+// Draws the whole map as state has it at `now`, isometric (isoview.js)
+// or, with the shoulder view switched on, from the low shoulder camera
+// (shoulderview.js). Notes whether anything drawn keeps moving, so frames
+// go on, and how long the drawing took (mapDrawTimes).
 function drawScene(now) {
+  const started = performance.now();
   frameNow = now;
   looping = false;
   const ctx = sceneCtx;
   ctx.fillStyle = HIDDEN_FLOOR;
   ctx.fillRect(0, 0, scene.width, scene.height);
-  drawIsoScene(ctx, { width: scene.width, height: scene.height, pageWidth: pageSize.width }, {
+  const draw = state.settings.view === 'shoulder' ? drawShoulderScene : drawIsoScene;
+  draw(ctx, { width: scene.width, height: scene.height, pageWidth: pageSize.width }, {
     colours, things: mapThings(), fogOf, paintGlyph, mistSprite, mistStrength, pulse, keepMoving,
     showPlain, now, still: reducedMotion.matches, walkAt: walkAt(now), sounds: soundTilesNow(now),
   });
+  drawTimes.push(performance.now() - started);
+  if (drawTimes.length > DRAW_TIMES_KEPT) drawTimes.shift();
+}
+
+// The DEV panel's frame meter: the median and slowest time, in ms, of the
+// last DRAW_TIMES_KEPT scenes drawn, or null before any.
+export function mapDrawTimes() {
+  if (!drawTimes.length) return null;
+  const sorted = [...drawTimes].sort((a, b) => a - b);
+  return { median: sorted[Math.floor(sorted.length / 2)], slowest: sorted[sorted.length - 1], count: sorted.length };
 }
 
 // Tells the frame loop that something just drawn keeps moving, so frames
