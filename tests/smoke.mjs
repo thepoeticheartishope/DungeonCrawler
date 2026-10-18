@@ -85,6 +85,9 @@
 //      the light round, spending one turn per body turn; E steps ahead at a
 //      slant; a tap on the floor aims the light there for no turn; the
 //      d-pad's up button steps too, and the frame meter shows a draw time.
+//      The top-bar eye is hidden, and Space held tilts the camera up to the
+//      eye in the sky for no turn, back down when let go (sky eye plan
+//      step A; saved as noesis-shoulder-look-up.png).
 //      With Turn in steps on (step F) a tap of right turns one way for one
 //      turn. Then on the first depth (step D), stood two tiles from a stick man
 //      and aimed at it, DEV -> Test shot with Auto-win kills it in this
@@ -1651,6 +1654,20 @@ async function checkShoulderView(page, url) {
   if (view !== 'shoulder') return `?view=shoulder left the view as ${view}`;
   const map = await page.$('#mapCanvas');
   await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-start.png') });
+  // Sky eye plan step A: the top-bar eye is hidden here, and Space held
+  // tilts the camera up to the sky, for no turn; let go, it comes back down.
+  if (await page.evaluate(() => getComputedStyle(document.getElementById('lightEye')).visibility) !== 'hidden') return 'the top-bar eye showed in the shoulder view';
+  const turnsBeforeLook = await turnsShown(page);
+  const pitch = () => page.evaluate(async () => (await import('./js/shoulderview.js')).shoulderPitch());
+  await page.keyboard.down(' ');
+  await page.waitForTimeout(700);
+  const upPitch = await pitch();
+  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-look-up.png') });
+  await page.keyboard.up(' ');
+  await page.waitForTimeout(700);
+  if (!(upPitch < -0.5)) return `holding Space did not tilt the camera up (pitch ${upPitch})`;
+  if (!(await pitch() > 0)) return `letting go of Space left the camera tilted up (pitch ${await pitch()})`;
+  if (await turnsShown(page) !== turnsBeforeLook) return 'looking up spent a turn';
   const holdKey = async (key, ms) => {
     await page.keyboard.down(key);
     await page.waitForTimeout(ms);

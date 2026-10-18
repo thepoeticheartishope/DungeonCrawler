@@ -1035,6 +1035,27 @@ export const SHOULDER_CAMERA = {
   reach: 11,        // tiles further than this from the camera aren't drawn
   turnMs: 90,       // the drawn light (and the camera locked to it) eases toward the real one: a 45° turn settles in about 300 ms
   pullMs: 130,      // the camera eases in from a wall (and back out) this fast
+  lookUpPitch: 1.05, // looking up (sky eye plan step A): the camera tilts this far up, in radians (about 60°)...
+  lookUpMs: 120,    // ...easing there and back this fast (jumps under reduced motion)
+};
+// Looking up with the look stick (sky eye plan step A): a push up past this
+// share of its reach, more up than sideways, looks up until it comes back.
+export const SHOULDER_LOOK_UP_STICK = 0.6;
+// The eye in the sky (sky eye plan, `ideas/sky-eye-plan.md` outside the
+// repo; the old top-bar eye in the shoulder view): straight overhead, seen
+// by looking up. Shut when a floor begins, opening as the boss's light
+// spreads (mapshared.js skyEyeOpen), twitching near the end.
+export const SKY_EYE = {
+  elevation: 1.25,  // how high in the sky it hangs, in radians above level, the way the light points (just above the middle of the view looking up)
+  size: 0.13,       // its half width, as a share of the map's width
+  lid: 0.62,        // its lids open this far apart at most, as a share of its half width
+  iris: 0.42,       // the iris's radius, as a share of its half width
+  look: 0.22,       // how far the pupil turns toward the player, as a share of its half width
+  halo: 2.2,        // its glow reaches this many half widths
+  twitchAt: 0.8,    // it twitches from this much open...
+  twitchMs: 2400,   // ...once in this long (never under reduced motion)
+  twitch: 0.04,     // by this share of its half width each way
+  paleFrom: 0.5,    // the sky pales faintly blue from this much open
 };
 // The shoulder view's sweep (shoulder view plan step B): holding left /
 // right sweeps the light round this fast (radians a second; the mockup's

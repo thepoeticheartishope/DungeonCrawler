@@ -181,12 +181,14 @@ function placeOnScreen(thing) {
 
 // The eye in the status bar: shut when a room begins, opening as the boss
 // light spreads, fully open (and twitching) as it's about to consume the
-// floor. Drawn in CSS — the terminal font has no symbol glyphs.
+// floor. Drawn in CSS — the terminal font has no symbol glyphs. In the
+// shoulder view the eye is in the sky instead (sky eye plan), so this one
+// is hidden there.
 export function renderLightEye() {
   const eye = els.lightEyeEl;
   if (!eye) return;
   // A rest floor has no light. Hidden, not removed, so the bar keeps its shape.
-  eye.style.visibility = state.run.resting ? 'hidden' : '';
+  eye.style.visibility = state.run.resting || state.settings.view === 'shoulder' ? 'hidden' : '';
   const p = lightProgress();
   eye.style.setProperty('--open', p.toFixed(3));
   eye.classList.toggle('eye-near', p >= 0.8);
