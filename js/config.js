@@ -1089,6 +1089,10 @@ export const MAP_ANIMATION_MS = {
 // from the map's edge.
 export const MINIMAP_MAX_UNIT = 9;
 export const MINIMAP_PAD = 12;
+// In the shoulder view, the arrow from the player's dot to where the light
+// points: its reach and its half width, in minimap tiles (never under 16
+// and 5 pixels).
+export const MINIMAP_ARROW = [1.6, 0.55];
 // On a fixed plan (plans.js) the minimap names the rooms the player has
 // walked into, in MINIMAP_LABEL_PX text, and the building in
 // MINIMAP_TITLE_PX text in its top-left corner. CSS px.

@@ -1606,7 +1606,8 @@ async function checkShoulderView(page, url) {
   };
   const ways = { N: [-1, 0], NE: [-1, 1], E: [0, 1], SE: [1, 1], S: [1, 0], SW: [1, -1], W: [0, -1], NW: [-1, -1] };
   let moved = false;
-  for (let i = 0; i < 8 && !moved; i++) {
+  const tried = [];
+  for (let i = 0; i < 12 && !moved; i++) {
     const before = await player();
     await page.keyboard.press('ArrowUp');
     await roomIdle(page);
@@ -1614,9 +1615,12 @@ async function checkShoulderView(page, url) {
     const [dr, dc] = ways[before.facing];
     if (after.row === before.row + dr && after.col === before.col + dc) moved = true;
     else if (after.row !== before.row || after.col !== before.col) return `up stepped from ${before.row},${before.col} facing ${before.facing} to ${after.row},${after.col}`;
-    else await holdKey('ArrowRight', 400);
+    else {
+      tried.push(before.facing);
+      await holdKey('ArrowRight', 600);
+    }
   }
-  if (!moved) return 'up never stepped the way the body faces';
+  if (!moved) return `up never stepped the way the body faces (tried facing ${tried.join(' ')})`;
   const order = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   const before = await player();
   const turns = await turnsShown(page);
