@@ -16,7 +16,8 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 - Test with the DEV tools: open the game as `index.html?dev` (hidden without it) and tap the DEV tag in the
   bottom-left corner: Fog off, Skip room, Auto-win, Inspect (live state + last 20 events).
 - Automated tests: `node --test tests/*.test.mjs` (rule unit tests, no dependencies) and
-  `node tests/smoke.mjs` (Playwright, see its header).
+  `node tests/smoke.mjs` (Playwright, see its header; `SMOKE_ONLY=tutorial,answer SMOKE_REPEAT=20` runs
+  only those runs, that many times each, to chase one that fails now and then).
 
 ## Code style (keep new code like the cleaned-up modules)
 
