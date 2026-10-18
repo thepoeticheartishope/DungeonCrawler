@@ -17,7 +17,8 @@
 // gun (gun plan step 4a): the stick man holds it (raised while a landed
 // shot waits for the dial), the tiles it reaches are lit faintly,
 // corner brackets mark what can be shot, a
-// dashed laser runs to the target, and showShot() plays a shot or a MISS.
+// dashed laser runs to the target, and the last shot (mapshared.js) plays
+// as a flash or a MISS.
 // isoTileAt() turns a tap on the map back into a tile.
 //
 // A minion the player has made out stands as a stick man in a cold blue
@@ -25,44 +26,37 @@
 // killed one keeps fading where it died until it is gone.
 
 import { state, key } from './state.js';
-import { ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN, ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, PLAYER_CONE_RANGE, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF, GAZE_MS, TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS } from './config.js';
+import {
+  ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ISO_MAP_SHAPE_MIN,
+  ISO_MAP_SHAPE_MAX, ISO_WALL_HEIGHT, ISO_CAMERA_BOX, ISO_CAMERA_GLIDE_MS, MAP_GLYPH_SIZES,
+  MAP_ANIMATION_MS, PLAYER_CONE_RANGE, ENEMY_LIGHT, LOOK_FREE_ARC, LOOK_CONE_HALF, ANSWER_RING,
+} from './config.js';
 import { FACING_VECTORS, canShoot } from './sight.js';
 import { lookAngle, bodyAngle, wrapAngle } from './look.js';
 import { lightOn } from './battery.js';
-import { gazeInPlay, inCone } from './gaze.js';
 import { t } from './text.js';
 import { artAt, art } from './tileart.js';
 import { drawStickForm, stickBox, dyingSticks, drawDroppedLetters } from './stickforms.js';
-import { answerRingNow, ringLetters } from './swirl.js';
-
-// How bright a lit tile is, by its steps from the player (0 = their own
-// tile): the light fades over the five steps they can see.
-const LIGHT_FALLOFF = [1, 1, 0.85, 0.7, 0.56, 0.44];
-const BOSS_LIT_LEVEL = 0.5;  // floor only the boss's light shows
-const REMEMBERED_LEVEL = 0.2; // floor explored but not lit now
-const WALL_MIN_LEVEL = 0.28; // a wall beside remembered floor: still a shape
-const SEARCHED_LEVEL = 0.6;  // a box or paper already searched is dimmer
+import { answerRingNow } from './swirl.js';
+import {
+  WALL_MIN_LEVEL, SEARCHED_LEVEL, PILLAR_INSET, BOX_INSET, BOX_HEIGHT, DRUM_RADIUS, DRUM_HEIGHT,
+  DRUM_HOOPS, DRUM_ENDS, DRUM_END_SIZE, DRUM_BREATH, DRUM_BREATH_REACH, DESK_GLOW, DESK_GLOW_RADIUS,
+  GLYPH_CELL, GLYPH_RISE, STAIR_STEPS, STAIR_INSET, STAIR_BEAM_HEIGHT, STAIR_BEAM_LAYERS,
+  STAIR_BEAM_FADE, DOOR_POST, DOOR_ARCH_RISE, DOOR_ARCH_THICK, DOOR_ARCH_STEPS, DOOR_MIN_LEVEL,
+  PAPER_SHEET, PAPER_LINES, SOUND_INSET, SOUND_LEVEL, HEARD_LIFT, GRATE_RATTLE, GRATE_RATTLE_SWAYS,
+  GRATE_BARS, EYE_LIFT, EYE_WIDTH, REACH_FILL, BRACKET_ARM, BRACKET_HALF, BRACKET_LEVEL,
+  BRACKET_PULSE, BRACKET_TEXT_SIZE, BRACKET_HP_GAP, LASER_LEVEL, SHOT_RING, MISS_TEXT_SIZE,
+  MISS_RISE, WEAK_RING, WEAK_RING_LEVEL, PAPER_SCALE, GRATE_SCALE, ISO_STICK_HEIGHT as STICK_HEIGHT,
+  floorLevelOf, wallShownBy, searched, minionOn, liveTarget, inReach, lastShot, recoilAt, darkRingAt,
+  answerRingLetters, eyeOf,
+} from './mapshared.js';
 
 // Sizes, as shares of a tile's width unless they say otherwise.
 const CAMERA_Y = 0.5;          // where the camera's tile stands, as a share of the map's height
 const CAMERA_JUMP = 2;         // a player move longer than this many steps (a new floor, a new run) snaps the camera
-const PILLAR_INSET = 0.24;     // a pillar is thinner than its tile, so it reads as a column
 const PILLAR_HEIGHT = 1.15;    // as a share of a wall's height: a pillar stands above the walls
-const BOX_INSET = 0.3;
-const BOX_HEIGHT = 0.3;
 // The energy cell (Timothy's pick from the ammo box mockup): round, so
 // nothing else on the map shares its shape. Three round ends show on its lid.
-const DRUM_RADIUS = 0.24;      // its footprint's radius, in tiles
-const DRUM_HEIGHT = 0.32;
-const DRUM_HOOPS = [0.25, 0.7]; // the bands round it, as shares of its height
-const DRUM_ENDS = [[-0.38, 0.1], [0.38, 0.1], [0, -0.42]]; // the round ends on the lid, as shares of the lid's ellipse
-const DRUM_END_SIZE = 0.22;     // a round end's size, as a share of the lid
-const DRUM_BREATH = [0.05, 0.12]; // its breathing glow's strength, faintest and fullest
-const DRUM_BREATH_REACH = 0.55; // how far the glow reaches, in tiles
-const DESK_GLOW = [0.16, 0.26];  // the reflective desk's warm light pool, faintest and fullest
-const DESK_GLOW_RADIUS = 1.3;  // how far it reaches over the floor, in tiles
-const GLYPH_CELL = 0.85;       // the tile size glyphs are sized for (MAP_GLYPH_SIZES)
-const GLYPH_RISE = 0.45;       // a glyph's middle sits this share of its height above the floor
 const CONTACT_SHADOW = 0.2;    // the dark ellipse a glyph stands on, as a share of the diamond
 const EDGE_WIDTH = 0.02;       // a phosphor line
 const RIDGE_BLUR = 0.1;        // the glow along a block's top edges
@@ -80,44 +74,19 @@ const MIST_SQUASH = 0.62;      // the mist lies flat: its height over its width
 const PILLAR_SHADOW = 2.7;     // how far a pillar's shadow reaches, in tiles
 const PILLAR_SHADOW_WIDTH = 0.2; // its width at the pillar; it spreads to 1.8x at the end
 // The stairs down: nested diamonds sinking into the floor.
-const STAIR_STEPS = 4;
-const STAIR_INSET = [0.08, 0.09]; // the first step's inset, then each next one's
 const STAIR_DROP = 0.1;           // how far each step sinks, as a share of a tile's height
 // The stairs' column of light, rising out of them above the walls so the
 // way out shows even behind a wall. Soft layers, widest and faintest
 // first: width a share of a tile's width, strength at the stairs.
-const STAIR_BEAM_HEIGHT = 2.1;    // as a share of a wall's height
-const STAIR_BEAM_LAYERS = [{ width: 0.55, strength: 0.16 }, { width: 0.32, strength: 0.26 }, { width: 0.12, strength: 0.5 }];
-const STAIR_BEAM_FADE = [0.75, 0.5]; // where up the column it has faded to this share of its strength
 const STAIR_BEAM_DEPTH = 0.5;     // the column draws among the standing things, with its own tile
 // A doorway: two thin posts with an arch over them and a faint haze in the
 // opening, so a way through reads from any side and its arch shows over a
 // wall in front of it (Timothy picked this from the door frames mockup).
 // It never cuts down with the walls beside it: it marks a way out.
-const DOOR_POST = 0.07;          // half a post's width, in tiles
-const DOOR_ARCH_RISE = 0.34;     // how far the arch rises above the walls, as a share of a wall's height
-const DOOR_ARCH_THICK = 0.08;    // the arch's thickness, as a share of a wall's height
-const DOOR_ARCH_STEPS = 16;      // straight pieces in each line of the arch
-const DOOR_MIN_LEVEL = 0.5;      // a remembered doorway's arch is still this bright
 const DOOR_HAZE = [0.2, 0.02];   // the haze's strength at the floor and at the arch
 const DOOR_DEPTH = 0.6;          // draws after a thing standing in the doorway, before the wall past it
 // The paper lying flat, in the tile's own two directions (-1..1 across it).
-const PAPER_SHEET = [[-0.8, -0.55], [0.75, -0.7], [0.8, 0.55], [-0.75, 0.7]];
-const PAPER_LINES = [-0.3, 0, 0.3];
-const PAPER_SCALE = 0.2;
-const SOUND_INSET = [0.4, 0.1];   // a tile of a mistake's sound opens from this inset to this one (shares of a tile)
-const SOUND_LEVEL = 0.55;         // how bright a tile of the sound is when it first lights
-const HEARD_LIFT = 0.18;          // the '!' over a stick man that heard a sound sits this share of a tile above its eye
-const GRATE_RATTLE = 0.03;   // how far a shuddering grate sways, as a share of a tile
-const GRATE_RATTLE_SWAYS = 3; // side to side this many times while it shudders
-const GRATE_SCALE = 0.19;     // a grate's frame: its corners sit this share of a tile in from the middle (it lies flat, inside its tile)
-const GRATE_BARS = [-0.5, -0.17, 0.17, 0.5]; // where its bars cross it, from -1 to 1
 // The player, drawn as a stick man standing on their tile.
-const STICK_HEIGHT = 0.62;     // feet to top of head
-const EYE_LIFT = 0.22;         // the eye over a stick man in the light (drawGazeEye): its height over the head
-const EYE_WIDTH = 0.16;        // half its width
-const EYE_OPEN = 0.07;         // how far the lids part when it is full
-const EYE_LEVEL = [0.45, 1];   // its strength, shut to full
 const STICK_LINE = 0.035;      // line width (never under 1.5px)
 const STICK_BLUR = 0.12;       // its glow
 const STICK_BREATH = 0.022;    // how far the chest lifts on a breath, as a share of its height
@@ -145,23 +114,8 @@ const GUN_GRIP = 0.09;           // the grip, hanging under the gun hand
 const GUN_RAISE = 0.08;          // how far the gun lifts while a landed shot waits for the dial
 const GUN_KICK = 0.08;           // how far it kicks back on a shot
 const GUN_LINE = 1.2;            // its line, as a share of the stick man's
-const REACH_FILL = 0.15;         // a reached tile's fill strength
-const BRACKET_ARM = 0.12;        // a corner bracket's arms, as a share of a tile's width
-const BRACKET_HALF = 0.32;       // the narrowest a bracket box is, half its width as a share of a tile's
-const BRACKET_LEVEL = [0.4, 0.95]; // a shootable thing's brackets, then the target's
-const BRACKET_PULSE = 0.025;     // how far the target's brackets breathe out, as a share of a tile's width
-const BRACKET_TEXT_SIZE = 0.26;  // the target's guard over its brackets, as a share of a tile's width
-const BRACKET_HP_GAP = 0.1;      // the target's guard sits this far over its brackets, as a share of a tile's height
-const LASER_LEVEL = [0.45, 0.8]; // the laser's strength, then while a landed shot waits
 const LASER_DASH = [0.06, 0.1];  // its dash and gap, in tile widths
 const SHOT_RISE = 0.3;           // where a shot ends above its tile, as a share of a tile's width
-const SHOT_RING = [0.06, 0.25];  // the ring where it lands: its first radius, then how much it grows, in tile widths
-const MISS_PAST = 0.6;           // how far past the minion a missed shot goes, in tiles
-const MISS_SIDE = 0.5;           // and how far to one side
-const MISS_TEXT_SIZE = 0.36;     // MISS's height, as a share of a tile's width
-const MISS_RISE = [1.15, 0.25];  // where MISS starts above its tile, then how far it floats up, in tile widths (slow: the calm rule)
-const WEAK_RING = 0.12;          // the ring on a stick enemy's maim point while a landed shot waits, its radius in tile widths
-const WEAK_RING_LEVEL = 0.7;     // and its strength
 // Walls in front of the camera, cut away (Timothy chose this over see-through glass).
 const WALL_STUB = 0.22;          // a cut-away wall's stub, as a share of its height
 const WALL_HOLD_STEPS = 2;       // a lowered wall stays down while the player is this many steps away or nearer
@@ -222,14 +176,9 @@ let shownLookAt = 0;     // the frame time it last moved
 let shownLookFloor = -1; // the floor (state.run.floorsEntered) it was drawn on: a new floor snaps it
 let frameLook = 0;       // the drawn look this frame
 // The gun's effects: view-only, like the camera.
-let shot = null;         // the last shot, from showShot(): { start, to: { row, col }, missed }
 let muzzle = null;       // where the gun's muzzle is this frame, in pixels (null with no gun drawn)
 let tapBoxes = [];       // this frame's minions, front first, for isoTileAt: [{ box, tile }]
 let pageScale = 1;       // canvas pixels per CSS pixel this frame
-let shotsShown = 0;      // shots shown so far, so a miss goes to the left and right in turn
-// The tutorial's ring of words: view-only, like the shot.
-let ringShown = false;   // the ring was drawn closed on the last frame
-let ringBrokeAt = null;  // the frame time it broke (its words scatter), or null
 
 // Draws the whole isometric map as state has it now, in layer order:
 // floor, things lying on it (stairs, papers, the look ring and cone
@@ -451,33 +400,6 @@ function isWall(row, col) {
   return state.floor.wallSet.has(key(row, col));
 }
 
-// Walls are never lit themselves (the light stops at them), so a wall
-// shows once any floor beside it, corners included, has been seen.
-function wallShown(row, col) {
-  for (let dr = -1; dr <= 1; dr++) {
-    for (let dc = -1; dc <= 1; dc++) {
-      const r = row + dr;
-      const c = col + dc;
-      if (r < 0 || c < 0 || r >= state.floor.GRID_SIZE || c >= state.floor.GRID_SIZE) continue;
-      if (!isWall(r, c) && look.fogOf(r, c) !== 'hidden') return true;
-    }
-  }
-  return false;
-}
-
-// How bright a floor tile is, from 0 to 1: fading over the player's own
-// light, a middle level where only the boss's light shows it, dim where
-// only remembered.
-function floorLevel(row, col) {
-  const fog = look.fogOf(row, col);
-  if (fog === 'hidden') return 0;
-  if (fog === 'dim') return REMEMBERED_LEVEL;
-  if (!state.settings.fogEnabled) return 1;
-  if (!state.floor.sightSet.has(key(row, col))) return BOSS_LIT_LEVEL;
-  const steps = Math.max(Math.abs(row - state.floor.playerRow), Math.abs(col - state.floor.playerCol));
-  return LIGHT_FALLOFF[Math.min(steps, LIGHT_FALLOFF.length - 1)];
-}
-
 // A wall is as bright as the brightest floor beside it (the 4 grid ways,
 // not the diagonals, so a wall isn't lit round a corner).
 function wallLevel(row, col) {
@@ -486,6 +408,24 @@ function wallLevel(row, col) {
     if (!isWall(row + dr, col + dc)) level = Math.max(level, floorLevel(row + dr, col + dc));
   }
   return level;
+}
+
+// How bright a floor tile is this frame (mapshared.js floorLevelOf).
+function floorLevel(row, col) {
+  return floorLevelOf(row, col, look.fogOf);
+}
+
+// Whether a wall shows yet (mapshared.js wallShownBy).
+function wallShown(row, col) {
+  return wallShownBy(row, col, look.fogOf);
+}
+
+// How far through its kick the gun is (mapshared.js recoilAt), keeping
+// frames going while it kicks.
+function recoil() {
+  const kick = recoilAt(look.now, look.still);
+  if (kick) look.keepMoving();
+  return kick;
 }
 
 // A phosphor colour at strength `a`.
@@ -937,38 +877,21 @@ function drawStairBeam(ctx, at) {
 // fade over TUTORIAL_RING_SCATTER_MS. Under reduced motion, and in
 // Comfort mode, they stand still and are simply gone when it breaks.
 function drawDarkRing(ctx) {
-  const tut = state.floor.tutorial;
-  const closed = !!tut && tut.stage === 'ring';
-  const still = look.still || state.settings.simpleEnemies;
-  if (closed) {
-    ringShown = true;
-    ringBrokeAt = null;
-  } else if (ringShown) {
-    ringShown = false;
-    ringBrokeAt = still ? null : look.now;
-  }
-  if (!closed && ringBrokeAt === null) return;
-  const gone = closed ? 0 : (look.now - ringBrokeAt) / TUTORIAL_RING_SCATTER_MS;
-  if (gone >= 1) {
-    ringBrokeAt = null;
-    return;
-  }
-  if (!still) look.keepMoving();
-  const words = t('tut.ring.words').split(' ');
-  const spin = still ? 0 : (look.now / TUTORIAL_RING_TURN_MS) * Math.PI * 2;
-  const radius = TUTORIAL_RING_RADIUS * (1 + gone * 1.5);
+  const ring = darkRingAt(look.now, look.still);
+  if (!ring) return;
+  if (ring.moving) look.keepMoving();
   const at = look.walkAt;
   ctx.save();
   ctx.font = Math.round(tw * 0.3) + 'px VT323, monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.globalAlpha = 0.75 * (1 - gone);
+  ctx.globalAlpha = ring.level;
   ctx.fillStyle = 'rgb(' + ENEMY_LIGHT.core + ')';
   ctx.shadowColor = 'rgba(' + ENEMY_LIGHT.halo + ', 0.6)';
   ctx.shadowBlur = tw * 0.15;
-  words.forEach((word, i) => {
-    const angle = spin + (i / words.length) * Math.PI * 2;
-    const [x, y] = centre(at.row + radius * Math.cos(angle), at.col + radius * Math.sin(angle));
+  ring.words.forEach((word, i) => {
+    const angle = ring.angles[i];
+    const [x, y] = centre(at.row + ring.radius * Math.cos(angle), at.col + ring.radius * Math.sin(angle));
     ctx.fillText(word, x, y - th * 0.6);
   });
   ctx.restore();
@@ -983,29 +906,19 @@ function drawDarkRing(ctx) {
 // ANSWER_RING_TURN_MS, and after a move rises a little as it fades. Never
 // shown under reduced motion (the line shows instead), so it always moves.
 function drawAnswerRing(ctx, ring, near) {
-  const letters = ringLetters(ring.text);
-  const n = letters.length;
+  const { out, letters } = answerRingLetters(ring, look.now);
   const [cx, foot] = centre(ring.row, ring.col);
   const size = Math.max(tw * ANSWER_RING.size, ANSWER_RING.minPx * pageScale);
   const radius = tw * (ring.boss ? ANSWER_RING.bossRadius : ANSWER_RING.radius);
-  const out = ring.fading === null ? 0 : smooth(ring.fading / ANSWER_RING_OUT_MS);
   const cy = foot - tw * (ring.boss ? ANSWER_RING.bossLift : ANSWER_RING.lift) - out * size * 0.8;
-  const spin = (look.now % ANSWER_RING_TURN_MS) / ANSWER_RING_TURN_MS * Math.PI * 2;
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  letters.forEach((ch, i) => {
-    // Going down the angle reads left to right across the front of the oval.
-    const angle = Math.PI * 0.95 - i * (Math.PI * 2 / n) + spin;
-    const toward = Math.sin(angle); // 1 nearest the player's side of the screen, -1 the far side
-    if ((toward >= 0) !== near) return;
-    const k = (toward + 1) / 2;
-    const comeIn = smooth((ring.since - (i / n) * ANSWER_RING_IN_MS * 0.6) / (ANSWER_RING_IN_MS * 0.4));
-    const level = comeIn * (1 - out) * (ANSWER_RING.backLevel + (1 - ANSWER_RING.backLevel) * Math.pow(k, 1.4));
-    if (level <= 0.01) return;
-    const px = Math.max(6, Math.round(size * (ANSWER_RING.backSize + (1 - ANSWER_RING.backSize) * k)));
+  letters.forEach(({ ch, angle, front, level, size: share }) => {
+    if ((front >= 0) !== near) return;
+    const px = Math.max(6, Math.round(size * share));
     const x = cx + Math.cos(angle) * radius;
-    const y = cy + toward * radius * ANSWER_RING.depth;
+    const y = cy + front * radius * ANSWER_RING.depth;
     ctx.font = px + 'px VT323, monospace';
     if (ch !== ' ') {
       ctx.fillStyle = 'rgba(0, 0, 0, ' + 0.8 * Math.min(1, level * 1.5) + ')';
@@ -1017,12 +930,6 @@ function drawAnswerRing(ctx, ring, near) {
     ctx.fillText(ch, x, y);
   });
   ctx.restore();
-}
-
-// Eases `x` (0..1, held there) in and out.
-function smooth(x) {
-  const k = Math.max(0, Math.min(1, x));
-  return k * k * (3 - 2 * k);
 }
 
 // The doorway on a tile, if it is one the player has seen with a wall on
@@ -1169,12 +1076,6 @@ function drawGrate(ctx, thing) {
     line(ctx, p([1, -1]), p([-1, 1]));
   }
   ctx.restore();
-}
-
-// Whether the paper or box on a tile has already been searched.
-function searched(at) {
-  const prop = state.floor.props.find(p => p.row === at.row && p.col === at.col);
-  return Boolean(prop && prop.searched);
 }
 
 // The wedge on the floor pointing where the player's body faces, any of
@@ -1437,19 +1338,19 @@ function drawHeardMark(ctx, at, strength) {
 // only moves as the gaze grows, so it is the same under reduced motion.
 // Out of the cone it isn't drawn, though its gaze is kept for next time.
 function drawGazeEye(ctx, at, m) {
-  if (!m || !m.gaze || !gazeInPlay() || !inCone(m)) return;
-  const share = Math.min(1, m.gaze / GAZE_MS);
+  const eye = eyeOf(m);
+  if (!eye) return;
+  const { share, level } = eye;
   const [x, foot] = centre(at.row, at.col);
   const y = foot - tw * (STICK_HEIGHT + EYE_LIFT);
   const w = tw * EYE_WIDTH;
-  const open = tw * EYE_OPEN * share * share * (3 - 2 * share);
+  const open = tw * eye.open;
   const lids = () => {
     ctx.beginPath();
     ctx.moveTo(x - w, y);
     ctx.quadraticCurveTo(x, y - open * 2, x + w, y);
     ctx.quadraticCurveTo(x, y + open * 2, x - w, y);
   };
-  const level = EYE_LEVEL[0] + (EYE_LEVEL[1] - EYE_LEVEL[0]) * share;
   ctx.save();
   if (open > 1) {
     lids();
@@ -1717,16 +1618,6 @@ function holdGun(shoulder, h, side, fr, fc) {
   };
 }
 
-// How far through its kick the gun is, 1 just fired to 0 settled. Still
-// under reduced motion.
-function recoil() {
-  if (!shot || look.still) return 0;
-  const age = look.now - shot.start;
-  if (age >= MAP_ANIMATION_MS.gunRecoil) return 0;
-  look.keepMoving();
-  return 1 - age / MAP_ANIMATION_MS.gunRecoil;
-}
-
 // The gun as two phosphor lines, butt to muzzle and the grip under it,
 // a little thicker than the stick man's lines. Uses the glow already set.
 function drawGun(ctx, gun, lineWidth) {
@@ -1739,16 +1630,6 @@ function drawGun(ctx, gun, lineWidth) {
   glowStroke(ctx);
 }
 
-// Whether the gun reaches a floor tile: one the player could shoot at
-// (sight.js canShoot: in their own light, in range, a clear line), not
-// their own tile and not a pillar.
-function inReach(row, col) {
-  const f = state.floor;
-  if (row === f.playerRow && col === f.playerCol) return false;
-  if (isWall(row, col) || f.pillarSet.has(key(row, col))) return false;
-  return canShoot({ row, col });
-}
-
 // The tiles the gun reaches, lit faintly over the floor.
 function drawReach(ctx, tiles) {
   tiles.forEach(({ row, col }) => {
@@ -1758,18 +1639,6 @@ function drawReach(ctx, tiles) {
     ctx.fillStyle = glow(REACH_FILL);
     ctx.fill();
   });
-}
-
-// The minion (or hunter) on a tile, if any.
-function minionOn(tile) {
-  return state.floor.minions.find(m => m.row === tile.row && m.col === tile.col);
-}
-
-// The gun's target, if it is still on the floor (a fight on the battle
-// screen can clear a minion the gun was aimed at).
-function liveTarget() {
-  const target = state.floor.gunTarget;
-  return target && state.floor.minions.includes(target) ? target : null;
 }
 
 // The map things that are minions or the hunter, as shown this frame.
@@ -1861,30 +1730,13 @@ function drawLaser(ctx) {
   ctx.restore();
 }
 
-// Plays a shot on the map (mapview.js shotOnMap calls it from main.js
-// drawEvents): a flash from the gun to `target`, or past it when it
-// `missed`, with MISS floating up over it. A miss goes to one side, then
-// the other, so two misses in a row don't look the same (never
-// Math.random: the seeded tests own it).
-export function showShot(target, missed) {
-  const at = { row: target.row, col: target.col };
-  let to = at;
-  if (missed) {
-    const dr = Math.sign(target.row - state.floor.playerRow);
-    const dc = Math.sign(target.col - state.floor.playerCol);
-    const side = shotsShown % 2 ? MISS_SIDE : -MISS_SIDE;
-    to = { row: at.row + dr * MISS_PAST + (dc ? side : 0), col: at.col + dc * MISS_PAST + (dr ? side : 0) };
-  }
-  shotsShown++;
-  shot = { start: performance.now(), at, to, missed };
-}
-
 // The last shot while it plays: the flash and the ring where it lands
 // (not under reduced motion), then MISS over a missed minion, fading as
 // it floats up (held still under reduced motion). Frames are shown plain
 // while it plays: the afterglow left a trail of MISSes under the rising
 // one, which read as the word shaking.
 function drawShot(ctx) {
+  const shot = lastShot();
   if (!shot) return;
   const age = look.now - shot.start;
   if (!look.still && age < Math.max(MAP_ANIMATION_MS.gunShot, shot.missed ? MAP_ANIMATION_MS.gunMiss : 0)) look.showPlain();
