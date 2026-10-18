@@ -79,6 +79,36 @@ export function turnBody() {
   return [{ type: 'bodyTurned', facing }];
 }
 
+// Sweeps the light `delta` radians round from where it points now (the
+// shoulder view's sweep, shoulder view plan step B: hold left / right).
+// Inside the free arc it costs nothing; once it passes the arc's edge the
+// body turns one way in the sweep's direction, and the light sweeps on
+// from there without a jump. The caller spends the turn. Events:
+// bodyTurned { facing } when the body turned, then the gun's
+// targetPicked when the target changed.
+export function sweepLook(delta) {
+  const events = [];
+  state.floor.look = wrapAngle(lookAngle() + delta);
+  if (wantsTurn()) {
+    const facing = nextWay(Math.sign(delta));
+    state.floor.facing = facing;
+    events.push({ type: 'bodyTurned', facing });
+  }
+  computeVisibility();
+  if (state.settings.gunCombat) events.push(...refreshGunTarget());
+  return events;
+}
+
+// The next way in use round from the body, clockwise (1) or
+// anticlockwise (-1).
+function nextWay(dir) {
+  const body = bodyAngle();
+  return waysInUse()
+    .map(way => ({ way, step: wrapAngle(BODY_ANGLES[way] - body) * dir }))
+    .filter(w => w.step > 1e-6)
+    .sort((a, b) => a.step - b.step)[0].way;
+}
+
 // The player stepped or turned by walking: the aim goes back to straight
 // ahead, so the light points the way they walk. Timothy: a look kept at the
 // arc's edge while walking was jarring; looking round is for standing still.

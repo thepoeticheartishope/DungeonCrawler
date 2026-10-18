@@ -75,11 +75,12 @@
 //      it through the duct, and waits play it in, the far grate's shudder
 //      ("The grate shudders." in the room log), then out beside the
 //      player's grate.
-//  11. Shoulder view run (shoulder view plan step A): a phone-sized page
-//      with ?view=shoulder starts a run in the shoulder view (DEV -> View
-//      says so); up steps the way the body faces, right turns the body one
-//      way for one turn, the d-pad's up button steps too, and the frame
-//      meter shows a draw time. The map is saved as noesis-shoulder-*.png
+//  11. Shoulder view run (shoulder view plan steps A and B): a phone-sized
+//      page with ?view=shoulder starts a run in the shoulder view (DEV ->
+//      View says so); up steps the way the body faces; holding right sweeps
+//      the light round, spending one turn per body turn; E steps ahead at a
+//      slant; a tap on the floor aims the light there for no turn; the
+//      d-pad's up button steps too, and the frame meter shows a draw time. The map is saved as noesis-shoulder-*.png
 //      in the system's temp folder. DEV -> View back to iso still draws.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
@@ -1594,6 +1595,12 @@ async function checkShoulderView(page, url) {
   if (view !== 'shoulder') return `?view=shoulder left the view as ${view}`;
   const map = await page.$('#mapCanvas');
   await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-start.png') });
+  const holdKey = async (key, ms) => {
+    await page.keyboard.down(key);
+    await page.waitForTimeout(ms);
+    await page.keyboard.up(key);
+    await roomIdle(page);
+  };
   const ways = { N: [-1, 0], NE: [-1, 1], E: [0, 1], SE: [1, 1], S: [1, 0], SW: [1, -1], W: [0, -1], NW: [-1, -1] };
   let moved = false;
   for (let i = 0; i < 8 && !moved; i++) {
@@ -1604,23 +1611,42 @@ async function checkShoulderView(page, url) {
     const [dr, dc] = ways[before.facing];
     if (after.row === before.row + dr && after.col === before.col + dc) moved = true;
     else if (after.row !== before.row || after.col !== before.col) return `up stepped from ${before.row},${before.col} facing ${before.facing} to ${after.row},${after.col}`;
-    else {
-      await page.keyboard.press('ArrowRight');
-      await roomIdle(page);
-    }
+    else await holdKey('ArrowRight', 400);
   }
   if (!moved) return 'up never stepped the way the body faces';
+  const order = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   const before = await player();
   const turns = await turnsShown(page);
-  await page.keyboard.press('ArrowRight');
-  await roomIdle(page);
+  await holdKey('ArrowRight', 800);
   const turned = await player();
-  if (turned.row !== before.row || turned.col !== before.col) return 'right moved the player';
-  const order = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-  if (order[(order.indexOf(before.facing) + 1) % 8] !== turned.facing) return `right turned ${before.facing} to ${turned.facing}`;
-  if (await turnsShown(page) !== turns + 1) return 'a turn by right did not spend exactly one turn';
+  if (turned.row !== before.row || turned.col !== before.col) return 'holding right moved the player';
+  const turnedWays = (order.indexOf(turned.facing) - order.indexOf(before.facing) + 8) % 8;
+  if (!turnedWays) return `holding right for 0.8 s never turned the body (${before.facing})`;
+  if (await turnsShown(page) !== turns + turnedWays) return `the sweep turned the body ${turnedWays} ways but spent ${await turnsShown(page) - turns} turns`;
   await page.waitForTimeout(400);
   await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-turned.png') });
+  const slanted = [];
+  for (let i = 0; i < 6 && !slanted.length; i++) {
+    const from = await player();
+    await page.keyboard.press('e');
+    await roomIdle(page);
+    const to = await player();
+    if (to.row !== from.row || to.col !== from.col) slanted.push(from, to);
+    else await holdKey('ArrowLeft', 300);
+  }
+  if (slanted.length) {
+    const [from, to] = slanted;
+    const way = order[(order.indexOf(from.facing) + 1) % 8];
+    if (to.facing !== way) return `E stepped from facing ${from.facing} to ${to.facing}, not ${way}`;
+  }
+  const lookNow = () => page.evaluate(async () => (await import('./js/state.js')).state.floor.look);
+  const aimed = await lookNow();
+  const tapTurns = await turnsShown(page);
+  const box = await map.boundingBox();
+  await map.tap({ position: { x: box.width * 0.3, y: box.height * 0.62 } });
+  await roomIdle(page);
+  if (await lookNow() === aimed) return 'a tap on the floor did not move the light';
+  if (await turnsShown(page) !== tapTurns) return 'a tap on the floor spent a turn';
   for (let i = 0; i < 4; i++) {
     await page.click('#btnU');
     await roomIdle(page);
@@ -1650,7 +1676,7 @@ async function runShoulderView(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: '?view=shoulder walked by the body, turned for one turn, showed a draw time and switched back to iso', consoleErrors, pageErrors };
+  return { ok: true, detail: '?view=shoulder walked by the body, swept the light one turn per body turn, stepped at a slant, aimed by a tap, showed a draw time and switched back to iso', consoleErrors, pageErrors };
 }
 
 async function main() {

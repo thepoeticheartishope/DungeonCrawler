@@ -10,8 +10,10 @@
 // map stands in as a plain glyph for now (step C draws it properly).
 //
 // mapview.js calls drawShoulderScene() from its drawScene, with the same
-// arguments as isoview.js drawIsoScene. The camera maths
-// (shoulderCamera, toCamera, projectPoint) are exported for the tests.
+// arguments as isoview.js drawIsoScene, and shoulderTileAt() /
+// shoulderGridAt() to turn a tap on the map into a tile or a floor point
+// (step B). The camera maths (shoulderCamera, toCamera, projectPoint,
+// floorAt) are exported for the tests.
 // Reads state and never changes it.
 
 import { state, key } from './state.js';
@@ -74,6 +76,7 @@ const CLOSE_FADE = { near: 0.35, far: 0.8, level: 0.2 };
 const VIGNETTE = { inner: 0.25, outer: 0.75, dark: 0.5, middleY: 0.6 };
 const GLYPH_CELL = 0.85;      // as in isoview.js: the tile size glyphs are sized for
 const GLYPH_RISE = 0.45;      // a glyph's middle sits this share of its height above the floor
+const ENEMY_KINDS = ['minion', 'hunter']; // what a tap on its glyph picks (gun.js pickTarget)
 // The four sides of a tile: the way out (n), its two corners (a, b) and
 // the way along it from a to b (t), on the grid with x = col, y = row.
 const SIDES = [
@@ -95,6 +98,8 @@ let width = 0;
 let height = 0;
 let lineWidth = 1;
 let pageWidth = 0;      // the map's width on the page, in CSS pixels
+let pageScale = 1;      // canvas pixels per CSS pixel
+let tapBoxes = [];      // this frame's stick men and other enemies, nearest first, for taps: [{ box: [left, top, right, bottom], tile }]
 
 // Draws the whole map from the shoulder camera: the floor, then the walls,
 // pillars, glyphs and the player, far to near, then the dark at the edges.
@@ -106,16 +111,52 @@ export function drawShoulderScene(ctx, canvasSize, shared) {
   width = canvasSize.width;
   height = canvasSize.height;
   pageWidth = canvasSize.pageWidth;
-  const pageScale = canvasSize.pageWidth ? width / canvasSize.pageWidth : 1;
+  pageScale = canvasSize.pageWidth ? width / canvasSize.pageWidth : 1;
   lineWidth = Math.max(LINE_MIN_PX, canvasSize.pageWidth * LINE_SHARE) * pageScale;
   const at = { x: look.walkAt.col + 0.5, y: look.walkAt.row + 0.5 };
   const moving = moveCamera(at);
   if (moving || look.walkAt.row !== state.floor.playerRow || look.walkAt.col !== state.floor.playerCol) look.showPlain();
   cam = cameraAt(at, shownLook, pulled.side, pulled.back, width, height);
   drawFloor(ctx);
-  const items = [...wallItems(ctx), ...thingItems(ctx)];
+  const boxes = [];
+  const items = [...wallItems(ctx), ...thingItems(ctx, boxes)];
   items.sort((a, b) => b.d - a.d).forEach(item => item.draw());
+  tapBoxes = boxes.sort((a, b) => a.d - b.d);
   drawVignette(ctx);
+}
+
+// The tile under a tap at (px, py) CSS pixels from the map's top-left: an
+// enemy whose glyph is under it first (nearest first: it stands up over
+// the floor behind it), else the floor tile the tap's ray meets; null
+// before the first frame or above the horizon.
+export function shoulderTileAt(px, py) {
+  if (!cam) return null;
+  const x = px * pageScale;
+  const y = py * pageScale;
+  const hit = tapBoxes.find(({ box }) => x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3]);
+  if (hit) return { row: hit.tile.row, col: hit.tile.col };
+  const at = shoulderGridAt(px, py);
+  return at && { row: Math.floor(at.row), col: Math.floor(at.col) };
+}
+
+// The floor point under a tap at (px, py) CSS pixels, in grid terms with
+// a tile's middle at whole numbers (as isoview.js isoGridAt), or null.
+export function shoulderGridAt(px, py) {
+  if (!cam) return null;
+  const at = floorAt(cam, px * pageScale, py * pageScale);
+  return at && { row: at[1] - 0.5, col: at[0] - 0.5 };
+}
+
+// Where the ray from camera `c` through canvas pixel (sx, sy) meets the
+// floor, as [x, y] (x = col, y = row, tile middles at .5), or null when
+// it points level or up (at or above the horizon).
+export function floorAt(c, sx, sy) {
+  const right = (sx - c.w / 2) / c.focal;
+  const up = (c.h / 2 - sy) / c.focal;
+  const ray = [0, 1, 2].map(i => c.F[i] + c.R[i] * right + c.U[i] * up);
+  if (ray[2] >= -1e-6) return null;
+  const s = -c.z / ray[2];
+  return [c.x + ray[0] * s, c.y + ray[1] * s];
 }
 
 // Eases the drawn light toward the real one and the camera's offsets
@@ -476,8 +517,9 @@ function faceItem(ctx, row, col, side, inset, h, base, ghost) {
 }
 
 // The player's stick man and, until step C, every other thing on the map
-// as its plain glyph standing on its tile, each as { d, draw }.
-function thingItems(ctx) {
+// as its plain glyph standing on its tile, each as { d, draw }. Enemies'
+// glyph boxes go into `boxes` as they are drawn, for taps.
+function thingItems(ctx, boxes) {
   const items = [];
   look.things.forEach(thing => {
     if (thing.kind === 'stairs') return;
@@ -486,22 +528,28 @@ function thingItems(ctx) {
     if (!inView(x, y)) return;
     const d = distance(x, y, 0.35);
     if (thing.kind === 'player') items.push({ d, draw: () => drawStickMan(ctx, x, y) });
-    else items.push({ d, draw: () => drawGlyph(ctx, thing, x, y) });
+    else items.push({ d, draw: () => {
+      const box = drawGlyph(ctx, thing, x, y);
+      if (box && ENEMY_KINDS.includes(thing.kind)) boxes.push({ d, box, tile: thing.tile });
+    } });
   });
   return items;
 }
 
 // A thing's glyph upright on its tile, never smaller than the isometric
 // map draws it (shoulder view plan, call 7), dimmer with distance.
+// Returns the box it covers on the canvas, feet included, or null.
 function drawGlyph(ctx, thing, x, y) {
   const ground = toCamera(cam, [x, y, 0]);
-  if (ground[2] < NEAR) return;
+  if (ground[2] < NEAR) return null;
   const across = pageWidth < ISO_NARROW_MAP_WIDTH ? ISO_TILES_ACROSS_NARROW : ISO_TILES_ACROSS;
   const cell = Math.max(width / across, cam.focal / ground[2]) * GLYPH_CELL;
   const [sx, sy] = toScreen(cam, ground);
   const rise = cell * MAP_GLYPH_SIZES[thing.look.size] * GLYPH_RISE + (thing.look.lift || 0) * cell / GLYPH_CELL;
   const alpha = (thing.look.alpha === undefined ? 1 : thing.look.alpha) * fadeAt(distance(x, y, 0));
   look.paintGlyph(ctx, cell, sx, sy - rise, thing.glyph, { ...thing.look, alpha });
+  const half = cell * MAP_GLYPH_SIZES[thing.look.size] / 2;
+  return [sx - half, sy - rise - half, sx + half, sy];
 }
 
 // The player as a stick man seen from behind, standing at (x, y): breathes

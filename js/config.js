@@ -1036,9 +1036,12 @@ export const SHOULDER_CAMERA = {
   turnMs: 90,       // the drawn light (and the camera locked to it) eases toward the real one: a 45° turn settles in about 300 ms
   pullMs: 130,      // the camera eases in from a wall (and back out) this fast
 };
-// In the shoulder view a held left / right (key or d-pad) turns the body
-// one more way this often, each a turn (shoulder view plan step A).
-export const SHOULDER_TURN_REPEAT_MS = 300;
+// The shoulder view's sweep (shoulder view plan step B): holding left /
+// right sweeps the light round this fast (radians a second; the mockup's
+// 144° a second), and a quick tap sweeps at least SHOULDER_SWEEP_TAP.
+// Past the free arc each body turn is a turn (look.js sweepLook).
+export const SHOULDER_SWEEP_SPEED = Math.PI * 0.8;
+export const SHOULDER_SWEEP_TAP = Math.PI / 12;
 // How long each map animation takes, in ms. Looping ones stand still
 // under reduced motion.
 export const MAP_ANIMATION_MS = {

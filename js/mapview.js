@@ -20,7 +20,7 @@ import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
 import { t } from './text.js';
 import { drawIsoScene, showShot, isoTileAt, isoGridAt } from './isoview.js';
-import { drawShoulderScene } from './shoulderview.js';
+import { drawShoulderScene, shoulderTileAt, shoulderGridAt } from './shoulderview.js';
 import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
 import { ventSealed } from './vents.js';
@@ -357,7 +357,11 @@ export function endAnswerRingOnMap() {
 // a finger or pen drags past MAP_DRAG_PX; `tap(tile, pointerType)` with the
 // tile under a press that didn't drag (isoview isoTileAt). A drag never
 // taps, so aiming on a phone can't pick or clear a target by accident.
-// The shoulder view has neither yet (shoulder view plan step B).
+// The shoulder view (shoulder view plan step B) has no hover or drag aim
+// (the camera turns with the light, so the point under the pointer would
+// run away from it); a tap there passes the tile (shoulderview
+// shoulderTileAt: an enemy's glyph first) and the floor point under it
+// (shoulderGridAt) as `tap(tile, pointerType, point)`.
 export function onMapPointer({ aim, tap }) {
   let press = null; // { x, y, id, dragged } while a press is down
   const place = e => {
@@ -381,7 +385,12 @@ export function onMapPointer({ aim, tap }) {
     if (!press || press.id !== e.pointerId) return;
     const dragged = press.dragged;
     press = null;
-    if (dragged || state.settings.view !== 'iso') return;
+    if (dragged) return;
+    if (state.settings.view === 'shoulder') {
+      const tile = shoulderTileAt(...place(e));
+      if (tile) tap(tile, e.pointerType, shoulderGridAt(...place(e)));
+      return;
+    }
     const tile = isoTileAt(...place(e));
     if (tile) tap(tile, e.pointerType);
   });
