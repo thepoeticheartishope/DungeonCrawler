@@ -15,18 +15,23 @@
 // With the gun on (step D) the stick man holds it, the tiles it reaches
 // are lit faintly, brackets mark what can be shot, a dashed laser runs to
 // the target, and the last shot (mapshared.js) plays as a flash or a MISS.
+// Holding Space or pushing the look stick up (sky eye plan step A) tilts
+// the camera up to the sky, where the eye hangs: the boss's light's time
+// left, shut when a floor begins and opening as the light spreads (in
+// Comfort mode, the turns left as a number).
 //
 // mapview.js calls drawShoulderScene() from its drawScene, with the same
 // arguments as isoview.js drawIsoScene, and shoulderTileAt() /
 // shoulderGridAt() to turn a tap on the map into a tile or a floor point
 // (step B). The camera maths (shoulderCamera, toCamera, projectPoint,
-// floorAt) are exported for the tests.
+// floorAt) are exported for the tests. main.js calls lookUp() while the
+// player looks up; it is view-only, like the camera.
 // Reads state and never changes it.
 
 import { state, key } from './state.js';
 import {
   SHOULDER_CAMERA, SHOULDER_WIDE_FOV, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, ISO_TILES_ACROSS,
-  ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING,
+  ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING, SKY_EYE,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { canShoot } from './sight.js';
@@ -43,7 +48,7 @@ import {
   BRACKET_PULSE, BRACKET_TEXT_SIZE, BRACKET_HP_GAP, LASER_LEVEL, SHOT_RING, MISS_TEXT_SIZE,
   MISS_RISE, WEAK_RING, WEAK_RING_LEVEL, PAPER_SCALE, GRATE_SCALE, ISO_STICK_HEIGHT, floorLevelOf,
   wallShownBy, searched, minionOn, liveTarget, inReach, lastShot, recoilAt, darkRingAt,
-  answerRingLetters, eyeOf,
+  answerRingLetters, eyeOf, skyEyeOpen, skyTurnsLeft,
 } from './mapshared.js';
 
 // Far things fade toward this share of their brightness, losing
@@ -124,6 +129,8 @@ let shownLook = null;   // the drawn light's angle (radians on the grid), easing
 let pulled = null;      // { side, back }: the camera's offsets now, easing toward what the walls allow
 let lastFrameAt = 0;    // the last frame's time
 let shownFloor = -1;    // the floor (state.run.floorsEntered) last drawn: a new floor snaps the camera
+let lookingUp = false;  // the player is holding the look up (lookUp)
+let shownPitch = null;  // the drawn camera's tilt (radians, down positive), easing toward its goal
 // This frame's drawing, set by drawShoulderScene.
 let look = null;        // what mapview.js passed in
 let cam = null;         // the camera (shoulderCamera)
@@ -149,7 +156,8 @@ export function drawShoulderScene(ctx, canvasSize, shared) {
   const at = { x: look.walkAt.col + 0.5, y: look.walkAt.row + 0.5 };
   const moving = moveCamera(at);
   if (moving || look.walkAt.row !== state.floor.playerRow || look.walkAt.col !== state.floor.playerCol) look.showPlain();
-  cam = cameraAt(at, shownLook, pulled.side, pulled.back, width, height, shoulderFov());
+  cam = cameraAt(at, shownLook, pulled.side, pulled.back, width, height, shoulderFov(), shownPitch);
+  drawSky(ctx);
   drawFloor(ctx);
   muzzle = null;
   const boxes = [];
@@ -199,9 +207,10 @@ export function floorAt(c, sx, sy) {
   return [c.x + ray[0] * s, c.y + ray[1] * s];
 }
 
-// Eases the drawn light toward the real one and the camera's offsets
-// toward what the walls allow, by the time since the last frame. A new
-// floor, or reduced motion, snaps both. Returns true while either moves.
+// Eases the drawn light toward the real one, the camera's offsets toward
+// what the walls allow and its tilt toward looking up or ahead, by the
+// time since the last frame. A new floor, or reduced motion, snaps them.
+// Returns true while any moves.
 function moveCamera(at) {
   const now = look.now;
   const goal = lookAngle();
@@ -213,6 +222,7 @@ function moveCamera(at) {
   if (snap) {
     shownLook = goal;
     pulled = pull;
+    shownPitch = pitchGoal(pull.back);
     return false;
   }
   const turnLeft = wrapAngle(goal - shownLook);
@@ -220,7 +230,35 @@ function moveCamera(at) {
   const ease = 1 - Math.exp(-dt / SHOULDER_CAMERA.pullMs);
   const settle = (from, to) => (Math.abs(to - from) < 0.002 ? to : from + (to - from) * ease);
   pulled = { side: settle(pulled.side, pull.side), back: settle(pulled.back, pull.back) };
-  return shownLook !== goal || pulled.side !== pull.side || pulled.back !== pull.back;
+  const tilt = pitchGoal(pulled.back);
+  const tiltEase = 1 - Math.exp(-dt / SHOULDER_CAMERA.lookUpMs);
+  shownPitch = Math.abs(tilt - shownPitch) < 0.002 ? tilt : shownPitch + (tilt - shownPitch) * tiltEase;
+  return shownLook !== goal || pulled.side !== pull.side || pulled.back !== pull.back || shownPitch !== tilt;
+}
+
+// The tilt the camera is heading for: up at the sky while the player
+// looks up, else its usual few degrees down for a camera `back` behind.
+function pitchGoal(back) {
+  return lookingUp ? -SHOULDER_CAMERA.lookUpPitch : restPitch(back);
+}
+
+// The camera's usual tilt, a little down: at a point SHOULDER_CAMERA
+// .aimAhead tiles ahead of the player, aimHeight up, from `back` behind.
+function restPitch(back) {
+  return Math.atan2(SHOULDER_CAMERA.height - SHOULDER_CAMERA.aimHeight, back + SHOULDER_CAMERA.aimAhead);
+}
+
+// Looks up at the sky (on) or back down (sky eye plan step A): main.js
+// calls it while Space is held or the look stick is pushed up. View-only:
+// looking up costs nothing and changes no state. The camera eases there.
+export function lookUp(on) {
+  lookingUp = on;
+}
+
+// The drawn camera's tilt in radians, down positive (up while looking
+// up), for the smoke test; null before the first frame.
+export function shoulderPitch() {
+  return shownPitch;
 }
 
 // How far right and back the camera can stand behind the player at `at`
@@ -256,12 +294,12 @@ export function pulledIn(at, angle, solid = isSolid) {
 // .5) looking at `angle`, `side` right of them and `back` behind, on a
 // canvas `w` by `h` pixels: its place, its axes (F ahead, R right, U up)
 // and its focal length in pixels (from the field of view `fov` across `w`,
-// in degrees).
-export function cameraAt(at, angle, side, back, w, h, fov = SHOULDER_CAMERA.fov) {
+// in degrees), tilted `pitch` radians down (its usual tilt unless given;
+// negative looks up).
+export function cameraAt(at, angle, side, back, w, h, fov = SHOULDER_CAMERA.fov, pitch = restPitch(back)) {
   const [fx, fy] = forwardOf(angle);
   const [rx, ry] = [-fy, fx];
   const z = SHOULDER_CAMERA.height;
-  const pitch = Math.atan2(z - SHOULDER_CAMERA.aimHeight, back + SHOULDER_CAMERA.aimAhead);
   const cp = Math.cos(pitch);
   const sp = Math.sin(pitch);
   return {
@@ -1343,6 +1381,137 @@ function drawShot(ctx) {
     ctx.fillText(t('gun.miss'), at[0], at[1]);
     ctx.restore();
   }
+}
+
+// The sky (sky eye plan step A): over the walls, paling faintly blue as
+// the boss's light nears the end, and the eye straight overhead, seen
+// only by looking up. Drawn before the floor, so a wall in the way still
+// covers it. In Comfort mode the sky stays dark and holds the turns left
+// as plain words instead of an eye.
+function drawSky(ctx) {
+  const open = skyEyeOpen();
+  const plain = state.settings.simpleEnemies;
+  if (!plain) drawPaleSky(ctx, open);
+  const at = skyPoint();
+  if (!at) return;
+  if (plain) drawTurnsLeft(ctx, at);
+  else drawSkyEye(ctx, at, open);
+}
+
+// Where something infinitely far away in direction `d` ([x, y, z] on the
+// grid, z up) shows on the canvas, or null when it is behind the camera.
+function screenOfWay(d) {
+  const p = toCamera({ x: 0, y: 0, z: 0, R: cam.R, U: cam.U, F: cam.F }, d);
+  return p[2] > NEAR ? toScreen(cam, p) : null;
+}
+
+// Where the eye is on the canvas this frame: SKY_EYE.elevation above
+// level, the way the drawn light points; null while it is off screen.
+function skyPoint() {
+  const [fx, fy] = forwardOf(shownLook);
+  const e = SKY_EYE.elevation;
+  const at = screenOfWay([fx * Math.cos(e), fy * Math.cos(e), Math.sin(e)]);
+  const r = width * SKY_EYE.size * SKY_EYE.halo;
+  if (!at || at[0] < -r || at[0] > width + r || at[1] < -r || at[1] > height + r) return null;
+  return at;
+}
+
+// The dark above the horizon, paling a little in the boss's blue once the
+// eye is more than SKY_EYE.paleFrom open.
+function drawPaleSky(ctx, open) {
+  const pale = Math.max(0, (open - SKY_EYE.paleFrom) / (1 - SKY_EYE.paleFrom));
+  if (!pale) return;
+  const [fx, fy] = forwardOf(shownLook);
+  const horizon = screenOfWay([fx, fy, 0]);
+  const bottom = Math.min(height, horizon ? horizon[1] : height);
+  if (bottom <= 0) return;
+  const sky = ctx.createLinearGradient(0, 0, 0, bottom);
+  sky.addColorStop(0, 'rgba(' + look.colours.bossLightRgb + ', ' + (0.1 * pale) + ')');
+  sky.addColorStop(1, 'rgba(' + look.colours.bossLightRgb + ', ' + (0.05 * pale) + ')');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, width, bottom);
+}
+
+// The eye at `at`: its glow, the dark between its lids, the iris and the
+// slit pupil turned toward the player, then the lids. Shut it is one line;
+// `open` (skyEyeOpen) parts the lids. Near the end it twitches slowly
+// (never under reduced motion: the calm rule).
+function drawSkyEye(ctx, [x0, y], open) {
+  const r = width * SKY_EYE.size;
+  let x = x0;
+  if (open >= SKY_EYE.twitchAt && !look.still) {
+    look.keepMoving();
+    const phase = (look.now % SKY_EYE.twitchMs) / SKY_EYE.twitchMs;
+    if (phase > 0.86 && phase < 0.9) x -= r * SKY_EYE.twitch;
+    else if (phase >= 0.9 && phase < 0.94) x += r * SKY_EYE.twitch;
+  }
+  const blue = look.colours.bossLightRgb;
+  const pale = look.colours.bossFogRgb;
+  const lid = r * SKY_EYE.lid * open;
+  const shape = () => {
+    ctx.beginPath();
+    ctx.moveTo(x - r, y);
+    ctx.quadraticCurveTo(x, y - lid * 2, x + r, y);
+    ctx.quadraticCurveTo(x, y + lid * 2, x - r, y);
+    ctx.closePath();
+  };
+  const reach = r * SKY_EYE.halo;
+  const halo = ctx.createRadialGradient(x, y, r * 0.2, x, y, reach);
+  halo.addColorStop(0, 'rgba(' + blue + ', ' + (0.05 + 0.18 * open) + ')');
+  halo.addColorStop(1, 'rgba(' + blue + ', 0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(x - reach, y - reach, reach * 2, reach * 2);
+  if (lid > 1) {
+    ctx.save();
+    shape();
+    ctx.fillStyle = '#000';
+    ctx.fill();
+    ctx.clip();
+    const [ix, iy] = pupilAt(x, y, r, lid);
+    const ir = r * SKY_EYE.iris;
+    const iris = ctx.createRadialGradient(ix, iy, ir * 0.2, ix, iy, ir);
+    iris.addColorStop(0, 'rgba(' + pale + ', 0.95)');
+    iris.addColorStop(1, 'rgba(' + blue + ', 0.55)');
+    ctx.beginPath();
+    ctx.arc(ix, iy, ir, 0, Math.PI * 2);
+    ctx.fillStyle = iris;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(ix, iy, ir * 0.18, ir * (0.35 + 0.45 * open), 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#000';
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.lineJoin = 'round';
+  [[lineWidth * 5, 0.15], [lineWidth * 1.6, 0.95]].forEach(([w, a]) => {
+    shape();
+    ctx.strokeStyle = 'rgba(' + pale + ', ' + a + ')';
+    ctx.lineWidth = w;
+    ctx.stroke();
+  });
+}
+
+// Where the eye's iris sits: turned from the middle (x, y) toward the
+// player on the canvas, as far as SKY_EYE.look of the half width `r`
+// sideways and no further up or down than the lids `lid` allow.
+function pupilAt(x, y, r, lid) {
+  const player = toCamera(cam, [look.walkAt.col + 0.5, look.walkAt.row + 0.5, STICK_HEIGHT * 0.8]);
+  if (player[2] < NEAR) return [x, y];
+  const [px, py] = toScreen(cam, player);
+  const length = Math.hypot(px - x, py - y) || 1;
+  return [x + (px - x) / length * r * SKY_EYE.look, y + (py - y) / length * Math.min(lid * 0.6, r * SKY_EYE.look)];
+}
+
+// Comfort mode's sky: the turns left before the light takes the floor, as
+// plain words where the eye would be ("no light here" with no boss's light).
+function drawTurnsLeft(ctx, [x, y]) {
+  const left = skyTurnsLeft();
+  const words = left === null ? t('sky.noLight') : t('sky.turnsLeft', { count: left });
+  ctx.font = Math.round(width * SKY_EYE.size * 0.5) + 'px VT323, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgb(' + look.colours.glowRgb + ')';
+  ctx.fillText(words, x, y);
 }
 
 // The dark pressing in at the edges of the screen.

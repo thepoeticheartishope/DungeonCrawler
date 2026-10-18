@@ -6,7 +6,7 @@ import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX, TUTORIAL_EXIT_ENERGY,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
-  LOOK_NUDGE, LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX,
+  LOOK_NUDGE, LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, SHOULDER_LOOK_UP_STICK,
   SHOULDER_SWEEP_SPEED, SHOULDER_SLOW_SHARE, SHOULDER_STEP_REPEAT_MS, SHOULDER_STEP_STICK, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
   TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS,
 } from './config.js';
@@ -48,6 +48,7 @@ import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
 import { computeVisibility, seesEnemy, FACING_VECTORS } from './sight.js';
 import { isoAngleOf } from './isoview.js';
+import { lookUp } from './shoulderview.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
@@ -156,7 +157,7 @@ initSetPicker({ startGame, openWorkshop: showWorkshop });
 initPractice({ letterPoolQuestion, sumLockQuestion, mountBattleQuestion });
 initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
-  gunCombatChanged, autoWinGun, battleScreen, wagerRow, viewChanged: showViewOptions,
+  gunCombatChanged, autoWinGun, battleScreen, wagerRow, viewChanged: () => { showViewOptions(); renderLightEye(); },
 });
 showViewOptions();
 
@@ -365,6 +366,28 @@ function stickSweep(dx) {
   if (stickStepped || Math.abs(push) < SHOULDER_STEP_STICK) return;
   stickStepped = true;
   stepTurn(Math.sign(push));
+}
+
+// Looking up at the sky (sky eye plan step A, shoulder view only): Space
+// held or the look stick pushed up, either one ('key' / 'stick'). Free and
+// view-only (shoulderview.js lookUp): the world keeps its turns, and with
+// Real time on it keeps moving while the player looks away from the floor.
+const lookingUp = new Set();
+function holdLookUp(source, on) {
+  if (lookingUp.has(source) === on) return;
+  if (on) lookingUp.add(source);
+  else lookingUp.delete(source);
+  lookUp(lookingUp.size > 0);
+  requestMapDraw();
+}
+
+// The look stick in the shoulder view: pushed up past SHOULDER_LOOK_UP_STICK
+// of its reach, more up than sideways, it looks up and stops sweeping;
+// otherwise it sweeps by its sideways push.
+function shoulderStick(dx, dy) {
+  const up = -dy > Math.abs(dx) && -dy / LOOK_STICK_KNOB_PX >= SHOULDER_LOOK_UP_STICK;
+  holdLookUp('stick', up);
+  stickSweep(up ? 0 : dx);
 }
 
 // One step of Turn in steps: the body turns one way round, clockwise (1)
@@ -1943,14 +1966,16 @@ initDpad({
 initLookStick({
   button: lookStick,
   // In the shoulder view the stick sweeps the light, faster the further it
-  // is pushed sideways; elsewhere it aims the way it is pushed on screen.
+  // is pushed sideways, or looks up when pushed up; elsewhere it aims the
+  // way it is pushed on screen.
   aim: (dx, dy) => {
     if (state.settings.view !== 'shoulder') return aimTo(isoAngleOf(dx, dy));
-    stickSweep(dx);
+    shoulderStick(dx, dy);
   },
   done: () => {
     stickStepped = false;
     sweep.release('stick');
+    holdLookUp('stick', false);
   },
   wait: skipTurn,
   light: switchLight,
@@ -1982,8 +2007,13 @@ const NUMPAD_WAYS = {
 const arrows = arrowChord(walkScreen, { readyIn: () => heldStepWait(performance.now()) });
 document.addEventListener('keyup', (e) => {
   if (ARROW_WAYS[e.key]) arrows.up(ARROW_WAYS[e.key]);
+  if (e.key === ' ') holdLookUp('key', false);
 });
-window.addEventListener('blur', () => arrows.reset());
+window.addEventListener('blur', () => {
+  arrows.reset();
+  holdLookUp('key', false);
+  holdLookUp('stick', false);
+});
 
 // Arrow-key support on desktop, ignored while typing in the answer box.
 // With 8 ways the arrows walk by screen, and two together walk a diagonal
@@ -1991,7 +2021,8 @@ window.addEventListener('blur', () => arrows.reset());
 // the map is taking number keys. With 8 ways off they walk as before
 // (up is grid north).
 // Q / E nudge the look, Space turns the body toward an aim past the arc
-// (free look plan). With the gun on: F is SELECT (fires), T picks the next
+// (free look plan); in the shoulder view Space held looks up at the sky
+// instead (sky eye plan step A: a sweep or a click already turns there). With the gun on: F is SELECT (fires), T picks the next
 // target, . waits. V switches the light (light battery plan).
 // On the stairs, Enter goes down (so does SELECT).
 // In the shoulder view the arrows, W A S D and Q / E walk round the body
@@ -2015,6 +2046,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
   else if (lookReady() && (e.key === 'q' || e.key === 'Q')) { e.preventDefault(); nudgeLook(-1); }
   else if (lookReady() && (e.key === 'e' || e.key === 'E')) { e.preventDefault(); nudgeLook(1); }
+  else if (e.key === ' ' && state.settings.view === 'shoulder' && !mapPanelShown()) { e.preventDefault(); holdLookUp('key', true); }
   else if (e.key === ' ' && wantsTurn() && !mapPanelShown()) { e.preventDefault(); turnLook(); }
   else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); pressSelect(); }
   else if (gunReady() && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }

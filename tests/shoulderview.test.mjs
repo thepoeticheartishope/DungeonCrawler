@@ -102,3 +102,40 @@ test('a wider field of view shows more across the same width', () => {
   const side = [middle.x + 2.5, middle.y - 2, 0];
   assert.ok(Math.abs(projectPoint(wide, side)[0] - W / 2) < Math.abs(projectPoint(normal, side)[0] - W / 2));
 });
+
+test('the eye in the sky opens with the boss light and is shut with none', async () => {
+  const { state } = await import('../js/state.js');
+  const { skyEyeOpen, skyTurnsLeft } = await import('../js/mapshared.js');
+  state.floor.boss = { row: 1, col: 1 };
+  state.floor.lightTurnBudget = 40;
+  state.floor.lightTurns = 0;
+  assert.equal(skyEyeOpen(), 0);
+  assert.equal(skyTurnsLeft(), 40);
+  state.floor.lightTurns = 10;
+  const quarter = skyEyeOpen();
+  state.floor.lightTurns = 30;
+  const most = skyEyeOpen();
+  assert.ok(quarter > 0 && quarter < most && most < 1, 'it opens as the light spreads');
+  assert.equal(skyTurnsLeft(), 10);
+  state.floor.lightTurns = 40;
+  assert.equal(skyEyeOpen(), 1);
+  assert.equal(skyTurnsLeft(), 0);
+  state.floor.boss = null; // a rest floor, or the boss has fallen
+  assert.equal(skyEyeOpen(), 0);
+  assert.equal(skyTurnsLeft(), null);
+});
+
+test('looking up puts the eye on screen, and looking ahead keeps it off', async () => {
+  const { SKY_EYE } = await import('../js/config.js');
+  const way = [0, -Math.cos(SKY_EYE.elevation), Math.sin(SKY_EYE.elevation)]; // the sky, looking north
+  // The map runs from 3:2 wide to 3:5 tall.
+  [[600, 400], [300, 500]].forEach(([w, h]) => {
+    const up = cameraAt(middle, 0, 0.4, 0.95, w, h, SHOULDER_CAMERA.fov, -SHOULDER_CAMERA.lookUpPitch);
+    const far = way.map((v, i) => [up.x, up.y, up.z][i] + v * 1000);
+    const [sx, sy] = projectPoint(up, far);
+    assert.ok(sx > 0 && sx < w && sy > 0 && sy < h / 2, `looking up on ${w}x${h} the eye is at ${sx},${sy}`);
+    const ahead = cameraAt(middle, 0, 0.4, 0.95, w, h);
+    const seen = projectPoint(ahead, way.map((v, i) => [ahead.x, ahead.y, ahead.z][i] + v * 1000));
+    assert.ok(!seen || seen[1] < 0, 'looking ahead the eye is above the screen');
+  });
+});

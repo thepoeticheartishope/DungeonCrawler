@@ -88,6 +88,8 @@ export const TEXT = {
   'stat.keys.sealed': '{held}/{total} SEALED', // draft. HUD: the gate is sealed until another key
   'stat.rest': 'REST', // draft — shown for the depth number while on a rest floor
   'stat.light': 'The {@term.boss} light: {pct}% of the way to consuming everything', // draft (the eye's tooltip)
+  'sky.turnsLeft': '{count} {count|plural:turn} left', // draft. Comfort mode's sky in the shoulder view, where the eye would be (sky eye plan)
+  'sky.noLight': 'no light here', // draft. The same with no boss light on the floor (a rest floor, the tutorial, after the boss)
 
   // ---- Encounter log: opening lines (what it is, a hint of what's at stake) ----
   'log.start.boss': 'ENCOUNTER: {@term.boss.symbol}',

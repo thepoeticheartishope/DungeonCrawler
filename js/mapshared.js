@@ -17,6 +17,7 @@ import { canShoot } from './sight.js';
 import { gazeInPlay, inCone } from './gaze.js';
 import { t } from './text.js';
 import { ringLetters } from './swirl.js';
+import { lightProgress } from './light.js';
 
 // How bright a lit tile is, by its steps from the player (0 = their own
 // tile): the light fades over the five steps they can see.
@@ -166,6 +167,21 @@ export function inReach(row, col) {
 export function smooth(x) {
   const k = Math.max(0, Math.min(1, x));
   return k * k * (3 - 2 * k);
+}
+
+// How open the eye in the sky is, 0 (shut) to 1 (wide open): the boss's
+// light's progress, eased so it opens slowly at first and settles at the
+// end. Shut with no boss (a rest floor, the tutorial, after the boss falls):
+// light.js lightProgress() is 0 then.
+export function skyEyeOpen() {
+  return smooth(lightProgress());
+}
+
+// The turns left before the light takes the floor, for Comfort mode's
+// number in the sky; null with no boss's light on this floor.
+export function skyTurnsLeft() {
+  if (!state.floor.boss) return null;
+  return Math.max(0, state.floor.lightTurnBudget - state.floor.lightTurns);
 }
 
 // The last shot (mapview.js shotOnMap -> showShot): { start, at, to,
