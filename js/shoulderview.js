@@ -14,7 +14,7 @@
 // the isometric map. Simple enemies keep their still glyphs here too.
 // With the gun on (step D) the stick man holds it, the tiles it reaches
 // are lit faintly, brackets mark what can be shot, a dashed laser runs to
-// the target, and showShot() plays a shot or a MISS.
+// the target, and the last shot (mapshared.js) plays as a flash or a MISS.
 //
 // mapview.js calls drawShoulderScene() from its drawScene, with the same
 // arguments as isoview.js drawIsoScene, and shoulderTileAt() /
@@ -25,22 +25,27 @@
 
 import { state, key } from './state.js';
 import {
-  SHOULDER_CAMERA, SHOULDER_WIDE_FOV, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH,
-  ENEMY_LIGHT, MINION_KINDS, GAZE_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS,
-  TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS,
+  SHOULDER_CAMERA, SHOULDER_WIDE_FOV, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, ISO_TILES_ACROSS,
+  ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { canShoot } from './sight.js';
-import { gazeInPlay, inCone } from './gaze.js';
 import { t } from './text.js';
 import { drawStickForm, stickBox, dyingSticks, drawDroppedLetters } from './stickforms.js';
-import { answerRingNow, ringLetters } from './swirl.js';
+import { answerRingNow } from './swirl.js';
+import {
+  WALL_MIN_LEVEL, SEARCHED_LEVEL, PILLAR_INSET, BOX_INSET, BOX_HEIGHT, DRUM_RADIUS, DRUM_HEIGHT,
+  DRUM_HOOPS, DRUM_ENDS, DRUM_END_SIZE, DRUM_BREATH, DRUM_BREATH_REACH, DESK_GLOW, DESK_GLOW_RADIUS,
+  GLYPH_CELL, GLYPH_RISE, STAIR_STEPS, STAIR_INSET, STAIR_BEAM_HEIGHT, STAIR_BEAM_LAYERS,
+  STAIR_BEAM_FADE, DOOR_POST, DOOR_ARCH_RISE, DOOR_ARCH_THICK, DOOR_ARCH_STEPS, DOOR_MIN_LEVEL,
+  PAPER_SHEET, PAPER_LINES, SOUND_INSET, SOUND_LEVEL, HEARD_LIFT, GRATE_RATTLE, GRATE_RATTLE_SWAYS,
+  GRATE_BARS, EYE_LIFT, EYE_WIDTH, REACH_FILL, BRACKET_ARM, BRACKET_HALF, BRACKET_LEVEL,
+  BRACKET_PULSE, BRACKET_TEXT_SIZE, BRACKET_HP_GAP, LASER_LEVEL, SHOT_RING, MISS_TEXT_SIZE,
+  MISS_RISE, WEAK_RING, WEAK_RING_LEVEL, PAPER_SCALE, GRATE_SCALE, ISO_STICK_HEIGHT, floorLevelOf,
+  wallShownBy, searched, minionOn, liveTarget, inReach, lastShot, recoilAt, darkRingAt,
+  answerRingLetters, eyeOf,
+} from './mapshared.js';
 
-// Light, as in isoview.js: the player's own light fades over five steps,
-// the boss's light shows floor at a middle level, remembered floor is dim.
-const LIGHT_FALLOFF = [1, 1, 0.85, 0.7, 0.56, 0.44];
-const BOSS_LIT_LEVEL = 0.5;
-const REMEMBERED_LEVEL = 0.2;
 // Far things fade toward this share of their brightness, losing
 // 1 / DISTANCE_FADE of it per tile past DISTANCE_FADE_FROM.
 const DISTANCE_FADE = 11;
@@ -49,9 +54,6 @@ const DISTANCE_FADE_MIN = 0.2;
 const NEAR = 0.06;            // the camera's near plane, in tiles: anything closer is cut off
 const CULL_BEHIND = -1;       // a tile whose middle is this far behind the camera isn't drawn at all
 const CULL_SIDE = 1.5;        // nor one this many tiles outside the sides of the view
-const PILLAR_INSET = 0.24;    // as in isoview.js: a pillar is thinner than its tile
-const STAIR_STEPS = 4;
-const STAIR_INSET = [0.08, 0.09]; // the first step's inset, then each next one's
 const STAIR_DROP = 0.08;          // how far each step sinks, in tiles
 // The camera never stands in a wall: it is pulled in, side first, then
 // back, until a line of PULL_SAMPLES points from the player to it, each
@@ -90,78 +92,24 @@ const STICK_STRIDE = 0.13;
 const CLOSE_FADE = { near: 0.35, far: 0.8, level: 0.2 };
 // The dark pressing in at the screen's edges, like a torch's edge.
 const VIGNETTE = { inner: 0.25, outer: 0.75, dark: 0.5, middleY: 0.6 };
-const GLYPH_CELL = 0.85;      // as in isoview.js: the tile size glyphs are sized for
-const GLYPH_RISE = 0.45;      // a glyph's middle sits this share of its height above the floor
 const ENEMY_KINDS = ['minion', 'hunter']; // what a tap on its glyph picks (gun.js pickTarget)
 // Props and the rest (step C), sized in tiles, as in isoview.js unless
 // said otherwise. Brightness: a block never darker than a remembered
 // wall, and a searched box, cell or paper dimmer.
-const WALL_MIN_LEVEL = 0.28;
-const SEARCHED_LEVEL = 0.6;
-const BOX_INSET = 0.3;
-const BOX_HEIGHT = 0.3;
-const DRUM_RADIUS = 0.24;
-const DRUM_HEIGHT = 0.32;
 const DRUM_SIDES = 12;              // the round case is drawn with this many sides
-const DRUM_HOOPS = [0.25, 0.7];     // the bands round it, as shares of its height
-const DRUM_ENDS = [[-0.38, 0.1], [0.38, 0.1], [0, -0.42]]; // the round ends on the lid, as shares of its radius
-const DRUM_END_SIZE = 0.22;
-const DRUM_BREATH = [0.05, 0.12];
-const DRUM_BREATH_REACH = 0.55;
-const PAPER_SHEET = [[-0.8, -0.55], [0.75, -0.7], [0.8, 0.55], [-0.75, 0.7]];
-const PAPER_LINES = [-0.3, 0, 0.3];
-const PAPER_SCALE = 0.4;            // tiles from the paper's middle to (u, v) = 1 (isoview's 0.2 is half a diamond)
-const GRATE_SCALE = 0.38;
-const GRATE_BARS = [-0.5, -0.17, 0.17, 0.5];
-const GRATE_RATTLE = 0.03;
-const GRATE_RATTLE_SWAYS = 3;
-const SOUND_INSET = [0.4, 0.1];
-const SOUND_LEVEL = 0.55;
-const DESK_GLOW = [0.16, 0.26];
-const DESK_GLOW_RADIUS = 1.3;
+const DIAMOND_TILES = 2;           // the shared paper and grate sizes are shares of the iso diamond: twice that in tiles
 const POOL_SIDES = 20;              // the desk's pool is drawn as a circle of this many sides
 const MIST_LEVEL = 0.13;            // the boss's mist over a floor tile at full strength
-const STAIR_BEAM_HEIGHT = 2.1;      // as a share of a wall's height
-const STAIR_BEAM_LAYERS = [{ width: 0.55, strength: 0.16 }, { width: 0.32, strength: 0.26 }, { width: 0.12, strength: 0.5 }];
-const STAIR_BEAM_FADE = [0.75, 0.5];
-const DOOR_POST = 0.07;
-const DOOR_ARCH_RISE = 0.34;
-const DOOR_ARCH_THICK = 0.08;
-const DOOR_ARCH_STEPS = 16;
-const DOOR_MIN_LEVEL = 0.5;
 const DOOR_HAZE = 0.1;
 const DOOR_DEPTH = 0.3;             // a doorway draws this much nearer than it is, over the walls beside it
-// Over a stick man: its eye (gaze.js) and the '!' when it heard a sound,
-// in tiles above its head; the ring on its maim point while a shot waits.
-const EYE_LIFT = 0.22;
-const EYE_WIDTH = 0.16;
-const EYE_OPEN = 0.07;
-const EYE_LEVEL = [0.45, 1];
-const HEARD_LIFT = 0.18;
-const WEAK_RING = 0.12;
-const WEAK_RING_LEVEL = 0.7;
-const ISO_STICK_HEIGHT = 0.62;      // isoview.js's stick man height: the answer ring's lift is measured against it
 const DARK_RING_LIFT = 0.5;         // the tutorial's ring of words floats this high
 // The gun (step D), in tiles from the player's feet: held `ahead` toward
 // the light, `side` right of the middle, `height` up; `length` grip to
 // muzzle, `grip` hanging under it; `raise` while a landed shot waits,
 // `kick` back on a shot; `line` its width as a share of the stick man's.
 const GUN = { ahead: 0.24, side: 0.08, height: 0.42, length: 0.26, grip: 0.07, raise: 0.05, kick: 0.06, line: 1.2 };
-const REACH_FILL = 0.15;            // a tile the gun reaches, lit this much more
-const BRACKET_ARM = 0.12;           // as in isoview.js, shares of a tile's width (never smaller than on the iso map)
-const BRACKET_HALF = 0.32;
-const BRACKET_LEVEL = [0.4, 0.95];
-const BRACKET_PULSE = 0.025;
-const BRACKET_TEXT_SIZE = 0.26;
-const BRACKET_HP_GAP = 0.1;
 const CHEST = 0.55;                 // a shot goes to this share of a stick man's height
-const LASER_LEVEL = [0.45, 0.8];
 const LASER_DASH = [5, 4];            // its dash and gap, in line widths
-const SHOT_RING = [0.06, 0.25];
-const MISS_PAST = 0.6;
-const MISS_SIDE = 0.5;
-const MISS_TEXT_SIZE = 0.36;
-const MISS_RISE = [1.15, 0.25];     // MISS starts this high over the floor, then floats up this much more (slow: the calm rule)
 // The four sides of a tile: the way out (n), its two corners (a, b) and
 // the way along it from a to b (t), on the grid with x = col, y = row.
 const SIDES = [
@@ -464,16 +412,18 @@ function isSolid(row, col) {
   return isWall(row, col) || state.floor.pillarSet.has(key(row, col));
 }
 
-// How bright a floor tile is, from 0 (hidden) to 1, as in isoview.js.
+// How bright a floor tile is this frame, from 0 (hidden, or a wall) to 1
+// (mapshared.js floorLevelOf).
 function floorLevel(row, col) {
-  if (isWall(row, col)) return 0;
-  const fog = look.fogOf(row, col);
-  if (fog === 'hidden') return 0;
-  if (fog === 'dim') return REMEMBERED_LEVEL;
-  if (!state.settings.fogEnabled) return 1;
-  if (!state.floor.sightSet.has(key(row, col))) return BOSS_LIT_LEVEL;
-  const steps = Math.max(Math.abs(row - state.floor.playerRow), Math.abs(col - state.floor.playerCol));
-  return LIGHT_FALLOFF[Math.min(steps, LIGHT_FALLOFF.length - 1)];
+  return isWall(row, col) ? 0 : floorLevelOf(row, col, look.fogOf);
+}
+
+// How far through its kick the gun is (mapshared.js recoilAt), keeping
+// frames going while it kicks.
+function recoil() {
+  const kick = recoilAt(look.now, look.still);
+  if (kick) look.keepMoving();
+  return kick;
 }
 
 // Every tile within reach of the camera worth drawing, as { row, col }.
@@ -536,15 +486,9 @@ function drawStairs(ctx, at) {
   }
 }
 
-// Walls are never lit themselves (the light stops at them), so a wall
-// shows once any floor beside it, corners included, has been seen.
+// Whether a wall shows yet (mapshared.js wallShownBy).
 function wallShown(row, col) {
-  for (let dr = -1; dr <= 1; dr++) {
-    for (let dc = -1; dc <= 1; dc++) {
-      if (!isWall(row + dr, col + dc) && look.fogOf(row + dr, col + dc) !== 'hidden') return true;
-    }
-  }
-  return false;
+  return wallShownBy(row, col, look.fogOf);
 }
 
 // Whether a wall at (row, col) stands between the camera and the player,
@@ -706,10 +650,6 @@ function drawingOf(thing) {
   return drawing;
 }
 
-function minionOn(tile) {
-  return state.floor.minions.find(m => m.row === tile.row && m.col === tile.col);
-}
-
 // A tile's width on the isometric map, in canvas pixels: text in the world
 // is never drawn smaller than there (shoulder view plan, call 7).
 function isoTileWidth() {
@@ -805,22 +745,22 @@ function enemyLine(ctx, path, level, w) {
 // showing from a third open. Sized for the distance, never smaller than
 // on the isometric map.
 function drawGazeEye(ctx, x, y, m) {
-  if (!m.gaze || !gazeInPlay() || !inCone(m)) return;
+  const eye = eyeOf(m);
+  if (!eye) return;
   const size = (MINION_KINDS[m.minionKind] || {}).size || 1;
   const at = screenOf(x, y, STICK_HEIGHT * size + EYE_LIFT);
   if (!at) return;
   const tw = Math.max(isoTileWidth(), tileAt(at[2]));
   const [ex, ey] = at;
-  const share = Math.min(1, m.gaze / GAZE_MS);
+  const { share, level } = eye;
   const w = tw * EYE_WIDTH;
-  const open = tw * EYE_OPEN * share * share * (3 - 2 * share);
+  const open = tw * eye.open;
   const lids = () => {
     ctx.beginPath();
     ctx.moveTo(ex - w, ey);
     ctx.quadraticCurveTo(ex, ey - open * 2, ex + w, ey);
     ctx.quadraticCurveTo(ex, ey + open * 2, ex - w, ey);
   };
-  const level = EYE_LEVEL[0] + (EYE_LEVEL[1] - EYE_LEVEL[0]) * share;
   ctx.save();
   if (open > 1) {
     lids();
@@ -852,8 +792,7 @@ function drawHeardMark(ctx, x, y, strength, size) {
 // The box's level: lit like its floor, never darker than a remembered
 // wall, dimmer once searched.
 function propLevel(thing) {
-  const prop = state.floor.props.find(p => p.row === thing.tile.row && p.col === thing.tile.col);
-  const level = Math.max(WALL_MIN_LEVEL, floorLevel(thing.at.row, thing.at.col) * (prop && prop.searched ? SEARCHED_LEVEL : 1));
+  const level = Math.max(WALL_MIN_LEVEL, floorLevel(thing.at.row, thing.at.col) * (searched(thing.tile) ? SEARCHED_LEVEL : 1));
   return level * (thing.look.alpha === undefined ? 1 : thing.look.alpha) * fadeAt(distance(thing.at.col + 0.5, thing.at.row + 0.5, 0));
 }
 
@@ -914,7 +853,7 @@ function drawDrum(ctx, thing) {
   const x = thing.at.col + 0.5;
   const y = thing.at.row + 0.5;
   const level = propLevel(thing);
-  const spent = state.floor.props.some(p => p.row === thing.tile.row && p.col === thing.tile.col && p.searched);
+  const spent = searched(thing.tile);
   const rgb = look.colours.glowRgb;
   if (thing.look.breath !== null && thing.look.breath !== undefined) {
     const mid = screenOf(x, y, DRUM_HEIGHT / 2);
@@ -1000,13 +939,14 @@ function onTile(row, col, scale, [u, v], dx = 0) {
 function drawPaper(ctx, thing) {
   const { row, col } = thing.at;
   const level = propLevel(thing);
-  const sheet = PAPER_SHEET.map(p => onTile(row, col, PAPER_SCALE, p));
+  const scale = PAPER_SCALE * DIAMOND_TILES;
+  const sheet = PAPER_SHEET.map(p => onTile(row, col, scale, p));
   if (tracePolygon(ctx, sheet)) {
     ctx.fillStyle = 'rgba(' + look.colours.glowRgb + ', ' + 0.16 * level + ')';
     ctx.fill();
   }
   sheet.forEach((p, i) => line3(ctx, p, sheet[(i + 1) % sheet.length], 0.8 * level));
-  PAPER_LINES.forEach(v => line3(ctx, onTile(row, col, PAPER_SCALE, [-0.5, v - 0.05]), onTile(row, col, PAPER_SCALE, [0.5, v - 0.15]), 0.45 * level));
+  PAPER_LINES.forEach(v => line3(ctx, onTile(row, col, scale, [-0.5, v - 0.05]), onTile(row, col, scale, [0.5, v - 0.15]), 0.45 * level));
 }
 
 // A grate in the floor (vents.js): a dark square frame with bars across
@@ -1017,7 +957,7 @@ function drawGrate(ctx, thing) {
   const r = thing.look.rattle;
   const dx = r === null || r === undefined ? 0 : Math.sin(r * Math.PI * GRATE_RATTLE_SWAYS * 2) * (1 - r) * GRATE_RATTLE;
   const level = floorLevel(row, col) * (thing.look.alpha === undefined ? 1 : thing.look.alpha) * fadeAt(distance(col + 0.5, row + 0.5, 0));
-  const p = uv => onTile(row, col, GRATE_SCALE, uv, dx);
+  const p = uv => onTile(row, col, GRATE_SCALE * DIAMOND_TILES, uv, dx);
   const frame = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(p);
   if (tracePolygon(ctx, frame)) {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
@@ -1149,14 +1089,11 @@ function drawDoorway(ctx, row, col, across) {
 // map. Only the `near` half or the far half is drawn, so what stands on
 // the tile can be between them. Letters never smaller than the iso map's.
 function drawAnswerRing(ctx, ring, near) {
-  const letters = ringLetters(ring.text);
-  const n = letters.length;
+  const { out, letters } = answerRingLetters(ring, look.now);
   const x = ring.col + 0.5;
   const y = ring.row + 0.5;
   const radius = ring.boss ? ANSWER_RING.bossRadius : ANSWER_RING.radius;
-  const out = ring.fading === null ? 0 : smooth(ring.fading / ANSWER_RING_OUT_MS);
   const lift = (ring.boss ? ANSWER_RING.bossLift : ANSWER_RING.lift) * STICK_HEIGHT / ISO_STICK_HEIGHT + out * 0.2;
-  const spin = (look.now % ANSWER_RING_TURN_MS) / ANSWER_RING_TURN_MS * Math.PI * 2;
   // Across the screen (the camera's right) and toward the camera, flat on the floor.
   const across = [cam.R[0], cam.R[1]];
   const toward = [-cam.F[0], -cam.F[1]];
@@ -1164,20 +1101,14 @@ function drawAnswerRing(ctx, ring, near) {
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  letters.forEach((ch, i) => {
-    const angle = Math.PI * 0.95 - i * (Math.PI * 2 / n) + spin;
-    const front = Math.sin(angle);
+  letters.forEach(({ ch, angle, front, level, size: share }) => {
     if ((front >= 0) !== near) return;
-    const k = (front + 1) / 2;
-    const comeIn = smooth((ring.since - (i / n) * ANSWER_RING_IN_MS * 0.6) / (ANSWER_RING_IN_MS * 0.4));
-    const level = comeIn * (1 - out) * (ANSWER_RING.backLevel + (1 - ANSWER_RING.backLevel) * Math.pow(k, 1.4));
-    if (level <= 0.01) return;
     const wx = x + (across[0] * Math.cos(angle) + toward[0] / flat * front) * radius;
     const wy = y + (across[1] * Math.cos(angle) + toward[1] / flat * front) * radius;
     const at = screenOf(wx, wy, lift);
     if (!at) return;
     const size = Math.max(isoTileWidth() * ANSWER_RING.size, ANSWER_RING.minPx * pageScale, tileAt(at[2]) * ANSWER_RING.size);
-    const px = Math.max(6, Math.round(size * (ANSWER_RING.backSize + (1 - ANSWER_RING.backSize) * k)));
+    const px = Math.max(6, Math.round(size * share));
     ctx.font = px + 'px VT323, monospace';
     if (ch !== ' ') {
       ctx.fillStyle = 'rgba(0, 0, 0, ' + 0.8 * Math.min(1, level * 1.5) + ')';
@@ -1191,51 +1122,26 @@ function drawAnswerRing(ctx, ring, near) {
   ctx.restore();
 }
 
-// Eases `x` (0..1, held there) in and out.
-function smooth(x) {
-  const k = Math.max(0, Math.min(1, x));
-  return k * k * (3 - 2 * k);
-}
-
 // The tutorial's ring of dark (tutorial.js stage 'ring'), as in
 // isoview.js: words in the stick men's cold light circling the player at
 // the edge of their small light; when the light breaks it they scatter
 // outward and fade. Still under reduced motion and in Comfort mode, and
 // simply gone when it breaks. Never smaller than on the isometric map.
-let ringShown = false;   // the ring was drawn closed on the last frame
-let ringBrokeAt = null;  // the frame time it broke, or null
 function drawDarkRing(ctx) {
-  const tut = state.floor.tutorial;
-  const closed = !!tut && tut.stage === 'ring';
-  const still = look.still || state.settings.simpleEnemies;
-  if (closed) {
-    ringShown = true;
-    ringBrokeAt = null;
-  } else if (ringShown) {
-    ringShown = false;
-    ringBrokeAt = still ? null : look.now;
-  }
-  if (!closed && ringBrokeAt === null) return;
-  const gone = closed ? 0 : (look.now - ringBrokeAt) / TUTORIAL_RING_SCATTER_MS;
-  if (gone >= 1) {
-    ringBrokeAt = null;
-    return;
-  }
-  if (!still) look.keepMoving();
-  const words = t('tut.ring.words').split(' ');
-  const spin = still ? 0 : (look.now / TUTORIAL_RING_TURN_MS) * Math.PI * 2;
-  const radius = TUTORIAL_RING_RADIUS * (1 + gone * 1.5);
+  const ring = darkRingAt(look.now, look.still);
+  if (!ring) return;
+  if (ring.moving) look.keepMoving();
   const px = look.walkAt.col + 0.5;
   const py = look.walkAt.row + 0.5;
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.globalAlpha = 0.75 * (1 - gone);
+  ctx.globalAlpha = ring.level;
   ctx.fillStyle = 'rgb(' + ENEMY_LIGHT.core + ')';
   ctx.shadowColor = 'rgba(' + ENEMY_LIGHT.halo + ', 0.6)';
-  words.forEach((word, i) => {
-    const angle = spin + (i / words.length) * Math.PI * 2;
-    const at = screenOf(px + radius * Math.sin(angle), py + radius * Math.cos(angle), DARK_RING_LIFT);
+  ring.words.forEach((word, i) => {
+    const angle = ring.angles[i];
+    const at = screenOf(px + ring.radius * Math.sin(angle), py + ring.radius * Math.cos(angle), DARK_RING_LIFT);
     if (!at) return;
     const size = Math.max(isoTileWidth(), tileAt(at[2])) * 0.3;
     ctx.font = Math.round(size) + 'px VT323, monospace';
@@ -1333,31 +1239,6 @@ function drawGun(ctx, gun, lineW) {
   });
 }
 
-// How far through its kick the gun is, 1 just fired to 0 settled. Still
-// under reduced motion.
-function recoil() {
-  if (!shot || look.still) return 0;
-  const age = look.now - shot.start;
-  if (age >= MAP_ANIMATION_MS.gunRecoil) return 0;
-  look.keepMoving();
-  return 1 - age / MAP_ANIMATION_MS.gunRecoil;
-}
-
-// Whether the gun reaches a floor tile: one the player could shoot at
-// (sight.js canShoot), not their own tile and not a wall or pillar.
-function inReach(row, col) {
-  const f = state.floor;
-  if (row === f.playerRow && col === f.playerCol) return false;
-  if (isSolid(row, col)) return false;
-  return canShoot({ row, col });
-}
-
-// The gun's target, if it is still on the floor.
-function liveTarget() {
-  const target = state.floor.gunTarget;
-  return target && state.floor.minions.includes(target) ? target : null;
-}
-
 // Corner brackets round everything the gun can shoot right now, faint, and
 // round the target, bright and slowly breathing, with its guard over it
 // while it has one (as in isoview.js). `boxes` are this frame's enemies'
@@ -1425,27 +1306,14 @@ function drawLaser(ctx) {
 // from the gun to `target`, or past it when it `missed`, with MISS
 // floating up over it. A miss goes to one side, then the other (never
 // Math.random: the seeded tests own it).
-let shot = null;       // the last shot: { start, at, to, missed }
-let shotsShown = 0;
 let muzzle = null;     // the gun's muzzle this frame, a world point, or null with no gun drawn
-export function showShot(target, missed) {
-  const at = { row: target.row, col: target.col };
-  let to = at;
-  if (missed) {
-    const dr = Math.sign(target.row - state.floor.playerRow);
-    const dc = Math.sign(target.col - state.floor.playerCol);
-    const side = shotsShown % 2 ? MISS_SIDE : -MISS_SIDE;
-    to = { row: at.row + dr * MISS_PAST + (dc ? side : 0), col: at.col + dc * MISS_PAST + (dr ? side : 0) };
-  }
-  shotsShown++;
-  shot = { start: performance.now(), at, to, missed };
-}
 
 // The last shot while it plays: the flash and a ring where it lands (not
 // under reduced motion), then MISS over a missed minion, fading as it
 // floats up (still under reduced motion). Frames show plain meanwhile, so
 // the afterglow leaves no trail.
 function drawShot(ctx) {
+  const shot = lastShot();
   if (!shot) return;
   const age = look.now - shot.start;
   if (!look.still && age < Math.max(MAP_ANIMATION_MS.gunShot, shot.missed ? MAP_ANIMATION_MS.gunMiss : 0)) look.showPlain();
