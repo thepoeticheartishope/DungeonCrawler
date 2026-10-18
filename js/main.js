@@ -6,7 +6,8 @@ import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX, TUTORIAL_EXIT_ENERGY,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
-  LOOK_NUDGE, LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
+  LOOK_NUDGE, LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX,
+  SHOULDER_SWEEP_SPEED, SHOULDER_SLOW_SHARE, SHOULDER_STEP_REPEAT_MS, SHOULDER_STEP_STICK, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
   TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS,
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
@@ -31,18 +32,18 @@ import { scoreGoals } from './goals.js';
 import { settleRelay } from './relays.js';
 import { playIntro } from './introview.js';
 import { settleAnswer } from './answers.js';
-import { initSetLoader, showWorkshop } from './setloader.js';
+import { initSetLoader, showWorkshop, showViewOptions } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar } from './gunpanels.js';
-import { t, setTextArea, applyStaticText } from './text.js';
+import { t, TEXT, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, SCREEN_WAYS, screenStep, arrowChord, shoulderStep, sweepHold } from './dpad.js';
 import { repeatMs, noteStep, heldStepReady, heldStepWait } from './walkpace.js';
-import { aimLook, turnBody, sweepLook, wantsTurn, lookAngle, waysInUse } from './look.js';
+import { aimLook, turnBody, sweepLook, wantsTurn, lookAngle, bodyAngle, waysInUse } from './look.js';
 import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
 import { computeVisibility, seesEnemy, FACING_VECTORS } from './sight.js';
@@ -60,6 +61,9 @@ const introGlitch = document.getElementById('introGlitch');
 const revealToggle = document.getElementById('revealToggle');
 const realTimeToggle = document.getElementById('realTimeToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
+const shoulderStepsToggle = document.getElementById('shoulderStepsToggle');
+const shoulderSlowToggle = document.getElementById('shoulderSlowToggle');
+const shoulderWideToggle = document.getElementById('shoulderWideToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
 const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
@@ -152,8 +156,9 @@ initSetPicker({ startGame, openWorkshop: showWorkshop });
 initPractice({ letterPoolQuestion, sumLockQuestion, mountBattleQuestion });
 initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
-  gunCombatChanged, autoWinGun, battleScreen, wagerRow,
+  gunCombatChanged, autoWinGun, battleScreen, wagerRow, viewChanged: showViewOptions,
 });
+showViewOptions();
 
 // A tap on the map. With the gun on (DEV -> Combat), it picks the gun's
 // target: the light swings to the minion on that tile and the target
@@ -229,6 +234,14 @@ function speakInRing() {
   }, TUTORIAL_KIND_DELAY_MS);
 }
 
+// A line's wording for the view in play: in the shoulder view, its
+// `.shoulder` version when it has one (shoulder view plan step F: lines
+// that name screen directions or aiming by drag say it this view's way).
+function viewText(key, vars) {
+  const shoulder = key + '.shoulder';
+  return t(state.settings.view === 'shoulder' && TEXT[shoulder] !== undefined ? shoulder : key, vars);
+}
+
 // The tutorial teaches without hand holding (Timothy): a stage's plain
 // hint shows in the room log only if the player is still on it after
 // TUTORIAL_STUCK_MS. Stages with no hint teach themselves.
@@ -249,7 +262,7 @@ function watchTutorial(restart = false) {
   if (!hint || (stage === 'ring' && !batteryInPlay())) return;
   stuckTimer = setTimeout(() => {
     const now = state.floor.tutorial;
-    if (now && now.stage === stage && !state.run.runEnded) showRoomNote('move-msg', t(hint));
+    if (now && now.stage === stage && !state.run.runEnded) showRoomNote('move-msg', viewText(hint));
   }, TUTORIAL_STUCK_MS);
 }
 
@@ -314,8 +327,55 @@ function shoulderSweep(delta) {
   applyTurnOutcome(events);
   state.run.turnLocked = false;
 }
-const sweep = sweepHold(shoulderSweep);
-window.addEventListener('blur', () => sweep.reset());
+const sweep = sweepHold(shoulderSweep, { speed: () => SHOULDER_SWEEP_SPEED * (state.settings.shoulderSlow ? SHOULDER_SLOW_SHARE : 1) });
+
+// Left / right pressed (a key, a d-pad arrow, by `source`) in the shoulder
+// view: the sweep while held, or with the Turn in steps comfort setting
+// (step F) one step at once and again every SHOULDER_STEP_REPEAT_MS while
+// held.
+const stepTimers = new Map(); // source -> the held step turn's timer
+function turnPress(source, dir) {
+  if (!state.settings.shoulderSteps) return sweep.push(source, dir, true);
+  turnRelease(source);
+  stepTurn(dir);
+  const again = () => {
+    stepTurn(dir);
+    stepTimers.set(source, setTimeout(again, SHOULDER_STEP_REPEAT_MS));
+  };
+  stepTimers.set(source, setTimeout(again, SHOULDER_STEP_REPEAT_MS));
+}
+function turnRelease(source) {
+  clearTimeout(stepTimers.get(source));
+  stepTimers.delete(source);
+  sweep.release(source);
+}
+window.addEventListener('blur', () => {
+  sweep.reset();
+  [...stepTimers.keys()].forEach(turnRelease);
+});
+
+// The look stick pushed sideways in the shoulder view: sweeps faster the
+// further it goes, or with Turn in steps one step each time it is pushed
+// past SHOULDER_STEP_STICK of its reach (again once it has come back).
+let stickStepped = false;
+function stickSweep(dx) {
+  const push = Math.max(-1, Math.min(1, dx / LOOK_STICK_KNOB_PX));
+  if (!state.settings.shoulderSteps) return sweep.push('stick', push);
+  if (Math.abs(push) < SHOULDER_STEP_STICK / 2) stickStepped = false;
+  if (stickStepped || Math.abs(push) < SHOULDER_STEP_STICK) return;
+  stickStepped = true;
+  stepTurn(Math.sign(push));
+}
+
+// One step of Turn in steps: the body turns one way round, clockwise (1)
+// or anticlockwise (-1), a spent turn, and the light points straight ahead
+// of it, so every press does the same thing wherever the light was.
+function stepTurn(dir) {
+  if (!lookReady()) return;
+  aimTo(bodyAngle() + dir * 2 * Math.PI / waysInUse().length);
+  turnLook();
+  if (state.settings.freeLook) aimTo(bodyAngle());
+}
 
 // The shoulder view's keys by the d-pad way they stand for. A held step key
 // steps again once the last step has landed (walkpace.js); a held sweep key
@@ -327,7 +387,7 @@ const SHOULDER_KEYS = {
 };
 function shoulderKey(way, repeat) {
   if (way === 'L' || way === 'R') {
-    if (!repeat) sweep.push('key' + way, SCREEN_WAYS[way][0], true);
+    if (!repeat) turnPress('key' + way, SCREEN_WAYS[way][0]);
     return;
   }
   if (repeat && !heldStepReady(performance.now())) return;
@@ -335,7 +395,7 @@ function shoulderKey(way, repeat) {
 }
 document.addEventListener('keyup', (e) => {
   const way = SHOULDER_KEYS[e.key];
-  if (way === 'L' || way === 'R') sweep.release('key' + way);
+  if (way === 'L' || way === 'R') turnRelease('key' + way);
 });
 
 // The look stick lights up while a tap would turn the body, and its label
@@ -343,7 +403,7 @@ document.addEventListener('keyup', (e) => {
 function syncLookStick() {
   const armed = wantsTurn();
   lookStick.classList.toggle('armed', armed);
-  lookStick.setAttribute('aria-label', t(armed ? 'dpad.stick.turn' : batteryInPlay() ? 'dpad.stick.wait' : 'dpad.stick.wait.plain'));
+  lookStick.setAttribute('aria-label', viewText(armed ? 'dpad.stick.turn' : batteryInPlay() ? 'dpad.stick.wait' : 'dpad.stick.wait.plain'));
 }
 
 // Whether the gun can be used right now: gun combat on, the room screen
@@ -990,6 +1050,9 @@ function startGame() {
   state.settings.revealOnWrong = revealToggle.checked;
   state.settings.realTime = realTimeToggle.checked;
   state.settings.simpleEnemies = simpleEnemiesToggle.checked;
+  state.settings.shoulderSteps = shoulderStepsToggle.checked;
+  state.settings.shoulderSlow = shoulderSlowToggle.checked;
+  state.settings.shoulderWide = shoulderWideToggle.checked;
   resetClock();
   // Read on every start, so a retry keeps the name without asking again.
   state.settings.playerName = playerNameInput.value.trim();
@@ -1345,7 +1408,7 @@ function drawEvents(events) {
         parts.push(t('tut.key.dropped'));
         break;
       case 'doorUnlocked':
-        parts.push(t('tut.door.open'));
+        parts.push(viewText('tut.door.open'));
         break;
       case 'relayHeld':
         parts.push(t(e.turns ? 'room.relay.held' : 'room.relay.heldDark', { turns: e.turns }));
@@ -1872,8 +1935,8 @@ initDpad({
   // The shoulder view's side arrows sweep the light while held.
   hold: (sx, sy, down) => {
     if (state.settings.view !== 'shoulder' || sy || !sx) return false;
-    if (down) sweep.push('pad', sx, true);
-    else sweep.release('pad');
+    if (down) turnPress('pad', sx);
+    else turnRelease('pad');
     return true;
   },
 });
@@ -1883,9 +1946,12 @@ initLookStick({
   // is pushed sideways; elsewhere it aims the way it is pushed on screen.
   aim: (dx, dy) => {
     if (state.settings.view !== 'shoulder') return aimTo(isoAngleOf(dx, dy));
-    sweep.push('stick', Math.max(-1, Math.min(1, dx / LOOK_STICK_KNOB_PX)));
+    stickSweep(dx);
   },
-  done: () => sweep.release('stick'),
+  done: () => {
+    stickStepped = false;
+    sweep.release('stick');
+  },
   wait: skipTurn,
   light: switchLight,
   // The first tap says what the stick does (3 taps only in Comfort mode

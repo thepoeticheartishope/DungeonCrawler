@@ -230,6 +230,16 @@
     50% { transform: translate(2px, -1px); clip-path: inset(10% 0 55% 0); opacity: 0.4; }
   }
 
+  .shoulder-options {
+    border: 1px solid var(--muted);
+    padding: 12px 14px 0;
+    margin: 0 0 22px;
+  }
+  .shoulder-options legend {
+    color: var(--muted);
+    font-size: 18px;
+    padding: 0 6px;
+  }
   .option-toggle {
     display: flex;
     align-items: center;
@@ -1641,6 +1651,24 @@
       <input type="checkbox" id="tutorialToggle" checked>
       <span data-t="start.tutorial"></span>
     </label>
+
+    <!-- The shoulder view's comfort settings (shoulder view plan step F),
+         shown only while that view is on (setloader.js showViewOptions). -->
+    <fieldset class="shoulder-options" id="shoulderOptions" hidden>
+      <legend data-t="start.shoulder.title"></legend>
+      <label class="option-toggle">
+        <input type="checkbox" id="shoulderStepsToggle">
+        <span data-t="start.shoulderSteps"></span>
+      </label>
+      <label class="option-toggle">
+        <input type="checkbox" id="shoulderSlowToggle">
+        <span data-t="start.shoulderSlow"></span>
+      </label>
+      <label class="option-toggle">
+        <input type="checkbox" id="shoulderWideToggle">
+        <span data-t="start.shoulderWide"></span>
+      </label>
+    </fieldset>
 
     <button id="startBtn" data-t="start.enter"></button>
   </section>

@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { SHOULDER_CAMERA } from '../js/config.js';
 import { readFileSync } from 'node:fs';
 
-import { shoulderCamera, pulledIn, toCamera, projectPoint, floorAt, SHOULDER_DRAWINGS } from '../js/shoulderview.js';
+import { shoulderCamera, cameraAt, pulledIn, toCamera, projectPoint, floorAt, SHOULDER_DRAWINGS } from '../js/shoulderview.js';
 
 const W = 400;
 const H = 600;
@@ -93,4 +93,12 @@ test('every kind of thing the game puts on the map has a shoulder drawing', () =
   });
   const ways = new Set(['block', 'drum', 'flat', 'glyph', 'form', 'player']);
   kinds.forEach(kind => assert.ok(ways.has(SHOULDER_DRAWINGS[kind]), `no shoulder drawing for ${kind}`));
+});
+
+test('a wider field of view shows more across the same width', () => {
+  const normal = cameraAt(middle, 0, 0.4, 0.95, W, H);
+  const wide = cameraAt(middle, 0, 0.4, 0.95, W, H, 88);
+  assert.ok(wide.focal < normal.focal);
+  const side = [middle.x + 2.5, middle.y - 2, 0];
+  assert.ok(Math.abs(projectPoint(wide, side)[0] - W / 2) < Math.abs(projectPoint(normal, side)[0] - W / 2));
 });

@@ -1,6 +1,6 @@
 // Start screen options and the workshop. The start screen keeps only what a
 // player sets before a run (name, reveal, real time, swap sides, simple
-// enemies, the tutorial room), remembered across
+// enemies, the tutorial room, the shoulder view's comfort settings), remembered across
 // sessions. The workshop is for authors: pasted or file lists, the sample
 // list, saving and deleting sets, and the way into DATA.SYS. Players pick
 // the set itself after Enter (setpicker.js). Uses only state, sets.js,
@@ -16,6 +16,12 @@ const realTimeToggle = document.getElementById('realTimeToggle');
 const dpadRightToggle = document.getElementById('dpadRightToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
+const shoulderOptions = document.getElementById('shoulderOptions');
+const shoulderToggles = {
+  shoulderSteps: document.getElementById('shoulderStepsToggle'),
+  shoulderSlow: document.getElementById('shoulderSlowToggle'),
+  shoulderWide: document.getElementById('shoulderWideToggle'),
+};
 const roomControls = document.querySelector('.room-controls');
 const playerNameInput = document.getElementById('playerName');
 const workshopScreen = document.getElementById('workshopScreen');
@@ -28,6 +34,12 @@ const loaderStatus = document.getElementById('loaderStatus');
 const saveSetName = document.getElementById('saveSetName');
 const saveSetBtn = document.getElementById('saveSetBtn');
 const savedSetsList = document.getElementById('savedSetsList');
+
+// Shows the shoulder view's comfort settings on the start screen only while
+// that view is on (?view=shoulder or DEV -> View; shoulder view plan step F).
+export function showViewOptions() {
+  shoulderOptions.hidden = state.settings.view !== 'shoulder';
+}
 
 // Wires the start screen options and the workshop. `showSets` returns to
 // the set screen (setpicker.js), which lists what the workshop made.
@@ -55,6 +67,7 @@ export function initSetLoader({ showSets }) {
         dpadRight: dpadRightToggle.checked,
         simpleEnemies: simpleEnemiesToggle.checked,
         tutorial: tutorialToggle.checked,
+        ...Object.fromEntries(Object.entries(shoulderToggles).map(([name, box]) => [name, box.checked])),
         playerName: playerNameInput.value,
       }));
     } catch (e) {
@@ -77,6 +90,10 @@ export function initSetLoader({ showSets }) {
   // On until a tutorial is finished (main.js switches it off then), so a
   // player who has never played gets one.
   if (typeof savedOptions.tutorial === 'boolean') tutorialToggle.checked = savedOptions.tutorial;
+  Object.entries(shoulderToggles).forEach(([name, box]) => {
+    if (typeof savedOptions[name] === 'boolean') box.checked = savedOptions[name];
+    box.addEventListener('change', saveOptions);
+  });
   placeDpad();
   playerNameInput.maxLength = PLAYER_NAME_MAX_LENGTH;
   if (typeof savedOptions.playerName === 'string') playerNameInput.value = savedOptions.playerName.slice(0, PLAYER_NAME_MAX_LENGTH);
