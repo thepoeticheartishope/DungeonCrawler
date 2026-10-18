@@ -89,6 +89,7 @@ export const TEXT = {
   'stat.rest': 'REST', // draft — shown for the depth number while on a rest floor
   'stat.light': 'The {@term.boss} light: {pct}% of the way to consuming everything', // draft (the eye's tooltip)
   'sky.turnsLeft': '{count} {count|plural:turn} left', // draft. Comfort mode's sky in the shoulder view, where the eye would be (sky eye plan)
+  'sky.watching': 'it is watching', // draft. Comfort mode's sky in the tutorial, where the eye is wide open
   'sky.noLight': 'no light here', // draft. The same with no boss light on the floor (a rest floor, the tutorial, after the boss)
 
   // ---- Encounter log: opening lines (what it is, a hint of what's at stake) ----
@@ -331,7 +332,7 @@ export const TEXT = {
   // whisper, then the kind voice, then the barrel's question.
   'tut.cantLeave': "You can't leave. Don't try.", // Timothy's wording. Fades on waking, in "I see you."'s style
   'tut.trust': 'You can do this. I trust you.', // Timothy's wording. The kind voice, walking toward the light
-  'tut.lookUp': 'Look up.', // draft (sky eye plan step B). The kind voice, the first time the player stands in the light from above, shoulder view only
+  'tut.lookUp': "It's watching you. Show it true light.", // Timothy's wording (sky eye plan step B). The kind voice, the first time the player stands in the light from above, shoulder view only: up there the eye is wide open, so they learn an open eye is bad without being told
   'tut.die': 'Die in darkness.', // Timothy's wording. The dungeon, as the ring of dark closes after the name
   'tut.dimLight': "Don't let them dim your light.", // Timothy's wording. The kind voice, a moment later: the only hint
   'tut.ring.words': 'dark dim die dark dim die', // draft. The words circling the player in the ring (split on spaces)

@@ -1503,10 +1503,11 @@ function pupilAt(x, y, r, lid) {
 }
 
 // Comfort mode's sky: the turns left before the light takes the floor, as
-// plain words where the eye would be ("no light here" with no boss's light).
+// plain words where the eye would be ("no light here" with no boss's
+// light; in the tutorial, where the eye is open, "it is watching").
 function drawTurnsLeft(ctx, [x, y]) {
   const left = skyTurnsLeft();
-  const words = left === null ? t('sky.noLight') : t('sky.turnsLeft', { count: left });
+  const words = state.floor.tutorial ? t('sky.watching') : left === null ? t('sky.noLight') : t('sky.turnsLeft', { count: left });
   ctx.font = Math.round(width * SKY_EYE.size * 0.5) + 'px VT323, monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';

@@ -11,7 +11,7 @@
 import { state, key } from './state.js';
 import {
   MAP_ANIMATION_MS, GAZE_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS,
-  TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS,
+  TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS, SKY_EYE,
 } from './config.js';
 import { canShoot } from './sight.js';
 import { gazeInPlay, inCone } from './gaze.js';
@@ -171,9 +171,12 @@ export function smooth(x) {
 
 // How open the eye in the sky is, 0 (shut) to 1 (wide open): the boss's
 // light's progress, eased so it opens slowly at first and settles at the
-// end. Shut with no boss (a rest floor, the tutorial, after the boss falls):
-// light.js lightProgress() is 0 then.
+// end. Shut with no boss (a rest floor, after the boss falls): light.js
+// lightProgress() is 0 then. In the tutorial room it is wide open
+// (SKY_EYE.tutorial), with no boss: the kind voice's "It's watching you."
+// sends the player up to see it, so they learn an open eye is bad.
 export function skyEyeOpen() {
+  if (state.floor.tutorial) return SKY_EYE.tutorial;
   return smooth(lightProgress());
 }
 

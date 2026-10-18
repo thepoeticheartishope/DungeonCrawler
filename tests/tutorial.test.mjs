@@ -109,7 +109,8 @@ test('walking toward the light brings the kind voice and the barrel', () => {
   assert.ok(state.floor.spotSet.has(key(barrel.row, barrel.col)), 'the barrel is in the light');
 });
 
-test('standing in the light the kind voice says "Look up." once, only in the shoulder view', () => {
+test('standing in the light the kind voice says "It\'s watching you." once, only in the shoulder view, and the eye is open', async () => {
+  const { skyEyeOpen } = await import('../js/mapshared.js');
   resetRun();
   state.settings.view = 'shoulder';
   passTurns(TUTORIAL_SPOT_TURNS);
@@ -120,6 +121,7 @@ test('standing in the light the kind voice says "Look up." once, only in the sho
   walkToSpot();
   const events = tutorialTurn([]);
   assert.deepEqual(events.map(e => [e.type, e.line, e.tone, e.wait]), [['whispered', 'tut.lookUp', 'kind', true]]);
+  assert.equal(skyEyeOpen(), 1, 'looking up shows it wide open, with no boss here');
   assert.deepEqual(tutorialTurn([]), [], 'only once');
   // Walking straight into the light says it with "I trust you." (held back a moment).
   resetRun();
