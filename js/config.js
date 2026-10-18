@@ -1019,6 +1019,26 @@ export const ISO_CAMERA_GLIDE_MS = 220;
 // How tall a wall stands, as a share of a tile's width. Pillars stand a
 // little above the walls and boxes much lower (sizes in isoview.js).
 export const ISO_WALL_HEIGHT = 1;
+// The low shoulder view (js/shoulderview.js, shoulder view plan; on with
+// ?view=shoulder or DEV -> View): a close camera just behind and right of
+// the player, below the wall tops, turning with the light. Distances are
+// in tiles. Timothy's settings from the close camera mockup (2026-10-18).
+export const SHOULDER_CAMERA = {
+  height: 0.85,     // the camera's height: below the walls (wallHeight), so it never sees over them
+  back: 0.95,       // how far behind the player it stands
+  side: 0.4,        // how far to the right of the player's shoulder
+  fov: 74,          // its field of view across the map's width, in degrees
+  aimAhead: 3,      // it looks at a point this far ahead of the player...
+  aimHeight: 0.45,  // ...at this height (about 6° down)
+  wallHeight: 1.1,  // a wall's height; a pillar stands pillarHeight times that
+  pillarHeight: 1.15,
+  reach: 11,        // tiles further than this from the camera aren't drawn
+  turnMs: 90,       // the drawn light (and the camera locked to it) eases toward the real one: a 45° turn settles in about 300 ms
+  pullMs: 130,      // the camera eases in from a wall (and back out) this fast
+};
+// In the shoulder view a held left / right (key or d-pad) turns the body
+// one more way this often, each a turn (shoulder view plan step A).
+export const SHOULDER_TURN_REPEAT_MS = 300;
 // How long each map animation takes, in ms. Looping ones stand still
 // under reduced motion.
 export const MAP_ANIMATION_MS = {

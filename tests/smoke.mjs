@@ -75,6 +75,12 @@
 //      it through the duct, and waits play it in, the far grate's shudder
 //      ("The grate shudders." in the room log), then out beside the
 //      player's grate.
+//  11. Shoulder view run (shoulder view plan step A): a phone-sized page
+//      with ?view=shoulder starts a run in the shoulder view (DEV -> View
+//      says so); up steps the way the body faces, right turns the body one
+//      way for one turn, the d-pad's up button steps too, and the frame
+//      meter shows a draw time. The map is saved as noesis-shoulder-*.png
+//      in the system's temp folder. DEV -> View back to iso still draws.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -1573,6 +1579,80 @@ async function guarded(run, browser, url) {
   }
 }
 
+// ---- Run 11: shoulder view ----
+
+// The checks listed in the header. Returns what failed ('' when all held).
+async function checkShoulderView(page, url) {
+  await loadPageAndSet(page, url + '&view=shoulder');
+  await startGameAndWaitForRoom(page);
+  await roomIdle(page);
+  const player = () => page.evaluate(async () => {
+    const f = (await import('./js/state.js')).state.floor;
+    return { row: f.playerRow, col: f.playerCol, facing: f.facing };
+  });
+  const view = await page.evaluate(async () => (await import('./js/state.js')).state.settings.view);
+  if (view !== 'shoulder') return `?view=shoulder left the view as ${view}`;
+  const map = await page.$('#mapCanvas');
+  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-start.png') });
+  const ways = { N: [-1, 0], NE: [-1, 1], E: [0, 1], SE: [1, 1], S: [1, 0], SW: [1, -1], W: [0, -1], NW: [-1, -1] };
+  let moved = false;
+  for (let i = 0; i < 8 && !moved; i++) {
+    const before = await player();
+    await page.keyboard.press('ArrowUp');
+    await roomIdle(page);
+    const after = await player();
+    const [dr, dc] = ways[before.facing];
+    if (after.row === before.row + dr && after.col === before.col + dc) moved = true;
+    else if (after.row !== before.row || after.col !== before.col) return `up stepped from ${before.row},${before.col} facing ${before.facing} to ${after.row},${after.col}`;
+    else {
+      await page.keyboard.press('ArrowRight');
+      await roomIdle(page);
+    }
+  }
+  if (!moved) return 'up never stepped the way the body faces';
+  const before = await player();
+  const turns = await turnsShown(page);
+  await page.keyboard.press('ArrowRight');
+  await roomIdle(page);
+  const turned = await player();
+  if (turned.row !== before.row || turned.col !== before.col) return 'right moved the player';
+  const order = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  if (order[(order.indexOf(before.facing) + 1) % 8] !== turned.facing) return `right turned ${before.facing} to ${turned.facing}`;
+  if (await turnsShown(page) !== turns + 1) return 'a turn by right did not spend exactly one turn';
+  await page.waitForTimeout(400);
+  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-turned.png') });
+  for (let i = 0; i < 4; i++) {
+    await page.click('#btnU');
+    await roomIdle(page);
+  }
+  await page.click('#devToggleBtn');
+  await page.waitForTimeout(600);
+  const meter = await page.textContent('#devFrameOut');
+  if (!/Draw: [0-9.]+ ms/.test(meter)) return `the frame meter read "${meter}"`;
+  if (await page.textContent('#devViewBtn') !== 'View: shoulder (dev)') return 'DEV -> View did not say shoulder';
+  await page.click('#devViewBtn');
+  await page.click('#devToggleBtn');
+  await page.keyboard.press('.');
+  await roomIdle(page);
+  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-back-to-iso.png') });
+  console.log('  shoulder view: ' + meter);
+  return '';
+}
+
+async function runShoulderView(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 390, height: 844 }, hasTouch: true });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkShoulderView(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: '?view=shoulder walked by the body, turned for one turn, showed a draw time and switched back to iso', consoleErrors, pageErrors };
+}
+
 async function main() {
   const port = await findFreePort();
   const server = spawn(process.execPath, [
@@ -1604,11 +1684,12 @@ async function main() {
       const tutorialResult = await guarded(runTutorial, browser, url);
       const answerLineResult = await guarded(runAnswerLine, browser, url);
       const ventsResult = await guarded(runVents, browser, url);
+      const shoulderResult = await guarded(runShoulderView, browser, url);
 
       await browser.close();
 
       let failed = false;
-      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult], ['tutorial', tutorialResult], ['answer line', answerLineResult], ['vents', ventsResult]]) {
+      for (const [name, result] of [['skip-room', skipRoomResult], ['battle', battleResult], ['gun', gunResult], ['real time', realTimeResult], ['simple enemies', simpleResult], ['free look', freeLookResult], ['eight ways', eightWaysResult], ['light battery', lightBatteryResult], ['tutorial', tutorialResult], ['answer line', answerLineResult], ['vents', ventsResult], ['shoulder view', shoulderResult]]) {
         if (result.ok) {
           console.log(`PASS (${name}): ${result.detail}`);
         } else {

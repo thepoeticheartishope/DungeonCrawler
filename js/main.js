@@ -6,7 +6,7 @@ import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX, TUTORIAL_EXIT_ENERGY,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
-  LOOK_NUDGE, LOOK_POINTER_DEAD, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
+  LOOK_NUDGE, LOOK_POINTER_DEAD, SHOULDER_TURN_REPEAT_MS, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
   TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS,
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
@@ -42,10 +42,10 @@ import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, SCREEN_WAYS, screenStep, arrowChord } from './dpad.js';
 import { repeatMs, noteStep, heldStepReady, heldStepWait } from './walkpace.js';
-import { aimLook, turnBody, wantsTurn, lookAngle } from './look.js';
+import { aimLook, turnBody, wantsTurn, lookAngle, bodyAngle, waysInUse } from './look.js';
 import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
-import { computeVisibility, seesEnemy } from './sight.js';
+import { computeVisibility, seesEnemy, FACING_VECTORS } from './sight.js';
 import { isoAngleOf } from './isoview.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
@@ -277,6 +277,47 @@ function turnLook() {
   state.run.turnLocked = true;
   applyTurnOutcome(turnBody());
   state.run.turnLocked = false;
+}
+
+// The shoulder view's controls (shoulder view plan step A, just enough to
+// walk): up steps the way the body faces, down steps the other way (which
+// turns the body round, as any step does), left / right turn the body one
+// way (a turn, look.js turnBody). The diagonals do nothing yet (step B).
+// Returns the ms until a held press acts again, or null to stop.
+function shoulderPush(sx, sy) {
+  if (!roomScreen.classList.contains('show') || state.run.runEnded) return null;
+  if (sx && !sy) {
+    turnOneWay(sx);
+    return SHOULDER_TURN_REPEAT_MS;
+  }
+  if (sx || !sy) return null;
+  const [dr, dc] = FACING_VECTORS[state.floor.facing].map(v => (sy < 0 ? v : -v));
+  movePlayer(dr, dc);
+  return repeatMs(dr, dc);
+}
+
+// Turns the body one way round, clockwise (1) or anticlockwise (-1): the
+// aim goes one way past the free arc and the body follows it (a turn).
+function turnOneWay(dir) {
+  if (!lookReady()) return;
+  aimTo(bodyAngle() + dir * 2 * Math.PI / waysInUse().length);
+  turnLook();
+}
+
+// The shoulder view's keys (arrows and W A S D) by the d-pad way they
+// stand for. A held step key steps again once the last step has landed
+// (walkpace.js), a held turn key every SHOULDER_TURN_REPEAT_MS.
+const SHOULDER_KEYS = {
+  ArrowUp: 'U', w: 'U', W: 'U', ArrowDown: 'D', s: 'D', S: 'D',
+  ArrowLeft: 'L', a: 'L', A: 'L', ArrowRight: 'R', d: 'R', D: 'R',
+};
+let lastShoulderTurnAt = 0;
+function shoulderKey(way, repeat) {
+  const now = performance.now();
+  const turning = way === 'L' || way === 'R';
+  if (repeat && (turning ? now - lastShoulderTurnAt < SHOULDER_TURN_REPEAT_MS : !heldStepReady(now))) return;
+  if (turning) lastShoulderTurnAt = now;
+  shoulderPush(...SCREEN_WAYS[way]);
 }
 
 // The look stick lights up while a tap would turn the body, and its label
@@ -1809,6 +1850,7 @@ initDpad({
   canWalk: () => roomScreen.classList.contains('show') && !state.run.runEnded,
   eightWays: () => state.settings.eightWays,
   repeatMs,
+  push: (sx, sy) => (state.settings.view === 'shoulder' ? shoulderPush(sx, sy) : undefined),
 });
 initLookStick({
   button: lookStick,
@@ -1855,6 +1897,8 @@ window.addEventListener('blur', () => arrows.reset());
 // (free look plan). With the gun on: F is SELECT (fires), T picks the next
 // target, . waits. V switches the light (light battery plan).
 // On the stairs, Enter goes down (so does SELECT).
+// In the shoulder view the arrows and W A S D walk and turn by the body
+// (shoulderKey), and the number pad does as before.
 // Letter and number keys answer a question on the ask screen, unless the
 // gun panels already used the key (picking a reload with 1-3, or F / Space
 // stopping the dial).
@@ -1866,6 +1910,8 @@ document.addEventListener('keydown', (e) => {
   // (walkpace.js), not at the keyboard's own repeat rate. Held arrows walk
   // on their own beat (dpad.js arrowChord).
   if (e.repeat && numpad && !heldStepReady(performance.now())) { e.preventDefault(); return; }
+  const shoulderWay = state.settings.view === 'shoulder' && !mapPanelShown() && SHOULDER_KEYS[e.key];
+  if (shoulderWay) { e.preventDefault(); shoulderKey(shoulderWay, e.repeat); return; }
   if (numpad && !mapPanelShown()) { e.preventDefault(); walkScreen(...SCREEN_WAYS[numpad]); }
   else if (ARROW_WAYS[e.key] && state.settings.eightWays) { e.preventDefault(); arrows.down(ARROW_WAYS[e.key], e.repeat); }
   else if (ARROW_WAYS[e.key]) { e.preventDefault(); walkScreen(...SCREEN_WAYS[ARROW_WAYS[e.key]]); }

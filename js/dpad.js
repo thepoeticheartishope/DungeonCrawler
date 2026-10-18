@@ -113,15 +113,25 @@ let holdTimer = null;
 // (walkpace.js: longer steps on screen wait longer). The centre is wired by initLookStick. `canWalk()` says
 // whether the room screen is taking moves right now; the repeat stops as soon
 // as it isn't (a fight opened, the floor changed, the run ended).
-export function initDpad({ buttons, movePlayer, canWalk, eightWays, repeatMs = () => DPAD_HOLD_REPEAT_MS }) {
+// `push(sx, sy)` may take a press first (the shoulder view's own meanings,
+// shoulder view plan): it returns the ms until a held press acts again,
+// null to stop, or undefined to leave the press to screenStep.
+export function initDpad({ buttons, movePlayer, canWalk, eightWays, repeatMs = () => DPAD_HOLD_REPEAT_MS, push = () => undefined }) {
   for (const [dir, [sx, sy]] of Object.entries(SCREEN_WAYS)) {
     const btn = buttons[dir];
     let pressed = false; // a pointer press already stepped; skip the click that follows it
+    // Acts on the press; the ms until a held press acts again, or null.
     const step = () => {
+      if (btn.disabled || !canWalk()) { stopHold(); return null; }
+      const own = push(sx, sy);
+      if (own !== undefined) {
+        if (own === null) stopHold();
+        return own;
+      }
       const grid = screenStep(sx, sy, eightWays());
-      if (btn.disabled || !grid || !canWalk()) { stopHold(); return; }
+      if (!grid) { stopHold(); return null; }
       movePlayer(grid[0], grid[1]);
-      return grid;
+      return repeatMs(grid[0], grid[1]);
     };
     btn.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
@@ -130,8 +140,8 @@ export function initDpad({ buttons, movePlayer, canWalk, eightWays, repeatMs = (
       stopHold();
       step();
       holdTimer = setTimeout(function repeat() {
-        const grid = step();
-        if (holdTimer !== null) holdTimer = setTimeout(repeat, grid ? repeatMs(grid[0], grid[1]) : DPAD_HOLD_REPEAT_MS);
+        const next = step();
+        if (holdTimer !== null) holdTimer = setTimeout(repeat, next ?? DPAD_HOLD_REPEAT_MS);
       }, DPAD_HOLD_DELAY_MS);
     });
     ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => btn.addEventListener(type, stopHold));

@@ -1,8 +1,8 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
-// panel over the screen): Skip room, Auto-win, Fog, Turn, Free look, Minigame, Camera, Look, Tendrils and Combat
-// toggles, a test shot and a test reload, for testing. main.js passes in the game actions and elements it needs.
+// panel over the screen): Skip room, Auto-win, Fog, Turn, Free look, Minigame, View, Camera, Look, Tendrils and Combat
+// toggles, a test shot and a test reload, and the map's frame meter, for testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
-import { requestMapDraw } from './mapview.js';
+import { requestMapDraw, mapDrawTimes } from './mapview.js';
 import { renderRoomHints, renderHud } from './render.js';
 import { MINIGAMES } from './minigames.js';
 import { STICK_POSE_IDS, TENDRIL_STYLES } from './stickforms.js';
@@ -25,6 +25,8 @@ const devDownedBtn = document.getElementById('devDownedBtn');
 const devNoiseBtn = document.getElementById('devNoiseBtn');
 const devShowDuctsBtn = document.getElementById('devShowDuctsBtn');
 const dpadEl = document.getElementById('dpad');
+const devViewBtn = document.getElementById('devViewBtn');
+const devFrameOut = document.getElementById('devFrameOut');
 const devCameraBtn = document.getElementById('devCameraBtn');
 const devSmoothWalkBtn = document.getElementById('devSmoothWalkBtn');
 const devLookBtn = document.getElementById('devLookBtn');
@@ -41,11 +43,43 @@ export function initDevPanel({
 }) {
   // Players never see DEV: it shows only when the address has ?dev
   // (index.html?dev), for testing.
-  devDock.hidden = !new URLSearchParams(location.search).has('dev');
+  const params = new URLSearchParams(location.search);
+  devDock.hidden = !params.has('dev');
   devToggleBtn.addEventListener('click', () => {
     const open = devPanel.classList.toggle('show');
     devToggleBtn.setAttribute('aria-expanded', String(open));
+    showFrameTimes();
   });
+
+  // The shoulder view (shoulder view plan): ?view=shoulder on the address
+  // starts in it, so Timothy can try each step on his phone from main
+  // (GitHub Pages) while everyone else keeps the isometric map.
+  if (params.get('view') === 'shoulder') state.settings.view = 'shoulder';
+  const showView = () => {
+    const shoulder = state.settings.view === 'shoulder';
+    devViewBtn.textContent = shoulder ? 'View: shoulder (dev)' : 'View: iso (dev)';
+    devViewBtn.setAttribute('aria-pressed', String(shoulder));
+  };
+  showView();
+  devViewBtn.addEventListener('click', () => {
+    state.settings.view = state.settings.view === 'shoulder' ? 'iso' : 'shoulder';
+    showView();
+    renderRoomHints();
+    requestMapDraw();
+  });
+
+  // The frame meter: how long the map takes to draw, refreshed twice a
+  // second while the panel is open (shoulder view plan step A: under about
+  // 10 ms on his phone is fine).
+  const FRAME_METER_MS = 500;
+  function showFrameTimes() {
+    if (!devPanel.classList.contains('show')) return;
+    const times = mapDrawTimes();
+    devFrameOut.textContent = times
+      ? 'Draw: ' + times.median.toFixed(1) + ' ms, slowest ' + times.slowest.toFixed(1) + ' (dev)'
+      : 'Draw: - (dev)';
+  }
+  setInterval(showFrameTimes, FRAME_METER_MS);
 
   // Dev tool: jump to the next room instantly, skipping combat, for
   // faster testing of dungeon generation across levels.
