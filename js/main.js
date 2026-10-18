@@ -235,6 +235,16 @@ function speakInRing() {
   }, TUTORIAL_KIND_DELAY_MS);
 }
 
+// A tutorial line that waits TUTORIAL_KIND_DELAY_MS before it shows, so
+// the line before it can be read (tutorial.js lookUpLine), and then only
+// if the player is still in the tutorial.
+function whisperSoon(e) {
+  setTimeout(() => {
+    if (!state.floor.tutorial || state.run.runEnded) return;
+    showWhisper(t(e.line), e.tone, TUTORIAL_WHISPER_MS);
+  }, TUTORIAL_KIND_DELAY_MS);
+}
+
 // A line's wording for the view in play: in the shoulder view, its
 // `.shoulder` version when it has one (shoulder view plan step F: lines
 // that name screen directions or aiming by drag say it this view's way).
@@ -1416,7 +1426,8 @@ function drawEvents(events) {
       case 'ringBroken':
         break;
       case 'whispered':
-        showWhisper(t(e.line), e.tone, TUTORIAL_WHISPER_MS);
+        if (e.wait) whisperSoon(e);
+        else showWhisper(t(e.line), e.tone, TUTORIAL_WHISPER_MS);
         break;
       case 'ringClosed':
         speakInRing();

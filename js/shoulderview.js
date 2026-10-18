@@ -1417,19 +1417,28 @@ function skyPoint() {
 }
 
 // The dark above the horizon, paling a little in the boss's blue once the
-// eye is more than SKY_EYE.paleFrom open.
+// eye is more than SKY_EYE.paleFrom open. Only while the camera tilts up
+// (lookUpShare), and fading to nothing at the horizon: drawn in the usual
+// view it showed as a flat grey slab over the dark (Timothy noticed it).
 function drawPaleSky(ctx, open) {
-  const pale = Math.max(0, (open - SKY_EYE.paleFrom) / (1 - SKY_EYE.paleFrom));
-  if (!pale) return;
+  const pale = Math.max(0, (open - SKY_EYE.paleFrom) / (1 - SKY_EYE.paleFrom)) * lookUpShare();
+  if (!(pale > 0)) return;
   const [fx, fy] = forwardOf(shownLook);
   const horizon = screenOfWay([fx, fy, 0]);
   const bottom = Math.min(height, horizon ? horizon[1] : height);
   if (bottom <= 0) return;
   const sky = ctx.createLinearGradient(0, 0, 0, bottom);
   sky.addColorStop(0, 'rgba(' + look.colours.bossLightRgb + ', ' + (0.1 * pale) + ')');
-  sky.addColorStop(1, 'rgba(' + look.colours.bossLightRgb + ', ' + (0.05 * pale) + ')');
+  sky.addColorStop(1, 'rgba(' + look.colours.bossLightRgb + ', 0)');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, width, bottom);
+}
+
+// How far the camera is tilted up toward the sky: 0 at its usual tilt,
+// 1 looking up.
+function lookUpShare() {
+  const rest = restPitch(pulled.back);
+  return Math.max(0, Math.min(1, (rest - shownPitch) / (rest + SHOULDER_CAMERA.lookUpPitch)));
 }
 
 // The eye at `at`: its glow, the dark between its lids, the iris and the
@@ -1503,10 +1512,11 @@ function pupilAt(x, y, r, lid) {
 }
 
 // Comfort mode's sky: the turns left before the light takes the floor, as
-// plain words where the eye would be ("no light here" with no boss's light).
+// plain words where the eye would be ("no light here" with no boss's
+// light; in the tutorial, where the eye is open, "it is watching").
 function drawTurnsLeft(ctx, [x, y]) {
   const left = skyTurnsLeft();
-  const words = left === null ? t('sky.noLight') : t('sky.turnsLeft', { count: left });
+  const words = state.floor.tutorial ? t('sky.watching') : left === null ? t('sky.noLight') : t('sky.turnsLeft', { count: left });
   ctx.font = Math.round(width * SKY_EYE.size * 0.5) + 'px VT323, monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';

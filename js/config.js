@@ -1056,6 +1056,7 @@ export const SKY_EYE = {
   twitchMs: 2400,   // ...once in this long (never under reduced motion)
   twitch: 0.04,     // by this share of its half width each way
   paleFrom: 0.5,    // the sky pales faintly blue from this much open
+  tutorial: 1,      // how open it is in the tutorial room (Timothy: wide open, so "It's watching you." shows an open eye is bad)
 };
 // The shoulder view's sweep (shoulder view plan step B): holding left /
 // right sweeps the light round this fast (radians a second; the mockup's
