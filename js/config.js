@@ -1028,6 +1028,12 @@ export const PLAYER_WALK = {
 // after walking (`fastMs` a breath), calming to MAP_ANIMATION_MS.playerBreath
 // over `calmMs`.
 export const PLAYER_BREATH = { lift: 0.02, fastMs: 1700, calmMs: 5000 };
+// The player's ember head (player figure plan step B, Timothy's pick E):
+// dark inside, with a soft glow in the middle in his own white light,
+// brightening from `low` to `high` and back with each breath (`mid` under
+// reduced motion), reaching `reach` head radii, and leaning `lean` of the
+// head's radius the way he looks.
+export const PLAYER_EMBER = { low: 0.4, high: 0.65, mid: 0.52, reach: 1, lean: 0.35 };
 // The player's glances, standing still for MAP_ANIMATION_MS.playerIdle: at
 // odd times (gapMs apart), to a random side, of a random size (`size`, a
 // share of `turn`, the head's shift as a share of its radius), and a

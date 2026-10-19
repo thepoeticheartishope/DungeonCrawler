@@ -30,14 +30,14 @@
 import { state, key } from './state.js';
 import {
   SHOULDER_CAMERA, SHOULDER_WIDE_FOV, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, ISO_TILES_ACROSS,
-  ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING, SKY_EYE, PLAYER_WALK, PLAYER_GLANCE,
+  ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING, SKY_EYE, PLAYER_WALK, PLAYER_GLANCE, PLAYER_EMBER,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { canShoot } from './sight.js';
 import { t } from './text.js';
 import { drawStickForm, stickBox, dyingSticks, drawDroppedLetters } from './stickforms.js';
 import { answerRingNow } from './swirl.js';
-import { playerPose, playerActive, resetPlayerForm } from './playerform.js';
+import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
 import {
   WALL_MIN_LEVEL, SEARCHED_LEVEL, PILLAR_INSET, BOX_INSET, BOX_HEIGHT, DRUM_RADIUS, DRUM_HEIGHT,
   DRUM_HOOPS, DRUM_ENDS, DRUM_END_SIZE, DRUM_BREATH, DRUM_BREATH_REACH, DESK_GLOW, DESK_GLOW_RADIUS,
@@ -1194,7 +1194,9 @@ function drawDarkRing(ctx) {
 // world along and across the way the light points, so from behind a step
 // reads as a step; the upper body lifted by his breath and lowered by the
 // hunch and the settling, leaning over the planted foot; the head turned
-// by his glances and scanning; the gun held a moment behind the body. No
+// by his glances and scanning; the gun held a moment behind the body. The
+// head is an ember (player figure plan step B): dark inside, a soft glow in
+// the middle that breathes with him and leans the way he looks. No
 // scan or glance while a shot waits or a dial is up: his eyes stay on it.
 // He fades when the camera is pulled in close.
 function drawStickMan(ctx, x, y) {
@@ -1243,12 +1245,33 @@ function drawStickMan(ctx, x, y) {
     ctx.lineTo(shoulder[0], shoulder[1]);
     ctx.lineTo(hands[0][0], hands[0][1]);
   }
-  ctx.moveTo(headX + headR, headY);
-  ctx.arc(headX, headY, headR, 0, Math.PI * 2);
   const lineW = Math.max(1.5, h * STICK_LINE);
   glowStroke(ctx, 1, lineW);
+  drawEmberHead(ctx, headX, headY, headR, pose, lineW);
   if (gun) drawGun(ctx, gun, lineW);
   ctx.restore();
+}
+
+// The player's ember head at (x, y), `r` across: filled with the dark, a
+// radial glow in the middle as bright as playerform.js emberGlow says,
+// leaning toward `pose.turn`, then the ring over it.
+function drawEmberHead(ctx, x, y, r, pose, lineW) {
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = look.colours.hidden;
+  ctx.fill();
+  const gx = x + pose.turn * PLAYER_GLANCE.turn * r * PLAYER_EMBER.lean;
+  const glow = ctx.createRadialGradient(gx, y, 0, gx, y, r * PLAYER_EMBER.reach);
+  glow.addColorStop(0, 'rgba(' + look.colours.glowRgb + ', ' + emberGlow(pose.breath, look.still) + ')');
+  glow.addColorStop(1, 'rgba(' + look.colours.glowRgb + ', 0)');
+  ctx.save();
+  ctx.clip();
+  ctx.fillStyle = glow;
+  ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  ctx.restore();
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  glowStroke(ctx, 1, lineW);
 }
 
 // Where the player's gun is (step D), held out ahead of the stick man at
