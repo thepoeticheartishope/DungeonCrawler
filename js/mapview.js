@@ -24,6 +24,7 @@ import { showShot } from './mapshared.js';
 import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
 import { ventSealed } from './vents.js';
+import { playerStepped, playerBumped } from './playerform.js';
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
 const FOG_DIM_ALPHA = 0.68;  // explored-but-unlit floor at a third of its brightness
@@ -153,8 +154,9 @@ export function slideOnMap(thing, from, ms = MAP_ANIMATION_MS.slide, hold = 0) {
 
 // Slides the player onto the tile they just stepped to, from the one
 // behind them (a step is always one tile toward `facing`), over the
-// step's time on screen (walkpace.js). A slide still
-// playing starts from where the player shows now.
+// step's time on screen (walkpace.js), and tells the stick man's body a
+// step started (playerform.js). A slide still playing starts from where
+// the player shows now.
 export function slidePlayerOnMap(facing) {
   if (!canvas || reducedMotion.matches) return;
   const f = state.floor;
@@ -163,14 +165,18 @@ export function slidePlayerOnMap(facing) {
   const running = effects.get(PLAYER);
   const from = running && running.kind === 'slide' ? slidePlace(running, now) : { row: f.playerRow - dr, col: f.playerCol - dc };
   effects.set(PLAYER, { kind: 'slide', start: now, ms: stepMs(dr, dc), from, to: { row: f.playerRow, col: f.playerCol } });
+  playerStepped(now, stepMs(dr, dc));
   requestMapDraw();
 }
 
 // Nudges the player toward `facing` and back: the feel of walking into
-// something, alongside the d-pad's blocked look.
+// something, alongside the d-pad's blocked look; the stick man takes a
+// half step (playerform.js).
 export function bumpOnMap(facing) {
   if (!canvas || reducedMotion.matches) return;
-  effects.set(PLAYER, { kind: 'bump', start: performance.now(), ms: MAP_ANIMATION_MS.bump, facing });
+  const now = performance.now();
+  effects.set(PLAYER, { kind: 'bump', start: now, ms: MAP_ANIMATION_MS.bump, facing });
+  playerBumped(now, MAP_ANIMATION_MS.bump);
   requestMapDraw();
 }
 

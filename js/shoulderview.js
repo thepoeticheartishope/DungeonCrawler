@@ -30,13 +30,14 @@
 import { state, key } from './state.js';
 import {
   SHOULDER_CAMERA, SHOULDER_WIDE_FOV, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, ISO_TILES_ACROSS,
-  ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING, SKY_EYE,
+  ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING, SKY_EYE, PLAYER_WALK, PLAYER_GLANCE,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { canShoot } from './sight.js';
 import { t } from './text.js';
 import { drawStickForm, stickBox, dyingSticks, drawDroppedLetters } from './stickforms.js';
 import { answerRingNow } from './swirl.js';
+import { playerPose, playerActive, resetPlayerForm } from './playerform.js';
 import {
   WALL_MIN_LEVEL, SEARCHED_LEVEL, PILLAR_INSET, BOX_INSET, BOX_HEIGHT, DRUM_RADIUS, DRUM_HEIGHT,
   DRUM_HOOPS, DRUM_ENDS, DRUM_END_SIZE, DRUM_BREATH, DRUM_BREATH_REACH, DESK_GLOW, DESK_GLOW_RADIUS,
@@ -88,8 +89,6 @@ const EDGE_CORNER = 0.55;
 // The player's stick man, in tiles and shares of its height.
 const STICK_HEIGHT = 0.75;
 const STICK_LINE = 0.05;
-const STICK_BREATH = 0.02;
-const STICK_STRIDE = 0.13;
 // With the camera pulled in close (a wall behind), the stick man fades so
 // he doesn't fill the screen: full at CLOSE_FADE.far tiles away, down to
 // CLOSE_FADE.level at CLOSE_FADE.near.
@@ -128,6 +127,7 @@ let shownLook = null;   // the drawn light's angle (radians on the grid), easing
 let pulled = null;      // { side, back }: the camera's offsets now, easing toward what the walls allow
 let lastFrameAt = 0;    // the last frame's time
 let shownFloor = -1;    // the floor (state.run.floorsEntered) last drawn: a new floor snaps the camera
+let poseLook = null;    // the drawn light's angle when the stick man was last drawn: a change is a turn (playerform.js playerActive)
 let lookingUp = false;  // the player is holding the look up (lookUp)
 let shownPitch = null;  // the drawn camera's tilt (radians, down positive), easing toward its goal
 // This frame's drawing, set by drawShoulderScene.
@@ -217,6 +217,7 @@ function moveCamera(at) {
   const snap = look.still || shownLook === null || shownFloor !== state.run.floorsEntered;
   const dt = Math.min(50, Math.max(0, now - lastFrameAt));
   lastFrameAt = now;
+  if (shownFloor !== state.run.floorsEntered) resetPlayerForm();
   shownFloor = state.run.floorsEntered;
   if (snap) {
     shownLook = goal;
@@ -1188,9 +1189,14 @@ function drawDarkRing(ctx) {
   ctx.restore();
 }
 
-// The player as a stick man seen from behind, standing at (x, y): breathes
-// standing still, feet swing apart on a step, and fades with the camera
-// pulled in close.
+// The player's stick man, feet at (x, y) on the grid, drawn from his pose
+// this frame (playerform.js playerPose): feet put on the floor in the
+// world along and across the way the light points, so from behind a step
+// reads as a step; the upper body lifted by his breath and lowered by the
+// hunch and the settling, leaning over the planted foot; the head turned
+// by his glances and scanning; the gun held a moment behind the body. No
+// scan or glance while a shot waits or a dial is up: his eyes stay on it.
+// He fades when the camera is pulled in close.
 function drawStickMan(ctx, x, y) {
   const foot = toCamera(cam, [x, y, 0]);
   const top = toCamera(cam, [x, y, STICK_HEIGHT]);
@@ -1198,43 +1204,47 @@ function drawStickMan(ctx, x, y) {
   const [fx, fy] = toScreen(cam, foot);
   const h = fy - toScreen(cam, top)[1];
   if (h < 2) return;
-  const f = state.floor;
-  const off = Math.max(Math.abs(look.walkAt.row - f.playerRow), Math.abs(look.walkAt.col - f.playerCol));
-  let breath = 0;
-  if (!look.still) {
-    look.keepMoving();
-    breath = Math.sin(look.now / MAP_ANIMATION_MS.playerBreath * Math.PI * 2) * h * STICK_BREATH;
-  }
-  const stride = Math.sin(Math.min(off, 1) * Math.PI) * h * STICK_STRIDE;
+  if (!look.still) look.keepMoving();
+  if (poseLook !== null && Math.abs(wrapAngle(shownLook - poseLook)) > 0.002) playerActive(look.now);
+  poseLook = shownLook;
+  const pose = playerPose(look.now, look.still, !!(state.battle.aim || state.battle.struggle));
+  const lift = pose.rise * h;
+  const sway = pose.sway * h;
+  const [ax, ay] = forwardOf(shownLook);
+  const onFloor = (along, side, up) => screenOf(x + ax * along - ay * side, y + ay * along + ax * side, up);
+  const feet = pose.feet.map(f => onFloor(f.along, f.side, f.up));
   const headR = h * 0.12;
-  const headY = fy - h + headR - breath;
-  const neck = [fx, headY + headR];
-  const hip = [fx, fy - h * 0.42];
-  const shoulder = [fx, neck[1] + h * 0.08];
+  const headY = fy - h + headR - lift;
+  const neck = [fx + sway, headY + headR];
+  const hip = [fx + sway * 0.4, fy - h * 0.42 + Math.max(0, -pose.rise) * h * 0.5];
+  const shoulder = [neck[0], neck[1] + h * 0.08];
+  const headX = neck[0] + pose.turn * PLAYER_GLANCE.turn * headR * 0.5;
   const near = (Math.hypot(x - cam.x, y - cam.y) - CLOSE_FADE.near) / (CLOSE_FADE.far - CLOSE_FADE.near);
   ctx.save();
   ctx.globalAlpha = CLOSE_FADE.level + (1 - CLOSE_FADE.level) * Math.max(0, Math.min(1, near));
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(fx - h * 0.13 + stride, fy);
-  ctx.lineTo(hip[0], hip[1]);
-  ctx.lineTo(fx + h * 0.13 - stride, fy);
+  if (feet[0] && feet[1]) {
+    ctx.moveTo(feet[0][0], feet[0][1]);
+    ctx.lineTo(hip[0], hip[1]);
+    ctx.lineTo(feet[1][0], feet[1][1]);
+  }
   ctx.moveTo(hip[0], hip[1]);
   ctx.lineTo(neck[0], neck[1]);
-  const gun = state.settings.gunCombat ? holdGun(x, y) : null;
-  const hands = gun && [screenOf(...gun.grip), screenOf(...gun.backHand)];
-  if (hands && hands[0] && hands[1]) {
+  const gun = state.settings.gunCombat ? holdGun(x, y, pose.gunRise * STICK_HEIGHT) : null;
+  const handZ = STICK_HEIGHT * 0.42 + pose.rise * STICK_HEIGHT;
+  const swing = i => -pose.feet[i].along / PLAYER_WALK.stride * PLAYER_WALK.armSwing;
+  const hands = gun
+    ? [screenOf(...gun.grip), screenOf(...gun.backHand)]
+    : [onFloor(swing(0), -PLAYER_WALK.armSide, handZ), onFloor(swing(1), PLAYER_WALK.armSide, handZ)];
+  if (hands[0] && hands[1]) {
     ctx.moveTo(hands[1][0], hands[1][1]);
     ctx.lineTo(shoulder[0], shoulder[1]);
     ctx.lineTo(hands[0][0], hands[0][1]);
-  } else {
-    ctx.moveTo(fx - h * 0.2, hip[1] + breath);
-    ctx.lineTo(shoulder[0], shoulder[1]);
-    ctx.lineTo(fx + h * 0.2, hip[1] + breath);
   }
-  ctx.moveTo(fx + headR, headY);
-  ctx.arc(fx, headY, headR, 0, Math.PI * 2);
+  ctx.moveTo(headX + headR, headY);
+  ctx.arc(headX, headY, headR, 0, Math.PI * 2);
   const lineW = Math.max(1.5, h * STICK_LINE);
   glowStroke(ctx, 1, lineW);
   if (gun) drawGun(ctx, gun, lineW);
@@ -1243,14 +1253,15 @@ function drawStickMan(ctx, x, y) {
 
 // Where the player's gun is (step D), held out ahead of the stick man at
 // (x, y) toward where the light points, a little right of the middle:
-// raised while a landed shot waits for the dial, kicked back on a shot.
+// raised while a landed shot waits for the dial, kicked back on a shot,
+// and `rise` tiles up with his body (playerform.js gunRise).
 // World points [x, y, z]: { grip, backHand, butt, muzzle, gripFoot }.
 // The muzzle is noted for the laser and the shot.
-function holdGun(x, y) {
+function holdGun(x, y, rise = 0) {
   const [fx, fy] = forwardOf(shownLook);
   const [rx, ry] = [-fy, fx];
   const ahead = GUN.ahead - recoil() * GUN.kick;
-  const z = GUN.height + (state.battle.aim ? GUN.raise : 0);
+  const z = GUN.height + rise + (state.battle.aim ? GUN.raise : 0);
   const at = (along, side, up) => [x + fx * along + rx * side, y + fy * along + ry * side, z + up];
   const gun = {
     grip: at(ahead, GUN.side, 0),

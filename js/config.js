@@ -993,6 +993,48 @@ export const SHOULDER_CAMERA = {
 // Looking up with the look stick (sky eye plan step A): a push up past this
 // share of its reach, more up than sideways, looks up until it comes back.
 export const SHOULDER_LOOK_UP_STICK = 0.6;
+// The player's stick man (player figure plan, `ideas/player-figure-plan.md`
+// outside the repo; js/playerform.js): a person feeling their way through
+// a dark place, never quite even (Timothy, the ember head mockup v4).
+// Distances in tiles, from his middle along the way he walks (`along`) and
+// across it (`side`); drops and sways as shares of his height.
+export const PLAYER_WALK = {
+  stride: 0.15,       // each foot forward or back of his middle, mid-step
+  stance: 0.045,      // each foot to the side: close, so he doesn't crab walk
+  lift: 0.025,        // how high the moving foot lifts
+  strideRange: [0.78, 1.1], // each step's length, a share of the stride, a little different every step
+  backShare: [0.8, 0.95],   // how far back the planted foot ends, a share of the step
+  sideJitter: 0.03,   // where a foot lands across the way, give or take
+  liftRange: [0.6, 1.4],    // each step's lift, a share of `lift`
+  timeRange: [0.95, 1.1],   // each step's time, a share of the slide's (the feet may lag the body, never the other way)
+  firstScale: 0.6,    // the first step after standing is this much shorter...
+  firstSlow: 1.25,    // ...and this much slower: testing the floor
+  restMs: 900,        // standing this long makes the next step a first step
+  gatherWaitMs: 160,  // when he stops, the back foot steps up beside the front one after this...
+  gatherMs: 380,      // ...taking this long
+  bumpScale: 0.4,     // a bump into a wall is a half step: the foot comes back down
+  settleMs: 320,      // after each step the weight settles, dipping this long...
+  settle: 0.012,      // ...this far
+  spreadDrop: 0.02,   // the body is this much lower with the feet a whole stride apart
+  hunch: 0.035,       // walking and for a while after (alertMs), he hunches this much...
+  alertMs: 2600,
+  scan: 0.35,         // ...and his head scans side to side this far (a share of a glance)
+  sway: 0.016,        // his weight shifts over the planted foot this far
+  gunLag: 0.2,        // the gun follows the body this share of the way each frame
+  armSwing: 0.12,     // without the gun, each hand swings this far against its foot...
+  armSide: 0.15,      // ...this far out to the side
+};
+// The player's breath: lifting his chest `lift` of his height, quicker
+// after walking (`fastMs` a breath), calming to MAP_ANIMATION_MS.playerBreath
+// over `calmMs`.
+export const PLAYER_BREATH = { lift: 0.02, fastMs: 1700, calmMs: 5000 };
+// The player's glances, standing still for MAP_ANIMATION_MS.playerIdle: at
+// odd times (gapMs apart), to a random side, of a random size (`size`, a
+// share of `turn`, the head's shift as a share of its radius), and a
+// `twiceShare` of them look, turn back and look again.
+export const PLAYER_GLANCE = {
+  turn: 0.8, size: [0.55, 1], onceMs: [900, 2000], twiceMs: [1800, 2600], twiceShare: 0.3, gapMs: [1500, 6000],
+};
 // The eye in the sky (sky eye plan, `ideas/sky-eye-plan.md` outside the
 // repo; the old top-bar eye in the shoulder view): straight overhead, seen
 // by looking up. Shut when a floor begins, opening as the boss's light
@@ -1045,8 +1087,7 @@ export const MAP_ANIMATION_MS = {
   mist: 14000,      // the boss mist's slow drift, there and back
   target: 1100,     // the box round the thing being fought
   playerBreath: 2600, // the stick man's chest rising and falling
-  playerIdle: 3000, // how long the player stands without moving or turning before the stick man starts looking round (the player figure plan brings it back)
-  playerGlance: 5200, // once idle, one glance to the side and back in each of these
+  playerIdle: 3000, // how long the player stands without moving or turning before the stick man starts glancing round (playerform.js, PLAYER_GLANCE)
   gunShot: 260,     // the shot's flash from the gun to where it went, fading (gun plan)
   gunMiss: 900,     // MISS floating up over a minion the shot missed, fading
   soundStep: 110,   // a mistake's sound reaches one walking step further (noise.js); all at once under reduced motion
