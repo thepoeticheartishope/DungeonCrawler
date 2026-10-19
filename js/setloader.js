@@ -17,8 +17,6 @@ const realTimeToggle = document.getElementById('realTimeToggle');
 const dpadRightToggle = document.getElementById('dpadRightToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
-const shoulderOptions = document.getElementById('shoulderOptions');
-const isoViewToggle = document.getElementById('isoViewToggle');
 const shoulderToggles = {
   shoulderSteps: document.getElementById('shoulderStepsToggle'),
   shoulderSlow: document.getElementById('shoulderSlowToggle'),
@@ -36,15 +34,6 @@ const loaderStatus = document.getElementById('loaderStatus');
 const saveSetName = document.getElementById('saveSetName');
 const saveSetBtn = document.getElementById('saveSetBtn');
 const savedSetsList = document.getElementById('savedSetsList');
-
-// Matches the start screen to the view in play (it can also come from the
-// address, ?view=iso / ?view=shoulder, or DEV -> View): the Isometric view
-// box, and the shoulder view's comfort settings shown only while that view
-// is on (shoulder view plan steps F and G).
-export function showViewOptions() {
-  isoViewToggle.checked = state.settings.view === 'iso';
-  shoulderOptions.hidden = state.settings.view !== 'shoulder';
-}
 
 // Wires the start screen options and the workshop. `showSets` returns to
 // the set screen (setpicker.js), which lists what the workshop made.
@@ -72,7 +61,6 @@ export function initSetLoader({ showSets }) {
         dpadRight: dpadRightToggle.checked,
         simpleEnemies: simpleEnemiesToggle.checked,
         tutorial: tutorialToggle.checked,
-        isoView: isoViewToggle.checked,
         ...Object.fromEntries(Object.entries(shoulderToggles).map(([name, box]) => [name, box.checked])),
         playerName: playerNameInput.value,
       }));
@@ -96,14 +84,6 @@ export function initSetLoader({ showSets }) {
   // On until a tutorial is finished (main.js switches it off then), so a
   // player who has never played gets one.
   if (typeof savedOptions.tutorial === 'boolean') tutorialToggle.checked = savedOptions.tutorial;
-  // The view (shoulder view plan step G): the shoulder view unless the
-  // player chose the old isometric map.
-  if (typeof savedOptions.isoView === 'boolean') state.settings.view = savedOptions.isoView ? 'iso' : 'shoulder';
-  isoViewToggle.addEventListener('change', () => {
-    state.settings.view = isoViewToggle.checked ? 'iso' : 'shoulder';
-    showViewOptions();
-    saveOptions();
-  });
   Object.entries(shoulderToggles).forEach(([name, box]) => {
     if (typeof savedOptions[name] === 'boolean') box.checked = savedOptions[name];
     box.addEventListener('change', saveOptions);

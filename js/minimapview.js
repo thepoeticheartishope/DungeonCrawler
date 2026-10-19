@@ -136,7 +136,7 @@ export function refreshMinimap() {
   ctx.arc(left + across(player) * unit, top + down(player) * unit, Math.max(3, unit * 0.45), 0, Math.PI * 2);
   ctx.fillStyle = colours.player;
   ctx.fill();
-  if (state.settings.view === 'shoulder') drawFacing(ctx, at(player), unit);
+  drawFacing(ctx, at(player), unit);
 }
 
 // In the shoulder view (shoulder view plan step E, call 3) the minimap

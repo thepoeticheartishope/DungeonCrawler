@@ -12,10 +12,9 @@ import { shoulderFov } from './shoulderview.js';
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
 import { whatBlocks, canPassCorner } from './passage.js';
-import { SCREEN_WAYS, screenStep, shoulderStep } from './dpad.js';
+import { SCREEN_WAYS, shoulderStep } from './dpad.js';
 import { FACING_VECTORS } from './sight.js';
 import { waysInUse, lookAngle, angleTo, wrapAngle } from './look.js';
-import { isoScreenShare, isoScreenOffset } from './isoview.js';
 import { clockReading } from './realclock.js';
 import { goalMark } from './goals.js';
 import { onStairs } from './moves.js';
@@ -104,18 +103,17 @@ export function renderRoomHints() {
 // (pressing it still turns to look that way), and one with a paper or box
 // not yet gone through lights up, since that press reads or examines it;
 // so does THE UNFOLDING, which a press opens. A diagonal that would cut a
-// corner is blocked too (passage.js canPassCorner). In the shoulder view
-// the arrows walk round the body (dpad.js shoulderStep), so the hints follow
-// it; the side arrows sweep the light and show none.
+// corner is blocked too (passage.js canPassCorner). The arrows walk round
+// the body (dpad.js shoulderStep), so the hints follow it; the side arrows
+// sweep the light and show none.
 function renderMoveHints() {
   const buttons = els.dpadButtons;
   if (!buttons) return;
-  const shoulder = state.settings.view === 'shoulder';
   for (const [dir, [sx, sy]] of Object.entries(SCREEN_WAYS)) {
     const btn = buttons[dir];
     if (!btn) continue;
-    const way = shoulder && shoulderStep(sx, sy, state.floor.facing, waysInUse());
-    const step = shoulder ? way && FACING_VECTORS[way] : screenStep(sx, sy, state.settings.eightWays);
+    const way = shoulderStep(sx, sy, state.floor.facing, waysInUse());
+    const step = way && FACING_VECTORS[way];
     if (!step) {
       btn.classList.remove('move-examine', 'move-blocked');
       continue;
@@ -134,9 +132,8 @@ function renderMoveHints() {
 
 // While the boss is off screen, the edge of the view facing it glows —
 // brighter as its light spreads — so the player always has a sense of
-// where it is. A diagonal boss lights two edges. The edges are screen
-// edges, so they follow where the diamond puts it (grid north is up and
-// to the right); in the shoulder view, its way round the player.
+// where it is. A diagonal boss lights two edges: its way round the player
+// from where the light points (ahead is the top edge, behind the bottom).
 //
 // After the boss, the same edges point at the hunter instead (in white,
 // not the boss's blue), brighter the closer it gets.
@@ -159,42 +156,17 @@ function renderLightHint() {
   Object.entries(edges).forEach(([side, el]) => { el.style.opacity = on[side] ? strength : '0'; });
 }
 
-// Where a thing is on the map compared with the player, by its place on
-// the diamond: dx right and dy down (any unit, only the direction is
-// used), and whether it is off the map. In the shoulder view (shoulder
-// view plan step E) it goes by its way round the player from where the
-// light points instead: ahead is the top edge, behind the bottom, left and
-// right the sides; it counts as on screen while it is in the player's
-// own sight (walls hide it here, its light alone doesn't show it) and
-// inside the camera's field of view.
+// Where a thing is compared with the player (shoulder view plan step E),
+// by its way round them from where the light points: dx right and dy down
+// (only the direction is used), ahead the top edge, behind the bottom.
+// It counts as on screen while it is in the player's own sight (walls
+// hide it, its light alone doesn't show it) and inside the camera's field
+// of view.
 function placeOnScreen(thing) {
-  if (state.settings.view === 'shoulder') {
-    const off = wrapAngle(angleTo(thing.row, thing.col) - lookAngle());
-    const seen = !state.settings.fogEnabled || state.floor.sightSet.has(key(thing.row, thing.col));
-    const inView = Math.abs(off) <= shoulderFov() * Math.PI / 360;
-    return { dx: Math.sin(off), dy: -Math.cos(off), offScreen: !(seen && inView) };
-  }
-  const at = isoScreenShare(thing.row, thing.col);
-  const { x, y } = isoScreenOffset(thing.row - state.floor.playerRow, thing.col - state.floor.playerCol);
-  return { dx: x, dy: y, offScreen: at.x < 0 || at.x > 1 || at.y < 0 || at.y > 1 };
-}
-
-// The eye in the status bar: shut when a room begins, opening as the boss
-// light spreads, fully open (and twitching) as it's about to consume the
-// floor. Drawn in CSS — the terminal font has no symbol glyphs. In the
-// shoulder view the eye is in the sky instead (sky eye plan), so this one
-// is hidden there.
-export function renderLightEye() {
-  const eye = els.lightEyeEl;
-  if (!eye) return;
-  // A rest floor has no light. Hidden, not removed, so the bar keeps its shape.
-  eye.style.visibility = state.run.resting || state.settings.view === 'shoulder' ? 'hidden' : '';
-  const p = lightProgress();
-  eye.style.setProperty('--open', p.toFixed(3));
-  eye.classList.toggle('eye-near', p >= 0.8);
-  const label = t('stat.light', { pct: Math.round(p * 100) });
-  eye.title = label;
-  eye.setAttribute('aria-label', label);
+  const off = wrapAngle(angleTo(thing.row, thing.col) - lookAngle());
+  const seen = !state.settings.fogEnabled || state.floor.sightSet.has(key(thing.row, thing.col));
+  const inView = Math.abs(off) <= shoulderFov() * Math.PI / 360;
+  return { dx: Math.sin(off), dy: -Math.cos(off), offScreen: !(seen && inView) };
 }
 
 // Status bar numbers: hearts, gold, turn count and the depth (REST on a

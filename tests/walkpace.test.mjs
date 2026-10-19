@@ -11,8 +11,8 @@ import { state } from '../js/state.js';
 import { MAP_ANIMATION_MS, DPAD_HOLD_REPEAT_MS, WALK_REPEAT_GAP_MS } from '../js/config.js';
 import { stepMs, repeatMs, noteStep, heldStepReady } from '../js/walkpace.js';
 
-// Every grid way, with its screen length in tile widths (isoview.js
-// isoScreenOffset: x = (dc - dr) / 2, y = (dc + dr) / 4).
+// Every grid way, with its screen length in tile widths (the old isometric
+// map's isoScreenOffset: x = (dc - dr) / 2, y = (dc + dr) / 4).
 const WAYS = [[-1, 0], [1, 0], [0, 1], [0, -1], [-1, -1], [1, 1], [-1, 1], [1, -1]];
 const screenLength = ([dr, dc]) => Math.hypot((dc - dr) / 2, (dc + dr) / 4);
 
