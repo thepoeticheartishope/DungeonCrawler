@@ -454,6 +454,30 @@ export const NOISE_RANGES = {
 export const NOISE = true;
 // DEV -> Show ducts: who is in a duct, and every pair known. Off by default.
 export const SHOW_DUCTS = false;
+// Static (static.js, staticview.js; Timothy 2026-10-19): a faint grain
+// over the map as the closest stick man nears, in place of "I see you.".
+// On by default; DEV -> Static switches it off.
+export const STATIC_NOISE = true;
+export const STATIC = {
+  startSteps: 7,      // walking steps from the closest stick man where it begins (2 more than the light reaches)
+  curve: 1.3,         // strength = share of the way in, to this power: quiet far off, rising near
+  grain: 0.14,        // the grain's strength at full: a thin veil, the map always readable (Timothy: v1 hid everything)
+  band: 0.04,         // a faint lighter band rolling down the screen at full
+  easeMs: 500,        // the strength eases toward a new level over about this long, never a jump
+  driftMs: 600,       // each grain frame crossfades into the next over this long (slow, no flicker)
+  bandMs: 6000,       // the band takes this long to roll down once
+  grainSize: 3,       // CSS pixels per grain
+  letters: 0.25,      // wrong letters start at this strength
+  letterHoldMs: 1400, // a wrong letter holds this long, then turns back
+  letterGapMs: [2500, 5500], // the wait between tries, picked at random in this range; each try comes off with the strength's chance
+};
+// The wrong letters' lookalikes (mockup v2, Timothy picked them): mirrored
+// where a mirror exists, else a near shape. Capitals for HUD labels,
+// small letters for the room log.
+export const STATIC_LOOKALIKES = {
+  E: 'Ǝ', R: 'Я', N: 'И', S: 'Ƨ', Y: 'У', I: '1', O: '0', A: 'Λ',
+  e: 'ɘ', a: 'ɒ', s: 'ƨ', b: 'd', d: 'b', p: 'q', q: 'p', n: 'u', u: 'n', o: '0',
+};
 // An idle stick man walks to a spot in another room, stands there for a
 // number of turns in this [min, max] range, then picks a new room (smarter
 // enemies step 2, Timothy 2026-10-15: random steps each turn looked like

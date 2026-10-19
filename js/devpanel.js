@@ -23,6 +23,7 @@ const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
 const devGazeBtn = document.getElementById('devGazeBtn');
 const devDownedBtn = document.getElementById('devDownedBtn');
 const devNoiseBtn = document.getElementById('devNoiseBtn');
+const devStaticBtn = document.getElementById('devStaticBtn');
 const devShowDuctsBtn = document.getElementById('devShowDuctsBtn');
 const dpadEl = document.getElementById('dpad');
 const devFrameOut = document.getElementById('devFrameOut');
@@ -166,6 +167,15 @@ export function initDevPanel({
     state.settings.noise = !state.settings.noise;
     devNoiseBtn.textContent = state.settings.noise ? 'Noise: ON (dev)' : 'Noise: OFF (dev)';
     devNoiseBtn.setAttribute('aria-pressed', String(state.settings.noise));
+  });
+
+  // Dev tool (static): the grain as stick men near, or "I see you." as
+  // before, to compare.
+  devStaticBtn.addEventListener('click', () => {
+    state.settings.staticNoise = !state.settings.staticNoise;
+    devStaticBtn.textContent = state.settings.staticNoise ? 'Static: ON (dev)' : 'Static: OFF (dev)';
+    devStaticBtn.setAttribute('aria-pressed', String(state.settings.staticNoise));
+    requestMapDraw();
   });
 
   // Dev tool (vents and noise plan step C): see who is in a duct and where

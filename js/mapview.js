@@ -25,6 +25,7 @@ import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } f
 import { startAnswerRing, endAnswerRing } from './swirl.js';
 import { ventSealed } from './vents.js';
 import { playerStepped, playerBumped } from './playerform.js';
+import { updateStatic } from './staticview.js';
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
 const FOG_DIM_ALPHA = 0.68;  // explored-but-unlit floor at a third of its brightness
@@ -138,6 +139,7 @@ export function requestMapDraw() {
   if (!canvas) return;
   dirty = true;
   queueFrame();
+  updateStatic();
 }
 
 // Slides a minion that has just stepped from `from` to its new tile. A minion already sliding starts from
