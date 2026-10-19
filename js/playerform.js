@@ -19,7 +19,7 @@
 // seed, never Math.random (the seeded tests own it).
 
 import {
-  PLAYER_WALK, PLAYER_BREATH, PLAYER_GLANCE, MAP_ANIMATION_MS,
+  PLAYER_WALK, PLAYER_BREATH, PLAYER_GLANCE, PLAYER_EMBER, MAP_ANIMATION_MS,
 } from './config.js';
 
 // The feet standing still: together under him, a stance apart.
@@ -157,6 +157,13 @@ function glanceAt(now) {
     v = t < 0.72 ? 1 - 0.6 * ease((t - 0.6) / 0.12) : t < 0.84 ? 0.4 + 0.5 * ease((t - 0.72) / 0.12) : 0.9 * (1 - ease((t - 0.84) / 0.16));
   }
   return v * glance.side * glance.size;
+}
+
+// How bright the ember in his head glows, 0..1: from PLAYER_EMBER.low to
+// .high and back with his `breath` (-1..1), steady at .mid when `still`.
+export function emberGlow(breath, still = false) {
+  if (still) return PLAYER_EMBER.mid;
+  return PLAYER_EMBER.low + (PLAYER_EMBER.high - PLAYER_EMBER.low) * (breath + 1) / 2;
 }
 
 // His pose at `now`, for the view to draw:

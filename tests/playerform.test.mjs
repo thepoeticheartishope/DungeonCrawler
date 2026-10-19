@@ -4,15 +4,16 @@
 // bounds; the first step after standing is shorter; a stop gathers the
 // feet together; a bump is a half step; the same steps come out the same
 // every time (seeded, never Math.random); a shot waiting keeps the head
-// still; reduced motion stands him still.
+// still; reduced motion stands him still. The ember head's glow breathes
+// with him (step B).
 //
 // Run: node --test tests/*.test.mjs
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { PLAYER_WALK, MAP_ANIMATION_MS } from '../js/config.js';
-import { playerStepped, playerBumped, playerActive, playerPose, feetAt, resetPlayerForm } from '../js/playerform.js';
+import { PLAYER_WALK, PLAYER_EMBER, MAP_ANIMATION_MS } from '../js/config.js';
+import { playerStepped, playerBumped, playerActive, playerPose, feetAt, resetPlayerForm, emberGlow } from '../js/playerform.js';
 
 const STEP_MS = 140;
 
@@ -121,4 +122,12 @@ test('walking he hunches and settles; reduced motion stands him still, feet toge
   assert.deepEqual(still.feet.map(f => [f.along, f.up]), [[0, 0], [0, 0]]);
   assert.equal(still.rise, 0);
   assert.equal(still.turn, 0);
+});
+
+test('the ember glows dimmest at the bottom of a breath, brightest at the top, steady when still', () => {
+  assert.equal(emberGlow(-1), PLAYER_EMBER.low);
+  assert.equal(emberGlow(1), PLAYER_EMBER.high);
+  assert.ok(emberGlow(0) > PLAYER_EMBER.low && emberGlow(0) < PLAYER_EMBER.high);
+  assert.equal(emberGlow(1, true), PLAYER_EMBER.mid);
+  assert.equal(emberGlow(-1, true), PLAYER_EMBER.mid);
 });

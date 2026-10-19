@@ -102,6 +102,7 @@ export function initMapView(canvasEl) {
   colours = {
     text: read('--text'), muted: read('--muted'), torch: read('--torch'), bright: read('--torch-bright'),
     glowRgb: read('--glow-rgb'), kindRgb: read('--kind-rgb'), bossFogRgb: read('--boss-fog-rgb'), bossLightRgb: read('--boss-light-rgb'),
+    hidden: HIDDEN_FLOOR,
   };
   // The canvas's size is noted here, when it changes, instead of read each
   // frame: reading it makes the browser lay the page out first.
