@@ -88,7 +88,7 @@ test('tendril letters are the same for the same seed, and as many as asked for',
 });
 
 // Downed stick men (downed plan step B). A tile 100 px wide; the stick
-// man's height is isoview.js STICK_HEIGHT (0.62) of it.
+// man's height is the old isometric map's STICK_HEIGHT (0.62) of it.
 const TILE = 100;
 const HEIGHT = 0.62 * TILE;
 

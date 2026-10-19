@@ -2,8 +2,8 @@
 // outside the repo): the floor in 3D from a close camera just behind and
 // to the right of the player's stick man, below the wall tops, turning
 // with the light. Walls hide what's past them, so only what is in sight
-// shows. Built beside the isometric view behind a switch
-// (state.settings.view, ?view=shoulder or DEV -> View) until it is ready.
+// shows. The game's only map view since the isometric view was removed
+// (2026-10-18; a copy is kept at ideas/reference/iso-view/ outside the repo).
 //
 // It draws the floor (lit, remembered, hidden, the boss's mist), walls,
 // pillars, doorways, the stairs and their light, the player's stick man
@@ -20,8 +20,7 @@
 // left, shut when a floor begins and opening as the light spreads (in
 // Comfort mode, the turns left as a number).
 //
-// mapview.js calls drawShoulderScene() from its drawScene, with the same
-// arguments as isoview.js drawIsoScene, and shoulderTileAt() /
+// mapview.js calls drawShoulderScene() from its drawScene, and shoulderTileAt() /
 // shoulderGridAt() to turn a tap on the map into a tile or a floor point
 // (step B). The camera maths (shoulderCamera, toCamera, projectPoint,
 // floorAt) are exported for the tests. main.js calls lookUp() while the
@@ -76,7 +75,7 @@ const GHOST_LEVEL = 0.3;
 const GHOST_WIDTH = 0.95;
 // Phosphor lines: a line's width as a share of the map's width on the
 // page (never under LINE_MIN_PX), with the glow as two wider, fainter
-// strokes under it (isoview.js HALO_LAYERS). Far, faint lines skip the
+// strokes under it (as the old isometric map did). Far, faint lines skip the
 // glow, which costs most of a frame.
 const LINE_SHARE = 0.0022;
 const LINE_MIN_PX = 1.2;
@@ -98,7 +97,7 @@ const CLOSE_FADE = { near: 0.35, far: 0.8, level: 0.2 };
 // The dark pressing in at the screen's edges, like a torch's edge.
 const VIGNETTE = { inner: 0.25, outer: 0.75, dark: 0.5, middleY: 0.6 };
 const ENEMY_KINDS = ['minion', 'hunter']; // what a tap on its glyph picks (gun.js pickTarget)
-// Props and the rest (step C), sized in tiles, as in isoview.js unless
+// Props and the rest (step C), sized in tiles, as on the old isometric map unless
 // said otherwise. Brightness: a block never darker than a remembered
 // wall, and a searched box, cell or paper dimmer.
 const DRUM_SIDES = 12;              // the round case is drawn with this many sides
@@ -144,8 +143,8 @@ let tapBoxes = [];      // this frame's stick men and other enemies, nearest fir
 // Draws the whole map from the shoulder camera: the floor, then the walls,
 // pillars, glyphs and the player, far to near, then the dark at the edges.
 // `canvasSize` is { width, height, pageWidth }; `shared` is what
-// mapview.js hands the isometric view (colours, things, fogOf, paintGlyph,
-// pulse, keepMoving, showPlain, now, still, walkAt).
+// mapview.js hands it (colours, things, fogOf, paintGlyph, mistStrength,
+// pulse, keepMoving, showPlain, now, still, walkAt, sounds).
 export function drawShoulderScene(ctx, canvasSize, shared) {
   look = shared;
   width = canvasSize.width;
@@ -188,7 +187,7 @@ export function shoulderTileAt(px, py) {
 }
 
 // The floor point under a tap at (px, py) CSS pixels, in grid terms with
-// a tile's middle at whole numbers (as isoview.js isoGridAt), or null.
+// a tile's middle at whole numbers (as the old isometric map did), or null.
 export function shoulderGridAt(px, py) {
   if (!cam) return null;
   const at = floorAt(cam, px * pageScale, py * pageScale);
@@ -778,8 +777,8 @@ function enemyLine(ctx, path, level, w) {
   ctx.restore();
 }
 
-// The eye over a stick man in the player's cone (gaze.js), as in
-// isoview.js: shut, a line; the lids part slowly with its gaze, the pupil
+// The eye over a stick man in the player's cone (gaze.js), as on the old
+// isometric map: shut, a line; the lids part slowly with its gaze, the pupil
 // showing from a third open. Sized for the distance, never smaller than
 // on the isometric map.
 function drawGazeEye(ctx, x, y, m) {
@@ -885,7 +884,7 @@ function round(x, y, r, angle, z) {
 }
 
 // An energy cell: a round case with bands and three round ends on its
-// lid, as in isoview.js. Unused, a faint glow breathes round it
+// lid, as on the old isometric map. Unused, a faint glow breathes round it
 // (mapview.js gives `look.breath`); used, it is dimmer and its ends dark.
 function drawDrum(ctx, thing) {
   const x = thing.at.col + 0.5;
@@ -1010,7 +1009,7 @@ function drawGrate(ctx, thing) {
 }
 
 // The unused reflective desk's pool of warm light on the floor round it
-// (as in isoview.js drawDeskGlow), breathing slowly.
+// (as the old isometric map did), breathing slowly.
 function drawDeskPool(ctx, thing) {
   const x = thing.at.col + 0.5;
   const y = thing.at.row + 0.5;
@@ -1070,7 +1069,7 @@ function drawBeam(ctx, at) {
 
 // The doorways in view, each as { d, draw }: two posts as tall as the
 // walls and an arch over them, with a faint haze in the opening (as in
-// isoview.js drawDoorway). Drawn just in front of the walls beside them.
+// the old isometric map). Drawn just in front of the walls beside them.
 function doorItems(ctx) {
   const items = [];
   state.floor.doorSet.forEach(k => {
@@ -1160,8 +1159,8 @@ function drawAnswerRing(ctx, ring, near) {
   ctx.restore();
 }
 
-// The tutorial's ring of dark (tutorial.js stage 'ring'), as in
-// isoview.js: words in the stick men's cold light circling the player at
+// The tutorial's ring of dark (tutorial.js stage 'ring'), as on the old
+// isometric map: words in the stick men's cold light circling the player at
 // the edge of their small light; when the light breaks it they scatter
 // outward and fade. Still under reduced motion and in Comfort mode, and
 // simply gone when it breaks. Never smaller than on the isometric map.
@@ -1279,7 +1278,7 @@ function drawGun(ctx, gun, lineW) {
 
 // Corner brackets round everything the gun can shoot right now, faint, and
 // round the target, bright and slowly breathing, with its guard over it
-// while it has one (as in isoview.js). `boxes` are this frame's enemies'
+// while it has one (as the old isometric map did). `boxes` are this frame's enemies'
 // boxes on the canvas.
 function drawBrackets(ctx, boxes) {
   const target = liveTarget();
@@ -1340,7 +1339,7 @@ function drawLaser(ctx) {
   ctx.restore();
 }
 
-// Plays a shot (mapview.js shotOnMap calls it with isoview.js's): a flash
+// Plays a shot (mapshared.js lastShot, from mapview.js shotOnMap): a flash
 // from the gun to `target`, or past it when it `missed`, with MISS
 // floating up over it. A miss goes to one side, then the other (never
 // Math.random: the seeded tests own it).

@@ -6,7 +6,7 @@ import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX, TUTORIAL_EXIT_ENERGY,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
-  LOOK_NUDGE, LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, SHOULDER_LOOK_UP_STICK,
+  LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, SHOULDER_LOOK_UP_STICK,
   SHOULDER_SWEEP_SPEED, SHOULDER_SLOW_SHARE, SHOULDER_STEP_REPEAT_MS, SHOULDER_STEP_STICK, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
   TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS,
 } from './config.js';
@@ -19,7 +19,7 @@ import {
 } from './quiz.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
-  formatTime, startTimer, stopTimer, renderLightEye, renderClock, showSensed, showWhisper,
+  formatTime, startTimer, stopTimer, renderClock, showSensed, showWhisper,
   showAnswerLine, fadeAnswerLine
 } from './render.js';
 import {
@@ -32,22 +32,21 @@ import { scoreGoals } from './goals.js';
 import { settleRelay } from './relays.js';
 import { playIntro } from './introview.js';
 import { settleAnswer } from './answers.js';
-import { initSetLoader, showWorkshop, showViewOptions } from './setloader.js';
+import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap } from './mapview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar } from './gunpanels.js';
-import { t, TEXT, setTextArea, applyStaticText } from './text.js';
+import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
-import { initDpad, initLookStick, SCREEN_WAYS, screenStep, arrowChord, shoulderStep, sweepHold } from './dpad.js';
-import { repeatMs, noteStep, heldStepReady, heldStepWait } from './walkpace.js';
-import { aimLook, turnBody, sweepLook, wantsTurn, lookAngle, bodyAngle, waysInUse } from './look.js';
+import { initDpad, initLookStick, SCREEN_WAYS, screenStep, shoulderStep, sweepHold } from './dpad.js';
+import { repeatMs, noteStep, heldStepReady } from './walkpace.js';
+import { aimLook, turnBody, sweepLook, wantsTurn, bodyAngle, waysInUse } from './look.js';
 import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
 import { computeVisibility, seesEnemy, FACING_VECTORS } from './sight.js';
-import { isoAngleOf } from './isoview.js';
 import { lookUp } from './shoulderview.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
@@ -105,7 +104,6 @@ const devPanel = document.getElementById('devPanel');
 const winStats = document.getElementById('winStats');
 const loseStats = document.getElementById('loseStats');
 const loseTitle = document.getElementById('loseTitle');
-const lightEyeEl = document.getElementById('lightEye');
 const lightHintEls = {
   n: document.getElementById('lightHintN'),
   s: document.getElementById('lightHintS'),
@@ -125,7 +123,7 @@ const btnSelect = document.getElementById('btnSelect');
 initRender({
   startScreen, introGlitch, roomScreen, battleScreen, exchangeScreen, winScreen, loseScreen,
   heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
-  lightEyeEl, lightHintEls, dpadButtons,
+  lightHintEls, dpadButtons,
   senseNote: document.getElementById('senseNote'),
   answerNote: document.getElementById('answerNote'),
   energyStat: document.getElementById('energyStat'),
@@ -143,7 +141,7 @@ initRender({
   btnSelect,
 });
 initMapView(document.getElementById('mapCanvas'));
-onMapPointer({ aim: aimAtPoint, tap: tapMap });
+onMapPointer({ tap: tapMap });
 
 initDataView({ backScreen: document.getElementById('workshopScreen') });
 initExchangeView({ buyItem, leaveExchange });
@@ -157,9 +155,8 @@ initSetPicker({ startGame, openWorkshop: showWorkshop });
 initPractice({ letterPoolQuestion, sumLockQuestion, mountBattleQuestion });
 initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
-  gunCombatChanged, autoWinGun, battleScreen, wagerRow, viewChanged: () => { showViewOptions(); renderLightEye(); },
+  gunCombatChanged, autoWinGun, battleScreen, wagerRow,
 });
-showViewOptions();
 
 // A tap on the map. With the gun on (DEV -> Combat), it picks the gun's
 // target: the light swings to the minion on that tile and the target
@@ -245,14 +242,6 @@ function whisperSoon(e) {
   }, TUTORIAL_KIND_DELAY_MS);
 }
 
-// A line's wording for the view in play: in the shoulder view, its
-// `.shoulder` version when it has one (shoulder view plan step F: lines
-// that name screen directions or aiming by drag say it this view's way).
-function viewText(key, vars) {
-  const shoulder = key + '.shoulder';
-  return t(state.settings.view === 'shoulder' && TEXT[shoulder] !== undefined ? shoulder : key, vars);
-}
-
 // The tutorial teaches without hand holding (Timothy): a stage's plain
 // hint shows in the room log only if the player is still on it after
 // TUTORIAL_STUCK_MS. Stages with no hint teach themselves.
@@ -273,7 +262,7 @@ function watchTutorial(restart = false) {
   if (!hint || (stage === 'ring' && !batteryInPlay())) return;
   stuckTimer = setTimeout(() => {
     const now = state.floor.tutorial;
-    if (now && now.stage === stage && !state.run.runEnded) showRoomNote('move-msg', viewText(hint));
+    if (now && now.stage === stage && !state.run.runEnded) showRoomNote('move-msg', t(hint));
   }, TUTORIAL_STUCK_MS);
 }
 
@@ -283,22 +272,13 @@ function aimTo(angle) {
   drawEvents(aimLook(angle));
 }
 
-// The mouse or a dragged finger over the map: aims at the grid point
-// under it, unless it's on the player's own tile, where the angle would
-// jump about.
+// A tap on the floor: aims at the floor point under it, unless it's on
+// the player's own tile, where the angle would jump about.
 function aimAtPoint(point) {
   const dr = point.row - state.floor.playerRow;
   const dc = point.col - state.floor.playerCol;
   if (Math.hypot(dr, dc) < LOOK_POINTER_DEAD) return;
   aimTo(Math.atan2(dc, -dr));
-}
-
-// Q / E: nudges the aim LOOK_NUDGE round, anticlockwise (-1) or clockwise
-// (1). An aim already past the arc goes on from there, so presses add up
-// to a turn.
-function nudgeLook(dir) {
-  const from = wantsTurn() ? state.floor.look : lookAngle();
-  aimTo(from + dir * LOOK_NUDGE);
 }
 
 // Turns the body toward an aim past the free arc (look.js turnBody): a
@@ -436,7 +416,7 @@ document.addEventListener('keyup', (e) => {
 function syncLookStick() {
   const armed = wantsTurn();
   lookStick.classList.toggle('armed', armed);
-  lookStick.setAttribute('aria-label', viewText(armed ? 'dpad.stick.turn' : batteryInPlay() ? 'dpad.stick.wait' : 'dpad.stick.wait.plain'));
+  lookStick.setAttribute('aria-label', t(armed ? 'dpad.stick.turn' : batteryInPlay() ? 'dpad.stick.wait' : 'dpad.stick.wait.plain'));
 }
 
 // Whether the gun can be used right now: gun combat on, the room screen
@@ -1141,7 +1121,6 @@ function drawFloor() {
 
   renderRoomHints();
   syncLookStick();
-  renderLightEye();
   renderTargeting();
   requestMapDraw();
   refreshMinimap();
@@ -1442,7 +1421,7 @@ function drawEvents(events) {
         parts.push(t('tut.key.dropped'));
         break;
       case 'doorUnlocked':
-        parts.push(viewText('tut.door.open'));
+        parts.push(t('tut.door.open'));
         break;
       case 'relayHeld':
         parts.push(t(e.turns ? 'room.relay.held' : 'room.relay.heldDark', { turns: e.turns }));
@@ -1758,7 +1737,6 @@ function drawEvents(events) {
   renderCombatStatus();
   renderRoomHints();
   syncLookStick();
-  renderLightEye();
   renderTargeting();
   requestMapDraw();
   refreshMinimap();
@@ -1961,14 +1939,12 @@ btnSelect.addEventListener('keydown', () => { selectPressed = false; });
 btnSelect.addEventListener('contextmenu', (e) => e.preventDefault());
 
 initDpad({
-  buttons: dpadButtons, movePlayer,
+  buttons: dpadButtons,
   canWalk: () => roomScreen.classList.contains('show') && !state.run.runEnded,
-  eightWays: () => state.settings.eightWays,
-  repeatMs,
-  push: (sx, sy) => (state.settings.view === 'shoulder' ? shoulderPush(sx, sy) : undefined),
-  // The shoulder view's side arrows sweep the light while held.
+  push: shoulderPush,
+  // The side arrows sweep the light while held.
   hold: (sx, sy, down) => {
-    if (state.settings.view !== 'shoulder' || sy || !sx) return false;
+    if (sy || !sx) return false;
     if (down) turnPress('pad', sx);
     else turnRelease('pad');
     return true;
@@ -1976,13 +1952,9 @@ initDpad({
 });
 initLookStick({
   button: lookStick,
-  // In the shoulder view the stick sweeps the light, faster the further it
-  // is pushed sideways, or looks up when pushed up; elsewhere it aims the
-  // way it is pushed on screen.
-  aim: (dx, dy) => {
-    if (state.settings.view !== 'shoulder') return aimTo(isoAngleOf(dx, dy));
-    shoulderStick(dx, dy);
-  },
+  // The stick sweeps the light, faster the further it is pushed sideways,
+  // or looks up when pushed up.
+  aim: shoulderStick,
   done: () => {
     stickStepped = false;
     sweep.release('stick');
@@ -1997,10 +1969,10 @@ initLookStick({
   wantsTurn,
 });
 
-// Walks the way (sx, sy) points on screen (dpad.js screenStep), if the
-// room screen is still up: the arrow keys' chord steps a moment after the
-// press. Returns the ms until a held key steps again (walkpace.js), or
-// null to stop the held walk.
+// Walks the way (sx, sy) points on the minimap's diamond (dpad.js
+// screenStep), if the room screen is up: the number pad, as before the
+// isometric view was removed. Returns the ms until a held key steps again
+// (walkpace.js), or null.
 function walkScreen(sx, sy) {
   const grid = screenStep(sx, sy, state.settings.eightWays);
   if (!grid || !roomScreen.classList.contains('show') || state.run.runEnded) return null;
@@ -2008,36 +1980,27 @@ function walkScreen(sx, sy) {
   return repeatMs(grid[0], grid[1]);
 }
 
-// The arrow keys by the screen way they push, and the number pad's keys by
-// the way they point (eight ways plan: 7 8 9 / 4 6 / 1 2 3).
-const ARROW_WAYS = { ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R' };
+// The number pad's keys by the way they point (eight ways plan: 7 8 9 /
+// 4 6 / 1 2 3).
 const NUMPAD_WAYS = {
   Numpad7: 'UL', Numpad8: 'U', Numpad9: 'UR', Numpad4: 'L',
   Numpad6: 'R', Numpad1: 'DL', Numpad2: 'D', Numpad3: 'DR',
 };
-const arrows = arrowChord(walkScreen, { readyIn: () => heldStepWait(performance.now()) });
 document.addEventListener('keyup', (e) => {
-  if (ARROW_WAYS[e.key]) arrows.up(ARROW_WAYS[e.key]);
   if (e.key === ' ') holdLookUp('key', false);
 });
 window.addEventListener('blur', () => {
-  arrows.reset();
   holdLookUp('key', false);
   holdLookUp('stick', false);
 });
 
-// Arrow-key support on desktop, ignored while typing in the answer box.
-// With 8 ways the arrows walk by screen, and two together walk a diagonal
-// (arrowChord); the number pad walks all 8 at once, unless a question on
-// the map is taking number keys. With 8 ways off they walk as before
-// (up is grid north).
-// Q / E nudge the look, Space turns the body toward an aim past the arc
-// (free look plan); in the shoulder view Space held looks up at the sky
-// instead (sky eye plan step A: a sweep or a click already turns there). With the gun on: F is SELECT (fires), T picks the next
-// target, . waits. V switches the light (light battery plan).
+// Keys on desktop, ignored while typing in the answer box. The arrows,
+// W A S D and Q / E walk round the body and sweep the light (shoulderKey),
+// and the number pad walks by the map's ways (as on the minimap), unless a
+// question on the map is taking number keys. Space held looks up at the
+// sky (sky eye plan step A). With the gun on: F is SELECT (fires), T picks
+// the next target, . waits. V switches the light (light battery plan).
 // On the stairs, Enter goes down (so does SELECT).
-// In the shoulder view the arrows, W A S D and Q / E walk round the body
-// and sweep the light (shoulderKey), and the number pad does as before.
 // Letter and number keys answer a question on the ask screen, unless the
 // gun panels already used the key (picking a reload with 1-3, or F / Space
 // stopping the dial).
@@ -2046,19 +2009,13 @@ document.addEventListener('keydown', (e) => {
   if (!roomScreen.classList.contains('show')) return;
   const numpad = NUMPAD_WAYS[e.code];
   // A held number pad key steps again only once its last step has landed
-  // (walkpace.js), not at the keyboard's own repeat rate. Held arrows walk
-  // on their own beat (dpad.js arrowChord).
+  // (walkpace.js), not at the keyboard's own repeat rate.
   if (e.repeat && numpad && !heldStepReady(performance.now())) { e.preventDefault(); return; }
-  const shoulderWay = state.settings.view === 'shoulder' && !mapPanelShown() && SHOULDER_KEYS[e.key];
-  if (shoulderWay) { e.preventDefault(); shoulderKey(shoulderWay, e.repeat); return; }
+  const way = !mapPanelShown() && SHOULDER_KEYS[e.key];
+  if (way) { e.preventDefault(); shoulderKey(way, e.repeat); return; }
   if (numpad && !mapPanelShown()) { e.preventDefault(); walkScreen(...SCREEN_WAYS[numpad]); }
-  else if (ARROW_WAYS[e.key] && state.settings.eightWays) { e.preventDefault(); arrows.down(ARROW_WAYS[e.key], e.repeat); }
-  else if (ARROW_WAYS[e.key]) { e.preventDefault(); walkScreen(...SCREEN_WAYS[ARROW_WAYS[e.key]]); }
   else if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
-  else if (lookReady() && (e.key === 'q' || e.key === 'Q')) { e.preventDefault(); nudgeLook(-1); }
-  else if (lookReady() && (e.key === 'e' || e.key === 'E')) { e.preventDefault(); nudgeLook(1); }
-  else if (e.key === ' ' && state.settings.view === 'shoulder' && !mapPanelShown()) { e.preventDefault(); holdLookUp('key', true); }
-  else if (e.key === ' ' && wantsTurn() && !mapPanelShown()) { e.preventDefault(); turnLook(); }
+  else if (e.key === ' ' && !mapPanelShown()) { e.preventDefault(); holdLookUp('key', true); }
   else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); pressSelect(); }
   else if (gunReady() && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
   else if (gunReady() && e.key === '.') { e.preventDefault(); skipTurn(); }

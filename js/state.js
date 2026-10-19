@@ -29,11 +29,9 @@ export const state = {
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
-    view: 'shoulder',       // the map's view: 'shoulder' (shoulderview.js, the default since shoulder view plan step G) or 'iso' (isoview.js; the start screen's Isometric view, remembered; ?view=iso / ?view=shoulder or DEV -> View for one session)
     shoulderSteps: false,   // start screen comfort setting, shoulder view: left / right turn the light 45° a press instead of sweeping; remembered
     shoulderSlow: false,    // start screen comfort setting, shoulder view: the sweep goes at SHOULDER_SLOW_SHARE of its speed; remembered
     shoulderWide: false,    // start screen comfort setting, shoulder view: a wider field of view (SHOULDER_WIDE_FOV); remembered
-    isoCameraGlide: true,   // dev toggle: the isometric camera glides after the player (false: locked to them)
     turnBeforeStep: TURN_BEFORE_STEP, // a press in a new direction only turns (true) or turns and steps (false); DEV -> Turn flips it
     freeLook: FREE_LOOK,    // the light points where the player aims, within look.js's free arc (true), or where the body faces (false); DEV -> Free look flips it
     eightWays: EIGHT_WAYS,  // the player and minions walk and face 8 ways (true) or the 4 grid ways (false); DEV -> 8 ways flips it
@@ -55,7 +53,7 @@ export const state = {
     order: [],
     roomIndex: 0,          // which danger depth (picks the recipe); a rest floor won't change it
     resting: false,        // on a rest floor (opening, between depths, or the epilogue); run.js nextFloor() flips it
-    floorsEntered: 0,      // goes up each time a floor is built; never reset, so a retry is a new floor too (isoview's camera snaps on it)
+    floorsEntered: 0,      // goes up each time a floor is built; never reset, so a retry is a new floor too (the shoulder camera snaps on it)
     attempts: 0,
     correctTotal: 0,       // right answers this run (the papers' {answered})
     haunts: new Map(), // missed question -> attempt it was last missed on (js/haunts.js)
@@ -139,7 +137,7 @@ export const state = {
     pillarSet: new Set(),     // pillar tiles: solid, and they block the player's light
     props: [],                // papers and boxes: [{ row, col, kind, theme, loot, gold, trapped, identified, searched, sprung }]
     chamberAt: new Map(),     // tile key -> which room on the floor it belongs to
-    doorSet: new Set(),       // doorway tiles: each room's open doors and inner doors (isoview.js draws an arch over each)
+    doorSet: new Set(),       // doorway tiles: each room's open doors and inner doors (shoulderview.js draws an arch over each)
     chamberThemes: [],        // theme per room
     chamberNames: [],         // text.js key of each room's name on a fixed plan (plans.js), same order as chamberAt's rooms; empty on a random floor or a rest
     visitedChambers: new Set(), // rooms the player has walked into (their theme line shows once)

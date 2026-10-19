@@ -1,5 +1,5 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
-// panel over the screen): Skip room, Auto-win, Fog, Turn, Free look, Minigame, View, Camera, Look, Tendrils and Combat
+// panel over the screen): Skip room, Auto-win, Fog, Turn, Free look, Minigame, Look, Tendrils and Combat
 // toggles, a test shot and a test reload, and the map's frame meter, for testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw, mapDrawTimes } from './mapview.js';
@@ -25,9 +25,7 @@ const devDownedBtn = document.getElementById('devDownedBtn');
 const devNoiseBtn = document.getElementById('devNoiseBtn');
 const devShowDuctsBtn = document.getElementById('devShowDuctsBtn');
 const dpadEl = document.getElementById('dpad');
-const devViewBtn = document.getElementById('devViewBtn');
 const devFrameOut = document.getElementById('devFrameOut');
-const devCameraBtn = document.getElementById('devCameraBtn');
 const devSmoothWalkBtn = document.getElementById('devSmoothWalkBtn');
 const devLookBtn = document.getElementById('devLookBtn');
 const devTendrilsBtn = document.getElementById('devTendrilsBtn');
@@ -38,7 +36,7 @@ const devReloadBtn = document.getElementById('devReloadBtn');
 
 export function initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
-  gunCombatChanged, autoWinGun, viewChanged,
+  gunCombatChanged, autoWinGun,
   battleScreen, wagerRow,
 }) {
   // Players never see DEV: it shows only when the address has ?dev
@@ -49,26 +47,6 @@ export function initDevPanel({
     const open = devPanel.classList.toggle('show');
     devToggleBtn.setAttribute('aria-expanded', String(open));
     showFrameTimes();
-    showView();
-  });
-
-  // The view (shoulder view plan): ?view=iso or ?view=shoulder on the
-  // address picks it for this visit, over the start screen's saved choice
-  // (the smoke tests run both).
-  if (['iso', 'shoulder'].includes(params.get('view'))) state.settings.view = params.get('view');
-  // The View button says the view in play (the start screen can change it too).
-  function showView() {
-    const shoulder = state.settings.view === 'shoulder';
-    devViewBtn.textContent = shoulder ? 'View: shoulder (dev)' : 'View: iso (dev)';
-    devViewBtn.setAttribute('aria-pressed', String(shoulder));
-  }
-  showView();
-  devViewBtn.addEventListener('click', () => {
-    state.settings.view = state.settings.view === 'shoulder' ? 'iso' : 'shoulder';
-    showView();
-    viewChanged();
-    renderRoomHints();
-    requestMapDraw();
   });
 
   // The frame meter: how long the map takes to draw, refreshed twice a
@@ -228,15 +206,6 @@ export function initDevPanel({
     devMinigameBtn.textContent = 'Minigame: ' + next + ' (dev)';
   });
 
-  // Dev tool: the isometric camera glides after the player, or stays locked
-  // on them as it did before, so the two can be compared in play.
-  devCameraBtn.addEventListener('click', () => {
-    state.settings.isoCameraGlide = !state.settings.isoCameraGlide;
-    devCameraBtn.textContent = state.settings.isoCameraGlide ? 'Camera: glide (dev)' : 'Camera: locked (dev)';
-    devCameraBtn.setAttribute('aria-pressed', String(state.settings.isoCameraGlide));
-    requestMapDraw();
-    renderRoomHints();
-  });
 
   // Dev tool: smooth walk (walkpace.js) on, or one step time for every way
   // with the camera gliding after the player, as before, to compare.

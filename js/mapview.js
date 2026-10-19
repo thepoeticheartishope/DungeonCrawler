@@ -5,7 +5,7 @@
 //
 // main.js calls initMapView() once, requestMapDraw() after anything on
 // the map may have changed, slideOnMap() / bumpOnMap() / shotOnMap() and a
-// minion's hurtOnMap() / deathOnMap() from their drawEvents cases, and onMapPointer() to hear taps and aiming on the map. This file reads state and never changes it.
+// minion's hurtOnMap() / deathOnMap() from their drawEvents cases, and onMapPointer() to hear taps on the map. This file reads state and never changes it.
 //
 // Everything is drawn into one canvas (the "phosphor"), so a later CRT
 // pass (curved glass, bloom) can read that canvas and draw on top of it.
@@ -19,18 +19,14 @@ import {
 import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
 import { t } from './text.js';
-import { drawIsoScene, isoTileAt, isoGridAt } from './isoview.js';
 import { drawShoulderScene, shoulderTileAt, shoulderGridAt } from './shoulderview.js';
 import { showShot } from './mapshared.js';
 import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
 import { ventSealed } from './vents.js';
-import { setTileArtColour } from './tileart.js';
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
 const FOG_DIM_ALPHA = 0.68;  // explored-but-unlit floor at a third of its brightness
-const MIST_RADIUS = 1.1;     // boss mist spills past its tile, so lit tiles blend into one haze
-const MIST_SPRITE_SHARE = 1 / 11; // the mist sprite's tile, as a share of the canvas width (isoview scales it)
 const MIST_DRIFT = [0.7, 1];  // the mist's strength at either end of its drift
 // The drift starts at three points in its cycle, tile by tile, so the mist
 // doesn't pulse in step.
@@ -75,7 +71,6 @@ let canvas = null;  // the phosphor: what the player sees, faded frame to frame
 let screen = null;  // the phosphor's 2D context
 const scene = document.createElement('canvas'); // this frame, drawn plain from state
 const sceneCtx = scene.getContext('2d');
-let mistSprite = null; // one tile's worth of boss mist, redrawn when the size changes
 let colours = {};
 let pageSize = { width: 0, height: 0 }; // the canvas's size on the page in CSS pixels, from the resize observer
 let frameHandle = 0; // the queued animation frame, or 0 when nothing is queued
@@ -107,7 +102,6 @@ export function initMapView(canvasEl) {
     text: read('--text'), muted: read('--muted'), torch: read('--torch'), bright: read('--torch-bright'),
     glowRgb: read('--glow-rgb'), kindRgb: read('--kind-rgb'), bossFogRgb: read('--boss-fog-rgb'), bossLightRgb: read('--boss-light-rgb'),
   };
-  setTileArtColour(colours.glowRgb);
   // The canvas's size is noted here, when it changes, instead of read each
   // frame: reading it makes the browser lay the page out first.
   new ResizeObserver(entries => {
@@ -353,18 +347,13 @@ export function endAnswerRingOnMap() {
   requestMapDraw();
 }
 
-// Hands main.js what the pointer does on the map (free look plan step C):
-// `aim(point)` with the grid point under it (isoview isoGridAt, not
-// rounded) while a mouse moves over the map with no button down, or while
-// a finger or pen drags past MAP_DRAG_PX; `tap(tile, pointerType)` with the
-// tile under a press that didn't drag (isoview isoTileAt). A drag never
-// taps, so aiming on a phone can't pick or clear a target by accident.
-// The shoulder view (shoulder view plan step B) has no hover or drag aim
-// (the camera turns with the light, so the point under the pointer would
-// run away from it); a tap there passes the tile (shoulderview
+// Hands main.js a tap on the map: `tap(tile, pointerType, point)` with the
+// tile under a press that didn't drag past MAP_DRAG_PX (shoulderview
 // shoulderTileAt: an enemy's glyph first) and the floor point under it
-// (shoulderGridAt) as `tap(tile, pointerType, point)`.
-export function onMapPointer({ aim, tap }) {
+// (shoulderGridAt). There is no hover or drag aim (the camera turns with
+// the light, so the point under the pointer would run away from it), and a
+// drag never taps, so a phone can't pick or clear a target by accident.
+export function onMapPointer({ tap }) {
   let press = null; // { x, y, id, dragged } while a press is down
   const place = e => {
     const box = canvas.getBoundingClientRect();
@@ -377,24 +366,14 @@ export function onMapPointer({ aim, tap }) {
   });
   canvas.addEventListener('pointermove', e => {
     if (press && press.id === e.pointerId && Math.hypot(e.clientX - press.x, e.clientY - press.y) > MAP_DRAG_PX) press.dragged = true;
-    const hovering = e.pointerType === 'mouse' && !press;
-    if (!hovering && !(press && press.dragged)) return;
-    if (state.settings.view !== 'iso') return;
-    const point = isoGridAt(...place(e));
-    if (point) aim(point);
   });
   canvas.addEventListener('pointerup', e => {
     if (!press || press.id !== e.pointerId) return;
     const dragged = press.dragged;
     press = null;
     if (dragged) return;
-    if (state.settings.view === 'shoulder') {
-      const tile = shoulderTileAt(...place(e));
-      if (tile) tap(tile, e.pointerType, shoulderGridAt(...place(e)));
-      return;
-    }
-    const tile = isoTileAt(...place(e));
-    if (tile) tap(tile, e.pointerType);
+    const tile = shoulderTileAt(...place(e));
+    if (tile) tap(tile, e.pointerType, shoulderGridAt(...place(e)));
   });
   canvas.addEventListener('pointercancel', () => { press = null; });
 }
@@ -458,34 +437,13 @@ function fitCanvas() {
   if (canvas.width === width && canvas.height === height && scene.width === width && scene.height === height) return true;
   canvas.width = scene.width = width;
   canvas.height = scene.height = height;
-  mistSprite = makeMistSprite(width * MIST_SPRITE_SHARE);
   dirty = true;
   snap = true;
   return true;
 }
 
-// One tile's boss mist as a soft round haze, drawn once per size instead
-// of building a gradient for every lit tile on every frame.
-function makeMistSprite(cell) {
-  const radius = cell * MIST_RADIUS;
-  const sprite = document.createElement('canvas');
-  sprite.width = sprite.height = Math.ceil(radius * 2);
-  const ctx = sprite.getContext('2d');
-  const mid = sprite.width / 2;
-  const g = ctx.createRadialGradient(mid, mid, 0, mid, mid, radius);
-  const fog = a => 'rgba(' + colours.bossFogRgb + ', ' + a + ')';
-  g.addColorStop(0, fog(0.13));
-  g.addColorStop(0.45, fog(0.09));
-  g.addColorStop(0.8, fog(0.03));
-  g.addColorStop(1, fog(0));
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, sprite.width, sprite.height);
-  return sprite;
-}
-
-// Draws the whole map as state has it at `now`, isometric (isoview.js)
-// or, with the shoulder view switched on, from the low shoulder camera
-// (shoulderview.js). Notes whether anything drawn keeps moving, so frames
+// Draws the whole map as state has it at `now`, from the low shoulder
+// camera (shoulderview.js). Notes whether anything drawn keeps moving, so frames
 // go on, and how long the drawing took (mapDrawTimes).
 function drawScene(now) {
   const started = performance.now();
@@ -494,9 +452,8 @@ function drawScene(now) {
   const ctx = sceneCtx;
   ctx.fillStyle = HIDDEN_FLOOR;
   ctx.fillRect(0, 0, scene.width, scene.height);
-  const draw = state.settings.view === 'shoulder' ? drawShoulderScene : drawIsoScene;
-  draw(ctx, { width: scene.width, height: scene.height, pageWidth: pageSize.width }, {
-    colours, things: mapThings(), fogOf, paintGlyph, mistSprite, mistStrength, pulse, keepMoving,
+  drawShoulderScene(ctx, { width: scene.width, height: scene.height, pageWidth: pageSize.width }, {
+    colours, things: mapThings(), fogOf, paintGlyph, mistStrength, pulse, keepMoving,
     showPlain, now, still: reducedMotion.matches, walkAt: walkAt(now), sounds: soundTilesNow(now),
   });
   drawTimes.push(performance.now() - started);
@@ -512,16 +469,15 @@ export function mapDrawTimes() {
 }
 
 // Tells the frame loop that something just drawn keeps moving, so frames
-// go on. The isometric view calls it for its own looping effects.
+// go on. The shoulder view calls it for its own looping effects.
 function keepMoving() {
   looping = true;
 }
 
-// The isometric view is moving something big this frame (the camera
-// gliding, the player sliding, a wall lowering or rising): keep drawing
-// frames, and show each one plain, with no afterglow. The afterglow keeps
-// every in-between place, so a gliding scene smeared and a lowering wall
-// looked like a stack of boxes.
+// The shoulder view is moving something big this frame (the camera
+// turning or tilting, the player sliding): keep drawing frames, and show
+// each one plain, with no afterglow. The afterglow keeps every in-between
+// place, so a moving scene smeared.
 function showPlain() {
   looping = true;
   snap = true;
@@ -537,7 +493,7 @@ function fogOf(row, col) {
 
 // How strongly the boss mist shows on a tile this frame, from 0 (none) to
 // 1: only on lit floor (not walls, not floor the player has never seen),
-// dimmed on remembered floor, drifting over time. The isometric view draws with it.
+// dimmed on remembered floor, drifting over time. The shoulder view draws with it.
 function mistStrength(row, col) {
   const k = key(row, col);
   if (!state.floor.bossLitSet.has(k) || state.floor.wallSet.has(k)) return 0;
@@ -549,7 +505,7 @@ function mistStrength(row, col) {
   return strength * (fog === 'dim' ? 1 - FOG_DIM_ALPHA : 1);
 }
 
-// Every glyph on the map, as a list the isometric view draws from: { kind, at, tile, glyph, look }. `at` is where it
+// Every glyph on the map, as a list the shoulder view draws from: { kind, at, tile, glyph, look }. `at` is where it
 // shows this frame in tiles (between tiles while something slides), `tile`
 // the tile the rules have it on (where a slide ends), glyph is
 // null for the '?' of something too far to make out, and look holds the
@@ -587,10 +543,10 @@ function mapThings() {
     const under = thing => thing.row === p.row && thing.col === p.col;
     if (p.kind === 'paper' && (under({ row: f.playerRow, col: f.playerCol }) || f.minions.some(under))) return;
     const known = !state.settings.fogEnabled || p.identified || canMakeOut(p.row, p.col);
-    // An unused energy cell breathes a faint glow (isoview.js drawEnergyCell).
+    // An unused energy cell breathes a faint glow (shoulderview.js drawDrum).
     const breath = p.kind === 'cell' && !p.searched && !remembered ? pulse(MAP_ANIMATION_MS.cellBreath, phaseOf(p) * MAP_ANIMATION_MS.cellBreath) : null;
     // An unused reflective desk sits in a pool of the kind voice's warm
-    // light (isoview.js drawDeskGlow), remembered ones too: it says "safe"
+    // light (shoulderview.js drawDeskPool), remembered ones too: it says "safe"
     // and calls the player back. Spent, the pool is gone.
     const deskGlow = p.kind === 'desk' && !p.searched ? pulse(MAP_ANIMATION_MS.deskGlow) : null;
     add(p.kind, p, known ? glyphOf(p) : null, {
@@ -660,7 +616,7 @@ function mapThings() {
 }
 
 // Paints one glyph centred on (x, y) in canvas pixels, sized for a tile
-// `cell` pixels wide, with the terminal's soft phosphor glow. The isometric
+// `cell` pixels wide, with the terminal's soft phosphor glow. The shoulder
 // view paints with it. A null glyph is the '?' of something too far to make
 // out: dim, and without the hostile bloom or any animation.
 // Look options: size (a MAP_GLYPH_SIZES key), colour, alpha, bloom (the

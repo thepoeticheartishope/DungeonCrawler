@@ -161,13 +161,13 @@ export function tutorialTurn(events) {
 // The light from above: every room tile within TUTORIAL_SPOT_RADIUS of
 // The kind voice's "It's watching you. Show it true light." (sky eye plan
 // step B: a new way to see gets a tutorial beat), once, the first time the
-// player stands in the light from above, and only in the shoulder view,
-// the one with a sky: looking up there shows the eye wide open (mapshared
+// player stands in the light from above: looking up there shows the eye
+// wide open (mapshared
 // skyEyeOpen), so they learn an open eye is bad without being told
 // (Timothy). `wait` asks main.js to hold it a moment, so it doesn't cut
 // off "You can do this. I trust you." Returns that whispered event, or none.
 function lookUpLine(tut) {
-  if (tut.toldLookUp || state.settings.view !== 'shoulder') return [];
+  if (tut.toldLookUp) return [];
   if (!state.floor.spotSet.has(key(state.floor.playerRow, state.floor.playerCol))) return [];
   tut.toldLookUp = true;
   return [{ type: 'whispered', line: 'tut.lookUp', tone: 'kind', wait: true }];

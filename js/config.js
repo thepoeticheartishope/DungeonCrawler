@@ -259,27 +259,6 @@ export const ROOM_THEMES = {
   shrine:  { pillarChance: 0.40, props: [0, 1], boxShare: 0.3 },
 };
 
-// Map textures (js/tileart.js): which texture each part of the map is drawn
-// with, by name. To restyle something, point it at another texture here; a
-// new kind of texture is a new painter in tileart.js's PAINTERS.
-// Textures: bricks, capstone, columnSide, crate, cobbles,
-// flagstones, planks, wetStone, inlay.
-//   floors  one per ROOM_THEMES key; a room with no entry gets `hall`
-export const TILE_ART = {
-  wall: 'bricks',           // wall faces
-  wallTop: 'capstone',      // the top of a wall or pillar
-  pillarSide: 'columnSide', // a pillar's sides
-  box: 'crate',             // a box's sides and lid
-  hall: 'cobbles',          // hallways, and any room theme not in `floors`
-  floors: { crypt: 'flagstones', library: 'planks', flooded: 'wetStone', shrine: 'inlay' },
-};
-// How bright the textures are, as phosphor strength [darkest, lightest]
-// (0..1). Floors stay low so glyphs on them read first (busy floors were
-// "noise, not depth"); walls are brighter, so a wall reads as solid.
-export const TILE_ART_TONES = { floor: [0.07, 0.11], wall: [0.17, 0.24], cap: [0.2, 0.26] };
-// How many looks each texture has; a tile picks one by its place, so the
-// pattern doesn't repeat in rows.
-export const TILE_ART_LOOKS = 4;
 // Pillars block walking and the player's light; the boss light spreads
 // past them. A room with pillars gets a mirrored set of one of these sizes.
 export const PILLARS_PER_ROOM = [2, 4];
@@ -542,11 +521,10 @@ export const GAZE_POLL_MS = 100;
 // aims, up to LOOK_FREE_ARC either side of the way the body faces, at no
 // cost; looking further round turns the body, which costs a turn. The cone
 // stays 90° wide (45° each side of the look) and PLAYER_CONE_RANGE deep.
-// LOOK_NUDGE is one press of Q / E. DEV -> Free look switches it
-// (state.settings.freeLook); off, the light points where the body faces.
+// DEV -> Free look switches it (state.settings.freeLook); off, the light
+// points where the body faces.
 // On by default since the controls (free look plan step C).
 export const LOOK_FREE_ARC = Math.PI / 6;
-export const LOOK_NUDGE = Math.PI / 12;
 export const FREE_LOOK = true;
 // Eight ways (eight ways plan): the player and the stick men walk and face
 // the 4 grid ways and the 4 diagonals between them. A diagonal step needs
@@ -554,23 +532,19 @@ export const FREE_LOOK = true;
 // canPassCorner). DEV -> 8 ways switches it (state.settings.eightWays);
 // off is the 4-way game as it was.
 export const EIGHT_WAYS = true;
-// Arrow keys (dpad.js arrowChord): after a first arrow, how long to wait
-// for a second before stepping, so two pressed together walk a diagonal.
-// The number pad (7 8 9 / 4 6 / 1 2 3) steps at once.
-export const KEY_CHORD_MS = 60;
 // The cone's half-width, and the slack each tile gets (sight.js inLookCone:
 // atan2(LOOK_CONE_SLACK, distance)) so an off-angle cone isn't ragged.
 export const LOOK_CONE_HALF = Math.PI / 4;
 export const LOOK_CONE_SLACK = 0.35;
 // The look controls (free look plan step C). The d-pad's centre is a look
-// stick (dpad.js initLookStick): a drag past LOOK_STICK_DRAG_PX aims, its
-// knob following up to LOOK_STICK_KNOB_PX; a tap turns the body when the
-// aim is past the arc. Otherwise (light battery plan step D)
+// stick (dpad.js initLookStick): a drag past LOOK_STICK_DRAG_PX sweeps the
+// light (or looks up), its knob following up to LOOK_STICK_KNOB_PX; a tap
+// turns the body when the aim is past the arc. Otherwise (light battery plan step D)
 // LOOK_STICK_LIGHT_TAPS taps, each within LOOK_STICK_TAP_MS of the last,
 // switch the light, and a press held LOOK_STICK_HOLD_MS waits (it was two
 // taps). On the
 // map (mapview.js onMapPointer), a press that moves past MAP_DRAG_PX is a
-// drag that aims, not a tap. A finger's tap wobbles: at 6 px, a tap on a
+// drag, not a tap. A finger's tap wobbles: at 6 px, a tap on a
 // phone became a small drag that re-aimed the light and never turned.
 export const LOOK_STICK_DRAG_PX = 14;
 export const LOOK_STICK_KNOB_PX = 18;
@@ -578,8 +552,8 @@ export const LOOK_STICK_TAP_MS = 450;
 export const LOOK_STICK_HOLD_MS = 1000;
 export const LOOK_STICK_LIGHT_TAPS = 3;
 export const MAP_DRAG_PX = 8;
-// The pointer this close to the player's own tile (in tiles) doesn't aim:
-// the angle would jump about under it.
+// A tap on the floor this close to the player's own tile (in tiles)
+// doesn't aim: the angle would jump about under it.
 export const LOOK_POINTER_DEAD = 0.35;
 
 // Turning (moves.js stepPlayer). With TURN_BEFORE_STEP on, a press in a new
@@ -612,7 +586,7 @@ export const ANSWER_RING_MIN_CHARS = 20;
 export const ANSWER_RING_TURN_MS = 8000;
 export const ANSWER_RING_IN_MS = 900;
 export const ANSWER_RING_OUT_MS = 1000;
-// Its shape, in tile widths (isoview.js drawAnswerRing): the ring's
+// Its shape, in tile widths (shoulderview.js drawAnswerRing): the ring's
 // half-width over a minion, chest or box and round the boss, its letters'
 // size, and how high it sits (over the head; round the boss, at its chest).
 // The far side shrinks to backSize and dims to backLevel; the near letters
@@ -637,7 +611,7 @@ export const TUTORIAL_KIND_DELAY_MS = 3000;
 export const TUTORIAL_COMFORT_BREAK_MS = 2500;
 // How long a tutorial stage can go on before its plain hint shows in the room log (only for a player who is stuck).
 export const TUTORIAL_STUCK_MS = 15000;
-// The ring of words round the player (isoview.js drawDarkRing): its distance from them in tiles,
+// The ring of words round the player (shoulderview.js drawDarkRing): its distance from them in tiles,
 // ms for one slow turn round, and how long they take to scatter when the light breaks it.
 export const TUTORIAL_RING_RADIUS = 1.4;
 export const TUTORIAL_RING_TURN_MS = 24000;
@@ -990,37 +964,15 @@ export const MAP_GLYPH_SIZES = {
 // the player) and sits this far lower on its tile, in tile widths.
 export const DOWNED_GLYPH_LEVEL = 0.65;
 export const DOWNED_GLYPH_LIFT = -0.08;
-// The isometric map (js/isoview.js, DEV -> View). How many tile widths
-// fit across the map: fewer means bigger tiles. The camera stands on the
-// player, so about half this many tiles show each way along a row.
+// The shoulder view sizes its glyphs (shoulderview.js isoTileWidth) so
+// they are never smaller than they were on the old isometric map, which
+// fit ISO_TILES_ACROSS tile widths across the map (ISO_TILES_ACROSS_NARROW
+// on a map narrower than ISO_NARROW_MAP_WIDTH CSS pixels, a phone).
 export const ISO_TILES_ACROSS = 9;
-// On a map narrower than ISO_NARROW_MAP_WIDTH CSS pixels (a phone), fewer
-// tiles fit across, so tiles and glyphs stay big enough to read. 7 still
-// holds the player's five steps of sight (2.5 tile widths each way).
 export const ISO_TILES_ACROSS_NARROW = 7;
 export const ISO_NARROW_MAP_WIDTH = 400;
-// The isometric map's width over its height: it takes all the height the
-// HUD and the controls leave, so its shape follows the screen, from
-// ISO_MAP_SHAPE_MAX (wide, a desktop) to ISO_MAP_SHAPE_MIN (tall, a phone).
-// Tiles are sized by the width (ISO_TILES_ACROSS), so a taller map shows
-// more rows, never smaller tiles. Keep in step with index.html's .grid-wrap
-// (3 / 2 and 5 / 3 there).
-export const ISO_MAP_SHAPE_MAX = 3 / 2;
-export const ISO_MAP_SHAPE_MIN = 3 / 5;
-// The isometric camera (DEV -> Camera). It holds still while the player
-// walks inside a box round the middle of the map, ISO_CAMERA_BOX tile
-// widths each way from the middle (x across, y down), and glides after
-// them over ISO_CAMERA_GLIDE_MS once they step out of it. Locked to the
-// player, every step shifted the whole scene along a diagonal, which
-// Timothy found disorienting. The box stays small so the player's five
-// steps of sight still fit on a phone's map (7 tiles across).
-export const ISO_CAMERA_BOX = { x: 1, y: 0.5 };
-export const ISO_CAMERA_GLIDE_MS = 220;
-// How tall a wall stands, as a share of a tile's width. Pillars stand a
-// little above the walls and boxes much lower (sizes in isoview.js).
-export const ISO_WALL_HEIGHT = 1;
-// The low shoulder view (js/shoulderview.js, shoulder view plan; on with
-// ?view=shoulder or DEV -> View): a close camera just behind and right of
+// The low shoulder view (js/shoulderview.js, shoulder view plan; the
+// game's only map view): a close camera just behind and right of
 // the player, below the wall tops, turning with the light. Distances are
 // in tiles. Timothy's settings from the close camera mockup (2026-10-18).
 export const SHOULDER_CAMERA = {
@@ -1079,8 +1031,7 @@ export const SHOULDER_WIDE_FOV = 88;
 // under reduced motion.
 export const MAP_ANIMATION_MS = {
   slide: 300,       // a minion stepping to the next tile
-  step: 140,        // the player stepping to the next tile (isometric): short, so walking stays quick. A grid N/E/S/W step; smooth walk (walkpace.js) scales the others by their length on screen
-  wallCut: 160,     // a wall lowering to a stub in front of something in sight, or rising again (isometric)
+  step: 140,        // the player stepping to the next tile: short, so walking stays quick. A grid N/E/S/W step; smooth walk (walkpace.js) scales the others by their length on screen
   bump: 180,        // the player walking into something, out and back
   bossPulse: 2000,  // the boss's glow swelling and fading
   warp: 3600,       // the slight wrongness of the boss's and a minion's shape
@@ -1093,8 +1044,8 @@ export const MAP_ANIMATION_MS = {
   deskGlow: 6000,   // the unused reflective desk's pool of the player's own light, swelling and fading: slow and calm, it is safe (desk.js)
   mist: 14000,      // the boss mist's slow drift, there and back
   target: 1100,     // the box round the thing being fought
-  playerBreath: 2600, // the stick man's chest rising and falling (isometric)
-  playerIdle: 3000, // how long the player stands without moving or turning before the stick man starts looking round
+  playerBreath: 2600, // the stick man's chest rising and falling
+  playerIdle: 3000, // how long the player stands without moving or turning before the stick man starts looking round (the player figure plan brings it back)
   playerGlance: 5200, // once idle, one glance to the side and back in each of these
   gunShot: 260,     // the shot's flash from the gun to where it went, fading (gun plan)
   gunMiss: 900,     // MISS floating up over a minion the shot missed, fading
@@ -1105,7 +1056,6 @@ export const MAP_ANIMATION_MS = {
   ventDrop: 260,    // a stick man climbing out of a grate onto the tile beside it
   darkFlash: 700,   // a stick man hit in the dark, shown in the shot's flash (light battery plan step C)
   gunRecoil: 120,   // the gun kicking back toward the player as it fires
-  lookEase: 70,     // the drawn look (ring tick, cone edges, the stick man's gaze) easing toward where the player aims (free look)
   // Minions as stick men (stick enemies plan, js/stickforms.js). Slow on
   // purpose: the calm rule for motion- and flicker-sensitive players.
   stickTell: 900,    // a stick enemy eases into its tell pose, or back out (stickforms.js)

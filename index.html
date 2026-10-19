@@ -650,9 +650,8 @@
 
   /* ---- Map ---- */
   /* The map takes all the height the HUD and the controls leave. Its
-     shape follows (isoview.js reads it each frame), from 3:2 wide at most
-     (a desktop) to 3:5 tall (a phone), centred in what is left over.
-     The two limits must match ISO_MAP_SHAPE_MAX / _MIN in config.js. */
+     shape follows (the shoulder view reads it each frame), from 3:2 wide
+     at most (a desktop) to 3:5 tall (a phone), centred in what is left over. */
   .map-fit {
     flex: 1 1 0;
     min-height: 120px;
@@ -668,10 +667,8 @@
     position: relative;
   }
 
-  /* The map (js/mapview.js, drawn isometric by js/isoview.js): one canvas,
-     the whole column wide and shorter, since the diamond is half as tall
-     as it is wide; the edge glows lie on top. The shape must match
-     ISO_MAP_SHAPE in config.js. */
+  /* The map (js/mapview.js, drawn by js/shoulderview.js): one canvas
+     filling the map's box; the edge glows lie on top. */
   .map-canvas {
     display: block;
     width: 100%;
@@ -850,54 +847,6 @@
   .clock-held .clock-meter { opacity: 0.4; }
   @media (prefers-reduced-motion: reduce) {
     .clock-fill { transition: none; }
-  }
-
-  /* The eye in the status bar (ink on the inverse bar). --open runs 0..1
-     with the boss light's progress: a shut lid at 0, an almond opening
-     around a dark iris as it grows. It twitches once nearly open. */
-  .eye {
-    --open: 0;
-    position: relative;
-    display: inline-block;
-    align-self: center;
-    width: 26px;
-    height: 14px;
-  }
-  .eye::before {
-    /* the lid line, always there */
-    content: '';
-    position: absolute;
-    left: 0; right: 0; top: 50%;
-    height: 2px;
-    margin-top: -1px;
-    background: var(--ink);
-    border-radius: 2px;
-  }
-  .eye::after {
-    /* the opening: an ellipse that grows taller as --open rises */
-    content: '';
-    position: absolute;
-    inset: 0;
-    border: 2px solid var(--ink);
-    border-radius: 50%;
-    transform: scaleY(var(--open));
-    transition: transform 0.35s ease;
-  }
-  .eye-iris {
-    position: absolute;
-    left: 50%; top: 50%;
-    width: 8px; height: 8px;
-    margin: -4px 0 0 -4px;
-    border-radius: 50%;
-    background: var(--ink);
-    transform: scale(var(--open));
-    transition: transform 0.35s ease;
-  }
-  .eye.eye-near { animation: eyeTwitch 2.4s steps(1, end) infinite; }
-  @keyframes eyeTwitch {
-    0%, 86%, 100% { transform: none; }
-    88% { transform: translateX(-1px); }
-    92% { transform: translateX(1px); }
   }
 
   /* ---- The d-pad and its buttons, one row under the map ---- */
@@ -1410,7 +1359,6 @@
     .battle-glitch::before, .battle-glitch::after { animation: none; opacity: 0; }
     .log-line { animation: none; }
     #battleScreen.glitch-in .terminal { animation: none; }
-    .eye.eye-near { animation: none; }
   }
 
   /* The room log, on the map's bottom edge: only the newest two notes
@@ -1576,9 +1524,7 @@
       <button class="dev-skip" id="devDownedBtn" type="button" aria-pressed="true" title="Testing only: a shot that leaves a stick man on 1 HP knocks it down; it crawls at half speed, grabs your ankle if it reaches you, and walking into it finishes it. Off: it stays standing, as before">Downed: ON (dev)</button>
       <button class="dev-skip" id="devGazeBtn" type="button" aria-pressed="true" title="Testing only: an eye over a stick man opens while your light is on it; after 3 seconds in total it steps closer">Gaze: ON (dev)</button>
       <button class="dev-skip" id="devMinigameBtn" type="button" title="Testing only: minigames roll as usual, never, or always (one picked), swapping in a question it fits">Minigame: roll (dev)</button>
-      <button class="dev-skip" id="devViewBtn" type="button" aria-pressed="true" title="Testing only: the map seen from a low camera behind your shoulder (the default), or the old isometric map, for this visit; ?view=iso or ?view=shoulder on the address picks it too">View: shoulder (dev)</button>
       <output class="dev-skip" id="devFrameOut" title="Testing only: how long the map takes to draw, median and slowest of the last 120 frames drawn">Draw: - (dev)</output>
-      <button class="dev-skip" id="devCameraBtn" type="button" title="Testing only: in isometric, the camera glides after the player or stays locked to them" aria-pressed="true">Camera: glide (dev)</button>
       <button class="dev-skip" id="devSmoothWalkBtn" type="button" title="Testing only: every way walks at the same speed on screen and the camera moves with the step, or one step time for all as before" aria-pressed="true">Smooth walk: ON (dev)</button>
       <button class="dev-skip" id="devLookBtn" type="button" title="Testing only: each stick enemy picks its own pose at random, or every one shows the pose picked here">Look: random (dev)</button>
       <button class="dev-skip" id="devTendrilsBtn" type="button" title="Testing only: each stick enemy picks its own tendril style at random, or every one uses the style picked here">Tendrils: random (dev)</button>
@@ -1612,8 +1558,6 @@
     <!-- Keys held of the floor's (locked core plan; render.js renderHud), hidden on a rest floor. -->
     <div class="stat" id="keysStat" hidden><span class="stat-label" data-t="stat.keys"></span><strong id="keysText"></strong></div>
     <div class="stat" id="goalsStat" hidden><span class="stat-label" data-t="stat.goals"></span><strong id="goalsText"></strong></div>
-    <!-- The boss light's progress, as an eye that opens (render.js renderLightEye). -->
-    <div class="stat"><span class="eye" id="lightEye" role="img"><span class="eye-iris"></span></span></div>
     <div class="stat stat-more"><span class="stat-label" data-t="stat.time"></span><strong id="timer">0:00</strong></div>
     <div class="stat stat-more"><span class="stat-label" data-t="stat.gold"></span><strong id="coinsTotal">0</strong></div>
     <div class="stat stat-more"><span class="stat-label" data-t="stat.turn"></span><strong id="turnCount">0</strong></div>
@@ -1652,16 +1596,9 @@
       <span data-t="start.tutorial"></span>
     </label>
 
-    <!-- The old isometric map instead of the shoulder view (shoulder view
-         plan step G: kept as an option for a while, call 4). -->
-    <label class="option-toggle">
-      <input type="checkbox" id="isoViewToggle">
-      <span data-t="start.isoView"></span>
-    </label>
 
-    <!-- The shoulder view's comfort settings (shoulder view plan step F),
-         shown only while that view is on (setloader.js showViewOptions). -->
-    <fieldset class="shoulder-options" id="shoulderOptions" hidden>
+    <!-- The view's comfort settings (shoulder view plan step F). -->
+    <fieldset class="shoulder-options" id="shoulderOptions">
       <legend data-t="start.shoulder.title"></legend>
       <label class="option-toggle">
         <input type="checkbox" id="shoulderStepsToggle">

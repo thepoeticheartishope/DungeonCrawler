@@ -109,10 +109,9 @@ test('walking toward the light brings the kind voice and the barrel', () => {
   assert.ok(state.floor.spotSet.has(key(barrel.row, barrel.col)), 'the barrel is in the light');
 });
 
-test('standing in the light the kind voice says "It\'s watching you." once, only in the shoulder view, and the eye is open', async () => {
+test('standing in the light the kind voice says "It\'s watching you." once, and the eye is open', async () => {
   const { skyEyeOpen } = await import('../js/mapshared.js');
   resetRun();
-  state.settings.view = 'shoulder';
   passTurns(TUTORIAL_SPOT_TURNS);
   const spot = state.floor.tutorial.spot;
   state.floor.playerRow = spot.row + TUTORIAL_SPOT_NEAR;
@@ -128,14 +127,6 @@ test('standing in the light the kind voice says "It\'s watching you." once, only
   passTurns(TUTORIAL_SPOT_TURNS);
   walkToSpot();
   assert.deepEqual(tutorialTurn([]).map(e => e.line || e.type), ['tut.trust', 'barrelAppeared', 'tut.lookUp']);
-  // The isometric view has no sky.
-  resetRun();
-  state.settings.view = 'iso';
-  passTurns(TUTORIAL_SPOT_TURNS);
-  walkToSpot();
-  assert.ok(!tutorialTurn([]).some(e => e.line === 'tut.lookUp'));
-  assert.deepEqual(tutorialTurn([]), []);
-  state.settings.view = 'shoulder';
 });
 
 test('bumping the barrel asks the name; a blank answer does nothing', () => {

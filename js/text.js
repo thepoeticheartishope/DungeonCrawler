@@ -72,7 +72,7 @@ export const TEXT = {
   'term.vent.symbol': '#', // draft. Drawn as a grate on the map; the glyph is a fallback
   'term.desk.symbol': 'Π', // draft. A desk seen from the front
   'term.cell.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
-  // The player's glyph (the isometric map draws a stick man in its place).
+  // The player's glyph (the map draws a stick man in its place).
   'term.player.symbol': '@',
   // What anything further than REVEAL_DISTANCE (config.js) shows as.
   'term.unknown.symbol': '?',
@@ -87,7 +87,6 @@ export const TEXT = {
   'stat.keys.count': '{held}/{total}', // HUD: keys held of the floor's
   'stat.keys.sealed': '{held}/{total} SEALED', // draft. HUD: the gate is sealed until another key
   'stat.rest': 'REST', // draft — shown for the depth number while on a rest floor
-  'stat.light': 'The {@term.boss} light: {pct}% of the way to consuming everything', // draft (the eye's tooltip)
   'sky.turnsLeft': '{count} {count|plural:turn} left', // draft. Comfort mode's sky in the shoulder view, where the eye would be (sky eye plan)
   'sky.watching': 'it is watching', // draft. Comfort mode's sky in the tutorial, where the eye is wide open
   'sky.noLight': 'no light here', // draft. The same with no boss light on the floor (a rest floor, the tutorial, after the boss)
@@ -344,13 +343,11 @@ export const TEXT = {
   'tut.finish': 'Finish it.', // draft (downed plan step C). The kind voice, when the tutorial's stick man goes down: a bump finishes it
   'tut.name.q': 'What is your name?', // Timothy: the barrel asks the player's name; any name is right
   // The plain hints show only for a player stuck on a stage (TUTORIAL_STUCK_MS).
-  'tut.hint.move': 'Arrows move you.', // draft. Stuck in the dark
-  'tut.hint.move.shoulder': 'Up walks ahead. Left and right sweep your light.', // draft. The same in the shoulder view (shoulder view plan step F)
+  'tut.hint.move': 'Up walks ahead. Left and right sweep your light.', // draft. Stuck in the dark
   'tut.hint.barrel': 'Walk into the barrel to open it.', // draft. Stuck at the barrel
   'tut.hint.fire': 'Look at it and press SELECT to shoot.', // draft. Stuck in the fight
   'tut.key.dropped': 'It falls. Something is left where it stood.', // draft. The stick man is gone and left the key
-  'tut.door.open': 'The door at the top unlocks.', // draft. Key taken
-  'tut.door.open.shoulder': 'The locked door opens.', // draft. The same in the shoulder view, which has no top of the screen
+  'tut.door.open': 'The locked door opens.', // draft. Key taken
   'tut.light.none': 'Your light will not come on.', // draft. V in the tutorial's dark
   'tut.light.held': 'Keep your light on.', // draft. V in the tutorial's fight: the light stays on there
   'tut.name.kept': 'Your name is {name}.', // draft. After the barrel's answer
@@ -359,10 +356,8 @@ export const TEXT = {
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
   'room.stickTaps': 'Tap 3 times for your light. Hold to wait.', // draft. The look stick's first tap (light battery plan step D)
   'room.stickTaps.plain': 'Hold to wait.', // draft. The same in Comfort mode, where there is no light to switch
-  'dpad.stick.wait': 'Look stick: drag to aim, hold to wait, tap 3 times for your light', // draft. The d-pad centre's label
-  'dpad.stick.wait.plain': 'Look stick: drag to aim, hold to wait', // draft. Its label in Comfort mode
-  'dpad.stick.wait.shoulder': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait, tap 3 times for your light', // draft. Its label in the shoulder view
-  'dpad.stick.wait.plain.shoulder': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait', // draft. The same in Comfort mode
+  'dpad.stick.wait': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait, tap 3 times for your light', // draft. The d-pad centre's label
+  'dpad.stick.wait.plain': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait', // draft. Its label in Comfort mode
   'dpad.stick.turn': 'Look stick: tap to turn and face your aim', // draft. Its label while the aim is past the arc
   'room.turn': 'You turn.', // draft. Free look: turning the body to look further round costs a turn
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft
@@ -499,8 +494,7 @@ export const TEXT = {
   'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
   'start.simpleEnemies': 'Comfort mode: plain enemies, light always on', // draft. A comfort option for players who don't want creepy enemies: every enemy a still letter e, and no light battery (was "Simple enemies")
   'start.tutorial': 'Tutorial room: runs once before your first run', // draft. On until a tutorial is finished
-  'start.isoView': 'Isometric view: the old map from above', // draft (shoulder view plan step G). The old view, kept as an option for a while
-  'start.shoulder.title': 'Shoulder view comfort', // draft. Heading over the shoulder view's comfort settings (shoulder view plan step F); shown only with that view on
+  'start.shoulder.title': 'Shoulder view comfort', // draft. Heading over the view's comfort settings (shoulder view plan step F)
   'start.shoulderSteps': 'Turn in steps instead of a smooth sweep', // draft
   'start.shoulderSlow': 'Slower sweep', // draft
   'start.shoulderWide': 'Wider view', // draft. A wider field of view, for players a narrow one makes queasy

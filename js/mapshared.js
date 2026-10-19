@@ -1,12 +1,13 @@
-// What both map views draw the same way (isoview.js, the isometric map, and
-// shoulderview.js, the low shoulder view): the light's levels, the sizes and
+// What the map view (shoulderview.js, the low shoulder view) draws that
+// isn't about how it projects the floor: the light's levels, the sizes and
 // strengths of the things on the floor, the gun's marks, and the rules for
 // what a view shows that don't depend on how it projects the floor (how
 // bright a tile is, which walls show, what the gun reaches and aims at, a
 // shot's path, the tutorial's ring and the answer ring over time, a stick
-// man's eye). One place, so a change shows the same in either view.
-// Sizes are shares of a tile's width unless they say otherwise; the shoulder
-// view reads a tile's width as one tile. Reads state only.
+// man's eye). Kept apart from the view since the isometric view shared it
+// (removed 2026-10-18). Sizes are shares of a tile's width unless they say
+// otherwise; the shoulder view reads a tile's width as one tile. Reads
+// state only.
 
 import { state, key } from './state.js';
 import {
@@ -79,7 +80,7 @@ export const GRATE_RATTLE_SWAYS = 3; // side to side this many times while it sh
 export const GRATE_SCALE = 0.19;     // a grate's frame: its corners sit this share of a tile in from the middle (it lies flat, inside its tile)
 export const GRATE_BARS = [-0.5, -0.17, 0.17, 0.5]; // where its bars cross it, from -1 to 1
 
-// The isometric view's stick man height, feet to top of head (the
+// The old isometric view's stick man height, feet to top of head (the
 // shoulder view measures the answer ring's lift against it), and the eye
 // over a stick man in the player's light (gaze.js).
 export const ISO_STICK_HEIGHT = 0.62;
