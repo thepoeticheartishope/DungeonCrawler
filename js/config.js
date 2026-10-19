@@ -459,7 +459,7 @@ export const SHOW_DUCTS = false;
 // On by default; DEV -> Static switches it off.
 export const STATIC_NOISE = true;
 export const STATIC = {
-  startSteps: 7,      // walking steps from the closest stick man where it begins (2 more than the light reaches)
+  startSteps: 5,      // walking steps from the closest stick man where it begins, about as far as the light reaches (Timothy: 7 put grain on ordinary walking)
   curve: 1.3,         // strength = share of the way in, to this power: quiet far off, rising near
   grain: 0.14,        // the grain's strength at full: a thin veil, the map always readable (Timothy: v1 hid everything)
   band: 0.04,         // a faint lighter band rolling down the screen at full

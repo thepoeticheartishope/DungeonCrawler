@@ -11,7 +11,8 @@ import { bfsPath } from './combat.js';
 
 // How strong the static should be, 0 to 1: nothing at STATIC.startSteps
 // walking steps or more from the closest stick man, full right beside the
-// player. Walking steps, so a wall between really keeps it quiet. Every
+// player (5 steps: clear while walking, rising as one gets close).
+// Walking steps, so a wall between really keeps it quiet. Every
 // stick man on the floor counts, downed ones too; one in a duct is in
 // state.floor.crawling, not minions, so it doesn't (the grate's shudder is
 // its warning). 0 with DEV -> Static off or no stick man in reach.

@@ -36,9 +36,9 @@ test('no stick man, or one at startSteps or further, makes no static', () => {
 
 test('it rises as the closest one nears and is full beside the player', () => {
   resetFloor();
-  state.floor.minions = [stickMan(1, 6)];
+  state.floor.minions = [stickMan(2, 6)];
   const far = staticLevel();
-  state.floor.minions = [stickMan(3, 6)];
+  state.floor.minions = [stickMan(4, 6)];
   const near = staticLevel();
   state.floor.minions = [stickMan(5, 6)];
   assert.ok(far > 0 && far < near && near < 1);
@@ -47,7 +47,7 @@ test('it rises as the closest one nears and is full beside the player', () => {
 
 test('the closest one counts, not the first', () => {
   resetFloor();
-  state.floor.minions = [stickMan(1, 6), stickMan(5, 5)];
+  state.floor.minions = [stickMan(2, 6), stickMan(5, 5)];
   assert.equal(staticLevel(), 1);
 });
 
