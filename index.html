@@ -669,6 +669,15 @@
     touch-action: none;
   }
 
+  /* The static (js/staticview.js) lies over the map and lets taps through. */
+  .static-canvas {
+    position: absolute;
+    inset: 1px;
+    width: calc(100% - 2px);
+    height: calc(100% - 2px);
+    pointer-events: none;
+  }
+
   /* The ask screen (js/gunpanels.js): a reload's offers and question, or
      a relay's, in place of the map and the controls, like the battle
      screen. The HUD stays above it. */
@@ -1510,6 +1519,7 @@
       <button class="dev-skip" id="devEightWaysBtn" type="button" aria-pressed="true" title="Testing only: you and the minions walk and face 8 ways (diagonals need both corner tiles open), or only the 4 ways, as before">8 ways: ON (dev)</button>
       <button class="dev-skip" id="devLightBatteryBtn" type="button" aria-pressed="true" title="Testing only: your light goes on and off (V) and runs on a 4-turn battery, or is always on, as before">Light battery: ON (dev)</button>
       <button class="dev-skip" id="devNoiseBtn" type="button" aria-pressed="true" title="Testing only: mistakes make a sound that stick men hear and come to, through grates too, and hunting ones crawl the ducts; or mistakes are quiet and grates are just floor, as before">Noise: ON (dev)</button>
+      <button class="dev-skip" id="devStaticBtn" type="button" aria-pressed="true" title="Testing only: a faint grain grows over the map as the closest stick man nears, in place of &quot;I see you.&quot;; or no grain and &quot;I see you.&quot; as before">Static: ON (dev)</button>
       <button class="dev-skip" id="devShowDuctsBtn" type="button" aria-pressed="false" title="Testing only: stick men in a duct show dimly on the grate they will come out of, and every pair of grates is known">Show ducts: OFF (dev)</button>
       <button class="dev-skip" id="devDownedBtn" type="button" aria-pressed="true" title="Testing only: a shot that leaves a stick man on 1 HP knocks it down; it crawls at half speed, grabs your ankle if it reaches you, and walking into it finishes it. Off: it stays standing, as before">Downed: ON (dev)</button>
       <button class="dev-skip" id="devGazeBtn" type="button" aria-pressed="true" title="Testing only: an eye over a stick man opens while your light is on it; after 3 seconds in total it steps closer">Gaze: ON (dev)</button>
@@ -1741,6 +1751,8 @@
     <div class="grid-wrap" id="mapWrap">
       <!-- The map (js/mapview.js). Glyphs come from text.js term.*.symbol. -->
       <canvas class="map-canvas" id="mapCanvas" aria-hidden="true"></canvas>
+      <!-- The static (js/staticview.js): a thin grain as the closest stick man nears. -->
+      <canvas class="static-canvas" id="staticCanvas" aria-hidden="true"></canvas>
       <!-- Edge glows pointing at an off-screen boss (render.js renderLightHint). -->
       <div class="light-hint light-hint-n" id="lightHintN" aria-hidden="true"></div>
       <div class="light-hint light-hint-s" id="lightHintS" aria-hidden="true"></div>

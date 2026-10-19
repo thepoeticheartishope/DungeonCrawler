@@ -1333,8 +1333,9 @@ function drawEvents(events) {
         if (!e.bumped) parts.push(t('room.turn'));
         break;
       // On the map itself, not in the room log: a whisper, not a report.
+      // The static says it instead while on (Simple enemies keep "Enemy close.").
       case 'presenceSensed':
-        showSensed();
+        if (!state.settings.staticNoise || state.settings.simpleEnemies) showSensed();
         break;
       case 'stairsReached':
         if (e.hidden) parts.push(t('room.stairs.hidden'));
