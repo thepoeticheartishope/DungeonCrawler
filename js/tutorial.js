@@ -38,6 +38,7 @@ import { spawnMinion } from './combat.js';
 import { crawlInto } from './vents.js';
 import { addRounds } from './gun.js';
 import { lightOn } from './battery.js';
+import { staticLevel } from './static.js';
 
 // The room: '#' wall, '.' floor, 'S' where the player wakes, 'D' the
 // locked door (in the top wall), 'L' the middle of the light from above,
@@ -78,7 +79,7 @@ export function parseTutorialRoom(rows = TUTORIAL_ROOM) {
 
 // A fresh tutorial's own state, for state.floor.tutorial.
 export function freshTutorial(room) {
-  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, minion: null, minionAt: null, toldReady: false, toldDial: false, toldLookUp: false };
+  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, minion: null, minionAt: null, toldReady: false, toldDial: false, toldLookUp: false, toldStatic: false };
 }
 
 // The light that won't come on: off, locked and steady (battery.js: a
@@ -118,7 +119,8 @@ export function tutorialDial(events) {
 // light; whispered { line: 'tut.lookUp', tone: 'kind', wait: true } the
 // first time they stand in it (see lookUpLine); whispered { line: 'tut.finish', tone: 'kind' } once the stick man
 // goes down (downed plan step C: its minionDowned is in `events`), so the
-// player learns a bump finishes it; keyDropped { row, col } once the stick man is gone (shot, or
+// player learns a bump finishes it; whispered { line: 'tut.static', tone:
+// 'kind' } the first time the static shows (see staticLine); keyDropped { row, col } once the stick man is gone (shot, or
 // cleared in classic combat); doorUnlocked once the key is taken. None
 // off the tutorial. In the fight the energy is filled again every turn,
 // so a miss never leaves the player with nothing to shoot (Timothy).
@@ -144,7 +146,7 @@ export function tutorialTurn(events) {
     if (state.floor.minions.includes(tut.minion) || state.floor.crawling.includes(tut.minion)) {
       tut.minionAt = { row: tut.minion.row, col: tut.minion.col };
       const downed = events.some(e => e.type === 'minionDowned' && e.minion === tut.minion);
-      return downed ? [{ type: 'whispered', line: 'tut.finish', tone: 'kind' }] : [];
+      return downed ? [{ type: 'whispered', line: 'tut.finish', tone: 'kind' }] : staticLine(tut);
     }
     const at = tut.minionAt;
     state.floor.keys.push({ row: at.row, col: at.col });
@@ -156,6 +158,17 @@ export function tutorialTurn(events) {
     return [{ type: 'doorUnlocked' }];
   }
   return [];
+}
+
+// The kind voice names the static (static.js: a new way to sense them
+// gets a tutorial beat), once, the first turn of the fight it shows: the
+// stick man has dropped out of the grate and is near. Not with Simple
+// enemies (no static; "Enemy close." says it) or DEV -> Static off.
+// Returns that whispered event, or none.
+function staticLine(tut) {
+  if (tut.toldStatic || state.settings.simpleEnemies || staticLevel() === 0) return [];
+  tut.toldStatic = true;
+  return [{ type: 'whispered', line: 'tut.static', tone: 'kind' }];
 }
 
 // The light from above: every room tile within TUTORIAL_SPOT_RADIUS of

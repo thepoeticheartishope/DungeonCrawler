@@ -257,6 +257,46 @@ test('the stick man gone leaves a key; taking it opens the door; the door is the
   assert.deepEqual(stepPlayer(-1, 0).map(e => e.type).slice(-1), ['tutorialLeft']);
 });
 
+test('the first time the static shows in the fight, the kind voice names it, once', () => {
+  resetRun();
+  state.settings.staticNoise = true;
+  passTurns(TUTORIAL_SPOT_TURNS);
+  walkToSpot();
+  tutorialTurn([]);
+  settleName('Ada');
+  toggleLight();
+  breakRing();
+  assert.deepEqual(tutorialTurn([]), [], 'in the duct: no static yet');
+  advanceMonsters();
+  advanceMonsters();
+  const f = state.floor;
+  const m = f.minions[0];
+  m.row = f.playerRow - 1; m.col = f.playerCol;
+  assert.deepEqual(tutorialTurn([]), [{ type: 'whispered', line: 'tut.static', tone: 'kind' }]);
+  assert.deepEqual(tutorialTurn([]), [], 'said once');
+});
+
+test('with Simple enemies or DEV -> Static off there is no static, so no line', () => {
+  for (const [simple, on] of [[true, true], [false, false]]) {
+    resetRun();
+    state.settings.simpleEnemies = simple;
+    state.settings.staticNoise = on;
+    passTurns(TUTORIAL_SPOT_TURNS);
+    walkToSpot();
+    tutorialTurn([]);
+    settleName('Ada');
+    toggleLight();
+    breakRing();
+    advanceMonsters();
+    advanceMonsters();
+    const f = state.floor;
+    const m = f.minions[0];
+    m.row = f.playerRow - 1; m.col = f.playerCol;
+    assert.deepEqual(tutorialTurn([]), []);
+  }
+  state.settings.staticNoise = true;
+});
+
 test('a maim drops the stick man; the kind voice says "Finish it."; a bump finishes it and the key drops', () => {
   resetRun();
   state.settings.downed = true;
@@ -270,9 +310,10 @@ test('a maim drops the stick man; the kind voice says "Finish it."; a bump finis
   advanceMonsters();
   const f = state.floor;
   const m = f.minions[0];
-  // Beside the player, north, in their light.
+  // Beside the player, north, in their light. The static was named as it came.
   m.row = f.playerRow - 1; m.col = f.playerCol;
   f.facing = 'N'; f.look = null;
+  f.tutorial.toldStatic = true;
   fire(m);
   readyShot();
   const zone = state.battle.aim.zones.find(z => z.tier === 'maim');
