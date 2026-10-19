@@ -29,9 +29,6 @@ export const state = {
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
-    shoulderSteps: false,   // start screen comfort setting, shoulder view: left / right turn the light 45° a press instead of sweeping; remembered
-    shoulderSlow: false,    // start screen comfort setting, shoulder view: the sweep goes at SHOULDER_SLOW_SHARE of its speed; remembered
-    shoulderWide: false,    // start screen comfort setting, shoulder view: a wider field of view (SHOULDER_WIDE_FOV); remembered
     turnBeforeStep: TURN_BEFORE_STEP, // a press in a new direction only turns (true) or turns and steps (false); DEV -> Turn flips it
     freeLook: FREE_LOOK,    // the light points where the player aims, within look.js's free arc (true), or where the body faces (false); DEV -> Free look flips it
     eightWays: EIGHT_WAYS,  // the player and minions walk and face 8 ways (true) or the 4 grid ways (false); DEV -> 8 ways flips it

@@ -77,8 +77,8 @@
 //      ("The grate shudders." in the room log), then out beside the
 //      player's grate.
 //  11. Shoulder view run (shoulder view plan steps A and B): a phone-sized
-//      page; the start screen shows the view's comfort settings (step F)
-//      and none of the old isometric view's controls (nor the top-bar eye);
+//      page; the start screen shows none of the old isometric view's
+//      controls, the top-bar eye or the removed comfort settings;
 //      up steps the way the body faces; holding right sweeps
 //      the light round, spending one turn per body turn; E steps ahead at a
 //      slant; a tap on the floor aims the light there for no turn; the
@@ -86,8 +86,7 @@
 //      Space held tilts the camera up to the
 //      eye in the sky for no turn, back down when let go (sky eye plan
 //      step A; saved as noesis-shoulder-look-up.png).
-//      With Turn in steps on (step F) a tap of right turns one way for one
-//      turn. Then on the first depth (step D), stood two tiles from a stick man
+//      Then on the first depth (step D), stood two tiles from a stick man
 //      and aimed at it, DEV -> Test shot with Auto-win kills it in this
 //      view (saved as noesis-shoulder-shot.png). The map is saved as noesis-shoulder-*.png
 //      in the system's temp folder.
@@ -190,7 +189,6 @@ async function runSkipRoom(browser, url) {
   const { consoleErrors, pageErrors } = collectErrors(page);
 
   await loadPageAndSet(page, url);
-  if (await page.isHidden('#shoulderOptions')) return { ok: false, reason: 'the view\'s comfort settings were hidden on the start screen', consoleErrors, pageErrors };
   await startGameAndWaitForRoom(page);
 
   // Walk one step.
@@ -1608,8 +1606,7 @@ async function guarded(run, browser, url) {
 // The checks listed in the header. Returns what failed ('' when all held).
 async function checkShoulderView(page, url) {
   await loadPageAndSet(page, url);
-  if (await page.isHidden('#shoulderOptions')) return 'the view\'s comfort settings were hidden on the start screen';
-  if (await page.locator('#isoViewToggle, #lightEye, #devViewBtn').count()) return 'the isometric view\'s controls or the top-bar eye are still on the page';
+  if (await page.locator('#isoViewToggle, #lightEye, #devViewBtn, #shoulderOptions').count()) return 'the isometric view\'s controls, the top-bar eye or the old comfort settings are still on the page';
   await startGameAndWaitForRoom(page);
   await roomIdle(page);
   const player = () => page.evaluate(async () => {
@@ -1706,18 +1703,6 @@ async function checkShoulderView(page, url) {
   await page.waitForTimeout(600);
   const meter = await page.textContent('#devFrameOut');
   if (!/Draw: [0-9.]+ ms/.test(meter)) return `the frame meter read "${meter}"`;
-  // Turn in steps (step F): one tap of right turns exactly one way, a turn.
-  await page.evaluate(async () => { (await import('./js/state.js')).state.settings.shoulderSteps = true; });
-  await page.click('#devToggleBtn');
-  const stepFrom = await player();
-  const stepTurns = await turnsShown(page);
-  await page.keyboard.press('ArrowRight');
-  await roomIdle(page);
-  const stepTo = await player();
-  if (order[(order.indexOf(stepFrom.facing) + 1) % 8] !== stepTo.facing) return `Turn in steps turned ${stepFrom.facing} to ${stepTo.facing}`;
-  if (await turnsShown(page) !== stepTurns + 1) return 'a step turn did not spend exactly one turn';
-  await page.evaluate(async () => { (await import('./js/state.js')).state.settings.shoulderSteps = false; });
-  await page.click('#devToggleBtn');
   const shotFailure = await shoulderShot(page, map);
   if (shotFailure) return shotFailure;
   console.log('  shoulder view: ' + meter);

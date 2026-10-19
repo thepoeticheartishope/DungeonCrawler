@@ -29,7 +29,7 @@
 
 import { state, key } from './state.js';
 import {
-  SHOULDER_CAMERA, SHOULDER_WIDE_FOV, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, ISO_TILES_ACROSS,
+  SHOULDER_CAMERA, MAP_GLYPH_SIZES, MAP_ANIMATION_MS, ISO_TILES_ACROSS,
   ISO_TILES_ACROSS_NARROW, ISO_NARROW_MAP_WIDTH, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING, SKY_EYE, PLAYER_WALK, PLAYER_GLANCE, PLAYER_EMBER,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
@@ -155,7 +155,7 @@ export function drawShoulderScene(ctx, canvasSize, shared) {
   const at = { x: look.walkAt.col + 0.5, y: look.walkAt.row + 0.5 };
   const moving = moveCamera(at);
   if (moving || look.walkAt.row !== state.floor.playerRow || look.walkAt.col !== state.floor.playerCol) look.showPlain();
-  cam = cameraAt(at, shownLook, pulled.side, pulled.back, width, height, shoulderFov(), shownPitch);
+  cam = cameraAt(at, shownLook, pulled.side, pulled.back, width, height, SHOULDER_CAMERA.fov, shownPitch);
   drawSky(ctx);
   drawFloor(ctx);
   muzzle = null;
@@ -307,12 +307,6 @@ export function cameraAt(at, angle, side, back, w, h, fov = SHOULDER_CAMERA.fov,
     F: [fx * cp, fy * cp, -sp], R: [rx, ry, 0], U: [fx * sp, fy * sp, cp],
     focal: (w / 2) / Math.tan(fov * Math.PI / 360), w, h,
   };
-}
-
-// The camera's field of view across the map, in degrees: the Wider view
-// comfort setting (step F) or Timothy's own.
-export function shoulderFov() {
-  return state.settings.shoulderWide ? SHOULDER_WIDE_FOV : SHOULDER_CAMERA.fov;
 }
 
 // The camera for a player at `at` looking at `angle`, pulled in from the

@@ -17,11 +17,6 @@ const realTimeToggle = document.getElementById('realTimeToggle');
 const dpadRightToggle = document.getElementById('dpadRightToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
-const shoulderToggles = {
-  shoulderSteps: document.getElementById('shoulderStepsToggle'),
-  shoulderSlow: document.getElementById('shoulderSlowToggle'),
-  shoulderWide: document.getElementById('shoulderWideToggle'),
-};
 const roomControls = document.querySelector('.room-controls');
 const playerNameInput = document.getElementById('playerName');
 const workshopScreen = document.getElementById('workshopScreen');
@@ -61,7 +56,6 @@ export function initSetLoader({ showSets }) {
         dpadRight: dpadRightToggle.checked,
         simpleEnemies: simpleEnemiesToggle.checked,
         tutorial: tutorialToggle.checked,
-        ...Object.fromEntries(Object.entries(shoulderToggles).map(([name, box]) => [name, box.checked])),
         playerName: playerNameInput.value,
       }));
     } catch (e) {
@@ -84,10 +78,6 @@ export function initSetLoader({ showSets }) {
   // On until a tutorial is finished (main.js switches it off then), so a
   // player who has never played gets one.
   if (typeof savedOptions.tutorial === 'boolean') tutorialToggle.checked = savedOptions.tutorial;
-  Object.entries(shoulderToggles).forEach(([name, box]) => {
-    if (typeof savedOptions[name] === 'boolean') box.checked = savedOptions[name];
-    box.addEventListener('change', saveOptions);
-  });
   placeDpad();
   playerNameInput.maxLength = PLAYER_NAME_MAX_LENGTH;
   if (typeof savedOptions.playerName === 'string') playerNameInput.value = savedOptions.playerName.slice(0, PLAYER_NAME_MAX_LENGTH);
