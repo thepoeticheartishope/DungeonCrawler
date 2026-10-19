@@ -37,10 +37,10 @@
 //      reload of the page (it's remembered).
 //   6. Free look run (free look is the default): the gun run's walk until a
 //      reload and a kill; a tap on a seen minion aims the light at it and
-//      spends no turn. The look stick: a drag aims for free, two taps spend
-//      nothing and a 1 s hold (wobbling, as a finger does) waits
-//      one turn, aimed past the arc one tap turns for one turn; the mouse
-//      over the map aims. Then the map is drawn looking ahead, at the arc's
+//      spends no turn. The look stick: a short drag sideways sweeps for
+//      free, two taps spend nothing and a 1 s hold (wobbling, as a finger
+//      does) waits one turn, a tap on the floor past the arc turns for one turn.
+//      Then the map is drawn looking ahead, at the arc's
 //      edge and past it, saved as noesis-free-look-*.png
 //      in the system's temp folder. Then DEV -> Free look off and a few
 //      turns played.
@@ -94,9 +94,8 @@
 //      view (saved as noesis-shoulder-shot.png). The map is saved as noesis-shoulder-*.png
 //      in the system's temp folder. DEV -> View back to iso still draws.
 //
-// Runs 1-10 play the isometric view (?view=iso); run 1 plays again in the
-// shoulder view, the default (shoulder view plan step G), and run 11 is
-// the shoulder view's own.
+// Every run plays the shoulder view, the game's only view since the
+// isometric view was removed (2026-10-18); run 11 is its own checks.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -724,12 +723,10 @@ async function roomIdle(page) {
   }, null, { timeout: 10000 });
 }
 
-// The look stick (dpad.js initLookStick) and the map with a mouse: a
-// drag aims and spends no turn; two taps spend nothing; a hold of
-// LOOK_STICK_HOLD_MS, wobbling, waits one turn; aimed past the
-// arc (E pressed 5 times), one tap (wobbling 8 px, as a finger does) turns
-// the body for one turn; the mouse
-// over the map aims.
+// The look stick (dpad.js initLookStick): a short drag sideways sweeps
+// the light inside the free arc and spends no turn; two taps spend
+// nothing; a hold of LOOK_STICK_HOLD_MS, wobbling, waits one turn; a
+// tap on the floor past the arc turns the body for one turn.
 async function lookControls(page) {
   if (await page.isVisible('#devPanel.show')) await page.click('#devToggleBtn');
   // No minions from here on: the waited and turned turns below would let
@@ -740,11 +737,11 @@ async function lookControls(page) {
     state.floor.hunter = null;
   });
   await roomIdle(page);
-  // Aimed a little off the body, so a drag straight right (which is a
-  // way the body can face since the eight ways plan) still moves the aim.
+  // Aimed a little left of the body, so a short drag right sweeps the
+  // light inside the free arc (a sweep past it turns the body, a turn).
   await page.evaluate(async () => {
     const { aimLook, bodyAngle } = await import('./js/look.js');
-    aimLook(bodyAngle() + 0.2);
+    aimLook(bodyAngle() - 0.3);
   });
   const stick = await page.locator('#btnSkip').boundingBox();
   const cx = stick.x + stick.width / 2;
@@ -752,9 +749,11 @@ async function lookControls(page) {
   let before = await lookNow(page);
   await page.mouse.move(cx, cy);
   await page.mouse.down();
-  await page.mouse.move(cx + 10, cy, { steps: 3 });
-  await page.mouse.move(cx + 24, cy, { steps: 3 });
+  await page.mouse.move(cx + 10, cy, { steps: 2 });
+  await page.mouse.move(cx + 18, cy, { steps: 2 });
+  await page.waitForTimeout(150); // the sweep runs while it is held
   await page.mouse.up();
+  await page.waitForTimeout(100);
   let after = await lookNow(page);
   if (after.look === before.look) return 'dragging the look stick did not aim';
   if (after.turns !== before.turns) return 'dragging the look stick spent a turn';
@@ -781,35 +780,17 @@ async function lookControls(page) {
   after = await lookNow(page);
   if (after.turns !== before.turns + 1) return `holding the look stick passed ${after.turns - before.turns} turns, not 1`;
 
-  await page.evaluate(async () => {
-    const { aimLook, bodyAngle } = await import('./js/look.js');
-    aimLook(bodyAngle());
-  });
-  await roomIdle(page);
-  for (let i = 0; i < 5; i++) { // 5 nudges of 15°: past the arc
-    await roomIdle(page);
-    await page.keyboard.press('e');
-  }
-  before = await lookNow(page);
-  if (!before.wants) return 'aiming past the arc did not want a turn';
-  if (!await page.locator('#btnSkip.armed').count()) return 'the look stick was not lit past the arc';
-  // A tap that wobbles a little, as a finger's does, is still a tap.
-  await page.mouse.move(cx, cy);
-  await page.mouse.down();
-  await page.mouse.move(cx + 6, cy + 5, { steps: 2 });
-  await page.mouse.up();
-  await roomIdle(page);
-  after = await lookNow(page);
-  if (after.facing === before.facing) return 'one tap past the arc did not turn the body';
-  if (after.turns !== before.turns + 1) return `turning passed ${after.turns - before.turns} turns, not 1`;
-
+  // A tap on the floor past the free arc (near the map's bottom-right
+  // corner, close beside the player) turns the body there at once, for
+  // one turn: in the shoulder view the camera turns with the light, so
+  // nothing is left waiting for the stick's tap.
   const map = await page.locator('#mapCanvas').boundingBox();
   before = await lookNow(page);
-  await page.mouse.move(map.x + map.width * 0.15, map.y + map.height * 0.2);
-  await page.mouse.move(map.x + map.width * 0.85, map.y + map.height * 0.8, { steps: 4 });
+  await page.mouse.click(map.x + map.width * 0.97, map.y + map.height * 0.97);
+  await roomIdle(page);
   after = await lookNow(page);
-  if (after.look === before.look) return 'the mouse over the map did not aim';
-  if (after.turns !== before.turns) return 'the mouse over the map spent a turn';
+  if (after.facing === before.facing) return 'a tap on the floor past the arc did not turn the body';
+  if (after.turns !== before.turns + 1) return `turning passed ${after.turns - before.turns} turns, not 1`;
   return '';
 }
 
@@ -860,14 +841,15 @@ async function runFreeLook(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'a shot killed a minion, a tap and the mouse aimed, the look stick aimed, waited and turned, and free look off played', consoleErrors, pageErrors };
+  return { ok: true, detail: 'a shot killed a minion, a tap aimed, the look stick swept, waited and turned, and free look off played', consoleErrors, pageErrors };
 }
 
 // Eight ways plan step B, on a phone-sized screen: the square pad fits
-// (swap sides off and on), two arrows together walk a diagonal, a corner
-// button and the number pad walk by screen, and DEV -> 8 ways off turns
-// the pad back with the arrows walking as before. Minions are cleared and
-// the player put on an open tile so every press is a real step.
+// (swap sides off and on); walking goes by the body, all 8 ways: up steps
+// the way it faces, E ahead at a slant, down turns round and steps, the
+// up-left button ahead at the other slant; and DEV -> 8 ways off turns the
+// pad back with up still stepping ahead. Minions are cleared and the
+// player put on an open tile, facing NW, so every press is a real step.
 async function checkEightWays(page) {
   await loadPageAndSet(page, page.url());
   await startGameAndWaitForRoom(page);
@@ -884,7 +866,8 @@ async function checkEightWays(page) {
   }
   await page.evaluate(() => document.querySelector('.room-controls').classList.remove('dpad-right'));
 
-  const place = () => page.evaluate(async () => {
+  let facing = { way: 'NW', look: -Math.PI / 4 };
+  const place = () => page.evaluate(async (facing) => {
     const { state } = await import('./js/state.js');
     const { whatBlocks } = await import('./js/passage.js');
     const { computeVisibility } = await import('./js/sight.js');
@@ -903,14 +886,14 @@ async function checkEightWays(page) {
         f.props = f.props.filter(p => Math.abs(p.row - r) > 1 || Math.abs(p.col - c) > 1);
         f.playerRow = r;
         f.playerCol = c;
-        f.facing = 'NW';
-        f.look = -Math.PI / 4;
+        f.facing = facing.way;
+        f.look = facing.look;
         computeVisibility();
         return true;
       }
     }
     return false;
-  });
+  }, facing);
   const where = () => page.evaluate(async () => {
     const { state } = await import('./js/state.js');
     return { row: state.floor.playerRow, col: state.floor.playerCol, facing: state.floor.facing };
@@ -928,18 +911,11 @@ async function checkEightWays(page) {
     }
     return '';
   };
-  const chord = async () => {
-    await page.keyboard.down('ArrowUp');
-    await page.keyboard.down('ArrowRight');
-    await page.keyboard.up('ArrowUp');
-    await page.keyboard.up('ArrowRight');
-  };
   const checks = [
-    [chord, { step: [-1, 0], facing: 'N' }, 'up + right keys'],
     [() => page.keyboard.press('ArrowUp'), { step: [-1, -1], facing: 'NW' }, 'up key'],
-    [() => page.click('#btnDL'), { step: [1, 0], facing: 'S' }, 'down-left button'],
-    [() => page.click('#btnR'), { step: [-1, 1], facing: 'NE' }, 'right button'],
-    [() => page.keyboard.press('Numpad7'), { step: [0, -1], facing: 'W' }, 'number pad 7'],
+    [() => page.keyboard.press('e'), { step: [-1, 0], facing: 'N' }, 'E key'],
+    [() => page.keyboard.press('ArrowDown'), { step: [1, 1], facing: 'SE' }, 'down key'],
+    [() => page.click('#btnUL'), { step: [0, -1], facing: 'W' }, 'up-left button'],
   ];
   for (const [press, want, label] of checks) {
     const failed = await tryStep(press, want, label);
@@ -948,6 +924,7 @@ async function checkEightWays(page) {
 
   await page.evaluate(() => document.getElementById('devEightWaysBtn').click());
   if (!await page.locator('#dpad.four-ways').count()) return 'DEV -> 8 ways off did not turn the pad back';
+  facing = { way: 'N', look: 0 };
   const old = await tryStep(() => page.keyboard.press('ArrowUp'), { step: [-1, 0], facing: 'N' }, '8 ways off, up key');
   if (old) return old;
   await page.locator('.room-controls').screenshot({ path: path.join(os.tmpdir(), 'noesis-eight-ways-pad-four.png') });
@@ -966,7 +943,7 @@ async function runEightWays(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'the square pad fit a phone, keys, chord, buttons and number pad walked by screen, and 8 ways off walked as before', consoleErrors, pageErrors };
+  return { ok: true, detail: 'the square pad fit a phone, keys and buttons walked by the body all 8 ways, and 8 ways off walked ahead', consoleErrors, pageErrors };
 }
 
 // ---- Run 7: light battery ----
@@ -1833,21 +1810,17 @@ async function main() {
   try {
     // ?dev: the DEV tools these runs use are hidden without it.
     const url = `http://127.0.0.1:${port}/?dev`;
-    // The runs written for the isometric view keep it (?view=iso); the
-    // shoulder view, the default since shoulder view plan step G, gets
-    // the plain address.
-    const isoUrl = url + '&view=iso';
     await waitForServer(url);
 
     const browser = await chromium.launch();
     try {
       const RUNS = [
-        ['skip-room', runSkipRoom, isoUrl], ['battle', runBattle, isoUrl], ['gun', runGun, isoUrl],
-        ['real time', runRealTime, isoUrl], ['simple enemies', runSimpleEnemies, isoUrl],
-        ['free look', runFreeLook, isoUrl], ['eight ways', runEightWays, isoUrl],
-        ['light battery', runLightBattery, isoUrl], ['tutorial', runTutorial, isoUrl],
-        ['answer line', runAnswerLine, isoUrl], ['vents', runVents, isoUrl],
-        ['skip-room, shoulder view', runSkipRoom, url], ['shoulder view', runShoulderView, url],
+        ['skip-room', runSkipRoom, url], ['battle', runBattle, url], ['gun', runGun, url],
+        ['real time', runRealTime, url], ['simple enemies', runSimpleEnemies, url],
+        ['free look', runFreeLook, url], ['eight ways', runEightWays, url],
+        ['light battery', runLightBattery, url], ['tutorial', runTutorial, url],
+        ['answer line', runAnswerLine, url], ['vents', runVents, url],
+        ['shoulder view', runShoulderView, url],
       ];
       // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
       // of those words, SMOKE_REPEAT=20 runs each that many times: for
