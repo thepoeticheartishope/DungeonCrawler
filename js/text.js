@@ -494,10 +494,6 @@ export const TEXT = {
   'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
   'start.simpleEnemies': 'Comfort mode: plain enemies, light always on', // draft. A comfort option for players who don't want creepy enemies: every enemy a still letter e, and no light battery (was "Simple enemies")
   'start.tutorial': 'Tutorial room: runs once before your first run', // draft. On until a tutorial is finished
-  'start.shoulder.title': 'Shoulder view comfort', // draft. Heading over the view's comfort settings (shoulder view plan step F)
-  'start.shoulderSteps': 'Turn in steps instead of a smooth sweep', // draft
-  'start.shoulderSlow': 'Slower sweep', // draft
-  'start.shoulderWide': 'Wider view', // draft. A wider field of view, for players a narrow one makes queasy
   'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft
 
   // ---- Set screen (after Enter: which questions this run asks) ----

@@ -7,7 +7,7 @@ import {
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
   LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, SHOULDER_LOOK_UP_STICK,
-  SHOULDER_SWEEP_SPEED, SHOULDER_SLOW_SHARE, SHOULDER_STEP_REPEAT_MS, SHOULDER_STEP_STICK, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
+  SHOULDER_SWEEP_SPEED, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
   TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS,
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
@@ -43,7 +43,7 @@ import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, SCREEN_WAYS, screenStep, shoulderStep, sweepHold } from './dpad.js';
 import { repeatMs, noteStep, heldStepReady } from './walkpace.js';
-import { aimLook, turnBody, sweepLook, wantsTurn, bodyAngle, waysInUse } from './look.js';
+import { aimLook, turnBody, sweepLook, wantsTurn, waysInUse } from './look.js';
 import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
 import { computeVisibility, seesEnemy, FACING_VECTORS } from './sight.js';
@@ -61,9 +61,6 @@ const introGlitch = document.getElementById('introGlitch');
 const revealToggle = document.getElementById('revealToggle');
 const realTimeToggle = document.getElementById('realTimeToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
-const shoulderStepsToggle = document.getElementById('shoulderStepsToggle');
-const shoulderSlowToggle = document.getElementById('shoulderSlowToggle');
-const shoulderWideToggle = document.getElementById('shoulderWideToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
 const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
@@ -318,44 +315,21 @@ function shoulderSweep(delta) {
   applyTurnOutcome(events);
   state.run.turnLocked = false;
 }
-const sweep = sweepHold(shoulderSweep, { speed: () => SHOULDER_SWEEP_SPEED * (state.settings.shoulderSlow ? SHOULDER_SLOW_SHARE : 1) });
+const sweep = sweepHold(shoulderSweep, { speed: SHOULDER_SWEEP_SPEED });
 
-// Left / right pressed (a key, a d-pad arrow, by `source`) in the shoulder
-// view: the sweep while held, or with the Turn in steps comfort setting
-// (step F) one step at once and again every SHOULDER_STEP_REPEAT_MS while
-// held.
-const stepTimers = new Map(); // source -> the held step turn's timer
+// Left / right pressed (a key, a d-pad arrow, by `source`): the sweep
+// while held.
 function turnPress(source, dir) {
-  if (!state.settings.shoulderSteps) return sweep.push(source, dir, true);
-  turnRelease(source);
-  stepTurn(dir);
-  const again = () => {
-    stepTurn(dir);
-    stepTimers.set(source, setTimeout(again, SHOULDER_STEP_REPEAT_MS));
-  };
-  stepTimers.set(source, setTimeout(again, SHOULDER_STEP_REPEAT_MS));
+  sweep.push(source, dir, true);
 }
 function turnRelease(source) {
-  clearTimeout(stepTimers.get(source));
-  stepTimers.delete(source);
   sweep.release(source);
 }
-window.addEventListener('blur', () => {
-  sweep.reset();
-  [...stepTimers.keys()].forEach(turnRelease);
-});
+window.addEventListener('blur', () => sweep.reset());
 
-// The look stick pushed sideways in the shoulder view: sweeps faster the
-// further it goes, or with Turn in steps one step each time it is pushed
-// past SHOULDER_STEP_STICK of its reach (again once it has come back).
-let stickStepped = false;
+// The look stick pushed sideways: sweeps faster the further it goes.
 function stickSweep(dx) {
-  const push = Math.max(-1, Math.min(1, dx / LOOK_STICK_KNOB_PX));
-  if (!state.settings.shoulderSteps) return sweep.push('stick', push);
-  if (Math.abs(push) < SHOULDER_STEP_STICK / 2) stickStepped = false;
-  if (stickStepped || Math.abs(push) < SHOULDER_STEP_STICK) return;
-  stickStepped = true;
-  stepTurn(Math.sign(push));
+  sweep.push('stick', Math.max(-1, Math.min(1, dx / LOOK_STICK_KNOB_PX)));
 }
 
 // Looking up at the sky (sky eye plan step A, shoulder view only): Space
@@ -378,16 +352,6 @@ function shoulderStick(dx, dy) {
   const up = -dy > Math.abs(dx) && -dy / LOOK_STICK_KNOB_PX >= SHOULDER_LOOK_UP_STICK;
   holdLookUp('stick', up);
   stickSweep(up ? 0 : dx);
-}
-
-// One step of Turn in steps: the body turns one way round, clockwise (1)
-// or anticlockwise (-1), a spent turn, and the light points straight ahead
-// of it, so every press does the same thing wherever the light was.
-function stepTurn(dir) {
-  if (!lookReady()) return;
-  aimTo(bodyAngle() + dir * 2 * Math.PI / waysInUse().length);
-  turnLook();
-  if (state.settings.freeLook) aimTo(bodyAngle());
 }
 
 // The shoulder view's keys by the d-pad way they stand for. A held step key
@@ -1063,9 +1027,6 @@ function startGame() {
   state.settings.revealOnWrong = revealToggle.checked;
   state.settings.realTime = realTimeToggle.checked;
   state.settings.simpleEnemies = simpleEnemiesToggle.checked;
-  state.settings.shoulderSteps = shoulderStepsToggle.checked;
-  state.settings.shoulderSlow = shoulderSlowToggle.checked;
-  state.settings.shoulderWide = shoulderWideToggle.checked;
   resetClock();
   // Read on every start, so a retry keeps the name without asking again.
   state.settings.playerName = playerNameInput.value.trim();
@@ -1956,7 +1917,6 @@ initLookStick({
   // or looks up when pushed up.
   aim: shoulderStick,
   done: () => {
-    stickStepped = false;
     sweep.release('stick');
     holdLookUp('stick', false);
   },
