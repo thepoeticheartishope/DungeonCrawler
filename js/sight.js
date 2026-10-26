@@ -48,7 +48,7 @@ export function inLookCone(row, col) {
 // what shows the player the way — and so is the tutorial's light from above
 // (state.floor.spotSet, tutorial.js).
 export function computeVisibility() {
-  state.floor.visibleSet = new Set([...state.floor.bossLitSet, ...state.floor.spotSet]);
+  state.floor.visibleSet = new Set([...state.floor.bossLitSet, ...state.floor.spotSet, ...state.floor.windowLitSet]);
   const startKey = key(state.floor.playerRow, state.floor.playerCol);
   state.floor.visibleSet.add(startKey);
   // The player's own light, apart from the boss's: only what the player
@@ -116,12 +116,14 @@ function clearLineTo(row, col) {
 }
 
 // Whether the player can make out what's on (row, col), rather than a
-// '?': it has to be in their own light (not just the boss's), within
-// REVEAL_DISTANCE, with nothing solid in between.
+// '?': it has to be in their own light or a window's (windows.js; not just
+// the boss's), within REVEAL_DISTANCE, with nothing solid in between.
+// Window light shows stick men too (Timothy, 2026-10-26).
 export function canMakeOut(row, col) {
   if (!state.settings.fogEnabled) return true;
   if (Math.max(Math.abs(row - state.floor.playerRow), Math.abs(col - state.floor.playerCol)) > REVEAL_DISTANCE) return false;
-  return state.floor.sightSet.has(key(row, col)) && clearLineTo(row, col);
+  const k = key(row, col);
+  return (state.floor.sightSet.has(k) || state.floor.windowLitSet.has(k)) && clearLineTo(row, col);
 }
 
 // Whether the player sees minion or hunter `m` at all. Unlike items, an

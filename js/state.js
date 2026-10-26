@@ -116,6 +116,8 @@ export const state = {
     struggles: 0,          // Struggles started on this floor; each one makes the next dial harder (gun.js struggleDial)
     bossLitSet: new Set(), // tiles the boss light currently reaches
     spotSet: new Set(),    // tiles lit by the tutorial's light from above (tutorial.js); empty elsewhere
+    windows: [],           // windows on back walls that face the outside (windows.js): [{ row, col, room }]
+    windowLitSet: new Set(), // tiles the windows light (windows.js); a stick man in them is seen (sight.js canMakeOut)
     tutorial: null,        // the tutorial room's progress (tutorial.js freshTutorial): { stage, turns, door, spot, roomTiles, minion, minionAt }; null on every other floor
     lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
     coin: null,            // { row, col } or null once collected
