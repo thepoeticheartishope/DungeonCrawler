@@ -4,6 +4,7 @@
 // writes.
 
 import { state, key } from './state.js';
+import { windowLightHere } from './windows.js';
 import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, LOOK_CONE_HALF, LOOK_CONE_SLACK,
 } from './config.js';
@@ -48,7 +49,7 @@ export function inLookCone(row, col) {
 // what shows the player the way — and so is the tutorial's light from above
 // (state.floor.spotSet, tutorial.js).
 export function computeVisibility() {
-  state.floor.visibleSet = new Set([...state.floor.bossLitSet, ...state.floor.spotSet]);
+  state.floor.visibleSet = new Set([...state.floor.bossLitSet, ...state.floor.spotSet, ...windowLightHere()]);
   const startKey = key(state.floor.playerRow, state.floor.playerCol);
   state.floor.visibleSet.add(startKey);
   // The player's own light, apart from the boss's: only what the player
@@ -116,12 +117,17 @@ function clearLineTo(row, col) {
 }
 
 // Whether the player can make out what's on (row, col), rather than a
-// '?': it has to be in their own light (not just the boss's), within
-// REVEAL_DISTANCE, with nothing solid in between.
+// '?': it has to be in their own light or a window's in the room they are
+// in (windows.js windowLightHere; not just the boss's), within
+// REVEAL_DISTANCE, with nothing solid in between. Window light shows stick
+// men too (Timothy, 2026-10-26).
 export function canMakeOut(row, col) {
   if (!state.settings.fogEnabled) return true;
   if (Math.max(Math.abs(row - state.floor.playerRow), Math.abs(col - state.floor.playerCol)) > REVEAL_DISTANCE) return false;
-  return state.floor.sightSet.has(key(row, col)) && clearLineTo(row, col);
+  const k = key(row, col);
+  const f = state.floor;
+  const windowLit = f.windowLitSet.has(k) && f.chamberAt.get(k) === f.chamberAt.get(key(f.playerRow, f.playerCol)) && f.chamberAt.has(k);
+  return (f.sightSet.has(k) || windowLit) && clearLineTo(row, col);
 }
 
 // Whether the player sees minion or hunter `m` at all. Unlike items, an

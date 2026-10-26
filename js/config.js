@@ -1014,6 +1014,12 @@ export const SHOULDER_CAMERA = {
   lookUpPitch: 1.05, // looking up (sky eye plan step A): the camera tilts this far up, in radians (about 60°)...
   lookUpMs: 120,    // ...easing there and back this fast (jumps under reduced motion)
 };
+// Windows on back walls that face the outside (windows.js, room view plan
+// step F): one every `every` columns along such a wall, and the pool of
+// light each throws: `length` tiles down from the wall, leaning `slant`
+// tiles across as it goes, `inset` tiles in from the window's sides. Its
+// light shows stick men as the player's own does (sight.js canMakeOut).
+export const WINDOW_LIGHT = { every: 3, length: 3.4, slant: 1.1, inset: 5 / 16 };
 // The pieces of furniture a fixed plan can stand in its rooms (plans.js
 // `furniture`, room view plan step E). Each has a bump line in text.js
 // (`furniture.<piece>`) and a drawing in roomview.js.

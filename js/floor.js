@@ -23,6 +23,7 @@ import { rollGoals } from './goals.js';
 import { placeRelays } from './relays.js';
 import { placeDesk } from './desk.js';
 import { placeVents } from './vents.js';
+import { placeWindows } from './windows.js';
 import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
@@ -252,6 +253,7 @@ export function buildFloor() {
   state.floor.darkness = false;
   initBossLight();
   rollGoals();
+  placeWindows();
   state.floor.visibleSet = new Set();
   state.floor.exploredSet = new Set();
   computeVisibility();
@@ -293,6 +295,8 @@ function clearDanger() {
   f.gateSealed = false;
   f.bossLitSet = new Set();
   f.spotSet = new Set();
+  f.windows = [];
+  f.windowLitSet = new Set();
   f.tutorial = null;
   f.bossDist = new Map();
   f.floorCount = 0;
@@ -408,6 +412,7 @@ export function buildRestFloor(kind) {
   const coinTile = pickCoinTile(f.wallSet, avoid, layout.roomTiles);
   f.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
 
+  placeWindows();
   f.visibleSet = new Set();
   f.exploredSet = new Set();
   computeVisibility();

@@ -21,9 +21,8 @@
 // laser to the target's chest, the shot's flash and ring or MISS (the last
 // shot from mapshared.js), the answer ring after a miss (swirl.js), and
 // the tutorial's ring of words. Step F: windows on back walls that face
-// the outside, the warm light they throw on the floor (for looks only: the
-// rules' light is still the player's own) with the frame's shadow across
-// it, and the eye in the sky: while the player looks up (main.js
+// the outside (windows.js), the warm light they throw on the floor (real
+// light: a stick man in it is seen) with the frame's shadow across it, and the eye in the sky: while the player looks up (main.js
 // holdLookUp -> lookUp), the room fades into the night sky and the eye
 // hangs in it, drawn as pixel art like the rest. The picture is drawn at ROOM_VIEW.tilePx a tile into a small
 // canvas, lit there, and scaled up by a whole number with smoothing off.
@@ -47,7 +46,7 @@ import { state, key } from './state.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
   ISO_NARROW_MAP_WIDTH, PLAYER_GLANCE, PLAYER_EMBER, MAP_ANIMATION_MS, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING,
-  SKY_EYE, SHOULDER_CAMERA,
+  SKY_EYE, SHOULDER_CAMERA, WINDOW_LIGHT,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
@@ -149,12 +148,11 @@ const GUN_COLOUR = '#c8d2d6';
 const SHOT_AT = 0.55;            // a shot goes to this share of a stick man's height
 const LASER_DASH = [5, 4];      // its dash and gap, in line widths
 const DARK_RING = { lift: 0.5, size: 0.3 }; // the tutorial's ring of words: how high it floats and its letters' size, in tiles
-// Windows (step F): one every WINDOW_EVERY columns along a back wall that
-// faces the outside, never at its ends; the warm pool each throws down and
-// across the floor (in tiles), its strength, and how bright the glass stays.
-const WINDOW_EVERY = 3;
+// Windows (step F; where they stand and the shape of their light are
+// windows.js and WINDOW_LIGHT): the frame and glass, the warm pool's
+// strength and colour, the frame's shadow in it, and how bright the glass stays.
 const WINDOW = { frame: '#4a3a30', glassTop: '#f3dcae', glassFoot: '#ddb173' };
-const POOL = { length: 3.4, slant: 1.1, level: 0.85, rgb: '255, 196, 132', bars: 'rgb(150, 130, 120)', glass: 0.8 };
+const POOL = { level: 0.85, rgb: '255, 196, 132', bars: 'rgb(150, 130, 120)', glass: 0.8 };
 // The night sky while looking up: how dark the room goes under it, and the
 // line width of the eye, in picture pixels.
 const SKY = { dark: 0.92, line: 1, rise: 0.15, middle: 0.42 };
@@ -408,9 +406,8 @@ function buildFloor(f) {
   for (let row = 0; row < f.GRID_SIZE; row++) {
     for (let col = 0; col < f.GRID_SIZE; col++) if (isWall(row, col) && !faceOf(row, col, isWall)) drawRim(ctx, row, col);
   }
-  const windows = windowsOf(f);
-  windows.forEach(w => drawWindow(ctx, w));
-  return { floor: f, entered: state.run.floorsEntered, walls: f.wallSet, pillars: f.pillarSet, world, rooms, windows };
+  f.windows.forEach(w => drawWindow(ctx, w));
+  return { floor: f, entered: state.run.floorsEntered, walls: f.wallSet, pillars: f.pillarSet, world, rooms, windows: f.windows };
 }
 
 // A tile's own number from 0 to 1, the same every time, for the grain of
@@ -1601,34 +1598,6 @@ const PIECES = {
 
 // ---- windows and the eye in the sky (step F) ----
 
-// The windows on this floor: on each back wall face of a room that looks
-// out (nothing but wall above it to the grid's edge), one 2 tiles wide
-// every WINDOW_EVERY columns along it, never at its ends. Each is
-// { row, col, room }: its lower face row, its left column, its room.
-function windowsOf(f) {
-  const windows = [];
-  for (let row = 1; row < f.GRID_SIZE; row++) {
-    let run = null;
-    const close = () => {
-      if (!run) return;
-      for (let col = run.c0 + 1; col + 1 <= run.c1 - 1; col += WINDOW_EVERY) windows.push({ row, col, room: run.room });
-      run = null;
-    };
-    for (let col = 0; col < f.GRID_SIZE; col++) {
-      const room = f.chamberAt.get(key(row + 1, col));
-      const outside = faceOf(row, col, isWall) === 'lower' && room !== undefined && faceOf(row - 1, col, isWall) === 'upper' &&
-        Array.from({ length: row - 1 }, (_, r) => r).every(r => isWall(r, col));
-      if (outside && run && run.room === room) run.c1 = col;
-      else {
-        close();
-        if (outside) run = { c0: col, c1: col, room };
-      }
-    }
-    close();
-  }
-  return windows;
-}
-
 // A window in the still picture: an arched frame two tiles wide over both
 // faces of the wall, warm glass (light outside), its cross bars, a sill.
 function drawWindow(ctx, w) {
@@ -1649,12 +1618,13 @@ function drawWindow(ctx, w) {
   ctx.fillRect(x0 - 3, bottom + 1, width + 6, 2);
 }
 
-// The warm light a window throws down and across the floor of its room,
-// added to the light (so it shows, but reveals nothing the rules don't),
-// with the shadow of its cross bars laid over it.
+// The warm light a window throws down and across the floor of its room
+// (the same shape as windows.js lights), added to the light, with the
+// shadow of its cross bars laid over it.
 function drawPool(w, ox, oy) {
-  const x0 = w.col * T + 5 - ox, x1 = (w.col + 2) * T - 5 - ox, by = (w.row + 1) * T - oy;
-  const dx = POOL.slant * T, len = POOL.length * T;
+  const inset = WINDOW_LIGHT.inset * T;
+  const x0 = w.col * T + inset - ox, x1 = (w.col + 2) * T - inset - ox, by = (w.row + 1) * T - oy;
+  const dx = WINDOW_LIGHT.slant * T, len = WINDOW_LIGHT.length * T;
   const g = gctx.createLinearGradient(0, by, 0, by + len);
   g.addColorStop(0, 'rgba(' + POOL.rgb + ', ' + POOL.level + ')');
   g.addColorStop(0.7, 'rgba(' + POOL.rgb + ', ' + POOL.level * 0.5 + ')');
