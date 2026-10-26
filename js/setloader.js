@@ -1,7 +1,6 @@
 // Start screen options and the workshop. The start screen keeps only what a
 // player sets before a run (name, reveal, real time, swap sides, simple
-// enemies, the tutorial room, the view and the shoulder view's comfort
-// settings), remembered across
+// enemies, the tutorial room), remembered across
 // sessions. The workshop is for authors: pasted or file lists, the sample
 // list, saving and deleting sets, and the way into DATA.SYS. Players pick
 // the set itself after Enter (setpicker.js). Uses only state, sets.js,

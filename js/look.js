@@ -80,7 +80,7 @@ export function turnBody() {
 }
 
 // Sweeps the light `delta` radians round from where it points now (the
-// shoulder view's sweep, shoulder view plan step B: hold left / right).
+// look stick's sweep, shoulder view plan step B).
 // Inside the free arc it costs nothing; once it passes the arc's edge the
 // body turns one way in the sweep's direction, and the light sweeps on
 // from there without a jump. The caller spends the turn. Events:

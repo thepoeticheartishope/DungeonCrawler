@@ -6,8 +6,8 @@ import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX, TUTORIAL_EXIT_ENERGY,
   BATTLE_CHOICE_COUNT,
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
-  LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, SHOULDER_LOOK_UP_STICK,
-  SHOULDER_SWEEP_SPEED, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
+  LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, LOOK_UP_STICK,
+  LOOK_SWEEP_SPEED, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
   TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS,
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
@@ -41,14 +41,13 @@ import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot,
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
-import { initDpad, initLookStick, SCREEN_WAYS, screenStep, padWay, sweepHold } from './dpad.js';
-import { roomViewWanted, lookUp as roomLookUp } from './roomview.js';
+import { initDpad, initLookStick, SCREEN_WAYS, padWay, sweepHold } from './dpad.js';
+import { lookUp } from './roomview.js';
 import { repeatMs, noteStep, heldStepReady } from './walkpace.js';
 import { aimLook, turnBody, sweepLook, wantsTurn, waysInUse } from './look.js';
 import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
 import { computeVisibility, seesEnemy, FACING_VECTORS } from './sight.js';
-import { lookUp as shoulderLookUp } from './shoulderview.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
@@ -162,8 +161,8 @@ initDevPanel({
 // fires (Timothy: tap, then SELECT), so a tap can never shoot by accident.
 // A mouse click on anything else turns the body when the aim is past the
 // free arc (free look plan); a tap on a phone never turns, so a stray tap
-// can't spend a turn. In the shoulder view (shoulder view plan step B) a
-// tap off a minion aims the light at the floor `point` under it instead,
+// can't spend a turn. A tap off a minion aims the light at the floor
+// `point` under it instead,
 // keeping the target (a mouse click past the arc then turns, as above).
 function tapMap(tile, pointerType, point) {
   const minion = state.floor.minions.some(m => m.row === tile.row && m.col === tile.col);
@@ -288,21 +287,14 @@ function turnLook() {
   state.run.turnLocked = false;
 }
 
-// The room view (room view plan, roomview.js) while the page has
-// ?view=room: its camera never turns, so every arrow, key and number pad
-// key walks the way it points on screen (dpad.js padWay), and the light is
-// aimed by the look stick and taps only.
-const ROOM_VIEW_ON = roomViewWanted();
-
-// The shoulder view's controls (shoulder view plan step B). The d-pad's
-// arrows and the keys walk round the body (dpad.js shoulderStep): up / W
-// straight ahead, down / S straight behind (which turns the body round, as
-// any step does), up-left / up-right and Q / E ahead at a slant. Left /
-// right (A / D, the d-pad's side arrows) sweep the light instead (sweep).
-// Returns the ms until a held press acts again, or null to stop.
-function shoulderPush(sx, sy) {
+// The controls (room view plan step A: the camera never turns). Every
+// d-pad arrow, key (arrows, W A S D, Q / E / Z / C for the corners) and
+// number pad key walks the way it points on screen (dpad.js padWay); the
+// light is aimed by the look stick and taps. Returns the ms until a held
+// press acts again, or null to stop.
+function padPush(sx, sy) {
   if (!roomScreen.classList.contains('show') || state.run.runEnded) return null;
-  const way = padWay(sx, sy, state.floor.facing, waysInUse(), ROOM_VIEW_ON);
+  const way = padWay(sx, sy, waysInUse());
   if (!way) return null;
   const [dr, dc] = FACING_VECTORS[way];
   movePlayer(dr, dc);
@@ -311,7 +303,7 @@ function shoulderPush(sx, sy) {
 
 // Sweeps the light (look.js sweepLook): free inside the arc; a body turn
 // past it is a spent turn, so the minions get a move.
-function shoulderSweep(delta) {
+function lightSweep(delta) {
   if (!lookReady()) return;
   const events = sweepLook(delta);
   if (!events.some(e => e.type === 'bodyTurned')) {
@@ -322,16 +314,7 @@ function shoulderSweep(delta) {
   applyTurnOutcome(events);
   state.run.turnLocked = false;
 }
-const sweep = sweepHold(shoulderSweep, { speed: SHOULDER_SWEEP_SPEED });
-
-// Left / right pressed (a key, a d-pad arrow, by `source`): the sweep
-// while held.
-function turnPress(source, dir) {
-  sweep.push(source, dir, true);
-}
-function turnRelease(source) {
-  sweep.release(source);
-}
+const sweep = sweepHold(lightSweep, { speed: LOOK_SWEEP_SPEED });
 window.addEventListener('blur', () => sweep.reset());
 
 // The look stick pushed sideways: sweeps faster the further it goes.
@@ -339,50 +322,39 @@ function stickSweep(dx) {
   sweep.push('stick', Math.max(-1, Math.min(1, dx / LOOK_STICK_KNOB_PX)));
 }
 
-// Looking up at the sky (sky eye plan step A; in the room view, its step F): Space
-// held or the look stick pushed up, either one ('key' / 'stick'). Free and
-// view-only (shoulderview.js / roomview.js lookUp): the world keeps its turns, and with
+// Looking up at the sky (sky eye plan; the room view's step F): Space held
+// or the look stick pushed up, either one ('key' / 'stick'). Free and
+// view-only (roomview.js lookUp): the world keeps its turns, and with
 // Real time on it keeps moving while the player looks away from the floor.
 const lookingUp = new Set();
 function holdLookUp(source, on) {
   if (lookingUp.has(source) === on) return;
   if (on) lookingUp.add(source);
   else lookingUp.delete(source);
-  (ROOM_VIEW_ON ? roomLookUp : shoulderLookUp)(lookingUp.size > 0);
+  lookUp(lookingUp.size > 0);
   requestMapDraw();
 }
 
-// The look stick in the shoulder view: pushed up past SHOULDER_LOOK_UP_STICK
-// of its reach, more up than sideways, it looks up and stops sweeping;
-// otherwise it sweeps by its sideways push.
-function shoulderStick(dx, dy) {
-  const up = -dy > Math.abs(dx) && -dy / LOOK_STICK_KNOB_PX >= SHOULDER_LOOK_UP_STICK;
+// The look stick: pushed up past LOOK_UP_STICK of its reach, more up than
+// sideways, it looks up and stops sweeping; otherwise it sweeps by its
+// sideways push.
+function stickPush(dx, dy) {
+  const up = -dy > Math.abs(dx) && -dy / LOOK_STICK_KNOB_PX >= LOOK_UP_STICK;
   holdLookUp('stick', up);
   stickSweep(up ? 0 : dx);
 }
 
-// The shoulder view's keys by the d-pad way they stand for. A held step key
-// steps again once the last step has landed (walkpace.js); a held sweep key
-// sweeps until it is let go.
-// The room view adds Z / C for the lower corners.
-const SHOULDER_KEYS = {
+// The keys by the d-pad way they stand for. A held key steps again once
+// the last step has landed (walkpace.js).
+const MOVE_KEYS = {
   ArrowUp: 'U', w: 'U', W: 'U', ArrowDown: 'D', s: 'D', S: 'D',
   ArrowLeft: 'L', a: 'L', A: 'L', ArrowRight: 'R', d: 'R', D: 'R',
-  q: 'UL', Q: 'UL', e: 'UR', E: 'UR',
-  ...(ROOM_VIEW_ON ? { z: 'DL', Z: 'DL', c: 'DR', C: 'DR' } : {}),
+  q: 'UL', Q: 'UL', e: 'UR', E: 'UR', z: 'DL', Z: 'DL', c: 'DR', C: 'DR',
 };
-function shoulderKey(way, repeat) {
-  if (!ROOM_VIEW_ON && (way === 'L' || way === 'R')) {
-    if (!repeat) turnPress('key' + way, SCREEN_WAYS[way][0]);
-    return;
-  }
+function moveKey(way, repeat) {
   if (repeat && !heldStepReady(performance.now())) return;
-  shoulderPush(...SCREEN_WAYS[way]);
+  padPush(...SCREEN_WAYS[way]);
 }
-document.addEventListener('keyup', (e) => {
-  const way = SHOULDER_KEYS[e.key];
-  if (way === 'L' || way === 'R') turnRelease('key' + way);
-});
 
 // The look stick lights up while a tap would turn the body, and its label
 // says what a tap does.
@@ -1913,20 +1885,13 @@ btnSelect.addEventListener('contextmenu', (e) => e.preventDefault());
 initDpad({
   buttons: dpadButtons,
   canWalk: () => roomScreen.classList.contains('show') && !state.run.runEnded,
-  push: shoulderPush,
-  // The side arrows sweep the light while held (they walk in the room view).
-  hold: (sx, sy, down) => {
-    if (ROOM_VIEW_ON || sy || !sx) return false;
-    if (down) turnPress('pad', sx);
-    else turnRelease('pad');
-    return true;
-  },
+  push: padPush,
 });
 initLookStick({
   button: lookStick,
   // The stick sweeps the light, faster the further it is pushed sideways,
   // or looks up when pushed up.
-  aim: shoulderStick,
+  aim: stickPush,
   done: () => {
     sweep.release('stick');
     holdLookUp('stick', false);
@@ -1939,17 +1904,6 @@ initLookStick({
   turn: turnLook,
   wantsTurn,
 });
-
-// Walks the way (sx, sy) points on the minimap's diamond (dpad.js
-// screenStep), if the room screen is up: the number pad, as before the
-// isometric view was removed. Returns the ms until a held key steps again
-// (walkpace.js), or null.
-function walkScreen(sx, sy) {
-  const grid = screenStep(sx, sy, state.settings.eightWays);
-  if (!grid || !roomScreen.classList.contains('show') || state.run.runEnded) return null;
-  movePlayer(grid[0], grid[1]);
-  return repeatMs(grid[0], grid[1]);
-}
 
 // The number pad's keys by the way they point (eight ways plan: 7 8 9 /
 // 4 6 / 1 2 3).
@@ -1966,9 +1920,8 @@ window.addEventListener('blur', () => {
 });
 
 // Keys on desktop, ignored while typing in the answer box. The arrows,
-// W A S D and Q / E walk round the body and sweep the light (shoulderKey),
-// and the number pad walks by the map's ways (as on the minimap), unless a
-// question on the map is taking number keys. Space held looks up at the
+// W A S D, Q / E / Z / C and the number pad walk the way they point on
+// screen (moveKey, padPush), unless a question on the map is taking number keys. Space held looks up at the
 // sky (sky eye plan step A). With the gun on: F is SELECT (fires), T picks
 // the next target, . waits. V switches the light (light battery plan).
 // On the stairs, Enter goes down (so does SELECT).
@@ -1982,9 +1935,9 @@ document.addEventListener('keydown', (e) => {
   // A held number pad key steps again only once its last step has landed
   // (walkpace.js), not at the keyboard's own repeat rate.
   if (e.repeat && numpad && !heldStepReady(performance.now())) { e.preventDefault(); return; }
-  const way = !mapPanelShown() && SHOULDER_KEYS[e.key];
-  if (way) { e.preventDefault(); shoulderKey(way, e.repeat); return; }
-  if (numpad && !mapPanelShown()) { e.preventDefault(); (ROOM_VIEW_ON ? shoulderPush : walkScreen)(...SCREEN_WAYS[numpad]); }
+  const way = !mapPanelShown() && MOVE_KEYS[e.key];
+  if (way) { e.preventDefault(); moveKey(way, e.repeat); return; }
+  if (numpad && !mapPanelShown()) { e.preventDefault(); padPush(...SCREEN_WAYS[numpad]); }
   else if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
   else if (e.key === ' ' && !mapPanelShown()) { e.preventDefault(); holdLookUp('key', true); }
   else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); pressSelect(); }

@@ -76,30 +76,18 @@
 //      it through the duct, and waits play it in, the far grate's shudder
 //      ("The grate shudders." in the room log), then out beside the
 //      player's grate.
-//  11. Shoulder view run (shoulder view plan steps A and B): a phone-sized
-//      page; the start screen shows none of the old isometric view's
-//      controls, the top-bar eye or the removed comfort settings;
-//      up steps the way the body faces; holding right sweeps
-//      the light round, spending one turn per body turn; E steps ahead at a
-//      slant; a tap on the floor aims the light there for no turn; the
-//      d-pad's up button steps too, and the frame meter shows a draw time.
-//      Space held tilts the camera up to the
-//      eye in the sky for no turn, back down when let go (sky eye plan
-//      step A; saved as noesis-shoulder-look-up.png).
-//      Then on the first depth (step D), stood two tiles from a stick man
-//      and aimed at it, DEV -> Test shot with Auto-win kills it in this
-//      view (saved as noesis-shoulder-shot.png). The map is saved as noesis-shoulder-*.png
-//      in the system's temp folder.
-//  12. Room view run (room view plan step A, `?view=room`): a phone-sized
-//      page on the first depth; stood two tiles from a stick man and aimed
-//      at it, DEV -> Test shot with Auto-win kills it in this view (step C);
-//      then every arrow key walks the way it points on screen whichever way
-//      the body faces (up is grid north, right grid east), and the map draws.
-//      First, Space held fades the room into the sky with the eye for no
-//      turn, and letting go brings it back (step F). Saved as noesis-room-*.png in the temp folder.
+//  11. Room view run (room view plan): a phone-sized page on the first
+//      depth. Space held fades the room into the sky with the eye for no
+//      turn, and letting go brings it back (step F); stood two tiles from a
+//      stick man and aimed at it, DEV -> Test shot with Auto-win kills it
+//      (step C); then on an open 2 x 2 block every arrow key walks the way
+//      it points on screen whichever way the body faces (up is grid north,
+//      right grid east), and the map draws. Saved as noesis-room-*.png in
+//      the system's temp folder.
 //
-// Every run plays the shoulder view, the game's only view since the
-// isometric view was removed (2026-10-18); run 11 is its own checks.
+// Every run plays the room view, the game's only map view since room view
+// plan step G (the shoulder view before it is kept outside the repo, at
+// ideas/reference/shoulder-view/); run 11 is its own checks.
 //
 // Every run must produce zero console errors or page errors. Exits non-zero
 // on any failure.
@@ -265,10 +253,10 @@ async function installBattleWatchers(page) {
 }
 
 const BATTLE_MAX_STEPS = 450;
-// The keys that walk grid north, east, south and west: since the eight
-// ways plan the arrows walk by screen (up = grid NW), and the number pad
-// steps at once with no wait for a second arrow.
-const ARROW_KEYS = ['Numpad9', 'Numpad3', 'Numpad1', 'Numpad7'];
+// The keys that walk grid north, east, south and west: they walk the way
+// they point on screen (room view plan, up = grid north), and the number
+// pad steps at once with no wait for a second arrow.
+const ARROW_KEYS = ['Numpad8', 'Numpad6', 'Numpad2', 'Numpad4'];
 
 // Which arrow (an ARROW_KEYS index) is the first step of the shortest
 // walk to the boss, or null with no boss or no way there. The boss's core
@@ -443,7 +431,7 @@ async function bumpEnergyCell(page) {
     computeVisibility();
     return true;
   });
-  if (placed) await page.keyboard.press('Numpad9');
+  if (placed) await page.keyboard.press('Numpad8');
   return placed;
 }
 
@@ -783,8 +771,8 @@ async function lookControls(page) {
 
   // A tap on the floor past the free arc (near the map's bottom-right
   // corner, close beside the player) turns the body there at once, for
-  // one turn: in the shoulder view the camera turns with the light, so
-  // nothing is left waiting for the stick's tap.
+  // one turn: the turn is spent at once,
+  // with nothing left waiting for the stick's tap.
   const map = await page.locator('#mapCanvas').boundingBox();
   before = await lookNow(page);
   await page.mouse.click(map.x + map.width * 0.97, map.y + map.height * 0.97);
@@ -912,11 +900,14 @@ async function checkEightWays(page) {
     }
     return '';
   };
+  // Every key and button walks the way it points on screen (up is grid
+  // north), whichever way the body faced before.
   const checks = [
-    [() => page.keyboard.press('ArrowUp'), { step: [-1, -1], facing: 'NW' }, 'up key'],
-    [() => page.keyboard.press('e'), { step: [-1, 0], facing: 'N' }, 'E key'],
-    [() => page.keyboard.press('ArrowDown'), { step: [1, 1], facing: 'SE' }, 'down key'],
-    [() => page.click('#btnUL'), { step: [0, -1], facing: 'W' }, 'up-left button'],
+    [() => page.keyboard.press('ArrowUp'), { step: [-1, 0], facing: 'N' }, 'up key'],
+    [() => page.keyboard.press('e'), { step: [-1, 1], facing: 'NE' }, 'E key'],
+    [() => page.keyboard.press('ArrowDown'), { step: [1, 0], facing: 'S' }, 'down key'],
+    [() => page.click('#btnUL'), { step: [-1, -1], facing: 'NW' }, 'up-left button'],
+    [() => page.keyboard.press('c'), { step: [1, 1], facing: 'SE' }, 'C key'],
   ];
   for (const [press, want, label] of checks) {
     const failed = await tryStep(press, want, label);
@@ -924,7 +915,7 @@ async function checkEightWays(page) {
   }
 
   await page.evaluate(() => document.getElementById('devEightWaysBtn').click());
-  if (!await page.locator('#dpad.four-ways').count()) return 'DEV -> 8 ways off did not turn the pad back';
+  if (!await page.locator('#dpad.four-ways').count()) return 'DEV -> 8 ways off did not hide the pad\'s corners';
   facing = { way: 'N', look: 0 };
   const old = await tryStep(() => page.keyboard.press('ArrowUp'), { step: [-1, 0], facing: 'N' }, '8 ways off, up key');
   if (old) return old;
@@ -944,7 +935,7 @@ async function runEightWays(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'the square pad fit a phone, keys and buttons walked by the body all 8 ways, and 8 ways off walked ahead', consoleErrors, pageErrors };
+  return { ok: true, detail: 'the square pad fit a phone, keys and buttons walked the way they point on screen all 8 ways, and 8 ways off walked ahead', consoleErrors, pageErrors };
 }
 
 // ---- Run 7: light battery ----
@@ -1442,7 +1433,7 @@ async function checkAnswerRing(page) {
     if (!chest) return null;
     // The open side to bump it from, and the number pad key that points at
     // it (screen up-right = grid north).
-    const sides = [[1, 0, 'N', 0, 'Numpad9'], [-1, 0, 'S', Math.PI, 'Numpad1'], [0, -1, 'E', Math.PI / 2, 'Numpad3'], [0, 1, 'W', -Math.PI / 2, 'Numpad7']];
+    const sides = [[1, 0, 'N', 0, 'Numpad8'], [-1, 0, 'S', Math.PI, 'Numpad2'], [0, -1, 'E', Math.PI / 2, 'Numpad6'], [0, 1, 'W', -Math.PI / 2, 'Numpad4']];
     const side = sides.find(([dr, dc]) => !whatBlocks(chest.row + dr, chest.col + dc));
     if (!side) return null;
     f.playerRow = chest.row + side[0];
@@ -1608,119 +1599,11 @@ async function guarded(run, browser, url) {
   }
 }
 
-// ---- Run 11: shoulder view ----
-
-// The checks listed in the header. Returns what failed ('' when all held).
-async function checkShoulderView(page, url) {
-  await loadPageAndSet(page, url);
-  if (await page.locator('#isoViewToggle, #lightEye, #devViewBtn, #shoulderOptions').count()) return 'the isometric view\'s controls, the top-bar eye or the old comfort settings are still on the page';
-  await startGameAndWaitForRoom(page);
-  await roomIdle(page);
-  const player = () => page.evaluate(async () => {
-    const f = (await import('./js/state.js')).state.floor;
-    return { row: f.playerRow, col: f.playerCol, facing: f.facing };
-  });
-  const map = await page.$('#mapCanvas');
-  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-start.png') });
-  // Sky eye plan step A: Space held tilts the camera up to the sky, for no
-  // turn; let go, it comes back down.
-  const turnsBeforeLook = await turnsShown(page);
-  const pitch = () => page.evaluate(async () => (await import('./js/shoulderview.js')).shoulderPitch());
-  await page.keyboard.down(' ');
-  await page.waitForTimeout(700);
-  const upPitch = await pitch();
-  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-look-up.png') });
-  await page.keyboard.up(' ');
-  await page.waitForTimeout(700);
-  if (!(upPitch < -0.5)) return `holding Space did not tilt the camera up (pitch ${upPitch})`;
-  if (!(await pitch() > 0)) return `letting go of Space left the camera tilted up (pitch ${await pitch()})`;
-  if (await turnsShown(page) !== turnsBeforeLook) return 'looking up spent a turn';
-  const holdKey = async (key, ms) => {
-    await page.keyboard.down(key);
-    await page.waitForTimeout(ms);
-    await page.keyboard.up(key);
-    await roomIdle(page);
-  };
-  const ways = { N: [-1, 0], NE: [-1, 1], E: [0, 1], SE: [1, 1], S: [1, 0], SW: [1, -1], W: [0, -1], NW: [-1, -1] };
-  let moved = false;
-  const tried = [];
-  for (let i = 0; i < 12 && !moved; i++) {
-    const before = await player();
-    await page.keyboard.press('ArrowUp');
-    await roomIdle(page);
-    const after = await player();
-    const [dr, dc] = ways[before.facing];
-    if (after.row === before.row + dr && after.col === before.col + dc) moved = true;
-    else if (after.row !== before.row || after.col !== before.col) return `up stepped from ${before.row},${before.col} facing ${before.facing} to ${after.row},${after.col}`;
-    else {
-      tried.push(before.facing);
-      await holdKey('ArrowRight', 600);
-    }
-  }
-  if (!moved) {
-    const why = await page.evaluate(async () => {
-      const { state } = await import('./js/state.js');
-      const { whatBlocks } = await import('./js/passage.js');
-      const f = state.floor;
-      return JSON.stringify({ at: [f.playerRow, f.playerCol], look: +f.look.toFixed(2), locked: state.run.turnLocked, ended: state.run.runEnded,
-        turns: state.run.turnCount, resting: state.run.resting, screen: document.getElementById('roomScreen').className,
-        panels: ['reloadPanel', 'askQuestionPanel', 'aimPanel', 'minimap'].filter(id => document.getElementById(id) && !document.getElementById(id).hidden),
-        ahead: whatBlocks(f.playerRow + (f.facing.includes('N') ? -1 : f.facing.includes('S') ? 1 : 0), f.playerCol + (f.facing.includes('E') ? 1 : f.facing.includes('W') ? -1 : 0)) });
-    });
-    return `up never stepped the way the body faces (tried facing ${tried.join(' ')}; ${why})`;
-  }
-  const order = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-  const before = await player();
-  const turns = await turnsShown(page);
-  await holdKey('ArrowRight', 800);
-  const turned = await player();
-  if (turned.row !== before.row || turned.col !== before.col) return 'holding right moved the player';
-  const turnedWays = (order.indexOf(turned.facing) - order.indexOf(before.facing) + 8) % 8;
-  if (!turnedWays) return `holding right for 0.8 s never turned the body (${before.facing})`;
-  if (await turnsShown(page) !== turns + turnedWays) return `the sweep turned the body ${turnedWays} ways but spent ${await turnsShown(page) - turns} turns`;
-  await page.waitForTimeout(400);
-  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-turned.png') });
-  const slanted = [];
-  for (let i = 0; i < 6 && !slanted.length; i++) {
-    const from = await player();
-    await page.keyboard.press('e');
-    await roomIdle(page);
-    const to = await player();
-    if (to.row !== from.row || to.col !== from.col) slanted.push(from, to);
-    else await holdKey('ArrowLeft', 300);
-  }
-  if (slanted.length) {
-    const [from, to] = slanted;
-    const way = order[(order.indexOf(from.facing) + 1) % 8];
-    if (to.facing !== way) return `E stepped from facing ${from.facing} to ${to.facing}, not ${way}`;
-  }
-  const lookNow = () => page.evaluate(async () => (await import('./js/state.js')).state.floor.look);
-  const aimed = await lookNow();
-  const tapTurns = await turnsShown(page);
-  const box = await map.boundingBox();
-  await map.tap({ position: { x: box.width * 0.3, y: box.height * 0.62 } });
-  await roomIdle(page);
-  if (await lookNow() === aimed) return 'a tap on the floor did not move the light';
-  if (await turnsShown(page) !== tapTurns) return 'a tap on the floor spent a turn';
-  for (let i = 0; i < 4; i++) {
-    await page.click('#btnU');
-    await roomIdle(page);
-  }
-  await page.click('#devToggleBtn');
-  await page.waitForTimeout(600);
-  const meter = await page.textContent('#devFrameOut');
-  if (!/Draw: [0-9.]+ ms/.test(meter)) return `the frame meter read "${meter}"`;
-  const shotFailure = await shoulderShot(page, map);
-  if (shotFailure) return shotFailure;
-  console.log('  shoulder view: ' + meter);
-  return '';
-}
-
-// ---- Run 12: room view ----
+// ---- Run 11: room view ----
 
 // The checks listed in the header. Returns what failed ('' when all held).
 async function checkRoomView(page, url) {
-  await loadPageAndSet(page, url + '&view=room');
+  await loadPageAndSet(page, url);
   await startGameAndWaitForRoom(page);
   await roomIdle(page);
   await page.click('#devToggleBtn');
@@ -1746,7 +1629,7 @@ async function checkRoomView(page, url) {
   // stood two tiles from a stick man and aimed at it, DEV -> Test shot
   // with Auto-win kills it in this view.
   await page.click('#devToggleBtn');
-  const shot = await shoulderShot(page, map, { skip: false, view: 'room' });
+  const shot = await standAndShoot(page, map, { skip: false, view: 'room' });
   await page.click('#devToggleBtn');
   if (shot) return shot;
   await roomIdle(page);
@@ -1821,11 +1704,11 @@ async function runRoomView(browser, url) {
   return { ok: true, detail: 'looked up at the sky, shot a stick man, arrows walked the way they point on screen and the room drew', consoleErrors, pageErrors };
 }
 
-// The shoulder view's shot (step D), with the DEV panel open: skips to the
+// A shot in the map view, with the DEV panel open: skips to the
 // first depth, stands the player two tiles from a stick man it can shoot,
 // looking at it, and fires DEV -> Test shot with Auto-win on (it stops the
 // dial in the kill zone). Returns what failed ('' when it was killed).
-async function shoulderShot(page, map, { skip = true, view = 'shoulder' } = {}) {
+async function standAndShoot(page, map, { skip = true, view = 'room' } = {}) {
   if (skip) {
     await page.click('#devSkipBtn');
     await page.waitForTimeout(300);
@@ -1870,20 +1753,6 @@ async function shoulderShot(page, map, { skip = true, view = 'shoulder' } = {}) 
   return '';
 }
 
-async function runShoulderView(browser, url) {
-  const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 390, height: 844 }, hasTouch: true });
-  const page = await context.newPage();
-  const { consoleErrors, pageErrors } = collectErrors(page);
-  const failure = await checkShoulderView(page, url);
-  await context.close();
-
-  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
-  if (consoleErrors.length || pageErrors.length) {
-    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
-  }
-  return { ok: true, detail: 'walked by the body, swept the light one turn per body turn, stepped at a slant, aimed by a tap, looked up, shot a stick man and showed a draw time', consoleErrors, pageErrors };
-}
-
 async function main() {
   const port = await findFreePort();
   const server = spawn(process.execPath, [
@@ -1910,7 +1779,7 @@ async function main() {
         ['free look', runFreeLook, url], ['eight ways', runEightWays, url],
         ['light battery', runLightBattery, url], ['tutorial', runTutorial, url],
         ['answer line', runAnswerLine, url], ['vents', runVents, url],
-        ['shoulder view', runShoulderView, url], ['room view', runRoomView, url],
+        ['room view', runRoomView, url],
       ];
       // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
       // of those words, SMOKE_REPEAT=20 runs each that many times: for

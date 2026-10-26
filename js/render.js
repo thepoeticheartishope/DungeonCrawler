@@ -7,14 +7,13 @@
 // of each one threading them through as parameters.
 
 import { state, key } from './state.js';
-import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, SHOULDER_CAMERA } from './config.js';
+import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS } from './config.js';
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
 import { whatBlocks, canPassCorner } from './passage.js';
 import { SCREEN_WAYS, padWay } from './dpad.js';
-import { roomViewWanted } from './roomview.js';
 import { FACING_VECTORS } from './sight.js';
-import { waysInUse, lookAngle, angleTo, wrapAngle } from './look.js';
+import { waysInUse } from './look.js';
 import { clockReading } from './realclock.js';
 import { goalMark } from './goals.js';
 import { onStairs } from './moves.js';
@@ -87,9 +86,6 @@ export function showScreen(el) {
   els.statsEl.classList.toggle('show', el !== els.startScreen && el !== els.introGlitch);
 }
 
-// The room view (?view=room) names the d-pad's ways by the screen.
-const ROOM_VIEW_ON = roomViewWanted();
-
 // How far away (in steps, as the crow flies) the hunter's edge glow starts
 // to brighten.
 const HUNTER_HINT_RANGE = 20;
@@ -106,17 +102,15 @@ export function renderRoomHints() {
 // (pressing it still turns to look that way), and one with a paper or box
 // not yet gone through lights up, since that press reads or examines it;
 // so does THE UNFOLDING, which a press opens. A diagonal that would cut a
-// corner is blocked too (passage.js canPassCorner). The arrows walk round
-// the body (dpad.js padWay), so the hints follow it; the side arrows
-// sweep the light and show none. In the room view each arrow is the way it
-// points on screen.
+// corner is blocked too (passage.js canPassCorner). Each arrow is the way
+// it points on screen (dpad.js padWay).
 function renderMoveHints() {
   const buttons = els.dpadButtons;
   if (!buttons) return;
   for (const [dir, [sx, sy]] of Object.entries(SCREEN_WAYS)) {
     const btn = buttons[dir];
     if (!btn) continue;
-    const way = padWay(sx, sy, state.floor.facing, waysInUse(), ROOM_VIEW_ON);
+    const way = padWay(sx, sy, waysInUse());
     const step = way && FACING_VECTORS[way];
     if (!step) {
       btn.classList.remove('move-examine', 'move-blocked');
@@ -136,8 +130,8 @@ function renderMoveHints() {
 
 // While the boss is off screen, the edge of the view facing it glows —
 // brighter as its light spreads — so the player always has a sense of
-// where it is. A diagonal boss lights two edges: its way round the player
-// from where the light points (ahead is the top edge, behind the bottom).
+// where it is. A diagonal boss lights two edges: its way from the player
+// on screen (the room view's camera never turns, so north is the top edge).
 //
 // After the boss, the same edges point at the hunter instead (in white,
 // not the boss's blue), brighter the closer it gets.
@@ -160,17 +154,13 @@ function renderLightHint() {
   Object.entries(edges).forEach(([side, el]) => { el.style.opacity = on[side] ? strength : '0'; });
 }
 
-// Where a thing is compared with the player (shoulder view plan step E),
-// by its way round them from where the light points: dx right and dy down
-// (only the direction is used), ahead the top edge, behind the bottom.
-// It counts as on screen while it is in the player's own sight (walls
-// hide it, its light alone doesn't show it) and inside the camera's field
-// of view.
+// Where a thing is compared with the player on screen: dx right and dy
+// down (only the direction is used; grid north is up). It counts as on
+// screen while it is in the player's own sight (walls hide it, its light
+// alone doesn't show it).
 function placeOnScreen(thing) {
-  const off = wrapAngle(angleTo(thing.row, thing.col) - lookAngle());
   const seen = !state.settings.fogEnabled || state.floor.sightSet.has(key(thing.row, thing.col));
-  const inView = Math.abs(off) <= SHOULDER_CAMERA.fov * Math.PI / 360;
-  return { dx: Math.sin(off), dy: -Math.cos(off), offScreen: !(seen && inView) };
+  return { dx: thing.col - state.floor.playerCol, dy: thing.row - state.floor.playerRow, offScreen: !seen };
 }
 
 // Status bar numbers: hearts, gold, turn count and the depth (REST on a

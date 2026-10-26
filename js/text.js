@@ -88,7 +88,7 @@ export const TEXT = {
   'stat.keys.count': '{held}/{total}', // HUD: keys held of the floor's
   'stat.keys.sealed': '{held}/{total} SEALED', // draft. HUD: the gate is sealed until another key
   'stat.rest': 'REST', // draft — shown for the depth number while on a rest floor
-  'sky.turnsLeft': '{count} {count|plural:turn} left', // draft. Comfort mode's sky in the shoulder view, where the eye would be (sky eye plan)
+  'sky.turnsLeft': '{count} {count|plural:turn} left', // draft. Comfort mode's sky while looking up, where the eye would be (sky eye plan)
   'sky.watching': 'it is watching', // draft. Comfort mode's sky in the tutorial, where the eye is wide open
   'sky.noLight': 'no light here', // draft. The same with no boss light on the floor (a rest floor, the tutorial, after the boss)
 

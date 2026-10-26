@@ -875,14 +875,11 @@
     justify-content: center;
     flex: none;
   }
-  /* DEV -> 8 ways off: the old pad. It turns with the isometric diamond,
-     so its top arrow points up and to the right, where a step north goes
-     on screen. Its corners are hidden, so turned it still fits its own box
-     and needs no room from the log. */
+  /* DEV -> 8 ways off: only the 4 edge arrows. North is up on screen
+     (the room view), so the pad stands straight with its corners hidden. */
   .dpad.four-ways {
     grid-template-columns: repeat(3, 48px);
     grid-template-rows: repeat(3, 48px);
-    transform: rotate(45deg);
   }
   .dpad.four-ways .dpad-corner { visibility: hidden; }
 

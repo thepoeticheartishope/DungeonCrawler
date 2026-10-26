@@ -16,7 +16,7 @@
 // fade. With reduced motion everything holds still (the tell pose is shown
 // still, so the warning isn't lost).
 //
-// shoulderview.js calls drawStickForm() for a minion it has made out, stickBox()
+// roomview.js calls drawStickForm() for a minion it has made out, stickBox()
 // for its brackets and taps, and dyingSticks() for killed ones
 // still fading. mapview.js calls hurtStick() /
 // killStick() from their drawEvents cases. Those moments are view-only and
@@ -598,7 +598,7 @@ function elbowOf(sh, hand, h, bend) {
 }
 
 // The letters crawling stick men dropped on this floor that still show,
-// for shoulderview.js: [{ row, col, letters: [{ letter, dx, dy }], level }],
+// for roomview.js: [{ row, col, letters: [{ letter, dx, dy }], level }],
 // dx and dy in tile widths from the tile's middle. Each fades over
 // DOWNED_DROP_TURNS of the player's turns.
 export function droppedLetters() {
@@ -686,7 +686,7 @@ export function finishStick(minion) {
   momentsOf(minion).finished = true;
 }
 
-// The killed minions still fading on this floor, for shoulderview.js to draw
+// The killed minions still fading on this floor, for roomview.js to draw
 // where they died.
 export function dyingSticks(now) {
   dying = dying.filter(d => d.floor === state.run.floorsEntered && now - momentsOf(d.minion).deadAt < MAP_ANIMATION_MS.stickDeath);

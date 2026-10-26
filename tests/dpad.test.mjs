@@ -1,32 +1,31 @@
-// Unit tests for the d-pad's rules (js/dpad.js): the number pad's grid
-// steps, the look stick's taps and holds (light battery plan step D), and the arrows' ways round the
-// body and the sweep (shoulder view plan step B).
+// Unit tests for the d-pad's rules (js/dpad.js): the way each arrow, key
+// and number pad key walks (the way it points on screen, room view plan),
+// the look stick's taps and holds (light battery plan step D) and its
+// sweep (shoulder view plan step B).
 //
 // Run: node --test tests/*.test.mjs
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { SCREEN_WAYS, screenStep, stickGestures, shoulderStep, sweepHold } from '../js/dpad.js';
+import { SCREEN_WAYS, padWay, stickGestures, sweepHold } from '../js/dpad.js';
 
-test('8 ways: each number pad key walks that way on the minimap\'s diamond', () => {
-  // Grid north is up and to the right, so up is grid NW.
-  const expected = {
-    U: [-1, -1], UR: [-1, 0], R: [-1, 1], DR: [0, 1],
-    D: [1, 1], DL: [1, 0], L: [1, -1], UL: [0, -1],
-  };
-  for (const [way, [sx, sy]] of Object.entries(SCREEN_WAYS)) {
-    assert.deepEqual(screenStep(sx, sy, true), expected[way], way);
-  }
-  assert.equal(screenStep(0, 0, true), null);
+const EIGHT = ['N', 'E', 'S', 'W', 'NE', 'SE', 'SW', 'NW'];
+const FOUR = ['N', 'E', 'S', 'W'];
+
+test('8 ways: each arrow, key and number pad key walks the way it points on screen', () => {
+  // Grid north is up (the room view's camera never turns).
+  const expected = { U: 'N', UR: 'NE', R: 'E', DR: 'SE', D: 'S', DL: 'SW', L: 'W', UL: 'NW' };
+  for (const [way, [sx, sy]] of Object.entries(SCREEN_WAYS)) assert.equal(padWay(sx, sy, EIGHT), expected[way], way);
+  assert.equal(padWay(0, 0, EIGHT), null);
 });
 
-test('4 ways: up is grid north, diagonals do nothing', () => {
-  assert.deepEqual(screenStep(0, -1, false), [-1, 0], 'up is grid north');
-  assert.deepEqual(screenStep(1, 0, false), [0, 1], 'right is grid east');
-  assert.deepEqual(screenStep(0, 1, false), [1, 0]);
-  assert.deepEqual(screenStep(-1, 0, false), [0, -1]);
-  assert.equal(screenStep(1, -1, false), null);
+test('4 ways: the edges walk, the corners do nothing', () => {
+  assert.equal(padWay(0, -1, FOUR), 'N', 'up is grid north');
+  assert.equal(padWay(1, 0, FOUR), 'E', 'right is grid east');
+  assert.equal(padWay(0, 1, FOUR), 'S');
+  assert.equal(padWay(-1, 0, FOUR), 'W');
+  assert.equal(padWay(1, -1, FOUR), null);
 });
 
 function stick({ armed = false } = {}) {
@@ -104,29 +103,6 @@ test('Enter on the focused stick taps', () => {
   const s = stick();
   s.g.tap(); s.g.tap(); s.g.tap();
   assert.deepEqual(s.actions(), ['count1', 'count2', 'light']);
-});
-
-// ---- The shoulder view (shoulder view plan step B) ----
-
-const EIGHT = ['N', 'E', 'S', 'W', 'NE', 'SE', 'SW', 'NW'];
-const FOUR = ['N', 'E', 'S', 'W'];
-
-test('shoulder view: up walks ahead, down behind, the upper corners at a slant', () => {
-  assert.equal(shoulderStep(0, -1, 'NE', EIGHT), 'NE');
-  assert.equal(shoulderStep(0, 1, 'NE', EIGHT), 'SW');
-  assert.equal(shoulderStep(-1, -1, 'NE', EIGHT), 'N');
-  assert.equal(shoulderStep(1, -1, 'NE', EIGHT), 'E');
-  assert.equal(shoulderStep(1, -1, 'NW', EIGHT), 'N', 'round past north');
-});
-
-test('shoulder view: left and right sweep and the lower corners do nothing', () => {
-  for (const [sx, sy] of [[-1, 0], [1, 0], [-1, 1], [1, 1]]) assert.equal(shoulderStep(sx, sy, 'N', EIGHT), null);
-});
-
-test('shoulder view with 4 ways: the slants are the next grid way round', () => {
-  assert.equal(shoulderStep(0, 1, 'E', FOUR), 'W');
-  assert.equal(shoulderStep(-1, -1, 'N', FOUR), 'W');
-  assert.equal(shoulderStep(1, -1, 'W', FOUR), 'N');
 });
 
 // A hand-run frame clock for sweepHold: run(ms) plays frames 10 ms apart.

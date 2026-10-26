@@ -1,4 +1,4 @@
-// What the map view (shoulderview.js, the low shoulder view) draws that
+// What the map view (roomview.js) draws that
 // isn't about how it projects the floor: the light's levels, the sizes and
 // strengths of the things on the floor, the gun's marks, and the rules for
 // what a view shows that don't depend on how it projects the floor (how
@@ -6,7 +6,7 @@
 // shot's path, the tutorial's ring and the answer ring over time, a stick
 // man's eye). Kept apart from the view since the isometric view shared it
 // (removed 2026-10-18). Sizes are shares of a tile's width unless they say
-// otherwise; the shoulder view reads a tile's width as one tile. Reads
+// otherwise; the room view reads a tile's width as one tile. Reads
 // state only.
 
 import { state, key } from './state.js';

@@ -7,8 +7,9 @@
 // and a dashed line between a pair once they know where it leads (vents
 // and noise plan, Timothy's call): the ducts are how the stick men come.
 // On a fixed plan it also names the building and each room the
-// player has walked into, so the floor can be learned run after run. Drawn as a diamond like the map, so north is up and to the
-// right, as on the d-pad, and scaled to fit, but never bigger than
+// player has walked into, so the floor can be learned run after run. Drawn
+// square like the map (room view plan step G), north up, as on the d-pad,
+// and scaled to fit, but never bigger than
 // MINIMAP_MAX_UNIT, so a few seen tiles don't fill the screen. Opening it costs no turn. main.js calls
 // refreshMinimap() whenever the map is drawn. Reads state only.
 
@@ -79,32 +80,19 @@ export function refreshMinimap() {
   const f = state.floor;
   const tiles = [...seenTiles()];
   if (!tiles.length) return;
-  // A tile's centre in diamond units: a step east goes right and down, a
-  // step north right and up, as on the map.
-  const across = tile => tile.col - tile.row;
-  const down = tile => (tile.col + tile.row) / 2;
-  const minX = Math.min(...tiles.map(across)) - 1;
-  const maxX = Math.max(...tiles.map(across)) + 1;
+  // A tile's centre in tile units: east is right and north up, as on the map.
+  const across = tile => tile.col;
+  const down = tile => tile.row;
+  const minX = Math.min(...tiles.map(across)) - 0.5;
+  const maxX = Math.max(...tiles.map(across)) + 0.5;
   const minY = Math.min(...tiles.map(down)) - 0.5;
   const maxY = Math.max(...tiles.map(down)) + 0.5;
   const unit = Math.min(MINIMAP_MAX_UNIT, (width - MINIMAP_PAD * 2) / (maxX - minX), (height - MINIMAP_PAD * 2) / (maxY - minY));
   const left = (width - (maxX - minX) * unit) / 2 - minX * unit;
   const top = (height - (maxY - minY) * unit) / 2 - minY * unit;
-  const diamond = (tile) => {
-    const x = left + across(tile) * unit;
-    const y = top + down(tile) * unit;
-    ctx.beginPath();
-    ctx.moveTo(x, y - unit / 2);
-    ctx.lineTo(x + unit, y);
-    ctx.lineTo(x, y + unit / 2);
-    ctx.lineTo(x - unit, y);
-    ctx.closePath();
-  };
-
   for (const tile of tiles) {
-    diamond(tile);
     ctx.fillStyle = isSolid(tile) ? colours.wall : colours.floor;
-    ctx.fill();
+    ctx.fillRect(left + (across(tile) - 0.5) * unit, top + (down(tile) - 0.5) * unit, unit, unit);
   }
   // Grates the player has seen, and a line between a pair they know.
   const at = tile => [left + across(tile) * unit, top + down(tile) * unit];
@@ -139,15 +127,12 @@ export function refreshMinimap() {
   drawFacing(ctx, at(player), unit);
 }
 
-// In the shoulder view (shoulder view plan step E, call 3) the minimap
-// stays still while the camera turns, so an arrow from the player's dot
-// shows where the light points, laid out on the diamond like the map.
+// An arrow from the player's dot shows where the light points (shoulder
+// view plan step E, call 3, kept), north up like the map.
 function drawFacing(ctx, [x, y], unit) {
   const angle = lookAngle();
-  const dc = Math.sin(angle);
-  const dr = -Math.cos(angle);
-  const ax = dc - dr;
-  const ay = (dc + dr) / 2;
+  const ax = Math.sin(angle);
+  const ay = -Math.cos(angle);
   const length = Math.hypot(ax, ay);
   const [ux, uy] = [ax / length, ay / length];
   const reach = Math.max(16, unit * MINIMAP_ARROW[0]);
