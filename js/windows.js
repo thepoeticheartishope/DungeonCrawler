@@ -1,9 +1,11 @@
 // Windows (room view plan step F; Timothy 2026-10-26: their light shows
 // stick men): back walls of rooms that face the outside get windows, and
 // each throws a pool of light down and across its room's floor. Window
-// light counts as light the player sees by, like their own (sight.js
-// canMakeOut): a stick man standing in it is seen, and a thing in it made
-// out, from within REVEAL_DISTANCE with nothing solid in between. Shooting
+// light lights the room the player is in (windowLightHere): it counts as
+// light they see by, like their own (sight.js canMakeOut), so a stick man
+// standing in it is seen, and a thing in it made out, from within
+// REVEAL_DISTANCE with nothing solid in between. Another room's windows
+// light nothing the player can see until they walk in. Shooting
 // still needs the player's own light (sight.js shootBlock).
 //
 // floor.js calls placeWindows() when a danger floor or a rest is built
@@ -52,6 +54,15 @@ export function placeWindows() {
   }
   f.windows = windows;
   f.windowLitSet = new Set(windows.flatMap(w => windowPool(w).map(p => key(p.row, p.col))));
+}
+
+// The window-lit tiles of the room the player stands in (none in a
+// hallway): what windows light for them now.
+export function windowLightHere() {
+  const f = state.floor;
+  const room = f.chamberAt.get(key(f.playerRow, f.playerCol));
+  if (room === undefined) return new Set();
+  return new Set([...f.windowLitSet].filter(k => f.chamberAt.get(k) === room));
 }
 
 // The floor tiles window `w` lights: its pool runs WINDOW_LIGHT.length tiles

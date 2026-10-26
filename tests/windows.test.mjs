@@ -1,9 +1,10 @@
 // Unit tests for windows (js/windows.js, room view plan step F): the
 // School's windows stand on the back walls that face the outside (the lab,
 // the library and the art room); their light stays on their own room's
-// floor; and window light shows a stick man as the player's own light does
-// (sight.js canMakeOut / seesEnemy), but only the player's own light lets
-// them shoot it (shootBlock).
+// floor; window light in the room the player is in shows a stick man as
+// their own light does (sight.js canMakeOut / seesEnemy), another room's
+// shows nothing; and only the player's own light lets them shoot it
+// (shootBlock).
 //
 // Run: node --test tests/*.test.mjs
 
@@ -65,4 +66,27 @@ test('a stick man in window light is seen, but can only be shot in the player’
   assert.ok(shootBlock(m) !== null, 'not shootable without the player’s own light');
   f.windowLitSet = new Set();
   assert.ok(!seesEnemy(m), 'not seen once the window light is gone');
+});
+
+test("another room's window light shows nothing: only the room the player is in", () => {
+  school();
+  const f = state.floor;
+  state.settings.fogEnabled = true;
+  const [r, c] = [...f.windowLitSet][0].split(',').map(Number);
+  const room = f.chamberAt.get(key(r, c));
+  // The hallway tile nearest it: outside the room.
+  const hall = [...Array(f.GRID_SIZE).keys()].flatMap(row => [...Array(f.GRID_SIZE).keys()].map(col => ({ row, col })))
+    .filter(p => !f.wallSet.has(key(p.row, p.col)) && !f.chamberAt.has(key(p.row, p.col)))
+    .sort((a, b) => Math.hypot(a.row - r, a.col - c) - Math.hypot(b.row - r, b.col - c))[0];
+  // In the room's doorway the window light shows it; one step out, not.
+  const inside = { row: hall.row - Math.sign(hall.row - r), col: hall.col };
+  f.playerRow = inside.row;
+  f.playerCol = inside.col;
+  f.sightSet = new Set();
+  const seenInside = f.chamberAt.get(key(inside.row, inside.col)) === room && seesEnemy({ row: r, col: c });
+  f.playerRow = hall.row;
+  f.playerCol = hall.col;
+  f.sightSet = new Set([key(hall.row, hall.col)]);
+  assert.ok(!seesEnemy({ row: r, col: c }), 'from the hallway the window light shows nothing');
+  assert.ok(seenInside || f.chamberAt.get(key(inside.row, inside.col)) !== room, 'inside the room it shows when in reach');
 });
