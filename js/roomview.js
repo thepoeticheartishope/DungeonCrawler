@@ -20,7 +20,12 @@
 // corner brackets on what can be shot and the breathing target, a dashed
 // laser to the target's chest, the shot's flash and ring or MISS (the last
 // shot from mapshared.js), the answer ring after a miss (swirl.js), and
-// the tutorial's ring of words. The picture is drawn at ROOM_VIEW.tilePx a tile into a small
+// the tutorial's ring of words. Step F: windows on back walls that face
+// the outside, the warm light they throw on the floor (for looks only: the
+// rules' light is still the player's own) with the frame's shadow across
+// it, and the eye in the sky: while the player looks up (main.js
+// holdLookUp -> lookUp), the room fades into the night sky and the eye
+// hangs in it, drawn as pixel art like the rest. The picture is drawn at ROOM_VIEW.tilePx a tile into a small
 // canvas, lit there, and scaled up by a whole number with smoothing off.
 // What gives off its own light (a key, the stairs' column, the desk's
 // pool, a cell's breath, the mist, a sound) is added after the lighting,
@@ -42,6 +47,7 @@ import { state, key } from './state.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
   ISO_NARROW_MAP_WIDTH, PLAYER_GLANCE, PLAYER_EMBER, MAP_ANIMATION_MS, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING,
+  SKY_EYE, SHOULDER_CAMERA,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
@@ -50,6 +56,7 @@ import {
   SOUND_INSET, SOUND_LEVEL, GRATE_RATTLE_SWAYS,
 } from './mapshared.js';
 import { drawDroppedLetters, drawStickForm, stickBox, dyingSticks } from './stickforms.js';
+import { skyEyeOpen, skyTurnsLeft } from './mapshared.js';
 import {
   minionOn, eyeOf, EYE_LIFT, EYE_WIDTH, HEARD_LIFT, WEAK_RING, WEAK_RING_LEVEL, inReach, liveTarget, lastShot,
   recoilAt, darkRingAt, answerRingLetters, REACH_FILL, BRACKET_ARM, BRACKET_HALF, BRACKET_LEVEL, BRACKET_PULSE,
@@ -142,6 +149,15 @@ const GUN_COLOUR = '#c8d2d6';
 const SHOT_AT = 0.55;            // a shot goes to this share of a stick man's height
 const LASER_DASH = [5, 4];      // its dash and gap, in line widths
 const DARK_RING = { lift: 0.5, size: 0.3 }; // the tutorial's ring of words: how high it floats and its letters' size, in tiles
+// Windows (step F): one every WINDOW_EVERY columns along a back wall that
+// faces the outside, never at its ends; the warm pool each throws down and
+// across the floor (in tiles), its strength, and how bright the glass stays.
+const WINDOW_EVERY = 3;
+const WINDOW = { frame: '#4a3a30', glassTop: '#f3dcae', glassFoot: '#ddb173' };
+const POOL = { length: 3.4, slant: 1.1, level: 0.85, rgb: '255, 196, 132', bars: 'rgb(150, 130, 120)', glass: 0.8 };
+// The night sky while looking up: how dark the room goes under it, and the
+// line width of the eye, in picture pixels.
+const SKY = { dark: 0.92, line: 1, rise: 0.15, middle: 0.42 };
 
 let look = null;          // what mapview.js hands each frame (see drawRoomScene)
 let built = null;         // this floor's still picture and what it was built from
@@ -163,10 +179,27 @@ let mctx = null;
 let view = { w: 0, h: 0 }; // the picture's size this frame
 let muzzle = null;        // the gun's muzzle this frame in picture pixels, or null with no gun drawn
 let frame = { ox: 0, oy: 0 }; // the camera's top-left this frame, in picture pixels
+let lookingUp = false;    // the player is looking up at the sky (lookUp)
+let upShare = 0;          // how far the sky has faded in, 0 to 1
+let skyAt = 0;            // the last frame the sky eased at
+let sky = null;           // the sky at the picture's size, over the whole map
+let sctx = null;
 
 // True when the page asked for the room view (?view=room).
 export function roomViewWanted() {
   return typeof location !== 'undefined' && new URLSearchParams(location.search).get('view') === 'room';
+}
+
+// Looks up at the sky (on) or back down (sky eye plan, room view plan step
+// F): main.js calls it while Space is held or the look stick is pushed up.
+// View-only and free: the room fades into the night sky with the eye.
+export function lookUp(on) {
+  lookingUp = on;
+}
+
+// How far the sky has faded in, 0 to 1 (for the smoke test).
+export function roomLookUp() {
+  return upShare;
 }
 
 // What a wall tile at (row, col) shows, given `wall(row, col)`: 'lower'
@@ -279,8 +312,15 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   g.addColorStop(1, 'rgba(' + look.colours.glowRgb + ', 0)');
   gctx.fillStyle = g;
   gctx.fillRect(head.x - ROOM_VIEW.ember.radius * T, head.y - ROOM_VIEW.ember.radius * T, ROOM_VIEW.ember.radius * T * 2, ROOM_VIEW.ember.radius * T * 2);
+  const lit = built.windows.filter(w => w.room === space.room);
+  lit.forEach(w => drawPool(w, ox, oy));
   bctx.globalCompositeOperation = 'multiply';
   bctx.drawImage(glow, 0, 0);
+  // The windows' glass glows from outside.
+  bctx.globalCompositeOperation = 'source-over';
+  bctx.globalAlpha = POOL.glass;
+  lit.forEach(w => bctx.drawImage(built.world, w.col * T, (w.row - 1) * T, 2 * T, 2 * T, w.col * T - ox, (w.row - 1) * T - oy, 2 * T, 2 * T));
+  bctx.globalAlpha = 1;
   // What gives off its own light, over the lit picture.
   bctx.globalCompositeOperation = 'lighter';
   glows.forEach(draw => draw());
@@ -305,6 +345,7 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   }
   drawDarkRing(ctx);
   drawEdgeMarks(ctx, ox, oy);
+  drawSky(ctx, viewW, viewH, at, ox, oy);
 }
 
 // The tile under a tap at (px, py) CSS pixels from the map's top-left: an
@@ -367,7 +408,9 @@ function buildFloor(f) {
   for (let row = 0; row < f.GRID_SIZE; row++) {
     for (let col = 0; col < f.GRID_SIZE; col++) if (isWall(row, col) && !faceOf(row, col, isWall)) drawRim(ctx, row, col);
   }
-  return { floor: f, entered: state.run.floorsEntered, walls: f.wallSet, pillars: f.pillarSet, world, rooms };
+  const windows = windowsOf(f);
+  windows.forEach(w => drawWindow(ctx, w));
+  return { floor: f, entered: state.run.floorsEntered, walls: f.wallSet, pillars: f.pillarSet, world, rooms, windows };
 }
 
 // A tile's own number from 0 to 1, the same every time, for the grain of
@@ -539,6 +582,7 @@ function spaceOf(row, col) {
     return {
       tiles,
       bounds: { x0: (r.c0 - 1) * T, x1: (r.c1 + 2) * T, y0: (r.r0 - ROOM_VIEW.faceRows) * T, y1: (r.r1 + 2) * T },
+      room,
     };
   }
   const tiles = new Set([key(row, col)]);
@@ -553,7 +597,7 @@ function spaceOf(row, col) {
     }));
     edge = next;
   }
-  return { tiles, bounds: null };
+  return { tiles, bounds: null, room: null };
 }
 
 // Glides the camera toward `goal` by the time since the last frame. A new
@@ -1554,3 +1598,201 @@ const PIECES = {
   desk: drawSchoolDesk, teacher: drawTeacherDesk, shelf: drawShelf, table: drawTable, bench: drawBench,
   easel: drawEasel, sink: drawSink, stall: drawStall, sofa: drawSofa,
 };
+
+// ---- windows and the eye in the sky (step F) ----
+
+// The windows on this floor: on each back wall face of a room that looks
+// out (nothing but wall above it to the grid's edge), one 2 tiles wide
+// every WINDOW_EVERY columns along it, never at its ends. Each is
+// { row, col, room }: its lower face row, its left column, its room.
+function windowsOf(f) {
+  const windows = [];
+  for (let row = 1; row < f.GRID_SIZE; row++) {
+    let run = null;
+    const close = () => {
+      if (!run) return;
+      for (let col = run.c0 + 1; col + 1 <= run.c1 - 1; col += WINDOW_EVERY) windows.push({ row, col, room: run.room });
+      run = null;
+    };
+    for (let col = 0; col < f.GRID_SIZE; col++) {
+      const room = f.chamberAt.get(key(row + 1, col));
+      const outside = faceOf(row, col, isWall) === 'lower' && room !== undefined && faceOf(row - 1, col, isWall) === 'upper' &&
+        Array.from({ length: row - 1 }, (_, r) => r).every(r => isWall(r, col));
+      if (outside && run && run.room === room) run.c1 = col;
+      else {
+        close();
+        if (outside) run = { c0: col, c1: col, room };
+      }
+    }
+    close();
+  }
+  return windows;
+}
+
+// A window in the still picture: an arched frame two tiles wide over both
+// faces of the wall, warm glass (light outside), its cross bars, a sill.
+function drawWindow(ctx, w) {
+  const x0 = w.col * T + 4, width = 2 * T - 8, top = (w.row - 1) * T + 5, bottom = w.row * T + T - 6;
+  const rad = width / 2;
+  for (let y = top; y <= bottom; y++) {
+    let half = rad;
+    if (y < top + rad) half = Math.sqrt(Math.max(0, rad * rad - (top + rad - y) ** 2));
+    const h = Math.round(half);
+    ctx.fillStyle = WINDOW.frame;
+    ctx.fillRect(x0 + rad - h - 2, y, h * 2 + 4, 1);
+    ctx.fillStyle = (y - top) / (bottom - top) < 0.5 ? WINDOW.glassTop : WINDOW.glassFoot;
+    if (h > 1) ctx.fillRect(x0 + rad - h, y, h * 2, 1);
+  }
+  ctx.fillStyle = WINDOW.frame;
+  ctx.fillRect(x0 + rad - 1, top, 2, bottom - top);
+  ctx.fillRect(x0, top + Math.round((bottom - top) * 0.55), width, 2);
+  ctx.fillRect(x0 - 3, bottom + 1, width + 6, 2);
+}
+
+// The warm light a window throws down and across the floor of its room,
+// added to the light (so it shows, but reveals nothing the rules don't),
+// with the shadow of its cross bars laid over it.
+function drawPool(w, ox, oy) {
+  const x0 = w.col * T + 5 - ox, x1 = (w.col + 2) * T - 5 - ox, by = (w.row + 1) * T - oy;
+  const dx = POOL.slant * T, len = POOL.length * T;
+  const g = gctx.createLinearGradient(0, by, 0, by + len);
+  g.addColorStop(0, 'rgba(' + POOL.rgb + ', ' + POOL.level + ')');
+  g.addColorStop(0.7, 'rgba(' + POOL.rgb + ', ' + POOL.level * 0.5 + ')');
+  g.addColorStop(1, 'rgba(' + POOL.rgb + ', 0)');
+  gctx.globalCompositeOperation = 'lighter';
+  gctx.fillStyle = g;
+  gctx.beginPath();
+  gctx.moveTo(x0, by);
+  gctx.lineTo(x1, by);
+  gctx.lineTo(x1 + dx, by + len);
+  gctx.lineTo(x0 + dx, by + len);
+  gctx.closePath();
+  gctx.fill();
+  gctx.globalCompositeOperation = 'multiply';
+  gctx.strokeStyle = POOL.bars;
+  gctx.lineWidth = 2;
+  const mx = (x0 + x1) / 2, t = 0.42;
+  gctx.beginPath();
+  gctx.moveTo(mx, by + 2);
+  gctx.lineTo(mx + dx * 0.8, by + len * 0.8);
+  gctx.moveTo(x0 + dx * t, by + len * t);
+  gctx.lineTo(x1 + dx * t, by + len * t);
+  gctx.stroke();
+  gctx.globalCompositeOperation = 'lighter';
+}
+
+// The eye in the sky while the player looks up (sky eye plan): the whole
+// map fades into the night, paling faintly blue as the eye opens, and the
+// eye hangs above the middle, drawn at the picture's size and scaled up
+// like the rest, its pupil turned down toward the player. It eases in and
+// out over SHOULDER_CAMERA.lookUpMs (at once under reduced motion).
+// Comfort mode shows the turns left as words instead.
+function drawSky(ctx, w, h, at, ox, oy) {
+  const goal = lookingUp ? 1 : 0;
+  const ease = look.still ? 1 : 1 - Math.exp(-Math.min(50, look.now - (skyAt || look.now)) / SHOULDER_CAMERA.lookUpMs);
+  skyAt = look.now;
+  upShare += (goal - upShare) * ease;
+  if (Math.abs(goal - upShare) < 0.01) upShare = goal;
+  if (upShare !== goal) look.showPlain();
+  if (!upShare) return;
+  if (!sky) {
+    sky = document.createElement('canvas');
+    sctx = sky.getContext('2d');
+  }
+  if (sky.width !== w || sky.height !== h) {
+    sky.width = w;
+    sky.height = h;
+  }
+  const open = skyEyeOpen();
+  sctx.clearRect(0, 0, w, h);
+  sctx.fillStyle = 'rgba(0, 0, 0, ' + SKY.dark * upShare + ')';
+  sctx.fillRect(0, 0, w, h);
+  const pale = Math.max(0, (open - SKY_EYE.paleFrom) / (1 - SKY_EYE.paleFrom)) * upShare;
+  if (pale > 0) {
+    const g = sctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, 'rgba(' + look.colours.bossLightRgb + ', ' + 0.14 * pale + ')');
+    g.addColorStop(1, 'rgba(' + look.colours.bossLightRgb + ', 0)');
+    sctx.fillStyle = g;
+    sctx.fillRect(0, 0, w, h);
+  }
+  const ex = w / 2, ey = h * SKY.middle + (1 - upShare) * h * SKY.rise;
+  if (!state.settings.simpleEnemies) {
+    sctx.globalAlpha = upShare;
+    drawSkyEye(sctx, ex, ey, w * SKY_EYE.size, open, [(at.col + 0.5) * T - ox, (at.row + 0.2) * T - oy]);
+    sctx.globalAlpha = 1;
+  }
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(sky, 0, 0, w, h, 0, 0, w * scale, h * scale);
+  ctx.imageSmoothingEnabled = true;
+  if (!state.settings.simpleEnemies) return;
+  const left = skyTurnsLeft();
+  const words = state.floor.tutorial ? t('sky.watching') : left === null ? t('sky.noLight') : t('sky.turnsLeft', { count: left });
+  ctx.save();
+  ctx.globalAlpha = upShare;
+  ctx.font = Math.round(w * scale * SKY_EYE.size * 0.5) + 'px VT323, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgb(' + look.colours.glowRgb + ')';
+  ctx.fillText(words, ex * scale, ey * scale);
+  ctx.restore();
+}
+
+// The eye at (x, y), `r` its half width in picture pixels, `open` (0..1,
+// skyEyeOpen) parting the lids: its glow, the dark between the lids, the
+// iris and slit pupil turned toward `toward`, then the lids. Near the end
+// it twitches slowly (never under reduced motion: the calm rule).
+function drawSkyEye(c, x0, y, r, open, toward) {
+  let x = x0;
+  if (open >= SKY_EYE.twitchAt && !look.still) {
+    look.keepMoving();
+    const phase = (look.now % SKY_EYE.twitchMs) / SKY_EYE.twitchMs;
+    if (phase > 0.86 && phase < 0.9) x -= r * SKY_EYE.twitch;
+    else if (phase >= 0.9 && phase < 0.94) x += r * SKY_EYE.twitch;
+  }
+  const blue = look.colours.bossLightRgb;
+  const pale = look.colours.bossFogRgb;
+  const lid = r * SKY_EYE.lid * open;
+  const shape = () => {
+    c.beginPath();
+    c.moveTo(x - r, y);
+    c.quadraticCurveTo(x, y - lid * 2, x + r, y);
+    c.quadraticCurveTo(x, y + lid * 2, x - r, y);
+    c.closePath();
+  };
+  const reach = r * SKY_EYE.halo;
+  const halo = c.createRadialGradient(x, y, r * 0.2, x, y, reach);
+  halo.addColorStop(0, 'rgba(' + blue + ', ' + (0.05 + 0.18 * open) + ')');
+  halo.addColorStop(1, 'rgba(' + blue + ', 0)');
+  c.fillStyle = halo;
+  c.fillRect(x - reach, y - reach, reach * 2, reach * 2);
+  if (lid > 1) {
+    c.save();
+    shape();
+    c.fillStyle = '#000';
+    c.fill();
+    c.clip();
+    const length = Math.hypot(toward[0] - x, toward[1] - y) || 1;
+    const ix = x + (toward[0] - x) / length * r * SKY_EYE.look;
+    const iy = y + (toward[1] - y) / length * Math.min(lid * 0.6, r * SKY_EYE.look);
+    const ir = r * SKY_EYE.iris;
+    const iris = c.createRadialGradient(ix, iy, ir * 0.2, ix, iy, ir);
+    iris.addColorStop(0, 'rgba(' + pale + ', 0.95)');
+    iris.addColorStop(1, 'rgba(' + blue + ', 0.55)');
+    c.beginPath();
+    c.arc(ix, iy, ir, 0, Math.PI * 2);
+    c.fillStyle = iris;
+    c.fill();
+    c.beginPath();
+    c.ellipse(ix, iy, ir * 0.18, ir * (0.35 + 0.45 * open), 0, 0, Math.PI * 2);
+    c.fillStyle = '#000';
+    c.fill();
+    c.restore();
+  }
+  c.lineJoin = 'round';
+  [[SKY.line * 3, 0.15], [SKY.line, 0.95]].forEach(([lw, a]) => {
+    shape();
+    c.strokeStyle = 'rgba(' + pale + ', ' + a + ')';
+    c.lineWidth = lw;
+    c.stroke();
+  });
+}

@@ -42,13 +42,13 @@ import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runD
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, SCREEN_WAYS, screenStep, padWay, sweepHold } from './dpad.js';
-import { roomViewWanted } from './roomview.js';
+import { roomViewWanted, lookUp as roomLookUp } from './roomview.js';
 import { repeatMs, noteStep, heldStepReady } from './walkpace.js';
 import { aimLook, turnBody, sweepLook, wantsTurn, waysInUse } from './look.js';
 import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
 import { computeVisibility, seesEnemy, FACING_VECTORS } from './sight.js';
-import { lookUp } from './shoulderview.js';
+import { lookUp as shoulderLookUp } from './shoulderview.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
@@ -339,16 +339,16 @@ function stickSweep(dx) {
   sweep.push('stick', Math.max(-1, Math.min(1, dx / LOOK_STICK_KNOB_PX)));
 }
 
-// Looking up at the sky (sky eye plan step A, shoulder view only): Space
+// Looking up at the sky (sky eye plan step A; in the room view, its step F): Space
 // held or the look stick pushed up, either one ('key' / 'stick'). Free and
-// view-only (shoulderview.js lookUp): the world keeps its turns, and with
+// view-only (shoulderview.js / roomview.js lookUp): the world keeps its turns, and with
 // Real time on it keeps moving while the player looks away from the floor.
 const lookingUp = new Set();
 function holdLookUp(source, on) {
   if (lookingUp.has(source) === on) return;
   if (on) lookingUp.add(source);
   else lookingUp.delete(source);
-  lookUp(lookingUp.size > 0);
+  (ROOM_VIEW_ON ? roomLookUp : shoulderLookUp)(lookingUp.size > 0);
   requestMapDraw();
 }
 
