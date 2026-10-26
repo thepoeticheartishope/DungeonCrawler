@@ -94,7 +94,9 @@
 //      page on the first depth; stood two tiles from a stick man and aimed
 //      at it, DEV -> Test shot with Auto-win kills it in this view (step C);
 //      then every arrow key walks the way it points on screen whichever way
-//      the body faces (up is grid north, right grid east), and the map draws. Saved as noesis-room-*.png in the temp folder.
+//      the body faces (up is grid north, right grid east), and the map draws.
+//      First, Space held fades the room into the sky with the eye for no
+//      turn, and letting go brings it back (step F). Saved as noesis-room-*.png in the temp folder.
 //
 // Every run plays the shoulder view, the game's only view since the
 // isometric view was removed (2026-10-18); run 11 is its own checks.
@@ -1727,6 +1729,19 @@ async function checkRoomView(page, url) {
   await roomIdle(page);
   const map = await page.$('#mapCanvas');
   await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-room-start.png') });
+  // Step F: Space held fades the room into the sky with the eye, for no
+  // turn; let go, the room comes back.
+  const turnsBeforeLook = await turnsShown(page);
+  const share = () => page.evaluate(async () => (await import('./js/roomview.js')).roomLookUp());
+  await page.keyboard.down(' ');
+  await page.waitForTimeout(700);
+  const upShare = await share();
+  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-room-look-up.png') });
+  await page.keyboard.up(' ');
+  await page.waitForTimeout(700);
+  if (!(upShare > 0.9)) return `holding Space did not show the sky (share ${upShare})`;
+  if (await share() !== 0) return `letting go of Space left the sky showing (share ${await share()})`;
+  if (await turnsShown(page) !== turnsBeforeLook) return 'looking up spent a turn in the room view';
   // Step C, first (the light's battery would run down on the walk):
   // stood two tiles from a stick man and aimed at it, DEV -> Test shot
   // with Auto-win kills it in this view.
@@ -1803,7 +1818,7 @@ async function runRoomView(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'arrows walked the way they point on screen, the room drew and a stick man was shot', consoleErrors, pageErrors };
+  return { ok: true, detail: 'looked up at the sky, shot a stick man, arrows walked the way they point on screen and the room drew', consoleErrors, pageErrors };
 }
 
 // The shoulder view's shot (step D), with the DEV panel open: skips to the
