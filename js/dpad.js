@@ -3,7 +3,8 @@
 // eight ways plan it is a square pad of 8 arrows; with DEV -> 8 ways off it
 // is turned 45° with only its 4 edge arrows. The arrows mean ways round the
 // body (shoulder view plan step B, shoulderStep), and left / right sweep
-// the light (sweepHold). The centre is the look stick (free look plan step
+// the light (sweepHold); in the room view (?view=room) every arrow walks
+// the way it points on screen (padWay). The centre is the look stick (free look plan step
 // C): push it sideways to sweep, up to look up, tap it to turn or (twice)
 // to wait. main.js passes in the buttons and the actions; this file only
 // handles input.
@@ -41,6 +42,21 @@ export function shoulderStep(sx, sy, facing, ways) {
   if (at < 0 || sy === 0 || (sx && sy > 0)) return null;
   if (sy > 0) return ring[(at + n / 2) % n];
   return ring[(at + sx + n) % n];
+}
+
+// The room view's ways by where a push points on screen (room view plan
+// step A): its camera never turns and grid north is up, so each arrow is
+// the grid way it points at.
+const ROOM_WAYS = { U: 'N', UR: 'NE', R: 'E', DR: 'SE', D: 'S', DL: 'SW', L: 'W', UL: 'NW' };
+
+// The way a push (sx, sy) on the d-pad or keys walks: in the room view
+// (`room`) the way it points on screen, among the ways in use; in the
+// shoulder view round the body (shoulderStep). Null when it walks nowhere.
+export function padWay(sx, sy, facing, ways, room) {
+  if (!room) return shoulderStep(sx, sy, facing, ways);
+  const name = Object.keys(SCREEN_WAYS).find(n => SCREEN_WAYS[n][0] === sx && SCREEN_WAYS[n][1] === sy);
+  const way = name && ROOM_WAYS[name];
+  return way && ways.includes(way) ? way : null;
 }
 
 // The shoulder view's sweep (shoulder view plan step B): while left or

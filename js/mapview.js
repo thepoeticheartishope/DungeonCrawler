@@ -20,6 +20,7 @@ import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
 import { t } from './text.js';
 import { drawShoulderScene, shoulderTileAt, shoulderGridAt } from './shoulderview.js';
+import { drawRoomScene, roomTileAt, roomGridAt, roomViewWanted } from './roomview.js';
 import { showShot } from './mapshared.js';
 import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
@@ -66,6 +67,12 @@ const PLAYER = 'player';
 
 // Floor beyond the player's memory, a touch warmer than black.
 const HIDDEN_FLOOR = '#050403';
+
+// The room view (room view plan, roomview.js) in place of the shoulder
+// view, while the page has ?view=room (until step G makes it the default).
+const ROOM_VIEW_ON = roomViewWanted();
+const tileAt = ROOM_VIEW_ON ? roomTileAt : shoulderTileAt;
+const gridAt = ROOM_VIEW_ON ? roomGridAt : shoulderGridAt;
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -381,8 +388,8 @@ export function onMapPointer({ tap }) {
     const dragged = press.dragged;
     press = null;
     if (dragged) return;
-    const tile = shoulderTileAt(...place(e));
-    if (tile) tap(tile, e.pointerType, shoulderGridAt(...place(e)));
+    const tile = tileAt(...place(e));
+    if (tile) tap(tile, e.pointerType, gridAt(...place(e)));
   });
   canvas.addEventListener('pointercancel', () => { press = null; });
 }
@@ -452,7 +459,7 @@ function fitCanvas() {
 }
 
 // Draws the whole map as state has it at `now`, from the low shoulder
-// camera (shoulderview.js). Notes whether anything drawn keeps moving, so frames
+// camera (shoulderview.js), or the room camera (roomview.js) with ?view=room. Notes whether anything drawn keeps moving, so frames
 // go on, and how long the drawing took (mapDrawTimes).
 function drawScene(now) {
   const started = performance.now();
@@ -461,10 +468,16 @@ function drawScene(now) {
   const ctx = sceneCtx;
   ctx.fillStyle = HIDDEN_FLOOR;
   ctx.fillRect(0, 0, scene.width, scene.height);
-  drawShoulderScene(ctx, { width: scene.width, height: scene.height, pageWidth: pageSize.width }, {
+  const shared = {
     colours, things: mapThings(), fogOf, paintGlyph, mistStrength, pulse, keepMoving,
     showPlain, now, still: reducedMotion.matches, walkAt: walkAt(now), sounds: soundTilesNow(now),
-  });
+  };
+  const size = { width: scene.width, height: scene.height, pageWidth: pageSize.width };
+  // The room view's pixel art has no afterglow: it would smear it.
+  if (ROOM_VIEW_ON) {
+    drawRoomScene(ctx, size, shared);
+    snap = true;
+  } else drawShoulderScene(ctx, size, shared);
   drawTimes.push(performance.now() - started);
   if (drawTimes.length > DRAW_TIMES_KEPT) drawTimes.shift();
 }
