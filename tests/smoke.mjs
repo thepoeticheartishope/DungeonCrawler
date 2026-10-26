@@ -91,9 +91,10 @@
 //      view (saved as noesis-shoulder-shot.png). The map is saved as noesis-shoulder-*.png
 //      in the system's temp folder.
 //  12. Room view run (room view plan step A, `?view=room`): a phone-sized
-//      page on the first depth; every arrow key walks the way it points on
-//      screen whichever way the body faces (up is grid north, right grid
-//      east), and the map draws. Saved as noesis-room-*.png in the temp folder.
+//      page on the first depth; stood two tiles from a stick man and aimed
+//      at it, DEV -> Test shot with Auto-win kills it in this view (step C);
+//      then every arrow key walks the way it points on screen whichever way
+//      the body faces (up is grid north, right grid east), and the map draws. Saved as noesis-room-*.png in the temp folder.
 //
 // Every run plays the shoulder view, the game's only view since the
 // isometric view was removed (2026-10-18); run 11 is its own checks.
@@ -1726,6 +1727,14 @@ async function checkRoomView(page, url) {
   await roomIdle(page);
   const map = await page.$('#mapCanvas');
   await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-room-start.png') });
+  // Step C, first (the light's battery would run down on the walk):
+  // stood two tiles from a stick man and aimed at it, DEV -> Test shot
+  // with Auto-win kills it in this view.
+  await page.click('#devToggleBtn');
+  const shot = await shoulderShot(page, map, { skip: false, view: 'room' });
+  await page.click('#devToggleBtn');
+  if (shot) return shot;
+  await roomIdle(page);
   const player = () => page.evaluate(async () => {
     const f = (await import('./js/state.js')).state.floor;
     return { row: f.playerRow, col: f.playerCol };
@@ -1770,16 +1779,18 @@ async function runRoomView(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'arrows walked the way they point on screen and the room drew', consoleErrors, pageErrors };
+  return { ok: true, detail: 'arrows walked the way they point on screen, the room drew and a stick man was shot', consoleErrors, pageErrors };
 }
 
 // The shoulder view's shot (step D), with the DEV panel open: skips to the
 // first depth, stands the player two tiles from a stick man it can shoot,
 // looking at it, and fires DEV -> Test shot with Auto-win on (it stops the
 // dial in the kill zone). Returns what failed ('' when it was killed).
-async function shoulderShot(page, map) {
-  await page.click('#devSkipBtn');
-  await page.waitForTimeout(300);
+async function shoulderShot(page, map, { skip = true, view = 'shoulder' } = {}) {
+  if (skip) {
+    await page.click('#devSkipBtn');
+    await page.waitForTimeout(300);
+  }
   const placed = await page.evaluate(async () => {
     const { state, key } = await import('./js/state.js');
     const { computeVisibility, canShoot } = await import('./js/sight.js');
@@ -1805,18 +1816,18 @@ async function shoulderShot(page, map) {
   });
   if (!placed) return 'no stick man on the first depth could be stood beside and shot';
   await page.waitForTimeout(400);
-  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-aim.png') });
+  await map.screenshot({ path: path.join(os.tmpdir(), `noesis-${view}-aim.png`) });
   await page.click('#devAutoWinBtn');
   await page.click('#devShotBtn');
   await page.waitForTimeout(150);
-  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-shoulder-shot.png') });
+  await map.screenshot({ path: path.join(os.tmpdir(), `noesis-${view}-shot.png`) });
   let left = placed;
   for (let i = 0; i < 40 && left >= placed; i++) {
     await page.waitForTimeout(150);
     left = await page.evaluate(async () => (await import('./js/state.js')).state.floor.minions.length);
   }
   await page.click('#devAutoWinBtn');
-  if (left >= placed) return 'Test shot with Auto-win did not kill the stick man in the shoulder view';
+  if (left >= placed) return `Test shot with Auto-win did not kill the stick man in the ${view} view`;
   return '';
 }
 
