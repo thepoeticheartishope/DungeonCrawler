@@ -9,7 +9,7 @@ import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { FLOOR_PLANS, buildPlanLayout } from './plans.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
 import {
-  CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
+  CHARGER, CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
 } from './config.js';
 import { floorRecipe, pickPaths, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './quiz.js';
@@ -22,6 +22,7 @@ import { placeBeats } from './beats.js';
 import { rollGoals } from './goals.js';
 import { placeRelays } from './relays.js';
 import { placeDesk } from './desk.js';
+import { placeCharger } from './charger.js';
 import { placeVents } from './vents.js';
 import { placeWindows } from './windows.js';
 import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
@@ -238,6 +239,15 @@ export function buildFloor() {
   if (desk) {
     state.floor.props.push({ ...desk, identified: false, searched: false, sprung: false });
     minionTaken.push(desk);
+  }
+  // The charger (charger.js): energy to full, in the start room beside the
+  // desk. Only with the gun, which spends energy; off until charger plan step B.
+  if (CHARGER.on && state.settings.gunCombat) {
+    const charger = placeCharger(layout, placer, minionTaken);
+    if (charger) {
+      state.floor.props.push({ ...charger, identified: false, searched: false, sprung: false });
+      minionTaken.push(charger);
+    }
   }
   // Relays (relays.js), with either kind of combat.
   placeRelays(layout, placer, minionTaken).forEach(p => {

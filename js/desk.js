@@ -11,12 +11,18 @@ import { state, key } from './state.js';
 // never on a `taken` tile. Null if the room has no spot for it.
 // Returns { row, col, kind: 'desk' } or null.
 export function placeDesk(layout, placer, taken) {
-  const startKey = key(layout.start.row, layout.start.col);
-  const room = layout.chambers.find(ch => ch.floorCells.some(p => key(p.row, p.col) === startKey));
+  const room = startRoom(layout);
   if (!room) return null;
   const free = room.floorCells.filter(p => !taken.some(q => q.row === p.row && q.col === p.col));
   const spot = placer.pick(free, true);
   return spot ? { ...spot, kind: 'desk' } : null;
+}
+
+// The room holding `layout.start`, or undefined. The charger stands in it
+// too (charger.js).
+export function startRoom(layout) {
+  const startKey = key(layout.start.row, layout.start.col);
+  return layout.chambers.find(ch => ch.floorCells.some(p => key(p.row, p.col) === startKey));
 }
 
 // Bumping the desk. With stability already full it does nothing and stays

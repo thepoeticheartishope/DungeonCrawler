@@ -345,6 +345,17 @@ export const CORE_KEYS = 3;
 // the walk to a relay usually costs, so relays slow the light but can't stop
 // it. A wrong answer gives the light RELAY_WRONG_TURNS. Drafts; tune after play.
 export const RELAYS_PER_FLOOR = [1, 2];
+// The charger (charger plan, `ideas/charger-plan.md` outside the repo;
+// charger.js): a machine in the start room, gun on only, that fills energy
+// to full through CHARGE.SYS, a wire puzzle with no wrong move. Wires are
+// `sizes[depth]` square (the last for any deeper depth: Timothy 2026-10-26,
+// 4 x 4 on depth 1, 5 x 5 from depth 2), and every `wireTurnsPerTurn` wire
+// turns spend a turn. Off (`on`) until charger plan step B puts it in the game.
+export const CHARGER = {
+  on: false,
+  sizes: [4, 5],
+  wireTurnsPerTurn: 2,
+};
 export const RELAY_TURNS_BACK = 6;
 export const RELAY_TURNS_CAP = 10;
 export const RELAY_WRONG_TURNS = 4;
