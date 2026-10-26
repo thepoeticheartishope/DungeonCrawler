@@ -5,9 +5,16 @@
 // black. Built beside the shoulder view behind ?view=room until step G.
 //
 // Step A draws the walls (faces, the rim round each room), the floors, the
-// light, the player's stick man, and every other thing as its glyph. The
-// picture is drawn at ROOM_VIEW.tilePx a tile into a small canvas, lit
-// there, and scaled up by a whole number with smoothing off.
+// light and the player's stick man. Step B draws the things on the floor
+// as pictures (ROOM_DRAWINGS): boxes, energy cells, papers, grates, the
+// reflective desk and its warm pool, relays, the chest, the coin, keys, the
+// stairs and their column of light, the boss's mist, a mistake's sound and
+// the letters a downed stick man drops. The rest stay glyphs until steps C
+// and D. The picture is drawn at ROOM_VIEW.tilePx a tile into a small
+// canvas, lit there, and scaled up by a whole number with smoothing off.
+// What gives off its own light (a key, the stairs' column, the desk's
+// pool, a cell's breath, the mist, a sound) is added after the lighting,
+// so it shows in the dark the way the rules let it.
 //
 // The light is the rules' light, not its own: lit tiles are the floor's
 // visibleSet, remembered ones its exploredSet (sight.js). On top of that,
@@ -17,16 +24,22 @@
 //
 // mapview.js calls drawRoomScene() from its drawScene when roomViewWanted(),
 // and roomTileAt() / roomGridAt() to turn a tap into a tile or a floor
-// point. faceOf, viewScale and cameraGoal are exported for the tests.
+// point. faceOf, viewScale, cameraGoal and ROOM_DRAWINGS are exported for
+// the tests.
 // Reads state and never changes it.
 
 import { state, key } from './state.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
-  ISO_NARROW_MAP_WIDTH, PLAYER_GLANCE, PLAYER_EMBER,
+  ISO_NARROW_MAP_WIDTH, PLAYER_GLANCE, PLAYER_EMBER, MAP_ANIMATION_MS,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
+import {
+  searched, DRUM_BREATH, DRUM_BREATH_REACH, DESK_GLOW, DESK_GLOW_RADIUS, STAIR_BEAM_LAYERS, STAIR_BEAM_FADE,
+  SOUND_INSET, SOUND_LEVEL, GRATE_RATTLE_SWAYS,
+} from './mapshared.js';
+import { drawDroppedLetters } from './stickforms.js';
 
 const T = ROOM_VIEW.tilePx;
 const ENEMY_KINDS = ['minion', 'hunter']; // what a tap on its glyph picks (gun.js pickTarget)
@@ -49,6 +62,34 @@ const DIM_TINT = [244, 236, 255];
 const STICK_LINE = 1;
 const HEAD_SHARE = 0.12;         // the head's radius, a share of his height
 const POSE_SCALE = ROOM_VIEW.stickHeight / 0.75; // playerform's poses are sized for a 0.75-tile stick man
+
+// How each kind of thing is drawn (step B; tests/roomview.test.mjs checks
+// every kind the game puts on the map has one): 'flat' lies on the floor
+// under everything, 'stand' stands on its tile and is sorted with the
+// stick men, 'glyph' stays its glyph over the picture (stick men and the
+// hunter in step C; the boss and THE UNFOLDING keep theirs, as in the
+// shoulder view), 'player' is the player's stick man. A thing not made
+// out yet is its '?' whatever its drawing, except the stairs and a grate.
+export const ROOM_DRAWINGS = {
+  paper: 'flat', vent: 'flat', stairs: 'flat',
+  box: 'stand', cell: 'stand', desk: 'stand', relay: 'stand', chest: 'stand', coin: 'stand', key: 'stand',
+  exchange: 'glyph', boss: 'glyph', hunter: 'glyph', minion: 'glyph', player: 'player',
+};
+// The things' colours, in the picture's pixels.
+const CRATE = { top: '#86663f', front: '#6b4f36', plank: '#4a3524', post: '#55402b', inside: '#1c140e' };
+const CELL = { body: '#3b4650', light: '#4d5a66', shade: '#2c353d', band: '#262d34', lid: '#5a6874', dead: '#1a1e22' };
+const SHEET = { fresh: '#d2cbbb', read: '#a8a294', ink: '#8a8476' };
+const GRATE = { frame: '#2a2e32', edge: '#5d656c', bar: '#50575d', seal: '#8b939a', sway: 2 }; // sway: how far it shudders, in picture pixels
+const DESK = { top: '#6e4d33', front: '#523a27', frame: '#4a3a30', glass: '#8fa3ad', shine: '#c9d6dc', dull: '#3a4448' };
+const RELAY = { body: '#4a5058', seam: '#33383e', dead: '#2a2e32', leg: '#2e3236' };
+const CHEST = { lid: '#5a3d2c', lidLight: '#6e4b36', body: '#4a3224', band: '#2e211a', lock: '#b49a6a' };
+const COIN = { face: '#d8b45a', shine: '#f3dc8e', rgb: '216, 180, 90' };
+const KEY = { metal: '#dfe8ea', glow: 0.7 };   // glow: its light at the brightest of its pulse, as a share of the pulse's strength
+const STAIRS = ['#3a3540', '#25212b', '#16131a', '#0a090c']; // each step down darker
+const STAIR_EDGE = '#5a5464';
+const BEAM_RISE = 2.6;          // the stairs' column of light, in tiles above the floor
+const MIST_GLOW = 0.22;         // the boss's mist at full strength over a tile
+const BREATH_GLOW = 2;          // a cell's breath is this many times its shoulder view strength (smaller here)
 
 let look = null;          // what mapview.js hands each frame (see drawRoomScene)
 let built = null;         // this floor's still picture and what it was built from
@@ -141,10 +182,23 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   const items = [];
   const c0 = Math.floor(ox / T) - 1, c1 = Math.ceil((ox + viewW) / T) + 1;
   const r0 = Math.floor(oy / T) - 1, r1 = Math.ceil((oy + viewH) / T) + 2;
+  const inView = (row, col) => row >= r0 && row <= r1 && col >= c0 && col <= c1;
   f.pillarSet.forEach(k => {
     const [row, col] = tileOf(k);
-    if (row >= r0 && row <= r1 && col >= c0 && col <= c1) items.push({ y: row + 1, draw: () => drawPillar(row, col, ox, oy) });
+    if (inView(row, col)) items.push({ y: row + 1, draw: () => drawPillar(row, col, ox, oy) });
   });
+  const glows = [];
+  look.things.forEach(thing => {
+    const drawing = drawingOf(thing);
+    if (!inView(Math.round(thing.at.row), Math.round(thing.at.col))) return;
+    const x = Math.round(thing.at.col * T) - ox;
+    const y = Math.round(thing.at.row * T) - oy;
+    if (drawing === 'flat') FLAT[thing.kind](thing, x, y, glows);
+    if (drawing === 'stand') items.push({ y: thing.at.row + 1, draw: () => STAND[thing.kind](thing, x, y, glows) });
+  });
+  // The tutorial's light from above falls in a column like the stairs' light.
+  const tut = f.tutorial;
+  if (tut && f.spotSet.size && inView(tut.spot.row, tut.spot.col)) glows.push(() => drawBeam((tut.spot.col + 0.5) * T - ox, (tut.spot.row + 0.7) * T - oy));
   items.push({ y: at.row + ROOM_VIEW.footAt + 0.01, draw: () => drawStickMan(at, ox, oy) });
   items.sort((a, b) => a.y - b.y).forEach(item => item.draw());
 
@@ -164,6 +218,11 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   gctx.fillRect(head.x - ROOM_VIEW.ember.radius * T, head.y - ROOM_VIEW.ember.radius * T, ROOM_VIEW.ember.radius * T * 2, ROOM_VIEW.ember.radius * T * 2);
   bctx.globalCompositeOperation = 'multiply';
   bctx.drawImage(glow, 0, 0);
+  // What gives off its own light, over the lit picture.
+  bctx.globalCompositeOperation = 'lighter';
+  glows.forEach(draw => draw());
+  drawMist(c0, r0, c1, r1, ox, oy);
+  drawSounds(ox, oy);
   bctx.globalCompositeOperation = 'source-over';
 
   ctx.imageSmoothingEnabled = false;
@@ -537,7 +596,7 @@ function drawGlyphs(ctx, ox, oy) {
   const cell = Math.max(tile, Math.min(isoTile, tile * 1.6));
   const boxes = [];
   look.things.forEach(thing => {
-    if (thing.kind === 'player') return;
+    if (drawingOf(thing) !== 'glyph') return;
     const x = ((thing.at.col + 0.5) * T - ox) * scale;
     const y = ((thing.at.row + 0.5) * T - oy) * scale;
     if (x < -cell || y < -cell || x > ctx.canvas.width + cell || y > ctx.canvas.height + cell) return;
@@ -548,4 +607,272 @@ function drawGlyphs(ctx, ox, oy) {
     }
   });
   tapBoxes = boxes;
+  // Letters a crawling stick man left (downed plan), only on lit floor, so
+  // they never give one away in the dark. Simple enemies have none.
+  if (state.settings.simpleEnemies) return;
+  const centre = (row, col) => [((col + 0.5) * T - ox) * scale, ((row + 0.5) * T - oy) * scale];
+  const lit = (row, col) => !state.settings.fogEnabled || state.floor.visibleSet.has(key(row, col));
+  drawDroppedLetters(ctx, cell, centre, lit);
 }
+
+// How a map thing is drawn (ROOM_DRAWINGS), allowing for what isn't made
+// out yet: its '?', except the stairs and a grate, which show as they are.
+function drawingOf(thing) {
+  const drawing = ROOM_DRAWINGS[thing.kind] || 'glyph';
+  if (thing.glyph === null && thing.kind !== 'stairs' && thing.kind !== 'vent') return 'glyph';
+  return drawing;
+}
+
+// ---- things on the floor (step B) ----
+// Each draws into the picture at (x, y), its tile's top-left in picture
+// pixels, and may push what gives off light onto `glows`, drawn after the
+// lighting.
+
+// A paper lying on its tile with two lines of writing; dimmer once read.
+function drawPaper(thing, x, y) {
+  bctx.fillStyle = searched(thing.tile) ? SHEET.read : SHEET.fresh;
+  bctx.fillRect(x + 4, y + 6, 8, 6);
+  bctx.fillRect(x + 5, y + 5, 7, 1);
+  bctx.fillStyle = SHEET.ink;
+  bctx.fillRect(x + 5, y + 8, 5, 1);
+  bctx.fillRect(x + 5, y + 10, 4, 1);
+}
+
+// A grate in the floor (vents.js): a dark frame with bars, shuddering side
+// to side while something moves in the duct, crossed out when sealed.
+function drawGrate(thing, x, y) {
+  const r = thing.look.rattle;
+  const dx = r === null || r === undefined ? 0 : Math.round(Math.sin(r * Math.PI * GRATE_RATTLE_SWAYS * 2) * (1 - r) * GRATE.sway);
+  const gx = x + dx;
+  bctx.fillStyle = GRATE.frame;
+  bctx.fillRect(gx + 2, y + 3, 12, 10);
+  bctx.fillStyle = '#000';
+  bctx.fillRect(gx + 3, y + 4, 10, 8);
+  bctx.fillStyle = GRATE.edge;
+  bctx.fillRect(gx + 2, y + 3, 12, 1);
+  bctx.fillStyle = GRATE.bar;
+  [5, 8, 11].forEach(bx => bctx.fillRect(gx + bx, y + 4, 1, 8));
+  if (!thing.look.sealed) return;
+  bctx.fillStyle = GRATE.seal;
+  for (let i = 0; i < 8; i++) {
+    bctx.fillRect(gx + 3 + Math.round(i * 10 / 8), y + 4 + i, 1, 1);
+    bctx.fillRect(gx + 12 - Math.round(i * 10 / 8), y + 4 + i, 1, 1);
+  }
+}
+
+// The stairs down: steps sinking into the floor, darker each one, and the
+// column of light rising out of them, pulsing (it shows in the dark: the
+// stairs are never lost).
+function drawStairs(thing, x, y, glows) {
+  STAIRS.forEach((colour, i) => {
+    bctx.fillStyle = colour;
+    bctx.fillRect(x + 1 + i * 2, y + 2 + i * 2, 14 - i * 3, 12 - i * 3);
+    bctx.fillStyle = STAIR_EDGE;
+    bctx.fillRect(x + 1 + i * 2, y + 2 + i * 2, 14 - i * 3, 1);
+  });
+  glows.push(() => drawBeam(x + T / 2, y + T * 0.7));
+}
+
+// A column of light standing up from (fx, fy) in picture pixels: soft
+// layers, widest and faintest first, fading toward the top, pulsing.
+function drawBeam(fx, fy) {
+  look.keepMoving();
+  const strength = 0.82 + 0.18 * look.pulse(MAP_ANIMATION_MS.glow);
+  const rgb = look.colours.glowRgb;
+  const top = fy - BEAM_RISE * T;
+  STAIR_BEAM_LAYERS.forEach(layer => {
+    const a = layer.strength * strength;
+    const fade = bctx.createLinearGradient(0, fy, 0, top);
+    fade.addColorStop(0, 'rgba(' + rgb + ', ' + a + ')');
+    fade.addColorStop(STAIR_BEAM_FADE[0], 'rgba(' + rgb + ', ' + a * STAIR_BEAM_FADE[1] + ')');
+    fade.addColorStop(1, 'rgba(' + rgb + ', 0)');
+    const half = Math.max(1, Math.round(T * layer.width / 2));
+    bctx.fillStyle = fade;
+    bctx.fillRect(Math.round(fx - half), Math.round(top), half * 2, Math.round(fy - top));
+  });
+}
+
+// A wooden crate; opened once searched, its lid leaning behind it.
+function drawBox(thing, x, y) {
+  const open = searched(thing.tile);
+  if (open) {
+    bctx.fillStyle = CRATE.top;
+    bctx.fillRect(x + 3, y + 1, 10, 3);
+  }
+  bctx.fillStyle = open ? CRATE.inside : CRATE.top;
+  bctx.fillRect(x + 2, y + 4, 12, 3);
+  bctx.fillStyle = CRATE.front;
+  bctx.fillRect(x + 2, y + 7, 12, 8);
+  bctx.fillStyle = CRATE.plank;
+  bctx.fillRect(x + 2, y + 10, 12, 1);
+  bctx.fillRect(x + 2, y + 13, 12, 1);
+  bctx.fillStyle = CRATE.post;
+  bctx.fillRect(x + 2, y + 4, 1, 11);
+  bctx.fillRect(x + 13, y + 4, 1, 11);
+}
+
+// An energy cell: a round case with bands and three ends on its lid,
+// glowing while unused (with a faint breath of light round it); dark once used.
+function drawCell(thing, x, y, glows) {
+  const spent = searched(thing.tile);
+  bctx.fillStyle = CELL.body;
+  bctx.fillRect(x + 4, y + 5, 8, 10);
+  bctx.fillStyle = CELL.light;
+  bctx.fillRect(x + 5, y + 5, 1, 10);
+  bctx.fillStyle = CELL.shade;
+  bctx.fillRect(x + 11, y + 5, 1, 10);
+  bctx.fillStyle = CELL.band;
+  bctx.fillRect(x + 4, y + 8, 8, 1);
+  bctx.fillRect(x + 4, y + 12, 8, 1);
+  bctx.fillStyle = CELL.lid;
+  bctx.fillRect(x + 5, y + 3, 6, 1);
+  bctx.fillRect(x + 4, y + 4, 8, 1);
+  const ends = [[6, 4], [9, 4], [8, 3]];
+  bctx.fillStyle = CELL.dead;
+  ends.forEach(([ex, ey]) => bctx.fillRect(x + ex, y + ey, 1, 1));
+  if (spent) return;
+  const breath = thing.look.breath;
+  glows.push(() => {
+    bctx.fillStyle = 'rgb(' + look.colours.glowRgb + ')';
+    ends.forEach(([ex, ey]) => bctx.fillRect(x + ex, y + ey, 1, 1));
+    if (breath === null || breath === undefined) return;
+    look.keepMoving();
+    const a = (DRUM_BREATH[0] + (DRUM_BREATH[1] - DRUM_BREATH[0]) * breath) * BREATH_GLOW;
+    halo(x + T / 2, y + 9, DRUM_BREATH_REACH * T * 1.6, look.colours.glowRgb, a);
+  });
+}
+
+// The reflective desk: a small desk with a mirror standing on it, in its
+// pool of the kind voice's warm light while unused; spent, the glass is dull.
+function drawDesk(thing, x, y, glows) {
+  const unused = thing.look.deskGlow !== null && thing.look.deskGlow !== undefined;
+  bctx.fillStyle = DESK.frame;
+  bctx.fillRect(x + 4, y - 6, 8, 12);
+  bctx.fillStyle = unused ? DESK.glass : DESK.dull;
+  bctx.fillRect(x + 5, y - 5, 6, 10);
+  if (unused) {
+    bctx.fillStyle = DESK.shine;
+    for (let i = 0; i < 4; i++) bctx.fillRect(x + 6 + i, y - 3 + i, 1, 1);
+  }
+  bctx.fillStyle = DESK.top;
+  bctx.fillRect(x + 1, y + 6, 14, 3);
+  bctx.fillStyle = DESK.front;
+  bctx.fillRect(x + 1, y + 9, 14, 6);
+  bctx.fillStyle = DESK.frame;
+  bctx.fillRect(x + 4, y + 11, 8, 1);
+  if (!unused) return;
+  glows.push(() => {
+    look.keepMoving();
+    const a = (DESK_GLOW[0] + (DESK_GLOW[1] - DESK_GLOW[0]) * thing.look.deskGlow) * (thing.look.alpha === undefined ? 1 : thing.look.alpha);
+    halo(x + T / 2, y + T * 0.7, DESK_GLOW_RADIUS * T, look.colours.kindRgb, a);
+  });
+}
+
+// A relay (relays.js): a grey box on short legs with a small lamp, lit
+// until it is used.
+function drawRelay(thing, x, y, glows) {
+  bctx.fillStyle = RELAY.leg;
+  bctx.fillRect(x + 4, y + 13, 1, 2);
+  bctx.fillRect(x + 11, y + 13, 1, 2);
+  bctx.fillStyle = RELAY.body;
+  bctx.fillRect(x + 3, y + 3, 10, 10);
+  bctx.fillStyle = RELAY.seam;
+  bctx.fillRect(x + 8, y + 4, 1, 8);
+  bctx.fillRect(x + 3, y + 3, 10, 1);
+  bctx.fillStyle = RELAY.dead;
+  bctx.fillRect(x + 10, y + 5, 2, 2);
+  if (searched(thing.tile)) return;
+  glows.push(() => {
+    bctx.fillStyle = 'rgb(' + look.colours.glowRgb + ')';
+    bctx.fillRect(x + 10, y + 5, 2, 2);
+  });
+}
+
+// The chest: a dark trunk with bands and a brass lock.
+function drawChest(thing, x, y) {
+  bctx.fillStyle = CHEST.lid;
+  bctx.fillRect(x + 2, y + 5, 12, 4);
+  bctx.fillRect(x + 3, y + 4, 10, 1);
+  bctx.fillStyle = CHEST.lidLight;
+  bctx.fillRect(x + 3, y + 5, 10, 1);
+  bctx.fillStyle = CHEST.body;
+  bctx.fillRect(x + 2, y + 9, 12, 6);
+  bctx.fillStyle = CHEST.band;
+  bctx.fillRect(x + 4, y + 4, 1, 11);
+  bctx.fillRect(x + 11, y + 4, 1, 11);
+  bctx.fillStyle = CHEST.lock;
+  bctx.fillRect(x + 7, y + 8, 2, 3);
+}
+
+// The coin, bobbing over its tile with a faint gold glint.
+function drawCoin(thing, x, y, glows) {
+  const lift = Math.round((thing.look.lift || 0) * T);
+  const cy = y + 8 - lift;
+  bctx.fillStyle = COIN.face;
+  bctx.fillRect(x + 6, cy, 4, 4);
+  bctx.fillRect(x + 7, cy - 1, 2, 6);
+  bctx.fillStyle = COIN.shine;
+  bctx.fillRect(x + 7, cy, 1, 1);
+  glows.push(() => halo(x + 8, cy + 2, T * 0.5, COIN.rgb, 0.18));
+}
+
+// A key lying on its tile: a ring, a shaft and two teeth, glowing as the
+// stairs do so a lit one isn't missed.
+function drawKey(thing, x, y, glows) {
+  const paint = () => {
+    bctx.fillStyle = KEY.metal;
+    bctx.fillRect(x + 3, y + 7, 4, 1);
+    bctx.fillRect(x + 3, y + 10, 4, 1);
+    bctx.fillRect(x + 3, y + 7, 1, 4);
+    bctx.fillRect(x + 6, y + 7, 1, 4);
+    bctx.fillRect(x + 7, y + 9, 7, 1);
+    bctx.fillRect(x + 11, y + 10, 1, 2);
+    bctx.fillRect(x + 13, y + 10, 1, 2);
+  };
+  paint();
+  const strength = thing.look.glow ? thing.look.glow[1] : 1;
+  glows.push(() => {
+    halo(x + 8, y + 9, T * 0.7, look.colours.glowRgb, strength * KEY.glow * 0.5);
+    paint();
+  });
+}
+
+// The boss's mist over the floor in view (mapview.js mistStrength: lit
+// floor only, dimmed when remembered, drifting).
+function drawMist(c0, r0, c1, r1, ox, oy) {
+  const rgb = look.colours.bossFogRgb;
+  for (let row = r0; row <= r1; row++) {
+    for (let col = c0; col <= c1; col++) {
+      const mist = look.mistStrength(row, col);
+      if (!mist) continue;
+      bctx.fillStyle = 'rgba(' + rgb + ', ' + MIST_GLOW * mist + ')';
+      bctx.fillRect(col * T - ox, row * T - oy, T, T);
+    }
+  }
+}
+
+// A mistake's sound spreading over the floor (mapview.js soundOnMap): a
+// square outline on each tile it reaches, opening out and fading.
+function drawSounds(ox, oy) {
+  look.sounds.forEach(({ row, col, strength, spread }) => {
+    const inset = Math.round((SOUND_INSET[0] + (SOUND_INSET[1] - SOUND_INSET[0]) * spread) * T);
+    const x = col * T - ox + inset, y = row * T - oy + inset, w = T - inset * 2;
+    if (w < 1) return;
+    bctx.strokeStyle = 'rgba(' + look.colours.glowRgb + ', ' + SOUND_LEVEL * strength + ')';
+    bctx.lineWidth = 1;
+    bctx.strokeRect(x + 0.5, y + 0.5, w - 1, w - 1);
+  });
+}
+
+// A soft round glow of `rgb` at (x, y) in picture pixels, `r` across, `a`
+// strong in the middle.
+function halo(x, y, r, rgb, a) {
+  const g = bctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, 'rgba(' + rgb + ', ' + a + ')');
+  g.addColorStop(1, 'rgba(' + rgb + ', 0)');
+  bctx.fillStyle = g;
+  bctx.fillRect(x - r, y - r, r * 2, r * 2);
+}
+
+const FLAT = { paper: drawPaper, vent: drawGrate, stairs: drawStairs };
+const STAND = { box: drawBox, cell: drawCell, desk: drawDesk, relay: drawRelay, chest: drawChest, coin: drawCoin, key: drawKey };

@@ -1,7 +1,8 @@
 // Unit tests for the room view (js/roomview.js, room view plan step A):
 // which wall tiles show a face, how far the picture is scaled up, where the
 // camera frames a room or follows the player, and the d-pad's ways when
-// the camera never turns (dpad.js padWay).
+// the camera never turns (dpad.js padWay); every kind of thing on the map
+// has a drawing (step B).
 //
 // Run: node --test tests/*.test.mjs
 
@@ -77,4 +78,19 @@ test('in the room view each arrow walks the way it points on screen, whichever w
   assert.equal(padWay(-1, 1, 'N', EIGHT, true), 'SW');
   assert.equal(padWay(1, -1, 'N', ['N', 'E', 'S', 'W'], true), null, 'a corner with 8 ways off');
   assert.equal(padWay(0, -1, 'S', EIGHT, false), 'S', 'the shoulder view still walks round the body');
+});
+
+test('every kind of thing the game puts on the map has a room view drawing', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { ROOM_DRAWINGS } = await import('../js/roomview.js');
+  // Props and the floor's other things are made with a `kind: '...'`
+  // literal in these files; mapview.js mapThings adds the rest.
+  const files = ['decor.js', 'relays.js', 'desk.js', 'tutorial.js', 'floor.js', 'combat.js'];
+  const kinds = new Set(['vent', 'coin', 'key', 'stairs', 'player', 'minion', 'hunter', 'boss', 'chest', 'exchange']);
+  files.forEach(file => {
+    const source = readFileSync(new URL('../js/' + file, import.meta.url), 'utf8');
+    for (const [, kind] of source.matchAll(/kind: '([a-z]+)'/g)) kinds.add(kind);
+  });
+  const ways = new Set(['flat', 'stand', 'glyph', 'player']);
+  kinds.forEach(kind => assert.ok(ways.has(ROOM_DRAWINGS[kind]), `no room view drawing for ${kind}`));
 });
