@@ -1328,7 +1328,8 @@ function drawEvents(events) {
       case 'blocked':
         bumpOnMap(state.floor.facing);
         cls = 'block-msg';
-        parts.push(e.kind === 'prop' ? t('room.' + e.thing.kind + '.done') : t('room.blocked.' + e.kind));
+        if (e.kind === 'furniture') parts.push(t('furniture.' + e.thing.piece));
+        else parts.push(e.kind === 'prop' ? t('room.' + e.thing.kind + '.done') : t('room.blocked.' + e.kind));
         break;
       // A step says nothing: the map already shows where the player went.
       case 'stepped':

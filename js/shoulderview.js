@@ -608,7 +608,7 @@ function faceItem(ctx, row, col, side, inset, h, base, ghost) {
 // its tile. tests/shoulderview.test.mjs checks every prop kind the game
 // places has one.
 export const SHOULDER_DRAWINGS = {
-  box: 'block', cell: 'drum', paper: 'flat', vent: 'flat', stairs: 'flat',
+  box: 'block', furniture: 'block', cell: 'drum', paper: 'flat', vent: 'flat', stairs: 'flat',
   desk: 'glyph', relay: 'glyph', chest: 'glyph', coin: 'glyph', key: 'glyph', exchange: 'glyph', boss: 'glyph', hunter: 'glyph',
   minion: 'form', player: 'player',
 };

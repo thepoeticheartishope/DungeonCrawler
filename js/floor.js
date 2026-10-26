@@ -163,8 +163,9 @@ export function buildFloor() {
   state.floor.chamberThemes = furnishing.themes;
   state.floor.chamberNames = plan ? layout.chambers.map(ch => ch.name) : [];
   state.floor.visitedChambers = new Set();
+  // Furniture is known for what it is from the start: it never shows as a '?'.
   furnishing.props.forEach(p => {
-    state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
+    state.floor.props.push({ ...p, identified: p.kind === 'furniture', searched: false, sprung: false });
   });
 
   // The gate's full count; reachGate (gate.js) sets it again by the keys held.
