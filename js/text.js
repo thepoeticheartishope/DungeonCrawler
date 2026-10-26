@@ -341,6 +341,7 @@ export const TEXT = {
   'tut.ready': "They'll be listening. Be ready.", // Timothy's wording (vents and noise plan step D: world-driven, not on the nose; it hints that sound brings them). The kind voice, once the ring breaks; then a stick man comes out of the grate
   'tut.breathe': 'Breathe. Then READY.', // draft (kill or maim plan step C). The kind voice, as the tutorial's first shot opens the dial at READY
   'tut.dial': 'Stop on K to kill. M drops it.', // draft. The kind voice, once that dial runs
+  'tut.static': 'Static means one is close.', // draft (static). The kind voice, the first time the static shows in the tutorial's fight (the stick man is out of the grate), so the player learns the grain means one is near
   'tut.finish': 'Finish it.', // draft (downed plan step C). The kind voice, when the tutorial's stick man goes down: a bump finishes it
   'tut.name.q': 'What is your name?', // Timothy: the barrel asks the player's name; any name is right
   // The plain hints show only for a player stuck on a stage (TUTORIAL_STUCK_MS).
