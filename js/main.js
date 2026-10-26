@@ -41,7 +41,8 @@ import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot,
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
-import { initDpad, initLookStick, SCREEN_WAYS, screenStep, shoulderStep, sweepHold } from './dpad.js';
+import { initDpad, initLookStick, SCREEN_WAYS, screenStep, padWay, sweepHold } from './dpad.js';
+import { roomViewWanted } from './roomview.js';
 import { repeatMs, noteStep, heldStepReady } from './walkpace.js';
 import { aimLook, turnBody, sweepLook, wantsTurn, waysInUse } from './look.js';
 import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
@@ -287,6 +288,12 @@ function turnLook() {
   state.run.turnLocked = false;
 }
 
+// The room view (room view plan, roomview.js) while the page has
+// ?view=room: its camera never turns, so every arrow, key and number pad
+// key walks the way it points on screen (dpad.js padWay), and the light is
+// aimed by the look stick and taps only.
+const ROOM_VIEW_ON = roomViewWanted();
+
 // The shoulder view's controls (shoulder view plan step B). The d-pad's
 // arrows and the keys walk round the body (dpad.js shoulderStep): up / W
 // straight ahead, down / S straight behind (which turns the body round, as
@@ -295,7 +302,7 @@ function turnLook() {
 // Returns the ms until a held press acts again, or null to stop.
 function shoulderPush(sx, sy) {
   if (!roomScreen.classList.contains('show') || state.run.runEnded) return null;
-  const way = shoulderStep(sx, sy, state.floor.facing, waysInUse());
+  const way = padWay(sx, sy, state.floor.facing, waysInUse(), ROOM_VIEW_ON);
   if (!way) return null;
   const [dr, dc] = FACING_VECTORS[way];
   movePlayer(dr, dc);
@@ -357,13 +364,15 @@ function shoulderStick(dx, dy) {
 // The shoulder view's keys by the d-pad way they stand for. A held step key
 // steps again once the last step has landed (walkpace.js); a held sweep key
 // sweeps until it is let go.
+// The room view adds Z / C for the lower corners.
 const SHOULDER_KEYS = {
   ArrowUp: 'U', w: 'U', W: 'U', ArrowDown: 'D', s: 'D', S: 'D',
   ArrowLeft: 'L', a: 'L', A: 'L', ArrowRight: 'R', d: 'R', D: 'R',
   q: 'UL', Q: 'UL', e: 'UR', E: 'UR',
+  ...(ROOM_VIEW_ON ? { z: 'DL', Z: 'DL', c: 'DR', C: 'DR' } : {}),
 };
 function shoulderKey(way, repeat) {
-  if (way === 'L' || way === 'R') {
+  if (!ROOM_VIEW_ON && (way === 'L' || way === 'R')) {
     if (!repeat) turnPress('key' + way, SCREEN_WAYS[way][0]);
     return;
   }
@@ -1904,9 +1913,9 @@ initDpad({
   buttons: dpadButtons,
   canWalk: () => roomScreen.classList.contains('show') && !state.run.runEnded,
   push: shoulderPush,
-  // The side arrows sweep the light while held.
+  // The side arrows sweep the light while held (they walk in the room view).
   hold: (sx, sy, down) => {
-    if (sy || !sx) return false;
+    if (ROOM_VIEW_ON || sy || !sx) return false;
     if (down) turnPress('pad', sx);
     else turnRelease('pad');
     return true;
@@ -1974,7 +1983,7 @@ document.addEventListener('keydown', (e) => {
   if (e.repeat && numpad && !heldStepReady(performance.now())) { e.preventDefault(); return; }
   const way = !mapPanelShown() && SHOULDER_KEYS[e.key];
   if (way) { e.preventDefault(); shoulderKey(way, e.repeat); return; }
-  if (numpad && !mapPanelShown()) { e.preventDefault(); walkScreen(...SCREEN_WAYS[numpad]); }
+  if (numpad && !mapPanelShown()) { e.preventDefault(); (ROOM_VIEW_ON ? shoulderPush : walkScreen)(...SCREEN_WAYS[numpad]); }
   else if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
   else if (e.key === ' ' && !mapPanelShown()) { e.preventDefault(); holdLookUp('key', true); }
   else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); pressSelect(); }

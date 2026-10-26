@@ -1014,6 +1014,26 @@ export const SHOULDER_CAMERA = {
   lookUpPitch: 1.05, // looking up (sky eye plan step A): the camera tilts this far up, in radians (about 60°)...
   lookUpMs: 120,    // ...easing there and back this fast (jumps under reduced motion)
 };
+// The room view (js/roomview.js, room view plan `ideas/room-view-plan.md`
+// outside the repo; behind ?view=room until step G): a fixed camera looking
+// down on one room at a time, drawn as pixel art at tilePx a tile and
+// scaled up by a whole number. Light levels run from 0 (black) to 1.
+export const ROOM_VIEW = {
+  tilePx: 16,         // the picture's own pixels per tile, before scaling up
+  minAcross: 15,      // the scale-up is the biggest whole number that still shows this many tiles across...
+  minDown: 11,        // ...and this many down...
+  minAcrossTall: 11,  // ...or this many across on a map taller than wide (a phone): a School room and its rim
+  faceRows: 2,        // a back wall's face is up to this many tiles tall (only over wall, never over floor)
+  hallReach: 6,       // in a hallway, "the space you're in" is hallway floor up to this many steps away
+  litNear: 1,         // a lit tile beside you...
+  litFar: 0.55,       // ...and one PLAYER_CONE_RANGE away
+  room: 0.28,         // the rest of the room you're in: dim, so you see its shape
+  remembered: 0.1,    // explored tiles elsewhere
+  ember: { radius: 1.3, level: 0.45 }, // the warm glow round the player's head, radius in tiles
+  glideMs: 180,       // the camera glides to a new room this fast (jumps under reduced motion)
+  stickHeight: 1.25,  // the player's stick man, in tiles
+  footAt: 0.78,       // his feet stand this far down his tile, so he rises over the tile behind
+};
 // Looking up with the look stick (sky eye plan step A): a push up past this
 // share of its reach, more up than sideways, looks up until it comes back.
 export const SHOULDER_LOOK_UP_STICK = 0.6;

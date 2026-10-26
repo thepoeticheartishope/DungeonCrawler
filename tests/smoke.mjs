@@ -90,6 +90,10 @@
 //      and aimed at it, DEV -> Test shot with Auto-win kills it in this
 //      view (saved as noesis-shoulder-shot.png). The map is saved as noesis-shoulder-*.png
 //      in the system's temp folder.
+//  12. Room view run (room view plan step A, `?view=room`): a phone-sized
+//      page on the first depth; every arrow key walks the way it points on
+//      screen whichever way the body faces (up is grid north, right grid
+//      east), and the map draws. Saved as noesis-room-*.png in the temp folder.
 //
 // Every run plays the shoulder view, the game's only view since the
 // isometric view was removed (2026-10-18); run 11 is its own checks.
@@ -1709,6 +1713,66 @@ async function checkShoulderView(page, url) {
   return '';
 }
 
+// ---- Run 12: room view ----
+
+// The checks listed in the header. Returns what failed ('' when all held).
+async function checkRoomView(page, url) {
+  await loadPageAndSet(page, url + '&view=room');
+  await startGameAndWaitForRoom(page);
+  await roomIdle(page);
+  await page.click('#devToggleBtn');
+  await page.click('#devSkipBtn');
+  await page.click('#devToggleBtn');
+  await roomIdle(page);
+  const map = await page.$('#mapCanvas');
+  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-room-start.png') });
+  const player = () => page.evaluate(async () => {
+    const f = (await import('./js/state.js')).state.floor;
+    return { row: f.playerRow, col: f.playerCol };
+  });
+  // Each arrow, pressed until one steps: the step must be the way it points.
+  const arrows = { ArrowUp: [-1, 0], ArrowRight: [0, 1], ArrowDown: [1, 0], ArrowLeft: [0, -1] };
+  const stepped = [];
+  for (const [arrow, [dr, dc]] of Object.entries(arrows)) {
+    const before = await player();
+    await page.keyboard.press(arrow);
+    await roomIdle(page);
+    await page.waitForTimeout(250);
+    const after = await player();
+    if (after.row === before.row && after.col === before.col) continue;
+    if (after.row - before.row !== dr || after.col - before.col !== dc) {
+      return `${arrow} stepped (${after.row - before.row}, ${after.col - before.col}), not the way it points (${dr}, ${dc})`;
+    }
+    stepped.push(arrow);
+  }
+  if (stepped.length < 2) return `only ${stepped.length} arrow keys stepped from the start (${stepped.join(', ')})`;
+  await page.waitForTimeout(400);
+  await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-room-walked.png') });
+  const lit = await page.evaluate(() => {
+    const c = document.getElementById('mapCanvas');
+    const data = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    let bright = 0;
+    for (let i = 0; i < data.length; i += 4 * 97) if (data[i] + data[i + 1] + data[i + 2] > 120) bright++;
+    return bright;
+  });
+  if (!lit) return 'the room view drew nothing bright on the map';
+  return '';
+}
+
+async function runRoomView(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkRoomView(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'arrows walked the way they point on screen and the room drew', consoleErrors, pageErrors };
+}
+
 // The shoulder view's shot (step D), with the DEV panel open: skips to the
 // first depth, stands the player two tiles from a stick man it can shoot,
 // looking at it, and fires DEV -> Test shot with Auto-win on (it stops the
@@ -1796,7 +1860,7 @@ async function main() {
         ['free look', runFreeLook, url], ['eight ways', runEightWays, url],
         ['light battery', runLightBattery, url], ['tutorial', runTutorial, url],
         ['answer line', runAnswerLine, url], ['vents', runVents, url],
-        ['shoulder view', runShoulderView, url],
+        ['shoulder view', runShoulderView, url], ['room view', runRoomView, url],
       ];
       // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
       // of those words, SMOKE_REPEAT=20 runs each that many times: for

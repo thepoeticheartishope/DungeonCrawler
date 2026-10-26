@@ -11,7 +11,8 @@ import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, SHOU
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
 import { whatBlocks, canPassCorner } from './passage.js';
-import { SCREEN_WAYS, shoulderStep } from './dpad.js';
+import { SCREEN_WAYS, padWay } from './dpad.js';
+import { roomViewWanted } from './roomview.js';
 import { FACING_VECTORS } from './sight.js';
 import { waysInUse, lookAngle, angleTo, wrapAngle } from './look.js';
 import { clockReading } from './realclock.js';
@@ -86,6 +87,9 @@ export function showScreen(el) {
   els.statsEl.classList.toggle('show', el !== els.startScreen && el !== els.introGlitch);
 }
 
+// The room view (?view=room) names the d-pad's ways by the screen.
+const ROOM_VIEW_ON = roomViewWanted();
+
 // How far away (in steps, as the crow flies) the hunter's edge glow starts
 // to brighten.
 const HUNTER_HINT_RANGE = 20;
@@ -103,15 +107,16 @@ export function renderRoomHints() {
 // not yet gone through lights up, since that press reads or examines it;
 // so does THE UNFOLDING, which a press opens. A diagonal that would cut a
 // corner is blocked too (passage.js canPassCorner). The arrows walk round
-// the body (dpad.js shoulderStep), so the hints follow it; the side arrows
-// sweep the light and show none.
+// the body (dpad.js padWay), so the hints follow it; the side arrows
+// sweep the light and show none. In the room view each arrow is the way it
+// points on screen.
 function renderMoveHints() {
   const buttons = els.dpadButtons;
   if (!buttons) return;
   for (const [dir, [sx, sy]] of Object.entries(SCREEN_WAYS)) {
     const btn = buttons[dir];
     if (!btn) continue;
-    const way = shoulderStep(sx, sy, state.floor.facing, waysInUse());
+    const way = padWay(sx, sy, state.floor.facing, waysInUse(), ROOM_VIEW_ON);
     const step = way && FACING_VECTORS[way];
     if (!step) {
       btn.classList.remove('move-examine', 'move-blocked');
