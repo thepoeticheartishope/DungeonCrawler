@@ -62,6 +62,7 @@ export const TEXT = {
   'term.exchange': 'THE UNFOLDING', // Timothy's name; code name exchange (js/exchange.js)
   'term.exchange.symbol': '8', // a loop folded over itself
   'term.box.symbol': '&',
+  'term.furniture.symbol': '=', // a fixed plan's furniture; drawn as itself in both views, the glyph is a fallback
   'term.cell': 'ENERGY CELL', // draft
   'term.relay': 'RELAY', // draft
   'term.relay.symbol': '¥', // draft. A mast with two arms
@@ -380,6 +381,16 @@ export const TEXT = {
   'room.blocked.hunter': 'The {@term.hunter} is right there.', // draft
   'room.hunter.wakes': ['Something else wakes. It knows where you are.', 'An {@term.hunter} stirs, far off, and turns toward you.'], // draft
   'room.blocked.corner': 'The corner is in the way.', // draft. A diagonal step that would cut past a wall or pillar (eight ways plan)
+  // A fixed plan's furniture, bumped (room view plan step E; plans.js).
+  'furniture.desk': ['A desk. A word is carved into it, then scratched out.', 'A desk, its chair pushed in.'], // draft
+  'furniture.teacher': "The teacher's desk. The register lies open at a blank page.", // draft
+  'furniture.shelf': ['Shelves. Every spine is blank.', 'Shelves, packed tight.'], // draft
+  'furniture.table': 'A table, set for no one.', // draft
+  'furniture.bench': 'A bench. The taps along it are dry.', // draft
+  'furniture.easel': 'An easel. The canvas faces away.', // draft
+  'furniture.sink': 'A sink. The mirror above it is gone.', // draft
+  'furniture.stall': 'A stall door, shut.', // draft
+  'furniture.sofa': 'A sofa, sunk where someone always sat.', // draft
   'room.blocked.pillar': ['A pillar. Cold, and older than you.', 'Stone. It does not think.'], // draft
 
   // Reading papers (step onto one) and examining boxes (bump into one; a turn passes).

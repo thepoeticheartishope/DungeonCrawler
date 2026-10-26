@@ -62,11 +62,29 @@ import { t } from './text.js';
 const T = ROOM_VIEW.tilePx;
 const ENEMY_KINDS = ['minion', 'hunter']; // what a tap on its glyph picks (gun.js pickTarget)
 
-// The picture's colours. Rooms and hallways only differ in floor and
-// wallpaper for now; each room gets its own look in step E.
+// The picture's colours: the floors (wood planks, lino squares, carpet,
+// small tiles, stone flags) and each room's look (step E): its floor and
+// its wallpaper, by the room's name on a fixed plan. A room without one
+// (a random floor, a rest) is wood with the plain paper; hallways are lino.
 const WOOD = { base: '#4a3427', light: '#4f3829', dark: '#463124', seam: '#2f2118', knot: '#5a4130' };
 const LINO = { a: '#4f5357', b: '#43474b', scuff: '#35383b' };
+const CARPET = { base: '#3c2a3b', weave: '#45313f', edge: '#4c3547' };
+const TILE = { a: '#8a8f8d', b: '#7d8280', grout: '#5f6361' };
+const STONE = { base: '#56524c', light: '#5f5b54', crack: '#403d38' };
 const PAPER = { room: ['#5f5560', '#685d69'], hall: ['#565b62', '#5e646b'] };
+const ROOM_LOOK = { floor: 'wood', paper: PAPER.room };
+const HALL_LOOK = { floor: 'lino', paper: PAPER.hall };
+const ROOM_LOOKS = {
+  'plan.school.examHall': { floor: 'wood', paper: ['#4f4a44', '#58524b'] },
+  'plan.school.frontHall': { floor: 'stone', paper: ['#57534d', '#605b55'] },
+  'plan.school.lab': { floor: 'tile', paper: ['#5d6763', '#66716c'] },
+  'plan.school.library': { floor: 'carpet', paper: ['#5b4a5a', '#644f62'] },
+  'plan.school.artRoom': { floor: 'wood', paper: ['#6b5f4e', '#756856'] },
+  'plan.school.class1': { floor: 'wood', paper: ['#5f6656', '#68705e'] },
+  'plan.school.class2': { floor: 'wood', paper: ['#5f6656', '#68705e'] },
+  'plan.school.toilets': { floor: 'tile', paper: ['#5a6a6e', '#637478'] },
+  'plan.school.staffRoom': { floor: 'carpet', paper: ['#5e5040', '#685948'] },
+};
 const CROWN = ['#2b2230', '#3d3343'];          // the dark moulding along a wall's top, and its light edge
 const SKIRTING = ['#3a2c26', '#4c3b32'];       // the board along a wall's foot, and its light edge
 const RIM = ['#463c4f', '#5c516a'];            // the band round a room, and its light edge
@@ -91,7 +109,7 @@ const POSE_SCALE = ROOM_VIEW.stickHeight / 0.75; // playerform's poses are sized
 // and a grate (drawn as they are) and enemies (never shown as a '?').
 export const ROOM_DRAWINGS = {
   paper: 'flat', vent: 'flat', stairs: 'flat',
-  box: 'stand', cell: 'stand', desk: 'stand', relay: 'stand', chest: 'stand', coin: 'stand', key: 'stand',
+  box: 'stand', furniture: 'stand', cell: 'stand', desk: 'stand', relay: 'stand', chest: 'stand', coin: 'stand', key: 'stand',
   minion: 'form', exchange: 'glyph', boss: 'glyph', hunter: 'glyph', player: 'player',
 };
 // The things' colours, in the picture's pixels.
@@ -339,10 +357,10 @@ function buildFloor(f) {
   });
   for (let row = 0; row < f.GRID_SIZE; row++) {
     for (let col = 0; col < f.GRID_SIZE; col++) {
-      if (!isWall(row, col)) drawFloorTile(ctx, row, col, f.chamberAt.has(key(row, col)));
+      if (!isWall(row, col)) drawFloorTile(ctx, row, col, lookAt(row, col));
       else {
         const face = faceOf(row, col, isWall);
-        if (face) drawFace(ctx, row, col, face, f.chamberAt.has(key(row + (face === 'lower' ? 1 : 2), col)));
+        if (face) drawFace(ctx, row, col, face, lookAt(row + (face === 'lower' ? 1 : 2), col));
       }
     }
   }
@@ -360,10 +378,20 @@ function grain(row, col, n) {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
-// Floor in a room is planks of wood; hallway floor is lino in squares.
-function drawFloorTile(ctx, row, col, inRoom) {
+// The look of the floor at (row, col): its room's (ROOM_LOOKS by the
+// room's name on a fixed plan), any other room's, or a hallway's.
+function lookAt(row, col) {
+  const room = state.floor.chamberAt.get(key(row, col));
+  if (room === undefined) return HALL_LOOK;
+  return ROOM_LOOKS[state.floor.chamberNames[room]] || ROOM_LOOK;
+}
+
+// One floor tile in its look's floor: planks of wood, lino in squares,
+// carpet, small tiles or stone flags, each tile a little different.
+function drawFloorTile(ctx, row, col, look) {
   const x = col * T, y = row * T;
-  if (inRoom) {
+  const floor = look.floor;
+  if (floor === 'wood') {
     ctx.fillStyle = WOOD.base;
     ctx.fillRect(x, y, T, T);
     for (let p = 0; p < 4; p++) {
@@ -380,6 +408,35 @@ function drawFloorTile(ctx, row, col, inRoom) {
     }
     return;
   }
+  if (floor === 'carpet') {
+    ctx.fillStyle = CARPET.base;
+    ctx.fillRect(x, y, T, T);
+    ctx.fillStyle = CARPET.weave;
+    for (let i = 0; i < T; i += 2) for (let j = (i / 2) % 2; j < T; j += 4) ctx.fillRect(x + j, y + i, 1, 1);
+    return;
+  }
+  if (floor === 'tile') {
+    ctx.fillStyle = TILE.grout;
+    ctx.fillRect(x, y, T, T);
+    for (let i = 0; i < 4; i++) {
+      for (let j = 0; j < 4; j++) {
+        ctx.fillStyle = (i + j) % 2 ? TILE.a : TILE.b;
+        ctx.fillRect(x + i * 4, y + j * 4, 3, 3);
+      }
+    }
+    return;
+  }
+  if (floor === 'stone') {
+    ctx.fillStyle = STONE.base;
+    ctx.fillRect(x, y, T, T);
+    ctx.fillStyle = STONE.light;
+    ctx.fillRect(x + 1, y + 1, 14, 1);
+    ctx.fillStyle = STONE.crack;
+    ctx.fillRect(x, y + T - 1, T, 1);
+    ctx.fillRect(x + T - 1, y, 1, T);
+    if (grain(row, col, 5) > 0.6) ctx.fillRect(x + 4 + Math.floor(grain(row, col, 6) * 6), y + 5, 3, 1);
+    return;
+  }
   for (let i = 0; i < 2; i++) {
     for (let j = 0; j < 2; j++) {
       ctx.fillStyle = (i + j) % 2 ? LINO.a : LINO.b;
@@ -392,12 +449,12 @@ function drawFloorTile(ctx, row, col, inRoom) {
   }
 }
 
-// A wall's face: wallpaper with a small diamond print, the moulding along
+// A wall's face: its room's wallpaper with a small diamond print, the moulding along
 // the top of an upper face, the skirting board along the foot of a lower
 // one, and a post where a doorway cuts through beside it.
-function drawFace(ctx, row, col, face, inRoom) {
+function drawFace(ctx, row, col, face, look) {
   const x = col * T, y = row * T;
-  const paper = inRoom ? PAPER.room : PAPER.hall;
+  const paper = look.paper;
   ctx.fillStyle = paper[0];
   ctx.fillRect(x, y, T, T);
   ctx.fillStyle = paper[1];
@@ -1107,7 +1164,7 @@ function halo(x, y, r, rgb, a) {
 }
 
 const FLAT = { paper: drawPaper, vent: drawGrate, stairs: drawStairs };
-const STAND = { box: drawBox, cell: drawCell, desk: drawDesk, relay: drawRelay, chest: drawChest, coin: drawCoin, key: drawKey };
+const STAND = { box: drawBox, furniture: drawFurniture, cell: drawCell, desk: drawDesk, relay: drawRelay, chest: drawChest, coin: drawCoin, key: drawKey };
 
 // ---- the gun on the map (step D) ----
 
@@ -1328,3 +1385,172 @@ function drawDarkRing(ctx) {
   });
   ctx.restore();
 }
+
+// ---- furniture (step E) ----
+// A fixed plan's furniture (plans.js `furniture`), one tile at a time:
+// the map thing's `at` is the prop itself, with its `piece` and its `part`
+// ('single', or 'left' / 'mid' / 'right' along a wider one), so a wide
+// piece joins up across its tiles. Each stands on its tile like a box.
+
+const WOODWORK = { top: '#7a5638', topLight: '#8c6644', front: '#5a3f29', dark: '#3f2c1e', leg: '#2f2016' };
+const BOOKS = ['#6b3b34', '#3f4f5f', '#5c5a3a', '#4c3a52', '#7a6a4e', '#2f4a42', '#5e3a2c'];
+const METAL = { top: '#7c8186', front: '#4e5358', seam: '#3a3e42', tap: '#a9b0b5' };
+const PORCELAIN = { bowl: '#c9ccc8', shade: '#9fa29e', pipe: '#6a6e6c' };
+const STALL = { door: '#5b6b73', edge: '#6f8089', gap: '#1c2124' };
+const SOFA = { back: '#5a3b3e', seat: '#6b474a', arm: '#4a3033' };
+const EASEL = { leg: '#5a3f29', board: '#b9ab8e', frame: '#8a7a5e' };
+
+// Draws furniture prop `thing` on its tile at (x, y).
+function drawFurniture(thing, x, y) {
+  const { piece, part } = thing.at;
+  const left = part === 'single' || part === 'left';
+  const right = part === 'single' || part === 'right';
+  (PIECES[piece] || PIECES.table)(x, y, left, right, thing.at);
+}
+
+// A pupil's desk with its chair behind it.
+function drawSchoolDesk(x, y) {
+  bctx.fillStyle = WOODWORK.dark;
+  bctx.fillRect(x + 4, y - 1, 8, 5);
+  bctx.fillStyle = WOODWORK.top;
+  bctx.fillRect(x + 2, y + 4, 12, 7);
+  bctx.fillStyle = WOODWORK.topLight;
+  bctx.fillRect(x + 2, y + 4, 12, 1);
+  bctx.fillStyle = WOODWORK.front;
+  bctx.fillRect(x + 2, y + 11, 12, 2);
+  bctx.fillStyle = WOODWORK.leg;
+  bctx.fillRect(x + 3, y + 13, 1, 3);
+  bctx.fillRect(x + 12, y + 13, 1, 3);
+}
+
+// The teacher's desk: a wide top and a solid front with drawers, papers on
+// its left end and a book on its right.
+function drawTeacherDesk(x, y, left, right) {
+  const x0 = x + (left ? 1 : 0), x1 = x + (right ? T - 1 : T);
+  bctx.fillStyle = WOODWORK.top;
+  bctx.fillRect(x0, y + 1, x1 - x0, 8);
+  bctx.fillStyle = WOODWORK.topLight;
+  bctx.fillRect(x0, y + 1, x1 - x0, 1);
+  bctx.fillStyle = WOODWORK.front;
+  bctx.fillRect(x0, y + 9, x1 - x0, 7);
+  bctx.fillStyle = WOODWORK.dark;
+  bctx.fillRect(x + 4, y + 11, 8, 1);
+  if (left) {
+    bctx.fillStyle = SHEET.fresh;
+    bctx.fillRect(x + 4, y + 3, 7, 4);
+  }
+  if (right) {
+    bctx.fillStyle = BOOKS[1];
+    bctx.fillRect(x + 6, y + 2, 5, 5);
+  }
+}
+
+// A bookcase standing tall: posts at its ends, shelves of books whose
+// colours are the same every time for the same tile.
+function drawShelf(x, y, left, right, at) {
+  const top = y - 12, h = 27;
+  bctx.fillStyle = WOODWORK.dark;
+  bctx.fillRect(x, top, T, h);
+  for (let s = 0; s < 3; s++) {
+    const base = top + 2 + (s + 1) * 8 - 1;
+    let bx = x + (left ? 2 : 0);
+    let k = 0;
+    while (bx < x + T - (right ? 2 : 0)) {
+      const bw = 2 + Math.floor(grain(at.row, at.col, s * 20 + k) * 2);
+      const bh = 4 + Math.floor(grain(at.row, at.col, s * 20 + k + 50) * 3);
+      if (grain(at.row, at.col, s * 20 + k + 90) > 0.12) {
+        bctx.fillStyle = BOOKS[Math.floor(grain(at.row, at.col, s * 20 + k + 70) * BOOKS.length)];
+        bctx.fillRect(bx, base - bh, Math.min(bw, x + T - (right ? 2 : 0) - bx), bh);
+      }
+      bx += bw;
+      k++;
+    }
+    bctx.fillStyle = WOODWORK.leg;
+    bctx.fillRect(x, base, T, 1);
+  }
+  bctx.fillStyle = WOODWORK.front;
+  if (left) bctx.fillRect(x, top, 1, h);
+  if (right) bctx.fillRect(x + T - 1, top, 1, h);
+  bctx.fillRect(x, top, T, 1);
+}
+
+// A plain table: one top across its tiles, legs at its ends.
+function drawTable(x, y, left, right) {
+  const x0 = x + (left ? 1 : 0), x1 = x + (right ? T - 1 : T);
+  bctx.fillStyle = WOODWORK.top;
+  bctx.fillRect(x0, y + 3, x1 - x0, 8);
+  bctx.fillStyle = WOODWORK.topLight;
+  bctx.fillRect(x0, y + 3, x1 - x0, 1);
+  bctx.fillStyle = WOODWORK.front;
+  bctx.fillRect(x0, y + 11, x1 - x0, 2);
+  bctx.fillStyle = WOODWORK.leg;
+  if (left) bctx.fillRect(x + 2, y + 13, 1, 3);
+  if (right) bctx.fillRect(x + T - 3, y + 13, 1, 3);
+}
+
+// A bench: a grey top over cupboards, a tap on each tile (the lab's, and
+// the hall's seats share the shape).
+function drawBench(x, y, left, right) {
+  const x0 = x + (left ? 1 : 0), x1 = x + (right ? T - 1 : T);
+  bctx.fillStyle = METAL.top;
+  bctx.fillRect(x0, y + 3, x1 - x0, 4);
+  bctx.fillStyle = METAL.front;
+  bctx.fillRect(x0, y + 7, x1 - x0, 9);
+  bctx.fillStyle = METAL.seam;
+  bctx.fillRect(x + 8, y + 8, 1, 7);
+  bctx.fillStyle = METAL.tap;
+  bctx.fillRect(x + 7, y + 1, 2, 3);
+}
+
+// An easel, its canvas turned away: three legs and the board's back.
+function drawEasel(x, y) {
+  bctx.fillStyle = EASEL.leg;
+  bctx.fillRect(x + 4, y + 2, 1, 14);
+  bctx.fillRect(x + 11, y + 2, 1, 14);
+  bctx.fillRect(x + 8, y - 2, 1, 15);
+  bctx.fillStyle = EASEL.frame;
+  bctx.fillRect(x + 3, y - 6, 10, 11);
+  bctx.fillStyle = EASEL.board;
+  bctx.fillRect(x + 4, y - 5, 8, 9);
+}
+
+// A sink on its pedestal, its tap above.
+function drawSink(x, y) {
+  bctx.fillStyle = PORCELAIN.pipe;
+  bctx.fillRect(x + 7, y + 9, 2, 7);
+  bctx.fillStyle = PORCELAIN.bowl;
+  bctx.fillRect(x + 3, y + 4, 10, 5);
+  bctx.fillStyle = PORCELAIN.shade;
+  bctx.fillRect(x + 5, y + 5, 6, 2);
+  bctx.fillStyle = METAL.tap;
+  bctx.fillRect(x + 7, y + 2, 2, 2);
+}
+
+// A stall: a tall door, shut, with the gap under it.
+function drawStall(x, y) {
+  bctx.fillStyle = STALL.edge;
+  bctx.fillRect(x + 1, y - 10, 14, 1);
+  bctx.fillStyle = STALL.door;
+  bctx.fillRect(x + 1, y - 9, 14, 22);
+  bctx.fillStyle = STALL.edge;
+  bctx.fillRect(x + 11, y + 2, 2, 1);
+  bctx.fillStyle = STALL.gap;
+  bctx.fillRect(x + 1, y + 13, 14, 3);
+}
+
+// A sofa: its back, its seat, an arm at each end.
+function drawSofa(x, y, left, right) {
+  bctx.fillStyle = SOFA.back;
+  bctx.fillRect(x, y + 1, T, 6);
+  bctx.fillStyle = SOFA.seat;
+  bctx.fillRect(x, y + 7, T, 7);
+  bctx.fillStyle = SOFA.arm;
+  if (left) bctx.fillRect(x, y + 3, 3, 12);
+  if (right) bctx.fillRect(x + T - 3, y + 3, 3, 12);
+  bctx.fillRect(x, y + 14, T, 2);
+}
+
+const PIECES = {
+  desk: drawSchoolDesk, teacher: drawTeacherDesk, shelf: drawShelf, table: drawTable, bench: drawBench,
+  easel: drawEasel, sink: drawSink, stall: drawStall, sofa: drawSofa,
+};

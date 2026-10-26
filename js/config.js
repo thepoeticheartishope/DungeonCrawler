@@ -1014,6 +1014,10 @@ export const SHOULDER_CAMERA = {
   lookUpPitch: 1.05, // looking up (sky eye plan step A): the camera tilts this far up, in radians (about 60°)...
   lookUpMs: 120,    // ...easing there and back this fast (jumps under reduced motion)
 };
+// The pieces of furniture a fixed plan can stand in its rooms (plans.js
+// `furniture`, room view plan step E). Each has a bump line in text.js
+// (`furniture.<piece>`) and a drawing in roomview.js.
+export const FURNITURE_PIECES = ['desk', 'teacher', 'shelf', 'table', 'bench', 'easel', 'sink', 'stall', 'sofa'];
 // The room view (js/roomview.js, room view plan `ideas/room-view-plan.md`
 // outside the repo; behind ?view=room until step G): a fixed camera looking
 // down on one room at a time, drawn as pixel art at tilePx a tile and

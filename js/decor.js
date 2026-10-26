@@ -73,7 +73,9 @@ export function makePlacer(layout, gridSize) {
     const { row, col } = parseKey(k);
     DIRS.forEach(([dr, dc]) => reserved.add(key(row + dr, col + dc)));
   }));
-  [layout.start, layout.spawn, layout.stairs, ...(layout.keys || [])].forEach(p => reserved.add(key(p.row, p.col)));
+  // Every key spot on a fixed plan, not only this run's, so its furniture
+  // stands the same every run.
+  [layout.start, layout.spawn, layout.stairs, ...(layout.keys || []), ...(layout.keySpots || [])].forEach(p => reserved.add(key(p.row, p.col)));
 
   const startKey = key(layout.start.row, layout.start.col);
 
@@ -212,10 +214,32 @@ export function rollProp(kind, theme, floorIndex) {
   return { kind, theme, loot, gold, trapped };
 }
 
+// A fixed plan's furniture (plans.js `furniture`, room view plan step E),
+// put down before anything else so it stands the same every run: each
+// piece's tiles become solid props of kind 'furniture' ({ piece, part }:
+// 'single', or 'left' / 'mid' / 'right' along a wider one) if the floor
+// stays whole and none of them is reserved (placer.tryBlock); otherwise the
+// piece is left out. Furniture blocks walking but not the light, and a bump
+// only says what it is.
+function placeFurniture(layout, placer) {
+  const pieces = [];
+  layout.chambers.forEach(chamber => (chamber.furniture || []).forEach(([piece, row, col, width = 1]) => {
+    const tiles = [];
+    for (let i = 0; i < width; i++) tiles.push({ row, col: col + i });
+    if (!placer.tryBlock(tiles, false)) return;
+    tiles.forEach((p, i) => {
+      const part = width === 1 ? 'single' : i === 0 ? 'left' : i === width - 1 ? 'right' : 'mid';
+      pieces.push({ row: p.row, col: p.col, kind: 'furniture', piece, part });
+    });
+  }));
+  return pieces;
+}
+
 // Themes and furniture for one floor.
 //   themes: one ROOM_THEMES key per chamber (same order as layout.chambers)
 //   pillars: Set of tile keys
-//   props: [{ row, col, kind: 'paper'|'box', theme, loot, gold, trapped }]
+//   props: [{ row, col, kind: 'paper'|'box', theme, loot, gold, trapped }],
+//     after the plan's furniture (placeFurniture)
 //   placer: for main.js to put the chest down on the same rules
 export function furnishFloor(layout, gridSize, floorIndex) {
   const placer = makePlacer(layout, gridSize);
@@ -228,7 +252,7 @@ export function furnishFloor(layout, gridSize, floorIndex) {
   });
 
   const pillars = new Set();
-  const props = [];
+  const props = placeFurniture(layout, placer);
 
   layout.chambers.forEach((chamber, i) => {
     const theme = themes[i];

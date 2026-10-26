@@ -1735,6 +1735,30 @@ async function checkRoomView(page, url) {
   await page.click('#devToggleBtn');
   if (shot) return shot;
   await roomIdle(page);
+  // Stand on an open 2 x 2 block of floor (furniture, step E, leaves
+  // fewer), far from any stick man: up, right, down and left then walk
+  // round it, each from where the last one ended.
+  const placed = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { whatBlocks } = await import('./js/passage.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const { requestMapDraw } = await import('./js/mapview.js');
+    const f = state.floor;
+    const open = (r, c) => !whatBlocks(r, c) && !f.minions.some(m => Math.max(Math.abs(m.row - r), Math.abs(m.col - c)) <= 6);
+    for (let r = 1; r < f.GRID_SIZE - 1; r++) {
+      for (let c = 1; c < f.GRID_SIZE - 1; c++) {
+        if (![[0, 0], [-1, 0], [-1, 1], [0, 1]].every(([dr, dc]) => open(r + dr, c + dc))) continue;
+        f.playerRow = r;
+        f.playerCol = c;
+        computeVisibility();
+        requestMapDraw();
+        return true;
+      }
+    }
+    return false;
+  });
+  if (!placed) return 'no open 2 x 2 block of floor on the first depth, away from the stick men';
+  await page.waitForTimeout(300);
   const player = () => page.evaluate(async () => {
     const f = (await import('./js/state.js')).state.floor;
     return { row: f.playerRow, col: f.playerCol };
@@ -1754,7 +1778,7 @@ async function checkRoomView(page, url) {
     }
     stepped.push(arrow);
   }
-  if (stepped.length < 2) return `only ${stepped.length} arrow keys stepped from the start (${stepped.join(', ')})`;
+  if (stepped.length < 4) return `only ${stepped.length} arrow keys stepped (${stepped.join(', ')})`;
   await page.waitForTimeout(400);
   await map.screenshot({ path: path.join(os.tmpdir(), 'noesis-room-walked.png') });
   const lit = await page.evaluate(() => {

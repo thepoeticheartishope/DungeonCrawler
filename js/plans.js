@@ -23,6 +23,14 @@
 // the first time the player walks in (moves.js roomEntered) and on the
 // minimap. Depth 1 is the keeper; depths 2 and 3 are drafts Timothy will
 // redraw and rename.
+// A room's `furniture` (room view plan step E) lists its pieces as
+// [piece, row, col, width]: width tiles along the row from (row, col),
+// 1 when left out. The same pieces stand there every run. decor.js puts
+// them down first, as solid props of kind 'furniture' that block walking
+// but not the light; one that would cut the floor in two, or stand on a
+// doorway, the start, a key spot, the gate or the stairs, is left out.
+// The pieces are the ones roomview.js draws (FURNITURE_PIECES in
+// config.js). Only the School is furnished so far.
 // No DOM access here.
 
 import { key } from './state.js';
@@ -66,15 +74,34 @@ export const FLOOR_PLANS = {
       '#################################',
     ],
     rooms: [
-      { name: 'plan.school.examHall', r0: 12, c0: 12, r1: 18, c1: 20, core: true },
-      { name: 'plan.school.frontHall', r0: 24, c0: 13, r1: 27, c1: 19 },
-      { name: 'plan.school.lab', r0: 2, c0: 2, r1: 6, c1: 8 },
-      { name: 'plan.school.library', r0: 2, c0: 12, r1: 5, c1: 20 },
-      { name: 'plan.school.artRoom', r0: 2, c0: 24, r1: 6, c1: 30 },
-      { name: 'plan.school.class1', r0: 12, c0: 2, r1: 18, c1: 6 },
-      { name: 'plan.school.class2', r0: 12, c0: 26, r1: 18, c1: 30 },
-      { name: 'plan.school.toilets', r0: 24, c0: 2, r1: 29, c1: 8 },
-      { name: 'plan.school.staffRoom', r0: 24, c0: 24, r1: 29, c1: 30 },
+      { name: 'plan.school.examHall', r0: 12, c0: 12, r1: 18, c1: 20, core: true, furniture: [
+        ['desk', 15, 13], ['desk', 15, 15], ['desk', 15, 17], ['desk', 15, 19],
+        ['desk', 17, 13], ['desk', 17, 15], ['desk', 17, 17], ['desk', 17, 19],
+      ] },
+      { name: 'plan.school.frontHall', r0: 24, c0: 13, r1: 27, c1: 19, furniture: [
+        ['bench', 24, 13, 2], ['bench', 24, 18, 2],
+      ] },
+      { name: 'plan.school.lab', r0: 2, c0: 2, r1: 6, c1: 8, furniture: [
+        ['bench', 4, 3, 2], ['bench', 4, 6, 2], ['sink', 2, 8],
+      ] },
+      { name: 'plan.school.library', r0: 2, c0: 12, r1: 5, c1: 20, furniture: [
+        ['shelf', 3, 13, 3], ['shelf', 3, 17, 3], ['table', 5, 12, 2],
+      ] },
+      { name: 'plan.school.artRoom', r0: 2, c0: 24, r1: 6, c1: 30, furniture: [
+        ['easel', 3, 25], ['easel', 3, 29], ['table', 4, 26, 3],
+      ] },
+      { name: 'plan.school.class1', r0: 12, c0: 2, r1: 18, c1: 6, furniture: [
+        ['teacher', 12, 3, 2], ['desk', 14, 3], ['desk', 14, 5], ['desk', 16, 3], ['desk', 16, 5],
+      ] },
+      { name: 'plan.school.class2', r0: 12, c0: 26, r1: 18, c1: 30, furniture: [
+        ['teacher', 12, 27, 2], ['desk', 14, 27], ['desk', 14, 29], ['desk', 16, 27], ['desk', 16, 29],
+      ] },
+      { name: 'plan.school.toilets', r0: 24, c0: 2, r1: 29, c1: 8, furniture: [
+        ['sink', 24, 2], ['sink', 24, 3], ['stall', 25, 8], ['stall', 27, 8],
+      ] },
+      { name: 'plan.school.staffRoom', r0: 24, c0: 24, r1: 29, c1: 30, furniture: [
+        ['table', 26, 26, 3], ['sofa', 29, 25, 2],
+      ] },
     ],
   },
   archive: {
@@ -252,7 +279,7 @@ export function buildPlanLayout(plan, keyCount, version = null) {
         chamberAt.set(key(r, c), i);
       }
     }
-    return { floorCells, doorKeys: new Set(), slots: [], name: room.name, isBoss: !!room.core };
+    return { floorCells, doorKeys: new Set(), slots: [], name: room.name, isBoss: !!room.core, furniture: room.furniture || [] };
   });
   chambers.forEach((ch, i) => {
     ch.floorCells.slice().forEach(p => DIRS.forEach(([dr, dc]) => {
