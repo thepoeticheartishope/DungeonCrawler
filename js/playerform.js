@@ -13,7 +13,7 @@
 // so the view only projects it.
 //
 // mapview.js calls playerStepped() when a step's slide starts and
-// playerBumped() on a bump; shoulderview.js calls playerPose() each frame
+// playerBumped() on a bump; roomview.js calls playerPose() each frame
 // and draws it. View-only: nothing here is game state, nothing changes
 // state. Each step's and each glance's variation comes from a counted
 // seed, never Math.random (the seeded tests own it).

@@ -1,7 +1,7 @@
 // Unit tests for the room view (js/roomview.js, room view plan step A):
 // which wall tiles show a face, how far the picture is scaled up, where the
 // camera frames a room or follows the player, and the d-pad's ways when
-// the camera never turns (dpad.js padWay); every kind of thing on the map
+// the eye in the sky opening with the boss's light; every kind of thing on the map
 // has a drawing (step B, stick men step C).
 //
 // Run: node --test tests/*.test.mjs
@@ -11,10 +11,8 @@ import assert from 'node:assert/strict';
 
 import { ROOM_VIEW } from '../js/config.js';
 import { faceOf, viewScale, cameraGoal } from '../js/roomview.js';
-import { padWay } from '../js/dpad.js';
 
 const T = ROOM_VIEW.tilePx;
-const EIGHT = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
 // A room of floor at rows 3-6, walls round it, as rows of text.
 const plan = [
@@ -72,12 +70,25 @@ test('a room too big follows the player without showing past its edge; a hallway
   assert.deepEqual(cameraGoal(null, { x: 300, y: 200 }, 240, 176), { x: 180, y: 112 });
 });
 
-test('in the room view each arrow walks the way it points on screen, whichever way the body faces', () => {
-  assert.equal(padWay(0, -1, 'S', EIGHT, true), 'N');
-  assert.equal(padWay(1, 0, 'W', EIGHT, true), 'E');
-  assert.equal(padWay(-1, 1, 'N', EIGHT, true), 'SW');
-  assert.equal(padWay(1, -1, 'N', ['N', 'E', 'S', 'W'], true), null, 'a corner with 8 ways off');
-  assert.equal(padWay(0, -1, 'S', EIGHT, false), 'S', 'the shoulder view still walks round the body');
+test('the eye in the sky opens with the boss light and is shut with none', async () => {
+  const { state } = await import('../js/state.js');
+  const { skyEyeOpen, skyTurnsLeft } = await import('../js/mapshared.js');
+  state.floor.tutorial = null;
+  state.floor.boss = { row: 1, col: 1 };
+  state.floor.lightTurnBudget = 40;
+  state.floor.lightTurns = 0;
+  assert.equal(skyEyeOpen(), 0);
+  assert.equal(skyTurnsLeft(), 40);
+  state.floor.lightTurns = 10;
+  const quarter = skyEyeOpen();
+  state.floor.lightTurns = 30;
+  const most = skyEyeOpen();
+  assert.ok(quarter > 0 && quarter < most && most < 1, 'it opens as the light spreads');
+  state.floor.lightTurns = 40;
+  assert.equal(skyEyeOpen(), 1);
+  state.floor.boss = null; // a rest floor, or the boss has fallen
+  assert.equal(skyEyeOpen(), 0);
+  assert.equal(skyTurnsLeft(), null);
 });
 
 test('every kind of thing the game puts on the map has a room view drawing', async () => {

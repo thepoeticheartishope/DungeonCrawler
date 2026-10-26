@@ -19,8 +19,7 @@ import {
 import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
 import { t } from './text.js';
-import { drawShoulderScene, shoulderTileAt, shoulderGridAt } from './shoulderview.js';
-import { drawRoomScene, roomTileAt, roomGridAt, roomViewWanted } from './roomview.js';
+import { drawRoomScene, roomTileAt, roomGridAt } from './roomview.js';
 import { showShot } from './mapshared.js';
 import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
@@ -68,11 +67,6 @@ const PLAYER = 'player';
 // Floor beyond the player's memory, a touch warmer than black.
 const HIDDEN_FLOOR = '#050403';
 
-// The room view (room view plan, roomview.js) in place of the shoulder
-// view, while the page has ?view=room (until step G makes it the default).
-const ROOM_VIEW_ON = roomViewWanted();
-const tileAt = ROOM_VIEW_ON ? roomTileAt : shoulderTileAt;
-const gridAt = ROOM_VIEW_ON ? roomGridAt : shoulderGridAt;
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -364,9 +358,9 @@ export function endAnswerRingOnMap() {
 }
 
 // Hands main.js a tap on the map: `tap(tile, pointerType, point)` with the
-// tile under a press that didn't drag past MAP_DRAG_PX (shoulderview
-// shoulderTileAt: an enemy's glyph first) and the floor point under it
-// (shoulderGridAt). There is no hover or drag aim (the camera turns with
+// tile under a press that didn't drag past MAP_DRAG_PX (roomview
+// roomTileAt: an enemy first) and the floor point under it (roomGridAt).
+// There is no hover or drag aim (a holdover from the shoulder view, whose camera turned with
 // the light, so the point under the pointer would run away from it), and a
 // drag never taps, so a phone can't pick or clear a target by accident.
 export function onMapPointer({ tap }) {
@@ -388,8 +382,8 @@ export function onMapPointer({ tap }) {
     const dragged = press.dragged;
     press = null;
     if (dragged) return;
-    const tile = tileAt(...place(e));
-    if (tile) tap(tile, e.pointerType, gridAt(...place(e)));
+    const tile = roomTileAt(...place(e));
+    if (tile) tap(tile, e.pointerType, roomGridAt(...place(e)));
   });
   canvas.addEventListener('pointercancel', () => { press = null; });
 }
@@ -458,8 +452,8 @@ function fitCanvas() {
   return true;
 }
 
-// Draws the whole map as state has it at `now`, from the low shoulder
-// camera (shoulderview.js), or the room camera (roomview.js) with ?view=room. Notes whether anything drawn keeps moving, so frames
+// Draws the whole map as state has it at `now`, from the room camera
+// (roomview.js, the game's map view since room view plan step G). Notes whether anything drawn keeps moving, so frames
 // go on, and how long the drawing took (mapDrawTimes).
 function drawScene(now) {
   const started = performance.now();
@@ -474,10 +468,8 @@ function drawScene(now) {
   };
   const size = { width: scene.width, height: scene.height, pageWidth: pageSize.width };
   // The room view's pixel art has no afterglow: it would smear it.
-  if (ROOM_VIEW_ON) {
-    drawRoomScene(ctx, size, shared);
-    snap = true;
-  } else drawShoulderScene(ctx, size, shared);
+  drawRoomScene(ctx, size, shared);
+  snap = true;
   drawTimes.push(performance.now() - started);
   if (drawTimes.length > DRAW_TIMES_KEPT) drawTimes.shift();
 }
@@ -491,13 +483,13 @@ export function mapDrawTimes() {
 }
 
 // Tells the frame loop that something just drawn keeps moving, so frames
-// go on. The shoulder view calls it for its own looping effects.
+// go on. The room view calls it for its own looping effects.
 function keepMoving() {
   looping = true;
 }
 
-// The shoulder view is moving something big this frame (the camera
-// turning or tilting, the player sliding): keep drawing frames, and show
+// The room view is moving something big this frame (the camera
+// gliding, the sky fading in, the player sliding): keep drawing frames, and show
 // each one plain, with no afterglow. The afterglow keeps every in-between
 // place, so a moving scene smeared.
 function showPlain() {
@@ -515,7 +507,7 @@ function fogOf(row, col) {
 
 // How strongly the boss mist shows on a tile this frame, from 0 (none) to
 // 1: only on lit floor (not walls, not floor the player has never seen),
-// dimmed on remembered floor, drifting over time. The shoulder view draws with it.
+// dimmed on remembered floor, drifting over time. The room view draws with it.
 function mistStrength(row, col) {
   const k = key(row, col);
   if (!state.floor.bossLitSet.has(k) || state.floor.wallSet.has(k)) return 0;
@@ -527,7 +519,7 @@ function mistStrength(row, col) {
   return strength * (fog === 'dim' ? 1 - FOG_DIM_ALPHA : 1);
 }
 
-// Every glyph on the map, as a list the shoulder view draws from: { kind, at, tile, glyph, look }. `at` is where it
+// Every glyph on the map, as a list the room view draws from: { kind, at, tile, glyph, look }. `at` is where it
 // shows this frame in tiles (between tiles while something slides), `tile`
 // the tile the rules have it on (where a slide ends), glyph is
 // null for the '?' of something too far to make out, and look holds the
@@ -565,10 +557,10 @@ function mapThings() {
     const under = thing => thing.row === p.row && thing.col === p.col;
     if (p.kind === 'paper' && (under({ row: f.playerRow, col: f.playerCol }) || f.minions.some(under))) return;
     const known = !state.settings.fogEnabled || p.identified || canMakeOut(p.row, p.col);
-    // An unused energy cell breathes a faint glow (shoulderview.js drawDrum).
+    // An unused energy cell breathes a faint glow (roomview.js drawCell).
     const breath = p.kind === 'cell' && !p.searched && !remembered ? pulse(MAP_ANIMATION_MS.cellBreath, phaseOf(p) * MAP_ANIMATION_MS.cellBreath) : null;
     // An unused reflective desk sits in a pool of the kind voice's warm
-    // light (shoulderview.js drawDeskPool), remembered ones too: it says "safe"
+    // light (roomview.js drawDesk), remembered ones too: it says "safe"
     // and calls the player back. Spent, the pool is gone.
     const deskGlow = p.kind === 'desk' && !p.searched ? pulse(MAP_ANIMATION_MS.deskGlow) : null;
     add(p.kind, p, known ? glyphOf(p) : null, {
@@ -638,7 +630,7 @@ function mapThings() {
 }
 
 // Paints one glyph centred on (x, y) in canvas pixels, sized for a tile
-// `cell` pixels wide, with the terminal's soft phosphor glow. The shoulder
+// `cell` pixels wide, with the terminal's soft phosphor glow. The room
 // view paints with it. A null glyph is the '?' of something too far to make
 // out: dim, and without the hostile bloom or any animation.
 // Look options: size (a MAP_GLYPH_SIZES key), colour, alpha, bloom (the

@@ -988,32 +988,13 @@ export const MAP_GLYPH_SIZES = {
 // the player) and sits this far lower on its tile, in tile widths.
 export const DOWNED_GLYPH_LEVEL = 0.65;
 export const DOWNED_GLYPH_LIFT = -0.08;
-// The shoulder view sizes its glyphs (shoulderview.js isoTileWidth) so
+// The room view sizes its glyphs (roomview.js drawGlyphs) so
 // they are never smaller than they were on the old isometric map, which
 // fit ISO_TILES_ACROSS tile widths across the map (ISO_TILES_ACROSS_NARROW
 // on a map narrower than ISO_NARROW_MAP_WIDTH CSS pixels, a phone).
 export const ISO_TILES_ACROSS = 9;
 export const ISO_TILES_ACROSS_NARROW = 7;
 export const ISO_NARROW_MAP_WIDTH = 400;
-// The low shoulder view (js/shoulderview.js, shoulder view plan; the
-// game's only map view): a close camera just behind and right of
-// the player, below the wall tops, turning with the light. Distances are
-// in tiles. Timothy's settings from the close camera mockup (2026-10-18).
-export const SHOULDER_CAMERA = {
-  height: 0.85,     // the camera's height: below the walls (wallHeight), so it never sees over them
-  back: 0.95,       // how far behind the player it stands
-  side: 0.4,        // how far to the right of the player's shoulder
-  fov: 74,          // its field of view across the map's width, in degrees
-  aimAhead: 3,      // it looks at a point this far ahead of the player...
-  aimHeight: 0.45,  // ...at this height (about 6° down)
-  wallHeight: 1.1,  // a wall's height; a pillar stands pillarHeight times that
-  pillarHeight: 1.15,
-  reach: 11,        // tiles further than this from the camera aren't drawn
-  turnMs: 90,       // the drawn light (and the camera locked to it) eases toward the real one: a 45° turn settles in about 300 ms
-  pullMs: 130,      // the camera eases in from a wall (and back out) this fast
-  lookUpPitch: 1.05, // looking up (sky eye plan step A): the camera tilts this far up, in radians (about 60°)...
-  lookUpMs: 120,    // ...easing there and back this fast (jumps under reduced motion)
-};
 // Windows on back walls that face the outside (windows.js, room view plan
 // step F): one every `every` columns along such a wall, and the pool of
 // light each throws: `length` tiles down from the wall, leaning `slant`
@@ -1025,7 +1006,7 @@ export const WINDOW_LIGHT = { every: 3, length: 3.4, slant: 1.1, inset: 5 / 16 }
 // (`furniture.<piece>`) and a drawing in roomview.js.
 export const FURNITURE_PIECES = ['desk', 'teacher', 'shelf', 'table', 'bench', 'easel', 'sink', 'stall', 'sofa'];
 // The room view (js/roomview.js, room view plan `ideas/room-view-plan.md`
-// outside the repo; behind ?view=room until step G): a fixed camera looking
+// outside the repo; the game's map view since step G): a fixed camera looking
 // down on one room at a time, drawn as pixel art at tilePx a tile and
 // scaled up by a whole number. Light levels run from 0 (black) to 1.
 export const ROOM_VIEW = {
@@ -1043,10 +1024,11 @@ export const ROOM_VIEW = {
   glideMs: 180,       // the camera glides to a new room this fast (jumps under reduced motion)
   stickHeight: 1.25,  // the player's stick man, in tiles
   footAt: 0.78,       // his feet stand this far down his tile, so he rises over the tile behind
+  lookUpMs: 120,      // looking up (sky eye plan): the sky fades in and out this fast (at once under reduced motion)
 };
 // Looking up with the look stick (sky eye plan step A): a push up past this
 // share of its reach, more up than sideways, looks up until it comes back.
-export const SHOULDER_LOOK_UP_STICK = 0.6;
+export const LOOK_UP_STICK = 0.6;
 // The player's stick man (player figure plan, `ideas/player-figure-plan.md`
 // outside the repo; js/playerform.js): a person feeling their way through
 // a dark place, never quite even (Timothy, the ember head mockup v4).
@@ -1112,12 +1094,12 @@ export const SKY_EYE = {
   paleFrom: 0.5,    // the sky pales faintly blue from this much open
   tutorial: 1,      // how open it is in the tutorial room (Timothy: wide open, so "It's watching you." shows an open eye is bad)
 };
-// The shoulder view's sweep (shoulder view plan step B): holding left /
-// right sweeps the light round this fast (radians a second; the mockup's
-// 144° a second), and a quick tap sweeps at least SHOULDER_SWEEP_TAP.
+// The light's sweep (shoulder view plan step B, kept for the look stick):
+// pushed fully sideways it sweeps the light round this fast (radians a
+// second; 144° a second), and a quick tap sweeps at least LOOK_SWEEP_TAP.
 // Past the free arc each body turn is a turn (look.js sweepLook).
-export const SHOULDER_SWEEP_SPEED = Math.PI * 0.8;
-export const SHOULDER_SWEEP_TAP = Math.PI / 12;
+export const LOOK_SWEEP_SPEED = Math.PI * 0.8;
+export const LOOK_SWEEP_TAP = Math.PI / 12;
 // How long each map animation takes, in ms. Looping ones stand still
 // under reduced motion.
 export const MAP_ANIMATION_MS = {
@@ -1162,8 +1144,7 @@ export const MAP_ANIMATION_MS = {
 // from the map's edge.
 export const MINIMAP_MAX_UNIT = 9;
 export const MINIMAP_PAD = 12;
-// In the shoulder view, the arrow from the player's dot to where the light
-// points: its reach and its half width, in minimap tiles (never under 16
+// The arrow from the player's dot to where the light points: its reach and its half width, in minimap tiles (never under 16
 // and 5 pixels).
 export const MINIMAP_ARROW = [1.6, 0.55];
 // On a fixed plan (plans.js) the minimap names the rooms the player has

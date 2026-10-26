@@ -2,7 +2,8 @@
 // repo): a fixed camera looking down on one room at a time at the angle
 // of the RPG Maker horror games, drawn as pixel art. Back walls show their
 // face, the floor runs toward the player, and the dark round the room is
-// black. Built beside the shoulder view behind ?view=room until step G.
+// black. The game's only map view since step G (the shoulder view it
+// replaced is kept at ideas/reference/shoulder-view/ outside the repo).
 //
 // Step A draws the walls (faces, the rim round each room), the floors, the
 // light and the player's stick man. Step B draws the things on the floor
@@ -36,8 +37,7 @@
 // gets one level; a tiny canvas of those levels is scaled up smoothly and
 // multiplied over the picture, so the light's edges are soft.
 //
-// mapview.js calls drawRoomScene() from its drawScene when roomViewWanted(),
-// and roomTileAt() / roomGridAt() to turn a tap into a tile or a floor
+// mapview.js calls drawRoomScene() from its drawScene, and roomTileAt() / roomGridAt() to turn a tap into a tile or a floor
 // point. faceOf, viewScale, cameraGoal and ROOM_DRAWINGS are exported for
 // the tests.
 // Reads state and never changes it.
@@ -46,7 +46,7 @@ import { state, key } from './state.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
   ISO_NARROW_MAP_WIDTH, PLAYER_GLANCE, PLAYER_EMBER, MAP_ANIMATION_MS, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING,
-  SKY_EYE, SHOULDER_CAMERA, WINDOW_LIGHT,
+  SKY_EYE, WINDOW_LIGHT,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
@@ -182,11 +182,6 @@ let upShare = 0;          // how far the sky has faded in, 0 to 1
 let skyAt = 0;            // the last frame the sky eased at
 let sky = null;           // the sky at the picture's size, over the whole map
 let sctx = null;
-
-// True when the page asked for the room view (?view=room).
-export function roomViewWanted() {
-  return typeof location !== 'undefined' && new URLSearchParams(location.search).get('view') === 'room';
-}
 
 // Looks up at the sky (on) or back down (sky eye plan, room view plan step
 // F): main.js calls it while Space is held or the look stick is pushed up.
@@ -360,7 +355,7 @@ export function roomTileAt(px, py) {
 }
 
 // The floor point under a tap at (px, py) CSS pixels, in grid terms with
-// a tile's middle at whole numbers (as the shoulder view gives it), or
+// a tile's middle at whole numbers (as main.js aimAtPoint takes it), or
 // null before the first frame.
 export function roomGridAt(px, py) {
   if (!shownCam) return null;
@@ -1655,11 +1650,11 @@ function drawPool(w, ox, oy) {
 // map fades into the night, paling faintly blue as the eye opens, and the
 // eye hangs above the middle, drawn at the picture's size and scaled up
 // like the rest, its pupil turned down toward the player. It eases in and
-// out over SHOULDER_CAMERA.lookUpMs (at once under reduced motion).
+// out over ROOM_VIEW.lookUpMs (at once under reduced motion).
 // Comfort mode shows the turns left as words instead.
 function drawSky(ctx, w, h, at, ox, oy) {
   const goal = lookingUp ? 1 : 0;
-  const ease = look.still ? 1 : 1 - Math.exp(-Math.min(50, look.now - (skyAt || look.now)) / SHOULDER_CAMERA.lookUpMs);
+  const ease = look.still ? 1 : 1 - Math.exp(-Math.min(50, look.now - (skyAt || look.now)) / ROOM_VIEW.lookUpMs);
   skyAt = look.now;
   upShare += (goal - upShare) * ease;
   if (Math.abs(goal - upShare) < 0.01) upShare = goal;

@@ -7,7 +7,7 @@
 // comfort version is the still line).
 //
 // main.js asks mapview.js answerRingOnMap() first and falls back to the
-// line when it says no; a move ends it (endAnswerRingOnMap). shoulderview.js
+// line when it says no; a move ends it (endAnswerRingOnMap). roomview.js
 // draws it with answerRingNow() and ringLetters(). The ring's moments are
 // view-only and kept here, not in state. Reads state and never changes it.
 
