@@ -6,6 +6,7 @@
 import { state, key } from './state.js';
 import { reachGate } from './gate.js';
 import { useDesk } from './desk.js';
+import { useCharger } from './charger.js';
 import { ventUnderfoot } from './vents.js';
 import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
@@ -212,6 +213,7 @@ function examineProp(prop) {
   if (prop.kind === 'cell') return [{ type: 'cellFound', prop }];
   if (prop.kind === 'relay') return [{ type: 'relayFound', prop }];
   if (prop.kind === 'desk') return useDesk(prop);
+  if (prop.kind === 'charger') return useCharger(prop);
   if (prop.kind === 'box' && prop.trapped) {
     prop.sprung = true;
     state.battle.selectedTarget = prop;

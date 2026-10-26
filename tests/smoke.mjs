@@ -84,6 +84,13 @@
 //      it points on screen whichever way the body faces (up is grid north,
 //      right grid east), and the map draws. Saved as noesis-room-*.png in
 //      the system's temp folder.
+//  12. Charger run (charger plan step B): a phone-sized page on the first
+//      depth, 0 energy, no stick men; walking into the charger opens
+//      CHARGE.SYS over the map (it fits, wires 44 px), 2 wire turns spend 1
+//      turn, Escape closes it and a bump opens it on the same wires,
+//      solving them fills energy and closes it, a bump at full opens nothing
+//      ("nothing to give"); then a hunting stick man beside the player
+//      closes it ("It found you."). Saved as noesis-charger*.png.
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -1753,6 +1760,151 @@ async function standAndShoot(page, map, { skip = true, view = 'room' } = {}) {
   return '';
 }
 
+// ---- Run 12: the charger ----
+
+// The charger (charger plan, charger.js / chargerview.js) on a phone-sized
+// screen: skips to the first depth, empties energy, clears the stick men,
+// and bumps the charger in the start room. CHARGE.SYS opens over the map
+// and fits it, every second wire turn is a turn, Escape closes it and a
+// bump opens it on the same wires, solving it fills energy and closes it,
+// and a bump at full opens nothing. Then a stick man beside the player
+// reaches them while it's open: it closes, "It found you.".
+async function runCharger(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkCharger(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'CHARGE.SYS opened over the map on a phone, 2 wire turns = 1 turn, wires kept on leaving, solved to full energy, full = no open, a stick man closed it', consoleErrors, pageErrors };
+}
+
+// The arrow key bumpCharger last walked into the charger with.
+let lastBump = 'ArrowUp';
+
+// Stands the player on a free side of the charger, energy as given, no
+// stick men, and walks into it (the map saved to `shot` first, if given). Returns false if there is no charger or no
+// free tile beside it.
+async function bumpCharger(page, energy, shot = null) {
+  const stood = await page.evaluate(async (energy) => {
+    const { state, key } = await import('./js/state.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const f = state.floor;
+    const charger = f.props.find(p => p.kind === 'charger');
+    if (!charger) return false;
+    // A free side of it, and the key that walks into it from there.
+    const free = (r, c) => !f.wallSet.has(key(r, c)) && !f.pillarSet.has(key(r, c)) && !f.props.some(p => p.row === r && p.col === c);
+    const side = [[1, 0, 'N', 0, 'ArrowUp'], [0, -1, 'E', Math.PI / 2, 'ArrowRight'], [0, 1, 'W', -Math.PI / 2, 'ArrowLeft'], [-1, 0, 'S', Math.PI, 'ArrowDown']]
+      .find(([dr, dc]) => free(charger.row + dr, charger.col + dc));
+    if (!side) return false;
+    const [dr, dc, facing, look, press] = side;
+    const r = charger.row + dr, c = charger.col + dc;
+    f.minions = [];
+    f.crawling = [];
+    f.hunter = null;
+    state.run.energy = energy;
+    state.run.rounds = Array(energy).fill(null);
+    f.playerRow = r; f.playerCol = c; f.facing = facing; f.look = look;
+    computeVisibility();
+    return press;
+  }, energy);
+  if (!stood) return false;
+  await page.waitForTimeout(250);
+  if (shot) await page.locator('#mapWrap').screenshot({ path: shot });
+  await page.keyboard.press(stood);
+  lastBump = stood;
+  await page.waitForTimeout(250);
+  return true;
+}
+
+async function checkCharger(page, url) {
+  await loadPageAndSet(page, url);
+  await startGameAndWaitForRoom(page);
+  await page.click('#devToggleBtn');
+  await page.waitForSelector('#devPanel.show', { timeout: 5000 });
+  await page.click('#devSkipBtn');
+  await page.waitForTimeout(300);
+  await page.click('#devToggleBtn');
+  await page.waitForTimeout(200);
+  const panel = page.locator('#chargerPanel');
+  const run = (fn) => page.evaluate(fn);
+  const turns = () => run(async () => (await import('./js/state.js')).state.run.turnCount);
+
+  if (!await bumpCharger(page, 0, path.join(os.tmpdir(), 'noesis-charger-room.png'))) return 'no charger in the start room with a free tile beside it';
+  if (!await panel.isVisible()) return 'bumping the charger at 0 energy did not open CHARGE.SYS';
+  const box = await panel.boundingBox();
+  const wrap = await page.locator('#mapWrap').boundingBox();
+  if (!box || !wrap || box.x < wrap.x - 1 || box.x + box.width > wrap.x + wrap.width + 1) return 'CHARGE.SYS does not fit the map on a phone';
+  const wire = await page.locator('.charger-wire').first().boundingBox();
+  if (!wire || wire.width < 43) return `a wire is ${wire && wire.width} px wide on a phone (want 44)`;
+  await page.screenshot({ path: path.join(os.tmpdir(), 'noesis-charger.png') });
+
+  const before = await turns();
+  await page.locator('.charger-wire').nth(1).click();
+  await page.waitForTimeout(100);
+  if (await turns() !== before) return 'one wire turn spent a turn';
+  await page.locator('.charger-wire').nth(1).click();
+  await page.waitForTimeout(150);
+  if (await turns() !== before + 1) return 'two wire turns did not spend one turn';
+
+  const left = await run(async () => (await import('./js/state.js')).state.floor.props.find(p => p.kind === 'charger').puzzle.wires.join());
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(150);
+  if (await panel.isVisible()) return 'Escape did not close CHARGE.SYS';
+  await page.keyboard.press(lastBump);
+  await page.waitForTimeout(250);
+  if (!await panel.isVisible()) return 'a second bump did not open CHARGE.SYS';
+  const kept = await run(async () => (await import('./js/state.js')).state.floor.props.find(p => p.kind === 'charger').puzzle.wires.join());
+  if (kept !== left) return 'the wires were not kept as they were left';
+
+  const steps = await run(async () => {
+    const { state } = await import('./js/state.js');
+    const { solveWires } = await import('./js/charger.js');
+    return solveWires(state.floor.props.find(p => p.kind === 'charger').puzzle);
+  });
+  if (!steps) return 'the wires had no way through';
+  for (const i of steps) {
+    await page.locator(`.charger-wire[data-i="${i}"]`).click();
+    await page.waitForTimeout(30);
+  }
+  const energy = await run(async () => (await import('./js/state.js')).state.run.energy);
+  if (energy !== 4) return `solving the wires left energy at ${energy}`;
+  await page.waitForTimeout(1200);
+  if (await panel.isVisible()) return 'CHARGE.SYS did not close after charging';
+
+  await page.keyboard.press(lastBump);
+  await page.waitForTimeout(250);
+  if (await panel.isVisible()) return 'bumping the charger at full energy opened CHARGE.SYS';
+  const full = await page.locator('#roomFeedback').innerText();
+  if (!/nothing to give/i.test(full)) return `no "nothing to give" line at full energy (log: ${full})`;
+
+  await bumpCharger(page, 0);
+  if (!await panel.isVisible()) return 'CHARGE.SYS did not open the third time';
+  await run(async () => {
+    const { state } = await import('./js/state.js');
+    const { spawnMinion } = await import('./js/combat.js');
+    const { key } = await import('./js/state.js');
+    const f = state.floor;
+    const free = (r, c) => !f.wallSet.has(key(r, c)) && !f.pillarSet.has(key(r, c)) && !f.props.some(p => p.row === r && p.col === c);
+    const spot = [[1, 0], [0, 1], [0, -1], [1, 1], [1, -1]].map(([dr, dc]) => ({ row: f.playerRow + dr, col: f.playerCol + dc }))
+      .find(p => free(p.row, p.col));
+    // One that always hunts (as the tutorial's does), so it comes whether or not it saw the player.
+    if (spot) spawnMinion(spot, 'SHARD').hunts = true;
+  });
+  for (let i = 0; i < 6 && await panel.isVisible(); i++) {
+    await page.locator('.charger-wire').first().click();
+    await page.waitForTimeout(120);
+  }
+  if (await panel.isVisible()) return 'a stick man beside the player did not close CHARGE.SYS';
+  const found = await page.locator('#roomFeedback').innerText();
+  if (!/found you/i.test(found)) return `no "It found you." line (log: ${found})`;
+  return '';
+}
+
 async function main() {
   const port = await findFreePort();
   const server = spawn(process.execPath, [
@@ -1779,7 +1931,7 @@ async function main() {
         ['free look', runFreeLook, url], ['eight ways', runEightWays, url],
         ['light battery', runLightBattery, url], ['tutorial', runTutorial, url],
         ['answer line', runAnswerLine, url], ['vents', runVents, url],
-        ['room view', runRoomView, url],
+        ['room view', runRoomView, url], ['charger', runCharger, url],
       ];
       // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
       // of those words, SMOKE_REPEAT=20 runs each that many times: for

@@ -111,12 +111,12 @@ export function placeCharger(layout, placer, taken) {
 // Bumping the charger. At full energy nothing opens (Timothy 2026-10-26).
 // Otherwise CHARGE.SYS opens on its wires: the ones left half done
 // (`kept`), else new ones for this depth. No turn is spent.
-// Events: chargerFull, or chargerOpened { kept }.
+// Events: chargerFull, or chargerOpened { charger, kept }.
 export function useCharger(charger, rand = Math.random) {
   if (state.run.energy >= ENERGY_MAX) return [{ type: 'chargerFull' }];
   const kept = !!charger.puzzle;
   if (!kept) charger.puzzle = makeWires(wireSize(), rand);
-  return [{ type: 'chargerOpened', kept }];
+  return [{ type: 'chargerOpened', charger, kept }];
 }
 
 // Turns wire `i` a quarter clockwise. Every CHARGER.wireTurnsPerTurn-th

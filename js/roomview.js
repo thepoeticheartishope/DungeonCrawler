@@ -115,7 +115,7 @@ const POSE_SCALE = ROOM_VIEW.stickHeight / 0.75; // playerform's poses are sized
 // and a grate (drawn as they are) and enemies (never shown as a '?').
 export const ROOM_DRAWINGS = {
   paper: 'flat', vent: 'flat', stairs: 'flat',
-  box: 'stand', furniture: 'stand', cell: 'stand', desk: 'stand', relay: 'stand', chest: 'stand', coin: 'stand', key: 'stand',
+  box: 'stand', furniture: 'stand', cell: 'stand', desk: 'stand', charger: 'stand', relay: 'stand', chest: 'stand', coin: 'stand', key: 'stand',
   minion: 'form', exchange: 'glyph', boss: 'glyph', hunter: 'glyph', player: 'player',
 };
 // The things' colours, in the picture's pixels.
@@ -124,6 +124,7 @@ const CELL = { body: '#3b4650', light: '#4d5a66', shade: '#2c353d', band: '#262d
 const SHEET = { fresh: '#d2cbbb', read: '#a8a294', ink: '#8a8476' };
 const GRATE = { frame: '#2a2e32', edge: '#5d656c', bar: '#50575d', seal: '#8b939a', sway: 2 }; // sway: how far it shudders, in picture pixels
 const DESK = { top: '#6e4d33', front: '#523a27', frame: '#4a3a30', glass: '#8fa3ad', shine: '#c9d6dc', dull: '#3a4448' };
+const CHARGER_ART = { body: '#3e4650', edge: '#56606b', shade: '#2b3138', window: '#1c2126', lit: '#e9c48a', cable: '#22272c', plug: '#6a737c' };
 const RELAY = { body: '#4a5058', seam: '#33383e', dead: '#2a2e32', leg: '#2e3236' };
 const CHEST = { lid: '#5a3d2c', lidLight: '#6e4b36', body: '#4a3224', band: '#2e211a', lock: '#b49a6a' };
 const COIN = { face: '#d8b45a', shine: '#f3dc8e', rgb: '216, 180, 90' };
@@ -1093,6 +1094,40 @@ function drawDesk(thing, x, y, glows) {
   });
 }
 
+// The charger (charger.js): a tall grey cabinet with a cable down to the
+// floor and a narrow cell window. While energy isn't full the window is lit
+// and it breathes the kind voice's warm light, like the desk; at full it
+// is dark (it has nothing to give).
+function drawCharger(thing, x, y, glows) {
+  const lit = thing.look.deskGlow !== null && thing.look.deskGlow !== undefined;
+  bctx.fillStyle = CHARGER_ART.cable;
+  bctx.fillRect(x + 13, y + 6, 1, 8);
+  bctx.fillRect(x + 13, y + 14, 2, 1);
+  bctx.fillStyle = CHARGER_ART.body;
+  bctx.fillRect(x + 3, y - 4, 10, 19);
+  bctx.fillStyle = CHARGER_ART.edge;
+  bctx.fillRect(x + 3, y - 4, 10, 1);
+  bctx.fillRect(x + 3, y - 4, 1, 19);
+  bctx.fillStyle = CHARGER_ART.shade;
+  bctx.fillRect(x + 12, y - 3, 1, 18);
+  bctx.fillRect(x + 4, y + 9, 8, 1);
+  bctx.fillStyle = CHARGER_ART.plug;
+  bctx.fillRect(x + 12, y + 5, 2, 2);
+  bctx.fillStyle = lit ? CHARGER_ART.lit : CHARGER_ART.window;
+  bctx.fillRect(x + 7, y - 1, 2, 8);
+  bctx.fillStyle = CHARGER_ART.shade;
+  bctx.fillRect(x + 6, y + 11, 4, 1);
+  bctx.fillRect(x + 6, y + 13, 4, 1);
+  if (!lit) return;
+  glows.push(() => {
+    look.keepMoving();
+    bctx.fillStyle = CHARGER_ART.lit;
+    bctx.fillRect(x + 7, y - 1, 2, 8);
+    const a = (DESK_GLOW[0] + (DESK_GLOW[1] - DESK_GLOW[0]) * thing.look.deskGlow) * (thing.look.alpha === undefined ? 1 : thing.look.alpha);
+    halo(x + T / 2, y + 3, DESK_GLOW_RADIUS * T * 0.8, look.colours.kindRgb, a);
+  });
+}
+
 // A relay (relays.js): a grey box on short legs with a small lamp, lit
 // until it is used.
 function drawRelay(thing, x, y, glows) {
@@ -1200,7 +1235,7 @@ function halo(x, y, r, rgb, a) {
 }
 
 const FLAT = { paper: drawPaper, vent: drawGrate, stairs: drawStairs };
-const STAND = { box: drawBox, furniture: drawFurniture, cell: drawCell, desk: drawDesk, relay: drawRelay, chest: drawChest, coin: drawCoin, key: drawKey };
+const STAND = { box: drawBox, furniture: drawFurniture, cell: drawCell, desk: drawDesk, charger: drawCharger, relay: drawRelay, chest: drawChest, coin: drawCoin, key: drawKey };
 
 // ---- the gun on the map (step D) ----
 

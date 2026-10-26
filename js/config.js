@@ -350,11 +350,13 @@ export const RELAYS_PER_FLOOR = [1, 2];
 // to full through CHARGE.SYS, a wire puzzle with no wrong move. Wires are
 // `sizes[depth]` square (the last for any deeper depth: Timothy 2026-10-26,
 // 4 x 4 on depth 1, 5 x 5 from depth 2), and every `wireTurnsPerTurn` wire
-// turns spend a turn. Off (`on`) until charger plan step B puts it in the game.
+// turns spend a turn. DEV -> Charger switches it off (`on`, the default).
+// Once charged, CHARGE.SYS stays up `closeMs` with its line, then closes.
 export const CHARGER = {
-  on: false,
+  on: true,
   sizes: [4, 5],
   wireTurnsPerTurn: 2,
+  closeMs: 900,
 };
 export const RELAY_TURNS_BACK = 6;
 export const RELAY_TURNS_CAP = 10;
@@ -1125,7 +1127,8 @@ export const MAP_ANIMATION_MS = {
   coinBob: 1400,    // the coin lifting and settling
   glow: 1800,       // the stairs' and THE UNFOLDING's glow
   cellBreath: 4000, // an unused energy cell's faint glow swelling and fading (Timothy: eerie, keep it)
-  deskGlow: 6000,   // the unused reflective desk's pool of the player's own light, swelling and fading: slow and calm, it is safe (desk.js)
+  deskGlow: 6000,
+  chargerGlow: 5000, // the charger's cell window breathing in the kind voice's warm light while energy isn't full (charger.js)   // the unused reflective desk's pool of the player's own light, swelling and fading: slow and calm, it is safe (desk.js)
   mist: 14000,      // the boss mist's slow drift, there and back
   target: 1100,     // the box round the thing being fought
   playerBreath: 2600, // the stick man's chest rising and falling

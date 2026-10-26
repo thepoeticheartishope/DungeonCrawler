@@ -8,7 +8,7 @@ import {
   TIMER_SECONDS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS, REALTIME_POLL_MS, REALTIME_WALK_MS, LETTER_POOL_FORM,
   LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, LOOK_UP_STICK,
   LOOK_SWEEP_SPEED, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
-  TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS,
+  TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS, CHARGER,
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -37,6 +37,8 @@ import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap } from './mapview.js';
+import { turnWire } from './charger.js';
+import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
@@ -143,6 +145,7 @@ onMapPointer({ tap: tapMap });
 initDataView({ backScreen: document.getElementById('workshopScreen') });
 initExchangeView({ buyItem, leaveExchange });
 initGunPanels({ pickReload, cancelReload: () => endReload(), readyBar: readyDial, backBar: lowerGun, stopBar: stopDamageBar, stopStruggle: stopStruggleBar });
+initChargerView({ turnWire: turnChargerWire, leave: () => closeCharger('move-msg', t('room.charger.left')) });
 initMinimap();
 
 applyStaticText();
@@ -1192,6 +1195,9 @@ statsEl.addEventListener('keydown', (e) => {
   toggleHud();
 });
 
+// What closes CHARGE.SYS: a stick man reaching the player.
+const CHARGER_BREAKERS = new Set(['minionStruck', 'struggleStarted', 'ankleGrabbed']);
+
 // A spent turn: the player's events plus the monsters' turn, drawn once,
 // then the room note from all of them (or the run ends in the light, or,
 // with the gun on, to a minion's strike). With the gun on, its target
@@ -1199,8 +1205,14 @@ statsEl.addEventListener('keydown', (e) => {
 // player's own actions don't move the world (`worldMoves` false): the clock
 // does (clockTick), so here only the targets catch up with the player.
 function applyTurnOutcome(events, worldMoves = !state.settings.realTime) {
-  const turn = worldMoves ? events.concat(advanceMonsters({ canStruggle: !mapPanelShown() })) : events;
+  const turn = worldMoves ? events.concat(advanceMonsters({ canStruggle: worldRunsUnder() })) : events;
   if (!worldMoves) refreshTargetValidity();
+  // A stick man that reaches the player closes CHARGE.SYS before its
+  // strike (or Struggle) is drawn; the wires stay as they were.
+  if (chargerShown() && turn.some(e => CHARGER_BREAKERS.has(e.type))) {
+    closeCharger();
+    turn.push({ type: 'chargerBroken' });
+  }
   // The tutorial room moves on (tutorial.js) after any spent turn.
   turn.push(...tutorialTurn(turn));
   if (state.settings.gunCombat) turn.push(...refreshGunTarget());
@@ -1235,10 +1247,11 @@ function closeReloadOnRunEnd() {
 // (a reload or a relay: Timothy chose a screen of its own over the
 // pressure of a clock running under the question), the dial (the
 // shot's timing is the player's), the battle screen, THE UNFOLDING, the
-// DEV panel, the end screens and a hidden tab.
+// DEV panel, the end screens and a hidden tab. It keeps running under
+// CHARGE.SYS: the time is the charger's cost (Timothy 2026-10-26).
 function clockMayRun() {
   return state.settings.realTime && !state.run.runEnded && !document.hidden &&
-    roomScreen.classList.contains('show') && !mapPanelShown() &&
+    roomScreen.classList.contains('show') && worldRunsUnder() &&
     !devPanel.classList.contains('show');
 }
 
@@ -1260,7 +1273,7 @@ setInterval(clockTick, REALTIME_POLL_MS);
 let gazeAt = performance.now();
 function gazeMayRun() {
   return !state.run.runEnded && !state.run.turnLocked && !document.hidden &&
-    roomScreen.classList.contains('show') && !mapPanelShown() && !devPanel.classList.contains('show');
+    roomScreen.classList.contains('show') && worldRunsUnder() && !devPanel.classList.contains('show');
 }
 function gazeTick() {
   const now = performance.now();
@@ -1409,6 +1422,19 @@ function drawEvents(events) {
         break;
       case 'deskUntouched':
         parts.push(t('room.desk.full'));
+        break;
+      case 'chargerFull':
+        parts.push(t('room.charger.full'));
+        break;
+      case 'chargerOpened':
+        parts.push(t(e.kept ? 'room.charger.kept' : 'room.charger.loose'));
+        break;
+      case 'charged':
+        parts.push(t('room.charger.done'));
+        break;
+      case 'chargerBroken':
+        parts.push(t('room.charger.found'));
+        cls = 'warn-msg';
         break;
       case 'exchangeOpened':
         parts.push(t('room.exchange.opened'));
@@ -1713,7 +1739,7 @@ let lastWalkAt = -Infinity;
 // is a turn (bodyTurned). With Real time
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
 function movePlayer(dRow, dCol) {
-  if (state.run.turnLocked || state.run.runEnded || mapPanelShown() === 'struggle') return;
+  if (state.run.turnLocked || state.run.runEnded || walkHeld()) return;
   if (state.settings.realTime && performance.now() - lastWalkAt < REALTIME_WALK_MS) return;
   state.run.turnLocked = true;
   const events = stepPlayer(dRow, dCol);
@@ -1737,6 +1763,69 @@ function movePlayer(dRow, dCol) {
   if (relay) openRelay(relay.prop);
   if (has('nameAsked')) openNameBarrel();
   if (has('tutorialLeft')) leaveTutorial();
+  const charger = events.find(e => e.type === 'chargerOpened');
+  if (charger) openCharger(charger.charger);
+}
+
+// Whether walking and waiting are held: the Struggle dial is the
+// player's move, and CHARGE.SYS's wires are (its turns are spent there).
+function walkHeld() {
+  const shown = mapPanelShown();
+  return shown === 'struggle' || shown === 'charger';
+}
+
+// Whether the world may go on with a panel up: none, or CHARGE.SYS (it sits
+// over the map, and Timothy 2026-10-26: with Real time on the running clock
+// is its cost).
+function worldRunsUnder() {
+  const shown = mapPanelShown();
+  return !shown || shown === 'charger';
+}
+
+// The charger whose CHARGE.SYS is open, or null. View-side, like reloadBox.
+let openChargerProp = null;
+// Closes CHARGE.SYS a moment after a charge (CHARGER.closeMs), so the
+// joined-up wires and their line are seen.
+let chargerCloseTimer = null;
+
+// CHARGE.SYS opens over the map on the charger's wires (charger.js
+// useCharger already made them, or kept them as they were left).
+function openCharger(charger) {
+  clearTimeout(chargerCloseTimer);
+  openChargerProp = charger;
+  showCharger(charger.puzzle, state.settings.realTime);
+}
+
+// A wire turned (a tap, or F / Enter / Space on it): charger.js turnWire.
+// Every second turn is a spent turn, the world's as for a step (with Real
+// time on, the clock is the cost instead). Once the power joins up, energy
+// is full and CHARGE.SYS closes after CHARGER.closeMs.
+function turnChargerWire(index) {
+  const charger = openChargerProp;
+  if (!charger || state.run.turnLocked || state.run.runEnded || !chargerShown()) return;
+  const wires = charger.puzzle;
+  const events = turnWire(charger, index);
+  if (!events.length) return;
+  const charged = events.some(e => e.type === 'charged');
+  renderCharger(wires, charged);
+  if (events.some(e => e.type === 'turnSpent') && !state.settings.realTime) {
+    state.run.turnLocked = true;
+    applyTurnOutcome(events);
+    state.run.turnLocked = false;
+  } else {
+    const note = drawEvents(events);
+    if (note.text) showRoomNote(note.cls, note.text);
+  }
+  if (charged && chargerShown()) chargerCloseTimer = setTimeout(() => closeCharger(), CHARGER.closeMs);
+}
+
+// Closes CHARGE.SYS (the wires stay on the charger as they were), with a
+// room note if one is given.
+function closeCharger(cls, text) {
+  clearTimeout(chargerCloseTimer);
+  openChargerProp = null;
+  closeMapPanels();
+  if (text) showRoomNote(cls, text);
 }
 
 // THE UNFOLDING's screen (exchangeview.js), opened by bumping it on a rest
@@ -1760,7 +1849,7 @@ function leaveExchange() {
 }
 
 function skipTurn() {
-  if (state.run.turnLocked || state.run.runEnded || mapPanelShown() === 'struggle') return;
+  if (state.run.turnLocked || state.run.runEnded || walkHeld()) return;
   state.run.turnLocked = true;
   applyTurnOutcome([{ type: 'waited' }]);
   state.run.turnLocked = false;
