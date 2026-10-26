@@ -2,7 +2,7 @@
 // which wall tiles show a face, how far the picture is scaled up, where the
 // camera frames a room or follows the player, and the d-pad's ways when
 // the camera never turns (dpad.js padWay); every kind of thing on the map
-// has a drawing (step B).
+// has a drawing (step B, stick men step C).
 //
 // Run: node --test tests/*.test.mjs
 
@@ -91,6 +91,6 @@ test('every kind of thing the game puts on the map has a room view drawing', asy
     const source = readFileSync(new URL('../js/' + file, import.meta.url), 'utf8');
     for (const [, kind] of source.matchAll(/kind: '([a-z]+)'/g)) kinds.add(kind);
   });
-  const ways = new Set(['flat', 'stand', 'glyph', 'player']);
+  const ways = new Set(['flat', 'stand', 'form', 'glyph', 'player']);
   kinds.forEach(kind => assert.ok(ways.has(ROOM_DRAWINGS[kind]), `no room view drawing for ${kind}`));
 });
