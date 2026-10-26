@@ -24,6 +24,7 @@ const devGazeBtn = document.getElementById('devGazeBtn');
 const devDownedBtn = document.getElementById('devDownedBtn');
 const devNoiseBtn = document.getElementById('devNoiseBtn');
 const devStaticBtn = document.getElementById('devStaticBtn');
+const devChargerBtn = document.getElementById('devChargerBtn');
 const devShowDuctsBtn = document.getElementById('devShowDuctsBtn');
 const dpadEl = document.getElementById('dpad');
 const devFrameOut = document.getElementById('devFrameOut');
@@ -176,6 +177,14 @@ export function initDevPanel({
     devStaticBtn.textContent = state.settings.staticNoise ? 'Static: ON (dev)' : 'Static: OFF (dev)';
     devStaticBtn.setAttribute('aria-pressed', String(state.settings.staticNoise));
     requestMapDraw();
+  });
+
+  // Dev tool (charger plan step C): a charger in the start room from the
+  // next floor on, or none, to compare.
+  devChargerBtn.addEventListener('click', () => {
+    state.settings.charger = !state.settings.charger;
+    devChargerBtn.textContent = state.settings.charger ? 'Charger: ON (dev)' : 'Charger: OFF (dev)';
+    devChargerBtn.setAttribute('aria-pressed', String(state.settings.charger));
   });
 
   // Dev tool (vents and noise plan step C): see who is in a duct and where

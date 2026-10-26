@@ -37,7 +37,7 @@ import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap } from './mapview.js';
-import { turnWire } from './charger.js';
+import { turnWire, chargerLine } from './charger.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar } from './gunpanels.js';
@@ -1000,6 +1000,7 @@ function resetRun(energy = ENERGY_START) {
   state.run.rounds = [];
   addRounds(energy);
   state.run.reloadIndex = 0;
+  state.run.chargerTold = false;
   state.run.lastMinigame = null;
   rollWeaknesses();
   state.run.loreQueue = [];
@@ -1215,6 +1216,7 @@ function applyTurnOutcome(events, worldMoves = !state.settings.realTime) {
   }
   // The tutorial room moves on (tutorial.js) after any spent turn.
   turn.push(...tutorialTurn(turn));
+  turn.push(...chargerLine());
   if (state.settings.gunCombat) turn.push(...refreshGunTarget());
   const note = drawEvents(turn);
   if (lightConsumed()) {

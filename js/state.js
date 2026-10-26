@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, CHARGER } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -36,6 +36,7 @@ export const state = {
     lightBattery: LIGHT_BATTERY, // the light goes on and off and runs on a battery (battery.js); DEV -> Light battery flips it (off: always on)
     showDucts: SHOW_DUCTS,  // DEV -> Show ducts: stick men in a duct drawn dimly at the grate they will come out of, and every pair of grates known
     noise: NOISE,           // mistakes make a sound stick men hear (noise.js); DEV -> Noise flips it (off: mistakes are quiet)
+    charger: CHARGER.on,   // a charger in each depth's start room, gun on (charger.js); DEV -> Charger flips it from the next floor
     staticNoise: STATIC_NOISE, // a faint grain grows as the closest stick man nears, in place of "I see you." (static.js); DEV -> Static flips it
     downed: DOWNED,         // a shot that leaves a stick man on 1 HP knocks it down: it crawls, grabs, and a bump finishes it (gun.js); DEV -> Downed flips it
     gaze: GAZE,             // an eye over a stick man opens in the player's light and it steps closer (gaze.js); DEV -> Gaze flips it
@@ -70,6 +71,7 @@ export const state = {
     turnCount: 0,
     coinsTotal: 0,
     energy: ENERGY_START, // energy held (0 to ENERGY_MAX, js/gun.js): the gun spends 1 a shot; carried from floor to floor
+    chargerTold: false,    // the kind voice has said the charger's line this run (charger.js chargerLine)
     reloadIndex: 0,        // reloads settled this run; picks the next category in the reload rotation (gun.js)
     lastMinigame: null,    // the minigame the last question ran as, or null if it was a plain question (minigames.js: never the same twice in a row)
     turnLocked: false,

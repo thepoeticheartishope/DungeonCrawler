@@ -89,7 +89,8 @@
 //      CHARGE.SYS over the map (it fits, wires 44 px), 2 wire turns spend 1
 //      turn, Escape closes it and a bump opens it on the same wires,
 //      solving them fills energy and closes it, a bump at full opens nothing
-//      ("nothing to give"); then a hunting stick man beside the player
+//      ("nothing to give"); the kind voice's "It still holds a charge."
+//      after the first turn beside it; then a hunting stick man beside the player
 //      closes it ("It found you."). Saved as noesis-charger*.png.
 //
 // Every run plays the room view, the game's only map view since room view
@@ -1850,6 +1851,10 @@ async function checkCharger(page, url) {
   await page.locator('.charger-wire').nth(1).click();
   await page.waitForTimeout(150);
   if (await turns() !== before + 1) return 'two wire turns did not spend one turn';
+  // The charger was made out before that turn: the kind voice says so once.
+  const told = await run(async () => (await import('./js/state.js')).state.run.chargerTold);
+  const whisper = await page.locator('#senseNote').innerText().catch(() => '');
+  if (!told || !/holds a charge/i.test(whisper)) return `no "It still holds a charge." after the first turn by the charger (said: ${whisper})`;
 
   const left = await run(async () => (await import('./js/state.js')).state.floor.props.find(p => p.kind === 'charger').puzzle.wires.join());
   await page.keyboard.press('Escape');

@@ -9,7 +9,7 @@ import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { FLOOR_PLANS, buildPlanLayout } from './plans.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
 import {
-  CHARGER, CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
+  CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
 } from './config.js';
 import { floorRecipe, pickPaths, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './quiz.js';
@@ -241,8 +241,8 @@ export function buildFloor() {
     minionTaken.push(desk);
   }
   // The charger (charger.js): energy to full, in the start room beside the
-  // desk. Only with the gun, which spends energy; off until charger plan step B.
-  if (CHARGER.on && state.settings.gunCombat) {
+  // desk. Only with the gun, which spends energy; DEV -> Charger turns it off.
+  if (state.settings.charger && state.settings.gunCombat) {
     const charger = placeCharger(layout, placer, minionTaken);
     if (charger) {
       state.floor.props.push({ ...charger, identified: false, searched: false, sprung: false });

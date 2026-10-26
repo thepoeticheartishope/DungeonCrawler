@@ -108,6 +108,18 @@ export function placeCharger(layout, placer, taken) {
   return spot ? { ...spot, kind: 'charger' } : null;
 }
 
+// The kind voice's line the first time in a run the player makes out a
+// charger (its tile in their light: sight.js marks it `identified`), so they
+// learn it is safe and what it is for (Timothy's rule: every new mechanic
+// gets a tutorial beat). Once a run.
+// Returns whispered { line: 'tut.charger', tone: 'kind' }, or nothing.
+export function chargerLine() {
+  if (state.run.chargerTold) return [];
+  if (!state.floor.props.some(p => p.kind === 'charger' && p.identified)) return [];
+  state.run.chargerTold = true;
+  return [{ type: 'whispered', line: 'tut.charger', tone: 'kind' }];
+}
+
 // Bumping the charger. At full energy nothing opens (Timothy 2026-10-26).
 // Otherwise CHARGE.SYS opens on its wires: the ones left half done
 // (`kept`), else new ones for this depth. No turn is spent.
