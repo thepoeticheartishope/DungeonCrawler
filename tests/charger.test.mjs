@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import { CHARGER, ENERGY_MAX } from '../js/config.js';
-import { makeWires, powered, rotated, solveWires, wireSize, placeCharger, useCharger, turnWire, N, E, S, W } from '../js/charger.js';
+import { makeWires, powered, rotated, solveWires, wireSize, placeCharger, useCharger, turnWire, chargerLine, N, E, S, W } from '../js/charger.js';
 
 // A small seeded random, so a failing case can be run again.
 function seeded(seed) {
@@ -133,4 +133,17 @@ test('the charger goes in the start room, off taken tiles', () => {
 test('no start room, no charger', () => {
   const layout = { start: { row: 0, col: 0 }, chambers: [] };
   assert.equal(placeCharger(layout, { pick: () => null }, []), null);
+});
+
+test('the kind voice speaks once a run, when a charger is first made out', () => {
+  state.run.chargerTold = false;
+  const charger = { row: 2, col: 2, kind: 'charger', identified: false };
+  state.floor.props = [charger];
+  assert.deepEqual(chargerLine(), []);
+  charger.identified = true;
+  assert.deepEqual(chargerLine(), [{ type: 'whispered', line: 'tut.charger', tone: 'kind' }]);
+  assert.deepEqual(chargerLine(), []);
+  // A new floor's charger in the same run: no second line.
+  state.floor.props = [{ ...charger }];
+  assert.deepEqual(chargerLine(), []);
 });

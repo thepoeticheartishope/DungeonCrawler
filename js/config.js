@@ -350,7 +350,8 @@ export const RELAYS_PER_FLOOR = [1, 2];
 // to full through CHARGE.SYS, a wire puzzle with no wrong move. Wires are
 // `sizes[depth]` square (the last for any deeper depth: Timothy 2026-10-26,
 // 4 x 4 on depth 1, 5 x 5 from depth 2), and every `wireTurnsPerTurn` wire
-// turns spend a turn. DEV -> Charger switches it off (`on`, the default).
+// turns spend a turn. `on` is the default of state.settings.charger, which
+// DEV -> Charger flips (from the next floor).
 // Once charged, CHARGE.SYS stays up `closeMs` with its line, then closes.
 export const CHARGER = {
   on: true,
