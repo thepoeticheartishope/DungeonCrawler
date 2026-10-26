@@ -708,6 +708,61 @@
   .dial-veil[hidden]:not(.fading) { display: none; }
   .dial-veil.fading { pointer-events: none; }
   .dial-prompt { color: var(--muted); }
+  /* CHARGE.SYS (chargerview.js): a light veil over the map (the room shows
+     through, taps don't reach it) and a box of wires in its middle. Wires
+     are buttons at least 44 px so a thumb can turn them, without the usual
+     brackets; the focused one flips to inverse like any button. Powered
+     ones and the ends that have power glow in the kind voice's warm light. */
+  .charger-veil {
+    position: absolute;
+    inset: 1px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .charger-veil[hidden] { display: none; }
+  .charger-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    max-height: 100%;
+    overflow: auto;
+    padding: 6px 10px 8px;
+    background: rgba(5, 6, 6, 0.9);
+    outline: 1px solid var(--line);
+    font-size: 18px;
+  }
+  .charger-top { display: flex; gap: 12px; align-items: baseline; color: var(--torch-bright); }
+  .charger-sub, .charger-hint { color: var(--muted); font-size: 15px; }
+  .charger-wires {
+    display: grid;
+    grid-template-columns: auto repeat(var(--wires, 4), auto) auto;
+    gap: 3px;
+    align-items: center;
+  }
+  .charger-end { font-size: 15px; color: var(--muted); }
+  .charger-end.lit { color: rgb(var(--kind-rgb)); }
+  .charger-wire {
+    width: clamp(44px, 9vmin, 52px);
+    aspect-ratio: 1;
+    min-height: 0;
+    padding: 0;
+    border: 1px solid var(--line);
+    background: none;
+    color: rgba(221, 232, 234, 0.45);
+    cursor: pointer;
+    display: block;
+  }
+  .charger-wire::before, .charger-wire::after { content: none; }
+  .charger-wire.on { color: rgb(var(--kind-rgb)); }
+  .charger-wire svg { width: 100%; height: 100%; display: block; }
+  .charger-wire line { stroke: currentColor; stroke-width: 5; stroke-linecap: square; }
+  .charger-wire rect { fill: currentColor; }
   /* The circle's room: what the prompt and the key leave. gunpanels.js
      sizes the canvas to DIAL_SIZE_SHARE of its shorter side. */
   .dial-stage {
@@ -1390,7 +1445,9 @@
   }
   /* The tutorial's kind voice talks over the dial (tutorial.js
      tutorialDial), so its line sits above the veil. */
-  #mapWrap:has(.dial-veil:not([hidden])) .map-notes { z-index: 6; }
+  #mapWrap:has(.dial-veil:not([hidden])) .map-notes,
+  #mapWrap:has(.charger-veil:not([hidden])) .map-notes,
+  #mapWrap:has(.charger-veil:not([hidden])) .feedback { z-index: 6; }
   #mapWrap:has(.dial-veil:not([hidden])) .feedback,
   #mapWrap:has(.dial-veil.fading) .feedback,
   #mapWrap:has(.minimap:not([hidden])) .feedback { display: none; }
@@ -1779,6 +1836,16 @@
         </div>
         <!-- What each zone does, filled in by gunpanels.js runDamageBar. -->
         <div class="damage-legend" id="damageLegend"></div>
+      </div>
+      <!-- CHARGE.SYS (chargerview.js): the charger's wires, over the map so
+           the room stays in view while the world keeps taking turns. -->
+      <div class="charger-veil" id="chargerPanel" role="dialog" aria-labelledby="chargerTitle" hidden>
+        <div class="charger-box">
+          <div class="charger-top"><span id="chargerTitle" data-t="charger.title"></span><span class="charger-sub" id="chargerSub"></span></div>
+          <div class="charger-hint" id="chargerHint"></div>
+          <div class="charger-wires" id="chargerWires"></div>
+          <button type="button" class="charger-leave" id="chargerLeave" data-t="charger.leave"></button>
+        </div>
       </div>
     </div>
     </div>

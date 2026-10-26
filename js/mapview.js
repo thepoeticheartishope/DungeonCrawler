@@ -14,7 +14,7 @@ import { state, key } from './state.js';
 import { stepsAway } from './passage.js';
 import {
   AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
-  MAP_ANIMATION_MS, FORM_TELL_STEPS, MAP_DRAG_PX, CRAWL_REACH, DOWNED_GLYPH_LEVEL, DOWNED_GLYPH_LIFT,
+  MAP_ANIMATION_MS, FORM_TELL_STEPS, ENERGY_MAX, MAP_DRAG_PX, CRAWL_REACH, DOWNED_GLYPH_LEVEL, DOWNED_GLYPH_LIFT,
 } from './config.js';
 import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
@@ -562,9 +562,12 @@ function mapThings() {
     // An unused reflective desk sits in a pool of the kind voice's warm
     // light (roomview.js drawDesk), remembered ones too: it says "safe"
     // and calls the player back. Spent, the pool is gone.
-    const deskGlow = p.kind === 'desk' && !p.searched ? pulse(MAP_ANIMATION_MS.deskGlow) : null;
+    // The charger breathes the same warm light while energy isn't full
+    // (roomview.js drawCharger); at full it has nothing to give.
+    const deskGlow = p.kind === 'desk' && !p.searched ? pulse(MAP_ANIMATION_MS.deskGlow)
+      : p.kind === 'charger' && state.run.energy < ENERGY_MAX ? pulse(MAP_ANIMATION_MS.chargerGlow) : null;
     add(p.kind, p, known ? glyphOf(p) : null, {
-      size: 'prop', colour: p.searched ? colours.muted : deskGlow !== null ? 'rgb(' + colours.kindRgb + ')' : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1, breath, deskGlow,
+      size: 'prop', colour: p.searched || (p.kind === 'charger' && deskGlow === null) ? colours.muted : deskGlow !== null ? 'rgb(' + colours.kindRgb + ')' : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1, breath, deskGlow,
     });
   });
   if (f.coin && isLit(f.coin.row, f.coin.col)) {

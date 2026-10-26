@@ -17,6 +17,7 @@ import { maxWager } from './modifiers.js';
 import { escapeHtml } from './quiz.js';
 import { mountQuestionPanel } from './questionview.js';
 import { t } from './text.js';
+import { chargerShown, hideCharger } from './chargerview.js';
 
 const els = {};
 let actions = {};
@@ -77,13 +78,15 @@ export function initGunPanels({ pickReload, cancelReload, readyBar, backBar, sto
 
 // Which panel shows: 'reload' or 'question' (on the ask screen), 'aim'
 // (a shot's dial over the map), 'struggle' (the same veil as the
-// Struggle dial), or null. A dial fading out after its stop no longer
-// counts: the player can move on.
+// Struggle dial), 'charger' (CHARGE.SYS over the map, chargerview.js),
+// or null. A dial fading out after its stop no longer counts: the player
+// can move on.
 export function mapPanelShown() {
   if (!els.reload) return null;
   if (!els.reload.hidden) return 'reload';
   if (!els.question.hidden) return 'question';
   if (!els.aim.hidden) return barMode;
+  if (chargerShown()) return 'charger';
   return null;
 }
 
@@ -253,8 +256,9 @@ function endFade() {
   clearDial();
 }
 
-// Hides every panel and stops the dial at once.
+// Hides every panel (CHARGE.SYS too) and stops the dial at once.
 export function closeMapPanels() {
+  hideCharger();
   endFade();
   clearDial();
   els.aim.classList.remove('on');

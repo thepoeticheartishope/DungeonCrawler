@@ -72,6 +72,8 @@ export const TEXT = {
   'term.vent': 'GRATE', // draft. A grate in the floor over a duct (vents.js)
   'term.vent.symbol': '#', // draft. Drawn as a grate on the map; the glyph is a fallback
   'term.desk.symbol': 'Π', // draft. A desk seen from the front
+  'term.charger': 'CHARGER', // draft
+  'term.charger.symbol': 'ϟ', // draft. A spark
   'term.cell.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
   // The player's glyph (the map draws a stick man in its place).
   'term.player.symbol': '@',
@@ -418,6 +420,23 @@ export const TEXT = {
   // The reflective desk (desk.js): in the start room, heals to full once a floor.
   'room.desk.healed': 'You see yourself in the {@term.desk}. You are whole again.', // draft
   'room.desk.full': 'Your face looks back from the {@term.desk}. You are already whole.', // draft. Full stability: the heal is kept
+  // The charger (charger.js): energy to full through CHARGE.SYS, in the start room.
+  'room.charger.loose': 'CHARGE.SYS. Its wires are loose.', // draft. Opened on new wires
+  'room.charger.kept': 'Your wires are as you left them.', // draft. Opened on half-done wires
+  'room.charger.left': 'You step back from the {@term.charger}.', // draft. LEAVE or Escape
+  'room.charger.found': 'It found you. CHARGE.SYS closed.', // draft. A stick man reached the player while it was open
+  'room.charger.done': 'The {@term.charger} hums. Energy full.', // draft
+  'room.charger.full': 'The {@term.charger} has nothing to give. Your energy is full.', // draft. Bumped at full energy: nothing opens
+  'charger.title': 'CHARGE.SYS', // draft
+  'charger.hint': 'Turn the wires so power reaches the cell.', // draft
+  'charger.charged': 'Charged. Energy full.', // draft
+  'charger.turns': 'TURNS SPENT {turns}', // draft. Turn mode: the turns the wires have cost so far
+  'charger.clock': 'THE CLOCK RUNS', // draft. Real time: the clock is the cost
+  'charger.pwr': 'PWR▸', // draft
+  'charger.cell': '◂CELL', // draft
+  'charger.wire': 'Wire {row}, {col}', // draft. A wire button's label
+  'charger.powered': 'powered', // draft. Added to a wire's label while power runs through it
+  'charger.leave': 'LEAVE', // draft
   'room.desk.done': 'The {@term.desk} is dull now. It will shine on the next floor.', // draft. Bumping a used desk
 
   // Stairs and floor goals (strategy plan step A). Stepping onto the stairs

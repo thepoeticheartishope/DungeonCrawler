@@ -76,11 +76,11 @@ test('at full energy the charger does not open', () => {
 
 test('opening it gives new wires; leaving keeps them as they were', () => {
   const charger = resetRun(1, 1);
-  assert.deepEqual(useCharger(charger, seeded(7)), [{ type: 'chargerOpened', kept: false }]);
+  assert.deepEqual(useCharger(charger, seeded(7)), [{ type: 'chargerOpened', charger, kept: false }]);
   assert.equal(charger.puzzle.n, 5);
   turnWire(charger, 3);
   const left = charger.puzzle.wires.slice();
-  assert.deepEqual(useCharger(charger, seeded(8)), [{ type: 'chargerOpened', kept: true }]);
+  assert.deepEqual(useCharger(charger, seeded(8)), [{ type: 'chargerOpened', charger, kept: true }]);
   assert.deepEqual(charger.puzzle.wires, left);
   assert.equal(charger.puzzle.turns, 1);
 });
@@ -107,7 +107,7 @@ test('joining power to the cell fills energy with plain rounds and clears the wi
   // The next use gets new wires.
   state.run.energy = 0;
   state.run.rounds = [];
-  assert.deepEqual(useCharger(charger, seeded(12)), [{ type: 'chargerOpened', kept: false }]);
+  assert.deepEqual(useCharger(charger, seeded(12)), [{ type: 'chargerOpened', charger, kept: false }]);
 });
 
 test('a wire turn with no wires open does nothing', () => {
