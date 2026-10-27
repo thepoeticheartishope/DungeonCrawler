@@ -45,11 +45,13 @@
 import { state, key } from './state.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
-  ISO_NARROW_MAP_WIDTH, PLAYER_GLANCE, PLAYER_EMBER, MAP_ANIMATION_MS, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING,
+  ISO_NARROW_MAP_WIDTH, PLAYER_EMBER, FIGURE3D, MAP_ANIMATION_MS, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING,
   SKY_EYE, WINDOW_LIGHT,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
+import { figurePose, projectFigure, phiOfAngle, resetFigure, sampleMove } from './figure3d.js';
+import { MOVE_JOINTS } from './moves3d.js';
 import {
   searched, DRUM_BREATH, DRUM_BREATH_REACH, DESK_GLOW, DESK_GLOW_RADIUS, STAIR_BEAM_LAYERS, STAIR_BEAM_FADE,
   SOUND_INSET, SOUND_LEVEL, GRATE_RATTLE_SWAYS,
@@ -233,6 +235,12 @@ export function cameraGoal(bounds, at, viewW, viewH) {
   };
 }
 
+// The player's figure in figure3d.js (its owner key), and his neck's
+// height standing, so a crouch can lower the gun with it.
+export const PLAYER_FIGURE = {};
+const NECK_Y = MOVE_JOINTS.indexOf('neck') * 3 + 1;
+const STANDING_NECK = sampleMove('Idle_Loop', 0, true)[NECK_Y];
+
 // Where the player was drawn last (one stick: their free spot), and
 // whether they have moved since. While they walk the scene shows plainly
 // each frame, with no afterglow, as during a step's slide.
@@ -252,6 +260,7 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   if (!built || built.floor !== f || built.entered !== state.run.floorsEntered || built.walls !== f.wallSet || built.pillars !== f.pillarSet) built = buildFloor(f);
   if (shownFloor !== state.run.floorsEntered) {
     resetPlayerForm();
+    resetFigure(PLAYER_FIGURE);
     shownCam = null;
     shownFloor = state.run.floorsEntered;
   }
@@ -704,34 +713,27 @@ function drawStickMan(at, ox, oy) {
   const fx = (at.col + 0.5) * T - ox;
   const fy = (at.row + ROOM_VIEW.footAt) * T - oy;
   const ax = Math.sin(angle), ay = -Math.cos(angle);
-  const onFloor = (along, side, up) => [
-    fx + (ax * along - ay * side) * POSE_SCALE * T,
-    fy + (ay * along + ax * side) * POSE_SCALE * T - up * POSE_SCALE * T,
-  ];
-  const lift = pose.rise * h;
-  const sway = pose.sway * h;
-  const headR = Math.max(2.5, h * HEAD_SHARE);
-  const headY = fy - h + headR - lift;
-  const neck = [fx + sway, headY + headR];
-  const hip = [fx + sway * 0.4, fy - h * 0.42 + Math.max(0, -pose.rise) * h * 0.5];
-  const shoulder = [neck[0], neck[1] + h * 0.08];
-  const feet = pose.feet.map(p => onFloor(p.along, p.side, p.up));
-  const gun = state.settings.gunCombat ? holdGun(fx, fy, ax, ay, h, pose.gunRise * h) : null;
-  const hands = gun ? [gun.grip, gun.backHand] : [-1, 1].map(s => [shoulder[0] + s * h * 0.2, hip[1] - h * 0.02]);
+  // The body is the 3D moves' (figure3d.js, one stick plan step F): it
+  // walks as far as he goes, crouches while he sneaks, and faces his light.
+  const f = state.floor;
+  const crouch = state.settings.oneStick && (f.sneaking || f.creeping);
+  const pxPerM = h / FIGURE3D.heightM;
+  const joints = figurePose(PLAYER_FIGURE, { at: [at.col, at.row], metres: FIGURE3D.heightM / ROOM_VIEW.stickHeight, crouch }, look.now, look.still);
+  const J = projectFigure(joints, phiOfAngle(angle), fx, fy, pxPerM);
+  // A crouch lowers the gun with his shoulders.
+  const drop = (STANDING_NECK - joints[NECK_Y]) * pxPerM;
+  const gun = state.settings.gunCombat ? holdGun(fx, fy, ax, ay, h, pose.gunRise * h - drop) : null;
+  const hands = gun ? [gun.grip, gun.backHand] : [J.haL, J.haR];
   const px = v => Math.round(v) + 0.5;
+  const path = (points) => points.forEach(([x, y], i) => (i ? bctx.lineTo(px(x), px(y)) : bctx.moveTo(px(x), px(y))));
   bctx.save();
   bctx.strokeStyle = look.colours.text;
   bctx.lineWidth = STICK_LINE;
   bctx.lineCap = 'square';
   bctx.beginPath();
-  bctx.moveTo(px(feet[0][0]), px(feet[0][1]));
-  bctx.lineTo(px(hip[0]), px(hip[1]));
-  bctx.lineTo(px(feet[1][0]), px(feet[1][1]));
-  bctx.moveTo(px(hip[0]), px(hip[1]));
-  bctx.lineTo(px(neck[0]), px(neck[1]));
-  bctx.moveTo(px(hands[0][0]), px(hands[0][1]));
-  bctx.lineTo(px(shoulder[0]), px(shoulder[1]));
-  bctx.lineTo(px(hands[1][0]), px(hands[1][1]));
+  path([J.ftL, J.knL, J.pelvis, J.knR, J.ftR]);
+  path([J.pelvis, J.chest, J.neck]);
+  path(gun ? [hands[0], J.neck, hands[1]] : [J.haL, J.elL, J.neck, J.elR, J.haR]);
   bctx.stroke();
   if (gun) {
     bctx.strokeStyle = GUN_COLOUR;
@@ -743,14 +745,15 @@ function drawStickMan(at, ox, oy) {
     bctx.stroke();
     bctx.strokeStyle = look.colours.text;
   }
-  // The ember head: dark inside, a glow in the middle that breathes, and
-  // the ring round it.
-  const hx = neck[0] + pose.turn * PLAYER_GLANCE.turn * headR * 0.5;
+  // The ember head: dark inside, a glow in the middle that breathes and
+  // leans the way he looks, and the ring round it.
+  const headR = Math.max(2.5, h * HEAD_SHARE);
+  const [hx, headY] = J.headMid;
   bctx.beginPath();
   bctx.arc(hx, headY, headR, 0, Math.PI * 2);
   bctx.fillStyle = look.colours.hidden;
   bctx.fill();
-  const gx = hx + pose.turn * PLAYER_GLANCE.turn * headR * PLAYER_EMBER.lean;
+  const gx = hx + ax * headR * PLAYER_EMBER.lean;
   const ember = bctx.createRadialGradient(gx, headY, 0, gx, headY, headR * PLAYER_EMBER.reach);
   ember.addColorStop(0, 'rgba(' + look.colours.glowRgb + ', ' + emberGlow(pose.breath, look.still) + ')');
   ember.addColorStop(1, 'rgba(' + look.colours.glowRgb + ', 0)');
@@ -835,7 +838,7 @@ function drawForms(ctx, ox, oy, standing) {
     if (!look.still) look.keepMoving();
     const [sx, sy] = centre(at.row, at.col);
     const weak = drawStickForm(ctx, m, sx, sy, {
-      tw, height, lineWidth, toward, now: look.now, still: look.still, centre,
+      tw, height, lineWidth, toward, now: look.now, still: look.still, centre, player: [px, py], pixel: scale,
       line: (path, level) => enemyLine(ctx, path, level, lineWidth),
       aiming: state.battle.aim !== null && state.battle.aim.target === m,
     });

@@ -561,7 +561,8 @@ function paceOf(m, chasing) {
 // for ONE_STICK.reachMs (a guarded HUSK's slower reachGuardMs) before its
 // reach lands or misses (reachOn). Event: reachStarted { minion }.
 function startReach(m) {
-  m.reaching = { left: m.guard ? ONE_STICK.reachGuardMs : ONE_STICK.reachMs };
+  const ms = m.guard ? ONE_STICK.reachGuardMs : ONE_STICK.reachMs;
+  m.reaching = { left: ms, ms };
   return [{ type: 'reachStarted', minion: m }];
 }
 

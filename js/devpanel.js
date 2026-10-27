@@ -245,9 +245,10 @@ export function initDevPanel({
     requestMapDraw();
   });
 
-  // Dev tool (stick enemies plan): every stick enemy shows its own random
-  // pose, or all show the one picked here, so each pose can be checked in play.
-  const LOOK_MODES = ['random', ...STICK_POSE_IDS];
+  // Dev tool (stick enemies plan): every stick enemy shows the one look
+  // picked here: the walker (3D moves, one stick plan step F, the default),
+  // or one of the seven odd poses from before, to compare.
+  const LOOK_MODES = STICK_POSE_IDS;
   devLookBtn.addEventListener('click', () => {
     const next = LOOK_MODES[(LOOK_MODES.indexOf(state.settings.enemyPose) + 1) % LOOK_MODES.length];
     state.settings.enemyPose = next;

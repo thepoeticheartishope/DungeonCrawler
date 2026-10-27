@@ -32,8 +32,9 @@
 
 import { state } from './state.js';
 import { stepsAway } from './passage.js';
+import { figurePose, turnFigure, projectFigure, phiToward, moveFrames, sampleMove } from './figure3d.js';
 import {
-  MAP_ANIMATION_MS, FORM_TELL_STEPS, MINION_KINDS, ENEMY_LIGHT, CRAWL_REACH, DOWNED_DROP_TURNS,
+  FIGURE3D, MAP_ANIMATION_MS, FORM_TELL_STEPS, MINION_KINDS, ENEMY_LIGHT, CRAWL_REACH, DOWNED_DROP_TURNS,
   TENDRIL_GROW_MS, TENDRIL_HOLD_MS, TENDRIL_BACK_MS, TENDRIL_STEP, TENDRIL_SIZE, TENDRIL_LOOKALIKES, TENDRIL_MIRRORABLE,
 } from './config.js';
 
@@ -69,6 +70,13 @@ const SHRINK = 0.4;                   // letters get this much smaller toward a 
 const LETTER_BACKING = 0.85;          // the black behind each letter, so it reads over the floor
 const MIN_LETTER_PX = 6;              // the smallest a letter is drawn
 
+// The walker's joints, by the names its pose uses, from figure3d.js's.
+const WALKER_JOINTS = {
+  head: 'headMid', neck: 'neck', sh: 'chest', hip: 'pelvis',
+  elbowF: 'elL', handF: 'haL', elbowB: 'elR', handB: 'haR',
+  kneeF: 'knL', footF: 'ftL', kneeB: 'knR', footB: 'ftR',
+};
+
 // The poses. Joints are [x, y] as shares of the stick man's height: feet at
 // y 0, up is negative, and toward the player is negative x (the pose is
 // mirrored when the player is on its other side). `rest` and `tell` hold
@@ -80,7 +88,26 @@ const MIN_LETTER_PX = 6;              // the smallest a letter is drawn
 // two arms or legs (the first brightens as the maim point), each its bones (indexes into `bones`), the
 // joint it grows from and the angle its tendril leaves at (step C);
 // `shadow` is the half-width of its shadow.
+//
+// The walker (one stick plan step F) is the one every stick man shows now:
+// a human body moved by the 3D moves (figure3d.js), standing, walking as
+// far as it goes, reaching (the reach's punch), hit and dying. Its `rest`
+// and `tell` are only its stand and its reach seen from the side, worked
+// out from the moves, for its box and the tendrils' anchors; drawUpright
+// takes its joints from the moves each frame. The seven odd poses stay
+// for DEV -> Look.
 export const STICK_POSES = {
+  walker: {
+    rest: walkerShares(sampleMove('Idle_Loop', 0, true)),
+    tell: walkerShares(sampleMove('Punch_Cross', FIGURE3D.punchPeak, false)),
+    idle: [],
+    bones: [['hip', 'kneeF'], ['kneeF', 'footF'], ['hip', 'kneeB'], ['kneeB', 'footB'], ['neck', 'sh'], ['sh', 'hip'],
+      ['neck', 'elbowF'], ['elbowF', 'handF'], ['neck', 'elbowB'], ['elbowB', 'handB']],
+    heads: [['head', 0.12]],
+    core: ['sh', 'hip'],
+    limbs: [{ bones: [0, 1], root: 'hip', angle: -2.3 }, { bones: [6, 7], root: 'neck', angle: -1.2 }],
+    shadow: 0.12,
+  },
   // Upside down: floating, head down, arms hanging straight.
   upsideDown: {
     rest: {
@@ -304,13 +331,15 @@ let dropCount = 0;
 
 // Draws `minion` as its stick man standing on (x, y), the middle of its tile
 // in canvas pixels, with its tendrils. `view` is { tw, height, lineWidth,
-// toward, now, still, line, aiming }: a tile's width, the player's stick
+// toward, now, still, line, aiming, player, pixel }: a tile's width, the player's stick
 // man height in pixels, its line width, the player's place on screen (the
 // pose leans toward it, tendrils reach for it), the frame time, reduced
 // motion, line(path, level) to stroke a path in the enemies' light at
 // strength `level`, and whether a landed shot on it waits for the dial
 // (its maim point limb brightens), and centre(row, col), a tile's
-// middle on the canvas (a downed one's crawl reaches across tiles). A
+// middle on the canvas (a downed one's crawl reaches across tiles), the
+// player's feet, and a room pixel's size on the canvas (the walker's
+// joints sit on them). A
 // downed one is drawn by drawDowned. Returns the maim point's place as
 // [x, y], or null.
 export function drawStickForm(ctx, minion, x, y, view) {
@@ -335,13 +364,15 @@ function drawUpright(ctx, minion, x, y, view, fade = 1, bodyOnly = false) {
   const hitK = !still && hitAge < MAP_ANIMATION_MS.stickHit ? 1 - hitAge / MAP_ANIMATION_MS.stickHit : 0;
   const push = -face * Math.sin(Math.PI * hitK) * HIT_PUSH * h;
   const t = still ? 0 : now / 1000 + fx.seed;
-  const rest = restAt(pose, t);
-  const J = {};
-  for (const k of Object.keys(rest)) {
-    J[k] = [
-      x + push + face * lerp(rest[k][0], pose.tell[k][0], tellK) * h,
-      y + lerp(rest[k][1], pose.tell[k][1], tellK) * h,
-    ];
+  const J = poseOf(minion) === 'walker' ? walkerNow(minion, fx, x, y, h, view, { push, tellK, hitK, dying }) : {};
+  if (poseOf(minion) !== 'walker') {
+    const rest = restAt(pose, t);
+    for (const k of Object.keys(rest)) {
+      J[k] = [
+        x + push + face * lerp(rest[k][0], pose.tell[k][0], tellK) * h,
+        y + lerp(rest[k][1], pose.tell[k][1], tellK) * h,
+      ];
+    }
   }
   const m = { now, still, t, tellK, dying, tw, side: face < 0 ? -1 : 1, toward: view.toward };
   const style = styleOf(minion);
@@ -701,11 +732,47 @@ function styleOf(minion) {
   return TENDRIL_STYLES.includes(forced) ? forced : momentsOf(minion).style;
 }
 
-// The pose `minion` shows: DEV -> Look's forced pose, else the one it
-// picked the first time it was drawn.
+// The pose `minion` shows: DEV -> Look's forced pose, else the walker
+// (one stick plan step F).
 function poseOf(minion) {
   const forced = state.settings.enemyPose;
-  return STICK_POSES[forced] ? forced : momentsOf(minion).pose;
+  return STICK_POSES[forced] ? forced : 'walker';
+}
+
+// 3D joints seen from the side, facing toward the player (negative x), as
+// shares of the walker's height: its pose's rest and tell.
+function walkerShares(joints) {
+  const P = projectFigure(joints, phiToward(-1, 0), 0, 0, 1 / FIGURE3D.heightM);
+  return Object.fromEntries(Object.entries(WALKER_JOINTS).map(([k, j]) => [k, P[j]]));
+}
+
+// The walker `minion`'s joints on the canvas this frame, standing on (x, y)
+// at height `h` (drawUpright): dying, it falls (Death01) as its lines fade;
+// just hit, it takes it (Hit_Chest); reaching (combat.js, One stick) its
+// punch winds up to FIGURE3D.punchPeak as the reach runs, and in turns its
+// tell does the same; else it stands or walks as far as it goes. It faces
+// the way it walks, else the player, turning at FIGURE3D.turnRate. Its
+// joints sit on the room's own pixels (`view.pixel`).
+function walkerNow(minion, fx, x, y, h, view, { push, tellK, hitK, dying }) {
+  const { now, still, tw } = view;
+  const reach = minion.reaching;
+  const pick = dying > 0 ? { move: 'Death01', frame: dying * (moveFrames('Death01') - 1) }
+    : hitK > 0 ? { move: 'Hit_Chest', frame: (1 - hitK) * (moveFrames('Hit_Chest') - 1) }
+    : reach ? { move: 'Punch_Cross', frame: (1 - reach.left / reach.ms) * FIGURE3D.punchPeak }
+    : tellK > 0 && !state.settings.oneStick ? { move: 'Punch_Cross', frame: tellK * FIGURE3D.punchPeak }
+    : null;
+  if (fx.at && (fx.at[0] !== x || fx.at[1] !== y)) {
+    fx.way = [x - fx.at[0], y - fx.at[1]];
+    fx.movedAt = now;
+  }
+  fx.at = [x, y];
+  const walking = fx.way && now - fx.movedAt < FIGURE3D.stopMs && !reach;
+  const [dx, dy] = walking ? fx.way : [view.player[0] - x, view.player[1] - y];
+  const phi = turnFigure(minion, phiToward(dx, dy), now, still);
+  const joints = figurePose(minion, { at: [x / tw, y / tw], metres: FIGURE3D.heightM * tw / h, pick, offset: fx.seed / 100 }, now, still);
+  const P = projectFigure(joints, phi, x + push, y, h / FIGURE3D.heightM);
+  const snap = v => Math.round(v / view.pixel) * view.pixel;
+  return Object.fromEntries(Object.entries(WALKER_JOINTS).map(([k, j]) => [k, [snap(P[j][0]), snap(P[j][1])]]));
 }
 
 // A minion's moments, made the first time it is drawn. Its seed picks its
@@ -717,7 +784,7 @@ function momentsOf(minion) {
     const n = seedCount++;
     fx = {
       seed: (n * 37.3) % 100,
-      pose: STICK_POSE_IDS[Math.floor(hash(n) * STICK_POSE_IDS.length)],
+      at: null, way: null, movedAt: -1e9, // the walker's last place, the way it last moved and when (walkerNow)
       style: TENDRIL_STYLES[Math.floor(hash(n * 7.3 + 11) * TENDRIL_STYLES.length)],
       hitAt: -1e9, hits: [], deadAt: null,
       tellOn: false, tellFrom: 0, tellAt: -1e9,

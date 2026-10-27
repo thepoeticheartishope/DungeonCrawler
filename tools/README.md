@@ -13,6 +13,7 @@ Python 3, standard library only. Run them from the repo root.
 | `build_dictionary.py` | no | `python3 tools/build_dictionary.py bible`: adds every answer of the subject's sets that `lists/dictionaries/<subject>.json` doesn't cover yet. Keeps existing entries as they are, so edits are safe. See "Subject dictionaries" below. |
 | `convert_batch.py` | yes (cached) | The steps for a photographed card batch in one place: checks the photos weren't converted before, refuses exact duplicates and lists likely near-duplicates, adds the batch, bumps `CACHE_NAME`, then runs the three scripts above for just the new questions. |
 | `kjv_check.py` | first run only | Checks citations and quotes against the KJV text: citations exist, "Which verse says…?" quotes match, quoted phrases are in the cited verses. Reports only. |
+| `moves3d_extract.mjs` | no | `node tools/moves3d_extract.mjs UAL1_Standard.glb UAL2_Standard.glb` (Node): writes `js/moves3d.js`, the 3D moves the stick men are drawn with (one stick plan step F), sampled 12 times a second from Quaternius's Universal Animation Library 1 and 2 (CC0, kept outside the repo). Not a question-set tool, but it lives here. |
 | `fact_check.py` | yes (cached) | Labels every Bible question `"fact": true` or `false` by comparing the cited verse in the KJV, ASV and WEB. Writes the label into the JSON. |
 
 Downloads and caches go in `~/.cache/dungeoncrawler-tools/` (outside the repo,

@@ -14,8 +14,9 @@ import { TENDRIL_LOOKALIKES, MINION_KINDS } from '../js/config.js';
 
 const poses = Object.entries(STICK_POSES);
 
-test('there are seven poses, a plain standing one among them', () => {
-  assert.equal(poses.length, 7);
+test('there are eight poses: the walker (3D moves) and the seven odd ones, a plain standing one among them', () => {
+  assert.equal(poses.length, 8);
+  assert.ok(STICK_POSES.walker);
   assert.ok(STICK_POSES.standing);
 });
 
