@@ -45,7 +45,8 @@
 //      in the system's temp folder. Then DEV -> Free look off and a few
 //      turns played.
 //   7. Light battery run: the battery reads LIGHT #### ON at the foot of
-//      the map; V switches it off (only the small circle lit, no turn spent)
+//      the map (the HUD tube's label; its canvas shows 4 lit cells, 1
+//      after 3 turns, none empty); V switches it off (only the small circle lit, no turn spent)
 //      and on, and so do 3 taps on the look stick; 4 turns on and it dies, refuses V while charging, and is
 //      charged again after 4 turns off; a few turns on the first depth with
 //      the stick men noticing the light, a shot into the dark (its bar
@@ -973,11 +974,30 @@ async function runEightWays(browser, url) {
 
 // ---- Run 7: light battery ----
 
-// The battery's text at the foot of the map, or null while it's hidden.
+// The battery's words at the foot of the map (the tube's label, read out
+// by screen readers), or null while it's hidden.
 function batteryShown(page) {
   return page.evaluate(() => {
     const el = document.getElementById('lightBattery');
-    return el.hidden ? null : el.textContent;
+    return el.hidden ? null : el.getAttribute('aria-label');
+  });
+}
+
+// How many of the HUD tube's cells are drawn lit (record book plan step
+// E): the middle of each cell along the tube on its side, cap on the left,
+// read off its canvas. The stored colour is dim, so this counts only with
+// the light on and warmed up.
+function tubeLitCells(page) {
+  return page.evaluate(async () => {
+    const { TUBE_W } = await import('./js/tubeart.js');
+    const canvas = document.getElementById('hudTube');
+    const ctx = canvas.getContext('2d');
+    let n = 0;
+    for (let i = 0; i < 4; i++) {
+      const [r] = ctx.getImageData(23 + 22 * i, Math.floor(TUBE_W / 4), 1, 1).data;
+      if (r > 150) n++;
+    }
+    return n;
   });
 }
 
@@ -1000,6 +1020,7 @@ async function checkLightBattery(page, url) {
   const lit = () => page.evaluate(async () => (await import('./js/state.js')).state.floor.sightSet.size);
 
   if (await batteryShown(page) !== 'LIGHT #### ON') return `the battery read ${await batteryShown(page)} at the start`;
+  if (await tubeLitCells(page) !== 4) return `the HUD tube showed ${await tubeLitCells(page)} lit cells at the start`;
   const litOn = await lit();
   const turns = await turnsShown(page);
   await page.keyboard.press('v');
@@ -1019,8 +1040,11 @@ async function checkLightBattery(page, url) {
 
   await wait(3);
   if (await batteryShown(page) !== 'LIGHT #--- ON') return `3 turns on left ${await batteryShown(page)}`;
+  await page.waitForTimeout(800);
+  if (await tubeLitCells(page) !== 1) return `the HUD tube showed ${await tubeLitCells(page)} lit cells after 3 turns on`;
   await wait(1);
   if (await batteryShown(page) !== 'LIGHT ---- EMPTY') return `4 turns on left ${await batteryShown(page)}`;
+  if (await tubeLitCells(page) !== 0) return 'the HUD tube still showed lit cells when empty';
   if (!(await page.evaluate(() => document.getElementById('roomFeedback').textContent)).includes('Your light dies.')) return 'no "Your light dies." in the log';
   await page.keyboard.press('v');
   if (await lastNote(page) !== 'No light until it is full. 4 more turns.') return `V while empty said "${await lastNote(page)}"`;
@@ -1214,7 +1238,7 @@ async function checkOneStick(page, url) {
   await page.waitForTimeout(500);
   const light = await page.evaluate(async () => {
     const { state } = await import('./js/state.js');
-    return { ...state.floor.light, hud: document.getElementById('lightBattery').textContent };
+    return { ...state.floor.light, hud: document.getElementById('lightBattery').getAttribute('aria-label') };
   });
   if (light.on || !light.locked) return 'the battery did not run out by time';
   if (!/EMPTY/i.test(light.hud)) return `the HUD's battery did not say it was empty: ${light.hud}`;

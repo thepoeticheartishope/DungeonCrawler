@@ -559,6 +559,7 @@ export const BOOK = {
   frames: 11,
   dogEarShare: 0.2,
   flapLean: 0.55,
+  tubeWarmMs: 700,   // the HUD tube's switch-on (step E): cells and glow fade up, never flicker
 };
 // Shots in the dark (light battery plan step C, gun.js fireDark): the shot
 // goes along the aim, checked every DARK_SHOT_STEP tiles for the first

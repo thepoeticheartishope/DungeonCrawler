@@ -1658,15 +1658,19 @@
   #mapWrap:has(.charger-veil:not([hidden])) .feedback { z-index: 6; }
   #mapWrap:has(.dial-veil:not([hidden])) .feedback,
   #mapWrap:has(.dial-veil.fading) .feedback { display: none; }
-  /* The light's battery (render.js renderBattery): small, in the map's
-     bottom-right corner; the room log's lines stop short of it. Hidden
-     with the log while a gun panel is over the map. Off or
-     empty it dims, so the cells read as the light itself. */
+  /* The light's battery (render.js renderBattery): the light tube on its
+     side (tubeart.js, record book plan step E) and ON / OFF / EMPTY after
+     it, small, in the map's bottom-right corner; the room log's lines stop
+     short of it. Hidden with the log while a gun panel is over the map.
+     Off or empty the word dims, as the tube does. */
   .light-battery {
     position: absolute;
     right: 10px;
     bottom: 7px;
     z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 14px;
     letter-spacing: 0.06em;
     color: var(--text);
@@ -1674,8 +1678,10 @@
     pointer-events: none;
     white-space: pre;
   }
+  .light-battery[hidden] { display: none; }
+  .hud-tube { width: 80px; height: auto; image-rendering: pixelated; }
   .light-battery.battery-off { color: var(--muted); text-shadow: none; }
-  #mapWrap:has(.light-battery:not([hidden])) .feedback { padding-right: 9.5em; }
+  #mapWrap:has(.light-battery:not([hidden])) .feedback { padding-right: 140px; }
   #mapWrap:has(.dial-veil:not([hidden])) .light-battery,
   #mapWrap:has(.dial-veil.fading) .light-battery { display: none; }
   @media (prefers-reduced-motion: reduce) { .feedback { transition: none; } }
@@ -2031,7 +2037,7 @@
       <div class="feedback" id="roomLog" role="log" aria-live="polite"><div id="roomFeedback"></div></div>
       <!-- The light's battery (render.js renderBattery; light battery plan):
            the map's bottom-right corner, beside the room log. -->
-      <div class="light-battery" id="lightBattery" hidden></div>
+      <div class="light-battery" id="lightBattery" role="img" hidden><canvas class="hud-tube" id="hudTube" aria-hidden="true"></canvas><span id="hudTubeWord" aria-hidden="true"></span></div>
 
       <!-- The dial and the Struggle dial (js/gunpanels.js, drawn by
            js/dialview.js): a veil over the map with READY in its middle,
