@@ -13,6 +13,8 @@ import { t } from './text.js';
 
 const revealToggle = document.getElementById('revealToggle');
 const realTimeToggle = document.getElementById('realTimeToggle');
+const turnsToggle = document.getElementById('turnsToggle');
+const realTimeOption = document.getElementById('realTimeOption');
 const dpadRightToggle = document.getElementById('dpadRightToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
@@ -52,6 +54,7 @@ export function initSetLoader({ showSets }) {
       localStorage.setItem(OPTION_STORAGE_KEY, JSON.stringify({
         revealOnWrong: revealToggle.checked,
         realTime: realTimeToggle.checked,
+        turns: turnsToggle.checked,
         dpadRight: dpadRightToggle.checked,
         simpleEnemies: simpleEnemiesToggle.checked,
         tutorial: tutorialToggle.checked,
@@ -60,6 +63,12 @@ export function initSetLoader({ showSets }) {
     } catch (e) {
       // Storage unavailable — the checkboxes still work for this session.
     }
+  }
+
+  // Real time is a choice only in turns (one stick plan step G): the
+  // default, one stick, is real time already.
+  function showRealTimeOption() {
+    realTimeOption.hidden = !turnsToggle.checked;
   }
 
   // Puts the d-pad on the side the swap-sides toggle asks for: right
@@ -72,6 +81,8 @@ export function initSetLoader({ showSets }) {
   const savedOptions = loadSavedOptions();
   if (typeof savedOptions.revealOnWrong === 'boolean') revealToggle.checked = savedOptions.revealOnWrong;
   if (typeof savedOptions.realTime === 'boolean') realTimeToggle.checked = savedOptions.realTime;
+  if (typeof savedOptions.turns === 'boolean') turnsToggle.checked = savedOptions.turns;
+  showRealTimeOption();
   if (typeof savedOptions.dpadRight === 'boolean') dpadRightToggle.checked = savedOptions.dpadRight;
   if (typeof savedOptions.simpleEnemies === 'boolean') simpleEnemiesToggle.checked = savedOptions.simpleEnemies;
   // On until a tutorial is finished (main.js switches it off then), so a
@@ -83,6 +94,7 @@ export function initSetLoader({ showSets }) {
 
   revealToggle.addEventListener('change', saveOptions);
   realTimeToggle.addEventListener('change', saveOptions);
+  turnsToggle.addEventListener('change', () => { showRealTimeOption(); saveOptions(); });
   simpleEnemiesToggle.addEventListener('change', saveOptions);
   tutorialToggle.addEventListener('change', saveOptions);
   dpadRightToggle.addEventListener('change', () => { placeDpad(); saveOptions(); });

@@ -18,6 +18,10 @@ import { computeVisibility, inLookCone, FACING_VECTORS } from '../js/sight.js';
 import { BODY_ANGLES, lookAngle, aimLook, wantsTurn, turnBody, sweepLook } from '../js/look.js';
 import { stepPlayer } from '../js/moves.js';
 
+// These are the turn game's rules (the start screen's Turns option): One
+// stick, the default since one stick plan step G, has its own tests.
+state.settings.oneStick = false;
+
 // An open size x size floor, player in the middle facing north, free look
 // on, nothing else on it.
 function resetFloor(size = 21) {

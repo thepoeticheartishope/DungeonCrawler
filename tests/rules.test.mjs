@@ -29,6 +29,10 @@ import { resetHaunts } from '../js/haunts.js';
 import { reachGate, openGateFree } from '../js/gate.js';
 import { rollCategoryModifiers } from '../js/modifiers.js';
 
+// These are the turn game's rules (the start screen's Turns option): One
+// stick, the default since one stick plan step G, has its own tests.
+state.settings.oneStick = false;
+
 // An open size x size floor, player in the middle facing north, fog on,
 // nothing else on it. Classic combat (the gun is the game's default since
 // gun plan step 9; its rules are tested in gun.test.mjs).

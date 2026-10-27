@@ -341,6 +341,9 @@ export const TEXT = {
   'tut.ring.words': 'dark dim die dark dim die', // draft. The words circling the player in the ring (split on spaces)
   'room.blocked.dark': 'The dark holds you here.', // draft. A step while the tutorial's ring is closed
   'tut.hint.light': 'Your light: V, or tap the middle of the arrows 3 times.', // draft. Room log, only if stuck in the ring
+  'tut.hint.move.stick': 'Hold to walk. A quick tap only looks.', // draft (one stick plan step G). Stuck in the dark with One stick: the stick or the keys
+  'tut.hint.light.stick': 'Your light: V, or tap the stick 3 times.', // draft (one stick plan step G). Stuck in the ring with One stick
+  'tut.reach': 'When it reaches, step away.', // draft (one stick plan step G). The kind voice, the first time the tutorial's stick man reaches for the player with One stick: out of reach, it misses
   'tut.ready': "They'll be listening. Be ready.", // Timothy's wording (vents and noise plan step D: world-driven, not on the nose; it hints that sound brings them). The kind voice, once the ring breaks; then a stick man comes out of the grate
   'tut.breathe': 'Breathe. Then READY.', // draft (kill or maim plan step C). The kind voice, as the tutorial's first shot opens the dial at READY
   'tut.dial': 'Stop on K to kill. M drops it.', // draft. The kind voice, once that dial runs
@@ -534,7 +537,8 @@ export const TEXT = {
   'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
   'start.simpleEnemies': 'Comfort mode: plain enemies, light always on', // draft. A comfort option for players who don't want creepy enemies: every enemy a still letter e, and no light battery (was "Simple enemies")
   'start.tutorial': 'Tutorial room: runs once before your first run', // draft. On until a tutorial is finished
-  'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft
+  'start.turns': 'Turns: the world waits for you (step by step, no rush)', // draft. Start screen option (one stick plan step G): off, the default, the game is in real time with one stick
+  'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft. Shown with Turns on only
 
   // ---- Set screen (after Enter: which questions this run asks) ----
   'pick.title': 'QUERY.SET', // draft

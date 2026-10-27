@@ -19,6 +19,10 @@ import { TEXT } from '../js/text.js';
 import { generateDungeonLayout } from '../js/dungeon.js';
 import { ROOM_TEMPLATES, parseTemplate } from '../js/rooms.js';
 
+// These are the turn game's rules (the start screen's Turns option): One
+// stick, the default since one stick plan step G, has its own tests.
+state.settings.oneStick = false;
+
 const FLOORS_PER_DEPTH = 15;
 
 function build(roomIndex) {

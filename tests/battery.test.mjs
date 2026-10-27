@@ -22,6 +22,10 @@ import { freshLight, lightOn, tickLight, toggleLight, turnsToFull } from '../js/
 import { computeVisibility, inLookCone, shootBlock } from '../js/sight.js';
 import { advanceMonsters, spawnMinion, lockOn } from '../js/combat.js';
 
+// These are the turn game's rules (the start screen's Turns option): One
+// stick, the default since one stick plan step G, has its own tests.
+state.settings.oneStick = false;
+
 function resetFloor(size = 21) {
   state.floor.GRID_SIZE = size;
   state.run.roomIndex = 0;

@@ -30,6 +30,10 @@ import {
   minionStrike, staggerHunter, readyStruggle, settleStruggle, dialZones, rollWeaknesses, addRounds, weaknessOf,
 } from '../js/gun.js';
 
+// These are the turn game's rules (the start screen's Turns option): One
+// stick, the default since one stick plan step G, has its own tests.
+state.settings.oneStick = false;
+
 const SET = [
   { term: 'Who built the ark?', meaning: 'Noah', category: 'OT' },
   { term: 'Who led the exodus?', meaning: 'Moses', category: 'OT' },
