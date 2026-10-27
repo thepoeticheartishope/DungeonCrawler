@@ -365,6 +365,7 @@ export const TEXT = {
   'dpad.walkStick': 'Move stick: drag to walk, push a little to creep, hold still to look up, tap 3 times for your light', // draft. The round stick's label (one stick plan step B)
   'room.sneak.on': 'You crouch low and creep.', // draft. X switched sneaking on (one stick plan step B)
   'room.sneak.off': 'You stand and walk.', // draft. X switched it off
+  'room.reach.missed': 'It misses.', // draft. A stick man's reach ended with the player out of reach (one stick plan step C)
   'room.stickTaps.plain': 'Hold to wait.', // draft. The same in Comfort mode, where there is no light to switch
   'dpad.stick.wait': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait, tap 3 times for your light', // draft. The d-pad centre's label
   'dpad.stick.wait.plain': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait', // draft. Its label in Comfort mode

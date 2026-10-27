@@ -97,6 +97,8 @@
 //      between tiles, the tile they stand on following it), letting go stops
 //      them, and the real-time NEXT meter shows. Step B: a tap only turns,
 //      X sneaks slower, and the round stick (in the d-pad's place) walks.
+//      Step C: a stick man beside them reaches and strikes; walked away
+//      from, it misses ("It misses.").
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -1101,7 +1103,7 @@ async function runOneStick(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'held arrows walked freely between tiles, letting go stopped, the NEXT meter showed, a tap turned, X crept, the round stick walked', consoleErrors, pageErrors };
+  return { ok: true, detail: 'held arrows walked freely between tiles, letting go stopped, the NEXT meter showed, a tap turned, X crept, the round stick walked, a reach landed and a dodged one missed', consoleErrors, pageErrors };
 }
 
 // The player's free spot and tile now.
@@ -1171,11 +1173,55 @@ async function checkOneStick(page, url) {
   await page.mouse.up();
   const stuck = await spotNow(page);
   if (stuck.x - pushed.x < 0.8) return `the round stick pushed right went only ${(stuck.x - pushed.x).toFixed(2)} tiles`;
+
+  // Step C: a stick man next to the player reaches, then strikes; one the
+  // player walks away from misses.
+  await placeInRow(page);
+  const struck = await reachFrom(page, 1500);
+  if (!struck.started) return 'a stick man beside the player never reached';
+  if (!struck.hurt) return 'a reach the player stood in did not land';
+  await placeInRow(page);
+  await page.keyboard.down('ArrowRight');
+  const dodged = await reachFrom(page, 1400);
+  await page.keyboard.up('ArrowRight');
+  if (!dodged.started) return 'a stick man beside the player walking away never reached';
+  if (dodged.hurt) return 'a reach landed on a player who walked away';
+  if (!dodged.missed) return 'a dodged reach did not say "It misses."';
   return '';
 }
 
-// Stands the player at the west end of four open tiles in a row, off the
-// stairs. Returns false when there are none.
+// Puts a hunting stick man on the tile west of the player (energy 1, so a
+// landed reach strikes rather than starting a Struggle), waits `ms`, and
+// says whether it reached, whether the player lost stability, and whether
+// the room log says it missed. The stick man is taken off again.
+async function reachFrom(page, ms) {
+  await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { spawnMinion } = await import('./js/combat.js');
+    state.run.energy = 1;
+    state.run.hearts = state.run.maxHearts;
+    window.__hearts = state.run.hearts;
+    const m = spawnMinion({ row: state.floor.playerRow, col: state.floor.playerCol - 1 }, 'SHARD');
+    m.hunts = true;
+    m.stepWait = 0;
+    window.__reacher = m;
+  });
+  let started = false;
+  for (let t = 0; t < ms; t += 50) {
+    await page.waitForTimeout(50);
+    started = started || await page.evaluate(() => !!window.__reacher.reaching);
+  }
+  return page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    state.floor.minions = state.floor.minions.filter(m => m !== window.__reacher);
+    const log = document.getElementById('roomLog').textContent;
+    return { started: true, hurt: state.run.hearts < window.__hearts, missed: log.includes('It misses.') };
+  }).then(r => ({ ...r, started: started || r.hurt }));
+}
+
+// Stands the player on the second of five open tiles in a row, off the
+// stairs (the one west of them is for a stick man to reach from). Returns
+// false when there are none.
 function placeInRow(page) {
   return page.evaluate(async () => {
     const { state } = await import('./js/state.js');
@@ -1184,8 +1230,8 @@ function placeInRow(page) {
     const f = state.floor;
     const open = (r, c) => !whatBlocks(r, c) && !(f.stairs && f.stairs.row === r && f.stairs.col === c);
     for (let r = 1; r < f.GRID_SIZE - 1; r++) {
-      for (let c = 1; c < f.GRID_SIZE - 4; c++) {
-        if (![0, 1, 2, 3].every(d => open(r, c + d))) continue;
+      for (let c = 2; c < f.GRID_SIZE - 4; c++) {
+        if (![-1, 0, 1, 2, 3].every(d => open(r, c + d))) continue;
         f.playerRow = r;
         f.playerCol = c;
         f.playerAt = null;
