@@ -6,7 +6,7 @@
 // stick (free look plan step C): push it sideways to sweep the light
 // (sweepHold), up to look up, tap it to turn or (twice) to wait. main.js passes in the buttons and the actions; this file only
 // handles input.
-import { DPAD_HOLD_DELAY_MS, DPAD_HOLD_REPEAT_MS, LOOK_STICK_DRAG_PX, LOOK_STICK_KNOB_PX, LOOK_STICK_TAP_MS, LOOK_STICK_HOLD_MS, LOOK_STICK_LIGHT_TAPS, LOOK_SWEEP_SPEED, LOOK_SWEEP_TAP } from './config.js';
+import { DPAD_HOLD_DELAY_MS, DPAD_HOLD_REPEAT_MS, LOOK_STICK_DRAG_PX, LOOK_STICK_KNOB_PX, LOOK_STICK_TAP_MS, LOOK_STICK_HOLD_MS, LOOK_STICK_LIGHT_TAPS, LOOK_SWEEP_SPEED, LOOK_SWEEP_TAP, ONE_STICK } from './config.js';
 
 // The pad's arrows by where they point on screen, as [x, y] (y down). The
 // d-pad's buttons, the arrow keys and the number pad are named by these.
@@ -276,6 +276,70 @@ export function initLookStick({ button, aim, wait, light, count, turn, wantsTurn
   });
   button.addEventListener('keydown', () => { pressed = false; });
   button.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+// The round stick (one stick plan step B), shown in place of the square
+// pad with One stick on: drag from its middle to walk the way it points;
+// how far it is pushed sets the pace (walk.js: a push in the dead zone only
+// turns, a small one creeps). `push(x, y)` gets the push on screen, each
+// of x and y from -1 to 1 (its length at most 1), on every move;
+// `release()` when the finger lifts. Until the finger moves
+// LOOK_STICK_DRAG_PX or leaves the dead zone, the press is still: it
+// pushes nothing, so a tap never turns the light by chance. A still press
+// held ONE_STICK.lookUpMs calls `lookUp(true)` (and `lookUp(false)` as it
+// ends): looking up at the sky; taps count to `light()` as on the look
+// stick (stickGestures, `count(n)` for the taps before the last).
+export function initWalkStick({ el, push, release, lookUp, light, count }) {
+  const knob = el.querySelector('.walk-knob');
+  let press = null; // { id, x, y, moved } while held
+  const gestures = stickGestures({
+    onWait: () => lookUp(true), onLight: light, onTurn: () => {}, onCount: count,
+    onHold: on => el.classList.toggle('holding', on),
+    wantsTurn: () => false, holdMs: ONE_STICK.lookUpMs,
+  });
+  // The push under the pointer, from the stick's middle, as a share of
+  // its reach (its radius less half the knob).
+  const pushAt = (e) => {
+    const r = el.getBoundingClientRect();
+    const reach = r.width / 2 - knob.offsetWidth / 2;
+    let x = (e.clientX - r.left - r.width / 2) / reach;
+    let y = (e.clientY - r.top - r.height / 2) / reach;
+    const length = Math.hypot(x, y);
+    if (length > 1) { x /= length; y /= length; }
+    return { x, y, reach };
+  };
+  const follow = (e) => {
+    const { x, y, reach } = pushAt(e);
+    const travel = Math.hypot(e.clientX - press.x, e.clientY - press.y);
+    if (!press.moved && travel <= LOOK_STICK_DRAG_PX && Math.hypot(x, y) < ONE_STICK.deadZone) return;
+    if (!press.moved) gestures.drag();
+    press.moved = true;
+    knob.style.transform = 'translate(' + x * reach + 'px, ' + y * reach + 'px)';
+    push(x, y);
+  };
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    el.setPointerCapture(e.pointerId);
+    press = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+    gestures.press();
+    follow(e);
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (press && press.id === e.pointerId) follow(e);
+  });
+  const end = (e, cancelled) => {
+    if (!press || press.id !== e.pointerId) return;
+    const moved = press.moved;
+    press = null;
+    knob.style.transform = '';
+    release();
+    lookUp(false);
+    gestures.release(!moved && !cancelled);
+  };
+  el.addEventListener('pointerup', (e) => end(e, false));
+  el.addEventListener('pointercancel', (e) => end(e, true));
+  el.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 // Ends a held walk.

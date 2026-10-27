@@ -1,8 +1,10 @@
-// Unit tests for free walking (walk.js, one stick plan step A): the player
+// Unit tests for free walking (walk.js, one stick plan steps A and B): the player
 // walks at their pace, diagonals as fast as straight lines, slides along a
 // wall, never walks into furniture, comes onto each tile once (moves.js
 // enterTile), and a push into something bumps it once, then again only
-// after ONE_STICK.bumpRepeatMs or a new push.
+// after ONE_STICK.bumpRepeatMs or a new push. Step B: the light swings
+// round by angle at ONE_STICK.turnRate, a key tap or a push in the
+// stick's dead zone only turns, and sneaking or a small push creeps.
 //
 // Run: node --test tests/*.test.mjs
 
@@ -14,7 +16,9 @@ import { state, key } from '../js/state.js';
 import { MAX_HEARTS, ONE_STICK } from '../js/config.js';
 import { computeVisibility } from '../js/sight.js';
 import { resetHaunts } from '../js/haunts.js';
-import { walkFree, freeSpot, resetWalk } from '../js/walk.js';
+import { walkFree, freeSpot, resetWalk, switchSneak } from '../js/walk.js';
+import { lookAngle, BODY_ANGLES } from '../js/look.js';
+import { inLookCone } from '../js/sight.js';
 
 const FRAME = 16;
 
@@ -26,7 +30,10 @@ function resetFloor(size = 21) {
   f.playerCol = Math.floor(size / 2);
   f.playerAt = null;
   f.facing = 'N';
-  f.look = null;
+  f.look = BODY_ANGLES.N;
+  f.lookWant = null;
+  f.sneaking = false;
+  f.creeping = false;
   f.darkness = false;
   f.light = freshLight();
   f.wallSet = new Set();
@@ -60,10 +67,11 @@ function resetFloor(size = 21) {
   computeVisibility();
 }
 
-// Walks (dx, dy) with `push` for `ms`, a frame at a time. Returns every event.
-function walk(dx, dy, ms, push = 1) {
+// Walks (dx, dy) with `push` for `ms`, a frame at a time (`keys`: held
+// move keys, whose first ONE_STICK.tapMs only turn). Returns every event.
+function walk(dx, dy, ms, push = 1, keys = false) {
   const events = [];
-  for (let t = 0; t < ms; t += FRAME) events.push(...walkFree(dx, dy, push, Math.min(FRAME, ms - t)));
+  for (let t = 0; t < ms; t += FRAME) events.push(...walkFree(dx, dy, { push, dtMs: Math.min(FRAME, ms - t), keys }));
   return events;
 }
 const count = (events, type) => events.filter(e => e.type === type).length;
@@ -117,7 +125,7 @@ test('furniture stops the body, and a push bumps it once per ONE_STICK.bumpRepea
   state.floor.props.push(desk);
   // Up to the desk: the body stops at it, and the first bump comes.
   let events = [];
-  while (!count(events, 'blocked')) events.push(...walkFree(1, 0, 1, FRAME));
+  while (!count(events, 'blocked')) events.push(...walkFree(1, 0, { dtMs: FRAME }));
   assert.equal(state.floor.playerCol, col);
   assert.ok(freeSpot().x <= col + 1 - ONE_STICK.body + 1e-9);
   assert.equal(events.find(e => e.type === 'blocked').thing, desk);
@@ -125,7 +133,7 @@ test('furniture stops the body, and a push bumps it once per ONE_STICK.bumpRepea
   assert.equal(count(events, 'blocked'), 0, 'not again at once');
   events = walk(1, 0, FRAME * 3);
   assert.equal(count(events, 'blocked'), 1, 'again after bumpRepeatMs');
-  walkFree(0, 0, 0, FRAME);
+  walkFree(0, 0, { dtMs: FRAME });
   assert.equal(count(walk(1, 0, FRAME), 'blocked'), 1, 'a new push bumps at once');
 });
 
@@ -152,4 +160,46 @@ test('a spot off its tile goes back to the tile centre', () => {
   state.floor.playerAt = { x: 2.2, y: 3.7 };
   const at = freeSpot();
   assert.deepEqual(at, { x: state.floor.playerCol + 0.5, y: state.floor.playerRow + 0.5 });
+});
+
+test('the light swings round at ONE_STICK.turnRate, holds when the push stops, and the cone follows', () => {
+  resetFloor();
+  const { playerRow: row, playerCol: col } = state.floor;
+  assert.ok(inLookCone(row - 3, col) && !inLookCone(row, col + 3));
+  walk(1, 0, 100, ONE_STICK.deadZone / 2);
+  assert.ok(Math.abs(lookAngle() - ONE_STICK.turnRate * 0.1) < 1e-6, 'part way round after 100 ms');
+  walk(1, 0, 400, ONE_STICK.deadZone / 2);
+  assert.ok(Math.abs(lookAngle() - Math.PI / 2) < 1e-6, 'east');
+  assert.equal(state.floor.facing, 'E');
+  assert.ok(inLookCone(row, col + 3) && !inLookCone(row - 3, col), 'the cone looks east');
+  walk(0, 0, 200);
+  assert.ok(Math.abs(lookAngle() - Math.PI / 2) < 1e-6, 'held');
+  walkFree(-1, 0, { push: ONE_STICK.deadZone / 2, dtMs: 16, still: true });
+  assert.ok(Math.abs(Math.abs(lookAngle()) - Math.PI / 2) < 1e-6 && lookAngle() < 0, 'reduced motion turns at once');
+});
+
+test('a key tap or a push in the dead zone only turns; a held key walks', () => {
+  resetFloor();
+  const start = freeSpot().x;
+  walk(1, 0, ONE_STICK.tapMs - FRAME, 1, true);
+  walk(0, 0, 300);
+  assert.equal(freeSpot().x, start, 'a tap: no step');
+  assert.ok(Math.abs(lookAngle() - Math.PI / 2) < 1e-6, 'but turned east');
+  walk(1, 0, 300, ONE_STICK.deadZone / 2);
+  assert.equal(freeSpot().x, start, 'the dead zone: no step');
+  walk(1, 0, 400, 1, true);
+  assert.ok(freeSpot().x > start + 0.5, 'a hold walks');
+});
+
+test('sneaking (X) creeps at sneakMs a tile, and so does a small push', () => {
+  resetFloor();
+  assert.equal(switchSneak()[0].on, true);
+  const start = freeSpot().x;
+  walk(1, 0, ONE_STICK.sneakMs);
+  assert.ok(Math.abs(freeSpot().x - start - 1) < 1e-6);
+  assert.ok(state.floor.creeping);
+  assert.equal(switchSneak()[0].on, false);
+  walk(1, 0, ONE_STICK.walkMs);
+  assert.ok(Math.abs(freeSpot().x - start - 2) < 1e-6, 'back to the walk');
+  assert.ok(!state.floor.creeping);
 });

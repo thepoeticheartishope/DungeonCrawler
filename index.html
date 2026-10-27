@@ -991,6 +991,46 @@
     .look-knob { transition: none; }
     .dpad-center.holding::after { transition: none; }
   }
+  /* The round stick (one stick plan step B): drag from the middle; the
+     dashed ring inside is the creep zone (ONE_STICK.creep). */
+  .walk-stick {
+    width: 164px;
+    height: 164px;
+    flex: none;
+    position: relative;
+    border: 1px solid var(--muted);
+    border-radius: 50%;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .walk-stick[hidden] { display: none; }
+  .walk-stick::before {
+    content: '';
+    position: absolute;
+    inset: 30%;
+    border: 1px dashed var(--line);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .walk-knob {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 56px;
+    height: 56px;
+    margin: -28px 0 0 -28px;
+    border: 1px solid var(--text);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  /* Held still to look up: the knob's ring fills, as the look stick's. */
+  .walk-stick.holding .walk-knob { background: var(--torch-bright); transition: background 0.5s linear; }
+  @media (prefers-reduced-motion: reduce) {
+    .walk-stick.holding .walk-knob { transition: none; }
+  }
+
   /* Which ways are open (render.js renderMoveHints): blocked dims, a
      paper or box to examine shows in inverse video. */
   .dpad button.move-blocked { opacity: 0.3; }
@@ -1872,7 +1912,7 @@
     <!-- The d-pad, and beside it MAP, LOG and SELECT. -->
     <div class="room-controls">
 
-    <div class="dpad-clip">
+    <div class="dpad-clip" id="dpadClip">
     <div class="dpad" id="dpad">
       <button class="dpad-ul dpad-corner" id="btnUL" type="button" aria-label="Move up and left">&#8598;</button>
       <button class="dpad-u" id="btnU" type="button" aria-label="Move up">&#8593;</button>
@@ -1885,6 +1925,9 @@
       <button class="dpad-dr dpad-corner" id="btnDR" type="button" aria-label="Move down and right">&#8600;</button>
     </div>
     </div>
+    <!-- The round stick (one stick plan step B, js/dpad.js initWalkStick),
+         in place of the d-pad with One stick on. -->
+    <div class="walk-stick" id="walkStick" hidden><span class="walk-knob" aria-hidden="true"></span></div>
     <!-- MAP (js/minimapview.js), LOG (the whole room log) and the gun's one
          button (main.js pressSelect: fire, or stop the dial; only with
          the gun on), lowest, away from the dial over the map. -->

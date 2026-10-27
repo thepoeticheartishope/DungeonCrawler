@@ -95,7 +95,8 @@
 //  13. One stick run (one stick plan step A): DEV -> One stick on the
 //      opening rest; held arrow keys walk the player freely (their spot
 //      between tiles, the tile they stand on following it), letting go stops
-//      them, and the real-time NEXT meter shows.
+//      them, and the real-time NEXT meter shows. Step B: a tap only turns,
+//      X sneaks slower, and the round stick (in the d-pad's place) walks.
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -1100,7 +1101,7 @@ async function runOneStick(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'held arrows walked freely between tiles, letting go stopped, the NEXT meter showed', consoleErrors, pageErrors };
+  return { ok: true, detail: 'held arrows walked freely between tiles, letting go stopped, the NEXT meter showed, a tap turned, X crept, the round stick walked', consoleErrors, pageErrors };
 }
 
 // The player's free spot and tile now.
@@ -1124,7 +1125,59 @@ async function checkOneStick(page, url) {
   await page.waitForSelector('#devPanel.show', { timeout: 5000 });
   await page.click('#devOneStickBtn');
   await page.click('#devToggleBtn');
-  const placed = await page.evaluate(async () => {
+  if (!await placeInRow(page)) return 'no four open tiles in a row on the opening rest';
+  await roomIdle(page);
+  const start = await spotNow(page);
+  await page.keyboard.down('ArrowRight');
+  await page.waitForTimeout(700);
+  await page.keyboard.up('ArrowRight');
+  const walked = await spotNow(page);
+  if (walked.x - start.x < 0.8) return `held → for 700 ms went only ${(walked.x - start.x).toFixed(2)} tiles`;
+  if (walked.y !== start.y) return 'walking east moved the player up or down';
+  if (walked.col !== Math.floor(walked.x)) return 'the tile the rules see did not follow the free spot';
+  if (walked.facing !== 'E') return `facing ${walked.facing} after walking east`;
+  await page.waitForTimeout(300);
+  const after = await spotNow(page);
+  if (after.x !== walked.x) return 'the player kept walking after the key was let go';
+  if (await page.isHidden('#clockStat')) return 'One stick did not show the real-time NEXT meter';
+
+  // Step B: a tap only turns; X sneaks (slower); the round stick walks.
+  await placeInRow(page);
+  const before = await spotNow(page);
+  await page.keyboard.down('ArrowDown');
+  await page.waitForTimeout(40);
+  await page.keyboard.up('ArrowDown');
+  await page.waitForTimeout(500);
+  const tapped = await spotNow(page);
+  if (tapped.x !== before.x || tapped.y !== before.y) return 'a tap on ↓ took a step';
+  if (tapped.facing !== 'S') return `a tap on ↓ turned to ${tapped.facing}, not S`;
+  await page.keyboard.press('x');
+  await page.keyboard.down('ArrowRight');
+  await page.waitForTimeout(700);
+  await page.keyboard.up('ArrowRight');
+  const crept = await spotNow(page);
+  await page.keyboard.press('x');
+  if (crept.x - tapped.x > 0.75) return `sneaking went ${(crept.x - tapped.x).toFixed(2)} tiles in 700 ms, too fast for a creep`;
+  if (crept.x - tapped.x < 0.3) return 'sneaking hardly moved';
+  if (!await page.isVisible('#walkStick') || await page.isVisible('#dpad')) return 'the round stick did not take the d-pad\'s place';
+  await placeInRow(page);
+  const pushed = await spotNow(page);
+  const box = await page.locator('#walkStick').boundingBox();
+  const [cx, cy] = [box.x + box.width / 2, box.y + box.height / 2];
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + box.width / 2, cy, { steps: 4 });
+  await page.waitForTimeout(600);
+  await page.mouse.up();
+  const stuck = await spotNow(page);
+  if (stuck.x - pushed.x < 0.8) return `the round stick pushed right went only ${(stuck.x - pushed.x).toFixed(2)} tiles`;
+  return '';
+}
+
+// Stands the player at the west end of four open tiles in a row, off the
+// stairs. Returns false when there are none.
+function placeInRow(page) {
+  return page.evaluate(async () => {
     const { state } = await import('./js/state.js');
     const { whatBlocks } = await import('./js/passage.js');
     const { computeVisibility } = await import('./js/sight.js');
@@ -1142,22 +1195,6 @@ async function checkOneStick(page, url) {
     }
     return false;
   });
-  if (!placed) return 'no four open tiles in a row on the opening rest';
-  await roomIdle(page);
-  const start = await spotNow(page);
-  await page.keyboard.down('ArrowRight');
-  await page.waitForTimeout(700);
-  await page.keyboard.up('ArrowRight');
-  const walked = await spotNow(page);
-  if (walked.x - start.x < 0.8) return `held → for 700 ms went only ${(walked.x - start.x).toFixed(2)} tiles`;
-  if (walked.y !== start.y) return 'walking east moved the player up or down';
-  if (walked.col !== Math.floor(walked.x)) return 'the tile the rules see did not follow the free spot';
-  if (walked.facing !== 'E') return `facing ${walked.facing} after walking east`;
-  await page.waitForTimeout(300);
-  const after = await spotNow(page);
-  if (after.x !== walked.x) return 'the player kept walking after the key was let go';
-  if (await page.isHidden('#clockStat')) return 'One stick did not show the real-time NEXT meter';
-  return '';
 }
 
 // ---- Main ----

@@ -5,7 +5,7 @@
 // north (row -1), +90° = east (col +1). Rules only; no DOM access here.
 
 import { state } from './state.js';
-import { LOOK_FREE_ARC } from './config.js';
+import { LOOK_FREE_ARC, ONE_STICK } from './config.js';
 import { computeVisibility } from './sight.js';
 import { refreshGunTarget } from './gun.js';
 
@@ -43,14 +43,17 @@ export function bodyAngle() {
 }
 
 // How far the aim (state.floor.look) is off the body, -π..π. No aim yet,
-// or free look off: 0.
+// free look off, or One stick (the light is the aim itself): 0.
 function aimOffset() {
-  if (!state.settings.freeLook || typeof state.floor.look !== 'number') return 0;
+  if (state.settings.oneStick || !state.settings.freeLook || typeof state.floor.look !== 'number') return 0;
   return wrapAngle(state.floor.look - bodyAngle());
 }
 
-// Where the light points: the aim, held inside the free arc.
+// Where the light points: the aim, held inside the free arc. With One
+// stick there is no arc: the light points at its own angle, which swings
+// round toward where the player goes (swingLook).
 export function lookAngle() {
+  if (state.settings.oneStick && typeof state.floor.look === 'number') return state.floor.look;
   return bodyAngle() + Math.max(-LOOK_FREE_ARC, Math.min(LOOK_FREE_ARC, aimOffset()));
 }
 
@@ -60,9 +63,14 @@ export function wantsTurn() {
 }
 
 // Aims at `angle`. The light follows as far as the arc allows, and the
-// gun's target follows the light. Costs no turn. Events: the gun's
-// targetPicked, when the target changed.
+// gun's target follows the light. Costs no turn. With One stick the
+// light swings round to it instead (swingLook), so it never jumps.
+// Events: the gun's targetPicked, when the target changed.
 export function aimLook(angle) {
+  if (state.settings.oneStick) {
+    state.floor.lookWant = wrapAngle(angle);
+    return [];
+  }
   state.floor.look = wrapAngle(angle);
   computeVisibility();
   return state.settings.gunCombat ? refreshGunTarget() : [];
@@ -112,6 +120,26 @@ function nextWay(dir) {
 // The player stepped or turned by walking: the aim goes back to straight
 // ahead, so the light points the way they walk. Timothy: a look kept at the
 // arc's edge while walking was jarring; looking round is for standing still.
+// With One stick the light keeps its own angle (swingLook).
 export function followBody() {
+  if (state.settings.oneStick) return;
   state.floor.look = bodyAngle();
+}
+
+// One stick (one stick plan step B): swings the light round toward
+// state.floor.lookWant at ONE_STICK.turnRate over `dtMs`, with a little
+// weight rather than a snap; `still` (reduced motion) turns it at once.
+// The body faces the way in use nearest the light (the legs, a bump's
+// nudge). Events: the gun's targetPicked, when the target changed.
+export function swingLook(dtMs, still = false) {
+  const f = state.floor;
+  if (typeof f.lookWant !== 'number') return [];
+  const from = lookAngle();
+  const gap = wrapAngle(f.lookWant - from);
+  if (Math.abs(gap) < 1e-6) return [];
+  const most = ONE_STICK.turnRate * dtMs / 1000;
+  f.look = still ? f.lookWant : wrapAngle(from + Math.max(-most, Math.min(most, gap)));
+  f.facing = nearestWay(f.look);
+  computeVisibility();
+  return state.settings.gunCombat ? refreshGunTarget() : [];
 }

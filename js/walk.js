@@ -1,4 +1,4 @@
-// Free walking (one stick plan step A): with One stick on, the player walks
+// Free walking (one stick plan steps A and B): with One stick on, the player walks
 // in real time at their own pace, not tile to tile. Their spot is free
 // (state.floor.playerAt, in tiles), and their body slides along walls and
 // furniture. The rules still see the tile they stand on (playerRow /
@@ -9,16 +9,17 @@
 
 import { state } from './state.js';
 import { whatBlocks } from './passage.js';
-import { computeVisibility } from './sight.js';
-import { followBody, nearestWay } from './look.js';
+import { swingLook } from './look.js';
 import { enterTile, bumpInto } from './moves.js';
 import { ONE_STICK } from './config.js';
 
 // The last bump while the player keeps pushing: what it hit (a tile key)
-// and the ms until pushing on bumps it again. Timing, so module vars
-// rather than state, as in realclock.js.
+// and the ms until pushing on bumps it again; and how long this push has
+// lasted (a key tap only turns). Timing, so module vars rather than
+// state, as in realclock.js.
 let bumpedAt = null;
 let bumpWait = 0;
+let pushedMs = 0;
 
 // The player's free spot. It is the centre of their tile whenever it isn't
 // on that tile (a new floor, or a rule that moved them, such as a step on
@@ -75,41 +76,47 @@ function slide(spot, axis, delta) {
 
 // One frame of walking: the stick (or the keys) pushed `push` (0..1) toward
 // (dirX, dirY) on screen (x right = east, y down = south; the camera never
-// turns), for `dtMs`. The player walks a tile in ONE_STICK.walkMs, or
-// creeps one in sneakMs under a small push, diagonals as fast as straight
-// lines. Their body turns to the way they walk (look.js nearestWay; one
-// stick plan step B makes it an angle). A push that gets less than
-// ONE_STICK.bumpProgress of its way bumps what stopped it (moves.js
-// bumpInto) once, then again every bumpRepeatMs while it goes on; letting
-// go (no push) ends it. Events: enterTile's (stepped { free: true } and
-// what the tile holds) and bumpInto's, or heldFast { minion } while a
-// downed one holds the ankle.
-export function walkFree(dirX, dirY, push, dtMs) {
+// turns), for `dtMs`. The light and body swing round toward the push
+// (look.js swingLook; `still` under reduced motion turns them at once) and
+// hold when it stops. A move key let go within ONE_STICK.tapMs (`keys`),
+// or a push on the stick inside its deadZone, only turns them: tap to look
+// (one stick plan step B). Otherwise the player walks a tile in
+// ONE_STICK.walkMs, or creeps one in sneakMs while sneaking or under a
+// push below `creep`, diagonals as fast as straight lines. A push that
+// gets less than ONE_STICK.bumpProgress of its way bumps what stopped it
+// (moves.js bumpInto) once, then again every bumpRepeatMs while it goes
+// on; letting go (no push) ends it. Events: swingLook's, enterTile's
+// (stepped { free: true } and what the tile holds) and bumpInto's, or
+// heldFast { minion } while a downed one holds the ankle.
+export function walkFree(dirX, dirY, { push = 1, dtMs = 0, keys = false, still = false } = {}) {
+  const f = state.floor;
+  const ms = Math.min(dtMs, ONE_STICK.frameMs);
   const len = Math.hypot(dirX, dirY);
-  if (!len || push <= 0) {
+  if (len) {
+    f.lookWant = Math.atan2(dirX, -dirY);
+    pushedMs += ms;
+  } else {
+    pushedMs = 0;
     bumpedAt = null;
     bumpWait = 0;
-    return [];
   }
-  const f = state.floor;
+  const events = swingLook(ms, still);
+  f.creeping = false;
+  if (!len || (keys && pushedMs <= ONE_STICK.tapMs) || push < ONE_STICK.deadZone) return events;
   const spot = freeSpot();
-  const ms = Math.min(dtMs, ONE_STICK.frameMs);
   bumpWait = Math.max(0, bumpWait - ms);
-  const pace = push < ONE_STICK.creep ? ONE_STICK.sneakMs : ONE_STICK.walkMs;
-  const reach = ms / pace;
+  f.creeping = f.sneaking || push < ONE_STICK.creep;
+  const reach = ms / (f.creeping ? ONE_STICK.sneakMs : ONE_STICK.walkMs);
   const [ux, uy] = [dirX / len, dirY / len];
-  turnToward(ux, uy);
 
   const [x0, y0] = [spot.x, spot.y];
   const hitX = slide(spot, 'x', ux * reach);
   const hitY = slide(spot, 'y', uy * reach);
-  const events = [];
   const row = Math.floor(spot.y);
   const col = Math.floor(spot.x);
   if (row !== f.playerRow || col !== f.playerCol) {
     f.playerRow = row;
     f.playerCol = col;
-    followBody();
     events.push(...enterTile(f.facing, true));
   }
 
@@ -119,14 +126,11 @@ export function walkFree(dirX, dirY, push, dtMs) {
   return events;
 }
 
-// Turns the body to the way in use nearest (ux, uy), if it isn't already:
-// the light follows it (look.js followBody).
-function turnToward(ux, uy) {
-  const way = nearestWay(Math.atan2(ux, -uy));
-  if (state.floor.facing === way) return;
-  state.floor.facing = way;
-  followBody();
-  computeVisibility();
+// Switches sneaking on or off (X): the player creeps, slow and crouched,
+// until it is switched off. Event: sneakSwitched { on }.
+export function switchSneak() {
+  state.floor.sneaking = !state.floor.sneaking;
+  return [{ type: 'sneakSwitched', on: state.floor.sneaking }];
 }
 
 // A bump into what `hit` found, unless the push already bumped it and
@@ -144,4 +148,5 @@ function bump(hit) {
 export function resetWalk() {
   bumpedAt = null;
   bumpWait = 0;
+  pushedMs = 0;
 }

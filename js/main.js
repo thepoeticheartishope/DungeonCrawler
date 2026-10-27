@@ -44,7 +44,7 @@ import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot,
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
-import { initDpad, initLookStick, SCREEN_WAYS, padWay, sweepHold } from './dpad.js';
+import { initDpad, initLookStick, initWalkStick, SCREEN_WAYS, padWay, sweepHold } from './dpad.js';
 import { lookUp } from './roomview.js';
 import { repeatMs, noteStep, heldStepReady } from './walkpace.js';
 import { aimLook, turnBody, sweepLook, wantsTurn, waysInUse } from './look.js';
@@ -54,7 +54,7 @@ import { computeVisibility, seesEnemy, FACING_VECTORS } from './sight.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
-import { walkFree, freeSpot, resetWalk } from './walk.js';
+import { walkFree, freeSpot, resetWalk, switchSneak } from './walk.js';
 import { mountQuestionPanel, setQuestion, setMinigame, retypeQuestion, clearModifier, applyModifier, placeWager } from './questionview.js';
 import { rollMinigame, forcedQuestion, endMinigame, letterPoolSetup, sumLockSetup } from './minigames.js';
 import { playMinigameOut } from './minigameview.js';
@@ -1330,11 +1330,14 @@ function drawEvents(events) {
         break;
       // A step says nothing: the map already shows where the player went.
       case 'stepped':
-        if (e.free) freeStepOnMap(ONE_STICK.walkMs);
+        if (e.free) freeStepOnMap(state.floor.creeping ? ONE_STICK.sneakMs : ONE_STICK.walkMs);
         else slidePlayerOnMap(e.facing);
         break;
       case 'waited':
         parts.push(t('room.wait'));
+        break;
+      case 'sneakSwitched':
+        parts.push(t(e.on ? 'room.sneak.on' : 'room.sneak.off'));
         break;
       // A bump that turned the body says only what it bumped.
       case 'bodyTurned':
@@ -1744,36 +1747,61 @@ function loseToLight() {
 let lastWalkAt = -Infinity;
 
 // The move keys held down with One stick on (one stick plan step A), by
-// d-pad way: free walking goes the way they add up to.
+// d-pad way: free walking goes the way they add up to. The round stick's
+// push instead while a finger is on it (step B): [x, y], or null.
 const heldWays = new Set();
+let stickPushed = null;
+const walkStick = document.getElementById('walkStick');
+const dpadClip = document.getElementById('dpadClip');
 // When the last walking frame ran, for its length.
 let walkFrameAt = null;
 
 // One frame of free walking with One stick on (walk.js walkFree): while
-// the real-time clock may run and nothing holds the player, the held keys
-// move them; a new tile or a bump settles like a step (settleMove). While
-// the walk can't run, held keys are forgotten, so a key held through a
-// panel doesn't walk on (or bump the same chest again) once it closes.
+// the real-time clock may run and nothing holds the player, the round
+// stick's push or the held keys move them and swing their light round; a
+// new tile or a bump settles like a step (settleMove). While the walk
+// can't run, held keys and the stick's push are forgotten, so a key held
+// through a panel doesn't walk on (or bump the same chest again) once it
+// closes. The round stick stands in for the d-pad while One stick is on.
 function walkFrame(now) {
   requestAnimationFrame(walkFrame);
   const dt = walkFrameAt === null ? 0 : now - walkFrameAt;
   walkFrameAt = now;
-  if (!state.settings.oneStick) return;
+  const one = state.settings.oneStick;
+  if (walkStick.hidden === one) {
+    walkStick.hidden = !one;
+    dpadClip.hidden = one;
+  }
+  if (!one) return;
   if (!clockMayRun() || state.run.turnLocked || walkHeld()) {
     heldWays.clear();
+    stickPushed = null;
     resetWalk();
     return;
   }
-  const [x, y] = [...heldWays].reduce(([sx, sy], way) => [sx + SCREEN_WAYS[way][0], sy + SCREEN_WAYS[way][1]], [0, 0]);
   const spot = freeSpot();
-  const [x0, y0] = [spot.x, spot.y];
-  const events = walkFree(x, y, 1, dt);
-  if (spot.x !== x0 || spot.y !== y0) requestMapDraw();
+  const [x0, y0, look0] = [spot.x, spot.y, state.floor.look];
+  let events;
+  if (stickPushed) {
+    const [x, y] = stickPushed;
+    events = walkFree(x, y, { push: Math.min(1, Math.hypot(x, y)), dtMs: dt, still: reduceMotion });
+  } else {
+    const [x, y] = [...heldWays].reduce(([sx, sy], way) => [sx + SCREEN_WAYS[way][0], sy + SCREEN_WAYS[way][1]], [0, 0]);
+    events = walkFree(x, y, { dtMs: dt, keys: true, still: reduceMotion });
+  }
+  if (spot.x !== x0 || spot.y !== y0 || state.floor.look !== look0) requestMapDraw();
   if (!events.length) return;
   state.run.turnLocked = true;
   settleMove(events);
 }
 requestAnimationFrame(walkFrame);
+
+// Sneaking on or off (X, One stick only; walk.js switchSneak).
+function toggleSneak() {
+  if (!state.settings.oneStick || !roomScreen.classList.contains('show') || mapPanelShown() || state.run.runEnded) return;
+  const note = drawEvents(switchSneak());
+  showRoomNote(note.cls, note.text);
+}
 
 // A move key went down or up with One stick on: it joins or leaves the
 // held ways.
@@ -2054,6 +2082,16 @@ initLookStick({
   wantsTurn,
 });
 
+walkStick.setAttribute('aria-label', t('dpad.walkStick'));
+initWalkStick({
+  el: walkStick,
+  push: (x, y) => { stickPushed = [x, y]; },
+  release: () => { stickPushed = null; },
+  lookUp: (on) => holdLookUp('stick', on),
+  light: switchLight,
+  count: (taps) => { if (taps === 1) showRoomNote('move-msg', t(batteryInPlay() ? 'room.walkStickTaps' : 'room.walkStickTaps.plain')); },
+});
+
 // The number pad's keys by the way they point (eight ways plan: 7 8 9 /
 // 4 6 / 1 2 3).
 const NUMPAD_WAYS = {
@@ -2062,12 +2100,14 @@ const NUMPAD_WAYS = {
 };
 document.addEventListener('keyup', (e) => {
   if (e.key === ' ') holdLookUp('key', false);
+  if (e.key === 'u' || e.key === 'U') holdLookUp('u', false);
   const way = MOVE_KEYS[e.key] || NUMPAD_WAYS[e.code];
   if (way) holdWay(way, false);
 });
 window.addEventListener('blur', () => {
   heldWays.clear();
   holdLookUp('key', false);
+  holdLookUp('u', false);
   holdLookUp('stick', false);
 });
 
@@ -2076,6 +2116,8 @@ window.addEventListener('blur', () => {
 // screen (moveKey, padPush), unless a question on the map is taking number keys. Space held looks up at the
 // sky (sky eye plan step A). With the gun on: F is SELECT (fires), T picks
 // the next target, . waits. V switches the light (light battery plan).
+// With One stick on, the move keys are held (walkFrame), X switches
+// sneaking and U held looks up as Space does.
 // On the stairs, Enter goes down (so does SELECT).
 // Letter and number keys answer a question on the ask screen, unless the
 // gun panels already used the key (picking a reload with 1-3, or F / Space
@@ -2100,6 +2142,8 @@ document.addEventListener('keydown', (e) => {
   else if (gunReady() && e.key === '.') { e.preventDefault(); skipTurn(); }
   else if ((e.key === 'l' || e.key === 'L') && !mapPanelShown()) { e.preventDefault(); toggleRoomLog(); }
   else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); switchLight(); }
+  else if (state.settings.oneStick && (e.key === 'x' || e.key === 'X')) { e.preventDefault(); toggleSneak(); }
+  else if (state.settings.oneStick && (e.key === 'u' || e.key === 'U') && !mapPanelShown()) { e.preventDefault(); holdLookUp('u', true); }
   else if (e.key === 'Escape' && roomLogEl.classList.contains('open')) { e.preventDefault(); toggleRoomLog(false); }
   else if (mapPanelShown() === 'question' && state.settings.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {
     const idxMap = { 1: 0, a: 0, 2: 1, b: 1, 3: 2, c: 2, 4: 3, d: 3 };

@@ -86,6 +86,9 @@ export const state = {
 
     playerRow: undefined,
     playerCol: undefined,
+    lookWant: null, // one stick (look.js swingLook): the angle the light and body are swinging round to, or null
+    sneaking: false, // one stick: X switched sneaking on (creep pace, walk.js); a small push on the stick creeps too (creeping)
+    creeping: false, // one stick: this frame's walk was at the creep pace (sneaking, or a small push)
     playerAt: null, // one stick (walk.js): the player's free spot in tiles, { x, y } (tile centre = col + 0.5); null = the centre of playerRow / playerCol
     facing: 'N', // 'N'|'S'|'E'|'W' — which way the player's body faces (bumps, slides, the stick man's legs)
     look: null,  // where the player aims, in radians on the grid (0 = north, +π/2 = east), or null = straight ahead; the light points here, held inside the body's free arc (look.js lookAngle)
