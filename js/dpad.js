@@ -275,6 +275,7 @@ export function initLookStick({ button, aim, wait, tap, turn, wantsTurn, done = 
 // ends): looking up at the sky; a tap calls `tap()` (a hint).
 export function initWalkStick({ el, push, release, lookUp, tap }) {
   const knob = el.querySelector('.walk-knob');
+  el.style.setProperty('--creep', ONE_STICK.creep); // the dashed ring
   let press = null; // { id, x, y, moved } while held
   const gestures = stickGestures({
     onWait: () => lookUp(true), onTurn: () => {}, onTap: tap,

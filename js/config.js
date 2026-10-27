@@ -1271,7 +1271,8 @@ export const FIGURE3D = {
 // (state.settings.oneStick false) keeps the game in turns, and DEV -> One
 // stick flips it in play. It turns Real time on. `walkMs` / `sneakMs`: ms to walk / creep one
 // tile (the mockup's quick and natural paces). `creep`: a push on the
-// stick under this share of its reach creeps. `body`: how far the
+// stick under this share of its reach creeps (0.6 -> 0.8, Timothy
+// 2026-10-27: on the phone a sneak kept turning into a walk). `body`: how far the
 // player's body reaches from their centre each way, in tiles, for walls
 // and furniture. `bumpProgress`: a push that gets less than this share of
 // its way is a bump into what stopped it (sliding along a wall isn't).
@@ -1301,7 +1302,7 @@ export const ONE_STICK = {
   on: true,
   walkMs: 450,
   sneakMs: 950,
-  creep: 0.6,
+  creep: 0.8,
   turnRate: 7,
   tapMs: 130,
   deadZone: 0.15,
