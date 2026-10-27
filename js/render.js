@@ -170,6 +170,8 @@ export function renderHud() {
   els.heartsEl.textContent = Math.max(state.run.hearts, 0) + '/' + state.run.maxHearts;
   els.coinsTotalEl.textContent = state.run.coinsTotal;
   els.turnCountEl.textContent = state.run.turnCount;
+  // With One stick a walk isn't a turn: the HUD's time says it instead.
+  els.turnCountEl.parentElement.hidden = state.settings.oneStick;
   els.roomNumEl.textContent = state.run.resting ? t('stat.rest') : state.run.roomIndex + 1;
   els.roomOfEl.style.display = state.run.resting ? 'none' : '';
   els.roomTotalEl.textContent = state.run.order.length;
@@ -190,7 +192,9 @@ function renderBattery() {
   els.lightBattery.hidden = !inPlay;
   if (!inPlay) return;
   const light = state.floor.light;
-  const cells = '#'.repeat(light.charge) + '-'.repeat(Math.max(LIGHT_BATTERY_MAX - light.charge, 0));
+  // With One stick the charge runs by time: a # stays until it is all spent.
+  const left = Math.ceil(light.charge);
+  const cells = '#'.repeat(left) + '-'.repeat(Math.max(LIGHT_BATTERY_MAX - left, 0));
   const word = light.on ? 'on' : light.locked ? 'empty' : 'off';
   els.lightBattery.textContent = t('stat.battery', { cells, state: t('stat.battery.' + word) });
   els.lightBattery.classList.toggle('battery-off', !light.on);

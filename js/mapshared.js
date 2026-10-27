@@ -13,6 +13,7 @@ import { state, key } from './state.js';
 import {
   MAP_ANIMATION_MS, GAZE_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS,
   TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS, SKY_EYE,
+  REALTIME_STEP_MS,
 } from './config.js';
 import { canShoot } from './sight.js';
 import { gazeInPlay, inCone } from './gaze.js';
@@ -182,10 +183,12 @@ export function skyEyeOpen() {
 }
 
 // The turns left before the light takes the floor, for Comfort mode's
-// number in the sky; null with no boss's light on this floor.
+// number in the sky (with One stick, seconds: the world's beats left);
+// null with no boss's light on this floor.
 export function skyTurnsLeft() {
   if (!state.floor.boss) return null;
-  return Math.max(0, state.floor.lightTurnBudget - state.floor.lightTurns);
+  const left = Math.max(0, state.floor.lightTurnBudget - state.floor.lightTurns);
+  return state.settings.oneStick ? Math.round(left * REALTIME_STEP_MS / 1000) : left;
 }
 
 // The last shot (mapview.js shotOnMap -> showShot): { start, at, to,

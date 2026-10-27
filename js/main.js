@@ -24,7 +24,7 @@ import {
   showAnswerLine, fadeAnswerLine
 } from './render.js';
 import {
-  isAdjacentToPlayer, refreshTargetValidity, advanceMonsters, minionClocks
+  isAdjacentToPlayer, refreshTargetValidity, advanceMonsters, clockFrame
 } from './combat.js';
 import { lightConsumed } from './light.js';
 import { openGateFree } from './gate.js';
@@ -48,7 +48,7 @@ import { initDpad, initLookStick, initWalkStick, SCREEN_WAYS, padWay, sweepHold 
 import { lookUp } from './roomview.js';
 import { repeatMs, noteStep, heldStepReady } from './walkpace.js';
 import { aimLook, turnBody, sweepLook, wantsTurn, waysInUse } from './look.js';
-import { toggleLight, turnsToFull, batteryInPlay } from './battery.js';
+import { toggleLight, turnsToFull, secondsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
 import { computeVisibility, seesEnemy, FACING_VECTORS } from './sight.js';
 import { buy } from './exchange.js';
@@ -206,7 +206,7 @@ function switchLight() {
     return;
   }
   if (result === 'locked') {
-    showRoomNote('block-msg', t('room.ownLight.locked', { turns: turnsToFull() }));
+    showRoomNote('block-msg', state.settings.oneStick ? t('room.ownLight.locked.seconds', { seconds: secondsToFull() }) : t('room.ownLight.locked', { turns: turnsToFull() }));
     return;
   }
   computeVisibility();
@@ -1801,17 +1801,21 @@ function walkFrame(now) {
     state.run.turnLocked = true;
     settleMove(events);
   }
-  minionFrame(dt);
+  worldFrame(dt);
 }
 requestAnimationFrame(walkFrame);
 
-// The stick men's own clocks with One stick on (combat.js minionClocks,
-// one stick plan step C), after the player's frame of walking: what they
-// did is drawn like the world's turn in real time (applyTurnOutcome, the
-// world not moved again), so a strike can still end the run.
-function minionFrame(dt) {
+// The world's frame with One stick on (combat.js clockFrame, one stick
+// plan steps C and D), after the player's frame of walking: the battery
+// runs by time and the stick men walk on their own clocks. What they did
+// is drawn like the world's turn in real time (applyTurnOutcome, the
+// world not moved again), so a strike can still end the run. The HUD's
+// battery is redrawn whenever a # of it is spent or back.
+function worldFrame(dt) {
   if (state.run.turnLocked || state.run.runEnded || !clockMayRun()) return;
-  const events = minionClocks(Math.min(dt, ONE_STICK.frameMs), { canStruggle: worldRunsUnder() });
+  const cells = Math.ceil(state.floor.light.charge);
+  const events = clockFrame(Math.min(dt, ONE_STICK.frameMs), { canStruggle: worldRunsUnder() });
+  if (Math.ceil(state.floor.light.charge) !== cells) renderHud();
   if (!events.length) return;
   state.run.turnLocked = true;
   applyTurnOutcome(events, false);

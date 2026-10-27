@@ -98,7 +98,8 @@
 //      them, and the real-time NEXT meter shows. Step B: a tap only turns,
 //      X sneaks slower, and the round stick (in the d-pad's place) walks.
 //      Step C: a stick man beside them reaches and strikes; walked away
-//      from, it misses ("It misses.").
+//      from, it misses ("It misses."). Step D: the battery runs out by
+//      time, and the HUD has no turn count.
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -1103,7 +1104,7 @@ async function runOneStick(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'held arrows walked freely between tiles, letting go stopped, the NEXT meter showed, a tap turned, X crept, the round stick walked, a reach landed and a dodged one missed', consoleErrors, pageErrors };
+  return { ok: true, detail: 'held arrows walked freely between tiles, letting go stopped, the NEXT meter showed, a tap turned, X crept, the round stick walked, a reach landed and a dodged one missed, the battery ran out by time', consoleErrors, pageErrors };
 }
 
 // The player's free spot and tile now.
@@ -1187,6 +1188,23 @@ async function checkOneStick(page, url) {
   if (!dodged.started) return 'a stick man beside the player walking away never reached';
   if (dodged.hurt) return 'a reach landed on a player who walked away';
   if (!dodged.missed) return 'a dodged reach did not say "It misses."';
+
+  // Step D: the battery runs down by time, with no step taken, and the
+  // HUD shows no turn count.
+  await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    state.floor.light.on = true;
+    state.floor.light.locked = false;
+    state.floor.light.charge = 0.05;
+  });
+  await page.waitForTimeout(500);
+  const light = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    return { ...state.floor.light, hud: document.getElementById('lightBattery').textContent };
+  });
+  if (light.on || !light.locked) return 'the battery did not run out by time';
+  if (!/EMPTY/i.test(light.hud)) return `the HUD's battery did not say it was empty: ${light.hud}`;
+  if (await page.locator('#turnCount').evaluate(el => !el.parentElement.hidden)) return 'One stick still showed the turn count';
   return '';
 }
 

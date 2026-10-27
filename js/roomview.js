@@ -1737,7 +1737,7 @@ function drawSky(ctx, w, h, at, ox, oy) {
   ctx.imageSmoothingEnabled = true;
   if (!state.settings.simpleEnemies) return;
   const left = skyTurnsLeft();
-  const words = state.floor.tutorial ? t('sky.watching') : left === null ? t('sky.noLight') : t('sky.turnsLeft', { count: left });
+  const words = state.floor.tutorial ? t('sky.watching') : left === null ? t('sky.noLight') : t(state.settings.oneStick ? 'sky.secondsLeft' : 'sky.turnsLeft', { count: left });
   ctx.save();
   ctx.globalAlpha = upShare;
   ctx.font = Math.round(w * scale * SKY_EYE.size * 0.5) + 'px VT323, monospace';

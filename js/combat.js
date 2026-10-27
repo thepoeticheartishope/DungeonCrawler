@@ -5,7 +5,7 @@
 import { state, key } from './state.js';
 import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIGHT, MINION_TRACK_TURNS, MINION_LINGER_TURNS, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS, DOWNED_SLOWDOWN, ONE_STICK } from './config.js';
 import { advanceLight } from './light.js';
-import { tickLight, batteryInPlay, lightOn } from './battery.js';
+import { tickLight, drainLight, batteryInPlay, lightOn } from './battery.js';
 import { minionStrike, struggleDial } from './gun.js';
 import { keptOut } from './relays.js';
 import { canPassCorner } from './passage.js';
@@ -386,7 +386,7 @@ function towardLastSeen(m) {
 // into one (crawlInto: ventEntered). Last, { type: 'presenceSensed',
 // minion } for each unseen one about to get next to the player
 // (senseUnseen). With `minions` false (One stick: each stick man walks on
-// its own clock, minionClocks) the world's beat leaves them out.
+// its own clock, clockFrame) the world's beat leaves them out.
 export function advanceMonsters({ canStruggle = true, minions = true } = {}) {
   state.run.turnCount++;
   advanceLight();
@@ -430,7 +430,7 @@ export function advanceMonsters({ canStruggle = true, minions = true } = {}) {
 }
 
 // One stick man's move (the turn's, or one stick's own clock's,
-// minionClocks): what it knows, then a step along a chase, a track, a
+// clockFrame): what it knows, then a step along a chase, a track, a
 // search or its idle plan, a duct, or reaching the player. `everyTurn`
 // (the shared turn) skips a slow kind's off turns; on its own clock the
 // pace does that instead. `reach(m)` replaces reaching the player at once
@@ -508,7 +508,9 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
   return { events, chasing: !!chasing };
 }
 
-// One stick (one stick plan step C): every stick man walks on its own
+// One stick (one stick plan steps C and D): a frame of the world in real
+// time. The light's battery runs first, by time (battery.js drainLight).
+// Then every stick man walks on its own
 // clock, not on the world's shared turn. Each frame (`dtMs`) its wait runs
 // down, and when it is up it moves (moveMinion) and waits again: a tile
 // in ONE_STICK.wanderMs while idle, tracking or searching, chaseMs while
@@ -517,12 +519,12 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
 // slowdown (movesEvery). Next to the player it doesn't strike at once: it
 // reaches (startReach), and only lands if they are still within reach
 // when the reach ends (reachOn): the answer to "hit from nowhere".
-// Events: moveMinion's, with each minionMoved given `ms` (its pace, for
-// the map's slide), reachStarted { minion }, reachMissed { minion }, and
-// reachPlayer's.
-export function minionClocks(dtMs, { canStruggle = true } = {}) {
-  const events = [];
-  let changed = false;
+// Events: drainLight's (lightDied, lightCharged), moveMinion's, with each
+// minionMoved given `ms` (its pace, for the map's slide),
+// reachStarted { minion }, reachMissed { minion }, and reachPlayer's.
+export function clockFrame(dtMs, { canStruggle = true } = {}) {
+  const events = drainLight(dtMs);
+  let changed = events.length > 0;
   const lightRules = batteryInPlay();
   for (const m of [...state.floor.minions]) {
     if (state.run.hearts <= 0) break;
@@ -550,7 +552,7 @@ export function minionClocks(dtMs, { canStruggle = true } = {}) {
   return events;
 }
 
-// How long `m` takes over a tile on its own clock (minionClocks).
+// How long `m` takes over a tile on its own clock (clockFrame).
 function paceOf(m, chasing) {
   return (chasing ? ONE_STICK.chaseMs : ONE_STICK.wanderMs) * movesEvery(m);
 }
