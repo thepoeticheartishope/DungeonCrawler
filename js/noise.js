@@ -9,7 +9,8 @@
 // No DOM access here.
 
 import { state, key } from './state.js';
-import { NOISE_RANGES } from './config.js';
+import { NOISE_RANGES, COVER } from './config.js';
+import { besideCover } from './sight.js';
 import { ventIndexAt, ductOpen } from './vents.js';
 import { hearNoise } from './combat.js';
 
@@ -64,7 +65,9 @@ export function makeNoise(kind) {
   if (!state.settings.noise) return [];
   const f = state.floor;
   const origin = { row: f.playerRow, col: f.playerCol };
-  const tiles = spreadSound(origin, NOISE_RANGES[kind]);
+  // Crouched in cover, it carries half as far (COVER.noiseShare).
+  const range = besideCover() ? Math.max(1, Math.round(NOISE_RANGES[kind] * COVER.noiseShare)) : NOISE_RANGES[kind];
+  const tiles = spreadSound(origin, range);
   const reached = new Set(tiles.map(t => key(t.row, t.col)));
   const events = [{ type: 'noiseMade', kind, tiles }];
   for (const m of f.minions) {

@@ -8,7 +8,8 @@
 // uses. floor.js buildFloor() calls placeCharger(). No DOM access here.
 
 import { state } from './state.js';
-import { CHARGER, ENERGY_MAX } from './config.js';
+import { CHARGER, ENERGY_MAX, LIGHT_BATTERY_MAX } from './config.js';
+import { batteryInPlay } from './battery.js';
 import { startRoom } from './desk.js';
 import { addRounds } from './gun.js';
 
@@ -125,18 +126,38 @@ export function chargerLine() {
 // (`kept`), else new ones for this depth. No turn is spent.
 // Events: chargerFull, or chargerOpened { charger, kept }.
 export function useCharger(charger, rand = Math.random) {
-  if (state.run.energy >= ENERGY_MAX) return [{ type: 'chargerFull' }];
+  if (!chargerHasMore()) return [{ type: 'chargerFull' }];
   const kept = !!charger.puzzle;
   if (!kept) charger.puzzle = makeWires(wireSize(), rand);
   return [{ type: 'chargerOpened', charger, kept }];
 }
 
+// Whether a charger has something to give: energy short of ENERGY_MAX, or
+// (Timothy 2026-10-26) the light's battery short of full while it is in
+// play. Its cell window glows while it does (mapview.js).
+export function chargerHasMore() {
+  if (state.run.energy < ENERGY_MAX) return true;
+  return batteryInPlay() && state.floor.light.charge < LIGHT_BATTERY_MAX;
+}
+
+// The light's battery to full, unlocked, as a charge leaves it (Timothy
+// 2026-10-26). The tutorial's steady light is left alone. Returns whether
+// it gave the light anything.
+function chargeLight() {
+  const light = state.floor.light;
+  if (!batteryInPlay() || light.steady || light.charge >= LIGHT_BATTERY_MAX) return false;
+  light.charge = LIGHT_BATTERY_MAX;
+  light.locked = false;
+  return true;
+}
+
 // Turns wire `i` a quarter clockwise. Every CHARGER.wireTurnsPerTurn-th
 // wire turn on these wires spends a turn (`turnSpent`: the caller runs the
 // world's turn; with Real time on the clock is the cost instead). Once the
-// power reaches the cell, energy fills to ENERGY_MAX with plain rounds and
-// the wires are cleared for next time.
-// Events: wireTurned { index }, then turnSpent, then charged { gained }.
+// power reaches the cell, energy fills to ENERGY_MAX with plain rounds, the
+// light's battery fills too (chargeLight), and the wires are cleared for
+// next time.
+// Events: wireTurned { index }, then turnSpent, then charged { gained, light }.
 export function turnWire(charger, i) {
   const puzzle = charger.puzzle;
   if (!puzzle || i < 0 || i >= puzzle.wires.length) return [];
@@ -147,8 +168,9 @@ export function turnWire(charger, i) {
   if (powered(puzzle).done) {
     const gained = Math.max(ENERGY_MAX - state.run.energy, 0);
     addRounds(gained);
+    const light = chargeLight();
     charger.puzzle = null;
-    events.push({ type: 'charged', gained });
+    events.push({ type: 'charged', gained, light });
   }
   return events;
 }

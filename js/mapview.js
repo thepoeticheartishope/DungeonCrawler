@@ -14,7 +14,7 @@ import { state, key } from './state.js';
 import { stepsAway } from './passage.js';
 import {
   AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
-  MAP_ANIMATION_MS, FORM_TELL_STEPS, ENERGY_MAX, MAP_DRAG_PX, CRAWL_REACH, DOWNED_GLYPH_LEVEL, DOWNED_GLYPH_LIFT,
+  MAP_ANIMATION_MS, FORM_TELL_STEPS, MAP_DRAG_PX, CRAWL_REACH, DOWNED_GLYPH_LEVEL, DOWNED_GLYPH_LIFT,
 } from './config.js';
 import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
@@ -22,6 +22,7 @@ import { freeSpot } from './walk.js';
 import { t } from './text.js';
 import { drawRoomScene, roomTileAt, roomGridAt, PLAYER_FIGURE } from './roomview.js';
 import { playOnce } from './figure3d.js';
+import { chargerHasMore } from './charger.js';
 import { showShot } from './mapshared.js';
 import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
@@ -585,7 +586,7 @@ function mapThings() {
     // The charger breathes the same warm light while energy isn't full
     // (roomview.js drawCharger); at full it has nothing to give.
     const deskGlow = p.kind === 'desk' && !p.searched ? pulse(MAP_ANIMATION_MS.deskGlow)
-      : p.kind === 'charger' && state.run.energy < ENERGY_MAX ? pulse(MAP_ANIMATION_MS.chargerGlow) : null;
+      : p.kind === 'charger' && chargerHasMore() ? pulse(MAP_ANIMATION_MS.chargerGlow) : null;
     add(p.kind, p, known ? glyphOf(p) : null, {
       size: 'prop', colour: p.searched || (p.kind === 'charger' && deskGlow === null) ? colours.muted : deskGlow !== null ? 'rgb(' + colours.kindRgb + ')' : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1, breath, deskGlow,
     });

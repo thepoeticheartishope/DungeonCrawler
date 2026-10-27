@@ -109,6 +109,57 @@ export function clearLine(fromRow, fromCol, row, col) {
   return true;
 }
 
+// ---- Cover (Timothy 2026-10-26) ----
+
+// Whether the player is crouched: One stick, sneaking (X) or creeping (a
+// small push on the stick, which stays crouched once let go until they
+// walk again, so a phone can hide too; walk.js).
+export function crouching() {
+  return state.settings.oneStick && (state.floor.sneaking || state.floor.creeping);
+}
+
+// Whether (row, col) is cover: something solid that isn't wall, the
+// player hides behind it (a pillar, furniture, a box, a cell, a relay,
+// the desk, the charger, the chest). A paper lies flat; a stick man isn't.
+function coverAt(row, col) {
+  const f = state.floor;
+  if (f.pillarSet.has(key(row, col))) return true;
+  if (f.chest && f.chest.row === row && f.chest.col === col) return true;
+  return f.props.some(p => p.kind !== 'paper' && p.row === row && p.col === col);
+}
+
+// Whether the player, crouched, has cover on one of the 8 tiles round
+// them: their mistakes are quieter (noise.js, COVER.noiseShare).
+export function besideCover() {
+  if (!crouching()) return false;
+  const f = state.floor;
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      if ((dr || dc) && coverAt(f.playerRow + dr, f.playerCol + dc)) return true;
+    }
+  }
+  return false;
+}
+
+// Whether the player, crouched, is hidden from one at (row, col): cover
+// beside them stands on the straight line between (sampled as clearLine
+// does). Then it can't notice them, nor their light (combat.js notice).
+export function hiddenFrom(row, col) {
+  if (!crouching()) return false;
+  const f = state.floor;
+  const dr = f.playerRow - row;
+  const dc = f.playerCol - col;
+  const steps = Math.max(Math.abs(dr), Math.abs(dc)) * 4;
+  for (let i = 1; i < steps; i++) {
+    const r = Math.round(row + (dr * i) / steps);
+    const c = Math.round(col + (dc * i) / steps);
+    if ((r === f.playerRow && c === f.playerCol) || (r === row && c === col)) continue;
+    if (Math.max(Math.abs(r - f.playerRow), Math.abs(c - f.playerCol)) > 1) continue;
+    if (coverAt(r, c)) return true;
+  }
+  return false;
+}
+
 // True if a straight line from the player's tile to (row, col) passes no
 // wall or pillar — the light can creep a step around a corner, but seeing
 // what something is takes a clear view of it.

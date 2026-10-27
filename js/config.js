@@ -464,6 +464,11 @@ export const NOISE_RANGES = {
   struggle: 4, // a lost Struggle
   gate: 10,    // a wrong answer at the gate
 };
+// Cover (Timothy 2026-10-26, sight.js): crouched (One stick: sneaking or
+// creeping) with something solid beside them, the player is quieter: a
+// mistake's sound spreads `noiseShare` of its NOISE_RANGES (at least a
+// step). Stick men on the far side of that cover can't notice them at all.
+export const COVER = { noiseShare: 0.5 };
 // Noise is on by default; DEV -> Noise switches it off (mistakes are quiet).
 export const NOISE = true;
 // DEV -> Show ducts: who is in a duct, and every pair known. Off by default.
