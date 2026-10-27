@@ -677,6 +677,107 @@
      screen. The HUD stays above it. */
   .ask-screen[hidden] { display: none; }
   .ask-screen { flex: 1 1 0; min-height: 0; overflow-y: auto; }
+
+  /* The record book (record book plan step A, js/bookview.js): the ask
+     screen as a slate handheld, the screen's name and CLOCK PAUSED along
+     its top, the light tube (js/tubeart.js) in a strip on the left and a
+     page with a ringed spine, faint rules and a margin line. Drawn in
+     code after the Pocket Inventory pack's shapes; none of its files are
+     used (their licence forbids sharing them). The page scrolls inside
+     itself, so a tall minigame still fits. data-paper switches the page
+     (DEV -> Book paper): dark is the game's. */
+  .book {
+    --page: #121819;
+    --page-rule: #1B2527;
+    --page-margin: #24304A;
+    --page-edge: #3D4A4C;
+    --page-ring: #1C2426;
+    --case: #141C1E;
+    --case-edge: #263133;
+    --case-shadow: #0A0F10;
+    --strip: #0E1517;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+    padding: 6px 10px 10px;
+    background: var(--case);
+    border-top: 2px solid var(--case-edge);
+    border-bottom: 2px solid var(--case-shadow);
+    clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+  }
+  .book-top { display: flex; justify-content: space-between; gap: 12px; white-space: nowrap; }
+  .book-paused { color: var(--muted); }
+  .book-body { flex: 1 1 0; min-height: 0; display: flex; gap: 10px; }
+  .book-strip {
+    flex: 0 0 auto;
+    width: 64px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 0 8px;
+    background: var(--strip);
+    border-top: 2px solid var(--case-edge);
+    border-left: 2px solid var(--case-edge);
+  }
+  .book-strip[hidden] { display: none; }
+  .book-tube { width: 44px; height: auto; image-rendering: pixelated; }
+  .book-light { color: var(--muted); margin-top: auto; }
+  .book-readout { color: var(--text); letter-spacing: 1px; }
+  .book-page {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 4px 12px 12px 46px;
+    background-color: var(--page);
+    background-image:
+      linear-gradient(to right, var(--page-edge) 0 10px, transparent 10px),
+      linear-gradient(to right, transparent 34px, var(--page-margin) 34px 36px, transparent 36px),
+      repeating-linear-gradient(to bottom, transparent 0 22px, var(--page-rule) 22px 24px);
+    background-attachment: local;
+    box-shadow: 0 0 0 4px var(--case-shadow), inset 0 0 40px rgba(0, 0, 0, 0.35);
+  }
+  /* The rings down the spine. */
+  .book-page::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 14px;
+    bottom: 8px;
+    width: 4px;
+    background: repeating-linear-gradient(to bottom, var(--page-ring) 0 8px, transparent 8px 24px);
+    pointer-events: none;
+  }
+  .book-page .terminal-body { padding-top: 6px; }
+  /* Cold paper and cream (DEV only, to compare): the page is light, so
+     the game's own text tokens are turned to ink inside it. */
+  .book[data-paper="cold"] .book-page {
+    --page: #A7B2B4; --page-rule: #95A2A4; --page-margin: #8796B8; --page-edge: #566366; --page-ring: #65727A;
+    --text: #101617; --muted: #4E5B5E; --torch: #101617; --torch-bright: #101617; --line: #566366;
+    --stone-dark: #A7B2B4; --stone: #A7B2B4; --stone-light: #95A2A4; --ink: #A7B2B4; --glow-rgb: 167, 178, 180;
+  }
+  .book[data-paper="cream"] .book-page {
+    --page: #E8D9B5; --page-rule: #D9C79F; --page-margin: #C9A9A0; --page-edge: #8E7556; --page-ring: #A0835F;
+    --text: #3A2E22; --muted: #8A7658; --torch: #3A2E22; --torch-bright: #3A2E22; --line: #8E7556;
+    --stone-dark: #E8D9B5; --stone: #E8D9B5; --stone-light: #D9C79F; --ink: #E8D9B5; --glow-rgb: 232, 217, 181;
+  }
+  /* A phone: the strip narrows to the tube alone, so the page keeps its width. */
+  @media (max-width: 480px) {
+    .book { padding: 4px 6px 8px; }
+    .book-strip { width: 30px; padding-top: 8px; }
+    .book-tube { width: 22px; }
+    .book-light, .book-readout { display: none; }
+    .book-page {
+      padding-left: 30px;
+      padding-right: 8px;
+      background-image:
+        linear-gradient(to right, var(--page-edge) 0 10px, transparent 10px),
+        linear-gradient(to right, transparent 22px, var(--page-margin) 22px 24px, transparent 24px),
+        repeating-linear-gradient(to bottom, transparent 0 22px, var(--page-rule) 22px 24px);
+    }
+  }
   #roomScreen.asking .map-fit, #roomScreen.asking .room-controls { display: none; }
   #reloadPanel[hidden], #askQuestionPanel[hidden] { display: none; }
   #reloadPanel { display: flex; flex-direction: column; gap: 6px; }
@@ -1605,6 +1706,7 @@
       <button class="dev-skip" id="devTurnBtn" type="button" aria-pressed="false" title="Testing only: a press in a new direction turns and steps (warned by I see you.), or only turns so you look first">Turn: and step (dev)</button>
       <button class="dev-skip" id="devFreeLookBtn" type="button" aria-pressed="true" title="Testing only: the light points where you aim, up to 30 degrees off the way you face (free look), or only where you face">Free look: ON (dev)</button>
       <button class="dev-skip" id="devEightWaysBtn" type="button" aria-pressed="true" title="Testing only: you and the minions walk and face 8 ways (diagonals need both corner tiles open), or only the 4 ways, as before">8 ways: ON (dev)</button>
+      <button class="dev-skip" id="devBookPaperBtn" type="button" title="Testing only: the record book's page (the ask screen): dark, as the game has it, or cold paper or cream, to compare">Book paper: dark (dev)</button>
       <button class="dev-skip" id="devLightBatteryBtn" type="button" aria-pressed="true" title="Testing only: your light goes on and off (V) and runs on a 4-turn battery, or is always on, as before">Light battery: ON (dev)</button>
       <button class="dev-skip" id="devNoiseBtn" type="button" aria-pressed="true" title="Testing only: mistakes make a sound that stick men hear and come to, through grates too, and hunting ones crawl the ducts; or mistakes are quiet and grates are just floor, as before">Noise: ON (dev)</button>
       <button class="dev-skip" id="devStaticBtn" type="button" aria-pressed="true" title="Testing only: a faint grain grows over the map as the closest stick man nears, in place of &quot;I see you.&quot;; or no grain and &quot;I see you.&quot; as before">Static: ON (dev)</button>
@@ -1900,17 +2002,28 @@
 
     <!-- The ask screen (js/gunpanels.js): a reload's offers and then its
          question, or a relay's question, in place of the map and the
-         controls (the HUD stays). The real-time clock waits while it shows. -->
-    <div class="terminal ask-screen" id="askScreen" hidden>
-      <div class="rule"><span id="askTitle"></span></div>
-      <div class="terminal-body">
-        <div id="reloadPanel" hidden>
-          <div class="term-line" id="reloadTitle"></div>
-          <div class="choice-list" id="reloadChoices"></div>
-          <button type="button" class="ask-cancel" id="reloadCancel" data-t="gun.reload.cancel"></button>
+         controls (the HUD stays). The real-time clock waits while it shows.
+         Drawn as the record book (js/bookview.js): the screen's name over
+         a dark page, and the light tube on its left edge. -->
+    <div class="terminal ask-screen book" id="askScreen" data-paper="dark" hidden>
+      <div class="book-top"><span id="askTitle"></span><span class="book-paused" data-t="book.paused"></span></div>
+      <div class="book-body">
+        <div class="book-strip" id="bookStrip">
+          <canvas class="book-tube" id="bookTube" aria-hidden="true"></canvas>
+          <div class="book-light" data-t="book.light"></div>
+          <div class="book-readout" id="bookReadout"></div>
         </div>
-        <div id="askQuestionPanel" hidden>
-          <div id="askQuestionSlot"></div>
+        <div class="book-page">
+          <div class="terminal-body">
+            <div id="reloadPanel" hidden>
+              <div class="term-line" id="reloadTitle"></div>
+              <div class="choice-list" id="reloadChoices"></div>
+              <button type="button" class="ask-cancel" id="reloadCancel" data-t="gun.reload.cancel"></button>
+            </div>
+            <div id="askQuestionPanel" hidden>
+              <div id="askQuestionSlot"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

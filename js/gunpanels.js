@@ -18,6 +18,7 @@ import { escapeHtml } from './quiz.js';
 import { mountQuestionPanel } from './questionview.js';
 import { t } from './text.js';
 import { chargerShown, hideCharger } from './chargerview.js';
+import { refreshBook } from './bookview.js';
 
 const els = {};
 let actions = {};
@@ -91,12 +92,14 @@ export function mapPanelShown() {
 }
 
 // Shows only `panel` (or none). The reload choices and the question take
-// the ask screen in place of the map and the controls.
+// the ask screen in place of the map and the controls, drawn as the record
+// book (bookview.js), refreshed each time it opens.
 function showOnly(panel) {
   [els.reload, els.question, els.aim].forEach(p => { p.hidden = p !== panel; });
   const asking = panel === els.reload || panel === els.question;
   els.ask.hidden = !asking;
   els.room.classList.toggle('asking', asking);
+  if (asking) refreshBook();
 }
 
 // The reload choices from gun.js reloadOffers(): the category the reload
