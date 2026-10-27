@@ -20,7 +20,8 @@ import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
 import { freeSpot } from './walk.js';
 import { t } from './text.js';
-import { drawRoomScene, roomTileAt, roomGridAt } from './roomview.js';
+import { drawRoomScene, roomTileAt, roomGridAt, PLAYER_FIGURE } from './roomview.js';
+import { playOnce } from './figure3d.js';
 import { showShot } from './mapshared.js';
 import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
@@ -180,6 +181,15 @@ export function slidePlayerOnMap(facing) {
 export function freeStepOnMap(ms) {
   if (!canvas || reducedMotion.matches) return;
   playerStepped(performance.now(), ms);
+  requestMapDraw();
+}
+
+// The player was struck (3D moves, one stick plan step F): his figure
+// takes the hit, or, with the run lost (`dead`), falls and stays down.
+// Nothing moves under reduced motion.
+export function playerHitOnMap(dead) {
+  if (!canvas || reducedMotion.matches) return;
+  playOnce(PLAYER_FIGURE, dead ? 'Death01' : 'Hit_Head', performance.now(), dead);
   requestMapDraw();
 }
 

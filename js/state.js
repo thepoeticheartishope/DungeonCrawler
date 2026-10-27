@@ -24,7 +24,7 @@ export const state = {
     revealOnWrong: false,
     realTime: false,        // start screen option: the world moves on a clock (realclock.js), not after each action; remembered
     enemyTendrils: 'random', // DEV -> Tendrils: each stick enemy's own random tendril style, or one of stickforms.js TENDRIL_STYLES for all
-    enemyPose: 'random',    // DEV -> Look: each stick enemy's own random pose, or one stickforms.js STICK_POSES id for all
+    enemyPose: 'walker',    // DEV -> Look: the stickforms.js STICK_POSES id every stick enemy shows (the walker: the 3D moves)
     simpleEnemies: false,   // start screen option, Comfort mode: every minion on the map is a still 'e' (tell 'E'), no form, no motion, and the light is always on (no battery); remembered
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js

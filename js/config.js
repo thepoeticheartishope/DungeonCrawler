@@ -1222,6 +1222,29 @@ export const REALTIME_POLL_MS = 100;
 // pressed sooner is ignored; the gun isn't held back.
 export const REALTIME_WALK_MS = 250;
 
+// 3D moves (one stick plan step F, figure3d.js): the stick men move with
+// Quaternius's animations (moves3d.js), drawn at the room's own pixels.
+// `heightM`: the figure's height in metres, the player's ROOM_VIEW
+// stickHeight (so a metre is about 11 room pixels). `depth`: a metre toward
+// the camera moves this share of a metre down the screen. `blendMs`: one
+// move blends into the next this long. `walkLoopM`: the ground one loop of
+// a walk covers, so the feet stay planted (the legs follow the ground
+// covered, not the clock). `stopMs`: still this long, a walker stands.
+// `headPast`: the head's middle sits this far past its joint, in metres.
+// `turnRate`: radians a second a stick man turns to face its way.
+// `punchPeak`: the reach's frame with the fist furthest out; a reach plays
+// up to it and holds there until it lands or misses.
+export const FIGURE3D = {
+  heightM: 1.75,
+  depth: 0.55,
+  blendMs: 200,
+  walkLoopM: { Walk_Loop: 1.3, Crouch_Fwd_Loop: 1.54 },
+  stopMs: 150,
+  headPast: 0.09,
+  turnRate: 8,
+  punchPeak: 4,
+};
+
 // One stick (one stick plan, ideas/one-stick-plan.md outside the repo):
 // the player walks freely in real time (walk.js), not tile to tile. Built
 // behind DEV -> One stick (state.settings.oneStick, off until step G);

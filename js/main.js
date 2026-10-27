@@ -37,7 +37,7 @@ import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap, freeStepOnMap } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap, freeStepOnMap, playerHitOnMap } from './mapview.js';
 import { turnWire, chargerLine } from './charger.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
@@ -1566,6 +1566,7 @@ function drawEvents(events) {
         logLine(t(e.won ? 'log.wager.won' : 'log.wager.lost', { n: e.n }), e.won ? 'bright' : 'alert');
         break;
       case 'signalLost':
+        playerHitOnMap(true);
         logLine(t('log.signalLost'), 'alert');
         break;
       case 'bossHit':
@@ -1688,6 +1689,7 @@ function drawEvents(events) {
         parts.push(t('gun.hunterStaggered'));
         break;
       case 'minionStruck':
+        playerHitOnMap(false);
         flashHearts();
         cls = 'warn-msg';
         parts.push(t(e.minion.kind === 'hunter' ? 'gun.hunterStruck' : 'gun.struck', { cost: e.cost }));
