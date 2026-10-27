@@ -47,6 +47,7 @@ export function initGunPanels({ pickReload, cancelReload, readyBar, backBar, sto
   els.question = document.getElementById('askQuestionPanel');
   els.questionSlot = document.getElementById('askQuestionSlot');
   els.page = document.getElementById('bookPage');
+  els.close = document.getElementById('bookClose');
   els.aim = document.getElementById('aimPanel');
   els.stage = document.getElementById('dialStage');
   els.canvas = document.getElementById('dialCanvas');
@@ -99,6 +100,7 @@ export function mapPanelShown() {
 function showOnly(panel) {
   [els.reload, els.question, els.aim].forEach(p => { p.hidden = p !== panel; });
   const asking = panel === els.reload || panel === els.question;
+  if (panel !== els.question && heldClose) dropHeld();
   els.ask.hidden = !asking;
   els.room.classList.toggle('asking', asking);
   if (asking) refreshBook();
@@ -145,6 +147,57 @@ export function showQuestionScreen(answers, kind) {
 // question. `dir` 1 turns forward, -1 back.
 export function turnAskPage(change, dir = 1) {
   turnPage(els.page, change, dir);
+}
+
+// What closes the book once an answer is in (holdAskScreen), or null.
+let heldClose = null;
+
+// Holds the ask screen open once an answer is in (record book plan step
+// C), so the struck pick and the written answer can be read: a tap on the
+// book or any key closes it and runs `onClose` (which settles the answer
+// and closes the ask screen). The clock stays paused until then. The
+// listeners go on after this event is done, so the tap or key that gave
+// the answer doesn't close it too.
+export function holdAskScreen(onClose) {
+  heldClose = onClose;
+  els.close.hidden = false;
+  setTimeout(() => {
+    if (heldClose !== onClose) return;
+    els.ask.addEventListener('click', closeHeldAsk);
+    addEventListener('keydown', closeOnKey, true);
+  }, 0);
+}
+
+// Whether the ask screen is held open after an answer.
+export function askHeld() {
+  return heldClose !== null;
+}
+
+// Closes the book held open after an answer (a tap, a key, DEV -> Auto-win).
+export function closeHeldAsk() {
+  const close = heldClose;
+  if (!close) return;
+  dropHeld();
+  close();
+}
+
+// Lets go of a held book without closing it: closeHeldAsk, or the ask
+// screen closed some other way (showOnly), so the next answer isn't stuck.
+function dropHeld() {
+  heldClose = null;
+  els.close.hidden = true;
+  els.ask.removeEventListener('click', closeHeldAsk);
+  removeEventListener('keydown', closeOnKey, true);
+}
+
+// A key closes the held book, and goes no further (it would answer the
+// next question or move the player otherwise). Shift and the like alone
+// don't count.
+function closeOnKey(e) {
+  if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  closeHeldAsk();
 }
 
 // Opens the dial for the landed shot waiting in state.battle.aim, at

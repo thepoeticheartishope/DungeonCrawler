@@ -1736,6 +1736,23 @@ async function checkAnswerLine(page, url, reveal) {
 
   const right = await missReload(page);
   if (right === null) return { skipped: 'no energy cell to bump' };
+  // The book holds the answer (record book plan step C): the pick struck,
+  // the right answer written beside it with Reveal on (not with it off),
+  // until a tap on the page closes it.
+  await page.waitForTimeout(150);
+  const marks = await page.evaluate(() => ({
+    held: !document.getElementById('askScreen').hidden,
+    struck: Boolean(document.querySelector('#askQuestionPanel .mc-option.opt-struck')),
+    written: document.querySelector('#askQuestionPanel .opt-struck .opt-written')?.textContent || null,
+    typed: getComputedStyle(document.getElementById('answerForm')).display !== 'none',
+  }));
+  if (!marks.typed) {
+    if (!marks.held) return 'the book closed by itself after a wrong answer';
+    if (!marks.struck) return 'the wrong pick was not struck through';
+    if (reveal && marks.written !== '→ ' + right) return `the book wrote "${marks.written}", the answer is "${right}"`;
+    if (!reveal && marks.written) return 'the book wrote the answer with Reveal off';
+    await page.click('#bookPage');
+  }
   await page.waitForSelector('#askQuestionPanel', { state: 'hidden', timeout: 5000 });
   await page.waitForTimeout(300);
   const shown = await answerLine(page);
