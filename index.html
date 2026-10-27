@@ -1181,7 +1181,8 @@
     .dpad-center.holding::after { transition: none; }
   }
   /* The round stick (one stick plan step B): drag from the middle; the
-     dashed ring inside is the creep zone (ONE_STICK.creep). */
+     dashed ring inside is the creep zone: --creep (ONE_STICK.creep, set
+     by dpad.js) of the knob's reach, half the stick less half the knob. */
   .walk-stick {
     width: 164px;
     height: 164px;
@@ -1198,7 +1199,7 @@
   .walk-stick::before {
     content: '';
     position: absolute;
-    inset: 30%;
+    inset: calc(50% - var(--creep, 0.8) * (50% - 28px));
     border: 1px dashed var(--line);
     border-radius: 50%;
     pointer-events: none;
