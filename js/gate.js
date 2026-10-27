@@ -10,7 +10,7 @@
 
 import { state } from './state.js';
 import { GATE_QUESTIONS, GATE_MODIFIERS, GATE_WRONG_TURNS } from './config.js';
-import { extinguishLight, updateBossLit } from './light.js';
+import { extinguishLight, updateBossLit, lightTurnsFor } from './light.js';
 import { computeVisibility } from './sight.js';
 
 // Right answers the gate asks with the keys held now.
@@ -47,7 +47,7 @@ export function openGateFree() {
 // seals until the next key. Event: gateSealed { turns }.
 export function sealGate() {
   state.floor.gateSealed = true;
-  state.floor.lightTurns += GATE_WRONG_TURNS;
+  state.floor.lightTurns += lightTurnsFor(GATE_WRONG_TURNS);
   updateBossLit();
   return { type: 'gateSealed', turns: GATE_WRONG_TURNS };
 }

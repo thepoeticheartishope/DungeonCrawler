@@ -6,7 +6,7 @@
 // it's full.
 
 import { state, key } from './state.js';
-import { LIGHT_TURNS_PER_STEP } from './config.js';
+import { LIGHT_TURNS_PER_STEP, ONE_STICK, REALTIME_STEP_MS } from './config.js';
 import { floorRecipe } from './floors.js';
 
 // Walkable steps from (row, col) to every reachable floor tile, walls only.
@@ -46,8 +46,8 @@ export function initBossLight() {
   state.floor.bossDist = stepsFrom(state.floor.boss.row, state.floor.boss.col);
   state.floor.floorCount = state.floor.bossDist.size;
   state.floor.keyRoute = keyRoute();
-  const walk = state.floor.keyRoute;
-  const turns = floorBudget(floorRecipe(state.run.roomIndex, state.floor.path), walk) + state.run.bonusSlack;
+  const walk = lightTurnsFor(state.floor.keyRoute);
+  const turns = lightTurnsFor(floorBudget(floorRecipe(state.run.roomIndex, state.floor.path), state.floor.keyRoute) + state.run.bonusSlack);
   state.run.bonusSlack = 0;
   state.floor.lightFullRadius = Math.max(1, Math.ceil(turns / LIGHT_TURNS_PER_STEP));
   state.floor.lightTurnBudget = state.floor.lightFullRadius * LIGHT_TURNS_PER_STEP;
@@ -55,6 +55,15 @@ export function initBossLight() {
   state.floor.lightLossShare = shareWithin(state.floor.lightFullRadius);
   state.floor.lightTurns = 0;
   updateBossLit();
+}
+
+// The light's turns for `turns` of the turn game: the same, or with One
+// stick (one stick plan step D) the world's beats they come to, each turn
+// counted as ONE_STICK.lightTurnMs, rounded up so a cost is never lost.
+// The budget, a relay's and the gate's turns all go through it.
+export function lightTurnsFor(turns) {
+  if (!state.settings.oneStick || turns <= 0) return turns;
+  return Math.ceil(turns * ONE_STICK.lightTurnMs / REALTIME_STEP_MS);
 }
 
 // Steps of the shortest walk from the player through every key on the

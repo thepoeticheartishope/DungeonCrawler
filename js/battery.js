@@ -1,6 +1,7 @@
 // The player's light on a battery (light battery plan step A). The light
 // goes on and off (V) at no cost. Each turn on spends 1 charge and each
-// turn off gives 1 back, up to LIGHT_BATTERY_MAX. Run it all the way out
+// turn off gives 1 back, up to LIGHT_BATTERY_MAX (with One stick, by time:
+// drainLight). Run it all the way out
 // and it goes off by itself and stays locked off until it is full again;
 // switched off by hand with charge left, it can come back on any time.
 // Off, the player sees only the small circle round them (sight.js).
@@ -8,7 +9,7 @@
 // leave the light always on, as it was. Rules only — no DOM access here.
 
 import { state } from './state.js';
-import { LIGHT_BATTERY_MAX, LOW_BATTERY_CHARGE } from './config.js';
+import { LIGHT_BATTERY_MAX, LOW_BATTERY_CHARGE, ONE_STICK } from './config.js';
 
 // A full battery with the light on, for a new floor (every floor, rest
 // floors too, starts full: mockup call 6).
@@ -35,22 +36,38 @@ export function lowBattery() {
 }
 
 // One turn of the battery, from combat.js advanceMonsters before anything
-// moves. Returns the events it caused: 'lightDied' when the charge runs
-// out with the light on, 'lightCharged' when a locked light is full again.
+// moves. With One stick the battery runs by time instead (drainLight), so
+// the world's beat leaves it alone. Events: runLight's.
 export function tickLight() {
+  if (state.settings.oneStick) return [];
+  return runLight(1);
+}
+
+// One stick (one stick plan step D): the battery runs for `dtMs` of real
+// time, a charge every ONE_STICK.batteryChargeMs, on or off. Called by
+// combat.js clockFrame every frame the world runs. Events: runLight's.
+export function drainLight(dtMs) {
+  return runLight(dtMs / ONE_STICK.batteryChargeMs);
+}
+
+// The battery runs `amount` charges: on, it spends them; off, it gets them
+// back, up to LIGHT_BATTERY_MAX. Returns the events it caused: 'lightDied'
+// when the charge runs out with the light on, 'lightCharged' when a locked
+// light is full again.
+function runLight(amount) {
   if (!batteryInPlay()) return [];
   const light = state.floor.light;
   // The tutorial's light is steady (tutorial.js): it never runs down or charges.
   if (light.steady) return [];
   if (light.on) {
-    light.charge = Math.max(light.charge - 1, 0);
+    light.charge = Math.max(light.charge - amount, 0);
     if (light.charge > 0) return [];
     light.on = false;
     light.locked = true;
     return [{ type: 'lightDied' }];
   }
   if (light.charge >= LIGHT_BATTERY_MAX) return [];
-  light.charge++;
+  light.charge = Math.min(light.charge + amount, LIGHT_BATTERY_MAX);
   if (light.charge < LIGHT_BATTERY_MAX || !light.locked) return [];
   light.locked = false;
   return [{ type: 'lightCharged' }];
@@ -69,7 +86,13 @@ export function toggleLight() {
   return light.on ? 'on' : 'off';
 }
 
-// Turns of charging left before a locked light can come back on.
+// Turns of charging left before a locked light can come back on (with
+// One stick, seconds: secondsToFull).
 export function turnsToFull() {
-  return LIGHT_BATTERY_MAX - state.floor.light.charge;
+  return Math.ceil(LIGHT_BATTERY_MAX - state.floor.light.charge);
+}
+
+// One stick: seconds of charging left before a locked light can come back on.
+export function secondsToFull() {
+  return Math.ceil((LIGHT_BATTERY_MAX - state.floor.light.charge) * ONE_STICK.batteryChargeMs / 1000);
 }

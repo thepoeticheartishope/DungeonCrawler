@@ -1240,12 +1240,19 @@ export const REALTIME_WALK_MS = 250;
 // on the round stick under this share of its reach only turns them.
 // `lookUpMs`: the round stick held still in its middle this long looks up
 // at the sky while held (open call 6; U and Space do it too).
-// Step C, the stick men on their own clocks (combat.js minionClocks):
+// Step C, the stick men on their own clocks (combat.js clockFrame):
 // `wanderMs` / `chaseMs` a tile idle / chasing, times the kind's
 // moveEvery. Next to the player one reaches for `reachMs` (a guarded
 // HUSK `reachGuardMs`) before it strikes, and lands only if the player is
 // still within `reach` tiles, centre to centre (a diagonal neighbour is
 // 1.41).
+// Step D, the world's beat (REALTIME_STEP_MS): the boss's light still
+// spreads a step every LIGHT_TURNS_PER_STEP beats, but its budget and the
+// turns a relay or the gate move it were tuned in turns, when a tile
+// walked was a turn. One turn of them counts as `lightTurnMs` of real time
+// (light.js lightTurnsFor; the creep pace: tune in play). The battery runs
+// by time: one charge (a # on the HUD) lasts `batteryChargeMs` on and
+// comes back in the same time off (LIGHT_BATTERY_MAX 4 = 12 s).
 export const ONE_STICK = {
   on: false,
   walkMs: 450,
@@ -1260,6 +1267,8 @@ export const ONE_STICK = {
   reachMs: 600,
   reachGuardMs: 800,
   reach: 1.7,
+  lightTurnMs: 950,
+  batteryChargeMs: 3000,
   body: 0.28,
   bumpProgress: 0.3,
   bumpRepeatMs: 400,

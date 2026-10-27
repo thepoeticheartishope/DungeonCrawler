@@ -10,7 +10,7 @@
 import { state, key } from './state.js';
 import { RELAYS_PER_FLOOR, RELAY_TURNS_BACK, RELAY_TURNS_CAP, RELAY_WRONG_TURNS } from './config.js';
 import { shuffle } from './quiz.js';
-import { updateBossLit } from './light.js';
+import { updateBossLit, lightTurnsFor } from './light.js';
 import { recordHauntAnswer } from './haunts.js';
 import { makeNoise } from './noise.js';
 
@@ -59,13 +59,13 @@ export function settleRelay(isCorrect, relay) {
   if (isCorrect) {
     state.run.correctTotal++;
     f.heldChambers.add(f.chamberAt.get(key(relay.row, relay.col)));
-    const turns = f.boss ? Math.min(RELAY_TURNS_BACK, RELAY_TURNS_CAP - f.relayTurnsWon, f.lightTurns) : 0;
+    const turns = f.boss ? Math.min(lightTurnsFor(RELAY_TURNS_BACK), lightTurnsFor(RELAY_TURNS_CAP) - f.relayTurnsWon, f.lightTurns) : 0;
     f.relayTurnsWon += turns;
     f.lightTurns -= turns;
     events.push({ type: 'relayHeld', turns });
   } else {
     f.misses++;
-    const turns = f.boss ? RELAY_WRONG_TURNS : 0;
+    const turns = f.boss ? lightTurnsFor(RELAY_WRONG_TURNS) : 0;
     f.lightTurns += turns;
     events.push({ type: 'relaySparked', turns, expected: q.meaning, source: q.source }, ...makeNoise('relay'));
   }

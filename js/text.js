@@ -91,6 +91,7 @@ export const TEXT = {
   'stat.keys.sealed': '{held}/{total} SEALED', // draft. HUD: the gate is sealed until another key
   'stat.rest': 'REST', // draft — shown for the depth number while on a rest floor
   'sky.turnsLeft': '{count} {count|plural:turn} left', // draft. Comfort mode's sky while looking up, where the eye would be (sky eye plan)
+  'sky.secondsLeft': '{count} {count|plural:second} left', // draft. The same with One stick, where the light runs by time (one stick plan step D)
   'sky.watching': 'it is watching', // draft. Comfort mode's sky in the tutorial, where the eye is wide open
   'sky.noLight': 'no light here', // draft. The same with no boss light on the floor (a rest floor, the tutorial, after the boss)
 
@@ -383,6 +384,7 @@ export const TEXT = {
   'room.ownLight.died': 'Your light dies. It needs a full charge.', // draft. Ran empty with the light on: locked off until full
   'room.ownLight.charged': 'Your light is charged.', // draft. A locked light is full again
   'room.ownLight.locked': 'No light until it is full. {turns} more turns.', // draft. V while locked
+  'room.ownLight.locked.seconds': 'No light until it is full. {seconds} more seconds.', // draft. The same with One stick (one stick plan step D)
   'room.gaze.step': 'It comes closer while you look.', // draft. The eye (gaze.js) is full: the stick man steps one closer
   'room.gaze.stare': 'It stares at you.', // draft. The same, already beside the player
   'room.blocked.wall': 'The membrane holds.', // draft

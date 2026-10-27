@@ -1,4 +1,4 @@
-// Unit tests for the stick men's own clocks (combat.js minionClocks, one
+// Unit tests for the stick men's own clocks (combat.js clockFrame, one
 // stick plan step C): idle they step every ONE_STICK.wanderMs, chasing
 // every chaseMs, a HUSK at its moveEvery times that; next to the player
 // one reaches for reachMs first, and its reach lands only if the player
@@ -13,7 +13,7 @@ import { freshLight } from '../js/battery.js';
 import { state } from '../js/state.js';
 import { MAX_HEARTS, MINION_KINDS, ONE_STICK } from '../js/config.js';
 import { computeVisibility } from '../js/sight.js';
-import { spawnMinion, minionClocks } from '../js/combat.js';
+import { spawnMinion, clockFrame } from '../js/combat.js';
 import { resetHaunts } from '../js/haunts.js';
 
 const FRAME = 10;
@@ -83,7 +83,7 @@ function hunterAt(dr, dc, kind = 'SHARD') {
 // Runs the clocks for `ms`, a frame at a time. Returns every event.
 function run(ms) {
   const events = [];
-  for (let t = 0; t < ms; t += FRAME) events.push(...minionClocks(FRAME));
+  for (let t = 0; t < ms; t += FRAME) events.push(...clockFrame(FRAME));
   return events;
 }
 const steps = (events, m) => events.filter(e => e.type === 'minionMoved' && e.minion === m);
