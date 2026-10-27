@@ -694,6 +694,9 @@ export const TEXT = {
   'book.paused': 'CLOCK PAUSED', // draft. The record book's top strip, right: nothing moves while it is open
   'book.light': 'LIGHT', // draft. Under the book's light tube
   'book.empty': 'EMPTY', // draft. Under the book's light tube when the battery ran empty (locked until full)
+  'book.right': 'RIGHT.', // draft. Written beside a right pick on the book's page
+  'book.written': '→ {answer}', // draft. Written beside a struck wrong pick: the right answer
+  'book.close': 'Tap the page or press a key to close.', // draft. Foot of the book's page once an answer is in
   'log.btn': 'LOG', // draft. The room log button (L on a keyboard): the whole log over the map
   'hud.more': 'Status: tap for more', // draft. The HUD's tooltip: a tap shows myelin, cycle and the goals' names
   'map.label': 'Map of what you have seen on this floor. Tap to close.', // draft. Read out by screen readers

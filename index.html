@@ -698,6 +698,7 @@
     --strip: #0E1517;
     --page-back: #263032;
     --page-back-dark: #1C2426;
+    --page-mark: #8FB0FF;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -757,7 +758,7 @@
      the game's own text tokens are turned to ink inside it. */
   .book[data-paper="cold"] {
     --page: #A7B2B4; --page-rule: #95A2A4; --page-margin: #8796B8; --page-edge: #566366; --page-ring: #65727A;
-    --page-back: #7C898C; --page-back-dark: #65727A;
+    --page-back: #7C898C; --page-back-dark: #65727A; --page-mark: #1F3A8A;
   }
   .book[data-paper="cold"] .book-page {
     --text: #101617; --muted: #4E5B5E; --torch: #101617; --torch-bright: #101617; --line: #566366;
@@ -765,7 +766,7 @@
   }
   .book[data-paper="cream"] {
     --page: #E8D9B5; --page-rule: #D9C79F; --page-margin: #C9A9A0; --page-edge: #8E7556; --page-ring: #A0835F;
-    --page-back: #B89B78; --page-back-dark: #A0835F;
+    --page-back: #B89B78; --page-back-dark: #A0835F; --page-mark: #1E7A4E;
   }
   .book[data-paper="cream"] .book-page {
     --text: #3A2E22; --muted: #8A7658; --torch: #3A2E22; --torch-bright: #3A2E22; --line: #8E7556;
@@ -786,6 +787,33 @@
   }
   .page-turn-flap.edge { border-left: 2px solid var(--page-edge); box-shadow: -4px 0 0 rgba(0, 0, 0, 0.25); }
   .page-turn-shadow { position: absolute; top: 0; bottom: 0; width: 0; background: rgba(0, 0, 0, 0.28); }
+
+  /* An answer in the book (record book plan step C, questionview.js
+     markAnswer): a wrong pick struck through left to right, the right
+     answer written beside it in the second ink, the right option
+     underlined; then the options let taps through to the page, which
+     closes the book (gunpanels.js holdAskScreen). Stepped like the turn;
+     still under reduced motion. Outside the book (the battle screen) the
+     classes never go on. */
+  .mc-options.answered .mc-option { pointer-events: none; }
+  .mc-option.opt-struck .opt-text {
+    background: linear-gradient(currentColor, currentColor) no-repeat 0 55% / 100% 2px;
+    animation: bookStrike 320ms steps(8, end);
+  }
+  .mc-option.opt-right .opt-text { text-decoration: underline 2px var(--page-mark, var(--text)); text-underline-offset: 5px; }
+  .mc-option.opt-right.opt-picked .opt-text { text-decoration-color: currentColor; }
+  .mc-option .opt-written {
+    margin-left: 14px;
+    color: var(--page-mark, var(--text));
+    animation: bookWrite 320ms steps(8, end);
+  }
+  @keyframes bookStrike { from { background-size: 0 2px; } }
+  @keyframes bookWrite { from { clip-path: inset(0 100% 0 0); } }
+  @media (prefers-reduced-motion: reduce) {
+    .mc-option.opt-struck .opt-text, .mc-option .opt-written { animation: none; }
+  }
+  .book-close { margin-top: 18px; color: var(--muted); }
+  .book-close[hidden] { display: none; }
 
   /* A phone: the strip narrows to the tube alone, so the page keeps its width. */
   @media (max-width: 480px) {
@@ -2048,6 +2076,7 @@
               <div id="askQuestionSlot"></div>
             </div>
           </div>
+          <div class="book-close" id="bookClose" data-t="book.close" hidden></div>
         </div>
       </div>
     </div>

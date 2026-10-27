@@ -46,6 +46,7 @@ export function mountQuestionPanel(host, next) {
 function renderChoices() {
   const letters = ['A', 'B', 'C', 'D'];
   mcOptionsEl.innerHTML = '';
+  mcOptionsEl.classList.remove('answered');
   state.battle.currentChoices.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -54,6 +55,41 @@ function renderChoices() {
     btn.addEventListener('click', () => handlers.onChoice(opt));
     mcOptionsEl.appendChild(btn);
   });
+}
+
+// Marks the options once an answer is in, on the record book's page
+// (record book plan step C): the pick struck through when wrong, with the
+// right answer written beside it in the second ink, and the right option
+// underlined; a right pick is underlined with RIGHT. beside it. `picked`
+// is the option given (null when the Timer ran out: nothing is struck).
+// `isRight(option)` says whether an option is the answer. With Reveal off
+// (`reveal` false) a miss is struck and the answer stays unwritten, as the
+// answer line stays hidden then. The options then let taps through to the
+// page, which closes the book (gunpanels.js holdAskScreen).
+export function markAnswer(picked, isRight, reveal) {
+  mcOptionsEl.classList.add('answered');
+  const right = state.battle.currentChoices.find(isRight);
+  [...mcOptionsEl.querySelectorAll('.mc-option')].forEach((btn, i) => {
+    const opt = state.battle.currentChoices[i];
+    const isPick = picked !== null && opt === picked;
+    if (isRight(opt) && (reveal || isPick)) btn.classList.add('opt-right');
+    if (isPick && isRight(opt)) {
+      btn.classList.add('opt-picked');
+      btn.appendChild(writtenNote(t('book.right')));
+    }
+    if (isPick && !isRight(opt)) {
+      btn.classList.add('opt-struck');
+      if (reveal && right !== undefined) btn.appendChild(writtenNote(t('book.written', { answer: right })));
+    }
+  });
+}
+
+// A note written beside an option in the book's second ink.
+function writtenNote(text) {
+  const note = document.createElement('span');
+  note.className = 'opt-written';
+  note.textContent = text;
+  return note;
 }
 
 // Types `text` into `el` one character at a time, terminal-style, instead

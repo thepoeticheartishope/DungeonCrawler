@@ -41,7 +41,7 @@ import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, s
 import { turnWire, chargerLine } from './charger.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
-import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar, turnAskPage } from './gunpanels.js';
+import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar, turnAskPage, holdAskScreen, askHeld, closeHeldAsk } from './gunpanels.js';
 import { t, TEXT, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, initWalkStick, SCREEN_WAYS, padWay, sweepHold } from './dpad.js';
@@ -55,7 +55,7 @@ import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
 import { walkFree, freeSpot, resetWalk, switchSneak } from './walk.js';
-import { mountQuestionPanel, setQuestion, setMinigame, retypeQuestion, clearModifier, applyModifier, placeWager } from './questionview.js';
+import { mountQuestionPanel, setQuestion, setMinigame, retypeQuestion, clearModifier, applyModifier, placeWager, markAnswer } from './questionview.js';
 import { rollMinigame, forcedQuestion, endMinigame, letterPoolSetup, sumLockSetup } from './minigames.js';
 import { playMinigameOut } from './minigameview.js';
 import { initMinimap, refreshMinimap } from './minimapview.js';
@@ -534,9 +534,9 @@ function pickReload(offer, category) {
   const box = reloadBox;
   const settle = (isCorrect, tier, scored = []) => endReload(() => [...scored, ...settleReload(isCorrect, offer, box, tier)]);
   askAnswers = {
-    onChoice: choice => settle(matchesAnswer(choice)),
+    onChoice: choice => holdAnswer(choice, () => settle(matchesAnswer(choice))),
     onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
-    onTimeout: () => settle(false),
+    onTimeout: () => holdAnswer(null, () => settle(false)),
     onResult: result => settle(result.right, result.tier || '2', endMinigame(result)),
     log: text => showRoomNote('', text),
   };
@@ -547,6 +547,19 @@ function pickReload(offer, category) {
   });
 }
 
+// An option was picked (or the Timer ran out, `picked` null) on the ask
+// screen: the book marks it (questionview.js markAnswer: struck, the right
+// answer written beside it) and stays open until a tap or a key, then
+// `settle` runs as before (record book plan step C). Nothing moves
+// meanwhile: the clock is paused while the ask screen shows. A second
+// answer while it waits does nothing.
+function holdAnswer(picked, settle) {
+  if (askHeld()) return;
+  clearModifier();
+  markAnswer(picked, matchesAnswer, state.settings.revealOnWrong);
+  holdAskScreen(settle);
+}
+
 // A relay was bumped (moves.js relayFound): its question on the ask screen,
 // like a reload's, with no offers to pick and no modifiers. Any answer
 // (relays.js settleRelay) is the turn.
@@ -555,9 +568,9 @@ function openRelay(relay) {
   state.run.turnLocked = true;
   const settle = (isCorrect, scored = []) => endReload(() => [...scored, ...settleRelay(isCorrect, relay)]);
   askAnswers = {
-    onChoice: choice => settle(matchesAnswer(choice)),
+    onChoice: choice => holdAnswer(choice, () => settle(matchesAnswer(choice))),
     onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
-    onTimeout: () => settle(false),
+    onTimeout: () => holdAnswer(null, () => settle(false)),
     onResult: result => settle(result.right, endMinigame(result)),
     log: text => showRoomNote('', text),
   };
@@ -670,9 +683,10 @@ function gunCombatChanged() {
 }
 
 // DEV -> Auto-win, with a gun panel open: picks the first reload, answers
-// its question right (a minigame at X), and starts and stops the dial in its
+// its question right (a minigame at X) and closes the book held after it, and starts and stops the dial in its
 // kill zone (a Struggle's in its zone). Walking, reloading and firing stay the player's.
 function autoWinGun() {
+  if (askHeld()) { closeHeldAsk(); return; }
   const shown = mapPanelShown();
   if (shown === 'reload') pickReload(reloadOffers().offers[0], reloadCategory());
   else if (shown === 'question' && askAnswers && state.battle.minigame) playMinigameOut();
