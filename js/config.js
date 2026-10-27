@@ -1240,6 +1240,12 @@ export const REALTIME_WALK_MS = 250;
 // on the round stick under this share of its reach only turns them.
 // `lookUpMs`: the round stick held still in its middle this long looks up
 // at the sky while held (open call 6; U and Space do it too).
+// Step C, the stick men on their own clocks (combat.js minionClocks):
+// `wanderMs` / `chaseMs` a tile idle / chasing, times the kind's
+// moveEvery. Next to the player one reaches for `reachMs` (a guarded
+// HUSK `reachGuardMs`) before it strikes, and lands only if the player is
+// still within `reach` tiles, centre to centre (a diagonal neighbour is
+// 1.41).
 export const ONE_STICK = {
   on: false,
   walkMs: 450,
@@ -1249,6 +1255,11 @@ export const ONE_STICK = {
   tapMs: 130,
   deadZone: 0.15,
   lookUpMs: 500,
+  wanderMs: 950,
+  chaseMs: 550,
+  reachMs: 600,
+  reachGuardMs: 800,
+  reach: 1.7,
   body: 0.28,
   bumpProgress: 0.3,
   bumpRepeatMs: 400,

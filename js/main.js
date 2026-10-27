@@ -24,7 +24,7 @@ import {
   showAnswerLine, fadeAnswerLine
 } from './render.js';
 import {
-  isAdjacentToPlayer, refreshTargetValidity, advanceMonsters
+  isAdjacentToPlayer, refreshTargetValidity, advanceMonsters, minionClocks
 } from './combat.js';
 import { lightConsumed } from './light.js';
 import { openGateFree } from './gate.js';
@@ -1210,7 +1210,7 @@ const CHARGER_BREAKERS = new Set(['minionStruck', 'struggleStarted', 'ankleGrabb
 // player's own actions don't move the world (`worldMoves` false): the clock
 // does (clockTick), so here only the targets catch up with the player.
 function applyTurnOutcome(events, worldMoves = !realTimeOn()) {
-  const turn = worldMoves ? events.concat(advanceMonsters({ canStruggle: worldRunsUnder() })) : events;
+  const turn = worldMoves ? events.concat(advanceMonsters({ canStruggle: worldRunsUnder(), minions: !state.settings.oneStick })) : events;
   if (!worldMoves) refreshTargetValidity();
   // A stick man that reaches the player closes CHARGE.SYS before its
   // strike (or Struggle) is drawn; the wires stay as they were.
@@ -1517,7 +1517,14 @@ function drawEvents(events) {
       // A downed one crawls (downed plan step B).
       case 'minionMoved':
         if (e.minion.downed) crawlOnMap(e.minion, e.from);
-        else slideOnMap(e.minion, e.from);
+        else slideOnMap(e.minion, e.from, e.ms);
+        break;
+      // One stick: the stick man's reach is its tell (it stands, near);
+      // only a miss is said.
+      case 'reachStarted':
+        break;
+      case 'reachMissed':
+        parts.push(t('room.reach.missed'));
         break;
       case 'minionEngaged':
         if (!engaged) parts.push(t('room.engage'));
@@ -1790,11 +1797,26 @@ function walkFrame(now) {
     events = walkFree(x, y, { dtMs: dt, keys: true, still: reduceMotion });
   }
   if (spot.x !== x0 || spot.y !== y0 || state.floor.look !== look0) requestMapDraw();
-  if (!events.length) return;
-  state.run.turnLocked = true;
-  settleMove(events);
+  if (events.length) {
+    state.run.turnLocked = true;
+    settleMove(events);
+  }
+  minionFrame(dt);
 }
 requestAnimationFrame(walkFrame);
+
+// The stick men's own clocks with One stick on (combat.js minionClocks,
+// one stick plan step C), after the player's frame of walking: what they
+// did is drawn like the world's turn in real time (applyTurnOutcome, the
+// world not moved again), so a strike can still end the run.
+function minionFrame(dt) {
+  if (state.run.turnLocked || state.run.runEnded || !clockMayRun()) return;
+  const events = minionClocks(Math.min(dt, ONE_STICK.frameMs), { canStruggle: worldRunsUnder() });
+  if (!events.length) return;
+  state.run.turnLocked = true;
+  applyTurnOutcome(events, false);
+  state.run.turnLocked = false;
+}
 
 // Sneaking on or off (X, One stick only; walk.js switchSneak).
 function toggleSneak() {
