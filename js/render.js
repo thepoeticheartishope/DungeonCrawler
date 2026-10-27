@@ -207,15 +207,16 @@ function renderGoals() {
   els.goalNames.textContent = goals.map(g => GOAL_MARKS[goalMark(g.id)] + ' ' + t('goal.' + g.id)).join('  ');
 }
 
-// The NEXT meter (Real time only): how long until the world next moves.
+// The NEXT meter (Real time or One stick only): how long until the world next moves.
 // Its edge runs slowly across and reaches the far end as the world moves,
 // filling the meter one step and emptying it the next, so it never jumps.
 // Dim while the clock is paused (`running` false). Under reduced motion it
 // moves in still quarter steps instead of gliding. Called on each clock
 // poll (main.js clockTick).
 export function renderClock(running) {
-  els.clockStat.hidden = !state.settings.realTime;
-  if (!state.settings.realTime) return;
+  const on = state.settings.realTime || state.settings.oneStick;
+  els.clockStat.hidden = !on;
+  if (!on) return;
   const { share, filling } = clockReading();
   const edge = reducedMotion.matches ? Math.floor(share * 4) / 4 : share;
   els.clockFill.style.left = (filling ? 0 : edge) * 100 + '%';

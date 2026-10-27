@@ -233,6 +233,16 @@ export function cameraGoal(bounds, at, viewW, viewH) {
   };
 }
 
+// Where the player was drawn last (one stick: their free spot), and
+// whether they have moved since. While they walk the scene shows plainly
+// each frame, with no afterglow, as during a step's slide.
+let drawnAt = null;
+function walkedSince(at) {
+  const moved = !drawnAt || drawnAt.row !== at.row || drawnAt.col !== at.col;
+  drawnAt = { row: at.row, col: at.col };
+  return moved;
+}
+
 // Draws the whole map from the room camera. `canvasSize` is { width,
 // height, pageWidth }; `shared` is what mapview.js hands it (colours,
 // things, fogOf, paintGlyph, keepMoving, showPlain, now, still, walkAt).
@@ -255,7 +265,8 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   const at = look.walkAt;
   const space = spaceOf(f.playerRow, f.playerCol);
   const goal = cameraGoal(space.bounds, { x: (at.col + 0.5) * T, y: (at.row + 0.5) * T }, viewW, viewH);
-  if (moveCamera(goal) || at.row !== f.playerRow || at.col !== f.playerCol) look.showPlain();
+  const sliding = state.settings.oneStick ? walkedSince(at) : at.row !== f.playerRow || at.col !== f.playerCol;
+  if (moveCamera(goal) || sliding) look.showPlain();
   const ox = Math.round(shownCam.x);
   const oy = Math.round(shownCam.y);
   frame = { ox, oy };

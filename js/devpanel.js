@@ -25,6 +25,7 @@ const devDownedBtn = document.getElementById('devDownedBtn');
 const devNoiseBtn = document.getElementById('devNoiseBtn');
 const devStaticBtn = document.getElementById('devStaticBtn');
 const devChargerBtn = document.getElementById('devChargerBtn');
+const devOneStickBtn = document.getElementById('devOneStickBtn');
 const devShowDuctsBtn = document.getElementById('devShowDuctsBtn');
 const dpadEl = document.getElementById('dpad');
 const devFrameOut = document.getElementById('devFrameOut');
@@ -185,6 +186,15 @@ export function initDevPanel({
     state.settings.charger = !state.settings.charger;
     devChargerBtn.textContent = state.settings.charger ? 'Charger: ON (dev)' : 'Charger: OFF (dev)';
     devChargerBtn.setAttribute('aria-pressed', String(state.settings.charger));
+  });
+
+  // Dev tool (one stick plan step A): walk freely in real time with the
+  // move keys held, or tile to tile as before. On, it turns Real time on.
+  devOneStickBtn.addEventListener('click', () => {
+    state.settings.oneStick = !state.settings.oneStick;
+    devOneStickBtn.textContent = state.settings.oneStick ? 'One stick: ON (dev)' : 'One stick: OFF (dev)';
+    devOneStickBtn.setAttribute('aria-pressed', String(state.settings.oneStick));
+    requestMapDraw();
   });
 
   // Dev tool (vents and noise plan step C): see who is in a duct and where

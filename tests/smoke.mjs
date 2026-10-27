@@ -92,6 +92,10 @@
 //      ("nothing to give"); the kind voice's "It still holds a charge."
 //      after the first turn beside it; then a hunting stick man beside the player
 //      closes it ("It found you."). Saved as noesis-charger*.png.
+//  13. One stick run (one stick plan step A): DEV -> One stick on the
+//      opening rest; held arrow keys walk the player freely (their spot
+//      between tiles, the tile they stand on following it), letting go stops
+//      them, and the real-time NEXT meter shows.
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -1083,6 +1087,79 @@ async function runLightBattery(browser, url) {
   return { ok: true, detail: 'V switched the light, the battery died after 4 turns, locked, charged after 4, and Comfort mode kept it always on', consoleErrors, pageErrors };
 }
 
+// ---- Run 13: one stick ----
+
+async function runOneStick(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkOneStick(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'held arrows walked freely between tiles, letting go stopped, the NEXT meter showed', consoleErrors, pageErrors };
+}
+
+// The player's free spot and tile now.
+function spotNow(page) {
+  return page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { freeSpot } = await import('./js/walk.js');
+    const at = freeSpot();
+    return { x: at.x, y: at.y, row: state.floor.playerRow, col: state.floor.playerCol, facing: state.floor.facing };
+  });
+}
+
+// One stick on the opening rest (no stick men): stands the player at the
+// west end of four open tiles in a row, holds → about 1.5 tiles' worth, and
+// checks they went east, off the tile centres, with their tile following.
+// Returns what failed ('' when all held).
+async function checkOneStick(page, url) {
+  await loadPageAndSet(page, url);
+  await startGameAndWaitForRoom(page);
+  await page.click('#devToggleBtn');
+  await page.waitForSelector('#devPanel.show', { timeout: 5000 });
+  await page.click('#devOneStickBtn');
+  await page.click('#devToggleBtn');
+  const placed = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { whatBlocks } = await import('./js/passage.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const f = state.floor;
+    const open = (r, c) => !whatBlocks(r, c) && !(f.stairs && f.stairs.row === r && f.stairs.col === c);
+    for (let r = 1; r < f.GRID_SIZE - 1; r++) {
+      for (let c = 1; c < f.GRID_SIZE - 4; c++) {
+        if (![0, 1, 2, 3].every(d => open(r, c + d))) continue;
+        f.playerRow = r;
+        f.playerCol = c;
+        f.playerAt = null;
+        computeVisibility();
+        return true;
+      }
+    }
+    return false;
+  });
+  if (!placed) return 'no four open tiles in a row on the opening rest';
+  await roomIdle(page);
+  const start = await spotNow(page);
+  await page.keyboard.down('ArrowRight');
+  await page.waitForTimeout(700);
+  await page.keyboard.up('ArrowRight');
+  const walked = await spotNow(page);
+  if (walked.x - start.x < 0.8) return `held → for 700 ms went only ${(walked.x - start.x).toFixed(2)} tiles`;
+  if (walked.y !== start.y) return 'walking east moved the player up or down';
+  if (walked.col !== Math.floor(walked.x)) return 'the tile the rules see did not follow the free spot';
+  if (walked.facing !== 'E') return `facing ${walked.facing} after walking east`;
+  await page.waitForTimeout(300);
+  const after = await spotNow(page);
+  if (after.x !== walked.x) return 'the player kept walking after the key was let go';
+  if (await page.isHidden('#clockStat')) return 'One stick did not show the real-time NEXT meter';
+  return '';
+}
+
 // ---- Main ----
 
 // ---- Run 8: tutorial room ----
@@ -1937,6 +2014,7 @@ async function main() {
         ['light battery', runLightBattery, url], ['tutorial', runTutorial, url],
         ['answer line', runAnswerLine, url], ['vents', runVents, url],
         ['room view', runRoomView, url], ['charger', runCharger, url],
+        ['one stick', runOneStick, url],
       ];
       // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
       // of those words, SMOKE_REPEAT=20 runs each that many times: for

@@ -18,6 +18,7 @@ import {
 } from './config.js';
 import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
+import { freeSpot } from './walk.js';
 import { t } from './text.js';
 import { drawRoomScene, roomTileAt, roomGridAt } from './roomview.js';
 import { showShot } from './mapshared.js';
@@ -170,6 +171,15 @@ export function slidePlayerOnMap(facing) {
   const from = running && running.kind === 'slide' ? slidePlace(running, now) : { row: f.playerRow - dr, col: f.playerCol - dc };
   effects.set(PLAYER, { kind: 'slide', start: now, ms: stepMs(dr, dc), from, to: { row: f.playerRow, col: f.playerCol } });
   playerStepped(now, stepMs(dr, dc));
+  requestMapDraw();
+}
+
+// The player walked freely onto a new tile (one stick plan, walk.js): the
+// stick man's body takes a step over `ms`, the time a tile takes at their
+// pace (playerform.js). The spot itself moves every frame, so no slide.
+export function freeStepOnMap(ms) {
+  if (!canvas || reducedMotion.matches) return;
+  playerStepped(performance.now(), ms);
   requestMapDraw();
 }
 
@@ -599,7 +609,7 @@ function mapThings() {
       size: 'stairs', colour: colours.bright, glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
     });
   });
-  add('player', shownAt(PLAYER, f.playerRow, f.playerCol), t('term.player.symbol'), { size: 'player' },
+  add('player', state.settings.oneStick ? freeAt() : shownAt(PLAYER, f.playerRow, f.playerCol), t('term.player.symbol'), { size: 'player' },
     { row: f.playerRow, col: f.playerCol });
   // DEV -> Show ducts: a stick man in a duct shows dimly on the grate it
   // will come out of.
@@ -707,11 +717,19 @@ function shownAt(effectKey, row, col) {
 // Where the player's step slide has them at `now`: their tile once it has
 // landed. A bump doesn't count, so the camera following this never nudges.
 function walkAt(now) {
+  if (state.settings.oneStick) return freeAt();
   const f = state.floor;
   const fx = effects.get(PLAYER);
   const tile = { row: f.playerRow, col: f.playerCol };
   if (!fx || fx.kind !== 'slide' || fx.to.row !== tile.row || fx.to.col !== tile.col || now - fx.start >= fx.ms) return tile;
   return slidePlace(fx, now);
+}
+
+// Where free walking has the player (one stick plan, walk.js), as a place
+// in tiles like a slide's (the tile's top-left corner).
+function freeAt() {
+  const at = freeSpot();
+  return { row: at.y - 0.5, col: at.x - 0.5 };
 }
 
 function slidePlace(fx, now) {
