@@ -1673,6 +1673,18 @@ async function missReload(page) {
   await page.waitForSelector('#reloadPanel:not([hidden])', { timeout: 5000 });
   await page.keyboard.press('1');
   await page.waitForSelector('#askQuestionPanel:not([hidden])', { timeout: 5000 });
+  // The ask screen is the record book (record book plan step A): its title
+  // on the top strip, and the light tube on the left while the battery is
+  // in play (this run switches it off, so the strip hides).
+  const book = await page.evaluate(async () => {
+    const { batteryInPlay } = await import('./js/battery.js');
+    return {
+      title: document.getElementById('askTitle').textContent,
+      tube: document.getElementById('bookTube').offsetWidth > 0,
+      inPlay: batteryInPlay(),
+    };
+  });
+  if (book.title !== 'RELOAD.SYS' || book.tube !== book.inPlay) throw new Error('the ask screen is not the record book: ' + JSON.stringify(book));
   return page.evaluate(async () => {
     const { state } = await import('./js/state.js');
     const right = state.battle.currentQuestion.meaning;

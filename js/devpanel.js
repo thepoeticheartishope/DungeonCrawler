@@ -9,6 +9,8 @@ import { STICK_POSE_IDS, TENDRIL_STYLES } from './stickforms.js';
 import { followBody, lookAngle, bodyAngle, nearestWay } from './look.js';
 import { computeVisibility } from './sight.js';
 import { refreshGunTarget } from './gun.js';
+import { refreshBook } from './bookview.js';
+import { BOOK } from './config.js';
 
 const devDock = document.getElementById('devDock');
 const devToggleBtn = document.getElementById('devToggleBtn');
@@ -19,6 +21,7 @@ const devFogBtn = document.getElementById('devFogBtn');
 const devTurnBtn = document.getElementById('devTurnBtn');
 const devFreeLookBtn = document.getElementById('devFreeLookBtn');
 const devEightWaysBtn = document.getElementById('devEightWaysBtn');
+const devBookPaperBtn = document.getElementById('devBookPaperBtn');
 const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
 const devGazeBtn = document.getElementById('devGazeBtn');
 const devDownedBtn = document.getElementById('devDownedBtn');
@@ -155,6 +158,16 @@ export function initDevPanel({
     if (state.settings.gunCombat) refreshGunTarget();
     renderRoomHints();
     requestMapDraw();
+  });
+
+  // Dev tool (record book plan step A): the book's page, dark as the game
+  // has it, or cold paper or cream, to compare. Seen on the next ask screen
+  // (Test reload opens one).
+  devBookPaperBtn.addEventListener('click', () => {
+    const papers = BOOK.papers;
+    state.settings.bookPaper = papers[(papers.indexOf(state.settings.bookPaper) + 1) % papers.length];
+    devBookPaperBtn.textContent = 'Book paper: ' + state.settings.bookPaper + ' (dev)';
+    refreshBook();
   });
 
   // Dev tool (light battery plan): the light goes on and off and runs on

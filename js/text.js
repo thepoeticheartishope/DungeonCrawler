@@ -691,6 +691,9 @@ export const TEXT = {
   'ask.title.reload': 'RELOAD.SYS', // draft. The ask screen's title for a reload (its offers, then its question)
   'ask.title.relay': 'RELAY.SYS', // draft. The ask screen's title for a relay's question
   'ask.title.barrel': 'BARREL', // draft. The ask screen's title for the tutorial barrel's question
+  'book.paused': 'CLOCK PAUSED', // draft. The record book's top strip, right: nothing moves while it is open
+  'book.light': 'LIGHT', // draft. Under the book's light tube
+  'book.empty': 'EMPTY', // draft. Under the book's light tube when the battery ran empty (locked until full)
   'log.btn': 'LOG', // draft. The room log button (L on a keyboard): the whole log over the map
   'hud.more': 'Status: tap for more', // draft. The HUD's tooltip: a tap shows myelin, cycle and the goals' names
   'map.label': 'Map of what you have seen on this floor. Tap to close.', // draft. Read out by screen readers

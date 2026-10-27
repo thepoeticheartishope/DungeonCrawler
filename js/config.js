@@ -543,6 +543,15 @@ export const PLAYER_CONE_RANGE = 5;
 // always on, as before.
 export const LIGHT_BATTERY_MAX = 4;
 export const LIGHT_BATTERY = true;
+// The record book (record book plan, ideas/record-book-plan.md outside the
+// repo): the ask screen drawn as a book with a dark page and the light tube
+// on its left edge (bookview.js). `paper` is the page the book opens with;
+// DEV -> Book paper cycles `papers` to compare them (Timothy picked dark,
+// 2026-10-27).
+export const BOOK = {
+  paper: 'dark',
+  papers: ['dark', 'cold', 'cream'],
+};
 // Shots in the dark (light battery plan step C, gun.js fireDark): the shot
 // goes along the aim, checked every DARK_SHOT_STEP tiles for the first
 // thing in the way. Its dial always hides DIAL_DARK_ARC of the circle, and
