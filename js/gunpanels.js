@@ -18,7 +18,7 @@ import { escapeHtml } from './quiz.js';
 import { mountQuestionPanel } from './questionview.js';
 import { t } from './text.js';
 import { chargerShown, hideCharger } from './chargerview.js';
-import { refreshBook } from './bookview.js';
+import { refreshBook, bookAsks, bookReading, bookTab, showAskTab } from './bookview.js';
 import { turnPage } from './pageturn.js';
 
 const els = {};
@@ -73,7 +73,7 @@ export function initGunPanels({ pickReload, cancelReload, readyBar, backBar, sto
     } else if (shown === 'reload' && e.key === 'Escape') {
       e.preventDefault();
       actions.cancelReload();
-    } else if (shown === 'reload') {
+    } else if (shown === 'reload' && bookTab() === 'ask') {
       const btn = els.reloadChoices.children[['1', '2', '3'].indexOf(e.key)];
       if (btn) { e.preventDefault(); btn.click(); }
     }
@@ -83,6 +83,7 @@ export function initGunPanels({ pickReload, cancelReload, readyBar, backBar, sto
 // Which panel shows: 'reload' or 'question' (on the ask screen), 'aim'
 // (a shot's dial over the map), 'struggle' (the same veil as the
 // Struggle dial), 'charger' (CHARGE.SYS over the map, chargerview.js),
+// 'book' (the record book read from the map for LOG or MAP, bookview.js),
 // or null. A dial fading out after its stop no longer counts: the player
 // can move on.
 export function mapPanelShown() {
@@ -91,16 +92,19 @@ export function mapPanelShown() {
   if (!els.question.hidden) return 'question';
   if (!els.aim.hidden) return barMode;
   if (chargerShown()) return 'charger';
+  if (bookReading()) return 'book';
   return null;
 }
 
 // Shows only `panel` (or none). The reload choices and the question take
 // the ask screen in place of the map and the controls, drawn as the record
-// book (bookview.js), refreshed each time it opens.
+// book (bookview.js), refreshed each time it opens. Any of them ends a
+// book read from the map.
 function showOnly(panel) {
   [els.reload, els.question, els.aim].forEach(p => { p.hidden = p !== panel; });
   const asking = panel === els.reload || panel === els.question;
   if (panel !== els.question && heldClose) dropHeld();
+  bookAsks(asking);
   els.ask.hidden = !asking;
   els.room.classList.toggle('asking', asking);
   if (asking) refreshBook();
@@ -159,6 +163,7 @@ let heldClose = null;
 // listeners go on after this event is done, so the tap or key that gave
 // the answer doesn't close it too.
 export function holdAskScreen(onClose) {
+  showAskTab();
   heldClose = onClose;
   els.close.hidden = false;
   setTimeout(() => {

@@ -1,17 +1,18 @@
-// The minimap (Timothy, 2026-10-11): MAP (or M) lays a small plan of the
-// floor over the map, and again (or M, Escape, a tap on it) takes it away.
-// It shows as little as it can: the tiles the player has seen (walls
-// brighter than floor) and a dot for the player. No minions, items or
-// stairs, so it helps the player find their way without playing the floor
-// for them. The one thing it does mark is the grates the player has seen,
-// and a dashed line between a pair once they know where it leads (vents
-// and noise plan, Timothy's call): the ducts are how the stick men come.
-// On a fixed plan it also names the building and each room the
-// player has walked into, so the floor can be learned run after run. Drawn
-// square like the map (room view plan step G), north up, as on the d-pad,
-// and scaled to fit, but never bigger than
-// MINIMAP_MAX_UNIT, so a few seen tiles don't fill the screen. Opening it costs no turn. main.js calls
-// refreshMinimap() whenever the map is drawn. Reads state only.
+// The minimap (Timothy, 2026-10-11): a small plan of the floor, on the
+// record book's MAP page (record book plan step D: MAP or M opens the
+// book there, bookview.js). It shows as little as it can: the tiles the
+// player has seen (walls brighter than floor) and a dot for the player.
+// No minions, items or stairs, so it helps the player find their way
+// without playing the floor for them. The one thing it does mark is the
+// grates the player has seen, and a dashed line between a pair once they
+// know where it leads (vents and noise plan, Timothy's call): the ducts
+// are how the stick men come. On a fixed plan it also names the building
+// and each room the player has walked into, so the floor can be learned
+// run after run, and a room seen but not yet walked into is drawn faint
+// with dashed walls. Drawn square like the map (room view plan step G),
+// north up, as on the d-pad, and scaled to fit, but never bigger than
+// MINIMAP_MAX_UNIT, so a few seen tiles don't fill the page. main.js
+// calls refreshMinimap() whenever the map is drawn. Reads state only.
 
 import { state, key } from './state.js';
 import { t } from './text.js';
@@ -19,47 +20,16 @@ import { MINIMAP_MAX_UNIT, MINIMAP_PAD, MINIMAP_LABEL_PX, MINIMAP_TITLE_PX, MINI
 import { lookAngle } from './look.js';
 
 const els = {};
-// The page's colours, read once from the CSS variables.
-let colours = null;
 
-// Looks up the minimap and its button and hooks them up. Call once, from
-// main.js.
+// Looks up the minimap's canvas. Call once, from main.js.
 export function initMinimap() {
   els.canvas = document.getElementById('minimap');
-  els.button = document.getElementById('btnMinimap');
   els.canvas.setAttribute('aria-label', t('map.label'));
-  els.button.addEventListener('click', () => toggleMinimap());
-  els.canvas.addEventListener('click', () => closeMinimap());
-  document.addEventListener('keydown', (e) => {
-    if (e.defaultPrevented || !onRoomScreen() || isTyping()) return;
-    if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleMinimap(); }
-    else if (e.key === 'Escape' && minimapShown()) { e.preventDefault(); closeMinimap(); }
-  });
 }
 
-// Whether the minimap is showing.
+// Whether the minimap is showing: the book is open at its MAP page.
 export function minimapShown() {
-  return !!els.canvas && !els.canvas.hidden;
-}
-
-// Shows the minimap if it's hidden, hides it if it's showing.
-export function toggleMinimap() {
-  if (minimapShown()) closeMinimap();
-  else openMinimap();
-}
-
-// Shows the minimap, drawn from where things are now.
-function openMinimap() {
-  els.canvas.hidden = false;
-  els.button.setAttribute('aria-pressed', 'true');
-  refreshMinimap();
-}
-
-// Hides the minimap.
-export function closeMinimap() {
-  if (!els.canvas) return;
-  els.canvas.hidden = true;
-  els.button.setAttribute('aria-pressed', 'false');
+  return !!els.canvas && els.canvas.offsetParent !== null;
 }
 
 // Redraws the minimap if it's showing, after the player moved, the floor
@@ -75,7 +45,7 @@ export function refreshMinimap() {
   const ctx = canvas.getContext('2d');
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.clearRect(0, 0, width, height);
-  if (!colours) colours = readColours();
+  const colours = readColours(canvas);
 
   const f = state.floor;
   const tiles = [...seenTiles()];
@@ -90,10 +60,17 @@ export function refreshMinimap() {
   const unit = Math.min(MINIMAP_MAX_UNIT, (width - MINIMAP_PAD * 2) / (maxX - minX), (height - MINIMAP_PAD * 2) / (maxY - minY));
   const left = (width - (maxX - minX) * unit) / 2 - minX * unit;
   const top = (height - (maxY - minY) * unit) / 2 - minY * unit;
+  const away = unenteredTiles();
+  ctx.fillStyle = colours.ink;
   for (const tile of tiles) {
-    ctx.fillStyle = isSolid(tile) ? colours.wall : colours.floor;
+    const out = away.has(key(tile.row, tile.col));
+    const solid = isSolid(tile);
+    // A wall of a room not been in shows every other tile, as a dash.
+    if (out && solid && (tile.row + tile.col) % 2) continue;
+    ctx.globalAlpha = solid ? colours.wall : out ? colours.floorFaint : colours.floor;
     ctx.fillRect(left + (across(tile) - 0.5) * unit, top + (down(tile) - 0.5) * unit, unit, unit);
   }
+  ctx.globalAlpha = 1;
   // Grates the player has seen, and a line between a pair they know.
   const at = tile => [left + across(tile) * unit, top + down(tile) * unit];
   const seen = v => !state.settings.fogEnabled || f.exploredSet.has(key(v.row, v.col));
@@ -118,18 +95,55 @@ export function refreshMinimap() {
   });
   ctx.restore();
   // Names first, so the player's dot is never hidden under one.
-  drawNames(ctx, tile => ({ x: left + across(tile) * unit, y: top + down(tile) * unit }));
+  drawNames(ctx, colours, tile => ({ x: left + across(tile) * unit, y: top + down(tile) * unit }));
   const player = { row: f.playerRow, col: f.playerCol };
   ctx.beginPath();
   ctx.arc(left + across(player) * unit, top + down(player) * unit, Math.max(3, unit * 0.45), 0, Math.PI * 2);
   ctx.fillStyle = colours.player;
   ctx.fill();
-  drawFacing(ctx, at(player), unit);
+  drawFacing(ctx, colours, at(player), unit);
+}
+
+// On a fixed plan with the fog on: the keys of the tiles of every named
+// room the player hasn't walked into yet, and of the walls that only
+// border such rooms. Empty otherwise.
+function unenteredTiles() {
+  const f = state.floor;
+  const out = new Set();
+  if (!f.plan || !state.settings.fogEnabled) return out;
+  f.chamberAt.forEach((room, k) => {
+    if (f.chamberNames[room] && !f.visitedChambers.has(room)) out.add(k);
+  });
+  if (!out.size) return out;
+  for (const tile of seenTiles()) {
+    if (isSolid(tile) && besideOnly(tile, out)) out.add(key(tile.row, tile.col));
+  }
+  return out;
+}
+
+// Whether every open tile round `tile` is in `keys` (and there is one).
+function besideOnly({ row, col }, keys) {
+  let any = false;
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      const next = { row: row + dr, col: col + dc };
+      if ((!dr && !dc) || !inGrid(next) || isSolid(next)) continue;
+      if (!keys.has(key(next.row, next.col))) return false;
+      any = true;
+    }
+  }
+  return any;
+}
+
+// Whether `tile` is on the floor's grid.
+function inGrid({ row, col }) {
+  const size = state.floor.GRID_SIZE;
+  return row >= 0 && col >= 0 && row < size && col < size;
 }
 
 // An arrow from the player's dot shows where the light points (shoulder
 // view plan step E, call 3, kept), north up like the map.
-function drawFacing(ctx, [x, y], unit) {
+function drawFacing(ctx, colours, [x, y], unit) {
   const angle = lookAngle();
   const ax = Math.sin(angle);
   const ay = -Math.cos(angle);
@@ -152,7 +166,7 @@ function drawFacing(ctx, [x, y], unit) {
 // name over its middle once the player has walked in (every room with
 // DEV -> Fog off). Each name sits on a dark band so the floor under it
 // doesn't make it hard to read. `at` turns a tile into canvas px.
-function drawNames(ctx, at) {
+function drawNames(ctx, colours, at) {
   const f = state.floor;
   if (!f.plan) return;
   ctx.textBaseline = 'middle';
@@ -225,30 +239,21 @@ function besideOpen({ row, col }) {
   return false;
 }
 
-// Floor, wall, player and name colours and the font from the page's CSS
-// variables, so the minimap matches the phosphor screen.
-function readColours() {
-  const css = getComputedStyle(document.documentElement);
-  const glow = css.getPropertyValue('--glow-rgb').trim();
+// The page's ink and how strongly floor and walls show in it, the player
+// and name colours and the font, from the CSS variables where the canvas
+// is, so the minimap matches the book's paper (read each time: DEV ->
+// Book paper changes it). The player is in the book's second ink.
+function readColours(canvas) {
+  const css = getComputedStyle(canvas);
+  const mark = css.getPropertyValue('--page-mark').trim() || css.getPropertyValue('--torch-bright').trim();
   return {
-    floor: 'rgba(' + glow + ', 0.3)',
-    wall: 'rgba(' + glow + ', 0.6)',
-    player: css.getPropertyValue('--torch-bright').trim(),
-    label: css.getPropertyValue('--torch-bright').trim(),
+    ink: css.getPropertyValue('--text').trim(),
+    floor: 0.3,
+    floorFaint: 0.12,
+    wall: 0.6,
+    player: mark,
+    label: css.getPropertyValue('--text').trim(),
     band: 'rgba(0, 0, 0, 0.7)',
     font: css.getPropertyValue('--font').trim(),
   };
-}
-
-// Whether the room screen is up (the minimap's key works only there).
-function onRoomScreen() {
-  const room = document.getElementById('roomScreen');
-  // Not while the ask screen (a reload or relay) has the map's place.
-  return room.classList.contains('show') && !room.classList.contains('asking');
-}
-
-// Whether a text box has the keyboard (M is then a letter, not the map).
-function isTyping() {
-  const el = document.activeElement;
-  return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
 }

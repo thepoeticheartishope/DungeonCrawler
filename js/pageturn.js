@@ -66,9 +66,15 @@ export function turnPage(pageEl, change, dir = 1) {
 }
 
 // A still copy of the page as it is now, for the turn to move: no ids
-// (they stay the live page's), hidden from screen readers and inert.
+// (they stay the live page's), hidden from screen readers and inert. A
+// copied canvas comes blank, so what the page's canvases show (the MAP
+// page's minimap) is drawn into the copies.
 function copyPage(pageEl) {
   const copy = pageEl.cloneNode(true);
+  const canvases = pageEl.querySelectorAll('canvas');
+  copy.querySelectorAll('canvas').forEach((canvas, i) => {
+    if (canvases[i].width && canvases[i].height) canvas.getContext('2d').drawImage(canvases[i], 0, 0);
+  });
   copy.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
   copy.removeAttribute('id');
   copy.setAttribute('aria-hidden', 'true');

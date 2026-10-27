@@ -105,6 +105,12 @@
 //      off), the arrows held: walking brings the light from above, then
 //      the barrel; the name closes the ring, V breaks it, and the stick
 //      man's first reach brings "When it reaches, step away.".
+//  15. Record book run (record book plan step D), on a phone with One
+//      stick: LOG opens the book at its LOG page in the map's place, the
+//      newest note first, CLOCK RUNNING and the world still taking turns;
+//      the MAP tab turns to the minimap drawn on the page; the same tab
+//      again closes it. M opens it at MAP, L turns to LOG, Esc closes it,
+//      and walking keys do nothing while it is open.
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -2256,6 +2262,101 @@ async function checkCharger(page, url) {
   return '';
 }
 
+async function runRecordBook(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkRecordBook(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'LOG and MAP opened the book in the map\'s place with the clock running, the tabs turned pages, the minimap drew on the page, L / M / Esc and the same tab closed it, no walking under it', consoleErrors, pageErrors };
+}
+
+// What the record book shows now: open, read from the map, its tab, the
+// clock's word, the log's first line, the minimap's drawn size, the world's
+// turns and where the player stands.
+async function bookState(page) {
+  return page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const canvas = document.getElementById('minimap');
+    const on = document.querySelector('#bookTabs .on');
+    return {
+      open: !document.getElementById('askScreen').hidden,
+      reading: document.getElementById('roomScreen').classList.contains('reading'),
+      mapHidden: document.querySelector('.map-fit').offsetParent === null,
+      tab: on ? on.dataset.tab : null,
+      askTab: !document.querySelector('#bookTabs [data-tab="ask"]').hidden,
+      clock: document.getElementById('bookClock').textContent,
+      first: (document.querySelector('#bookLogLines > *') || { textContent: '' }).textContent,
+      newest: (document.getElementById('roomFeedback').lastElementChild || { dataset: {} }).dataset.text || '',
+      mapDrawn: canvas.offsetParent ? canvas.width * canvas.height : 0,
+      turns: state.run.turnCount,
+      at: JSON.stringify([state.floor.playerRow, state.floor.playerCol, state.floor.playerAt]),
+    };
+  });
+}
+
+async function checkRecordBook(page, url) {
+  await loadPageAndSet(page, url, { turns: false });
+  await startGameAndWaitForRoom(page);
+  // Out of the opening rest, so stick men and the clock are about.
+  await page.click('#devToggleBtn');
+  await page.waitForSelector('#devPanel.show', { timeout: 5000 });
+  await page.click('#devSkipBtn');
+  if (await page.isVisible('#devPanel.show')) await page.click('#devToggleBtn');
+  await page.waitForTimeout(600);
+
+  await page.click('#btnLog');
+  await page.waitForTimeout(100);
+  let st = await bookState(page);
+  if (!st.open || !st.reading || !st.mapHidden) return 'LOG did not open the book in the map\'s place: ' + JSON.stringify(st);
+  if (st.tab !== 'log' || st.askTab) return 'LOG opened at ' + st.tab + ' (ASK tab shown: ' + st.askTab + ')';
+  if (st.clock !== 'CLOCK RUNNING') return 'the book read from the map said ' + st.clock;
+  if (!st.newest || !st.first.startsWith(st.newest)) return 'the LOG page did not start with the newest note: ' + JSON.stringify([st.first, st.newest]);
+  const turns = st.turns;
+  await page.waitForTimeout(3500);
+  st = await bookState(page);
+  if (st.turns <= turns) return 'the world took no turns with the book open from the map';
+  if (!st.open && st.turns > turns) {
+    // A stick man reaching the player closes it; that's allowed, but this run wants it open.
+    return 'the book closed by itself (a stick man reached the player?)';
+  }
+
+  await page.click('#bookTabs [data-tab="map"]');
+  await page.waitForTimeout(600);
+  st = await bookState(page);
+  if (st.tab !== 'map' || !st.mapDrawn) return 'the MAP tab did not show the minimap on the page: ' + JSON.stringify(st);
+  await page.click('#bookTabs [data-tab="map"]');
+  await page.waitForTimeout(100);
+  st = await bookState(page);
+  if (st.open || st.reading || st.mapHidden) return 'the same tab again did not close the book: ' + JSON.stringify(st);
+
+  await page.keyboard.press('m');
+  await page.waitForTimeout(100);
+  st = await bookState(page);
+  if (!st.open || st.tab !== 'map') return 'M did not open the book at MAP';
+  await page.keyboard.press('l');
+  await page.waitForTimeout(600);
+  st = await bookState(page);
+  if (st.tab !== 'log') return 'L did not turn the book to LOG';
+  const at = st.at;
+  await page.keyboard.down('ArrowLeft');
+  await page.waitForTimeout(500);
+  await page.keyboard.up('ArrowLeft');
+  st = await bookState(page);
+  if (st.at !== at) return 'the player walked with the book open';
+  if (!st.open) return 'a walking key closed the book';
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(100);
+  st = await bookState(page);
+  if (st.open) return 'Esc did not close the book';
+  return null;
+}
+
 async function main() {
   const port = await findFreePort();
   const server = spawn(process.execPath, [
@@ -2284,6 +2385,7 @@ async function main() {
         ['answer line', runAnswerLine, url], ['vents', runVents, url],
         ['room view', runRoomView, url], ['charger', runCharger, url],
         ['one stick', runOneStick, url], ['tutorial stick', runTutorialStick, url],
+        ['record book', runRecordBook, url],
       ];
       // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
       // of those words, SMOKE_REPEAT=20 runs each that many times: for
