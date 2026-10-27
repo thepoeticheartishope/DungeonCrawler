@@ -59,6 +59,7 @@ import { mountQuestionPanel, setQuestion, setMinigame, retypeQuestion, clearModi
 import { rollMinigame, forcedQuestion, endMinigame, letterPoolSetup, sumLockSetup } from './minigames.js';
 import { playMinigameOut } from './minigameview.js';
 import { initMinimap, refreshMinimap } from './minimapview.js';
+import { initBook, bookReading, closeBook, refreshBook, refreshBookLog } from './bookview.js';
 
 const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
@@ -100,7 +101,6 @@ const endPanel = document.getElementById('endPanel');
 const continueBtn = document.getElementById('continueBtn');
 const roomFeedback = document.getElementById('roomFeedback');
 const roomLogEl = document.getElementById('roomLog');
-const btnLog = document.getElementById('btnLog');
 const devPanel = document.getElementById('devPanel');
 
 const winStats = document.getElementById('winStats');
@@ -150,6 +150,7 @@ initExchangeView({ buyItem, leaveExchange });
 initGunPanels({ pickReload, cancelReload: () => endReload(), readyBar: readyDial, backBar: lowerGun, stopBar: stopDamageBar, stopStruggle: stopStruggleBar });
 initChargerView({ turnWire: turnChargerWire, leave: () => closeCharger('move-msg', t('room.charger.left')) });
 initMinimap();
+initBook({ askHeld, mapPanelShown });
 
 applyStaticText();
 
@@ -1195,21 +1196,12 @@ function showRoomNote(cls, text) {
   roomLogEl.classList.remove('log-dim');
   clearTimeout(roomLogDimTimer);
   roomLogDimTimer = setTimeout(() => roomLogEl.classList.add('log-dim'), ROOM_LOG_DIM_MS);
+  refreshBookLog();
 }
 
 // The timer that dims the room log's newest notes. View-only, so not in
 // state.
 let roomLogDimTimer = null;
-
-// LOG (or L): the whole room log over the map, or back to the newest
-// notes on its bottom edge. A tap on the open log closes it too.
-function toggleRoomLog(open = !roomLogEl.classList.contains('open')) {
-  roomLogEl.classList.toggle('open', open);
-  btnLog.setAttribute('aria-pressed', String(open));
-  if (open) roomLogEl.classList.remove('log-dim');
-}
-btnLog.addEventListener('click', () => toggleRoomLog());
-roomLogEl.addEventListener('click', () => toggleRoomLog(false));
 
 // The HUD: a tap (or Enter / Space on it) shows the rest of it, myelin,
 // cycle and the goals' names, and hides it again.
@@ -1225,7 +1217,8 @@ statsEl.addEventListener('keydown', (e) => {
   toggleHud();
 });
 
-// What closes CHARGE.SYS: a stick man reaching the player.
+// What closes CHARGE.SYS, and the record book read from the map: a stick
+// man reaching the player.
 const CHARGER_BREAKERS = new Set(['minionStruck', 'struggleStarted', 'ankleGrabbed']);
 
 // A spent turn: the player's events plus the monsters' turn, drawn once,
@@ -1243,6 +1236,7 @@ function applyTurnOutcome(events, worldMoves = !realTimeOn()) {
     closeCharger();
     turn.push({ type: 'chargerBroken' });
   }
+  if (bookReading() && turn.some(e => CHARGER_BREAKERS.has(e.type))) closeBook();
   // The tutorial room moves on (tutorial.js) after any spent turn.
   turn.push(...tutorialTurn(turn));
   turn.push(...chargerLine());
@@ -1285,7 +1279,8 @@ function realTimeOn() {
 // pressure of a clock running under the question), the dial (the
 // shot's timing is the player's), the battle screen, THE UNFOLDING, the
 // DEV panel, the end screens and a hidden tab. It keeps running under
-// CHARGE.SYS: the time is the charger's cost (Timothy 2026-10-26).
+// CHARGE.SYS: the time is the charger's cost (Timothy 2026-10-26), and
+// under the record book read for LOG or MAP.
 function clockMayRun() {
   return realTimeOn() && !state.run.runEnded && !document.hidden &&
     roomScreen.classList.contains('show') && worldRunsUnder() &&
@@ -1299,6 +1294,7 @@ function clockTick() {
   const running = clockMayRun();
   const due = pollClock(performance.now(), running);
   renderClock(running);
+  if (bookReading()) refreshBook();
   if (due) applyTurnOutcome([], true);
 }
 setInterval(clockTick, REALTIME_POLL_MS);
@@ -1913,18 +1909,21 @@ function settleMove(events) {
 }
 
 // Whether walking and waiting are held: the Struggle dial is the
-// player's move, and CHARGE.SYS's wires are (its turns are spent there).
+// player's move, CHARGE.SYS's wires are (its turns are spent there), and
+// the record book read from the map has the map's place.
 function walkHeld() {
   const shown = mapPanelShown();
-  return shown === 'struggle' || shown === 'charger';
+  return shown === 'struggle' || shown === 'charger' || shown === 'book';
 }
 
-// Whether the world may go on with a panel up: none, or CHARGE.SYS (it sits
+// Whether the world may go on with a panel up: none, CHARGE.SYS (it sits
 // over the map, and Timothy 2026-10-26: with Real time on the running clock
-// is its cost).
+// is its cost), or the record book read from the map for LOG or MAP
+// (record book plan open call 1: reading costs time, as it did over the
+// map).
 function worldRunsUnder() {
   const shown = mapPanelShown();
-  return !shown || shown === 'charger';
+  return !shown || shown === 'charger' || shown === 'book';
 }
 
 // The charger whose CHARGE.SYS is open, or null. View-side, like reloadBox.
@@ -2197,11 +2196,9 @@ document.addEventListener('keydown', (e) => {
   else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); pressSelect(); }
   else if (gunReady() && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
   else if (gunReady() && e.key === '.') { e.preventDefault(); skipTurn(); }
-  else if ((e.key === 'l' || e.key === 'L') && !mapPanelShown()) { e.preventDefault(); toggleRoomLog(); }
   else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); switchLight(); }
   else if (state.settings.oneStick && (e.key === 'x' || e.key === 'X')) { e.preventDefault(); toggleSneak(); }
   else if (state.settings.oneStick && (e.key === 'u' || e.key === 'U') && !mapPanelShown()) { e.preventDefault(); holdLookUp('u', true); }
-  else if (e.key === 'Escape' && roomLogEl.classList.contains('open')) { e.preventDefault(); toggleRoomLog(false); }
   else if (mapPanelShown() === 'question' && state.settings.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {
     const idxMap = { 1: 0, a: 0, 2: 1, b: 1, 3: 2, c: 2, 4: 3, d: 3 };
     const idx = idxMap[e.key.toLowerCase()];

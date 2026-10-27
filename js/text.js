@@ -687,7 +687,7 @@ export const TEXT = {
   'gun.dial.key.lunge': '> = it lunges', // draft
   'gun.dial.key.miss': 'else miss', // draft
   'gun.dark.nothing': 'The shot goes into the dark. Nothing there.', // draft. A shot in the dark that found nothing
-  'map.btn': 'MAP', // draft. The minimap button (M on a keyboard)
+  'map.btn': 'MAP', // draft. The minimap button (M on a keyboard): opens the record book at MAP
   'ask.title.reload': 'RELOAD.SYS', // draft. The ask screen's title for a reload (its offers, then its question)
   'ask.title.relay': 'RELAY.SYS', // draft. The ask screen's title for a relay's question
   'ask.title.barrel': 'BARREL', // draft. The ask screen's title for the tutorial barrel's question
@@ -697,7 +697,17 @@ export const TEXT = {
   'book.right': 'RIGHT.', // draft. Written beside a right pick on the book's page
   'book.written': '→ {answer}', // draft. Written beside a struck wrong pick: the right answer
   'book.close': 'Tap the page or press a key to close.', // draft. Foot of the book's page once an answer is in
-  'log.btn': 'LOG', // draft. The room log button (L on a keyboard): the whole log over the map
+  'book.running': 'CLOCK RUNNING', // draft. The record book's top strip, right, opened from the map for LOG or MAP: the world goes on
+  'book.tab.ask': 'ASK', // draft. The book's tab for the question (only while one is open)
+  'book.tab.log': 'LOG', // draft. The book's tab for the whole room log
+  'book.tab.map': 'MAP', // draft. The book's tab for the minimap
+  'book.title.log': 'LOG', // draft. The book's top strip, left, on the LOG page
+  'book.title.map': 'MAP', // draft. The book's top strip, left, on the MAP page
+  'book.log.head': 'Newest first.', // draft. Top of the LOG page
+  'book.log.empty': 'Nothing yet.', // draft. The LOG page before any note
+  'book.map.dashed': 'Dashed rooms: not been in yet.', // draft. Foot of the MAP page on a fixed plan
+  'book.read.close': 'Tap the page or press Esc to close.', // draft. Foot of the book's page opened from the map
+  'log.btn': 'LOG', // draft. The room log button (L on a keyboard): opens the record book at LOG
   'hud.more': 'Status: tap for more', // draft. The HUD's tooltip: a tap shows myelin, cycle and the goals' names
   'map.label': 'Map of what you have seen on this floor. Tap to close.', // draft. Read out by screen readers
   // Fixed floor plans (plans.js): each floor's name, then its rooms' names.

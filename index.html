@@ -732,6 +732,8 @@
     position: relative;
     flex: 1 1 0;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
     padding: 4px 12px 12px 46px;
     background-color: var(--page);
@@ -815,6 +817,38 @@
   .book-close { margin-top: 18px; color: var(--muted); }
   .book-close[hidden] { display: none; }
 
+  /* LOG and MAP in the book (record book plan step D, js/bookview.js):
+     the log one note to a rule, newest first and brightest; the minimap
+     filling the page. The tabs down the book's right edge, the open one
+     light like the page's ink. */
+  .book-sub { color: var(--muted); line-height: 24px; }
+  .book-sub[hidden], .book-log[hidden], .book-map[hidden] { display: none; }
+  .book-log { padding-top: 6px; }
+  .book-log-line { line-height: 24px; color: var(--muted); overflow-wrap: anywhere; }
+  .book-log-line:first-child { color: var(--text); }
+  .book-log-line.warn-msg::before { content: '! '; }
+  .book-log-line.block-msg { color: var(--block); }
+  .book-log-line .note-count { color: var(--muted); }
+  .book-map { flex: 1 1 auto; display: flex; flex-direction: column; padding-top: 6px; }
+  .book-map .minimap { display: block; flex: 1 1 0; min-height: 160px; width: 100%; }
+  .book-tabs { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; padding-top: 12px; }
+  .book-tabs button {
+    min-width: 30px;
+    min-height: 64px;
+    padding: 6px 2px;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    letter-spacing: -2px;
+    color: var(--muted);
+    background: var(--case);
+    border: 2px solid var(--page-edge);
+    border-left: none;
+    touch-action: manipulation;
+  }
+  .book-tabs button::before, .book-tabs button::after { content: none; }
+  .book-tabs button.on { color: var(--case); background: var(--text); border-color: var(--text); }
+  .book-tabs button[hidden] { display: none; }
+
   /* A phone: the strip narrows to the tube alone, so the page keeps its width. */
   @media (max-width: 480px) {
     .book { padding: 4px 6px 8px; }
@@ -830,7 +864,8 @@
         repeating-linear-gradient(to bottom, transparent 0 22px, var(--page-rule) 22px 24px);
     }
   }
-  #roomScreen.asking .map-fit, #roomScreen.asking .room-controls { display: none; }
+  #roomScreen.asking .map-fit, #roomScreen.asking .room-controls,
+  #roomScreen.reading .map-fit, #roomScreen.reading .room-controls { display: none; }
   #reloadPanel[hidden], #askQuestionPanel[hidden] { display: none; }
   #reloadPanel { display: flex; flex-direction: column; gap: 6px; }
   .ask-cancel { align-self: flex-start; }
@@ -1207,19 +1242,6 @@
     touch-action: manipulation;
   }
 
-  /* The minimap (js/minimapview.js): over the whole map, under the gun's
-     panels. A tap on it closes it. */
-  .minimap {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 4;
-    background: var(--stone-dark);
-    border: 1px solid var(--line);
-    cursor: pointer;
-  }
-  .minimap[hidden] { display: none; }
 
   /* ---- Battle screen: styled as a terminal window ---- */
   .terminal { text-align: left; }
@@ -1602,10 +1624,10 @@
   /* The room log, on the map's bottom edge: only the newest two notes
      (ROOM_LOG_LINES in config.js), over a shade so they read on the map,
      dimming after ROOM_LOG_DIM_MS (a slow fade; none under reduced
-     motion). Taps go through it to the map. LOG opens all of it over the
-     map, scrolled to the newest. Reversed so the browser keeps the newest
+     motion). Taps go through it to the map. LOG opens all of it in the
+     record book (js/bookview.js). Reversed so the browser keeps the newest
      in view; the notes keep their order inside #roomFeedback. Hidden
-     while a gun panel or the minimap is over the map. */
+     while a gun panel is over the map. */
   .feedback {
     position: absolute;
     left: 1px;
@@ -1626,28 +1648,19 @@
     pointer-events: none;
     transition: opacity 1.2s ease;
   }
-  .feedback:not(.open) .room-note:not(:nth-last-child(-n+2)) { display: none; }
-  .feedback.log-dim:not(.open) { opacity: 0.4; }
+  .feedback .room-note:not(:nth-last-child(-n+2)) { display: none; }
+  .feedback.log-dim { opacity: 0.4; }
   .feedback:has(#roomFeedback:empty) { display: none; }
-  .feedback.open {
-    top: 1px;
-    max-height: none;
-    padding-top: 10px;
-    background: var(--stone-dark);
-    pointer-events: auto;
-    cursor: pointer;
-  }
   /* The tutorial's kind voice talks over the dial (tutorial.js
      tutorialDial), so its line sits above the veil. */
   #mapWrap:has(.dial-veil:not([hidden])) .map-notes,
   #mapWrap:has(.charger-veil:not([hidden])) .map-notes,
   #mapWrap:has(.charger-veil:not([hidden])) .feedback { z-index: 6; }
   #mapWrap:has(.dial-veil:not([hidden])) .feedback,
-  #mapWrap:has(.dial-veil.fading) .feedback,
-  #mapWrap:has(.minimap:not([hidden])) .feedback { display: none; }
+  #mapWrap:has(.dial-veil.fading) .feedback { display: none; }
   /* The light's battery (render.js renderBattery): small, in the map's
      bottom-right corner; the room log's lines stop short of it. Hidden
-     with the log while a gun panel or the minimap is over the map. Off or
+     with the log while a gun panel is over the map. Off or
      empty it dims, so the cells read as the light itself. */
   .light-battery {
     position: absolute;
@@ -1662,11 +1675,9 @@
     white-space: pre;
   }
   .light-battery.battery-off { color: var(--muted); text-shadow: none; }
-  #mapWrap:has(.light-battery:not([hidden])) .feedback:not(.open) { padding-right: 9.5em; }
+  #mapWrap:has(.light-battery:not([hidden])) .feedback { padding-right: 9.5em; }
   #mapWrap:has(.dial-veil:not([hidden])) .light-battery,
-  #mapWrap:has(.dial-veil.fading) .light-battery,
-  #mapWrap:has(.minimap:not([hidden])) .light-battery,
-  #mapWrap:has(.feedback.open) .light-battery { display: none; }
+  #mapWrap:has(.dial-veil.fading) .light-battery { display: none; }
   @media (prefers-reduced-motion: reduce) { .feedback { transition: none; } }
   .feedback::-webkit-scrollbar { display: none; }
   .feedback .room-note { margin-top: 4px; }
@@ -2016,13 +2027,11 @@
       </div>
       <!-- The room log (main.js showRoomNote) on the map's bottom edge: the
            newest notes, dimming after a while. LOG (or L) opens all of it
-           over the map (main.js toggleRoomLog). -->
+           in the record book (js/bookview.js). -->
       <div class="feedback" id="roomLog" role="log" aria-live="polite"><div id="roomFeedback"></div></div>
       <!-- The light's battery (render.js renderBattery; light battery plan):
            the map's bottom-right corner, beside the room log. -->
       <div class="light-battery" id="lightBattery" hidden></div>
-      <!-- The minimap (js/minimapview.js): MAP or M lays it over the map. -->
-      <canvas class="minimap" id="minimap" role="img" hidden></canvas>
 
       <!-- The dial and the Struggle dial (js/gunpanels.js, drawn by
            js/dialview.js): a veil over the map with READY in its middle,
@@ -2058,7 +2067,7 @@
          Drawn as the record book (js/bookview.js): the screen's name over
          a dark page, and the light tube on its left edge. -->
     <div class="terminal ask-screen book" id="askScreen" data-paper="dark" hidden>
-      <div class="book-top"><span id="askTitle"></span><span class="book-paused" data-t="book.paused"></span></div>
+      <div class="book-top"><span id="askTitle"></span><span id="bookTabTitle" hidden></span><span class="book-paused" id="bookClock"></span></div>
       <div class="book-body">
         <div class="book-strip" id="bookStrip">
           <canvas class="book-tube" id="bookTube" aria-hidden="true"></canvas>
@@ -2066,7 +2075,7 @@
           <div class="book-readout" id="bookReadout"></div>
         </div>
         <div class="book-page" id="bookPage">
-          <div class="terminal-body">
+          <div class="terminal-body" id="bookAsk">
             <div id="reloadPanel" hidden>
               <div class="term-line" id="reloadTitle"></div>
               <div class="choice-list" id="reloadChoices"></div>
@@ -2076,7 +2085,24 @@
               <div id="askQuestionSlot"></div>
             </div>
           </div>
+          <!-- LOG and MAP (record book plan step D, js/bookview.js). -->
+          <div class="book-log" id="bookLog" hidden>
+            <div class="book-sub" data-t="book.log.head"></div>
+            <div id="bookLogLines"></div>
+          </div>
+          <div class="book-map" id="bookMap" hidden>
+            <!-- The minimap (js/minimapview.js). -->
+            <canvas class="minimap" id="minimap" role="img"></canvas>
+            <div class="book-sub" id="bookMapFoot" data-t="book.map.dashed"></div>
+          </div>
           <div class="book-close" id="bookClose" data-t="book.close" hidden></div>
+          <div class="book-close" id="bookReadClose" data-t="book.read.close" hidden></div>
+        </div>
+        <!-- The tabs: ASK only while a question is open. -->
+        <div class="book-tabs" id="bookTabs" role="tablist">
+          <button type="button" role="tab" data-tab="ask" class="on" data-t="book.tab.ask"></button>
+          <button type="button" role="tab" data-tab="log" data-t="book.tab.log"></button>
+          <button type="button" role="tab" data-tab="map" data-t="book.tab.map"></button>
         </div>
       </div>
     </div>
@@ -2100,12 +2126,12 @@
     <!-- The round stick (one stick plan step B, js/dpad.js initWalkStick),
          in place of the d-pad with One stick on. -->
     <div class="walk-stick" id="walkStick" hidden><span class="walk-knob" aria-hidden="true"></span></div>
-    <!-- MAP (js/minimapview.js), LOG (the whole room log) and the gun's one
+    <!-- MAP and LOG (open the record book there, js/bookview.js) and the gun's one
          button (main.js pressSelect: fire, or stop the dial; only with
          the gun on), lowest, away from the dial over the map. -->
     <div class="room-buttons">
-      <button type="button" id="btnMinimap" data-t="map.btn" aria-pressed="false"></button>
-      <button type="button" id="btnLog" data-t="log.btn" aria-pressed="false"></button>
+      <button type="button" id="btnMinimap" data-t="map.btn"></button>
+      <button type="button" id="btnLog" data-t="log.btn"></button>
       <button type="button" id="btnSelect" data-t="gun.btn.select" hidden></button>
     </div>
     </div>
