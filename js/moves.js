@@ -91,32 +91,11 @@ export function stepPlayer(dRow, dCol) {
   // Anything in the way stops the move, or, for a box, is examined instead.
   const cornered = !canPassCorner(state.floor.playerRow, state.floor.playerCol, dRow, dCol);
   const block = cornered ? { kind: 'corner' } : whatBlocks(newRow, newCol);
-  if (block && block.kind === 'prop') {
-    events.push(...examineProp(block.thing));
-    return events;
-  }
-  // Looking into it costs no turn: a rest floor has no light to feed.
-  if (block && block.kind === 'exchange') {
-    events.push({ type: 'exchangeOpened' });
-    return events;
-  }
-  if (block && block.kind === 'boss') {
-    events.push(reachGate());
-    return events;
-  }
-  if (block && block.kind === 'chest') {
-    events.push(reachItem(block));
-    return events;
-  }
-  if (block && block.kind === 'minion' && block.thing.downed) {
-    events.push(...finishDowned(block.thing));
-    return events;
-  }
   if (block) {
-    events.push({ type: 'blocked', kind: block.kind, thing: block.thing });
+    events.push(...bumpInto(block));
     // With free look, turning costs a turn, so a bump that turned the body
     // isn't a free turn: it's spent like one (free look plan, call 1).
-    if (turned && state.settings.freeLook) events.push({ type: 'bodyTurned', facing, bumped: true });
+    if (turned && state.settings.freeLook && plainBump(block)) events.push({ type: 'bodyTurned', facing, bumped: true });
     return events;
   }
   // A downed one has the player's ankle: they can turn, shoot, wait or
@@ -131,8 +110,48 @@ export function stepPlayer(dRow, dCol) {
   state.floor.playerRow = newRow;
   state.floor.playerCol = newCol;
   followBody();
+  events.push(...enterTile(facing));
+  return events;
+}
+
+// What a bump into `block` (passage.js whatBlocks) does: a box or another
+// prop is examined (examineProp), THE UNFOLDING opens (no turn: a rest
+// floor has no light to feed), the gate asks, the chest is selected, a
+// downed stick man is finished, and anything else just stops the player.
+// Shared by the step (stepPlayer) and free walking (walk.js). Events:
+// blocked { kind, thing }, exchangeOpened, gateReached / blocked gate
+// (gate.js reachGate), itemReached, the box events from examineProp, and
+// gun.js finishDowned's.
+export function bumpInto(block) {
+  if (block.kind === 'prop') return examineProp(block.thing);
+  if (block.kind === 'exchange') return [{ type: 'exchangeOpened' }];
+  if (block.kind === 'boss') return [reachGate()];
+  if (block.kind === 'chest') return [reachItem(block)];
+  if (block.kind === 'minion' && block.thing.downed) return finishDowned(block.thing);
+  return [{ type: 'blocked', kind: block.kind, thing: block.thing }];
+}
+
+// Whether a bump into `block` only stops the player (a wall, a stick man
+// standing, furniture), with nothing to open, ask or finish.
+function plainBump(block) {
+  if (['prop', 'exchange', 'boss', 'chest'].includes(block.kind)) return false;
+  return !(block.kind === 'minion' && block.thing.downed);
+}
+
+// The player has just come onto the tile they now stand on
+// (playerRow / playerCol, already set): the light is worked out again and
+// whatever lies there counts. Shared by the step (stepPlayer) and free
+// walking (walk.js, which passes `free` so the map doesn't slide the
+// player a whole tile). Events: stepped { facing, free }, then
+// tutorialLeft, or stairsReached { path, hidden }, or coinTaken { gold },
+// keyTaken, paperRead, the vent events from ventUnderfoot and
+// roomEntered { theme, name }.
+export function enterTile(facing, free = false) {
+  const events = [];
+  const newRow = state.floor.playerRow;
+  const newCol = state.floor.playerCol;
   computeVisibility();
-  events.push({ type: 'stepped', facing });
+  events.push({ type: 'stepped', facing, free });
 
   // The tutorial's open door is the way out of it (tutorial.js): main.js
   // starts the run.

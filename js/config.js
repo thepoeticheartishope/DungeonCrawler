@@ -1222,6 +1222,29 @@ export const REALTIME_POLL_MS = 100;
 // pressed sooner is ignored; the gun isn't held back.
 export const REALTIME_WALK_MS = 250;
 
+// One stick (one stick plan, ideas/one-stick-plan.md outside the repo):
+// the player walks freely in real time (walk.js), not tile to tile. Built
+// behind DEV -> One stick (state.settings.oneStick, off until step G);
+// it turns Real time on. `walkMs` / `sneakMs`: ms to walk / creep one
+// tile (the mockup's quick and natural paces). `creep`: a push on the
+// stick under this share of its reach creeps. `body`: how far the
+// player's body reaches from their centre each way, in tiles, for walls
+// and furniture. `bumpProgress`: a push that gets less than this share of
+// its way is a bump into what stopped it (sliding along a wall isn't).
+// `bumpRepeatMs`: pushing on into the same thing bumps it again this
+// often. `frameMs`: the most one frame may move the player (a slow tab
+// never jumps them through anything).
+export const ONE_STICK = {
+  on: false,
+  walkMs: 450,
+  sneakMs: 950,
+  creep: 0.6,
+  body: 0.28,
+  bumpProgress: 0.3,
+  bumpRepeatMs: 400,
+  frameMs: 50,
+};
+
 // Minigame practice (Timothy, 2026-10-11; js/practice.js): PRACTICE_TAPS
 // taps on the title on the start screen, each within PRACTICE_TAP_MS of
 // the last, open a hidden screen to play any minigame on its own, no

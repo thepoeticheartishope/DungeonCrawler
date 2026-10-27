@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, CHARGER } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, CHARGER, ONE_STICK } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -36,6 +36,7 @@ export const state = {
     lightBattery: LIGHT_BATTERY, // the light goes on and off and runs on a battery (battery.js); DEV -> Light battery flips it (off: always on)
     showDucts: SHOW_DUCTS,  // DEV -> Show ducts: stick men in a duct drawn dimly at the grate they will come out of, and every pair of grates known
     noise: NOISE,           // mistakes make a sound stick men hear (noise.js); DEV -> Noise flips it (off: mistakes are quiet)
+    oneStick: ONE_STICK.on, // walk freely in real time with one stick (walk.js), not tile to tile; turns Real time on; DEV -> One stick flips it
     charger: CHARGER.on,   // a charger in each depth's start room, gun on (charger.js); DEV -> Charger flips it from the next floor
     staticNoise: STATIC_NOISE, // a faint grain grows as the closest stick man nears, in place of "I see you." (static.js); DEV -> Static flips it
     downed: DOWNED,         // a shot that leaves a stick man on 1 HP knocks it down: it crawls, grabs, and a bump finishes it (gun.js); DEV -> Downed flips it
@@ -85,6 +86,7 @@ export const state = {
 
     playerRow: undefined,
     playerCol: undefined,
+    playerAt: null, // one stick (walk.js): the player's free spot in tiles, { x, y } (tile centre = col + 0.5); null = the centre of playerRow / playerCol
     facing: 'N', // 'N'|'S'|'E'|'W' — which way the player's body faces (bumps, slides, the stick man's legs)
     look: null,  // where the player aims, in radians on the grid (0 = north, +π/2 = east), or null = straight ahead; the light points here, held inside the body's free arc (look.js lookAngle)
     wallSet: new Set(),

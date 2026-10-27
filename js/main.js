@@ -9,6 +9,7 @@ import {
   LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, LOOK_UP_STICK,
   LOOK_SWEEP_SPEED, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS,
   TUTORIAL_KIND_DELAY_MS, TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS, CHARGER,
+  ONE_STICK,
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
@@ -36,7 +37,7 @@ import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap } from './mapview.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap, freeStepOnMap } from './mapview.js';
 import { turnWire, chargerLine } from './charger.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
@@ -53,6 +54,7 @@ import { computeVisibility, seesEnemy, FACING_VECTORS } from './sight.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
+import { walkFree, freeSpot, resetWalk } from './walk.js';
 import { mountQuestionPanel, setQuestion, setMinigame, retypeQuestion, clearModifier, applyModifier, placeWager } from './questionview.js';
 import { rollMinigame, forcedQuestion, endMinigame, letterPoolSetup, sumLockSetup } from './minigames.js';
 import { playMinigameOut } from './minigameview.js';
@@ -1013,6 +1015,7 @@ function startGame() {
   state.settings.realTime = realTimeToggle.checked;
   state.settings.simpleEnemies = simpleEnemiesToggle.checked;
   resetClock();
+  resetWalk();
   // Read on every start, so a retry keeps the name without asking again.
   state.settings.playerName = playerNameInput.value.trim();
   // Every run is multiple choice. The typing path (answerForm,
@@ -1058,6 +1061,7 @@ function loadRoom(restKind) {
 // a fresh room screen.
 function drawFloor() {
   resetClock();
+  resetWalk();
   fadeAnswerLine(true);
   if (state.settings.gunCombat) refreshGunTarget();
   renderHud();
@@ -1205,7 +1209,7 @@ const CHARGER_BREAKERS = new Set(['minionStruck', 'struggleStarted', 'ankleGrabb
 // catches up with where everything is now. With Real time on, the
 // player's own actions don't move the world (`worldMoves` false): the clock
 // does (clockTick), so here only the targets catch up with the player.
-function applyTurnOutcome(events, worldMoves = !state.settings.realTime) {
+function applyTurnOutcome(events, worldMoves = !realTimeOn()) {
   const turn = worldMoves ? events.concat(advanceMonsters({ canStruggle: worldRunsUnder() })) : events;
   if (!worldMoves) refreshTargetValidity();
   // A stick man that reaches the player closes CHARGE.SYS before its
@@ -1244,6 +1248,12 @@ function closeReloadOnRunEnd() {
   if (mapPanelShown()) endReload();
 }
 
+// Whether the world runs on the real-time clock: Real time on, or One
+// stick (one stick plan: free walking is real time).
+function realTimeOn() {
+  return state.settings.realTime || state.settings.oneStick;
+}
+
 // Whether the real-time clock may run: Real time on, a run going, the
 // room screen up with nothing paused over it. It stops for the ask screen
 // (a reload or a relay: Timothy chose a screen of its own over the
@@ -1252,7 +1262,7 @@ function closeReloadOnRunEnd() {
 // DEV panel, the end screens and a hidden tab. It keeps running under
 // CHARGE.SYS: the time is the charger's cost (Timothy 2026-10-26).
 function clockMayRun() {
-  return state.settings.realTime && !state.run.runEnded && !document.hidden &&
+  return realTimeOn() && !state.run.runEnded && !document.hidden &&
     roomScreen.classList.contains('show') && worldRunsUnder() &&
     !devPanel.classList.contains('show');
 }
@@ -1320,7 +1330,8 @@ function drawEvents(events) {
         break;
       // A step says nothing: the map already shows where the player went.
       case 'stepped':
-        slidePlayerOnMap(e.facing);
+        if (e.free) freeStepOnMap(ONE_STICK.walkMs);
+        else slidePlayerOnMap(e.facing);
         break;
       case 'waited':
         parts.push(t('room.wait'));
@@ -1732,6 +1743,45 @@ function loseToLight() {
 // View-side timing, so a module var rather than state.
 let lastWalkAt = -Infinity;
 
+// The move keys held down with One stick on (one stick plan step A), by
+// d-pad way: free walking goes the way they add up to.
+const heldWays = new Set();
+// When the last walking frame ran, for its length.
+let walkFrameAt = null;
+
+// One frame of free walking with One stick on (walk.js walkFree): while
+// the real-time clock may run and nothing holds the player, the held keys
+// move them; a new tile or a bump settles like a step (settleMove). While
+// the walk can't run, held keys are forgotten, so a key held through a
+// panel doesn't walk on (or bump the same chest again) once it closes.
+function walkFrame(now) {
+  requestAnimationFrame(walkFrame);
+  const dt = walkFrameAt === null ? 0 : now - walkFrameAt;
+  walkFrameAt = now;
+  if (!state.settings.oneStick) return;
+  if (!clockMayRun() || state.run.turnLocked || walkHeld()) {
+    heldWays.clear();
+    resetWalk();
+    return;
+  }
+  const [x, y] = [...heldWays].reduce(([sx, sy], way) => [sx + SCREEN_WAYS[way][0], sy + SCREEN_WAYS[way][1]], [0, 0]);
+  const spot = freeSpot();
+  const [x0, y0] = [spot.x, spot.y];
+  const events = walkFree(x, y, 1, dt);
+  if (spot.x !== x0 || spot.y !== y0) requestMapDraw();
+  if (!events.length) return;
+  state.run.turnLocked = true;
+  settleMove(events);
+}
+requestAnimationFrame(walkFrame);
+
+// A move key went down or up with One stick on: it joins or leaves the
+// held ways.
+function holdWay(way, down) {
+  if (down) heldWays.add(way);
+  else heldWays.delete(way);
+}
+
 // One arrow press (stepPlayer in moves.js). A step or a first look in a
 // box spends a turn; a step onto the stairs only asks (goDown takes them); a trapped box or the
 // chest opens the battle screen; an energy cell opens the
@@ -1742,14 +1792,22 @@ let lastWalkAt = -Infinity;
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
 function movePlayer(dRow, dCol) {
   if (state.run.turnLocked || state.run.runEnded || walkHeld()) return;
-  if (state.settings.realTime && performance.now() - lastWalkAt < REALTIME_WALK_MS) return;
+  if (realTimeOn() && performance.now() - lastWalkAt < REALTIME_WALK_MS) return;
   state.run.turnLocked = true;
   const events = stepPlayer(dRow, dCol);
-  const has = (type) => events.some(e => e.type === type);
-  if (has('stepped')) {
+  if (events.some(e => e.type === 'stepped')) {
     lastWalkAt = performance.now();
     noteStep(dRow, dCol, lastWalkAt);
   }
+  settleMove(events);
+}
+
+// What the player's move (a step, or free walking's new tile or bump)
+// leads to, with the turn locked by the caller: a spent turn plays out
+// (applyTurnOutcome), else its events are drawn; then any panel or
+// screen it asks for opens.
+function settleMove(events) {
+  const has = (type) => events.some(e => e.type === type);
   if (has('stepped') || has('propSearched') || has('bodyTurned') || has('minionFinished')) {
     applyTurnOutcome(events);
   } else {
@@ -1795,7 +1853,7 @@ let chargerCloseTimer = null;
 function openCharger(charger) {
   clearTimeout(chargerCloseTimer);
   openChargerProp = charger;
-  showCharger(charger.puzzle, state.settings.realTime);
+  showCharger(charger.puzzle, realTimeOn());
 }
 
 // A wire turned (a tap, or F / Enter / Space on it): charger.js turnWire.
@@ -1810,7 +1868,7 @@ function turnChargerWire(index) {
   if (!events.length) return;
   const charged = events.some(e => e.type === 'charged');
   renderCharger(wires, charged);
-  if (events.some(e => e.type === 'turnSpent') && !state.settings.realTime) {
+  if (events.some(e => e.type === 'turnSpent') && !realTimeOn()) {
     state.run.turnLocked = true;
     applyTurnOutcome(events);
     state.run.turnLocked = false;
@@ -2004,8 +2062,11 @@ const NUMPAD_WAYS = {
 };
 document.addEventListener('keyup', (e) => {
   if (e.key === ' ') holdLookUp('key', false);
+  const way = MOVE_KEYS[e.key] || NUMPAD_WAYS[e.code];
+  if (way) holdWay(way, false);
 });
 window.addEventListener('blur', () => {
+  heldWays.clear();
   holdLookUp('key', false);
   holdLookUp('stick', false);
 });
@@ -2023,6 +2084,9 @@ document.addEventListener('keydown', (e) => {
   if (document.activeElement === answerInput || e.defaultPrevented) return;
   if (!roomScreen.classList.contains('show')) return;
   const numpad = NUMPAD_WAYS[e.code];
+  // One stick: the move keys are held, not pressed (walkFrame).
+  const held = state.settings.oneStick && !mapPanelShown() && (MOVE_KEYS[e.key] || numpad);
+  if (held) { e.preventDefault(); holdWay(held, true); return; }
   // A held number pad key steps again only once its last step has landed
   // (walkpace.js), not at the keyboard's own repeat rate.
   if (e.repeat && numpad && !heldStepReady(performance.now())) { e.preventDefault(); return; }
