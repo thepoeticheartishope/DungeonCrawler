@@ -99,7 +99,8 @@
 //      X sneaks slower, and the round stick (in the d-pad's place) walks.
 //      Step C: a stick man beside them reaches and strikes; walked away
 //      from, it misses ("It misses."). Step D: the battery runs out by
-//      time, and the HUD has no turn count.
+//      time, and the HUD has no turn count. Step E: SELECT opens the dial
+//      on a reaching stick man, and the reach waits while it is up.
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -1104,7 +1105,7 @@ async function runOneStick(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'held arrows walked freely between tiles, letting go stopped, the NEXT meter showed, a tap turned, X crept, the round stick walked, a reach landed and a dodged one missed, the battery ran out by time', consoleErrors, pageErrors };
+  return { ok: true, detail: 'held arrows walked freely between tiles, letting go stopped, the NEXT meter showed, a tap turned, X crept, the round stick walked, a reach landed and a dodged one missed, the battery ran out by time, the dial held a reach', consoleErrors, pageErrors };
 }
 
 // The player's free spot and tile now.
@@ -1205,6 +1206,46 @@ async function checkOneStick(page, url) {
   if (light.on || !light.locked) return 'the battery did not run out by time';
   if (!/EMPTY/i.test(light.hud)) return `the HUD's battery did not say it was empty: ${light.hud}`;
   if (await page.locator('#turnCount').evaluate(el => !el.parentElement.hidden)) return 'One stick still showed the turn count';
+
+  // Step E: facing a stick man that reaches, SELECT (F) opens the shot's
+  // dial on it, and the reach waits while the dial is up.
+  await placeInRow(page);
+  const reaching = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { spawnMinion } = await import('./js/combat.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const f = state.floor;
+    f.light = { on: true, charge: 4, locked: false };
+    f.look = -Math.PI / 2;
+    f.lookWant = -Math.PI / 2;
+    state.run.energy = 2;
+    state.run.rounds = [null, null];
+    state.run.hearts = state.run.maxHearts;
+    const m = spawnMinion({ row: f.playerRow, col: f.playerCol - 1 }, 'SHARD');
+    m.hunts = true;
+    m.stepWait = 0;
+    computeVisibility();
+    window.__reacher = m;
+    return true;
+  });
+  if (!reaching) return 'could not stand a stick man beside the player';
+  await page.waitForFunction(() => window.__reacher.reaching, null, { timeout: 3000 }).catch(() => {});
+  await page.keyboard.press('f');
+  const dial = await page.waitForSelector('#aimPanel:not([hidden])', { timeout: 3000 }).then(() => true).catch(() => false);
+  if (!dial) return 'SELECT did not open the dial on the stick man beside the player';
+  const left = await page.evaluate(() => window.__reacher.reaching && window.__reacher.reaching.left);
+  if (typeof left !== 'number') return 'the stick man beside the player was not reaching when the dial opened';
+  await page.waitForTimeout(1000);
+  const held = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    return { left: window.__reacher.reaching && window.__reacher.reaching.left, hurt: state.run.hearts < state.run.maxHearts };
+  });
+  if (held.hurt || held.left !== left) return 'the reach went on while the dial was up';
+  await page.keyboard.press('Escape');
+  await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    state.floor.minions = state.floor.minions.filter(m => m !== window.__reacher);
+  });
   return '';
 }
 
