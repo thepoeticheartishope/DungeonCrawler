@@ -1246,9 +1246,10 @@ export const FIGURE3D = {
 };
 
 // One stick (one stick plan, ideas/one-stick-plan.md outside the repo):
-// the player walks freely in real time (walk.js), not tile to tile. Built
-// behind DEV -> One stick (state.settings.oneStick, off until step G);
-// it turns Real time on. `walkMs` / `sneakMs`: ms to walk / creep one
+// the player walks freely in real time (walk.js), not tile to tile. The
+// default since step G (`on`); the start screen's Turns option
+// (state.settings.oneStick false) keeps the game in turns, and DEV -> One
+// stick flips it in play. It turns Real time on. `walkMs` / `sneakMs`: ms to walk / creep one
 // tile (the mockup's quick and natural paces). `creep`: a push on the
 // stick under this share of its reach creeps. `body`: how far the
 // player's body reaches from their centre each way, in tiles, for walls
@@ -1277,7 +1278,7 @@ export const FIGURE3D = {
 // by time: one charge (a # on the HUD) lasts `batteryChargeMs` on and
 // comes back in the same time off (LIGHT_BATTERY_MAX 4 = 12 s).
 export const ONE_STICK = {
-  on: false,
+  on: true,
   walkMs: 450,
   sneakMs: 950,
   creep: 0.6,

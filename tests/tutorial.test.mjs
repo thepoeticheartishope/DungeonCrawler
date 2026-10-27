@@ -356,3 +356,18 @@ test('the first shot\'s dial: the kind voice at READY and once it runs, once eac
   assert.deepEqual(tutorialDial(ready), [{ type: 'whispered', line: 'tut.dial', tone: 'kind' }]);
   assert.deepEqual(tutorialDial(ready), [], 'said once');
 });
+
+test('with One stick, the first reach of the fight brings "When it reaches, step away." once', () => {
+  resetRun();
+  passTurns(TUTORIAL_SPOT_TURNS);
+  walkToSpot();
+  tutorialTurn([]);
+  settleName('Ada');
+  toggleLight();
+  breakRing();
+  const m = state.floor.tutorial.minion;
+  const reach = [{ type: 'reachStarted', minion: m }];
+  const told = tutorialTurn(reach).filter(e => e.type === 'whispered');
+  assert.deepEqual(told.map(e => [e.line, e.tone]), [['tut.reach', 'kind']]);
+  assert.deepEqual(tutorialTurn(reach).filter(e => e.line === 'tut.reach'), [], 'once');
+});

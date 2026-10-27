@@ -92,7 +92,7 @@
 //      ("nothing to give"); the kind voice's "It still holds a charge."
 //      after the first turn beside it; then a hunting stick man beside the player
 //      closes it ("It found you."). Saved as noesis-charger*.png.
-//  13. One stick run (one stick plan step A): DEV -> One stick on the
+//  13. One stick run (one stick plan steps A-G): the default (Turns off) on the
 //      opening rest; held arrow keys walk the player freely (their spot
 //      between tiles, the tile they stand on following it), letting go stops
 //      them, and the real-time NEXT meter shows. Step B: a tap only turns,
@@ -101,6 +101,10 @@
 //      from, it misses ("It misses."). Step D: the battery runs out by
 //      time, and the HUD has no turn count. Step E: SELECT opens the dial
 //      on a reaching stick man, and the reach waits while it is up.
+//  14. Tutorial with One stick (one stick plan step G): the default (Turns
+//      off), the arrows held: walking brings the light from above, then
+//      the barrel; the name closes the ring, V breaks it, and the stick
+//      man's first reach brings "When it reaches, step away.".
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -166,10 +170,16 @@ function collectErrors(page) {
 
 // Loads the page fresh, ready for #startBtn, with the tutorial room off
 // (it is on for a new player; the tutorial run plays it).
-async function loadPageAndSet(page, url) {
+// Opens the start screen with the tutorial off. Every run but the One
+// stick ones plays in turns (`turns`, the start screen's Turns option):
+// they drive the turn game's rules step by step. One stick, the default
+// since one stick plan step G, has its own runs.
+async function loadPageAndSet(page, url, { turns = true } = {}) {
   await page.goto(url, { waitUntil: 'load' });
   await page.waitForSelector('#startBtn', { timeout: 10000 });
   await page.uncheck('#tutorialToggle');
+  if (turns) await page.check('#turnsToggle');
+  else await page.uncheck('#turnsToggle');
 }
 
 // Enter, then pick the built-in "Bible Quiz Bowl" on the set screen, which
@@ -1123,12 +1133,9 @@ function spotNow(page) {
 // checks they went east, off the tile centres, with their tile following.
 // Returns what failed ('' when all held).
 async function checkOneStick(page, url) {
-  await loadPageAndSet(page, url);
+  await loadPageAndSet(page, url, { turns: false });
   await startGameAndWaitForRoom(page);
-  await page.click('#devToggleBtn');
-  await page.waitForSelector('#devPanel.show', { timeout: 5000 });
-  await page.click('#devOneStickBtn');
-  await page.click('#devToggleBtn');
+  if (await page.evaluate(async () => !(await import('./js/state.js')).state.settings.oneStick)) return 'One stick was not the default';
   if (!await placeInRow(page)) return 'no four open tiles in a row on the opening rest';
   await roomIdle(page);
   const start = await spotNow(page);
@@ -1374,6 +1381,10 @@ async function checkTutorial(page, url) {
   await page.goto(url, { waitUntil: 'load' });
   await page.waitForSelector('#startBtn', { timeout: 10000 });
   if (!await page.isChecked('#tutorialToggle')) return 'the tutorial was not on for a new player';
+  if (await page.isChecked('#turnsToggle')) return 'Turns was on for a new player (One stick is the default)';
+  // This run drives the tutorial a turn at a time (the start screen's
+  // Turns option); runTutorialStick plays its start with One stick.
+  await page.check('#turnsToggle');
   await startGameAndWaitForRoom(page);
   let st = await tutorialState(page);
   if (st.stage !== 'dark') return 'the run did not start in the tutorial room';
@@ -1566,6 +1577,87 @@ async function runTutorial(browser, url) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
   return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, grate shudders, stick man drops out, the first shot at READY ("Breathe.", BACK spent nothing, the dial ran with its key line), one shot drops it ("Finish it."), a bump finishes it, key, door, out to the opening rest', consoleErrors, pageErrors };
+}
+
+// ---- Run 14: the tutorial with One stick ----
+
+async function runTutorialStick(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const reason = await checkTutorialStick(page, url);
+  await context.close();
+  if (reason) return { ok: false, reason, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'walked freely in the dark until the light fell, to the barrel, name, ring broken by the light, the stick man reached and the kind voice said to step away', consoleErrors, pageErrors };
+}
+
+// Holds the arrow keys toward `goal` ({ row, col }) with One stick, a
+// moment at a time, until `done(tutorialState)` or `ms` runs out. Returns
+// the last state, or null if it never came.
+async function holdToward(page, goal, done, ms = 12000) {
+  const held = new Set();
+  const hold = async (want) => {
+    for (const k of [...held]) if (!want.includes(k)) { await page.keyboard.up(k); held.delete(k); }
+    for (const k of want) if (!held.has(k)) { await page.keyboard.down(k); held.add(k); }
+  };
+  let st = null;
+  for (let t = 0; t < ms; t += 120) {
+    st = await tutorialState(page);
+    if (done(st)) break;
+    const at = await page.evaluate(async () => {
+      const { state } = await import('/js/state.js');
+      return { row: state.floor.playerRow, col: state.floor.playerCol };
+    });
+    const want = [];
+    if (goal.row < at.row) want.push('ArrowUp');
+    if (goal.row > at.row) want.push('ArrowDown');
+    if (goal.col < at.col) want.push('ArrowLeft');
+    if (goal.col > at.col) want.push('ArrowRight');
+    // On the goal (a bump into the barrel needs a push): keep going up.
+    await hold(want.length ? want : ['ArrowUp']);
+    await page.waitForTimeout(120);
+    st = null;
+  }
+  await hold([]);
+  return st && done(st) ? st : null;
+}
+
+// The tutorial's start with One stick, the default: walking (not waiting)
+// brings the light from above, walking to it the barrel, the name the
+// ring, the light breaks it, and the stick man's first reach brings the
+// kind voice's "When it reaches, step away."
+async function checkTutorialStick(page, url) {
+  await page.goto(url, { waitUntil: 'load' });
+  await page.waitForSelector('#startBtn', { timeout: 10000 });
+  await page.check('#tutorialToggle');
+  await page.uncheck('#turnsToggle');
+  await startGameAndWaitForRoom(page);
+  let st = await tutorialState(page);
+  if (st.stage !== 'dark') return 'the run did not start in the tutorial room';
+  st = await holdToward(page, st.spot, s => s.stage !== 'dark');
+  if (!st) return 'walking in the dark never brought the light from above';
+  st = await holdToward(page, st.spot, s => s.stage === 'name');
+  if (!st) return 'walking to the light did not bring the barrel';
+  st = await holdToward(page, st.barrel, s => s.ask, 8000);
+  if (!st) return 'pushing into the barrel did not ask anything';
+  await page.fill('#answerInput', 'Smoke');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(200);
+  st = await tutorialState(page);
+  if (st.stage !== 'ring') return 'the name did not close the ring (stage ' + st.stage + ')';
+  await page.keyboard.press('v');
+  await page.waitForTimeout(200);
+  st = await tutorialState(page);
+  if (st.stage !== 'fight') return 'the light did not break the ring (stage ' + st.stage + ')';
+  for (let t = 0; t < 25000; t += 100) {
+    await page.waitForTimeout(100);
+    st = await tutorialState(page);
+    if (st.sense.includes('step away')) return '';
+  }
+  return 'the stick man never reached with the kind voice saying to step away: ' + st.sense;
 }
 
 // Runs one smoke run. A throw (a Playwright timeout, say) becomes that
@@ -2113,13 +2205,15 @@ async function checkCharger(page, url) {
     const { spawnMinion } = await import('./js/combat.js');
     const { key } = await import('./js/state.js');
     const f = state.floor;
-    const free = (r, c) => !f.wallSet.has(key(r, c)) && !f.pillarSet.has(key(r, c)) && !f.props.some(p => p.row === r && p.col === c);
+    const free = (r, c) => !f.wallSet.has(key(r, c)) && !f.pillarSet.has(key(r, c)) && !f.props.some(p => p.row === r && p.col === c) &&
+      !f.minions.some(m => m.row === r && m.col === c);
     const spot = [[1, 0], [0, 1], [0, -1], [1, 1], [1, -1]].map(([dr, dc]) => ({ row: f.playerRow + dr, col: f.playerCol + dc }))
       .find(p => free(p.row, p.col));
     // One that always hunts (as the tutorial's does), so it comes whether or not it saw the player.
     if (spot) spawnMinion(spot, 'SHARD').hunts = true;
   });
-  for (let i = 0; i < 6 && await panel.isVisible(); i++) {
+  // Up to 5 turns (2 wire turns each): a diagonal one may have to go round a corner first.
+  for (let i = 0; i < 10 && await panel.isVisible(); i++) {
     await page.locator('.charger-wire').first().click();
     await page.waitForTimeout(120);
   }
@@ -2156,7 +2250,7 @@ async function main() {
         ['light battery', runLightBattery, url], ['tutorial', runTutorial, url],
         ['answer line', runAnswerLine, url], ['vents', runVents, url],
         ['room view', runRoomView, url], ['charger', runCharger, url],
-        ['one stick', runOneStick, url],
+        ['one stick', runOneStick, url], ['tutorial stick', runTutorialStick, url],
       ];
       // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
       // of those words, SMOKE_REPEAT=20 runs each that many times: for

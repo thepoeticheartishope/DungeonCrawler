@@ -36,13 +36,13 @@ import { settleAnswer } from './answers.js';
 import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
-import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
+import { initDevPanel, recordEvents, refreshInspector, syncDevOneStick } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, glyphOf, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap, freeStepOnMap, playerHitOnMap } from './mapview.js';
 import { turnWire, chargerLine } from './charger.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar } from './gunpanels.js';
-import { t, setTextArea, applyStaticText } from './text.js';
+import { t, TEXT, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, initWalkStick, SCREEN_WAYS, padWay, sweepHold } from './dpad.js';
 import { lookUp } from './roomview.js';
@@ -64,6 +64,7 @@ const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
 const revealToggle = document.getElementById('revealToggle');
 const realTimeToggle = document.getElementById('realTimeToggle');
+const turnsToggle = document.getElementById('turnsToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
 const playerNameInput = document.getElementById('playerName');
@@ -246,7 +247,9 @@ function whisperSoon(e) {
 
 // The tutorial teaches without hand holding (Timothy): a stage's plain
 // hint shows in the room log only if the player is still on it after
-// TUTORIAL_STUCK_MS. Stages with no hint teach themselves.
+// TUTORIAL_STUCK_MS. Stages with no hint teach themselves. With One stick
+// a hint with a `.stick` wording says it for the stick (one stick plan
+// step G).
 const STUCK_HINTS = { dark: 'tut.hint.move', name: 'tut.hint.barrel', ring: 'tut.hint.light', fight: 'tut.hint.fire' };
 let watchedStage = null;
 let stuckTimer = null;
@@ -260,7 +263,8 @@ function watchTutorial(restart = false) {
   if (stage === watchedStage && !restart) return;
   watchedStage = stage;
   clearTimeout(stuckTimer);
-  const hint = STUCK_HINTS[stage];
+  const plain = STUCK_HINTS[stage];
+  const hint = plain && state.settings.oneStick && TEXT[plain + '.stick'] ? plain + '.stick' : plain;
   if (!hint || (stage === 'ring' && !batteryInPlay())) return;
   stuckTimer = setTimeout(() => {
     const now = state.floor.tutorial;
@@ -1012,7 +1016,11 @@ function resetRun(energy = ENERGY_START) {
 function startGame() {
   resetRun();
   state.settings.revealOnWrong = revealToggle.checked;
-  state.settings.realTime = realTimeToggle.checked;
+  // One stick unless the start screen asks for turns (one stick plan step
+  // G); Real time is a turns option.
+  state.settings.oneStick = !turnsToggle.checked;
+  state.settings.realTime = turnsToggle.checked && realTimeToggle.checked;
+  syncDevOneStick();
   state.settings.simpleEnemies = simpleEnemiesToggle.checked;
   resetClock();
   resetWalk();

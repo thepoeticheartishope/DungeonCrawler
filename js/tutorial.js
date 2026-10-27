@@ -17,7 +17,9 @@
 //          The first shot's dial (kill or maim plan step C): at READY
 //          "Breathe. Then READY.", once it runs "Stop on K to kill. M
 //          drops it." It has no guard, so a maim drops it (downed plan):
-//          the kind voice says "Finish it.", and a bump finishes it
+//          the kind voice says "Finish it.", and a bump finishes it.
+//          With One stick, the first time it reaches for the player:
+//          "When it reaches, step away." (one stick plan step G)
 //   key    it falls and leaves a key
 //   open   the key opens the door at the top; through it, the run begins
 // It shows the game's central mechanics, so when a core mechanic is added,
@@ -79,7 +81,7 @@ export function parseTutorialRoom(rows = TUTORIAL_ROOM) {
 
 // A fresh tutorial's own state, for state.floor.tutorial.
 export function freshTutorial(room) {
-  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, minion: null, minionAt: null, toldReady: false, toldDial: false, toldLookUp: false, toldStatic: false };
+  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, minion: null, minionAt: null, toldReady: false, toldDial: false, toldLookUp: false, toldStatic: false, toldReach: false };
 }
 
 // The light that won't come on: off, locked and steady (battery.js: a
@@ -119,7 +121,9 @@ export function tutorialDial(events) {
 // light; whispered { line: 'tut.lookUp', tone: 'kind', wait: true } the
 // first time they stand in it (see lookUpLine); whispered { line: 'tut.finish', tone: 'kind' } once the stick man
 // goes down (downed plan step C: its minionDowned is in `events`), so the
-// player learns a bump finishes it; whispered { line: 'tut.static', tone:
+// player learns a bump finishes it; whispered { line: 'tut.reach', tone:
+// 'kind' } the first time it reaches for them with One stick (see
+// reachLine); whispered { line: 'tut.static', tone:
 // 'kind' } the first time the static shows (see staticLine); keyDropped { row, col } once the stick man is gone (shot, or
 // cleared in classic combat); doorUnlocked once the key is taken. None
 // off the tutorial. In the fight the energy is filled again every turn,
@@ -146,7 +150,8 @@ export function tutorialTurn(events) {
     if (state.floor.minions.includes(tut.minion) || state.floor.crawling.includes(tut.minion)) {
       tut.minionAt = { row: tut.minion.row, col: tut.minion.col };
       const downed = events.some(e => e.type === 'minionDowned' && e.minion === tut.minion);
-      return downed ? [{ type: 'whispered', line: 'tut.finish', tone: 'kind' }] : staticLine(tut);
+      if (downed) return [{ type: 'whispered', line: 'tut.finish', tone: 'kind' }];
+      return [...reachLine(tut, events), ...staticLine(tut)];
     }
     const at = tut.minionAt;
     state.floor.keys.push({ row: at.row, col: at.col });
@@ -158,6 +163,17 @@ export function tutorialTurn(events) {
     return [{ type: 'doorUnlocked' }];
   }
   return [];
+}
+
+// The kind voice on the reach (one stick plan step G: the reach is the
+// real-time answer to "hit from nowhere", so it gets a tutorial beat), once,
+// the first time the tutorial's stick man reaches for the player
+// (combat.js reachStarted, One stick only): stepped out of reach, it
+// misses. Returns that whispered event, or none.
+function reachLine(tut, events) {
+  if (tut.toldReach || !events.some(e => e.type === 'reachStarted' && e.minion === tut.minion)) return [];
+  tut.toldReach = true;
+  return [{ type: 'whispered', line: 'tut.reach', tone: 'kind' }];
 }
 
 // The kind voice names the static (static.js: a new way to sense them

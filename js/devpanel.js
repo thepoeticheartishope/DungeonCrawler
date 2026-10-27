@@ -37,6 +37,13 @@ const devCombatBtn = document.getElementById('devCombatBtn');
 const devShotBtn = document.getElementById('devShotBtn');
 const devReloadBtn = document.getElementById('devReloadBtn');
 
+// DEV -> One stick's label from state.settings.oneStick (main.js
+// startGame sets it from the start screen's Turns option).
+export function syncDevOneStick() {
+  devOneStickBtn.textContent = state.settings.oneStick ? 'One stick: ON (dev)' : 'One stick: OFF (dev)';
+  devOneStickBtn.setAttribute('aria-pressed', String(state.settings.oneStick));
+}
+
 export function initDevPanel({
   advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
   gunCombatChanged, autoWinGun,
@@ -192,8 +199,7 @@ export function initDevPanel({
   // move keys held, or tile to tile as before. On, it turns Real time on.
   devOneStickBtn.addEventListener('click', () => {
     state.settings.oneStick = !state.settings.oneStick;
-    devOneStickBtn.textContent = state.settings.oneStick ? 'One stick: ON (dev)' : 'One stick: OFF (dev)';
-    devOneStickBtn.setAttribute('aria-pressed', String(state.settings.oneStick));
+    syncDevOneStick();
     requestMapDraw();
   });
 

@@ -13,6 +13,10 @@ import { initBossLight, advanceLight } from '../js/light.js';
 import { advanceMonsters, spawnMinion } from '../js/combat.js';
 import { resetHaunts } from '../js/haunts.js';
 
+// These are the turn game's rules (the start screen's Turns option): One
+// stick, the default since one stick plan step G, has its own tests.
+state.settings.oneStick = false;
+
 // An open 15x15 floor. Room 1 is rows 1-5, cols 9-13 (a relay at its
 // middle); everything else is room 0. The boss sits in the far corner.
 function resetFloor() {

@@ -12,6 +12,7 @@ import assert from 'node:assert/strict';
 import { ROOM_VIEW } from '../js/config.js';
 import { faceOf, viewScale, cameraGoal } from '../js/roomview.js';
 
+
 const T = ROOM_VIEW.tilePx;
 
 // A room of floor at rows 3-6, walls round it, as rows of text.
@@ -73,6 +74,8 @@ test('a room too big follows the player without showing past its edge; a hallway
 test('the eye in the sky opens with the boss light and is shut with none', async () => {
   const { state } = await import('../js/state.js');
   const { skyEyeOpen, skyTurnsLeft } = await import('../js/mapshared.js');
+  // In turns (the start screen's Turns option); beat.test.mjs has One stick's seconds.
+  state.settings.oneStick = false;
   state.floor.tutorial = null;
   state.floor.boss = { row: 1, col: 1 };
   state.floor.lightTurnBudget = 40;
