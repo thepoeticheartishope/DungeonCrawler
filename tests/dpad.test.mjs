@@ -34,14 +34,12 @@ function stick({ armed = false } = {}) {
   let due = null;
   const g = stickGestures({
     onWait: () => calls.push('wait'),
-    onLight: () => calls.push('light'),
     onTurn: () => calls.push('turn'),
-    onCount: (n) => calls.push('count' + n),
+    onTap: () => calls.push('tap'),
     onHold: (on) => calls.push(on ? 'ring' : 'unring'),
     wantsTurn: () => armed,
-    holdMs: 1000, tapMs: 450,
+    holdMs: 1000,
     timers: { set: (fn, ms) => { due = { fn, at: clock + ms }; return 1; }, clear: () => { due = null; } },
-    now: () => clock,
   });
   const pass = (ms) => {
     clock += ms;
@@ -51,17 +49,10 @@ function stick({ armed = false } = {}) {
   return { g, calls, pass, tapOnce, actions: () => calls.filter(c => c !== 'ring' && c !== 'unring') };
 }
 
-test('3 quick taps switch the light; the first two only count', () => {
+test('taps only hint, however many and however quick (the light has its own button)', () => {
   const s = stick();
   s.tapOnce(); s.tapOnce(); s.tapOnce();
-  assert.deepEqual(s.actions(), ['count1', 'count2', 'light']);
-});
-
-test('2 taps, then a pause: the count starts again', () => {
-  const s = stick();
-  s.tapOnce(); s.tapOnce();
-  s.tapOnce(1000);
-  assert.deepEqual(s.actions(), ['count1', 'count2', 'count1']);
+  assert.deepEqual(s.actions(), ['tap', 'tap', 'tap']);
 });
 
 test('a press held 1 s waits, shows its ring, and its release is no tap', () => {
@@ -75,20 +66,10 @@ test('a press held 1 s waits, shows its ring, and its release is no tap', () => 
   assert.deepEqual(s.actions(), ['wait']);
 });
 
-test('a hold after 2 taps waits and drops the count', () => {
+test('a drag cancels the hold and is no tap', () => {
   const s = stick();
-  s.tapOnce(); s.tapOnce();
-  s.g.press(); s.pass(1000); s.g.release();
-  s.tapOnce();
-  assert.deepEqual(s.actions(), ['count1', 'count2', 'wait', 'count1']);
-});
-
-test('a drag cancels the hold and the count', () => {
-  const s = stick();
-  s.tapOnce(); s.tapOnce();
   s.g.press(); s.pass(200); s.g.drag(); s.pass(2000); s.g.release(false);
-  s.tapOnce();
-  assert.deepEqual(s.actions(), ['count1', 'count2', 'count1']);
+  assert.deepEqual(s.actions(), []);
   assert.equal(s.calls.filter(c => c === 'ring').length, s.calls.filter(c => c === 'unring').length, 'every ring cleared');
 });
 
@@ -101,8 +82,8 @@ test('aimed past the arc, one tap turns; a hold still waits', () => {
 
 test('Enter on the focused stick taps', () => {
   const s = stick();
-  s.g.tap(); s.g.tap(); s.g.tap();
-  assert.deepEqual(s.actions(), ['count1', 'count2', 'light']);
+  s.g.tap();
+  assert.deepEqual(s.actions(), ['tap']);
 });
 
 // A hand-run frame clock for sweepHold: run(ms) plays frames 10 ms apart.

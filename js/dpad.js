@@ -6,7 +6,7 @@
 // stick (free look plan step C): push it sideways to sweep the light
 // (sweepHold), up to look up, tap it to turn or (twice) to wait. main.js passes in the buttons and the actions; this file only
 // handles input.
-import { DPAD_HOLD_DELAY_MS, DPAD_HOLD_REPEAT_MS, LOOK_STICK_DRAG_PX, LOOK_STICK_KNOB_PX, LOOK_STICK_TAP_MS, LOOK_STICK_HOLD_MS, LOOK_STICK_LIGHT_TAPS, LOOK_SWEEP_SPEED, LOOK_SWEEP_TAP, ONE_STICK } from './config.js';
+import { DPAD_HOLD_DELAY_MS, DPAD_HOLD_REPEAT_MS, LOOK_STICK_DRAG_PX, LOOK_STICK_KNOB_PX, LOOK_STICK_HOLD_MS, LOOK_SWEEP_SPEED, LOOK_SWEEP_TAP, ONE_STICK } from './config.js';
 
 // The pad's arrows by where they point on screen, as [x, y] (y down). The
 // d-pad's buttons, the arrow keys and the number pad are named by these.
@@ -154,40 +154,27 @@ export function initDpad({ buttons, canWalk, push, hold = () => false }) {
 
 // What a press on the look stick means (light battery plan step D), apart
 // from the page, so it can be tested with a hand-run clock: `timers`
-// { set(fn, ms), clear(id) } and `now()`. A press held `holdMs` calls
+// { set(fn, ms), clear(id) }. A press held `holdMs` calls
 // `onWait()` (`onHold(true)` as the press starts, so the stick can show its
 // ring, and `onHold(false)` when the hold ends either way). A tap calls
-// `onTurn()` when `wantsTurn()` and no taps are counting; otherwise taps
-// count, each within `tapMs` of the last: the LOOK_STICK_LIGHT_TAPS-th
-// calls `onLight()`, and the ones before it `onCount(n)`. A drag cancels
-// the hold and the count.
-export function stickGestures({ onWait, onLight, onTurn, onCount, onHold, wantsTurn,
-  holdMs = LOOK_STICK_HOLD_MS, tapMs = LOOK_STICK_TAP_MS,
-  timers = { set: (fn, ms) => setTimeout(fn, ms), clear: (id) => clearTimeout(id) },
-  now = () => performance.now() }) {
+// `onTurn()` when `wantsTurn()`, else `onTap()` (a hint), so a stray tap
+// never spends a turn. The light is the LIGHT button's now (Timothy
+// 2026-10-27: 3 taps were too much in a tense moment). A drag cancels the
+// hold.
+export function stickGestures({ onWait, onTurn, onTap, onHold, wantsTurn,
+  holdMs = LOOK_STICK_HOLD_MS,
+  timers = { set: (fn, ms) => setTimeout(fn, ms), clear: (id) => clearTimeout(id) } }) {
   let holdTimer = null;
   let held = false;      // this press already waited
-  let taps = 0;
-  let lastTapAt = -Infinity;
   const endHold = () => {
     if (holdTimer === null) return;
     timers.clear(holdTimer);
     holdTimer = null;
     onHold(false);
   };
-  const resetTaps = () => {
-    taps = 0;
-    lastTapAt = -Infinity;
-  };
   const tap = () => {
-    const at = now();
-    if (at - lastTapAt > tapMs) taps = 0;
-    if (taps === 0 && wantsTurn()) { resetTaps(); onTurn(); return; }
-    taps++;
-    lastTapAt = at;
-    if (taps < LOOK_STICK_LIGHT_TAPS) { onCount(taps); return; }
-    resetTaps();
-    onLight();
+    if (wantsTurn()) onTurn();
+    else onTap();
   };
   return {
     press() {
@@ -197,14 +184,12 @@ export function stickGestures({ onWait, onLight, onTurn, onCount, onHold, wantsT
       holdTimer = timers.set(() => {
         holdTimer = null;
         held = true;
-        resetTaps();
         onHold(false);
         onWait();
       }, holdMs);
     },
     drag() {
       endHold();
-      resetTaps();
     },
     // The press ended: a tap, unless it already waited or `tapped` is
     // false (a drag, a cancelled press).
@@ -223,17 +208,17 @@ export function stickGestures({ onWait, onLight, onTurn, onCount, onHold, wantsT
 // on screen, and the knob follows up to LOOK_STICK_KNOB_PX, springing back
 // on release; pointer capture keeps the drag when the finger leaves the
 // button. Taps and holds go through stickGestures: hold to `wait()`, a tap
-// to `turn()` when `wantsTurn()`, 3 taps to `light()`, and `count(n)` for
-// the taps before the third, so a stray tap never spends a turn. While a
+// to `turn()` when `wantsTurn()`, else `tap()` (a hint), so a stray tap
+// never spends a turn. While a
 // press could still become a hold, the button has the class `holding` (its
 // filling ring, index.html). `done()` is called when a drag ends (the
 // light's sweep stops then).
-export function initLookStick({ button, aim, wait, light, count, turn, wantsTurn, done = () => {} }) {
+export function initLookStick({ button, aim, wait, tap, turn, wantsTurn, done = () => {} }) {
   const knob = button.querySelector('.look-knob');
   let press = null;      // { x, y, id, dragged } while held
   let pressed = false;   // a pointer press already counted; skip the click that follows it
   const gestures = stickGestures({
-    onWait: wait, onLight: light, onTurn: turn, onCount: count,
+    onWait: wait, onTurn: turn, onTap: tap,
     onHold: on => button.classList.toggle('holding', on),
     wantsTurn,
   });
@@ -287,13 +272,12 @@ export function initLookStick({ button, aim, wait, light, count, turn, wantsTurn
 // LOOK_STICK_DRAG_PX or leaves the dead zone, the press is still: it
 // pushes nothing, so a tap never turns the light by chance. A still press
 // held ONE_STICK.lookUpMs calls `lookUp(true)` (and `lookUp(false)` as it
-// ends): looking up at the sky; taps count to `light()` as on the look
-// stick (stickGestures, `count(n)` for the taps before the last).
-export function initWalkStick({ el, push, release, lookUp, light, count }) {
+// ends): looking up at the sky; a tap calls `tap()` (a hint).
+export function initWalkStick({ el, push, release, lookUp, tap }) {
   const knob = el.querySelector('.walk-knob');
   let press = null; // { id, x, y, moved } while held
   const gestures = stickGestures({
-    onWait: () => lookUp(true), onLight: light, onTurn: () => {}, onCount: count,
+    onWait: () => lookUp(true), onTurn: () => {}, onTap: tap,
     onHold: on => el.classList.toggle('holding', on),
     wantsTurn: () => false, holdMs: ONE_STICK.lookUpMs,
   });

@@ -195,7 +195,7 @@ function lookReady() {
 }
 
 // Switches the light on or off (battery.js toggleLight; V, the LIGHT
-// button, 3 taps on a stick). No turn, so
+// button). No turn, so
 // the real-time clock doesn't matter. Locked after running empty, it stays
 // off and says how long until it is full.
 function switchLight() {
@@ -221,7 +221,8 @@ function switchLight() {
   showRoomNote(note.cls, note.text);
 }
 // The LIGHT button under the map (light button prototype, Timothy
-// 2026-10-27: 3 taps on a stick were too much in a tense moment).
+// 2026-10-27: 3 taps on a stick, the way before, were too much in a tense
+// moment).
 document.getElementById('lightBattery').addEventListener('click', () => switchLight());
 
 // The tutorial's ring has closed ("Die in darkness."): a moment later the
@@ -377,7 +378,7 @@ function moveKey(way, repeat) {
 function syncLookStick() {
   const armed = wantsTurn();
   lookStick.classList.toggle('armed', armed);
-  lookStick.setAttribute('aria-label', t(armed ? 'dpad.stick.turn' : batteryInPlay() ? 'dpad.stick.wait' : 'dpad.stick.wait.plain'));
+  lookStick.setAttribute('aria-label', t(armed ? 'dpad.stick.turn' : 'dpad.stick.wait'));
 }
 
 // Whether the gun can be used right now: gun combat on, the room screen
@@ -2136,10 +2137,8 @@ initLookStick({
     holdLookUp('stick', false);
   },
   wait: skipTurn,
-  light: switchLight,
-  // The first tap says what the stick does (3 taps only in Comfort mode
-  // do nothing, so it says only how to wait there).
-  count: (taps) => { if (taps === 1) showRoomNote('move-msg', t(batteryInPlay() ? 'room.stickTaps' : 'room.stickTaps.plain')); },
+  // A tap that does nothing says what the stick does.
+  tap: () => showRoomNote('move-msg', t('room.stickTap')),
   turn: turnLook,
   wantsTurn,
 });
@@ -2150,8 +2149,7 @@ initWalkStick({
   push: (x, y) => { stickPushed = [x, y]; },
   release: () => { stickPushed = null; },
   lookUp: (on) => holdLookUp('stick', on),
-  light: switchLight,
-  count: (taps) => { if (taps === 1) showRoomNote('move-msg', t(batteryInPlay() ? 'room.walkStickTaps' : 'room.walkStickTaps.plain')); },
+  tap: () => showRoomNote('move-msg', t('room.walkStickTap')),
 });
 
 // The number pad's keys by the way they point (eight ways plan: 7 8 9 /

@@ -600,18 +600,15 @@ export const LOOK_CONE_SLACK = 0.35;
 // The look controls (free look plan step C). The d-pad's centre is a look
 // stick (dpad.js initLookStick): a drag past LOOK_STICK_DRAG_PX sweeps the
 // light (or looks up), its knob following up to LOOK_STICK_KNOB_PX; a tap
-// turns the body when the aim is past the arc. Otherwise (light battery plan step D)
-// LOOK_STICK_LIGHT_TAPS taps, each within LOOK_STICK_TAP_MS of the last,
-// switch the light, and a press held LOOK_STICK_HOLD_MS waits (it was two
-// taps). On the
+// turns the body when the aim is past the arc. A press held
+// LOOK_STICK_HOLD_MS waits (it was two taps). The light has its own
+// button since 2026-10-27 (3 taps on a stick switched it before). On the
 // map (mapview.js onMapPointer), a press that moves past MAP_DRAG_PX is a
 // drag, not a tap. A finger's tap wobbles: at 6 px, a tap on a
 // phone became a small drag that re-aimed the light and never turned.
 export const LOOK_STICK_DRAG_PX = 14;
 export const LOOK_STICK_KNOB_PX = 18;
-export const LOOK_STICK_TAP_MS = 450;
 export const LOOK_STICK_HOLD_MS = 1000;
-export const LOOK_STICK_LIGHT_TAPS = 3;
 export const MAP_DRAG_PX = 8;
 // A tap on the floor this close to the player's own tile (in tiles)
 // doesn't aim: the angle would jump about under it.

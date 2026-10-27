@@ -253,8 +253,8 @@ export function settleName(raw) {
   return [{ type: 'nameGiven', name }, { type: 'whispered', line: 'tut.die', tone: 'dread' }, { type: 'ringClosed' }];
 }
 
-// The light is on in the ring (main.js, after V or 3 taps on the look
-// stick; in Comfort mode, where it is always on, once the kind voice has
+// The light is on in the ring (main.js, after V or the LIGHT button;
+// in Comfort mode, where it is always on, once the kind voice has
 // spoken): the ring breaks, the energy is filled, and the kind voice warns
 // that mistakes bring them (vents and noise plan step D). A slow stick man
 // is already in the grate's duct (vents.js crawlInto, quietly: no line

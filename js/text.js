@@ -363,17 +363,14 @@ export const TEXT = {
   'room.blocked.door': 'The door is locked.', // draft. The tutorial's door before its key
   'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
-  'room.stickTaps': 'Tap 3 times for your light. Hold to wait.', // draft. The look stick's first tap (light battery plan step D)
-  'room.walkStickTaps': 'Tap 3 times for your light. Hold still to look up.', // draft. The round stick's first tap (one stick plan step B)
-  'room.walkStickTaps.plain': 'Hold still to look up.', // draft. The same in Comfort mode
-  'dpad.walkStick': 'Move stick: drag to walk, push a little to creep, hold still to look up, tap 3 times for your light', // draft. The round stick's label (one stick plan step B)
+  'room.stickTap': 'Hold to wait.', // draft. A tap on the look stick that does nothing: what it does
+  'room.walkStickTap': 'Hold still to look up.', // draft. A tap on the round stick: what it does
+  'dpad.walkStick': 'Move stick: drag to walk, push a little to creep, hold still to look up', // draft. The round stick's label (one stick plan step B)
   'room.sneak.on': 'You crouch low and creep.', // draft. X switched sneaking on (one stick plan step B)
   'room.sneak.off': 'You stand and walk.', // draft. X switched it off
   'room.cover': 'In cover. Keep low.', // draft (Timothy 2026-10-26). Crouched beside something solid: quieter, and unseen from its far side
   'room.reach.missed': 'It misses.', // draft. A stick man's reach ended with the player out of reach (one stick plan step C)
-  'room.stickTaps.plain': 'Hold to wait.', // draft. The same in Comfort mode, where there is no light to switch
-  'dpad.stick.wait': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait, tap 3 times for your light', // draft. The d-pad centre's label
-  'dpad.stick.wait.plain': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait', // draft. Its label in Comfort mode
+  'dpad.stick.wait': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait', // draft. The d-pad centre's label
   'dpad.stick.turn': 'Look stick: tap to turn and face your aim', // draft. Its label while the aim is past the arc
   'room.turn': 'You turn.', // draft. Free look: turning the body to look further round costs a turn
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft
