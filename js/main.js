@@ -41,7 +41,7 @@ import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, s
 import { turnWire, chargerLine } from './charger.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
-import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar } from './gunpanels.js';
+import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar, turnAskPage } from './gunpanels.js';
 import { t, TEXT, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, initWalkStick, SCREEN_WAYS, padWay, sweepHold } from './dpad.js';
@@ -540,8 +540,11 @@ function pickReload(offer, category) {
     onResult: result => settle(result.right, result.tier || '2', endMinigame(result)),
     log: text => showRoomNote('', text),
   };
-  showQuestionScreen(askAnswers, 'reload');
-  askQuestion(pickQuestion(state.battle.currentQuestion, category.pool), offer.modifiers, category.pool, category);
+  // The book's page turns from the offers to the question (record book plan step B).
+  turnAskPage(() => {
+    showQuestionScreen(askAnswers, 'reload');
+    askQuestion(pickQuestion(state.battle.currentQuestion, category.pool), offer.modifiers, category.pool, category);
+  });
 }
 
 // A relay was bumped (moves.js relayFound): its question on the ask screen,

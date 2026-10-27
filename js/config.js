@@ -547,10 +547,18 @@ export const LIGHT_BATTERY = true;
 // repo): the ask screen drawn as a book with a dark page and the light tube
 // on its left edge (bookview.js). `paper` is the page the book opens with;
 // DEV -> Book paper cycles `papers` to compare them (Timothy picked dark,
-// 2026-10-27).
+// 2026-10-27). A page turns sideways over the spine (pageturn.js, step B):
+// `turnMs` long (his "moderately"), in `frames` stepped frames like a
+// sprite's, a dog-ear at the bottom-right corner for the first `dogEarShare`
+// of it, the lifted sheet leaning `flapLean` of the turned width toward the
+// spine.
 export const BOOK = {
   paper: 'dark',
   papers: ['dark', 'cold', 'cream'],
+  turnMs: 360,
+  frames: 11,
+  dogEarShare: 0.2,
+  flapLean: 0.55,
 };
 // Shots in the dark (light battery plan step C, gun.js fireDark): the shot
 // goes along the aim, checked every DARK_SHOT_STEP tiles for the first

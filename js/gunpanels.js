@@ -19,6 +19,7 @@ import { mountQuestionPanel } from './questionview.js';
 import { t } from './text.js';
 import { chargerShown, hideCharger } from './chargerview.js';
 import { refreshBook } from './bookview.js';
+import { turnPage } from './pageturn.js';
 
 const els = {};
 let actions = {};
@@ -45,6 +46,7 @@ export function initGunPanels({ pickReload, cancelReload, readyBar, backBar, sto
   els.askTitle = document.getElementById('askTitle');
   els.question = document.getElementById('askQuestionPanel');
   els.questionSlot = document.getElementById('askQuestionSlot');
+  els.page = document.getElementById('bookPage');
   els.aim = document.getElementById('aimPanel');
   els.stage = document.getElementById('dialStage');
   els.canvas = document.getElementById('dialCanvas');
@@ -136,6 +138,13 @@ export function showQuestionScreen(answers, kind) {
   els.askTitle.textContent = t('ask.title.' + kind);
   mountQuestionPanel(els.questionSlot, answers);
   showOnly(els.question);
+}
+
+// Turns the book's page (record book plan step B, pageturn.js) to what
+// `change` puts on the ask screen: a reload's offers turning to its
+// question. `dir` 1 turns forward, -1 back.
+export function turnAskPage(change, dir = 1) {
+  turnPage(els.page, change, dir);
 }
 
 // Opens the dial for the landed shot waiting in state.battle.aim, at

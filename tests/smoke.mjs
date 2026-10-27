@@ -1673,6 +1673,10 @@ async function missReload(page) {
   await page.waitForSelector('#reloadPanel:not([hidden])', { timeout: 5000 });
   await page.keyboard.press('1');
   await page.waitForSelector('#askQuestionPanel:not([hidden])', { timeout: 5000 });
+  // The page turns from the offers to the question (record book plan step
+  // B), then the turn is gone and the question takes answers.
+  if (!await page.evaluate(() => Boolean(document.querySelector('.page-turn')))) throw new Error('the page did not turn from the offers to the question');
+  await page.waitForSelector('.page-turn', { state: 'detached', timeout: 2000 });
   // The ask screen is the record book (record book plan step A): its title
   // on the top strip, and the light tube on the left while the battery is
   // in play (this run switches it off, so the strip hides).

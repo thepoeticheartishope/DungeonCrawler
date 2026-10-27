@@ -696,6 +696,8 @@
     --case-edge: #263133;
     --case-shadow: #0A0F10;
     --strip: #0E1517;
+    --page-back: #263032;
+    --page-back-dark: #1C2426;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -708,7 +710,7 @@
   }
   .book-top { display: flex; justify-content: space-between; gap: 12px; white-space: nowrap; }
   .book-paused { color: var(--muted); }
-  .book-body { flex: 1 1 0; min-height: 0; display: flex; gap: 10px; }
+  .book-body { position: relative; flex: 1 1 0; min-height: 0; display: flex; gap: 10px; }
   .book-strip {
     flex: 0 0 auto;
     width: 64px;
@@ -753,16 +755,38 @@
   .book-page .terminal-body { padding-top: 6px; }
   /* Cold paper and cream (DEV only, to compare): the page is light, so
      the game's own text tokens are turned to ink inside it. */
-  .book[data-paper="cold"] .book-page {
+  .book[data-paper="cold"] {
     --page: #A7B2B4; --page-rule: #95A2A4; --page-margin: #8796B8; --page-edge: #566366; --page-ring: #65727A;
+    --page-back: #7C898C; --page-back-dark: #65727A;
+  }
+  .book[data-paper="cold"] .book-page {
     --text: #101617; --muted: #4E5B5E; --torch: #101617; --torch-bright: #101617; --line: #566366;
     --stone-dark: #A7B2B4; --stone: #A7B2B4; --stone-light: #95A2A4; --ink: #A7B2B4; --glow-rgb: 167, 178, 180;
   }
-  .book[data-paper="cream"] .book-page {
+  .book[data-paper="cream"] {
     --page: #E8D9B5; --page-rule: #D9C79F; --page-margin: #C9A9A0; --page-edge: #8E7556; --page-ring: #A0835F;
+    --page-back: #B89B78; --page-back-dark: #A0835F;
+  }
+  .book[data-paper="cream"] .book-page {
     --text: #3A2E22; --muted: #8A7658; --torch: #3A2E22; --torch-bright: #3A2E22; --line: #8E7556;
     --stone-dark: #E8D9B5; --stone: #E8D9B5; --stone-light: #D9C79F; --ink: #E8D9B5; --glow-rgb: 232, 217, 181;
   }
+  /* A page turning (record book plan step B, js/pageturn.js): over the
+     page, a still copy of the page going away clipped to what is left of
+     it, the back of the sheet lifting (.page-turn-flap, darker by the
+     fold, its free edge lined) and the shadow it casts on the page under
+     it. It catches taps until the turn is over. */
+  .page-turn { position: absolute; z-index: 2; overflow: hidden; }
+  .page-turn-copy { position: absolute; inset: 0; margin: 0; overflow: hidden; }
+  .page-turn-flap {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(to right, var(--page-back) calc(100% - 8px), var(--page-back-dark) 0);
+  }
+  .page-turn-flap.edge { border-left: 2px solid var(--page-edge); box-shadow: -4px 0 0 rgba(0, 0, 0, 0.25); }
+  .page-turn-shadow { position: absolute; top: 0; bottom: 0; width: 0; background: rgba(0, 0, 0, 0.28); }
+
   /* A phone: the strip narrows to the tube alone, so the page keeps its width. */
   @media (max-width: 480px) {
     .book { padding: 4px 6px 8px; }
@@ -2013,7 +2037,7 @@
           <div class="book-light" data-t="book.light"></div>
           <div class="book-readout" id="bookReadout"></div>
         </div>
-        <div class="book-page">
+        <div class="book-page" id="bookPage">
           <div class="terminal-body">
             <div id="reloadPanel" hidden>
               <div class="term-line" id="reloadTitle"></div>
