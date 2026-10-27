@@ -194,7 +194,8 @@ function lookReady() {
     !state.run.turnLocked && !state.run.runEnded;
 }
 
-// Switches the light on or off (battery.js toggleLight; V). No turn, so
+// Switches the light on or off (battery.js toggleLight; V, the LIGHT
+// button, 3 taps on a stick). No turn, so
 // the real-time clock doesn't matter. Locked after running empty, it stays
 // off and says how long until it is full.
 function switchLight() {
@@ -219,6 +220,9 @@ function switchLight() {
   const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }, ...freed, ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
   showRoomNote(note.cls, note.text);
 }
+// The LIGHT button under the map (light button prototype, Timothy
+// 2026-10-27: 3 taps on a stick were too much in a tense moment).
+document.getElementById('lightBattery').addEventListener('click', () => switchLight());
 
 // The tutorial's ring has closed ("Die in darkness."): a moment later the
 // kind voice says the one hint, "Don't let them dim your light." In

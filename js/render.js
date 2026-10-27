@@ -185,8 +185,9 @@ export function renderHud() {
   renderBattery();
 }
 
-// The light's battery at the foot of the map (battery.js): the light tube
-// on its side (tubeart.js, record book plan step E), a cell a turn of
+// The light's battery on the LIGHT button under the map (battery.js; light
+// button prototype): the light tube on its side (tubeart.js, record book
+// plan step E), a cell a turn of
 // charge, then ON / OFF / EMPTY (locked until full). Its label keeps the
 // words the HUD used to show (LIGHT ##-- ON), so a screen reader hears
 // the same. Hidden with the battery out of play (Comfort mode, DEV).

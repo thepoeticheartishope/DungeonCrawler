@@ -340,9 +340,9 @@ export const TEXT = {
   'tut.dimLight': "Don't let them dim your light.", // Timothy's wording. The kind voice, a moment later: the only hint
   'tut.ring.words': 'dark dim die dark dim die', // draft. The words circling the player in the ring (split on spaces)
   'room.blocked.dark': 'The dark holds you here.', // draft. A step while the tutorial's ring is closed
-  'tut.hint.light': 'Your light: V, or tap the middle of the arrows 3 times.', // draft. Room log, only if stuck in the ring
+  'tut.hint.light': 'Your light: V, or the LIGHT button.', // draft. Room log, only if stuck in the ring
   'tut.hint.move.stick': 'Hold to walk. A quick tap only looks.', // draft (one stick plan step G). Stuck in the dark with One stick: the stick or the keys
-  'tut.hint.light.stick': 'Your light: V, or tap the stick 3 times.', // draft (one stick plan step G). Stuck in the ring with One stick
+  'tut.hint.light.stick': 'Your light: V, or the LIGHT button.', // draft (one stick plan step G). Stuck in the ring with One stick
   'tut.reach': 'When it reaches, step away.', // draft (one stick plan step G). The kind voice, the first time the tutorial's stick man reaches for the player with One stick: out of reach, it misses
   'tut.ready': "They'll be listening. Be ready.", // Timothy's wording (vents and noise plan step D: world-driven, not on the nose; it hints that sound brings them). The kind voice, once the ring breaks; then a stick man comes out of the grate
   'tut.breathe': 'Breathe. Then READY.', // draft (kill or maim plan step C). The kind voice, as the tutorial's first shot opens the dial at READY

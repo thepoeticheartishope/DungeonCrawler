@@ -47,7 +47,7 @@
 //   7. Light battery run: the battery reads LIGHT #### ON at the foot of
 //      the map (the HUD tube's label; its canvas shows 4 lit cells, 1
 //      after 3 turns, none empty); V switches it off (only the small circle lit, no turn spent)
-//      and on, and so do 3 taps on the look stick; 4 turns on and it dies, refuses V while charging, and is
+//      and on, and so do 3 taps on the look stick and the LIGHT button; 4 turns on and it dies, refuses V while charging, and is
 //      charged again after 4 turns off; a few turns on the first depth with
 //      the stick men noticing the light, a shot into the dark (its bar
 //      says DARK SHOT), and a stick man alone in the light for 3 s steps
@@ -1036,7 +1036,12 @@ async function checkLightBattery(page, url) {
     if (await batteryShown(page) !== 'LIGHT #### ' + want) return `3 taps on the stick left ${await batteryShown(page)}`;
     await page.waitForTimeout(500);
   }
-  if (await turnsShown(page) !== turns) return 'tapping the stick spent a turn';
+  // The LIGHT button under the map switches it too (light button prototype).
+  for (const want of ['OFF', 'ON']) {
+    await page.click('#lightBattery');
+    if (await batteryShown(page) !== 'LIGHT #### ' + want) return `the LIGHT button left ${await batteryShown(page)}`;
+  }
+  if (await turnsShown(page) !== turns) return 'tapping the stick or the LIGHT button spent a turn';
 
   await wait(3);
   if (await batteryShown(page) !== 'LIGHT #--- ON') return `3 turns on left ${await batteryShown(page)}`;
