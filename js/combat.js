@@ -9,7 +9,7 @@ import { tickLight, drainLight, batteryInPlay, lightOn } from './battery.js';
 import { minionStrike, struggleDial } from './gun.js';
 import { keptOut } from './relays.js';
 import { canPassCorner } from './passage.js';
-import { computeVisibility, clearLine, seesEnemy, FACING_VECTORS } from './sight.js';
+import { computeVisibility, clearLine, seesEnemy, hiddenFrom, FACING_VECTORS } from './sight.js';
 import { waysInUse } from './look.js';
 import { ductStep, crawlInto, crawlTurn } from './vents.js';
 
@@ -324,7 +324,9 @@ function inView(m) {
 }
 function notice(m) {
   m.drawn = false;
-  if (inView(m)) {
+  // Crouched behind cover from it (Timothy 2026-10-26), the player and
+  // their light go unnoticed.
+  if (inView(m) && !hiddenFrom(m.row, m.col)) {
     m.drawn = lightOn();
     lockOn(m);
     return true;
@@ -465,7 +467,7 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
   const sheltered = keptOut(m).has(key(state.floor.playerRow, state.floor.playerCol));
   const path = sheltered ? null : bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blockedTilesFor(m));
   // In the darkness after the boss falls, every minion hunts, from anywhere.
-  const noticed = noticing ? seen : path && path.length - 1 <= MINION_CHASE_RANGE;
+  const noticed = noticing ? seen : path && path.length - 1 <= MINION_CHASE_RANGE && !hiddenFrom(m.row, m.col);
   // The tutorial's stick man (m.hunts) always comes for the player.
   const chasing = path && (state.floor.darkness || noticed || m.hunts);
   // Out of view but tracking: to where it last saw them (or heard a

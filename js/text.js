@@ -369,6 +369,7 @@ export const TEXT = {
   'dpad.walkStick': 'Move stick: drag to walk, push a little to creep, hold still to look up, tap 3 times for your light', // draft. The round stick's label (one stick plan step B)
   'room.sneak.on': 'You crouch low and creep.', // draft. X switched sneaking on (one stick plan step B)
   'room.sneak.off': 'You stand and walk.', // draft. X switched it off
+  'room.cover': 'In cover. Keep low.', // draft (Timothy 2026-10-26). Crouched beside something solid: quieter, and unseen from its far side
   'room.reach.missed': 'It misses.', // draft. A stick man's reach ended with the player out of reach (one stick plan step C)
   'room.stickTaps.plain': 'Hold to wait.', // draft. The same in Comfort mode, where there is no light to switch
   'dpad.stick.wait': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait, tap 3 times for your light', // draft. The d-pad centre's label
@@ -438,7 +439,8 @@ export const TEXT = {
   'room.charger.left': 'You step back from the {@term.charger}.', // draft. LEAVE or Escape
   'room.charger.found': 'It found you. CHARGE.SYS closed.', // draft. A stick man reached the player while it was open
   'room.charger.done': 'The {@term.charger} hums. Energy full.', // draft
-  'room.charger.full': 'The {@term.charger} has nothing to give. Your energy is full.', // draft. Bumped at full energy: nothing opens
+  'room.charger.doneLight': 'The {@term.charger} hums. Energy and light full.', // draft. The same when it filled the light's battery too (Timothy 2026-10-26)
+  'room.charger.full': 'The {@term.charger} has nothing to give. Your energy and light are full.', // draft. Bumped with both full: nothing opens
   'charger.title': 'CHARGE.SYS', // draft
   'charger.hint': 'Turn the wires so power reaches the cell.', // draft
   'charger.charged': 'Charged. Energy full.', // draft

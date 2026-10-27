@@ -10,6 +10,7 @@
 import { state } from './state.js';
 import { whatBlocks } from './passage.js';
 import { swingLook } from './look.js';
+import { besideCover } from './sight.js';
 import { enterTile, bumpInto } from './moves.js';
 import { ONE_STICK } from './config.js';
 
@@ -20,6 +21,8 @@ import { ONE_STICK } from './config.js';
 let bumpedAt = null;
 let bumpWait = 0;
 let pushedMs = 0;
+// Whether the player was crouched in cover last frame (coverChanged).
+let inCover = false;
 
 // The player's free spot. It is the centre of their tile whenever it isn't
 // on that tile (a new floor, or a rule that moved them, such as a step on
@@ -85,9 +88,12 @@ function slide(spot, axis, delta) {
 // push below `creep`, diagonals as fast as straight lines. A push that
 // gets less than ONE_STICK.bumpProgress of its way bumps what stopped it
 // (moves.js bumpInto) once, then again every bumpRepeatMs while it goes
-// on; letting go (no push) ends it. Events: swingLook's, enterTile's
+// on; letting go (no push) ends it. A creep stays crouched once let go
+// (`creeping`), until the player walks at full pace, so they can hide in
+// cover from the stick too. Events: swingLook's, enterTile's
 // (stepped { free: true } and what the tile holds) and bumpInto's, or
-// heldFast { minion } while a downed one holds the ankle.
+// heldFast { minion } while a downed one holds the ankle; then
+// coverTaken (coverChanged).
 export function walkFree(dirX, dirY, { push = 1, dtMs = 0, keys = false, still = false } = {}) {
   const f = state.floor;
   const ms = Math.min(dtMs, ONE_STICK.frameMs);
@@ -101,8 +107,7 @@ export function walkFree(dirX, dirY, { push = 1, dtMs = 0, keys = false, still =
     bumpWait = 0;
   }
   const events = swingLook(ms, still);
-  f.creeping = false;
-  if (!len || (keys && pushedMs <= ONE_STICK.tapMs) || push < ONE_STICK.deadZone) return events;
+  if (!len || (keys && pushedMs <= ONE_STICK.tapMs) || push < ONE_STICK.deadZone) return [...events, ...coverChanged()];
   const spot = freeSpot();
   bumpWait = Math.max(0, bumpWait - ms);
   f.creeping = f.sneaking || push < ONE_STICK.creep;
@@ -123,13 +128,25 @@ export function walkFree(dirX, dirY, { push = 1, dtMs = 0, keys = false, still =
   const hit = Math.abs(ux) >= Math.abs(uy) ? hitX || hitY : hitY || hitX;
   const stuck = Math.hypot(spot.x - x0, spot.y - y0) < reach * ONE_STICK.bumpProgress;
   if (hit && stuck) events.push(...bump(hit));
-  return events;
+  return [...events, ...coverChanged()];
+}
+
+// Says when the player has just crouched in cover (sight.js besideCover:
+// quieter, and hidden from stick men on its far side), once each time.
+// Event: coverTaken.
+function coverChanged() {
+  const now = besideCover();
+  if (now === inCover) return [];
+  inCover = now;
+  return now ? [{ type: 'coverTaken' }] : [];
 }
 
 // Switches sneaking on or off (X): the player creeps, slow and crouched,
 // until it is switched off. Event: sneakSwitched { on }.
 export function switchSneak() {
   state.floor.sneaking = !state.floor.sneaking;
+  // Switched off, a crouch left from creeping goes too: they stand.
+  if (!state.floor.sneaking) state.floor.creeping = false;
   return [{ type: 'sneakSwitched', on: state.floor.sneaking }];
 }
 
@@ -149,4 +166,5 @@ export function resetWalk() {
   bumpedAt = null;
   bumpWait = 0;
   pushedMs = 0;
+  inCover = false;
 }

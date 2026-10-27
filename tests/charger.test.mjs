@@ -7,7 +7,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
-import { CHARGER, ENERGY_MAX } from '../js/config.js';
+import { CHARGER, ENERGY_MAX, LIGHT_BATTERY_MAX } from '../js/config.js';
+import { freshLight } from '../js/battery.js';
 import { makeWires, powered, rotated, solveWires, wireSize, placeCharger, useCharger, turnWire, chargerLine, N, E, S, W } from '../js/charger.js';
 
 // A small seeded random, so a failing case can be run again.
@@ -20,6 +21,9 @@ function seeded(seed) {
 
 // Energy as given, plain rounds, and a fresh charger.
 function resetRun(energy, depth = 0) {
+  state.settings.lightBattery = true;
+  state.settings.simpleEnemies = false;
+  state.floor.light = freshLight();
   state.run.energy = energy;
   state.run.rounds = Array(energy).fill(null);
   state.run.roomIndex = depth;
@@ -100,7 +104,7 @@ test('joining power to the cell fills energy with plain rounds and clears the wi
   const turns = solveWires(charger.puzzle);
   let events = [];
   turns.forEach(i => { events = turnWire(charger, i); });
-  assert.deepEqual(events.at(-1), { type: 'charged', gained: ENERGY_MAX - 1 });
+  assert.deepEqual(events.at(-1), { type: 'charged', gained: ENERGY_MAX - 1, light: false });
   assert.equal(state.run.energy, ENERGY_MAX);
   assert.deepEqual(state.run.rounds, ['Ports', ...Array(ENERGY_MAX - 1).fill(null)]);
   assert.equal(charger.puzzle, null);
@@ -146,4 +150,17 @@ test('the kind voice speaks once a run, when a charger is first made out', () =>
   // A new floor's charger in the same run: no second line.
   state.floor.props = [{ ...charger }];
   assert.deepEqual(chargerLine(), []);
+});
+
+test("a charge fills the light's battery too, and a low battery alone opens it", () => {
+  const charger = resetRun(ENERGY_MAX);
+  assert.deepEqual(useCharger(charger, seeded(5)), [{ type: 'chargerFull' }], 'energy and light full: nothing to give');
+  state.floor.light = { on: false, charge: 1, locked: true };
+  const opened = useCharger(charger, seeded(5));
+  assert.equal(opened[0].type, 'chargerOpened', 'a low battery is something to give');
+  let events = [];
+  solveWires(charger.puzzle).forEach(i => { events = turnWire(charger, i); });
+  assert.deepEqual(events.at(-1), { type: 'charged', gained: 0, light: true });
+  assert.equal(state.floor.light.charge, LIGHT_BATTERY_MAX);
+  assert.equal(state.floor.light.locked, false);
 });

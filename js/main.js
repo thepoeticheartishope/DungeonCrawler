@@ -1454,7 +1454,7 @@ function drawEvents(events) {
         parts.push(t(e.kept ? 'room.charger.kept' : 'room.charger.loose'));
         break;
       case 'charged':
-        parts.push(t('room.charger.done'));
+        parts.push(t(e.light ? 'room.charger.doneLight' : 'room.charger.done'));
         break;
       case 'chargerBroken':
         parts.push(t('room.charger.found'));
@@ -1531,6 +1531,9 @@ function drawEvents(events) {
       // only a miss is said.
       case 'reachStarted':
       case 'reachBroken':
+        break;
+      case 'coverTaken':
+        parts.push(t('room.cover'));
         break;
       case 'reachMissed':
         parts.push(t('room.reach.missed'));
