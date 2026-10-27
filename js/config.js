@@ -1234,11 +1234,21 @@ export const REALTIME_WALK_MS = 250;
 // `bumpRepeatMs`: pushing on into the same thing bumps it again this
 // often. `frameMs`: the most one frame may move the player (a slow tab
 // never jumps them through anything).
+// Step B: `turnRate`: radians a second the light and body swing round
+// toward where the player goes (they hold when they stop). `tapMs`: a move
+// key let go sooner than this only turns them, no step. `deadZone`: a push
+// on the round stick under this share of its reach only turns them.
+// `lookUpMs`: the round stick held still in its middle this long looks up
+// at the sky while held (open call 6; U and Space do it too).
 export const ONE_STICK = {
   on: false,
   walkMs: 450,
   sneakMs: 950,
   creep: 0.6,
+  turnRate: 7,
+  tapMs: 130,
+  deadZone: 0.15,
+  lookUpMs: 500,
   body: 0.28,
   bumpProgress: 0.3,
   bumpRepeatMs: 400,

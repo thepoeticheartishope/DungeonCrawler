@@ -155,6 +155,9 @@ export function buildFloor() {
   state.floor.playerRow = state.floor.PLAYER_START.row;
   state.floor.playerCol = state.floor.PLAYER_START.col;
   state.floor.playerAt = null;
+  state.floor.lookWant = null;
+  state.floor.sneaking = false;
+  state.floor.creeping = false;
   state.floor.facing = 'N';
   state.floor.look = BODY_ANGLES.N;
 
@@ -390,6 +393,9 @@ export function buildRestFloor(kind) {
   f.playerRow = f.PLAYER_START.row;
   f.playerCol = f.PLAYER_START.col;
   f.playerAt = null;
+  f.lookWant = null;
+  f.sneaking = false;
+  f.creeping = false;
   f.facing = facingToward(layout.start, layout.stairs);
   f.look = BODY_ANGLES[f.facing];
 
@@ -450,6 +456,9 @@ export function buildTutorialFloor() {
   f.playerRow = f.PLAYER_START.row;
   f.playerCol = f.PLAYER_START.col;
   f.playerAt = null;
+  f.lookWant = null;
+  f.sneaking = false;
+  f.creeping = false;
   f.facing = facingToward(room.start, room.door);
   f.look = BODY_ANGLES[f.facing];
 
