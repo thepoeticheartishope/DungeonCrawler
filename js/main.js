@@ -132,6 +132,8 @@ initRender({
   gunTargetStat: document.getElementById('gunTargetStat'),
   energyCount: document.getElementById('energyCount'),
   lightBattery: document.getElementById('lightBattery'),
+  hudTube: document.getElementById('hudTube'),
+  hudTubeWord: document.getElementById('hudTubeWord'),
   gunTarget: document.getElementById('gunTarget'),
   clockStat: document.getElementById('clockStat'),
   keysStat: document.getElementById('keysStat'),

@@ -7,7 +7,8 @@
 // of each one threading them through as parameters.
 
 import { state, key } from './state.js';
-import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS } from './config.js';
+import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, BOOK } from './config.js';
+import { drawTube, TUBE_W, TUBE_H } from './tubeart.js';
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
 import { whatBlocks, canPassCorner } from './passage.js';
@@ -184,9 +185,11 @@ export function renderHud() {
   renderBattery();
 }
 
-// The light's battery at the foot of the map (battery.js): # a turn of
-// charge, - spent, like the energy cells, then ON / OFF / EMPTY (locked
-// until full). Hidden with the battery out of play (Comfort mode, DEV).
+// The light's battery at the foot of the map (battery.js): the light tube
+// on its side (tubeart.js, record book plan step E), a cell a turn of
+// charge, then ON / OFF / EMPTY (locked until full). Its label keeps the
+// words the HUD used to show (LIGHT ##-- ON), so a screen reader hears
+// the same. Hidden with the battery out of play (Comfort mode, DEV).
 function renderBattery() {
   const inPlay = batteryInPlay();
   els.lightBattery.hidden = !inPlay;
@@ -196,8 +199,30 @@ function renderBattery() {
   const left = Math.ceil(light.charge);
   const cells = '#'.repeat(left) + '-'.repeat(Math.max(LIGHT_BATTERY_MAX - left, 0));
   const word = light.on ? 'on' : light.locked ? 'empty' : 'off';
-  els.lightBattery.textContent = t('stat.battery', { cells, state: t('stat.battery.' + word) });
+  els.lightBattery.setAttribute('aria-label', t('stat.battery', { cells, state: t('stat.battery.' + word) }));
+  els.hudTubeWord.textContent = t('stat.battery.' + word);
   els.lightBattery.classList.toggle('battery-off', !light.on);
+  if (light.on && !tubeWasOn) tubeWarmFrom = reducedMotion.matches ? null : performance.now();
+  tubeWasOn = light.on;
+  drawHudTube();
+}
+
+// The HUD tube's switch-on: when it started (null = done), and whether
+// the light was on at the last draw. View-only timing, so module vars.
+let tubeWarmFrom = null;
+let tubeWasOn = true;
+
+// Draws the HUD tube from the light now. While it warms after a
+// switch-on, the cells and glow come up over BOOK.tubeWarmMs, one frame
+// at a time; reduced motion lights it at once.
+function drawHudTube() {
+  const canvas = els.hudTube;
+  if (canvas.width !== TUBE_H) { canvas.width = TUBE_H; canvas.height = TUBE_W; }
+  const light = state.floor.light;
+  const warm = tubeWarmFrom === null ? 1 : Math.min(1, (performance.now() - tubeWarmFrom) / BOOK.tubeWarmMs);
+  drawTube(canvas.getContext('2d'), { charge: light.charge, max: LIGHT_BATTERY_MAX, lit: light.on, bright: warm, upright: false });
+  if (warm >= 1) { tubeWarmFrom = null; return; }
+  requestAnimationFrame(() => { if (light.on && tubeWarmFrom !== null) drawHudTube(); });
 }
 
 // The floor's goals (goals.js), each with a mark: [x] kept if the player
