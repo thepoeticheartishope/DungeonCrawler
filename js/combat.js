@@ -622,14 +622,16 @@ export function reachPlayer(m, { canStruggle = true } = {}) {
 // way it would chase them. A step onto the player is reaching them
 // (reachPlayer). It goes nowhere with no way through, from outside a room
 // a relay holds the player in, or while it already holds their ankle.
-// Events: minionMoved { minion, from }, reachPlayer's, or none.
+// Events: minionMoved { minion, from }, reachPlayer's (with One stick
+// reachStarted { minion } instead), or none.
 export function lungeAt(m) {
   const player = { row: state.floor.playerRow, col: state.floor.playerCol };
   if (m.grabbing || keptOut(m).has(key(player.row, player.col))) return [];
   const path = bfsPath({ row: m.row, col: m.col }, player, blockedTilesFor(m));
   if (!path || path.length < 2) return [];
   const next = path[1];
-  if (next.row === player.row && next.col === player.col) return reachPlayer(m);
+  // One stick: even a lunge reaches first, so no strike comes from nowhere.
+  if (next.row === player.row && next.col === player.col) return state.settings.oneStick ? startReach(m) : reachPlayer(m);
   const from = { row: m.row, col: m.col };
   m.row = next.row;
   m.col = next.col;

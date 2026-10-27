@@ -142,6 +142,10 @@ export function pickTarget(tile) {
   }
   aimLook(angleTo(target.row, target.col));
   const reason = shootBlock(target);
+  // One stick (one stick plan step E): the light swings round to it
+  // (look.js swingLook), and the target follows the light as it comes
+  // (refreshGunTarget), so outside the cone for now says nothing.
+  if (reason === 'notInLight' && state.settings.oneStick) return [];
   if (reason) {
     refreshGunTarget();
     return [{ type: 'targetBlocked', target, reason: reason === 'notInLight' && wantsTurn() ? 'needsTurn' : reason }];
@@ -405,7 +409,8 @@ export function cancelShot() {
 // minion one step away can't walk straight in.
 // Events: shotMissed { minion }; shotJammed { minion, energyLost },
 // shotLoud { minion } and its noise (noise.js makeNoise), or shotLunged
-// { minion } and lungeAt's; or minionHit { minion, tier, matched } then
+// { minion } and lungeAt's; or minionHit { minion, tier, matched } (with
+// One stick, reachBroken { minion } if it was reaching) then
 // guardBroken { minion, stun }, minionReels { minion }, minionDowned
 // { minion }, or the kill's (minionFinished for a downed one, then
 // minionKilled, goldGained). A shot in the dark (aim.dark) with nothing
@@ -427,6 +432,11 @@ export function settleShot(position) {
   m.rest = Math.max(m.rest || 0, MINION_STUN_MOVES);
   if (aim.dark) lockOn(m);
   const events = [{ type: 'minionHit', minion: m, tier: zone.tier, matched: aim.matched, ...dark }];
+  // One stick (one stick plan step E): a landed shot stops a reach.
+  if (m.reaching) {
+    m.reaching = null;
+    events.push({ type: 'reachBroken', minion: m });
+  }
   if (m.guard) {
     const stun = GUARD_STUN_MOVES[zone.tier];
     m.guard = false;
@@ -588,5 +598,6 @@ function pushBack(m, tiles) {
 // Events: hunterStaggered { hunter }.
 export function staggerHunter(hunter) {
   hunter.rest = HUNTER_REST_TURNS;
+  hunter.reaching = null;
   return [{ type: 'hunterStaggered', hunter }];
 }

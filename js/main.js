@@ -1522,6 +1522,7 @@ function drawEvents(events) {
       // One stick: the stick man's reach is its tell (it stands, near);
       // only a miss is said.
       case 'reachStarted':
+      case 'reachBroken':
         break;
       case 'reachMissed':
         parts.push(t('room.reach.missed'));
