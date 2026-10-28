@@ -9,12 +9,11 @@
 // crawlTurn). No DOM access here.
 
 import { state, key } from './state.js';
+import { EIGHT_STEPS } from './grid.js';
 import { VENT_PAIRS, VENT_MIN_APART, VENT_TURNS, VENT_RATTLE_HEARD, MINION_KINDS } from './config.js';
-import { shuffle } from './quiz.js';
+import { shuffle } from './random.js';
 import { neighbors, blockedTilesFor, tileOccupied } from './combat.js';
 import { keptOut } from './relays.js';
-
-const STEPS = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
 
 // The floor's grates: one spot in each room that may have one (never the
 // start room, so the desk's room stays safe, nor the core), then rooms
@@ -60,7 +59,7 @@ function walkingSteps(from, walls) {
   while (queue.length) {
     const cur = queue.shift();
     const d = dist.get(key(cur.row, cur.col));
-    for (const [dr, dc] of STEPS) {
+    for (const [dr, dc] of EIGHT_STEPS) {
       const row = cur.row + dr, col = cur.col + dc, k = key(row, col);
       if (dist.has(k) || walls.has(k)) continue;
       if (dr && dc && (walls.has(key(cur.row + dr, cur.col)) || walls.has(key(cur.row, cur.col + dc)))) continue;

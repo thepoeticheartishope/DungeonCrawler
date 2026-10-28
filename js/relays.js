@@ -9,7 +9,7 @@
 
 import { state, key } from './state.js';
 import { RELAYS_PER_FLOOR, RELAY_TURNS_BACK, RELAY_TURNS_CAP, RELAY_WRONG_TURNS } from './config.js';
-import { shuffle } from './quiz.js';
+import { shuffle } from './random.js';
 import { updateBossLit, lightTurnsFor } from './light.js';
 import { recordHauntAnswer } from './haunts.js';
 import { makeNoise } from './noise.js';

@@ -13,11 +13,8 @@ import {
 } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
 import { resetHaunts, pickHaunt } from './haunts.js';
-import {
-  shuffle, pickQuestion, escapeHtml,
-  normalizeSpaces,
-  buildCategoryChoices, buildChoices
-} from './quiz.js';
+import { pickQuestion, escapeHtml, normalizeSpaces, buildCategoryChoices, buildChoices } from './quiz.js';
+import { shuffle } from './random.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
   formatTime, startTimer, stopTimer, renderClock, showSensed, showWhisper,

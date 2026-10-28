@@ -24,7 +24,8 @@ import {
   SUM_LOCK_MAX_ADDEND,
   LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS,
 } from './config.js';
-import { numberQuestion, pickQuestion, shuffle, normalizeSpaces } from './quiz.js';
+import { numberQuestion, pickQuestion, normalizeSpaces } from './quiz.js';
+import { shuffle } from './random.js';
 import { recordHauntAnswer } from './haunts.js';
 
 // The modifiers each minigame supports (the plan's compatibility table).

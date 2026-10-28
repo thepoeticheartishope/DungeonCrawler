@@ -6,6 +6,7 @@
 // it's full.
 
 import { state, key } from './state.js';
+import { FOUR_STEPS } from './grid.js';
 import { LIGHT_TURNS_PER_STEP, ONE_STICK, REALTIME_STEP_MS } from './config.js';
 import { floorRecipe } from './floors.js';
 
@@ -16,7 +17,7 @@ function stepsFrom(row, col) {
   while (queue.length) {
     const cur = queue.shift();
     const d = dist.get(key(cur.row, cur.col));
-    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    for (const [dr, dc] of FOUR_STEPS) {
       const nr = cur.row + dr, nc = cur.col + dc;
       if (nr < 0 || nr >= state.floor.GRID_SIZE || nc < 0 || nc >= state.floor.GRID_SIZE) continue;
       const k = key(nr, nc);

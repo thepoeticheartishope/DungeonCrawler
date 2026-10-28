@@ -24,6 +24,7 @@
 // No DOM access here — dungeon.js places these on the grid.
 
 import { ROOM_INNER_WALLS } from './config.js';
+import { FOUR_STEPS } from './grid.js';
 
 export const ROOM_TEMPLATES = [
   { rows: [
@@ -126,7 +127,7 @@ function openInnerWalls(rows) {
   }
   while (queue.length) {
     const [cr, cc] = queue.shift();
-    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    for (const [dr, dc] of FOUR_STEPS) {
       const nr = cr + dr, nc = cc + dc;
       if (nr < 0 || nr >= h || nc < 0 || nc >= w) continue;
       if (rows[nr][nc] !== '#' || kept.has(nr + ',' + nc)) continue;
@@ -198,7 +199,7 @@ export function parseTemplate(rows) {
       while (queue.length) {
         const [cr, cc] = queue.shift();
         patch.push([cr, cc]);
-        for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        for (const [dr, dc] of FOUR_STEPS) {
           const nr = cr + dr, nc = cc + dc;
           if (nr < 0 || nr >= h || nc < 0 || nc >= w) continue;
           if (!isFloorChar(rows[nr][nc]) || seen.has(nr + ',' + nc)) continue;

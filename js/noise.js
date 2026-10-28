@@ -9,12 +9,11 @@
 // No DOM access here.
 
 import { state, key } from './state.js';
+import { EIGHT_STEPS } from './grid.js';
 import { NOISE_RANGES, COVER } from './config.js';
 import { besideCover } from './sight.js';
 import { ventIndexAt, ductOpen } from './vents.js';
 import { hearNoise } from './combat.js';
-
-const STEPS = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
 
 // Where a sound made at `origin` reaches within `range` walking steps:
 // 8 ways, never cutting a wall's corner (the way stick men walk), so it
@@ -45,7 +44,7 @@ export function spreadSound(origin, range) {
     const frontier = next;
     next = [];
     for (const t of frontier) {
-      for (const [dr, dc] of STEPS) {
+      for (const [dr, dc] of EIGHT_STEPS) {
         const row = t.row + dr, col = t.col + dc;
         if (walled(row, col)) continue;
         if (dr && dc && (walled(t.row + dr, t.col) || walled(t.row, t.col + dc))) continue;

@@ -3,7 +3,8 @@
 // '?', and whether a thing can be shot (canShoot / aimChance). Rules only — no DOM access here; mapview.js draws from what this
 // writes.
 
-import { state, key } from './state.js';
+import { state, key, parseKey } from './state.js';
+import { FOUR_STEPS } from './grid.js';
 import { windowLightHere } from './windows.js';
 import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, LOOK_CONE_HALF, LOOK_CONE_SLACK, LAMP_LIGHT, STEADY_AIM,
@@ -80,7 +81,7 @@ export function computeVisibility() {
   while (queue.length) {
     const cur = queue.shift();
     if (cur.dist >= reach) continue;
-    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    for (const [dr, dc] of FOUR_STEPS) {
       const nr = cur.row + dr, nc = cur.col + dc;
       if (nr < 0 || nr >= state.floor.GRID_SIZE || nc < 0 || nc >= state.floor.GRID_SIZE) continue;
       const nk = key(nr, nc);
@@ -202,7 +203,7 @@ function lampPoolsSeen() {
   const f = state.floor;
   if (!f.lampPoolSet.size || !lampsOn()) return [];
   return [...f.lampPoolSet].filter(k => {
-    const [row, col] = k.split(',').map(Number);
+    const { row, col } = parseKey(k);
     return tilesAway(row, col) <= LAMP_LIGHT.seeFrom && clearLineTo(row, col);
   });
 }

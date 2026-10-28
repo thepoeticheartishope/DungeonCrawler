@@ -42,7 +42,8 @@
 // the tests.
 // Reads state and never changes it.
 
-import { state, key } from './state.js';
+import { state, key, parseKey } from './state.js';
+import { FOUR_STEPS } from './grid.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
   ISO_NARROW_MAP_WIDTH, PLAYER_EMBER, FIGURE3D, MAP_ANIMATION_MS, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING,
@@ -313,7 +314,7 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   const r0 = Math.floor(oy / T) - 1, r1 = Math.ceil((oy + viewH) / T) + 2;
   const inView = (row, col) => row >= r0 && row <= r1 && col >= c0 && col <= c1;
   f.pillarSet.forEach(k => {
-    const [row, col] = tileOf(k);
+    const { row, col } = parseKey(k);
     if (inView(row, col)) items.push({ y: row + 1, row, col, draw: () => drawPillar(row, col, ox, oy) });
   });
   const glows = [];
@@ -418,11 +419,6 @@ export function roomGridAt(px, py) {
 
 // ---- the floor's still picture ----
 
-// The row and column of a tile key (state.js key).
-function tileOf(k) {
-  return k.split(',').map(Number);
-}
-
 function isWall(row, col) {
   const f = state.floor;
   return row < 0 || col < 0 || row >= f.GRID_SIZE || col >= f.GRID_SIZE || f.wallSet.has(key(row, col));
@@ -437,7 +433,7 @@ function buildFloor(f) {
   ctx.fillRect(0, 0, world.width, world.height);
   const rooms = new Map();
   f.chamberAt.forEach((i, k) => {
-    const [row, col] = tileOf(k);
+    const { row, col } = parseKey(k);
     const r = rooms.get(i) || { r0: row, r1: row, c0: col, c1: col };
     rooms.set(i, { r0: Math.min(r.r0, row), r1: Math.max(r.r1, row), c0: Math.min(r.c0, col), c1: Math.max(r.c1, col) });
   });
@@ -633,7 +629,7 @@ function spaceOf(row, col) {
   let edge = [[row, col]];
   for (let step = 0; step < ROOM_VIEW.hallReach; step++) {
     const next = [];
-    edge.forEach(([r, c]) => [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dr, dc]) => {
+    edge.forEach(([r, c]) => FOUR_STEPS.forEach(([dr, dc]) => {
       const k = key(r + dr, c + dc);
       if (isWall(r + dr, c + dc) || tiles.has(k) || f.chamberAt.has(k)) return;
       tiles.add(k);
@@ -684,7 +680,7 @@ function drawShadows(ox, oy, inView) {
   gctx.save();
   gctx.beginPath();
   f.visibleSet.forEach(k => {
-    const [row, col] = tileOf(k);
+    const { row, col } = parseKey(k);
     if (inView(row, col) && !isWall(row, col)) gctx.rect(col * T - ox, row * T - oy, T, T);
   });
   gctx.clip();
@@ -1358,9 +1354,9 @@ function drawSwitch(thing, x, y, glows) {
 // Where the safe room's lamp hangs, in picture pixels: over the middle of
 // the room's floor (cx, cy), and how big the room is (`size`, tiles).
 function lampSpot(ox, oy) {
-  const cells = [...state.floor.safeRoom.cells].map(tileOf);
-  const r0 = Math.min(...cells.map(([r]) => r)), r1 = Math.max(...cells.map(([r]) => r));
-  const c0 = Math.min(...cells.map(([, c]) => c)), c1 = Math.max(...cells.map(([, c]) => c));
+  const cells = [...state.floor.safeRoom.cells].map(parseKey);
+  const r0 = Math.min(...cells.map(p => p.row)), r1 = Math.max(...cells.map(p => p.row));
+  const c0 = Math.min(...cells.map(p => p.col)), c1 = Math.max(...cells.map(p => p.col));
   return { cx: Math.round(((c0 + c1 + 1) / 2) * T - ox), cy: Math.round(((r0 + r1 + 1) / 2) * T - oy), size: Math.max(r1 - r0 + 1, c1 - c0 + 1) };
 }
 

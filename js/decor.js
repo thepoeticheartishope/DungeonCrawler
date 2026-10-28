@@ -9,31 +9,13 @@
 // the stairs. Papers are placed on the same rules (so they stay out of
 // doorways and off each other), though in play anyone walks over them.
 
-import { state, key } from './state.js';
+import { state, key, parseKey } from './state.js';
+import { shuffle, randInt } from './random.js';
+import { FOUR_STEPS } from './grid.js';
 import {
   ROOM_THEMES, PILLARS_PER_ROOM, ROOM_PILLARS, ENERGY_CELL_ROOM_CHANCE, ENERGY_CELLS_MIN, PAPER_LORE_CHANCE, PAPERS_PER_ROOM, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD,
 } from './config.js';
 import { startRoom } from './desk.js';
-
-const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-
-function randInt(lo, hi) {
-  return lo + Math.floor(Math.random() * (hi - lo + 1));
-}
-
-function shuffle(list) {
-  const a = list.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function parseKey(k) {
-  const [row, col] = k.split(',').map(Number);
-  return { row, col };
-}
 
 // Picks a key from { name: weight } tables like BOX_LOOT.
 function weighted(table) {
@@ -72,7 +54,7 @@ export function makePlacer(layout, gridSize) {
   layout.chambers.forEach(ch => ch.doorKeys.forEach(k => {
     reserved.add(k);
     const { row, col } = parseKey(k);
-    DIRS.forEach(([dr, dc]) => reserved.add(key(row + dr, col + dc)));
+    FOUR_STEPS.forEach(([dr, dc]) => reserved.add(key(row + dr, col + dc)));
   }));
   // Every key spot on a fixed plan, not only this run's, so its furniture
   // stands the same every run.
@@ -89,7 +71,7 @@ export function makePlacer(layout, gridSize) {
     const queue = [layout.start];
     while (queue.length) {
       const cur = queue.shift();
-      for (const [dr, dc] of DIRS) {
+      for (const [dr, dc] of FOUR_STEPS) {
         const nk = key(cur.row + dr, cur.col + dc);
         if (!floor.has(nk) || blocked.has(nk) || seen.has(nk)) continue;
         seen.add(nk);
@@ -99,7 +81,7 @@ export function makePlacer(layout, gridSize) {
     if (seen.size !== floor.size - blocked.size) return false;
     for (const k of examinable) {
       const { row, col } = parseKey(k);
-      if (!DIRS.some(([dr, dc]) => seen.has(key(row + dr, col + dc)))) return false;
+      if (!FOUR_STEPS.some(([dr, dc]) => seen.has(key(row + dr, col + dc)))) return false;
     }
     return true;
   }
@@ -138,7 +120,7 @@ export function makePlacer(layout, gridSize) {
 }
 
 function hasWallNeighbour(p, walls) {
-  return DIRS.some(([dr, dc]) => walls.has(key(p.row + dr, p.col + dc)));
+  return FOUR_STEPS.some(([dr, dc]) => walls.has(key(p.row + dr, p.col + dc)));
 }
 
 // Free-standing floor: nothing but floor on all eight sides. Also used by

@@ -36,6 +36,7 @@
 // No DOM access here.
 
 import { key } from './state.js';
+import { FOUR_STEPS } from './grid.js';
 
 export const FLOOR_PLANS = {
   school: {
@@ -216,8 +217,6 @@ export const FLOOR_PLANS = {
 
 export const PLAN_VERSIONS = ['A', 'B'];
 
-const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-
 // Takes `count` random items from `list`, never the same one twice.
 function pickSome(list, count) {
   const pool = list.slice();
@@ -285,7 +284,7 @@ export function buildPlanLayout(plan, keyCount, version = null) {
     return { floorCells, doorKeys: new Set(), slots: [], name: room.name, isBoss: !!room.core, furniture: room.furniture || [] };
   });
   chambers.forEach((ch, i) => {
-    ch.floorCells.slice().forEach(p => DIRS.forEach(([dr, dc]) => {
+    ch.floorCells.slice().forEach(p => FOUR_STEPS.forEach(([dr, dc]) => {
       const k = key(p.row + dr, p.col + dc);
       if (!floor.has(k) || chamberAt.has(k)) return;
       chamberAt.set(k, i);

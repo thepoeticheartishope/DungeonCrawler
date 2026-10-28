@@ -8,12 +8,11 @@
 // Whatever the recipe doesn't list stays random.
 // No DOM access here.
 
-import { state, key } from './state.js';
+import { state, key, parseKey } from './state.js';
+import { FOUR_STEPS } from './grid.js';
 import { MINION_MIN_START_DISTANCE } from './config.js';
 import { rollProp } from './decor.js';
 import { solidProp } from './passage.js';
-
-const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 // The beat kinds a recipe may list. Papers and boxes are extra furniture,
 // a minion is one of the floor's own minions, and the special is the
@@ -40,7 +39,7 @@ function solidTiles() {
 // Open neighbours of a tile, inside the grid and not solid.
 function openNeighbours(p, solid) {
   const size = state.floor.GRID_SIZE;
-  return DIRS
+  return FOUR_STEPS
     .map(([dr, dc]) => ({ row: p.row + dr, col: p.col + dc }))
     .filter(q => q.row >= 0 && q.row < size && q.col >= 0 && q.col < size && !solid.has(key(q.row, q.col)));
 }
@@ -112,9 +111,9 @@ function isFreeRoomTile(k, ctx) {
 function tilesNearDoors(layout) {
   const near = new Set();
   layout.chambers.forEach(ch => ch.doorKeys.forEach(k => {
-    const [row, col] = k.split(',').map(Number);
+    const { row, col } = parseKey(k);
     near.add(k);
-    DIRS.forEach(([dr, dc]) => near.add(key(row + dr, col + dc)));
+    FOUR_STEPS.forEach(([dr, dc]) => near.add(key(row + dr, col + dc)));
   }));
   return near;
 }
@@ -138,7 +137,7 @@ function candidatesFor(kind, target, afterAt, ctx) {
   ctx.progress.forEach((where, k) => {
     if (where.at < afterAt || !isFreeRoomTile(k, ctx)) return;
     if (kind === 'minion' && where.fromStart < MINION_MIN_START_DISTANCE) return;
-    const [row, col] = k.split(',').map(Number);
+    const { row, col } = parseKey(k);
     tiles.push({ row, col, at: where.at, score: Math.abs(where.at - target) + Math.abs(where.off - BESIDE_THE_WALK[kind]) / 2 });
   });
   for (let i = tiles.length - 1; i > 0; i--) {

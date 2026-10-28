@@ -15,10 +15,9 @@
 // access here.
 
 import { state, key } from './state.js';
+import { FOUR_STEPS } from './grid.js';
 import { startRoom } from './desk.js';
 import { batteryInPlay } from './battery.js';
-
-const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 // The start room's shutters and switch, or null if it has no doorway or no
 // spot for the switch. Its doorways are its own tiles with open floor
@@ -35,10 +34,10 @@ export function placeSafeRoom(layout, placer, taken) {
   const cells = new Set(room.floorCells.map(p => key(p.row, p.col)));
   const size = state.floor.GRID_SIZE;
   const open = (r, c) => r >= 0 && c >= 0 && r < size && c < size && !layout.walls.has(key(r, c)) && !cells.has(key(r, c));
-  const doors = room.floorCells.filter(p => DIRS.some(([dr, dc]) => open(p.row + dr, p.col + dc)));
+  const doors = room.floorCells.filter(p => FOUR_STEPS.some(([dr, dc]) => open(p.row + dr, p.col + dc)));
   if (!doors.length) return null;
   const nearDoor = (p) => Math.min(...doors.map(d => Math.max(Math.abs(d.row - p.row), Math.abs(d.col - p.col))));
-  const wallSide = (p) => DIRS.some(([dr, dc]) => layout.walls.has(key(p.row + dr, p.col + dc)));
+  const wallSide = (p) => FOUR_STEPS.some(([dr, dc]) => layout.walls.has(key(p.row + dr, p.col + dc)));
   const candidates = room.floorCells
     .filter(p => wallSide(p) && !taken.some(q => q.row === p.row && q.col === p.col))
     .map(p => ({ p, d: nearDoor(p) + Math.random() / 2 }))
