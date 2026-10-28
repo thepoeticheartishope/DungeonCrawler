@@ -312,3 +312,17 @@ export function eyeOf(m) {
     level: EYE_LEVEL[0] + (EYE_LEVEL[1] - EYE_LEVEL[0]) * share,
   };
 }
+
+// Whether (row, col) is wall or off the grid.
+export function isWall(row, col) {
+  const f = state.floor;
+  return row < 0 || col < 0 || row >= f.GRID_SIZE || col >= f.GRID_SIZE || f.wallSet.has(key(row, col));
+}
+
+// A tile's own number from 0 to 1, the same every time, for the grain of
+// wood and the scuffs on the lino. Never Math.random (the seeded tests own it).
+export function grain(row, col, n) {
+  let h = (row * 374761393 + col * 668265263 + n * 982451653) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}

@@ -135,7 +135,8 @@ Drawing and page code:
 | `render.js` | Screens, the HUD (`renderHud()` only writer of hearts / gold / turns), edge glow, d-pad hints. |
 | `mapview.js` | The map canvas, its animations and taps; `requestMapDraw()`, `glyphOf()`, `mapThings()`. |
 | `roomview.js` | The room view, the only map view: camera, pixel art, light map, stick men, gun, sky eye, lamps, shadows. |
-| `mapshared.js` | Sizes and view-independent helpers the map view uses (`floorLevelOf`, `minionOn`, last shot …). |
+| `roomthings.js` | The room view's things on the floor and the furniture as pixel art (`FLAT` / `STAND`). |
+| `mapshared.js` | Sizes and view-independent helpers the map view uses (`floorLevelOf`, `minionOn`, `isWall`, `grain`, last shot …). |
 | `stickforms.js` | Minions as stick men: poses, tells, tendrils of letters, downed and dying. |
 | `playerform.js` | The player's stick man: breath, ember head, glances. |
 | `figure3d.js` | Picks and blends the 3D moves into poses for the player and stick men. |
