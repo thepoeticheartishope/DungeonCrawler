@@ -25,6 +25,7 @@ import { placeDesk } from './desk.js';
 import { placeCharger } from './charger.js';
 import { placeVents } from './vents.js';
 import { placeWindows } from './windows.js';
+import { placeLamps } from './lamps.js';
 import { placeSafeRoom, inSafeRoom } from './saferoom.js';
 import { solidProp } from './passage.js';
 import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
@@ -288,6 +289,7 @@ export function buildFloor() {
   initBossLight();
   rollGoals();
   placeWindows();
+  placeLamps(layout);
   state.floor.visibleSet = new Set();
   state.floor.exploredSet = new Set();
   computeVisibility();
@@ -332,6 +334,8 @@ function clearDanger() {
   f.spotSet = new Set();
   f.windows = [];
   f.windowLitSet = new Set();
+  f.lamps = [];
+  f.lampPoolSet = new Set();
   f.tutorial = null;
   f.bossDist = new Map();
   f.floorCount = 0;
