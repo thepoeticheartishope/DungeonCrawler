@@ -6,12 +6,13 @@
 import { state, key } from './state.js';
 import { windowLightHere } from './windows.js';
 import {
-  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, LOOK_CONE_HALF, LOOK_CONE_SLACK,
+  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, LOOK_CONE_HALF, LOOK_CONE_SLACK, LAMP_LIGHT,
 } from './config.js';
 import { lookAngle, angleTo, wrapAngle } from './look.js';
 import { lightOn } from './battery.js';
 import { solidProp } from './passage.js';
 import { shutterDownAt, lampLit, lampLightHere } from './saferoom.js';
+import { lampsOn, lampPoolLit } from './lamps.js';
 
 // One step each way the body can face. The 4 grid ways, then the 4
 // diagonals (eight ways plan); on screen the diagonals are straight up,
@@ -52,7 +53,7 @@ export function inLookCone(row, col) {
 // what shows the player the way — and so is the tutorial's light from above
 // (state.floor.spotSet, tutorial.js).
 export function computeVisibility() {
-  state.floor.visibleSet = new Set([...state.floor.bossLitSet, ...state.floor.spotSet, ...windowLightHere(), ...lampLightHere()]);
+  state.floor.visibleSet = new Set([...state.floor.bossLitSet, ...state.floor.spotSet, ...windowLightHere(), ...lampLightHere(), ...lampPoolsSeen()]);
   const startKey = key(state.floor.playerRow, state.floor.playerCol);
   state.floor.visibleSet.add(startKey);
   // The player's own light, apart from the boss's: only what the player
@@ -178,20 +179,43 @@ function clearLineTo(row, col) {
   return clearLine(state.floor.playerRow, state.floor.playerCol, row, col);
 }
 
+// The lamp-lit tiles the player sees from where they stand: in a lamp's
+// pool while the lamps are on (lamps.js), within LAMP_LIGHT.seeFrom tiles,
+// with a clear line. They see these from outside the room too, unlike a
+// window's light: the dark hides detail, not presence (presence cues plan).
+function lampPoolsSeen() {
+  const f = state.floor;
+  if (!f.lampPoolSet.size || !lampsOn()) return [];
+  return [...f.lampPoolSet].filter(k => {
+    const [row, col] = k.split(',').map(Number);
+    return tilesAway(row, col) <= LAMP_LIGHT.seeFrom && clearLineTo(row, col);
+  });
+}
+
+// How many tiles (row, col) is from the player, any way, diagonals included.
+function tilesAway(row, col) {
+  return Math.max(Math.abs(row - state.floor.playerRow), Math.abs(col - state.floor.playerCol));
+}
+
 // Whether the player can make out what's on (row, col), rather than a
 // '?': it has to be in their own light or a window's in the room they are
 // in (windows.js windowLightHere; not just the boss's) or the safe room's
 // lamp while they are in it (saferoom.js), within
 // REVEAL_DISTANCE, with nothing solid in between. Window light shows stick
-// men too (Timothy, 2026-10-26).
+// men too (Timothy, 2026-10-26). A lamp's pool (lamps.js) shows what is in
+// it from as far as LAMP_LIGHT.seeFrom and from any room, so a stick man
+// crossing it is seen in time to plan (Timothy, 2026-10-28).
 export function canMakeOut(row, col) {
   if (!state.settings.fogEnabled) return true;
-  if (Math.max(Math.abs(row - state.floor.playerRow), Math.abs(col - state.floor.playerCol)) > REVEAL_DISTANCE) return false;
+  const far = tilesAway(row, col);
   const k = key(row, col);
   const f = state.floor;
+  const lampPool = lampPoolLit(row, col) && far <= LAMP_LIGHT.seeFrom;
+  if (far > REVEAL_DISTANCE && !lampPool) return false;
   const windowLit = f.windowLitSet.has(k) && f.chamberAt.get(k) === f.chamberAt.get(key(f.playerRow, f.playerCol)) && f.chamberAt.has(k);
   const lamp = lampLit(row, col) && lampLit(f.playerRow, f.playerCol);
-  return (f.sightSet.has(k) || windowLit || lamp) && clearLineTo(row, col);
+  const near = far <= REVEAL_DISTANCE && (f.sightSet.has(k) || windowLit || lamp);
+  return (near || lampPool) && clearLineTo(row, col);
 }
 
 // Whether the player sees minion or hunter `m` at all. Unlike items, an

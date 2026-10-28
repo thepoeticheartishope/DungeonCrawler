@@ -1053,6 +1053,12 @@ export const ISO_NARROW_MAP_WIDTH = 400;
 // tiles across as it goes, `inset` tiles in from the window's sides. Its
 // light shows stick men as the player's own does (sight.js canMakeOut).
 export const WINDOW_LIGHT = { every: 3, length: 3.4, slant: 1.1, inset: 5 / 16 };
+// Lamps a fixed plan puts down (lamps.js, plans.js `L`; presence cues plan
+// step A, Timothy 2026-10-28): each lights the floor within `radius` tiles
+// of it, and a stick man in that light is seen from as far as `seeFrom`
+// tiles (any way, diagonals included) with a clear line, about as far as
+// the room view shows, past REVEAL_DISTANCE and from outside the room.
+export const LAMP_LIGHT = { radius: 2, seeFrom: 10 };
 // The pieces of furniture a fixed plan can stand in its rooms (plans.js
 // `furniture`, room view plan step E). Each has a bump line in text.js
 // (`furniture.<piece>`) and a drawing in roomview.js.

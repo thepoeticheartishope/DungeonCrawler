@@ -16,6 +16,8 @@
 //   K  a key spot: CORE_KEYS of them hold a key each run
 //   a  floor only in version A (wall in B)
 //   b  floor only in version B (wall in A)
+//   L  floor with a lamp over it (lamps.js): it lights a small pool round
+//      it, seen from afar (presence cues plan)
 // Rooms are rectangles of floor (r0, c0 to r1, c1, inclusive); the one
 // with `core: true` is the core. Floor outside every room is hallway. A
 // hallway tile beside a room is that room's doorway, as in rooms.js.
@@ -244,7 +246,8 @@ function pickKeySpots(spots, chamberAt, count) {
 
 // A floor layout built from a fixed plan, in the same shape as dungeon.js
 // generateDungeonLayout returns (walls, roomTiles, chambers, chamberAt,
-// start, spawn = the gate, stairs, keys), plus `version` and `keySpots`.
+// start, spawn = the gate, stairs, keys), plus `version`, `keySpots` and
+// `lamps`.
 // `version` is 'A' or 'B' (random if left out); `keyCount` key spots
 // get keys. A plan that breaks its own rules is a mistake in this file,
 // so it throws.
@@ -253,7 +256,7 @@ export function buildPlanLayout(plan, keyCount, version = null) {
   const size = plan.rows.length;
   const walls = new Set();
   const floor = new Set();
-  const found = { G: [], X: [], S: [], K: [] };
+  const found = { G: [], X: [], S: [], K: [], L: [] };
   plan.rows.forEach((row, r) => {
     if (row.length !== size) throw new Error(plan.name + ': row ' + r + ' is not ' + size + ' long');
     [...row].forEach((ch, c) => {
@@ -296,7 +299,7 @@ export function buildPlanLayout(plan, keyCount, version = null) {
   const keys = pickKeySpots(keySpots, chamberAt, keyCount);
   if (keys.length < keyCount) throw new Error(plan.name + ': not enough key spots in different rooms');
   return {
-    walls, roomTiles, chambers, chamberAt, keys, keySpots, version: v,
+    walls, roomTiles, chambers, chamberAt, keys, keySpots, lamps: found.L, version: v,
     start: found.S[0], spawn: found.G[0], stairs: found.X[0],
   };
 }
