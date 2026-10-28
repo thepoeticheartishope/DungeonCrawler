@@ -13,7 +13,7 @@ import { state, key } from './state.js';
 import {
   MAP_ANIMATION_MS, GAZE_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS,
   TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS, SKY_EYE,
-  REALTIME_STEP_MS,
+  REALTIME_STEP_MS, ROOM_VIEW,
 } from './config.js';
 import { canShoot } from './sight.js';
 import { gazeInPlay, inCone } from './gaze.js';
@@ -326,3 +326,9 @@ export function grain(row, col, n) {
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
+
+// What a tap on its glyph picks (gun.js pickTarget).
+export const ENEMY_KINDS = ['minion', 'hunter'];
+
+// The room view's stick men are sized from the player figure's poses.
+export const POSE_SCALE = ROOM_VIEW.stickHeight / 0.75; // playerform's poses are sized for a 0.75-tile stick man
