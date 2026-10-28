@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, CHARGER, ONE_STICK, BOOK, SAFE_ROOM } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, WARNING_TIMER, CHARGER, ONE_STICK, BOOK, SAFE_ROOM } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -41,6 +41,7 @@ export const state = {
     charger: CHARGER.on,   // a charger in each depth's start room, gun on (charger.js); DEV -> Charger flips it from the next floor
     safeRoom: SAFE_ROOM.on, // each depth's start room is a safe room with shutters (saferoom.js); DEV -> Safe room flips it from the next floor
     staticNoise: STATIC_NOISE, // a faint grain grows as the closest stick man nears, in place of "I see you." (static.js); DEV -> Static flips it
+    warningTimer: WARNING_TIMER.on, // the room log says how long before a stick man's reach he first gave himself away (warning.js); DEV -> Warning timer flips it
     downed: DOWNED,         // a shot that leaves a stick man on 1 HP knocks it down: it crawls, grabs, and a bump finishes it (gun.js); DEV -> Downed flips it
     gaze: GAZE,             // an eye over a stick man opens in the player's light and it steps closer (gaze.js); DEV -> Gaze flips it
     minigame: 'roll',       // DEV -> Minigame: 'roll' (minigames roll as usual), 'off' (never), or a minigame id (always, when it fits)
