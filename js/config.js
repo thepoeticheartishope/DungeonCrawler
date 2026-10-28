@@ -669,12 +669,6 @@ export const MAP_DRAG_PX = 8;
 // doesn't aim: the angle would jump about under it.
 export const LOOK_POINTER_DEAD = 0.35;
 
-// Turning (moves.js stepPlayer). With TURN_BEFORE_STEP on, a press in a new
-// direction only turns the player, so they look before they walk. Off, a
-// press turns and steps at once, and the warning below covers what looking
-// first used to: nothing reaches the player from the dark unannounced.
-// DEV -> Turn switches it in play (state.settings.turnBeforeStep).
-export const TURN_BEFORE_STEP = false;
 // The warning (combat.js senseUnseen, "I see you."): a minion or the hunter
 // the player can't see, SENSE_STEPS walkable steps away and due to move next
 // turn, so its next move puts it right beside them. Once per approach.

@@ -26,7 +26,7 @@ state.settings.oneStick = false;
 // on, nothing else on it.
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { freeLook: true, fogEnabled: true, gunCombat: false, turnBeforeStep: false, eightWays: true },
+    settings: { freeLook: true, fogEnabled: true, gunCombat: false, eightWays: true },
     floor: { look: 0 },
   });
 }
@@ -108,13 +108,6 @@ test('a bump that turns the body is a spent turn; a bump straight ahead is free'
   assert.deepEqual(ahead.map(e => e.type), ['blocked'], 'already facing it: free');
   state.settings.freeLook = false;
   assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['turned', 'blocked'], 'free look off: free, as before');
-});
-
-test('DEV turn-first stays free', () => {
-  resetFloor();
-  state.settings.turnBeforeStep = true;
-  assert.deepEqual(stepPlayer(0, 1).map(e => e.type), ['turned']);
-  state.settings.turnBeforeStep = false;
 });
 
 test('looking straight along a way, the cone lights exactly the old diamond', () => {
