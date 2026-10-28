@@ -37,7 +37,6 @@ function resetFloor() {
   f.stairs = null;
   f.coin = null;
   state.settings.gunCombat = true;
-  state.settings.turnBeforeStep = false;
   state.run.coinsTotal = 0;
 }
 

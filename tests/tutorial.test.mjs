@@ -31,7 +31,6 @@ function resetRun() {
   state.settings.gunCombat = true;
   state.settings.eightWays = true;
   state.settings.freeLook = true;
-  state.settings.turnBeforeStep = false;
   state.settings.playerName = '';
   state.run.hearts = 3;
   state.run.energy = 0;

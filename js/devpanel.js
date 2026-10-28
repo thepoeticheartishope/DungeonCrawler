@@ -18,7 +18,6 @@ const devPanel = document.getElementById('devPanel');
 const devSkipBtn = document.getElementById('devSkipBtn');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
-const devTurnBtn = document.getElementById('devTurnBtn');
 const devFreeLookBtn = document.getElementById('devFreeLookBtn');
 const devEightWaysBtn = document.getElementById('devEightWaysBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
@@ -119,14 +118,6 @@ export function initDevPanel({
     state.settings.fogEnabled = !state.settings.fogEnabled;
     devFogBtn.textContent = state.settings.fogEnabled ? 'Fog: ON (dev)' : 'Fog: OFF (dev)';
     requestMapDraw();
-  });
-
-  // Dev tool: a press in a new direction turns and steps at once (warned by
-  // "I see you."), or only turns, as before, so the two can be compared.
-  devTurnBtn.addEventListener('click', () => {
-    state.settings.turnBeforeStep = !state.settings.turnBeforeStep;
-    devTurnBtn.textContent = state.settings.turnBeforeStep ? 'Turn: look first (dev)' : 'Turn: and step (dev)';
-    devTurnBtn.setAttribute('aria-pressed', String(state.settings.turnBeforeStep));
   });
 
   // Dev tool (free look plan): the light points where the player aims,

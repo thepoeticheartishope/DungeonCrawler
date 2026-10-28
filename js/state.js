@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, WARNING_TIMER, CHARGER, ONE_STICK, BOOK, SAFE_ROOM, STEADY_AIM } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, WARNING_TIMER, CHARGER, ONE_STICK, BOOK, SAFE_ROOM, STEADY_AIM } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -35,7 +35,6 @@ export const state = {
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
-    turnBeforeStep: TURN_BEFORE_STEP, // a press in a new direction only turns (true) or turns and steps (false); DEV -> Turn flips it
     freeLook: FREE_LOOK,    // the light points where the player aims, within look.js's free arc (true), or where the body faces (false); DEV -> Free look flips it
     eightWays: EIGHT_WAYS,  // the player and minions walk and face 8 ways (true) or the 4 grid ways (false); DEV -> 8 ways flips it
     smoothWalk: SMOOTH_WALK, // every way walks at the same speed on screen and the camera moves with the step (walkpace.js); DEV -> Smooth walk flips it

@@ -38,7 +38,7 @@ state.settings.oneStick = false;
 // gun plan step 9; its rules are tested in gun.test.mjs).
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { freeLook: false, fogEnabled: true, gunCombat: false, turnBeforeStep: false, eightWays: true },
+    settings: { freeLook: false, fogEnabled: true, gunCombat: false, eightWays: true },
     see: false,
   });
 }
@@ -412,33 +412,6 @@ test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the 
 });
 
 // --- moves.js: stepPlayer ---
-
-test('turning first: a press in a new direction only turns, no step, no turn spent', () => {
-  resetFloor();
-  state.settings.turnBeforeStep = true;
-  const [r, c] = [state.floor.playerRow, state.floor.playerCol];
-  const events = stepPlayer(1, 0);
-  assert.deepEqual(events.map(e => e.type), ['turned']);
-  assert.equal(events[0].facing, 'S');
-  assert.equal(state.floor.facing, 'S');
-  assert.deepEqual([state.floor.playerRow, state.floor.playerCol], [r, c]);
-  // The second press the same way steps.
-  assert.deepEqual(stepPlayer(1, 0).map(e => e.type), ['stepped']);
-  assert.deepEqual([state.floor.playerRow, state.floor.playerCol], [r + 1, c]);
-});
-
-test('turning first toward a wall changes facing; the next press there is blocked', () => {
-  resetFloor();
-  state.settings.turnBeforeStep = true;
-  const [r, c] = [state.floor.playerRow, state.floor.playerCol];
-  state.floor.wallSet.add(key(r, c + 1));
-  assert.deepEqual(stepPlayer(0, 1).map(e => e.type), ['turned']);
-  assert.equal(state.floor.facing, 'E');
-  const events = stepPlayer(0, 1);
-  assert.deepEqual(events.map(e => e.type), ['blocked']);
-  assert.equal(events[0].kind, 'wall');
-  assert.deepEqual([state.floor.playerRow, state.floor.playerCol], [r, c]);
-});
 
 test('by default a press in a new direction turns and steps at once', () => {
   resetFloor();

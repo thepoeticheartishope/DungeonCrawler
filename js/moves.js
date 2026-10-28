@@ -54,11 +54,9 @@ function takeKey(index) {
 // would cut a corner (passage.js canPassCorner) is a bump, kind 'corner',
 // before anything on the tile itself counts. A turn or a
 // step points the light straight ahead again (look.js followBody), even
-// with free look on. With state.settings.turnBeforeStep on, it only turns: no step, no
-// bump, no turn spent, so they can look behind them first. Turning first is
-// off by default because combat.js senseUnseen warns ("I see you.") before
-// anything unseen gets next to them. Events: turned { facing } (alone when
-// turning first, else before the rest),
+// with free look on. It never only turns: combat.js senseUnseen warns
+// ("I see you.") before anything unseen gets next to the player, which is
+// what looking first was for. Events: turned { facing } (before the rest),
 // blocked { kind, thing } (kind 'corner' too; with free look, then bodyTurned { facing,
 // bumped: true } if the press turned the body: a spent turn), stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
 // keyTaken { held, total, unsealed }, gateReached { questions } (bumped the
@@ -83,7 +81,6 @@ export function stepPlayer(dRow, dCol) {
     followBody();
     computeVisibility();
     events.push({ type: 'turned', facing });
-    if (state.settings.turnBeforeStep) return events;
   }
 
   const newRow = state.floor.playerRow + dRow;
