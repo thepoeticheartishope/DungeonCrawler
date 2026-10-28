@@ -1,6 +1,6 @@
 import { state, key } from './state.js';
 import { buildFloor, buildRestFloor, buildTutorialFloor } from './floor.js';
-import { tutorialTurn, tutorialDial, settleName, breakRing } from './tutorial.js';
+import { tutorialTurn, tutorialDial, tutorialSteady, settleName, breakRing } from './tutorial.js';
 import { nextFloor } from './run.js';
 import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, ENERGY_MAX, TUTORIAL_EXIT_ENERGY,
@@ -434,7 +434,7 @@ function fireGun() {
   // shot while the world goes on, and letting go fires (releaseSelect).
   if (state.battle.aim && steadyOn()) {
     startSteady();
-    const note = drawEvents(events);
+    const note = drawEvents(events.concat(tutorialSteady(events)));
     if (note.text) showRoomNote(note.cls, note.text);
     requestMapDraw();
     return;
@@ -1904,7 +1904,8 @@ function walkFrame(now) {
     stickPushed = null;
     resetWalk();
     if (!clockMayRun() || state.run.turnLocked) return;
-    const note = drawEvents(tickSteady(Math.min(dt, ONE_STICK.frameMs)));
+    const ticked = tickSteady(Math.min(dt, ONE_STICK.frameMs));
+    const note = drawEvents(ticked.concat(tutorialSteady(ticked)));
     if (note.text) showRoomNote(note.cls, note.text);
     requestMapDraw();
     const hearts = state.run.hearts;

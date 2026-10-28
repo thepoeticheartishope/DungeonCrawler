@@ -81,7 +81,7 @@ export function parseTutorialRoom(rows = TUTORIAL_ROOM) {
 
 // A fresh tutorial's own state, for state.floor.tutorial.
 export function freshTutorial(room) {
-  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, minion: null, minionAt: null, toldReady: false, toldDial: false, toldLookUp: false, toldStatic: false, toldReach: false };
+  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, minion: null, minionAt: null, toldReady: false, toldDial: false, toldHold: false, toldSteady: false, toldLookUp: false, toldStatic: false, toldReach: false };
 }
 
 // The light that won't come on: off, locked and steady (battery.js: a
@@ -111,6 +111,28 @@ export function tutorialDial(events) {
   if (!tut.toldDial && events.some(e => e.type === 'shotReady')) {
     tut.toldDial = true;
     return [{ type: 'whispered', line: 'tut.dial', tone: 'kind' }];
+  }
+  return [];
+}
+
+// The fight's first steadied shot (steady aim plan step D, One stick): the
+// kind voice talks the player through holding once, a line as the aim
+// starts (`events` are fire()'s, holding aimStarted) and one the first time
+// it comes to full. Returns whispered { line: 'tut.hold', tone: 'kind' },
+// then whispered { line: 'tut.steady', tone: 'kind' }, else none (and none
+// off the tutorial's fight). Turns mode keeps the dial's lines
+// (tutorialDial).
+export function tutorialSteady(events) {
+  const tut = state.floor.tutorial;
+  if (!tut || tut.stage !== 'fight') return [];
+  if (!tut.toldHold && events.some(e => e.type === 'aimStarted')) {
+    tut.toldHold = true;
+    return [{ type: 'whispered', line: 'tut.hold', tone: 'kind' }];
+  }
+  const aim = state.battle.aim;
+  if (tut.toldHold && !tut.toldSteady && aim && aim.phase === 'steady' && aim.steady >= 1) {
+    tut.toldSteady = true;
+    return [{ type: 'whispered', line: 'tut.steady', tone: 'kind' }];
   }
   return [];
 }

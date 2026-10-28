@@ -17,12 +17,12 @@ import {
   TUTORIAL_SPOT_TURNS, TUTORIAL_SPOT_NEAR, TUTORIAL_MINION_KIND, ENERGY_MAX,
 } from '../js/config.js';
 import { buildTutorialFloor } from '../js/floor.js';
-import { TUTORIAL_ROOM, parseTutorialRoom, tutorialTurn, tutorialDial, settleName, breakRing } from '../js/tutorial.js';
+import { TUTORIAL_ROOM, parseTutorialRoom, tutorialTurn, tutorialDial, tutorialSteady, settleName, breakRing } from '../js/tutorial.js';
 import { stepPlayer } from '../js/moves.js';
 import { whatBlocks } from '../js/passage.js';
 import { lightOn, tickLight, toggleLight } from '../js/battery.js';
 import { advanceMonsters } from '../js/combat.js';
-import { fire, readyShot, cancelShot, settleShot } from '../js/gun.js';
+import { fire, readyShot, cancelShot, settleShot, startSteady, cancelSteady } from '../js/gun.js';
 
 function resetRun() {
   state.settings.fogEnabled = true;
@@ -355,6 +355,35 @@ test('the first shot\'s dial: the kind voice at READY and once it runs, once eac
   assert.equal(state.run.energy, energy - 1, 'READY spends the round');
   assert.deepEqual(tutorialDial(ready), [{ type: 'whispered', line: 'tut.dial', tone: 'kind' }]);
   assert.deepEqual(tutorialDial(ready), [], 'said once');
+});
+
+test('the first steadied shot: the kind voice as it starts and when it comes to full, once each, only in the fight', () => {
+  resetRun();
+  assert.deepEqual(tutorialSteady([{ type: 'aimStarted' }]), [], 'not before the fight');
+  passTurns(TUTORIAL_SPOT_TURNS);
+  walkToSpot();
+  tutorialTurn([]);
+  settleName('Ada');
+  toggleLight();
+  breakRing();
+  advanceMonsters();
+  advanceMonsters();
+  const f = state.floor;
+  const m = f.minions[0];
+  m.row = f.playerRow - 1; m.col = f.playerCol;
+  f.facing = 'N'; f.look = null;
+  state.run.energy = 0;
+  tutorialTurn([]);
+
+  const opened = fire(m);
+  startSteady();
+  assert.deepEqual(tutorialSteady(opened), [{ type: 'whispered', line: 'tut.hold', tone: 'kind' }]);
+  assert.deepEqual(tutorialSteady([]), [], 'not yet steady');
+  state.battle.aim.steady = 1;
+  assert.deepEqual(tutorialSteady([]), [{ type: 'whispered', line: 'tut.steady', tone: 'kind' }]);
+  assert.deepEqual(tutorialSteady([]), [], 'said once');
+  cancelSteady();
+  assert.deepEqual(tutorialSteady(fire(m)), [], 'the first line said once too');
 });
 
 test('with One stick, the first reach of the fight brings "When it reaches, step away." once', () => {

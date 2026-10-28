@@ -1689,7 +1689,7 @@ async function runTutorialStick(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'walked freely in the dark until the light fell, to the barrel, name, ring broken by the light, the stick man reached and the kind voice said to step away', consoleErrors, pageErrors };
+  return { ok: true, detail: 'walked freely in the dark until the light fell, to the barrel, name, ring broken by the light, the stick man reached and the kind voice said to step away, then a held shot ("Hold it.", "Now. Let go.") killed it', consoleErrors, pageErrors };
 }
 
 // Holds the arrow keys toward `goal` ({ row, col }) with One stick, a
@@ -1725,8 +1725,9 @@ async function holdToward(page, goal, done, ms = 12000) {
 
 // The tutorial's start with One stick, the default: walking (not waiting)
 // brings the light from above, walking to it the barrel, the name the
-// ring, the light breaks it, and the stick man's first reach brings the
-// kind voice's "When it reaches, step away."
+// ring, the light breaks it, the stick man's first reach brings the kind
+// voice's "When it reaches, step away.", and the first shot is held and let
+// go with the kind voice's two lines (steady aim plan step D).
 async function checkTutorialStick(page, url) {
   await page.goto(url, { waitUntil: 'load' });
   await page.waitForSelector('#startBtn', { timeout: 10000 });
@@ -1750,12 +1751,50 @@ async function checkTutorialStick(page, url) {
   await page.waitForTimeout(200);
   st = await tutorialState(page);
   if (st.stage !== 'fight') return 'the light did not break the ring (stage ' + st.stage + ')';
-  for (let t = 0; t < 25000; t += 100) {
+  let away = false;
+  for (let t = 0; t < 25000 && !away; t += 100) {
     await page.waitForTimeout(100);
     st = await tutorialState(page);
-    if (st.sense.includes('step away')) return '';
+    away = st.sense.includes('step away');
   }
-  return 'the stick man never reached with the kind voice saying to step away: ' + st.sense;
+  if (!away) return 'the stick man never reached with the kind voice saying to step away: ' + st.sense;
+
+  // Steady aim (steady aim plan step D): the first shot is held. The stick
+  // man is stood still two tiles off in the light; F held brings the kind
+  // voice's "Hold it." and, at full, "Now. Let go."; letting go there kills it.
+  const set = await page.evaluate(async () => {
+    const { state, key } = await import('/js/state.js');
+    const { computeVisibility } = await import('/js/sight.js');
+    const { refreshGunTarget } = await import('/js/gun.js');
+    const f = state.floor;
+    const m = f.minions[0];
+    const open = (r, c) => !f.wallSet.has(key(r, c)) && !f.pillarSet.has(key(r, c)) && !f.props.some(p => p.row === r && p.col === c);
+    const way = [[-1, 0, 0], [1, 0, Math.PI], [0, 1, Math.PI / 2], [0, -1, -Math.PI / 2]]
+      .find(([dr, dc]) => open(f.playerRow + dr, f.playerCol + dc) && open(f.playerRow + 2 * dr, f.playerCol + 2 * dc));
+    if (!m || !way) return false;
+    Object.assign(m, { row: f.playerRow + 2 * way[0], col: f.playerCol + 2 * way[1], stepWait: 1e9, reaching: null, hunts: false });
+    f.light = { on: true, charge: 4, locked: false };
+    f.look = way[2];
+    f.lookWant = way[2];
+    state.run.energy = 1;
+    state.run.rounds = [null];
+    computeVisibility();
+    refreshGunTarget();
+    return state.floor.gunTarget === m;
+  });
+  if (!set) return 'could not stand the tutorial stick man in front of the player for the held shot';
+  await page.keyboard.down('f');
+  await page.waitForTimeout(300);
+  st = await tutorialState(page);
+  if (!st.sense.includes('Hold it.')) { await page.keyboard.up('f'); return 'no "Hold it." as the first shot started to steady: ' + st.sense; }
+  await page.waitForTimeout(1000);
+  st = await tutorialState(page);
+  if (!st.sense.includes('Now. Let go.')) { await page.keyboard.up('f'); return 'no "Now. Let go." once the aim came to full: ' + st.sense; }
+  await page.keyboard.up('f');
+  await page.waitForTimeout(300);
+  const left = await page.evaluate(async () => (await import('/js/state.js')).state.floor.minions.length);
+  if (left !== 0) return 'letting go at full hold did not kill the tutorial stick man';
+  return '';
 }
 
 // Runs one smoke run. A throw (a Playwright timeout, say) becomes that

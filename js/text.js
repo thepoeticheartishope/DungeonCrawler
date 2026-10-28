@@ -348,6 +348,8 @@ export const TEXT = {
   'tut.reach': 'When it reaches, step away.', // draft (one stick plan step G). The kind voice, the first time the tutorial's stick man reaches for the player with One stick: out of reach, it misses
   'tut.ready': "They'll be listening. Be ready.", // Timothy's wording (vents and noise plan step D: world-driven, not on the nose; it hints that sound brings them). The kind voice, once the ring breaks; then a stick man comes out of the grate
   'tut.breathe': 'Breathe. Then READY.', // draft (kill or maim plan step C). The kind voice, as the tutorial's first shot opens the dial at READY
+  'tut.hold': 'Hold it. Let it settle.', // draft (steady aim plan step D). The kind voice, as the tutorial's first shot starts to steady (One stick)
+  'tut.steady': 'Now. Let go.', // draft. The kind voice, the first time that aim comes to full
   'tut.dial': 'Stop on K to kill. M drops it.', // draft. The kind voice, once that dial runs
   'tut.shutter': 'Pull the shutter. They won’t follow you in.', // draft (safe room plan step C). The kind voice, the first time in a run the player is in the safe room with its switch made out
   'tut.charger': 'It still holds a charge.', // draft (charger plan step C). The kind voice, the first time in a run the player makes out a charger
