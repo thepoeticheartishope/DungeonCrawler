@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { freshLight } from '../js/battery.js';
 import { state } from '../js/state.js';
 import { MAX_HEARTS, STEADY_AIM } from '../js/config.js';
-import { computeVisibility } from '../js/sight.js';
+import { computeVisibility, inLookCone, shootBlock } from '../js/sight.js';
 import { spawnMinion } from '../js/combat.js';
 import { resetHaunts } from '../js/haunts.js';
 import { BODY_ANGLES } from '../js/look.js';
@@ -144,4 +144,25 @@ test('a weaving STALKER steadies slower (STEADY_AIM.kindSlow)', () => {
 
 test('steady aim is off by default until step C', () => {
   assert.equal(STEADY_AIM.on, false);
+});
+
+test('the light narrows to a beam as the aim steadies, and opens again after', () => {
+  steadyOn();
+  const f = state.floor;
+  // Two ahead and two to the side: 45 degrees off, inside the full cone.
+  const side = { row: f.playerRow - 2, col: f.playerCol + 2 };
+  assert.ok(inLookCone(side.row, side.col), 'in the cone at first');
+  tickSteady(STEADY_AIM.fullMs);
+  assert.ok(!inLookCone(side.row, side.col), 'outside the beam at full hold');
+  cancelSteady();
+  assert.ok(inLookCone(side.row, side.col), 'the cone opens again');
+});
+
+test('the beam stays on a stick man stepping aside while the aim steadies', () => {
+  const m = steadyOn();
+  tickSteady(STEADY_AIM.fullMs);
+  m.col += 1;
+  const events = tickSteady(16);
+  assert.ok(steadying(), 'still steadying: ' + events.map(e => e.type).join(','));
+  assert.equal(shootBlock(m), null);
 });

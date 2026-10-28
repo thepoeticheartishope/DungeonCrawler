@@ -19,7 +19,7 @@ import {
 } from './config.js';
 import { fightGroups, shuffle } from './quiz.js';
 import { recordHauntAnswer } from './haunts.js';
-import { shootBlock, canShoot, seesEnemy } from './sight.js';
+import { shootBlock, canShoot, seesEnemy, computeVisibility } from './sight.js';
 import { aimLook, angleTo, lookAngle, wantsTurn, wrapAngle } from './look.js';
 import { goldReward } from './moves.js';
 import { tileOccupied, lockOn, lungeAt } from './combat.js';
@@ -413,28 +413,45 @@ export function steadying() {
 // One frame of holding, `dtMs` long. A lit shot whose stick man can't be
 // shot any more (gone, out of the light or reach) is lowered: steadyLost.
 // A shot into the dark never says so (it would give away what is there).
-// Past dropAtMs on the head the arm drops back: steadyDropped. A weaving
+// Past dropAtMs on the head the arm drops back: steadyDropped. The light
+// narrows to a beam as it steadies and follows a lit stick man (step B). A weaving
 // kind (STEADY_AIM.kindSlow, the STALKER) steadies slower, but only in the
 // light: in the dark the aim can't tell what it is on.
 export function tickSteady(dtMs) {
   const aim = state.battle.aim;
   if (!steadying()) return [];
   const m = aim.target;
-  if (!aim.dark && m && (!state.floor.minions.includes(m) || shootBlock(m))) {
+  const lit = !aim.dark && m && state.floor.minions.includes(m);
+  if (lit) followTarget(m);
+  if (!aim.dark && m && (!lit || shootBlock(m))) {
     state.battle.aim = null;
+    computeVisibility();
     return [{ type: 'steadyLost' }];
   }
+  const events = [];
   if (aim.steady < 1) {
-    const kind = !aim.dark && m ? STEADY_AIM.kindSlow[m.minionKind] || 1 : 1;
+    const kind = lit ? STEADY_AIM.kindSlow[m.minionKind] || 1 : 1;
     const slow = (aim.dark ? STEADY_AIM.dark : lowBattery() ? STEADY_AIM.lowBattery : 1) * kind;
     aim.steady = Math.min(1, aim.steady + dtMs * slow / STEADY_AIM.fullMs);
-    return [];
+  } else {
+    aim.heldMs += dtMs;
+    if (aim.heldMs >= STEADY_AIM.dropAtMs) {
+      aim.steady = STEADY_AIM.dropTo;
+      aim.heldMs = 0;
+      events.push({ type: 'steadyDropped' });
+    }
   }
-  aim.heldMs += dtMs;
-  if (aim.heldMs < STEADY_AIM.dropAtMs) return [];
-  aim.steady = STEADY_AIM.dropTo;
-  aim.heldMs = 0;
-  return [{ type: 'steadyDropped' }];
+  computeVisibility();
+  return events;
+}
+
+// While a lit shot steadies, the light stays on its stick man: the beam it
+// narrows to (sight.js coneShape) would lose him at his first step aside.
+function followTarget(m) {
+  const angle = angleTo(m.row, m.col);
+  state.floor.look = angle;
+  state.floor.lookWant = angle;
+  computeVisibility();
 }
 
 // The chance a steadied shot lands (0 to 1): up from minChance with the
@@ -455,7 +472,8 @@ export function steadyShaking(aim) {
 // steadyChance, and it settles as a stopped dial would: on the head (full
 // hold) a kill, below it a maim, a miss in the first wildBelow a harm (not
 // in the tutorial room: a plain fight there), any other miss a miss.
-// Events: readyShot's, then settleShot's.
+// The light opens out of its beam again. Events: readyShot's, then
+// settleShot's.
 export function releaseSteady() {
   const aim = state.battle.aim;
   if (!steadying()) return [];
@@ -467,7 +485,9 @@ export function releaseSteady() {
   else if (aim.steady < STEADY_AIM.wildBelow && !state.floor.tutorial) {
     zone = { tier: 'harm', harm: HARM_KINDS[Math.floor(Math.random() * HARM_KINDS.length)] };
   }
-  return [...events, ...settleZone(aim, zone)];
+  const settled = settleZone(aim, zone);
+  computeVisibility();
+  return [...events, ...settled];
 }
 
 // The gun lowered while steadying (SELECT slid off, Escape): nothing was
@@ -475,6 +495,7 @@ export function releaseSteady() {
 export function cancelSteady() {
   if (!steadying()) return [];
   state.battle.aim = null;
+  computeVisibility();
   return [{ type: 'shotCancelled' }];
 }
 
