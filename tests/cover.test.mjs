@@ -9,59 +9,22 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { freshLight } from '../js/battery.js';
+import { emptyFloor } from './helpers.mjs';
 import { state } from '../js/state.js';
-import { MAX_HEARTS, NOISE_RANGES, COVER, ONE_STICK } from '../js/config.js';
+import { NOISE_RANGES, COVER, ONE_STICK } from '../js/config.js';
 import { computeVisibility, hiddenFrom, besideCover } from '../js/sight.js';
 import { spawnMinion, advanceMonsters } from '../js/combat.js';
 import { makeNoise } from '../js/noise.js';
-import { resetHaunts } from '../js/haunts.js';
 import { BODY_ANGLES } from '../js/look.js';
 import { walkFree, resetWalk, switchSneak } from '../js/walk.js';
 
 // An open floor, player in the middle facing north (light on), One stick.
 function resetFloor(size = 21) {
-  const f = state.floor;
-  f.GRID_SIZE = size;
-  f.playerRow = Math.floor(size / 2);
-  f.playerCol = Math.floor(size / 2);
-  f.playerAt = null;
-  f.facing = 'N';
-  f.look = BODY_ANGLES.N;
-  f.lookWant = null;
-  f.sneaking = false;
-  f.creeping = false;
-  f.darkness = false;
-  f.darkTurns = 0;
-  f.light = freshLight();
-  f.wallSet = new Set();
-  f.pillarSet = new Set();
-  f.bossLitSet = new Set();
-  f.exploredSet = new Set();
-  f.heldChambers = new Set();
-  f.chamberAt = new Map();
-  f.visitedChambers = new Set();
-  f.boss = null;
-  f.hunter = null;
-  f.minions = [];
-  f.crawling = [];
-  f.vents = [];
-  f.keys = [];
-  f.chest = null;
-  f.exchange = null;
-  f.tutorial = null;
-  f.props = [];
-  f.gunTarget = null;
-  state.settings.oneStick = true;
-  state.settings.lightBattery = true;
-  state.settings.simpleEnemies = false;
-  state.settings.gunCombat = true;
-  state.settings.noise = true;
-  state.settings.eightWays = true;
-  state.settings.fogEnabled = true;
-  state.run.hearts = MAX_HEARTS;
-  state.run.turnCount = 0;
-  resetHaunts();
+  emptyFloor(size, {
+    settings: { oneStick: true, lightBattery: true, simpleEnemies: false, gunCombat: true, noise: true, eightWays: true, fogEnabled: true },
+    floor: { look: BODY_ANGLES.N },
+    see: false,
+  });
   resetWalk();
   computeVisibility();
 }

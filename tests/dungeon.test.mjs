@@ -6,14 +6,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { key } from '../js/state.js';
+import { FOUR_STEPS } from '../js/grid.js';
+import { key, parseKey } from '../js/state.js';
 import { REST_GRID } from '../js/config.js';
 import { buildRestLayout } from '../js/dungeon.js';
 import { ROOM_TEMPLATES } from '../js/rooms.js';
 import { REST_RECIPES } from '../js/floors.js';
 
 const LAYOUTS_PER_DRAWING = 40;
-const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 // Every 'rest' drawing, and every drawing a rest recipe names (the opening
 // uses the waking room, which has more than one door to wall up).
 const restNames = new Set(Object.values(REST_RECIPES).map(r => r.room));
@@ -33,7 +33,7 @@ function walkDistances(layout, from) {
   while (queue.length) {
     const cur = queue.shift();
     const d = dist.get(key(cur.row, cur.col));
-    for (const [dr, dc] of DIRS) {
+    for (const [dr, dc] of FOUR_STEPS) {
       const next = { row: cur.row + dr, col: cur.col + dc };
       const k = key(next.row, next.col);
       if (!layout.roomTiles.has(k) || dist.has(k)) continue;
@@ -62,7 +62,7 @@ test('a rest layout is one chamber, not a boss room, walled in all round', () =>
       }
     }
     layout.roomTiles.forEach(k => {
-      const [r, c] = k.split(',').map(Number);
+      const { row: r, col: c } = parseKey(k);
       assert.ok(r > 0 && c > 0 && r < REST_GRID - 1 && c < REST_GRID - 1, `room tile ${k} on the grid edge`);
       assert.equal(layout.chamberAt.get(k), 0);
     });
@@ -85,7 +85,7 @@ test('start and stairs are on room floor, apart, and off the paper spots', () =>
 
 test('the player starts beside the walled-up way in', () => {
   eachLayout(layout => {
-    const besideWall = DIRS.filter(([dr, dc]) => layout.walls.has(key(layout.start.row + dr, layout.start.col + dc)));
+    const besideWall = FOUR_STEPS.filter(([dr, dc]) => layout.walls.has(key(layout.start.row + dr, layout.start.col + dc)));
     assert.ok(besideWall.length > 0, 'start is not against a wall');
   });
 });

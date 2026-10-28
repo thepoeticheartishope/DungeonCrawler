@@ -8,12 +8,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { freshLight } from '../js/battery.js';
+import { emptyFloor, gunRun, minionAt as placeMinion } from './helpers.mjs';
 import { state } from '../js/state.js';
 import { MAX_HEARTS, MINION_KINDS, DOWNED_SLOWDOWN } from '../js/config.js';
-import { computeVisibility } from '../js/sight.js';
-import { spawnMinion, advanceMonsters, movesEvery } from '../js/combat.js';
-import { resetHaunts } from '../js/haunts.js';
+import { advanceMonsters, movesEvery } from '../js/combat.js';
 import { stepPlayer } from '../js/moves.js';
 import { fitsVents } from '../js/vents.js';
 import { fire, readyShot, settleShot } from '../js/gun.js';
@@ -21,65 +19,14 @@ import { fire, readyShot, settleShot } from '../js/gun.js';
 // An open floor, player in the middle facing north, the gun on, Downed on,
 // one round of energy.
 function resetFloor(size = 21) {
-  const f = state.floor;
-  f.GRID_SIZE = size;
-  f.playerRow = Math.floor(size / 2);
-  f.playerCol = Math.floor(size / 2);
-  f.facing = 'N';
-  f.look = null;
-  f.darkness = false;
-  f.darkTurns = 0;
-  f.light = freshLight();
-  f.wallSet = new Set();
-  f.pillarSet = new Set();
-  f.bossLitSet = new Set();
-  f.exploredSet = new Set();
-  f.heldChambers = new Set();
-  f.chamberAt = new Map();
-  f.visitedChambers = new Set();
-  f.boss = null;
-  f.hunter = null;
-  f.minions = [];
-  f.crawling = [];
-  f.vents = [];
-  f.keys = [];
-  f.chest = null;
-  f.exchange = null;
-  f.tutorial = null;
-  f.props = [];
-  f.gunTarget = null;
-  f.struggles = 0;
-  state.settings.freeLook = false;
-  state.settings.turnBeforeStep = false;
-  state.settings.eightWays = true;
-  state.settings.fogEnabled = true;
-  state.settings.gunCombat = true;
-  state.settings.downed = true;
-  state.settings.noise = true;
-  state.settings.simpleEnemies = false;
-  state.run.roomIndex = 0;
-  state.run.turnCount = 0;
-  state.run.coinsTotal = 0;
-  state.run.hearts = MAX_HEARTS;
-  state.run.energy = 1;
-  state.run.rounds = [null];
-  state.run.weakTo = {};
-  state.run.weakKnown = new Set();
-  state.battle.selectedTarget = null;
-  state.battle.aim = null;
-  state.battle.struggle = null;
-  resetHaunts();
-  computeVisibility();
+  emptyFloor(size, {
+    settings: { freeLook: false, turnBeforeStep: false, eightWays: true, fogEnabled: true, gunCombat: true, downed: true, noise: true, simpleEnemies: false },
+    run: gunRun(1),
+  });
 }
 
-// A stick man `dr`, `dc` tiles from the player that always comes for them
-// (like the tutorial's), so its moves don't hang on what it notices.
-function minionAt(dr, dc, kind = 'SHARD') {
-  const m = spawnMinion({ row: state.floor.playerRow + dr, col: state.floor.playerCol + dc }, kind);
-  m.hunts = true;
-  computeVisibility();
-  return m;
-}
+// Every stick man here hunts, so the chase and reach rules run.
+const minionAt = (dr, dc, kind) => placeMinion(dr, dc, kind, { hunts: true });
 
 // A downed stick man, as a maim leaves it, with its stun spent.
 function downedAt(dr, dc, kind = 'SHARD') {

@@ -11,10 +11,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { freshLight } from '../js/battery.js';
+import { emptyFloor } from './helpers.mjs';
 import { state, key } from '../js/state.js';
 import { LOOK_FREE_ARC, PLAYER_CONE_RANGE } from '../js/config.js';
-import { computeVisibility, inLookCone, FACING_VECTORS } from '../js/sight.js';
+import { inLookCone, FACING_VECTORS } from '../js/sight.js';
 import { BODY_ANGLES, lookAngle, aimLook, wantsTurn, turnBody, sweepLook } from '../js/look.js';
 import { stepPlayer } from '../js/moves.js';
 
@@ -25,37 +25,10 @@ state.settings.oneStick = false;
 // An open size x size floor, player in the middle facing north, free look
 // on, nothing else on it.
 function resetFloor(size = 21) {
-  state.floor.GRID_SIZE = size;
-  state.run.roomIndex = 0;
-  state.run.resting = false;
-  state.floor.playerRow = Math.floor(size / 2);
-  state.floor.playerCol = Math.floor(size / 2);
-  state.floor.facing = 'N';
-  state.floor.look = 0;
-  state.settings.freeLook = true;
-  state.settings.fogEnabled = true;
-  state.settings.gunCombat = false;
-  state.settings.turnBeforeStep = false;
-  state.settings.eightWays = true;
-  state.floor.darkness = false;
-  state.floor.light = freshLight();
-  state.floor.wallSet = new Set();
-  state.floor.pillarSet = new Set();
-  state.floor.bossLitSet = new Set();
-  state.floor.exploredSet = new Set();
-  state.floor.boss = null;
-  state.floor.hunter = null;
-  state.floor.minions = [];
-  state.floor.chest = null;
-  state.floor.props = [];
-  state.floor.coin = null;
-  state.floor.keys = [];
-  state.floor.stairs = null;
-  state.floor.stairsAlt = null;
-  state.floor.exchange = null;
-  state.floor.chamberAt = new Map();
-  state.floor.visitedChambers = new Set();
-  computeVisibility();
+  emptyFloor(size, {
+    settings: { freeLook: true, fogEnabled: true, gunCombat: false, turnBeforeStep: false, eightWays: true },
+    floor: { look: 0 },
+  });
 }
 
 const DEG = Math.PI / 180;

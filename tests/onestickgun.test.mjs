@@ -8,77 +8,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { freshLight } from '../js/battery.js';
+import { emptyFloor, gunRun, minionAt as placeMinion } from './helpers.mjs';
 import { state } from '../js/state.js';
 import { MAX_HEARTS, ONE_STICK } from '../js/config.js';
-import { computeVisibility } from '../js/sight.js';
-import { spawnMinion, clockFrame, lungeAt } from '../js/combat.js';
-import { resetHaunts } from '../js/haunts.js';
+import { clockFrame, lungeAt } from '../js/combat.js';
 import { BODY_ANGLES, swingLook } from '../js/look.js';
 import { fire, readyShot, settleShot, pickTarget, refreshGunTarget } from '../js/gun.js';
 
 // An open floor, player in the middle facing north, the gun on, One stick
 // on, two rounds of energy.
 function resetFloor(size = 21) {
-  const f = state.floor;
-  f.GRID_SIZE = size;
-  f.playerRow = Math.floor(size / 2);
-  f.playerCol = Math.floor(size / 2);
-  f.playerAt = null;
-  f.facing = 'N';
-  f.look = BODY_ANGLES.N;
-  f.lookWant = null;
-  f.darkness = false;
-  f.darkTurns = 0;
-  f.light = freshLight();
-  f.wallSet = new Set();
-  f.pillarSet = new Set();
-  f.bossLitSet = new Set();
-  f.exploredSet = new Set();
-  f.heldChambers = new Set();
-  f.chamberAt = new Map();
-  f.visitedChambers = new Set();
-  f.boss = null;
-  f.hunter = null;
-  f.minions = [];
-  f.crawling = [];
-  f.vents = [];
-  f.keys = [];
-  f.chest = null;
-  f.exchange = null;
-  f.tutorial = null;
-  f.props = [];
-  f.gunTarget = null;
-  f.struggles = 0;
-  state.settings.oneStick = true;
-  state.settings.freeLook = true;
-  state.settings.eightWays = true;
-  state.settings.fogEnabled = true;
-  state.settings.gunCombat = true;
-  state.settings.downed = true;
-  state.settings.noise = true;
-  state.settings.simpleEnemies = false;
-  state.settings.lightBattery = true;
-  state.run.roomIndex = 0;
-  state.run.turnCount = 0;
-  state.run.hearts = MAX_HEARTS;
-  state.run.energy = 2;
-  state.run.rounds = [null, null];
-  state.run.weakTo = {};
-  state.run.weakKnown = new Set();
-  state.battle.selectedTarget = null;
-  state.battle.aim = null;
-  state.battle.struggle = null;
-  resetHaunts();
-  computeVisibility();
+  emptyFloor(size, {
+    settings: { oneStick: true, freeLook: true, eightWays: true, fogEnabled: true, gunCombat: true, downed: true, noise: true, simpleEnemies: false, lightBattery: true },
+    run: gunRun(2),
+    floor: { look: BODY_ANGLES.N },
+  });
 }
 
-function minionAt(dr, dc, kind = 'SHARD') {
-  const m = spawnMinion({ row: state.floor.playerRow + dr, col: state.floor.playerCol + dc }, kind);
-  m.hunts = true;
-  computeVisibility();
-  return m;
-}
+// Every stick man here hunts, so the chase and reach rules run.
+const minionAt = (dr, dc, kind) => placeMinion(dr, dc, kind, { hunts: true });
 
 // Fires at `m`, presses READY and stops the dial in the middle of its
 // first `tier` zone.

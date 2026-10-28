@@ -10,12 +10,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { freshLight } from '../js/battery.js';
+import { emptyFloor, gunRun } from './helpers.mjs';
 import { state } from '../js/state.js';
-import { MAX_HEARTS, STEADY_AIM } from '../js/config.js';
+import { STEADY_AIM } from '../js/config.js';
 import { computeVisibility, inLookCone, shootBlock } from '../js/sight.js';
 import { spawnMinion } from '../js/combat.js';
-import { resetHaunts } from '../js/haunts.js';
 import { BODY_ANGLES } from '../js/look.js';
 import {
   fire, refreshGunTarget, startSteady, steadying, tickSteady, steadyChance, steadyShaking, releaseSteady, cancelSteady, holdSteady,
@@ -25,27 +24,14 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
 
 // An open floor, player in the middle facing north, One stick on, two rounds.
 function resetFloor(size = 21) {
-  const f = state.floor;
-  Object.assign(f, {
-    GRID_SIZE: size, playerRow: Math.floor(size / 2), playerCol: Math.floor(size / 2), playerAt: null,
-    facing: 'N', look: BODY_ANGLES.N, lookWant: null, darkness: false, darkTurns: 0, light: freshLight(),
-    wallSet: new Set(), pillarSet: new Set(), bossLitSet: new Set(), exploredSet: new Set(),
-    heldChambers: new Set(), chamberAt: new Map(), visitedChambers: new Set(), boss: null, hunter: null,
-    minions: [], crawling: [], vents: [], keys: [], chest: null, exchange: null, tutorial: null, props: [],
-    gunTarget: null, struggles: 0,
+  emptyFloor(size, {
+    settings: {
+      oneStick: true, freeLook: true, eightWays: true, fogEnabled: true, gunCombat: true, downed: true,
+      noise: true, simpleEnemies: false, lightBattery: true, steadyAim: true,
+    },
+    run: gunRun(2),
+    floor: { look: BODY_ANGLES.N },
   });
-  Object.assign(state.settings, {
-    oneStick: true, freeLook: true, eightWays: true, fogEnabled: true, gunCombat: true, downed: true,
-    noise: true, simpleEnemies: false, lightBattery: true, steadyAim: true,
-  });
-  Object.assign(state.run, {
-    roomIndex: 0, turnCount: 0, hearts: MAX_HEARTS, energy: 2, rounds: [null, null], weakTo: {}, weakKnown: new Set(),
-  });
-  state.battle.selectedTarget = null;
-  state.battle.aim = null;
-  state.battle.struggle = null;
-  resetHaunts();
-  computeVisibility();
 }
 
 // A stick man two tiles ahead, aimed at and steadying.

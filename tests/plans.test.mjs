@@ -6,13 +6,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { FOUR_STEPS } from '../js/grid.js';
 import { key } from '../js/state.js';
 import { CORE_KEYS } from '../js/config.js';
 import { FLOOR_PLANS, PLAN_VERSIONS, buildPlanLayout } from '../js/plans.js';
 import { FLOOR_RECIPES } from '../js/floors.js';
 import { TEXT } from '../js/text.js';
 
-const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 // Steps from `start` to every open tile it can reach on a size x size
 // grid, never through `blocked`.
@@ -21,7 +21,7 @@ function stepsFrom(layout, size, start, blocked = new Set()) {
   const queue = [start];
   while (queue.length) {
     const cur = queue.shift();
-    for (const [dr, dc] of DIRS) {
+    for (const [dr, dc] of FOUR_STEPS) {
       const r = cur.row + dr, c = cur.col + dc, k = key(r, c);
       if (r < 0 || c < 0 || r >= size || c >= size) continue;
       if (layout.walls.has(k) || blocked.has(k) || dist.has(k)) continue;

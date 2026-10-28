@@ -62,8 +62,9 @@ Code:
 - Move code with shell commands, unchanged. Don't rewrite it while moving it.
 
 Tests and commits:
-- A new or changed rule gets a check in `tests/*.test.mjs` (Node's built-in runner, set up
-  the floor with `resetFloor()`). Run `node --test tests/*.test.mjs` before a PR.
+- A new or changed rule gets a check in `tests/*.test.mjs` (Node's built-in runner). Set up the
+  floor with `tests/helpers.mjs` `emptyFloor(size, { settings, run, floor })` (also `gunRun`,
+  `twoRooms`, `minionAt`, `withRandom`), not a new copy of the setup. Run `node --test tests/*.test.mjs` before a PR.
   A change that could alter gameplay also gets `node tests/smoke.mjs`.
 - Commit subject: short and imperative ("Move floor setup out of main.js into floor.js",
   "Fix: <symptom>"). The body says what changed and why, and ends with the

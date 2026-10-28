@@ -11,7 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { state, key } from '../js/state.js';
+import { state, key, parseKey } from '../js/state.js';
 import { CORE_KEYS } from '../js/config.js';
 import { FLOOR_PLANS, buildPlanLayout } from '../js/plans.js';
 import { placeWindows, windowPool } from '../js/windows.js';
@@ -56,8 +56,7 @@ test('a stick man in window light is seen, but can only be shot in the player’
   school();
   const f = state.floor;
   state.settings.fogEnabled = true;
-  const lit = [...f.windowLitSet][0].split(',').map(Number);
-  const m = { row: lit[0], col: lit[1] };
+  const m = parseKey([...f.windowLitSet][0]);
   f.playerRow = m.row + 2;
   f.playerCol = m.col;
   while (f.wallSet.has(key(f.playerRow, f.playerCol))) f.playerRow--;
@@ -72,7 +71,7 @@ test("another room's window light shows nothing: only the room the player is in"
   school();
   const f = state.floor;
   state.settings.fogEnabled = true;
-  const [r, c] = [...f.windowLitSet][0].split(',').map(Number);
+  const { row: r, col: c } = parseKey([...f.windowLitSet][0]);
   const room = f.chamberAt.get(key(r, c));
   // The hallway tile nearest it: outside the room.
   const hall = [...Array(f.GRID_SIZE).keys()].flatMap(row => [...Array(f.GRID_SIZE).keys()].map(col => ({ row, col })))
