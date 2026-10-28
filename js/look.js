@@ -1,5 +1,5 @@
 // Free look (free look plan): the body faces one of 8 ways on the grid
-// (state.floor.facing; 4 with DEV -> 8 ways off), and the light points wherever the player aims, up
+// (state.floor.facing), and the light points wherever the player aims, up
 // to LOOK_FREE_ARC either side of the body. Aiming costs no turn; turning
 // the body to look further round costs one. Angles are on the grid: 0 =
 // north (row -1), +90° = east (col +1). Rules only; no DOM access here.
@@ -14,11 +14,9 @@ export const BODY_ANGLES = {
   NE: Math.PI / 4, SE: 3 * Math.PI / 4, SW: -3 * Math.PI / 4, NW: -Math.PI / 4,
 };
 
-// The ways the body can face and walk: all 8, or with DEV -> 8 ways off
-// only the 4 grid ways, as the game was before the eight ways plan.
+// The ways the body can face and walk: all 8 (eight ways plan).
 export function waysInUse() {
-  const ways = Object.keys(BODY_ANGLES);
-  return state.settings.eightWays ? ways : ways.filter(way => way.length === 1);
+  return Object.keys(BODY_ANGLES);
 }
 
 // The way in use closest to `angle`.

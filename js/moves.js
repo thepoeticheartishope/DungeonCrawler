@@ -48,8 +48,7 @@ function takeKey(index) {
 }
 
 // One arrow press, (dRow, dCol) one tile on the grid: one of the 8 ways
-// (eight ways plan), or the 4 grid ways with DEV -> 8 ways off, when a
-// diagonal does nothing. A press in a new direction turns the player's body to
+// (eight ways plan). A press in a new direction turns the player's body to
 // face it, then goes on to step that way in the same press. A diagonal that
 // would cut a corner (passage.js canPassCorner) is a bump, kind 'corner',
 // before anything on the tile itself counts. A turn or a

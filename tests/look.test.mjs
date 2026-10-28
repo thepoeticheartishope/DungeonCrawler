@@ -26,7 +26,7 @@ state.settings.oneStick = false;
 // on, nothing else on it.
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { freeLook: true, fogEnabled: true, gunCombat: false, eightWays: true },
+    settings: { freeLook: true, fogEnabled: true, gunCombat: false },
     floor: { look: 0 },
   });
 }
@@ -128,17 +128,12 @@ test('looking straight along a way, the cone lights exactly the old diamond', ()
   }
 });
 
-test('turnBody picks among 8 ways, or 4 with 8 ways off', () => {
+test('turnBody picks among 8 ways', () => {
   resetFloor();
   aimLook(50 * DEG);
   assert.deepEqual(turnBody(), [{ type: 'bodyTurned', facing: 'NE' }]);
   aimLook(-140 * DEG);
   assert.deepEqual(turnBody(), [{ type: 'bodyTurned', facing: 'SW' }]);
-  resetFloor();
-  state.settings.eightWays = false;
-  aimLook(50 * DEG);
-  assert.deepEqual(turnBody(), [{ type: 'bodyTurned', facing: 'E' }]);
-  state.settings.eightWays = true;
 });
 
 // Sweeps `degrees` in one-degree steps, as the shoulder view's held sweep
@@ -165,11 +160,4 @@ test('sweeping past the arc spends exactly one turn per body turn', () => {
   assert.ok(Math.abs(lookAngle() - 90 * DEG) < 1e-6, 'the light swept on without a jump');
   assert.equal(sweep(-180), 4);
   assert.equal(state.floor.facing, 'W');
-});
-
-test('with 4 ways the sweep turns the body a quarter round', () => {
-  resetFloor();
-  state.settings.eightWays = false;
-  assert.equal(sweep(31), 1);
-  assert.equal(state.floor.facing, 'E');
 });

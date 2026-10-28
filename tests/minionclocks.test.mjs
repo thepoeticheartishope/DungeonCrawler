@@ -20,7 +20,7 @@ const FRAME = 10;
 // on, energy left (so a landed reach strikes, no Struggle).
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { oneStick: true, freeLook: false, eightWays: true, fogEnabled: true, gunCombat: true, downed: true, noise: true, simpleEnemies: false },
+    settings: { oneStick: true, freeLook: false, fogEnabled: true, gunCombat: true, downed: true, noise: true, simpleEnemies: false },
     run: gunRun(1),
   });
 }
