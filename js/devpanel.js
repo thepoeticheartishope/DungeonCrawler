@@ -27,6 +27,7 @@ const devGazeBtn = document.getElementById('devGazeBtn');
 const devDownedBtn = document.getElementById('devDownedBtn');
 const devNoiseBtn = document.getElementById('devNoiseBtn');
 const devStaticBtn = document.getElementById('devStaticBtn');
+const devWarningBtn = document.getElementById('devWarningBtn');
 const devChargerBtn = document.getElementById('devChargerBtn');
 const devSafeRoomBtn = document.getElementById('devSafeRoomBtn');
 const devOneStickBtn = document.getElementById('devOneStickBtn');
@@ -199,6 +200,14 @@ export function initDevPanel({
     devStaticBtn.textContent = state.settings.staticNoise ? 'Static: ON (dev)' : 'Static: OFF (dev)';
     devStaticBtn.setAttribute('aria-pressed', String(state.settings.staticNoise));
     requestMapDraw();
+  });
+
+  // Dev tool (presence cues plan step D): the warning timer, to tune the
+  // lamps by how long before a reach a stick man first showed.
+  devWarningBtn.addEventListener('click', () => {
+    state.settings.warningTimer = !state.settings.warningTimer;
+    devWarningBtn.textContent = state.settings.warningTimer ? 'Warning timer: ON (dev)' : 'Warning timer: OFF (dev)';
+    devWarningBtn.setAttribute('aria-pressed', String(state.settings.warningTimer));
   });
 
   // Dev tool (charger plan step C): a charger in the start room from the

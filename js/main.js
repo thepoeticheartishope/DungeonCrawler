@@ -52,6 +52,7 @@ import { aimLook, turnBody, sweepLook, wantsTurn, waysInUse } from './look.js';
 import { toggleLight, turnsToFull, secondsToFull, batteryInPlay } from './battery.js';
 import { tickGaze } from './gaze.js';
 import { computeVisibility, seesEnemy, FACING_VECTORS } from './sight.js';
+import { noteSigns, warningAtReach } from './warning.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
@@ -1585,6 +1586,8 @@ function drawEvents(events) {
       // One stick: the stick man's reach is its tell (it stands, near);
       // only a miss is said.
       case 'reachStarted':
+        if (state.settings.warningTimer) parts.push(warningNote(e.minion));
+        break;
       case 'reachBroken':
         break;
       case 'coverTaken':
@@ -1874,6 +1877,14 @@ function walkFrame(now) {
 }
 requestAnimationFrame(walkFrame);
 
+// DEV -> Warning timer's room log line for stick man m's reach: how long
+// before it he first gave himself away, and by what (warning.js).
+function warningNote(m) {
+  const { kind, ms } = warningAtReach(m, performance.now());
+  if (!kind) return t('room.dev.warning.none');
+  return t('room.dev.warning', { s: (ms / 1000).toFixed(1), kind: t('room.dev.warning.' + kind) });
+}
+
 // The world's frame with One stick on (combat.js clockFrame, one stick
 // plan steps C and D), after the player's frame of walking: the battery
 // runs by time and the stick men walk on their own clocks. What they did
@@ -1884,6 +1895,7 @@ function worldFrame(dt) {
   if (state.run.turnLocked || state.run.runEnded || !clockMayRun()) return;
   const cells = Math.ceil(state.floor.light.charge);
   const events = clockFrame(Math.min(dt, ONE_STICK.frameMs), { canStruggle: worldRunsUnder() });
+  if (state.settings.warningTimer) noteSigns(performance.now());
   if (Math.ceil(state.floor.light.charge) !== cells) renderHud();
   if (!events.length) return;
   state.run.turnLocked = true;

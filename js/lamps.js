@@ -11,7 +11,8 @@
 // lampPoolLit (canMakeOut, computeVisibility); roomview.js draws each lamp
 // hanging over its tile and its warm pool, and the minimap rings the ones
 // seen (step B). A random floor or a rest has no lamps. The School's hang
-// over its two hall junctions and its side corridors' crossings. The lamps go out when the boss falls, like the
+// over its two hall junctions, its side corridors' crossings and its four
+// hall corners (step D). The lamps go out when the boss falls, like the
 // safe room's (lampsOn).
 // No DOM access here.
 

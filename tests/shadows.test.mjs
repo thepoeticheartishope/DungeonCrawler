@@ -59,6 +59,8 @@ test('a wall stops a shadow', () => {
 
 test('no shadow from a lamp too far, behind a wall, right overhead or out', () => {
   school();
+  // Only the upper hall's lamp, so the corner lamps don't count.
+  placeLamps({ lamps: [{ row: 9, col: 16 }] });
   assert.equal(shadowsAt({ row: 9, col: 16 - SHADOW.castFrom - 1 }).length, 0, 'too far');
   assert.equal(shadowsAt({ row: 5, col: 13 }).length, 0, 'in the library, the wall between');
   assert.equal(shadowsAt({ row: 9, col: 16 }).length, 0, 'right under it');

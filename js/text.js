@@ -372,6 +372,12 @@ export const TEXT = {
   'room.sneak.on': 'You crouch low and creep.', // draft. X switched sneaking on (one stick plan step B)
   'room.sneak.off': 'You stand and walk.', // draft. X switched it off
   'room.cover': 'In cover. Keep low.', // draft (Timothy 2026-10-26). Crouched beside something solid: quieter, and unseen from its far side
+  'room.dev.warning': 'DEV: warned {s} s before, by {kind}.', // DEV -> Warning timer (warning.js, presence cues plan step D): how long before a stick man's reach he first gave himself away
+  'room.dev.warning.none': 'DEV: no warning.', // DEV -> Warning timer: he reached for the player with no sign before
+  'room.dev.warning.light': 'your light',
+  'room.dev.warning.lamp': 'a lamp',
+  'room.dev.warning.window': 'a window',
+  'room.dev.warning.shadow': 'his shadow',
   'room.reach.missed': 'It misses.', // draft. A stick man's reach ended with the player out of reach (one stick plan step C)
   'dpad.stick.wait': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait', // draft. The d-pad centre's label
   'dpad.stick.turn': 'Look stick: tap to turn and face your aim', // draft. Its label while the aim is past the arc

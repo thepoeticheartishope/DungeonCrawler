@@ -495,6 +495,10 @@ export const SHOW_DUCTS = false;
 // over the map as the closest stick man nears, in place of "I see you.".
 // On by default; DEV -> Static switches it off.
 export const STATIC_NOISE = true;
+// The warning timer (warning.js, presence cues plan step D): a DEV tool,
+// off by default (DEV -> Warning timer). A stick man's signs out of view
+// `forgetMs` are forgotten, so his next one starts a new approach.
+export const WARNING_TIMER = { on: false, forgetMs: 3000 };
 export const STATIC = {
   startSteps: 5,      // walking steps from the closest stick man where it begins, about as far as the light reaches (Timothy: 7 put grain on ordinary walking)
   curve: 1.3,         // strength = share of the way in, to this power: quiet far off, rising near
