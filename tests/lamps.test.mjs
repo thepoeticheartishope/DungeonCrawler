@@ -16,7 +16,8 @@ import { FLOOR_PLANS, buildPlanLayout } from '../js/plans.js';
 import { placeLamps, lampPool } from '../js/lamps.js';
 import { seesEnemy, shootBlock, clearLine, computeVisibility } from '../js/sight.js';
 
-// The School's long hallway runs along row 9; a lamp goes at (9, 18).
+// The School's long hallway runs along row 9; a lamp goes at (9, 18), in
+// place of the School's own lamps.
 const LAMP = { row: 9, col: 18 };
 
 // The School laid out (version A) on state.floor with one lamp at LAMP, the
@@ -24,7 +25,7 @@ const LAMP = { row: 9, col: 18 };
 // tile lit.
 function school() {
   const plan = FLOOR_PLANS.school;
-  const rows = plan.rows.slice();
+  const rows = plan.rows.map(row => row.replace(/L/g, '.'));
   rows[LAMP.row] = rows[LAMP.row].slice(0, LAMP.col) + 'L' + rows[LAMP.row].slice(LAMP.col + 1);
   const layout = buildPlanLayout({ ...plan, rows }, CORE_KEYS, 'A');
   const f = state.floor;
@@ -47,6 +48,14 @@ test('a plan’s L is a lamp on open floor', () => {
   assert.deepEqual(layout.lamps, [LAMP]);
   assert.deepEqual(state.floor.lamps, [LAMP]);
   assert.ok(!state.floor.wallSet.has(key(LAMP.row, LAMP.col)));
+});
+
+test('the School has its four lamps on open floor in both versions', () => {
+  ['A', 'B'].forEach(v => {
+    const layout = buildPlanLayout(FLOOR_PLANS.school, CORE_KEYS, v);
+    assert.deepEqual(layout.lamps, [{ row: 9, col: 16 }, { row: 15, col: 9 }, { row: 15, col: 23 }, { row: 21, col: 16 }]);
+    layout.lamps.forEach(l => assert.ok(!layout.walls.has(key(l.row, l.col)), v + ' ' + l.row + ',' + l.col));
+  });
 });
 
 test('a lamp’s pool is open floor within its radius, with a clear line to the lamp', () => {

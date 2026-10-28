@@ -8,8 +8,10 @@
 // player's own light (sight.js shootBlock).
 //
 // floor.js calls placeLamps() when a floor is built. sight.js asks
-// lampPoolLit (canMakeOut, computeVisibility). A random floor
-// or a rest has no lamps. The lamps go out when the boss falls, like the
+// lampPoolLit (canMakeOut, computeVisibility); roomview.js draws each lamp
+// hanging over its tile and its warm pool, and the minimap rings the ones
+// seen (step B). A random floor or a rest has no lamps. The School's hang
+// over its two hall junctions and its side corridors' crossings. The lamps go out when the boss falls, like the
 // safe room's (lampsOn).
 // No DOM access here.
 
