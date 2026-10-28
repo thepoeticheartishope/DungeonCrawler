@@ -99,6 +99,15 @@ export const BRACKET_LEVEL = [0.4, 0.95]; // a shootable thing's brackets, then 
 export const BRACKET_PULSE = 0.025;     // how far the target's brackets breathe out, as a share of a tile's width
 export const BRACKET_TEXT_SIZE = 0.26;  // the target's guard over its brackets, as a share of a tile's width
 export const BRACKET_HP_GAP = 0.1;      // the target's guard sits this far over its brackets, as a share of a tile's height
+// Steady aim (steady aim plan): the target's brackets start STEADY_OPEN tile
+// widths further out and close in as the aim steadies; a mark across the
+// body climbs from the feet to the head (STEADY_MARK of the box's width)
+// and shakes STEADY_SHAKE tile widths when the arm does; the chance to land
+// sits by the top right bracket, STEADY_TEXT_SIZE of a tile's width high.
+export const STEADY_OPEN = 0.35;
+export const STEADY_MARK = 0.7;
+export const STEADY_SHAKE = 0.03;
+export const STEADY_TEXT_SIZE = 0.26;
 export const LASER_LEVEL = [0.45, 0.8]; // the laser's strength, then while a landed shot waits
 export const SHOT_RING = [0.06, 0.25];  // the ring where it lands: its first radius, then how much it grows, in tile widths
 const MISS_PAST = 0.6;           // how far past the minion a missed shot goes, in tiles

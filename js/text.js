@@ -792,6 +792,9 @@ export const TEXT = {
   'gun.shotLunged': 'It lunges.', // draft. The dial stopped in a lunge zone: it steps closer
   'gun.guardBroken': 'The guard breaks. It reels.', // draft. A hit on a guard (the HUSK's)
   'gun.lowered': 'You lower the gun.', // draft. BACK before READY: nothing spent
+  'gun.steady.lost': 'It left your aim. You lower the gun.', // draft. Steady aim: the stick man went out of the light or reach while SELECT was held
+  'gun.steady.knocked': 'The hit knocks your aim away.', // draft. Steady aim: struck while SELECT was held; nothing spent
+  'gun.steady.dropped': 'Your arm tires and drops.', // draft. Steady aim: held on the head too long, the aim falls back down
   'gun.stunned': 'It reels.', // draft. A maim with DEV -> Downed off: the minion skips its next move
   // Category weaknesses (strategy plan step D): {group} is a reload group's label.
   'gun.matched': 'The round was made for it.', // draft. A round from the group the minion is weak to (its kill zone was wider)

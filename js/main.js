@@ -41,7 +41,7 @@ import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, s
 import { turnWire, chargerLine } from './charger.js';
 import { shutterLine } from './saferoom.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
-import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
+import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, startSteady, steadying, tickSteady, releaseSteady, cancelSteady, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar, turnAskPage, holdAskScreen, askHeld, closeHeldAsk } from './gunpanels.js';
 import { t, TEXT, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
@@ -409,6 +409,7 @@ function finishGunAction(events) {
 // Energy comes only from energy cells: there is no reloading at will.
 // Standing on the stairs, SELECT goes down instead of firing.
 function pressSelect() {
+  if (steadying() && !mapPanelShown()) return;
   const shown = mapPanelShown();
   if (shown === 'aim' || shown === 'struggle') { pressBar(); return; }
   if (!shown && onStairs()) { goDown(); return; }
@@ -429,6 +430,15 @@ function fireGun() {
     return;
   }
   gunTest = false;
+  // Steady aim (STEADY_AIM, steady aim plan): no dial; SELECT held steadies the
+  // shot while the world goes on, and letting go fires (releaseSelect).
+  if (state.battle.aim && steadyOn()) {
+    startSteady();
+    const note = drawEvents(events);
+    if (note.text) showRoomNote(note.cls, note.text);
+    requestMapDraw();
+    return;
+  }
   state.run.turnLocked = true;
   if (state.battle.aim) {
     const note = drawEvents(events.concat(tutorialDial(events)));
@@ -437,6 +447,29 @@ function fireGun() {
     return;
   }
   applyTurnOutcome(events);
+  state.run.turnLocked = false;
+}
+
+// Whether SELECT is held to steady a shot instead of opening the dial:
+// DEV -> Steady aim, with One stick on (the world runs while it is held).
+function steadyOn() {
+  return state.settings.steadyAim && state.settings.oneStick;
+}
+
+// SELECT let go while steadying (gun.js releaseSteady): the shot fires and
+// settles as a stopped dial's would. `cancel` (slid off SELECT, Escape)
+// lowers the gun for nothing (cancelSteady).
+function releaseSelect(cancel = false) {
+  if (!steadying()) return;
+  if (cancel) {
+    const note = drawEvents(cancelSteady());
+    if (note.text) showRoomNote(note.cls, note.text);
+    requestMapDraw();
+    return;
+  }
+  const events = releaseSteady();
+  state.run.turnLocked = true;
+  finishGunAction(events);
   state.run.turnLocked = false;
 }
 
@@ -1686,6 +1719,14 @@ function drawEvents(events) {
       case 'shotCancelled':
         parts.push(t('gun.lowered'));
         break;
+      // Steady aim: the stick man left the aim, or the arm tired.
+      case 'steadyLost':
+        parts.push(t('gun.steady.lost'));
+        break;
+      case 'steadyDropped':
+        cls = 'warn-msg';
+        parts.push(t('gun.steady.dropped'));
+        break;
       case 'shotMissed':
         shotOnMap(e.minion, false);
         if (e.dark) revealInFlash(e.minion);
@@ -1852,6 +1893,28 @@ function walkFrame(now) {
     dpadClip.hidden = one;
   }
   if (!one) return;
+  // Steadying a shot (steady aim): the player stands still, the aim
+  // steadies and the world goes on.
+  // A panel over the map (a Struggle, CHARGE.SYS) or a hit takes the aim
+  // away: nothing is spent.
+  if (steadying() && mapPanelShown()) cancelSteady();
+  if (steadying()) {
+    heldWays.clear();
+    stickPushed = null;
+    resetWalk();
+    if (!clockMayRun() || state.run.turnLocked) return;
+    const note = drawEvents(tickSteady(Math.min(dt, ONE_STICK.frameMs)));
+    if (note.text) showRoomNote(note.cls, note.text);
+    requestMapDraw();
+    const hearts = state.run.hearts;
+    worldFrame(dt);
+    if (state.run.hearts < hearts && steadying()) {
+      cancelSteady();
+      selectHold = null;
+      showRoomNote('warn-msg', t('gun.steady.knocked'));
+    }
+    return;
+  }
   if (!clockMayRun() || state.run.turnLocked || walkHeld()) {
     heldWays.clear();
     stickPushed = null;
@@ -2156,12 +2219,32 @@ continueBtn.addEventListener('click', leaveEncounter);
 // pointer behind it (Enter or Space on the focused button) still counts,
 // the same way the d-pad does it.
 let selectPressed = false;
+// Steady aim: the press being held, and whether it has slid off SELECT
+// (letting go there lowers the gun instead of firing).
+let selectHold = null;
+const SELECT_SLIDE_OFF_PX = 14;
 btnSelect.addEventListener('pointerdown', (e) => {
   if (e.button !== 0 || btnSelect.disabled) return;
   e.preventDefault();
   selectPressed = true;
   pressSelect();
+  if (!steadying()) return;
+  try { btnSelect.setPointerCapture(e.pointerId); } catch (_) { /* fine without */ }
+  selectHold = { off: false };
 });
+btnSelect.addEventListener('pointermove', (e) => {
+  if (!selectHold) return;
+  const r = btnSelect.getBoundingClientRect(), pad = SELECT_SLIDE_OFF_PX;
+  selectHold.off = e.clientX < r.left - pad || e.clientX > r.right + pad || e.clientY < r.top - pad || e.clientY > r.bottom + pad;
+});
+const letGoSelect = (e) => {
+  if (!selectHold) return;
+  const off = selectHold.off || e.type === 'pointercancel';
+  selectHold = null;
+  releaseSelect(off);
+};
+btnSelect.addEventListener('pointerup', letGoSelect);
+btnSelect.addEventListener('pointercancel', letGoSelect);
 btnSelect.addEventListener('click', () => {
   if (selectPressed) { selectPressed = false; return; }
   pressSelect();
@@ -2206,6 +2289,7 @@ const NUMPAD_WAYS = {
   Numpad6: 'R', Numpad1: 'DL', Numpad2: 'D', Numpad3: 'DR',
 };
 document.addEventListener('keyup', (e) => {
+  if ((e.key === 'f' || e.key === 'F') && !selectHold) releaseSelect();
   if (e.key === ' ') holdLookUp('key', false);
   if (e.key === 'u' || e.key === 'U') holdLookUp('u', false);
   const way = MOVE_KEYS[e.key] || NUMPAD_WAYS[e.code];
@@ -2232,6 +2316,7 @@ window.addEventListener('blur', () => {
 document.addEventListener('keydown', (e) => {
   if (document.activeElement === answerInput || e.defaultPrevented) return;
   if (!roomScreen.classList.contains('show')) return;
+  if (e.key === 'Escape' && steadying()) { e.preventDefault(); releaseSelect(true); return; }
   const numpad = NUMPAD_WAYS[e.code];
   // One stick: the move keys are held, not pressed (walkFrame).
   const held = state.settings.oneStick && !mapPanelShown() && (MOVE_KEYS[e.key] || numpad);
@@ -2244,7 +2329,7 @@ document.addEventListener('keydown', (e) => {
   if (numpad && !mapPanelShown()) { e.preventDefault(); padPush(...SCREEN_WAYS[numpad]); }
   else if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
   else if (e.key === ' ' && !mapPanelShown()) { e.preventDefault(); holdLookUp('key', true); }
-  else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); pressSelect(); }
+  else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); if (!(e.repeat && steadyOn())) pressSelect(); }
   else if (gunReady() && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
   else if (gunReady() && e.key === '.') { e.preventDefault(); skipTurn(); }
   else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); switchLight(); }

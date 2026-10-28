@@ -438,6 +438,33 @@ export const MINION_STUN_MOVES = 1;
 // DEV -> Downed (DOWNED) switches it off: a 1 HP stick man stays standing.
 export const DOWNED = true;
 export const DOWNED_SLOWDOWN = 2;
+// Steady aim (steady aim plan step A, `ideas/steady-aim-plan.md` outside
+// the repo; Timothy 2026-10-27, after Signalis): SELECT is held, not
+// tapped, and no dial opens. The aim steadies over
+// fullMs (slower on a low battery or in the dark) and climbs from the legs
+// to the head; letting go fires. The chance to land climbs with it from
+// minChance to 1 at full hold: below full a hit maims, at full it kills.
+// A miss in the first `wildBelow` of the hold is a harm (HARM_KINDS). Held
+// on the head past shakeAfterMs the arm shakes and the chance falls toward
+// shakeFloor; at dropAtMs it drops back to `dropTo`. The world never stops
+// for it, and the player stands still while aiming (Timothy's calls,
+// 2026-10-28: the aim climbs with time, stand still, a wild early miss,
+// no change by depth). A kind in `kindSlow` steadies that much slower on
+// it: the STALKER weaves. `on` is the start setting, off until step C
+// (DEV -> Steady aim, or ?aim=steady / ?aim=dial); One stick only.
+export const STEADY_AIM = {
+  on: false,
+  fullMs: 1000,
+  minChance: 0.05,
+  wildBelow: 0.3,
+  shakeAfterMs: 700,
+  dropAtMs: 1600,
+  shakeFloor: 0.4,
+  dropTo: 0.55,
+  lowBattery: 0.75,
+  dark: 0.55,
+  kindSlow: { STALKER: 0.8 },
+};
 // How much of a crawl (MAP_ANIMATION_MS.crawl) the leading hand takes to
 // reach and plant before the body starts to drag (mapview.js holds the
 // slide back that long), and how many turns the letters it drops on the

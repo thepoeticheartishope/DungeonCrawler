@@ -15,7 +15,7 @@ import {
   DIAL_DEPTHS, DIAL_ZONE_GAP, DIAL_LAP_MS, DIAL_LAP_LIMIT_MS, HARM_KINDS, HARM_WIDTH, GUARD_STUN_MOVES, DARK_SWEEP_SCALE,
   MINION_KINDS, MINION_STRIKE_COST, MINION_STUN_MOVES, DARK_MISS_COST, HUNTER_REST_TURNS, STRUGGLE_PUSHBACK,
   STRUGGLE_ZONE_WIDTH, STRUGGLE_LAP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_WIDTH,
-  MINIGAME_TIER_PAY, PLAYER_CONE_RANGE, DARK_SHOT_STEP,
+  MINIGAME_TIER_PAY, PLAYER_CONE_RANGE, DARK_SHOT_STEP, STEADY_AIM,
 } from './config.js';
 import { fightGroups, shuffle } from './quiz.js';
 import { recordHauntAnswer } from './haunts.js';
@@ -392,6 +392,92 @@ export function cancelShot() {
   return [{ type: 'shotCancelled' }];
 }
 
+// Steady aim (STEADY_AIM, steady aim plan): SELECT held on a shot waiting at
+// READY steadies it instead of opening the dial. aim.steady runs 0 to 1,
+// aim.heldMs counts time held at full (the shake). Nothing is spent yet.
+// Events: none (the view shows the aim).
+export function startSteady() {
+  const aim = state.battle.aim;
+  if (!aim || aim.phase !== 'ready') return [];
+  aim.phase = 'steady';
+  aim.steady = 0;
+  aim.heldMs = 0;
+  return [];
+}
+
+// Whether a shot is being steadied now.
+export function steadying() {
+  return !!state.battle.aim && state.battle.aim.phase === 'steady';
+}
+
+// One frame of holding, `dtMs` long. A lit shot whose stick man can't be
+// shot any more (gone, out of the light or reach) is lowered: steadyLost.
+// A shot into the dark never says so (it would give away what is there).
+// Past dropAtMs on the head the arm drops back: steadyDropped. A weaving
+// kind (STEADY_AIM.kindSlow, the STALKER) steadies slower, but only in the
+// light: in the dark the aim can't tell what it is on.
+export function tickSteady(dtMs) {
+  const aim = state.battle.aim;
+  if (!steadying()) return [];
+  const m = aim.target;
+  if (!aim.dark && m && (!state.floor.minions.includes(m) || shootBlock(m))) {
+    state.battle.aim = null;
+    return [{ type: 'steadyLost' }];
+  }
+  if (aim.steady < 1) {
+    const kind = !aim.dark && m ? STEADY_AIM.kindSlow[m.minionKind] || 1 : 1;
+    const slow = (aim.dark ? STEADY_AIM.dark : lowBattery() ? STEADY_AIM.lowBattery : 1) * kind;
+    aim.steady = Math.min(1, aim.steady + dtMs * slow / STEADY_AIM.fullMs);
+    return [];
+  }
+  aim.heldMs += dtMs;
+  if (aim.heldMs < STEADY_AIM.dropAtMs) return [];
+  aim.steady = STEADY_AIM.dropTo;
+  aim.heldMs = 0;
+  return [{ type: 'steadyDropped' }];
+}
+
+// The chance a steadied shot lands (0 to 1): up from minChance with the
+// steadiness, 1 at full hold, then down toward shakeFloor while the arm
+// shakes.
+export function steadyChance(aim) {
+  if (aim.steady < 1) return Math.max(STEADY_AIM.minChance, aim.steady);
+  const shake = Math.max(0, aim.heldMs - STEADY_AIM.shakeAfterMs) / (STEADY_AIM.dropAtMs - STEADY_AIM.shakeAfterMs);
+  return 1 - shake * (1 - STEADY_AIM.shakeFloor);
+}
+
+// Whether the aim is shaking (held on the head past shakeAfterMs).
+export function steadyShaking(aim) {
+  return aim.steady >= 1 && aim.heldMs > STEADY_AIM.shakeAfterMs;
+}
+
+// SELECT let go: the round is spent (readyShot), the shot rolls against
+// steadyChance, and it settles as a stopped dial would: on the head (full
+// hold) a kill, below it a maim, a miss in the first wildBelow a harm (not
+// in the tutorial room: a plain fight there), any other miss a miss.
+// Events: readyShot's, then settleShot's.
+export function releaseSteady() {
+  const aim = state.battle.aim;
+  if (!steadying()) return [];
+  const chance = steadyChance(aim);
+  aim.phase = 'ready';
+  const events = readyShot();
+  let zone = null;
+  if (Math.random() < chance) zone = { tier: aim.steady >= 1 ? 'kill' : 'maim' };
+  else if (aim.steady < STEADY_AIM.wildBelow && !state.floor.tutorial) {
+    zone = { tier: 'harm', harm: HARM_KINDS[Math.floor(Math.random() * HARM_KINDS.length)] };
+  }
+  return [...events, ...settleZone(aim, zone)];
+}
+
+// The gun lowered while steadying (SELECT slid off, Escape): nothing was
+// spent. Events: shotCancelled.
+export function cancelSteady() {
+  if (!steadying()) return [];
+  state.battle.aim = null;
+  return [{ type: 'shotCancelled' }];
+}
+
 // The player stopped the running dial at `position` (0 to 1, in the
 // zones' own frame: the view takes off any drift) for the shot in
 // state.battle.aim. No health (kill or maim plan):
@@ -421,10 +507,15 @@ export function cancelShot() {
 export function settleShot(position) {
   const aim = state.battle.aim;
   if (!aim || aim.phase !== 'run') return [];
+  return settleZone(aim, aim.zones.find(z => position >= z.from && position <= z.to));
+}
+
+// What a shot does once it is known where it went: `zone` ({ tier, harm? })
+// or none (a miss). The dial's stop and steady aim's roll both come here.
+function settleZone(aim, zone) {
   state.battle.aim = null;
   const m = aim.target;
   const dark = aim.dark ? { dark: true } : {};
-  const zone = aim.zones.find(z => position >= z.from && position <= z.to);
   if (zone && zone.tier === 'harm') return settleHarm(zone.harm, aim);
   if (!m) return [{ type: 'shotIntoDark', end: aim.end }];
   if (!zone) return [{ type: 'shotMissed', minion: m, ...dark }];

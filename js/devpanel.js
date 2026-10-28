@@ -25,6 +25,7 @@ const devBookPaperBtn = document.getElementById('devBookPaperBtn');
 const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
 const devGazeBtn = document.getElementById('devGazeBtn');
 const devDownedBtn = document.getElementById('devDownedBtn');
+const devSteadyBtn = document.getElementById('devSteadyBtn');
 const devNoiseBtn = document.getElementById('devNoiseBtn');
 const devStaticBtn = document.getElementById('devStaticBtn');
 const devWarningBtn = document.getElementById('devWarningBtn');
@@ -241,6 +242,20 @@ export function initDevPanel({
     devShowDuctsBtn.textContent = state.settings.showDucts ? 'Show ducts: ON (dev)' : 'Show ducts: OFF (dev)';
     devShowDuctsBtn.setAttribute('aria-pressed', String(state.settings.showDucts));
     requestMapDraw();
+  });
+
+  // Dev tool (steady aim plan step A): SELECT held steadies a shot, or the
+  // dial as before. ?aim=steady or ?aim=dial in the address sets it at load.
+  const showSteady = () => {
+    devSteadyBtn.textContent = state.settings.steadyAim ? 'Steady aim: ON (dev)' : 'Steady aim: OFF (dev)';
+    devSteadyBtn.setAttribute('aria-pressed', String(state.settings.steadyAim));
+  };
+  if (params.get('aim') === 'steady') state.settings.steadyAim = true;
+  if (params.get('aim') === 'dial') state.settings.steadyAim = false;
+  showSteady();
+  devSteadyBtn.addEventListener('click', () => {
+    state.settings.steadyAim = !state.settings.steadyAim;
+    showSteady();
   });
 
   // Dev tool (downed plan step A): a shot that leaves a stick man on 1 HP
