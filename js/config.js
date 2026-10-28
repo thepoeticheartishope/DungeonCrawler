@@ -453,10 +453,11 @@ export const DOWNED_SLOWDOWN = 2;
 // (step B, Timothy's call): the cone's half-angle runs from LOOK_CONE_HALF
 // to `beamHalf` and its slack from LOOK_CONE_SLACK to `beamSlack` with the
 // aim, and the beam stays on the stick man. A kind in `kindSlow` steadies that much slower on
-// it: the STALKER weaves. `on` is the start setting, off until step C
-// (DEV -> Steady aim, or ?aim=steady / ?aim=dial); One stick only.
+// it: the STALKER weaves. `on` is the start setting, the default since
+// step C (DEV -> Steady aim, or ?aim=steady / ?aim=dial). One stick only:
+// the start screen's Turns option keeps the dial, as does the Struggle.
 export const STEADY_AIM = {
-  on: false,
+  on: true,
   fullMs: 1000,
   minChance: 0.05,
   wildBelow: 0.3,
