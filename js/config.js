@@ -1059,6 +1059,22 @@ export const WINDOW_LIGHT = { every: 3, length: 3.4, slant: 1.1, inset: 5 / 16 }
 // tiles (any way, diagonals included) with a clear line, about as far as
 // the room view shows, past REVEAL_DISTANCE and from outside the room.
 export const LAMP_LIGHT = { radius: 2, seeFrom: 10 };
+// Shadows (shadows.js, presence cues plan step C): a lamp within `castFrom`
+// tiles with a clear line to a stick man, or a window whose pool he stands
+// in (its light from `windowHigh` tiles above the window), throws his
+// shadow away from it: `base` tiles long and `perTile` longer for each
+// tile he stands from the light; none closer than `minFrom` (right under
+// it). Measured every `sample` tiles. Subtle (Timothy 2026-10-28: a help
+// to notice one moving through light, not a mark in the dark): drawn only
+// on floor that is lit (visibleSet), `dark` over it at
+// his feet, `tipDark` at its tip (the part that reaches the player's light
+// first, so it mustn't fade away), `width` tiles wide there; where it
+// falls glides after him over
+// `glideMs` a tile (at once under reduced motion), so it never jumps.
+export const SHADOW = {
+  castFrom: 5, windowHigh: 1.5, base: 2.5, perTile: 0.5, minFrom: 0.3, sample: 0.25,
+  dark: 0.35, tipDark: 0.25, width: 0.5, glideMs: 400,
+};
 // The pieces of furniture a fixed plan can stand in its rooms (plans.js
 // `furniture`, room view plan step E). Each has a bump line in text.js
 // (`furniture.<piece>`) and a drawing in roomview.js.

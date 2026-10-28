@@ -46,7 +46,7 @@ import { state, key } from './state.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
   ISO_NARROW_MAP_WIDTH, PLAYER_EMBER, FIGURE3D, MAP_ANIMATION_MS, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING,
-  SKY_EYE, WINDOW_LIGHT, SAFE_ROOM, LAMP_LIGHT,
+  SKY_EYE, WINDOW_LIGHT, SAFE_ROOM, LAMP_LIGHT, SHADOW,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
@@ -65,6 +65,7 @@ import {
 } from './mapshared.js';
 import { canShoot } from './sight.js';
 import { lampsOn, lampPoolLit } from './lamps.js';
+import { shadowsAt } from './shadows.js';
 import { answerRingNow } from './swirl.js';
 import { t } from './text.js';
 
@@ -280,6 +281,7 @@ export function drawRoomScene(ctx, canvasSize, shared) {
     resetPlayerForm();
     resetFigure(PLAYER_FIGURE);
     shownCam = null;
+    shadowFeet.clear();
     shownFloor = state.run.floorsEntered;
   }
   pageScale = canvasSize.pageWidth ? canvasSize.width / canvasSize.pageWidth : 1;
@@ -354,6 +356,7 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   const safe = f.safeRoom;
   if (safe && safe.lamp && space.room === safe.chamber) drawLamp(ox, oy, glows);
   if (lampsOn()) lamps.filter(l => !state.settings.fogEnabled || f.visibleSet.has(key(l.row, l.col))).forEach(l => glows.push(() => bulbAt(...hallLampSpot(l, ox, oy), HALL_LAMP.bulb)));
+  drawShadows(ox, oy, inView);
   bctx.globalCompositeOperation = 'multiply';
   bctx.drawImage(glow, 0, 0);
   // The windows' glass glows from outside.
@@ -659,6 +662,72 @@ function moveCamera(goal) {
 // Fills the one-pixel-a-tile light canvas for the tiles from (c0, r0),
 // `w` by `h`: each floor tile's level and tint, a wall face the level of
 // the floor it stands over, a rim the brightest beside it, the dark 0.
+// Where each stick man's shadow is cast from (view-only): it glides
+// toward his tile, or the spot he is drawn at while seen, so a shadow seen
+// before he is never jumps a tile at a time. Keyed by the stick man.
+const shadowFeet = new Map();
+let shadowClock = null;
+
+// The stick men's shadows (shadows.js), darkening the light itself and
+// only on floor that is lit (visibleSet, not the dim room shape or memory:
+// Timothy, they showed where there was no light): a faint wedge from his
+// feet, widening to SHADOW.width at its tip and fading a little along it.
+function drawShadows(ox, oy, inView) {
+  const f = state.floor;
+  const dt = shadowClock === null ? 0 : look.now - shadowClock;
+  shadowClock = look.now;
+  const seenAt = new Map(look.things.filter(thing => drawingOf(thing) === 'form').map(thing => [minionOn(thing.tile), thing.at]));
+  [...shadowFeet.keys()].forEach(m => { if (!f.minions.includes(m)) shadowFeet.delete(m); });
+  gctx.globalCompositeOperation = 'source-over';
+  gctx.save();
+  gctx.beginPath();
+  f.visibleSet.forEach(k => {
+    const [row, col] = tileOf(k);
+    if (inView(row, col) && !isWall(row, col)) gctx.rect(col * T - ox, row * T - oy, T, T);
+  });
+  gctx.clip();
+  f.minions.forEach(m => {
+    const goal = seenAt.get(m) || { row: m.row, col: m.col };
+    const feet = glideFeet(m, goal, dt);
+    if (!inView(Math.round(feet.row), Math.round(feet.col))) return;
+    shadowsAt(feet).forEach(s => {
+      const fx = (feet.col + 0.5) * T - ox, fy = (feet.row + ROOM_VIEW.footAt) * T - oy;
+      const tx = fx + s.dir[1] * s.length * T, ty = fy + s.dir[0] * s.length * T;
+      const [nx, ny] = [-s.dir[0] * T, s.dir[1] * T];
+      const half = SHADOW.width / 2;
+      const g = gctx.createLinearGradient(fx, fy, tx, ty);
+      g.addColorStop(0, 'rgba(0, 0, 0, ' + SHADOW.dark + ')');
+      g.addColorStop(1, 'rgba(0, 0, 0, ' + SHADOW.tipDark + ')');
+      gctx.fillStyle = g;
+      gctx.beginPath();
+      gctx.moveTo(fx + nx * half * 0.4, fy + ny * half * 0.4);
+      gctx.lineTo(tx + nx * half, ty + ny * half);
+      gctx.lineTo(tx - nx * half, ty - ny * half);
+      gctx.lineTo(fx - nx * half * 0.4, fy - ny * half * 0.4);
+      gctx.closePath();
+      gctx.fill();
+    });
+  });
+  gctx.restore();
+}
+
+// Moves stick man m's shadow's feet toward `goal` by `dt` ms of gliding
+// (SHADOW.glideMs a tile), or at once under reduced motion or when far
+// off (a duct drop, a knockback); returns where they are.
+function glideFeet(m, goal, dt) {
+  const was = shadowFeet.get(m);
+  const gap = was ? Math.hypot(goal.row - was.row, goal.col - was.col) : Infinity;
+  if (look.still || gap > 2 || gap <= dt / SHADOW.glideMs) {
+    shadowFeet.set(m, { row: goal.row, col: goal.col });
+    return goal;
+  }
+  const share = dt / SHADOW.glideMs / gap;
+  const feet = { row: was.row + (goal.row - was.row) * share, col: was.col + (goal.col - was.col) * share };
+  shadowFeet.set(m, feet);
+  look.keepMoving();
+  return feet;
+}
+
 function lightTiles(space, at, c0, r0, w, h) {
   if (lights.width < w || lights.height < h) {
     lights.width = Math.max(lights.width, w);
