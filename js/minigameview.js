@@ -22,7 +22,8 @@ import {
   crosswireSetup, crosswireTier, fogRevealTier, sumLockMatches,
 } from './minigames.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
-import { normalizeSpaces, buildChoices, resolveImageSrc, shuffle } from './quiz.js';
+import { normalizeSpaces, buildChoices, resolveImageSrc } from './quiz.js';
+import { shuffle } from './random.js';
 import { t } from './text.js';
 
 const slot = document.getElementById('minigameSlot');

@@ -2,7 +2,7 @@
 // spawning, and advancing a turn. Rules only — no page access. Functions
 // that change what's on the map return what changed, and main.js draws it.
 
-import { state, key } from './state.js';
+import { state, key, parseKey } from './state.js';
 import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIGHT, MINION_TRACK_TURNS, MINION_LINGER_TURNS, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS, DOWNED_SLOWDOWN, ONE_STICK, SAFE_ROOM } from './config.js';
 import { advanceLight } from './light.js';
 import { tickLight, drainLight, batteryInPlay, lightOn } from './battery.js';
@@ -329,7 +329,7 @@ function inView(m) {
   // own light off.
   if (!lightOn()) return (m.track > 0 || lampLit(f.playerRow, f.playerCol)) && sees(m, f.playerRow, f.playerCol);
   return sees(m, f.playerRow, f.playerCol) ||
-    [...f.sightSet].some(k => { const [row, col] = k.split(',').map(Number); return sees(m, row, col); });
+    [...f.sightSet].some(k => { const { row, col } = parseKey(k); return sees(m, row, col); });
 }
 function notice(m) {
   m.drawn = false;

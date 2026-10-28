@@ -4,6 +4,7 @@
 import { state } from './state.js';
 import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE, CHOICE_TYPES, NO_REPEAT_CHOICE_TYPES, NUMBER_NEAR_POOL, STEM_CUES } from './config.js';
 import { t } from './text.js';
+import { shuffle } from './random.js';
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
 
@@ -11,15 +12,6 @@ const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
 // custom list has been loaded).
 export function defaultSample(mcMode) {
   return mcMode ? MC_SAMPLE_DATA : TYPING_SAMPLE_DATA;
-}
-
-export function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
 }
 
 // Parses pasted text as either a JSON array of {term, meaning} objects,

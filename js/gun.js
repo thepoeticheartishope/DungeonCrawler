@@ -17,7 +17,8 @@ import {
   STRUGGLE_ZONE_WIDTH, STRUGGLE_LAP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_WIDTH,
   MINIGAME_TIER_PAY, PLAYER_CONE_RANGE, DARK_SHOT_STEP, STEADY_AIM,
 } from './config.js';
-import { fightGroups, shuffle } from './quiz.js';
+import { fightGroups } from './quiz.js';
+import { shuffle } from './random.js';
 import { recordHauntAnswer } from './haunts.js';
 import { shootBlock, canShoot, seesEnemy, computeVisibility } from './sight.js';
 import { aimLook, angleTo, lookAngle, wantsTurn, wrapAngle } from './look.js';

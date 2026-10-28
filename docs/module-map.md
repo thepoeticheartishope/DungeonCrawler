@@ -9,7 +9,9 @@ Rules and data (no page/DOM access):
 | File | Job |
 |---|---|
 | `config.js` | Tunable constants and sample data. Never changes at runtime. |
-| `state.js` | The one shared `state` object, plus `key(r, c)`. Grouped by lifetime: `state.settings` (start screen / DEV panel), `state.run` (one run), `state.floor` (rebuilt each floor), `state.battle` (the current fight). |
+| `state.js` | The one shared `state` object, plus `key(r, c)` and its reverse `parseKey(k)` (→ `{ row, col }`). Grouped by lifetime: `state.settings` (start screen / DEV panel), `state.run` (one run), `state.floor` (rebuilt each floor), `state.battle` (the current fight). |
+| `grid.js` | `FOUR_STEPS` (the four ways, in the order every four-way search uses) and `EIGHT_STEPS` (with the diagonals, as noise.js and vents.js spread). One copy instead of the eleven tables the rules used to carry. |
+| `random.js` | `shuffle(list)` (a shuffled copy) and `randInt(lo, hi)` (both ends included), shared by every rule that rolls; moved here from quiz.js, dungeon.js, decor.js and introview.js. |
 | `text.js` | All wording. `t()`, per-floor overrides, `data-t` labels. |
 | `rooms.js` | Hand-drawn room templates (`#` wall, `.` floor, `?` prop, `+` inner door). |
 | `dungeon.js` | Builds a random floor layout from the templates (a recipe with no `plan`): rooms, hallways, boss room, stairs; `buildRestLayout()` for a rest floor's one room. Locked core plan (`ideas/qol-batch-2026-10-12.md` outside the repo): the boss room (the core) sits near the middle, the start room beside its one door; `keyCount` keys (`CORE_KEYS`) go in random rooms, never the start or core (`layout.keys`). |

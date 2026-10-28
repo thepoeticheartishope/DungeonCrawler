@@ -80,7 +80,9 @@ Rules and data (no page/DOM access):
 | File | Job |
 |---|---|
 | `config.js` | Tunable constants and sample data. Never changes at runtime. |
-| `state.js` | The one shared `state` (`settings` / `run` / `floor` / `battle`) and `key(r, c)`. |
+| `state.js` | The one shared `state` (`settings` / `run` / `floor` / `battle`), `key(r, c)` and `parseKey(k)`. |
+| `grid.js` | `FOUR_STEPS` / `EIGHT_STEPS`: the one copy of the step tables. |
+| `random.js` | `shuffle(list)` and `randInt(lo, hi)`. |
 | `text.js` | All wording: `t()`, per-floor overrides, `data-t` labels. |
 | `rooms.js` | Hand-drawn room templates for random floors. |
 | `dungeon.js` | Random floor layouts from the templates; `buildRestLayout()`. |

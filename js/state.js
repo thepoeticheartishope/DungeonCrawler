@@ -17,6 +17,12 @@ export function key(r, c) {
   return r + ',' + c;
 }
 
+// The other way: a tile key back into `{ row, col }`.
+export function parseKey(k) {
+  const [row, col] = k.split(',').map(Number);
+  return { row, col };
+}
+
 const initialGridSize = FLOOR_RECIPES[0].grid;
 
 export const state = {

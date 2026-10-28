@@ -4,7 +4,8 @@
 // quiet room (buildRestFloor). No page access — main.js loadRoom() calls
 // one of them, then drawFloor() puts the result on the page.
 
-import { state, key } from './state.js';
+import { state, key, parseKey } from './state.js';
+import { FOUR_STEPS } from './grid.js';
 import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { FLOOR_PLANS, buildPlanLayout } from './plans.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
@@ -12,7 +13,7 @@ import {
   CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
 } from './config.js';
 import { floorRecipe, pickPaths, REST_RECIPES, restLore } from './floors.js';
-import { shuffle } from './quiz.js';
+import { shuffle } from './random.js';
 import { BODY_ANGLES } from './look.js';
 import { computeVisibility } from './sight.js';
 import { freshLight } from './battery.js';
@@ -58,7 +59,7 @@ function stepsFromStart() {
   while (queue.length) {
     const cur = queue.shift();
     const d = dist.get(key(cur.row, cur.col));
-    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    for (const [dr, dc] of FOUR_STEPS) {
       const nr = cur.row + dr, nc = cur.col + dc;
       if (nr < 0 || nr >= state.floor.GRID_SIZE || nc < 0 || nc >= state.floor.GRID_SIZE) continue;
       const k = key(nr, nc);
@@ -83,7 +84,7 @@ function placeMinions(roomTiles, takenTiles, count, recipe) {
   const far = shuffle(free.filter(k => dist.get(k) >= MINION_MIN_START_DISTANCE));
   const near = shuffle(free.filter(k => dist.get(k) < MINION_MIN_START_DISTANCE && dist.get(k) >= 3));
   [...far, ...near].slice(0, count).forEach(k => {
-    const [row, col] = k.split(',').map(Number);
+    const { row, col } = parseKey(k);
     spawnMinion({ row, col }, nextMinionKind(recipe));
   });
 }
@@ -243,7 +244,7 @@ export function buildFloor() {
   state.floor.chest = null;
 
   const specialCandidates = [...freeRoomTiles]
-    .map(k => { const [row, col] = k.split(',').map(Number); return { row, col }; })
+    .map(k => { const { row, col } = parseKey(k); return { row, col }; })
     .filter(p => !takenTiles.some(q => q.row === p.row && q.col === p.col));
   const specialTile = beats.specialTile || placer.pick(specialCandidates);
   if (specialTile) state.floor.chest = { row: specialTile.row, col: specialTile.col, kind: 'chest' };
@@ -354,7 +355,7 @@ function pickSecondStairs(layout, avoid) {
   const doors = doorTiles(layout);
   const apart = (p, q) => Math.abs(p.row - q.row) + Math.abs(p.col - q.col) >= REST_STAIRS_APART;
   const tiles = [...layout.roomTiles].filter(k => !doors.has(k)).map(k => {
-    const [row, col] = k.split(',').map(Number);
+    const { row, col } = parseKey(k);
     return { row, col };
   }).filter(p => !avoid.some(q => q.row === p.row && q.col === p.col) && apart(p, layout.stairs) && apart(p, layout.start));
   return tiles.length ? tiles[Math.floor(Math.random() * tiles.length)] : null;
@@ -371,7 +372,7 @@ function placeExchange(layout, avoid) {
   const placer = makePlacer(layout, REST_GRID);
   const onPaper = p => avoid.some(q => q.row === p.row && q.col === p.col);
   const tiles = [...layout.roomTiles].map(k => {
-    const [row, col] = k.split(',').map(Number);
+    const { row, col } = parseKey(k);
     return { row, col };
   }).filter(p => !onPaper(p));
   const open = tiles.filter(p => freeStanding(p, layout.roomTiles));

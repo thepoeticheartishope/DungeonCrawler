@@ -12,7 +12,9 @@
 // reading shared game state, so it can be tested on its own with no
 // dependency on the rest of the game.
 
-import { key } from './state.js';
+import { key, parseKey } from './state.js';
+import { shuffle, randInt } from './random.js';
+import { FOUR_STEPS } from './grid.js';
 import { randomTemplate, namedTemplate, parseTemplate } from './rooms.js';
 
 const CHAMBER_BUFFER = 2;    // empty tiles required between two rooms' outer walls
@@ -24,12 +26,6 @@ const TURN_TRIES = 20;       // turns of a drawing tried before a room that won'
 const CORE_JITTER = 2;       // tiles the core may sit off the grid's middle, either way
 const GATE_GAP = CHAMBER_BUFFER + 1; // tiles between the core's wall and the start room's wall
 const GATE_SLIDE = 2;        // tiles the start room may slide along the core's side, either way
-
-const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-
-function randInt(lo, hi) {
-  return lo + Math.floor(Math.random() * (hi - lo + 1));
-}
 
 // A parsed template placed with its top-left corner at (r0, c0), in
 // absolute grid coordinates. The footprint is the whole drawing, walls
@@ -117,7 +113,7 @@ function routeHallway(from, to, blocked, corridors, gridSize) {
     }
     const sk = key(cur.row, cur.col) + ',' + cur.dir;
     if (best.has(sk) && best.get(sk) < cur.cost) continue;
-    DIRS.forEach(([dr, dc], dir) => {
+    FOUR_STEPS.forEach(([dr, dc], dir) => {
       const nr = cur.row + dr, nc = cur.col + dc;
       if (!inBounds(nr, nc)) return;
       const nk = key(nr, nc);
@@ -173,9 +169,9 @@ function connect(a, b, blocked, corridors, gridSize, opts = {}) {
 function findRoomEntrances(floorSet, roomFloorTiles) {
   const entrances = [];
   for (const tileKey of roomFloorTiles) {
-    const [r, c] = tileKey.split(',').map(Number);
+    const { row: r, col: c } = parseKey(tileKey);
     let touchesOutside = false;
-    for (const [dr, dc] of DIRS) {
+    for (const [dr, dc] of FOUR_STEPS) {
       const nk = key(r + dr, c + dc);
       if (floorSet.has(nk) && !roomFloorTiles.has(nk)) touchesOutside = true;
     }
@@ -189,7 +185,7 @@ function reachableFrom(start, floorSet) {
   const queue = [start];
   while (queue.length) {
     const cur = queue.shift();
-    for (const [dr, dc] of DIRS) {
+    for (const [dr, dc] of FOUR_STEPS) {
       const nk = key(cur.row + dr, cur.col + dc);
       if (!floorSet.has(nk) || seen.has(nk)) continue;
       seen.add(nk);
@@ -206,7 +202,7 @@ function openInterior(room) {
   const avoid = new Set();
   [...room.openDoors, ...room.innerDoors].forEach(d => {
     avoid.add(key(d.row, d.col));
-    DIRS.forEach(([dr, dc]) => avoid.add(key(d.row + dr, d.col + dc)));
+    FOUR_STEPS.forEach(([dr, dc]) => avoid.add(key(d.row + dr, d.col + dc)));
   });
   room.slots.forEach(s => avoid.add(key(s.row, s.col)));
   return room.floorCells.filter(p => !avoid.has(key(p.row, p.col)));
@@ -229,15 +225,6 @@ function placeAtRandom(tpl, gridSize) {
   return placeRoom(tpl,
     randInt(EDGE_MARGIN, gridSize - tpl.h - EDGE_MARGIN),
     randInt(EDGE_MARGIN, gridSize - tpl.w - EDGE_MARGIN));
-}
-
-function shuffle(list) {
-  const out = list.slice();
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
 }
 
 // The core (the boss room) near the middle of the grid, up to

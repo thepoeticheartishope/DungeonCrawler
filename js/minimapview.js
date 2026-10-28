@@ -15,7 +15,7 @@
 // MINIMAP_MAX_UNIT, so a few seen tiles don't fill the page. main.js
 // calls refreshMinimap() whenever the map is drawn. Reads state only.
 
-import { state, key } from './state.js';
+import { state, key, parseKey } from './state.js';
 import { t } from './text.js';
 import { MINIMAP_MAX_UNIT, MINIMAP_PAD, MINIMAP_LABEL_PX, MINIMAP_TITLE_PX, MINIMAP_ARROW } from './config.js';
 import { lookAngle } from './look.js';
@@ -205,7 +205,7 @@ function roomMiddles() {
   const sums = new Map();
   f.chamberAt.forEach((room, k) => {
     if (!f.chamberNames[room]) return;
-    const [row, col] = k.split(',').map(Number);
+    const { row, col } = parseKey(k);
     const s = sums.get(room) || { row: 0, col: 0, n: 0 };
     sums.set(room, { row: s.row + row, col: s.col + col, n: s.n + 1 });
   });

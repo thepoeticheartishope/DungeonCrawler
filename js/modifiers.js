@@ -8,7 +8,7 @@
 
 import { state } from './state.js';
 import { MODIFIER_CHANCE, MODIFIER_DARK_BONUS, FLIP_MAX_ANSWERS, HUNTER_MODIFIER_PAIRS, BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS } from './config.js';
-import { shuffle } from './quiz.js';
+import { shuffle } from './random.js';
 import { gateModifierCount } from './gate.js';
 
 export const MODIFIERS = ['blind', 'gambler', 'flip', 'timer'];

@@ -17,6 +17,7 @@ import {
   INTRO_HESITATE_MS, INTRO_ANSWER_CHAR_MS, INTRO_ANSWER_MAX_MS, INTRO_VERDICT_MS, INTRO_FADE_AFTER_MS, INTRO_FADE_MS, INTRO_CALL_HOLD_MS,
 } from './config.js';
 import { t } from './text.js';
+import { shuffle } from './random.js';
 
 const screen = document.getElementById('introGlitch');
 const log = document.getElementById('introLog');
@@ -37,7 +38,7 @@ export function playIntro({ questions, attempt }, done) {
   log.classList.remove('fading');
   call.textContent = t('intro.call');
   call.classList.remove('show');
-  const lines = shuffled(questions.filter(Boolean).map(oneLine)).filter(q => q !== oneLine(attempt.question));
+  const lines = shuffle(questions.filter(Boolean).map(oneLine)).filter(q => q !== oneLine(attempt.question));
   finish = () => {
     clearTimeout(timer);
     timer = null;
@@ -157,7 +158,7 @@ function typeOne(text, then, deadline, glitches = true) {
 function gapSpots(text) {
   const letters = [...text].map((ch, i) => (ch === ' ' ? -1 : i)).filter(i => i >= 0);
   const count = Math.min(letters.length, 2 + Math.floor(Math.random() * 3));
-  return new Set(shuffled(letters).slice(0, count));
+  return new Set(shuffle(letters).slice(0, count));
 }
 
 // A question as one line of text.
@@ -175,12 +176,3 @@ function addLine(text, cls = '') {
   return line;
 }
 
-// A shuffled copy (the intro's own, so it never touches the run's order).
-function shuffled(list) {
-  const copy = list.slice();
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
