@@ -23,7 +23,6 @@ import { staticLevel } from '../js/static.js';
 import { breakGate } from '../js/gate.js';
 import { freshLight, tickLight } from '../js/battery.js';
 
-state.settings.safeRoom = true;
 const DEPTHS = FLOOR_RECIPES.map((_, i) => i);
 const turns = (ms) => Math.round(ms / SAFE_ROOM.turnMs);
 
@@ -275,17 +274,6 @@ test('the lamp goes out when the boss falls', () => {
   const events = breakGate();
   assert.equal(f.safeRoom.lamp, false);
   assert.ok(events.some(e => e.type === 'lampWentOut'));
-});
-
-test('with DEV -> Safe room off a floor has no safe room', () => {
-  state.settings.safeRoom = false;
-  try {
-    const f = build(0);
-    assert.equal(f.safeRoom, null);
-    assert.ok(!f.props.some(p => p.kind === 'shutter' || p.kind === 'switch'));
-  } finally {
-    state.settings.safeRoom = true;
-  }
 });
 
 // ---- step B: the lamp ----

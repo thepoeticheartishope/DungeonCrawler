@@ -1097,15 +1097,38 @@ async function checkLightBattery(page, url) {
   if (await batteryShown(page) !== 'LIGHT #### ON') return `V when charged left ${await batteryShown(page)}`;
 
   // Down to the first depth, where the stick men notice the light: a few
-  // turns with it on and off (any page error fails the run). DEV -> Safe
-  // room off: the player would start in it, where the lamp switches their
-  // light off and it doesn't charge; these are the rules outside it.
+  // turns with it on and off (any page error fails the run). The player
+  // starts in the safe room, where the lamp switches their light off and it
+  // doesn't charge; these are the rules outside it, so they are put on the
+  // nearest open tile outside it, clear of stick men, and switch it on (V).
   await page.click('#devToggleBtn');
   await page.waitForSelector('#devPanel.show', { timeout: 5000 });
-  await page.click('#devSafeRoomBtn');
   await page.click('#devSkipBtn');
   await page.click('#devToggleBtn');
   await roomIdle(page);
+  const outside = await page.evaluate(async () => {
+    const { state, key } = await import('./js/state.js');
+    const { whatBlocks } = await import('./js/passage.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const { requestMapDraw } = await import('./js/mapview.js');
+    const f = state.floor;
+    const inside = f.safeRoom ? f.safeRoom.cells : new Set();
+    const near = (r, c) => Math.abs(r - f.playerRow) + Math.abs(c - f.playerCol);
+    let best = null;
+    for (let r = 0; r < f.GRID_SIZE; r++) for (let c = 0; c < f.GRID_SIZE; c++) {
+      if (inside.has(key(r, c)) || whatBlocks(r, c) || !f.chamberAt.has(key(r, c))) continue;
+      if (f.minions.some(m => Math.max(Math.abs(m.row - r), Math.abs(m.col - c)) < 5)) continue;
+      if (!best || near(r, c) < near(...best)) best = [r, c];
+    }
+    if (!best) return null;
+    [f.playerRow, f.playerCol] = best;
+    if (f.safeRoom) f.safeRoom.playerIn = false;
+    computeVisibility();
+    requestMapDraw();
+    return { on: f.light.on };
+  });
+  if (!outside) return 'found no open tile outside the safe room';
+  if (!outside.on) await page.keyboard.press('v');
   if (await batteryShown(page) !== 'LIGHT #### ON') return `a new floor's battery read ${await batteryShown(page)}`;
   await wait(2);
   await page.keyboard.press('v');

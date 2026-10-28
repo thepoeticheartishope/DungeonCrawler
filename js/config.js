@@ -350,11 +350,9 @@ export const RELAYS_PER_FLOOR = [1, 2];
 // to full through CHARGE.SYS, a wire puzzle with no wrong move. Wires are
 // `sizes[depth]` square (the last for any deeper depth: Timothy 2026-10-26,
 // 4 x 4 on depth 1, 5 x 5 from depth 2), and every `wireTurnsPerTurn` wire
-// turns spend a turn. `on` is the default of state.settings.charger, which
-// DEV -> Charger flips (from the next floor).
+// turns spend a turn.
 // Once charged, CHARGE.SYS stays up `closeMs` with its line, then closes.
 export const CHARGER = {
-  on: true,
   sizes: [4, 5],
   wireTurnsPerTurn: 2,
   closeMs: 900,
@@ -362,15 +360,12 @@ export const CHARGER = {
 // The safe room (safe room plan, `ideas/safe-room-plan.md` outside the repo;
 // Timothy 2026-10-27; saferoom.js): the start room of a danger floor gets a
 // shutter on each doorway and a pull switch inside. Shut, no stick man
-// comes in; the hunter lifts it. `on` is the default of
-// state.settings.safeRoom, which DEV -> Safe room flips (from the next
-// floor). A stick man at an open doorway stops `hesitateMs` before it
+// comes in; the hunter lifts it. A stick man at an open doorway stops `hesitateMs` before it
 // comes in; one shut out gives up `waitMs` after the shutter stopped it;
 // the hunter stands `hunterLiftMs` at a shut one before it rolls up. The
 // shutter drops over `dropMs` (roomview.js). With Real time off a turn
 // counts as `turnMs` for these waits. Drafts; tune after play.
 export const SAFE_ROOM = {
-  on: true,
   hesitateMs: 1500,
   waitMs: 3000,
   hunterLiftMs: 2500,

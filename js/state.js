@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, WARNING_TIMER, CHARGER, ONE_STICK, BOOK, SAFE_ROOM, STEADY_AIM } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, WARNING_TIMER, ONE_STICK, BOOK, STEADY_AIM } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -40,8 +40,6 @@ export const state = {
     showDucts: SHOW_DUCTS,  // DEV -> Show ducts: stick men in a duct drawn dimly at the grate they will come out of, and every pair of grates known
     noise: NOISE,           // mistakes make a sound stick men hear (noise.js); DEV -> Noise flips it (off: mistakes are quiet)
     oneStick: ONE_STICK.on, // walk freely in real time with one stick (walk.js), not tile to tile; turns Real time on; DEV -> One stick flips it
-    charger: CHARGER.on,   // a charger in each depth's start room, gun on (charger.js); DEV -> Charger flips it from the next floor
-    safeRoom: SAFE_ROOM.on, // each depth's start room is a safe room with shutters (saferoom.js); DEV -> Safe room flips it from the next floor
     staticNoise: STATIC_NOISE, // a faint grain grows as the closest stick man nears, in place of "I see you." (static.js); DEV -> Static flips it
     warningTimer: WARNING_TIMER.on, // the room log says how long before a stick man's reach he first gave himself away (warning.js); DEV -> Warning timer flips it
     steadyAim: STEADY_AIM.on, // SELECT held steadies a shot instead of opening the dial (gun.js startSteady); DEV -> Steady aim or ?aim=steady / ?aim=dial flips it
