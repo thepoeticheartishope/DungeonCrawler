@@ -131,7 +131,8 @@ Drawing and page code:
 
 | File | Job |
 |---|---|
-| `main.js` | Everything else: wiring, `drawEvents()`, turn and frame flow, battle screen, room log, end screens (~2,400 lines). |
+| `main.js` | Everything else: wiring, `drawEvents()`, turn and frame flow, room log, end screens (~2,050 lines). |
+| `battlescreen.js` | The battle screen: encounter log, category choices, a turn of questions, settling answers. |
 | `render.js` | Screens, the HUD (`renderHud()` only writer of hearts / gold / turns), edge glow, d-pad hints. |
 | `mapview.js` | The map canvas, its animations and taps; `requestMapDraw()`, `glyphOf()`, `mapThings()`. |
 | `roomview.js` | The room view, the only map view: camera, walls and floors, light map, stick men, shadows (~1,000 lines). |
