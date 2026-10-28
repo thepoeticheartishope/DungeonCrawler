@@ -11,6 +11,7 @@
 import { state, key } from './state.js';
 import { MINION_MIN_START_DISTANCE } from './config.js';
 import { rollProp } from './decor.js';
+import { solidProp } from './passage.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
@@ -26,12 +27,13 @@ export const BEAT_KINDS = ['paper', 'box', 'minion', 'special'];
 const BESIDE_THE_WALK = { paper: 0, box: 1, minion: 0, special: 1 };
 
 // Tiles nobody walks through when the floor is built: walls, pillars and
-// boxes. Papers lie flat, so they don't count.
+// boxes. Papers lie flat and the safe room's shutters start up, so they
+// don't count.
 function solidTiles() {
   const f = state.floor;
   const solid = new Set(f.wallSet);
   f.pillarSet.forEach(k => solid.add(k));
-  f.props.forEach(p => { if (p.kind !== 'paper') solid.add(key(p.row, p.col)); });
+  f.props.forEach(p => { if (solidProp(p)) solid.add(key(p.row, p.col)); });
   return solid;
 }
 

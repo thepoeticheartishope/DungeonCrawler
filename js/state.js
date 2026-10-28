@@ -117,6 +117,7 @@ export const state = {
     gunTarget: null,       // the minion (or hunter) the gun is aimed at, picked by a tap on the map (gun.js pickTarget), or null
     goals: [],             // this floor's side goals: [{ id, pay }] from FLOOR_GOALS (goals.js rollGoals); none on a rest floor
     heldChambers: new Set(), // rooms held by a relay (relays.js): no boss light, no minion from outside
+    safeRoom: null,        // the start room's shutters on a danger floor (saferoom.js): { chamber, cells: Set of its tile keys, doors: [keys], switchAt: { row, col }, shut, lamp, playerIn }; null on a rest or tutorial floor or with SAFE_ROOM off
     relayTurnsWon: 0,      // light turns relays have taken back on this floor (capped at RELAY_TURNS_CAP)
     path: null,            // the way down the player took to this depth (floors.js FLOOR_PATHS), or null
     stairsAlt: null,       // a between-rest's second stairs: { row, col, path, hidden } (hidden until scouted); null elsewhere
