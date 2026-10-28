@@ -46,7 +46,7 @@ import { state, key } from './state.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
   ISO_NARROW_MAP_WIDTH, PLAYER_EMBER, FIGURE3D, MAP_ANIMATION_MS, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING,
-  SKY_EYE, WINDOW_LIGHT, SAFE_ROOM,
+  SKY_EYE, WINDOW_LIGHT, SAFE_ROOM, LAMP_LIGHT,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
@@ -64,6 +64,7 @@ import {
   BRACKET_TEXT_SIZE, BRACKET_HP_GAP, LASER_LEVEL, SHOT_RING, MISS_TEXT_SIZE, MISS_RISE, ISO_STICK_HEIGHT,
 } from './mapshared.js';
 import { canShoot } from './sight.js';
+import { lampsOn, lampPoolLit } from './lamps.js';
 import { answerRingNow } from './swirl.js';
 import { t } from './text.js';
 
@@ -102,6 +103,12 @@ const PILLAR = { body: '#4a4652', light: '#5a5662', dark: '#38343f', top: '#625d
 // white, the dim room and memory a touch violet.
 const LIT_TINT = [228, 240, 244];
 const DIM_TINT = [244, 236, 255];
+// A plan's lamps (lamps.js, presence cues plan step B): their pool is warm,
+// `floor` bright under the lamp and fading to `edge` of that at its rim,
+// steady (no flicker: Timothy's motion rule). Each hangs like the safe
+// room's lamp (LAMP), its bulb `bulb` bright.
+const HALL_LAMP = { floor: 0.7, edge: 0.3, bulb: 0.4 };
+const LAMP_TINT = [255, 214, 170];
 // The player's stick man, drawn in the picture's pixels.
 const STICK_LINE = 1;
 const HEAD_SHARE = 0.12;         // the head's radius, a share of his height
@@ -322,6 +329,9 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   items.push({ y: at.row + ROOM_VIEW.footAt + 0.01, draw: () => drawStickMan(at, ox, oy) });
   // The safe room's lamp hangs from the ceiling, over all of it.
   if (f.safeRoom && space.room === f.safeRoom.chamber) items.push({ y: Infinity, draw: () => drawLampShade(ox, oy) });
+  // A plan's lamps hang the same way, in the halls as well as rooms.
+  const lamps = f.lamps.filter(l => inView(l.row, l.col));
+  lamps.forEach(l => items.push({ y: Infinity, draw: () => shadeAt(...hallLampSpot(l, ox, oy)) }));
   items.sort((a, b) => a.y - b.y).forEach(item => item.draw());
   const standing = items.filter(item => item.row !== undefined);
 
@@ -343,6 +353,7 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   lit.forEach(w => drawPool(w, ox, oy));
   const safe = f.safeRoom;
   if (safe && safe.lamp && space.room === safe.chamber) drawLamp(ox, oy, glows);
+  if (lampsOn()) lamps.filter(l => !state.settings.fogEnabled || f.visibleSet.has(key(l.row, l.col))).forEach(l => glows.push(() => bulbAt(...hallLampSpot(l, ox, oy), HALL_LAMP.bulb)));
   bctx.globalCompositeOperation = 'multiply';
   bctx.drawImage(glow, 0, 0);
   // The windows' glass glows from outside.
@@ -658,6 +669,9 @@ function lightTiles(space, at, c0, r0, w, h) {
   const floorLight = (row, col) => {
     if (isWall(row, col)) return null;
     const k = key(row, col);
+    if (fog && f.visibleSet.has(k) && !f.sightSet.has(k) && lampPoolLit(row, col)) {
+      return [Math.max(lampLevel(row, col), space.tiles.has(k) ? ROOM_VIEW.room : 0), LAMP_TINT];
+    }
     if (!fog || f.visibleSet.has(k)) {
       const d = Math.hypot(row - at.row, col - at.col);
       const level = ROOM_VIEW.litNear + (ROOM_VIEW.litFar - ROOM_VIEW.litNear) * Math.min(1, d / PLAYER_CONE_RANGE);
@@ -1284,6 +1298,12 @@ function lampSpot(ox, oy) {
 // dark once the lamp is out.
 function drawLampShade(ox, oy) {
   const { cx, cy } = lampSpot(ox, oy);
+  shadeAt(cx, cy);
+}
+
+// A lamp's cord and shade hanging over the floor point (cx, cy), in the
+// picture's pixels: the safe room's lamp and a plan's lamps alike.
+function shadeAt(cx, cy) {
   const sy = Math.round(cy - LAMP.hang * T);
   const top = Math.round(cy - LAMP.ceiling * T);
   bctx.fillStyle = SWITCH_ART.cord;
@@ -1308,24 +1328,44 @@ function drawLamp(ox, oy, glows) {
   g.addColorStop(1, 'rgba(' + POOL.rgb + ', 0)');
   gctx.fillStyle = g;
   gctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+  glows.push(() => bulbAt(cx, cy, LAMP.bulb));
+}
+
+// A lit lamp's bulb under its shade over the floor point (cx, cy), `bulb`
+// bright, and a faint cone of light falling from it to the floor. Drawn
+// over the lit picture, so it shows in the dark.
+function bulbAt(cx, cy, bulb) {
   const sy = Math.round(cy - LAMP.hang * T) + 2;
-  glows.push(() => {
-    const spread = T * 1.2;
-    const cone = bctx.createLinearGradient(0, sy, 0, cy);
-    cone.addColorStop(0, 'rgba(' + POOL.rgb + ', ' + LAMP.beam + ')');
-    cone.addColorStop(1, 'rgba(' + POOL.rgb + ', 0)');
-    bctx.fillStyle = cone;
-    bctx.beginPath();
-    bctx.moveTo(cx - 3, sy);
-    bctx.lineTo(cx + 4, sy);
-    bctx.lineTo(cx + spread, cy);
-    bctx.lineTo(cx - spread, cy);
-    bctx.closePath();
-    bctx.fill();
-    bctx.fillStyle = SWITCH_ART.warm;
-    bctx.fillRect(cx - 1, sy, 3, 1);
-    halo(cx + 0.5, sy, T * 0.5, POOL.rgb, LAMP.bulb);
-  });
+  const spread = T * 1.2;
+  const cone = bctx.createLinearGradient(0, sy, 0, cy);
+  cone.addColorStop(0, 'rgba(' + POOL.rgb + ', ' + LAMP.beam + ')');
+  cone.addColorStop(1, 'rgba(' + POOL.rgb + ', 0)');
+  bctx.fillStyle = cone;
+  bctx.beginPath();
+  bctx.moveTo(cx - 3, sy);
+  bctx.lineTo(cx + 4, sy);
+  bctx.lineTo(cx + spread, cy);
+  bctx.lineTo(cx - spread, cy);
+  bctx.closePath();
+  bctx.fill();
+  bctx.fillStyle = SWITCH_ART.warm;
+  bctx.fillRect(cx - 1, sy, 3, 1);
+  halo(cx + 0.5, sy, T * 0.5, POOL.rgb, bulb);
+}
+
+// Where a plan's lamp `l` hangs, as [cx, cy]: over its tile's middle, in
+// the picture's pixels with the camera at (ox, oy).
+function hallLampSpot(l, ox, oy) {
+  return [Math.round((l.col + 0.5) * T - ox), Math.round((l.row + 0.5) * T - oy)];
+}
+
+// How bright a plan's lamps light the tile (row, col): HALL_LAMP.floor
+// under a lamp, down to HALL_LAMP.edge of that at LAMP_LIGHT.radius, the
+// brightest lamp's.
+function lampLevel(row, col) {
+  const near = Math.min(...state.floor.lamps.map(l => Math.hypot(row - l.row, col - l.col)));
+  const share = 1 - (1 - HALL_LAMP.edge) * Math.min(1, near / LAMP_LIGHT.radius);
+  return HALL_LAMP.floor * share;
 }
 
 // The chest: a dark trunk with bands and a brass lock.

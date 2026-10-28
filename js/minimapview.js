@@ -6,7 +6,8 @@
 // without playing the floor for them. The one thing it does mark is the
 // grates the player has seen, and a dashed line between a pair once they
 // know where it leads (vents and noise plan, Timothy's call): the ducts
-// are how the stick men come. On a fixed plan it also names the building
+// are how the stick men come. Lamps the player has seen get a small ring
+// (presence cues plan step B): the lit places to plan from. On a fixed plan it also names the building
 // and each room the player has walked into, so the floor can be learned
 // run after run, and a room seen but not yet walked into is drawn faint
 // with dashed walls. Drawn square like the map (room view plan step G),
@@ -92,6 +93,14 @@ export function refreshMinimap() {
     ctx.fillStyle = '#000';
     ctx.fillRect(x - r, y - r / 2, r * 2, r);
     ctx.strokeRect(x - r, y - r / 2, r * 2, r);
+  });
+  // Lamps the player has seen (lamps.js): a small ring, so the lit places
+  // to plan from are on the map.
+  f.lamps.filter(seen).forEach(l => {
+    const [x, y] = at(l);
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(2, unit * 0.3), 0, Math.PI * 2);
+    ctx.stroke();
   });
   ctx.restore();
   // Names first, so the player's dot is never hidden under one.

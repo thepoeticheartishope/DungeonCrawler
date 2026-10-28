@@ -2285,7 +2285,8 @@ async function checkCharger(page, url) {
     const f = state.floor;
     const free = (r, c) => !f.wallSet.has(key(r, c)) && !f.pillarSet.has(key(r, c)) && !f.props.some(p => p.row === r && p.col === c) &&
       !f.minions.some(m => m.row === r && m.col === c);
-    const spot = [[1, 0], [0, 1], [0, -1], [1, 1], [1, -1]].map(([dr, dc]) => ({ row: f.playerRow + dr, col: f.playerCol + dc }))
+    // Above too: beside the charger in a corner, below and both sides can all be wall or furniture.
+    const spot = [[1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 0], [-1, 1], [-1, -1]].map(([dr, dc]) => ({ row: f.playerRow + dr, col: f.playerCol + dc }))
       .find(p => free(p.row, p.col));
     // One that always hunts (as the tutorial's does), so it comes whether or not it saw the player.
     if (spot) spawnMinion(spot, 'SHARD').hunts = true;
