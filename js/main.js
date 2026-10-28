@@ -1470,6 +1470,38 @@ function drawEvents(events) {
       case 'chargerFull':
         parts.push(t('room.charger.full'));
         break;
+      // The safe room (saferoom.js): the shutters, the lamp, and what waits
+      // outside. Several shut out at once are said once.
+      case 'shutterDown':
+        parts.push(t('room.shutter.down'));
+        break;
+      case 'shutterUp':
+        parts.push(t('room.shutter.up'));
+        break;
+      case 'shutterBlocked':
+        parts.push(t('room.shutter.blocked'));
+        cls = 'block-msg';
+        break;
+      case 'shutterWaited':
+        if (!parts.includes(t('room.shutter.waits'))) parts.push(t('room.shutter.waits'));
+        break;
+      case 'shutterGaveUp':
+        if (!parts.includes(t('room.shutter.gone'))) parts.push(t('room.shutter.gone'));
+        break;
+      case 'shutterLifting':
+        parts.push(t('room.shutter.hunter'));
+        cls = 'warn-msg';
+        break;
+      case 'shutterLifted':
+        parts.push(t('room.shutter.lifted'));
+        cls = 'warn-msg';
+        break;
+      case 'lightSwitchedForLamp':
+        parts.push(t('room.lamp.ownOff'));
+        break;
+      case 'lampWentOut':
+        logLine(t('room.lamp.out'), 'alert');
+        break;
       case 'chargerOpened':
         parts.push(t(e.kept ? 'room.charger.kept' : 'room.charger.loose'));
         break;

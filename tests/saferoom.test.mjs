@@ -1,4 +1,4 @@
-// Unit tests for saferoom.js (safe room plan step A): where the shutters
+// Unit tests for saferoom.js (safe room plan steps A and B): where the shutters
 // and switch go, up = open floor and down = solid, stick men kept out,
 // stopping at an open door, giving up at a shut one, the hunter lifting
 // it, a reach broken at the doorway, static, the lamp, and no energy cells.
@@ -20,6 +20,7 @@ import { clearLine, computeVisibility } from '../js/sight.js';
 import { enterTile } from '../js/moves.js';
 import { staticLevel } from '../js/static.js';
 import { breakGate } from '../js/gate.js';
+import { freshLight, tickLight } from '../js/battery.js';
 
 SAFE_ROOM.on = true;
 const DEPTHS = FLOOR_RECIPES.map((_, i) => i);
@@ -286,4 +287,74 @@ test('with SAFE_ROOM off a floor has no safe room', () => {
   } finally {
     SAFE_ROOM.on = true;
   }
+});
+
+// ---- step B: the lamp ----
+
+// The battery in play, the light on and full.
+function battery(f) {
+  state.settings.lightBattery = true;
+  state.settings.simpleEnemies = false;
+  f.light = freshLight();
+}
+
+test('coming into the lit room switches the player\'s light off; with the lamp out it stays on', () => {
+  const f = build(0);
+  battery(f);
+  const { door, outside } = atTheDoor(f);
+  const walkIn = () => {
+    f.playerRow = outside.row;
+    f.playerCol = outside.col;
+    enterTile('N');
+    f.playerRow = door.row;
+    f.playerCol = door.col;
+    return enterTile('N');
+  };
+  assert.ok(walkIn().some(e => e.type === 'lightSwitchedForLamp'));
+  assert.equal(f.light.on, false);
+  f.light.on = true;
+  f.safeRoom.lamp = false;
+  assert.ok(!walkIn().some(e => e.type === 'lightSwitchedForLamp'));
+  assert.equal(f.light.on, true);
+});
+
+test('off in the safe room the battery doesn\'t charge; outside it does', () => {
+  const f = build(0);
+  battery(f);
+  f.light.on = false;
+  f.light.charge = 1;
+  f.safeRoom.playerIn = true;
+  tickLight();
+  assert.equal(f.light.charge, 1);
+  f.safeRoom.playerIn = false;
+  tickLight();
+  assert.equal(f.light.charge, 2);
+});
+
+test('in the lamp a stick man in the hall sees the player with their light off, unless the shutter is down', () => {
+  for (const shut of [false, true]) {
+    const f = build(0);
+    battery(f);
+    const { door, outside } = atTheDoor(f);
+    f.playerRow = door.row - (outside.row - door.row);
+    f.playerCol = door.col - (outside.col - door.col);
+    f.light.on = false;
+    computeVisibility();
+    if (shut) pullShutter();
+    const m = spawnMinion({ row: outside.row + (outside.row - door.row), col: outside.col + (outside.col - door.col) }, 'SHARD');
+    advanceMonsters();
+    assert.equal(!!m.lastSeen || m.track > 0, !shut, shut ? 'saw through the shutter' : 'didn\'t see the lit player');
+  }
+});
+
+test('the lamp lights the whole room for the player inside it', () => {
+  const f = build(0);
+  battery(f);
+  atTheDoor(f);
+  f.light.on = false;
+  computeVisibility();
+  assert.ok([...f.safeRoom.cells].every(k => f.visibleSet.has(k)));
+  f.safeRoom.lamp = false;
+  computeVisibility();
+  assert.ok(![...f.safeRoom.cells].every(k => f.visibleSet.has(k)), 'with the lamp out and no light it is dark');
 });

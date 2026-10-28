@@ -12,7 +12,7 @@ import { canPassCorner, solidProp } from './passage.js';
 import { computeVisibility, clearLine, seesEnemy, hiddenFrom, FACING_VECTORS } from './sight.js';
 import { waysInUse } from './look.js';
 import { ductStep, crawlInto, crawlTurn } from './vents.js';
-import { inSafeRoom, shutIn, liftShutters } from './saferoom.js';
+import { inSafeRoom, shutIn, liftShutters, lampLit } from './saferoom.js';
 
 // True if `entity` stands on one of the tiles around the player: the 8
 // around them (eight ways plan, call 4), apart from a diagonal a corner
@@ -312,7 +312,8 @@ function idleStep(m, intoPlayer) {
 // With the light on, a clear line within MINION_LIGHT_SIGHT tiles to the
 // player or any tile their light is on draws it (`drawn`): the light leads
 // back to the player, so it locks on to where they are. With the light
-// off, one already tracking keeps locking on while it can see the player;
+// off, one already tracking keeps locking on while it can see the player,
+// and any can see them standing in the safe room's lit lamp; otherwise
 // one that never saw them doesn't notice them, even right beside them.
 // Out of view it walks to `lastSeen` without forgetting (smarter enemies,
 // Timothy 2026-10-15: hiding and breaking the line should work, so it
@@ -324,7 +325,9 @@ function sees(m, row, col) {
 }
 function inView(m) {
   const f = state.floor;
-  if (!lightOn()) return m.track > 0 && sees(m, f.playerRow, f.playerCol);
+  // In the safe room's lamp (saferoom.js), the player is lit with their
+  // own light off.
+  if (!lightOn()) return (m.track > 0 || lampLit(f.playerRow, f.playerCol)) && sees(m, f.playerRow, f.playerCol);
   return sees(m, f.playerRow, f.playerCol) ||
     [...f.sightSet].some(k => { const [row, col] = k.split(',').map(Number); return sees(m, row, col); });
 }

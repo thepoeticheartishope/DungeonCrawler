@@ -75,6 +75,8 @@ export const TEXT = {
   'term.charger': 'CHARGER', // draft
   'term.charger.symbol': 'ϟ', // draft. A spark
   'term.cell.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
+  'term.shutter.symbol': '≡', // draft. The safe room's shutter (saferoom.js); drawn as slats on the map, the glyph is a fallback
+  'term.switch.symbol': '¡', // draft. The safe room's pull switch; drawn as a handle on the map, the glyph is a fallback
   // The player's glyph (the map draws a stick man in its place).
   'term.player.symbol': '@',
   // What anything further than REVEAL_DISTANCE (config.js) shows as.
@@ -430,6 +432,16 @@ export const TEXT = {
   // The reflective desk (desk.js): in the start room, heals to full once a floor.
   'room.desk.healed': 'You see yourself in the {@term.desk}. You are whole again.', // draft
   'room.desk.full': 'Your face looks back from the {@term.desk}. You are already whole.', // draft. Full stability: the heal is kept
+  // The safe room (saferoom.js): the start room's shutters, switch and lamp.
+  'room.shutter.down': 'You pull the shutter down.', // draft
+  'room.shutter.up': 'The shutter rolls up.', // draft
+  'room.shutter.blocked': 'Something is in the doorway. The shutter won’t drop.', // draft. Someone stands under it
+  'room.shutter.waits': 'It waits at the shutter.', // draft. A stick man that knew where the player was, shut out
+  'room.shutter.gone': 'It’s gone.', // draft. It gave up and wandered off
+  'room.shutter.hunter': 'Something is lifting the shutter.', // draft. The hunter's hand on the slats
+  'room.shutter.lifted': 'The shutter is up. It’s coming in.', // draft. The hunter lifted it
+  'room.lamp.ownOff': 'The lamp is on. You switch your light off.', // draft. Coming into the lit safe room: the battery neither drains nor fills there
+  'room.lamp.out': 'The lamp goes out.', // draft. The boss fell: time to leave
   // The charger (charger.js): energy to full through CHARGE.SYS, in the start room.
   'room.charger.loose': 'CHARGE.SYS. Its wires are loose.', // draft. Opened on new wires
   'room.charger.kept': 'Your wires are as you left them.', // draft. Opened on half-done wires

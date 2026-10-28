@@ -11,7 +11,7 @@ import {
 import { lookAngle, angleTo, wrapAngle } from './look.js';
 import { lightOn } from './battery.js';
 import { solidProp } from './passage.js';
-import { shutterDownAt } from './saferoom.js';
+import { shutterDownAt, lampLit, lampLightHere } from './saferoom.js';
 
 // One step each way the body can face. The 4 grid ways, then the 4
 // diagonals (eight ways plan); on screen the diagonals are straight up,
@@ -52,7 +52,7 @@ export function inLookCone(row, col) {
 // what shows the player the way — and so is the tutorial's light from above
 // (state.floor.spotSet, tutorial.js).
 export function computeVisibility() {
-  state.floor.visibleSet = new Set([...state.floor.bossLitSet, ...state.floor.spotSet, ...windowLightHere()]);
+  state.floor.visibleSet = new Set([...state.floor.bossLitSet, ...state.floor.spotSet, ...windowLightHere(), ...lampLightHere()]);
   const startKey = key(state.floor.playerRow, state.floor.playerCol);
   state.floor.visibleSet.add(startKey);
   // The player's own light, apart from the boss's: only what the player
@@ -180,7 +180,8 @@ function clearLineTo(row, col) {
 
 // Whether the player can make out what's on (row, col), rather than a
 // '?': it has to be in their own light or a window's in the room they are
-// in (windows.js windowLightHere; not just the boss's), within
+// in (windows.js windowLightHere; not just the boss's) or the safe room's
+// lamp while they are in it (saferoom.js), within
 // REVEAL_DISTANCE, with nothing solid in between. Window light shows stick
 // men too (Timothy, 2026-10-26).
 export function canMakeOut(row, col) {
@@ -189,7 +190,8 @@ export function canMakeOut(row, col) {
   const k = key(row, col);
   const f = state.floor;
   const windowLit = f.windowLitSet.has(k) && f.chamberAt.get(k) === f.chamberAt.get(key(f.playerRow, f.playerCol)) && f.chamberAt.has(k);
-  return (f.sightSet.has(k) || windowLit) && clearLineTo(row, col);
+  const lamp = lampLit(row, col) && lampLit(f.playerRow, f.playerCol);
+  return (f.sightSet.has(k) || windowLit || lamp) && clearLineTo(row, col);
 }
 
 // Whether the player sees minion or hunter `m` at all. Unlike items, an

@@ -151,10 +151,12 @@ export function switchSneak() {
 }
 
 // A bump into what `hit` found, unless the push already bumped it and
-// ONE_STICK.bumpRepeatMs hasn't passed.
+// ONE_STICK.bumpRepeatMs hasn't passed. The safe room's switch takes one
+// pull a push, so holding on doesn't flick the shutter up and down.
 function bump(hit) {
   const at = hit.row + ',' + hit.col;
-  if (bumpedAt === at && bumpWait > 0) return [];
+  const once = hit.block.thing && hit.block.thing.kind === 'switch';
+  if (bumpedAt === at && (bumpWait > 0 || once)) return [];
   bumpedAt = at;
   bumpWait = ONE_STICK.bumpRepeatMs;
   if (hit.block.kind === 'held') return [{ type: 'heldFast', minion: hit.block.thing }];
