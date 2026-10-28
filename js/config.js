@@ -1293,8 +1293,6 @@ export const DPAD_HOLD_REPEAT_MS = 170;
 // Smooth walk (walkpace.js): a held way steps again this long after a
 // step's slide has landed (170 - 140, the beat a grid step always had).
 export const WALK_REPEAT_GAP_MS = 30;
-// Smooth walk is on by default; DEV -> Smooth walk switches it off.
-export const SMOOTH_WALK = true;
 // The room log keeps this many notes, newest at the bottom: all of them
 // show when LOG opens it over the map; otherwise only the newest two sit on
 // the map's bottom edge (index.html .feedback, nth-last-child(-n+2)), and

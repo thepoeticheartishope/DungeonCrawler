@@ -34,7 +34,6 @@ const devOneStickBtn = document.getElementById('devOneStickBtn');
 const devShowDuctsBtn = document.getElementById('devShowDuctsBtn');
 const dpadEl = document.getElementById('dpad');
 const devFrameOut = document.getElementById('devFrameOut');
-const devSmoothWalkBtn = document.getElementById('devSmoothWalkBtn');
 const devLookBtn = document.getElementById('devLookBtn');
 const devTendrilsBtn = document.getElementById('devTendrilsBtn');
 const devMinigameBtn = document.getElementById('devMinigameBtn');
@@ -278,15 +277,6 @@ export function initDevPanel({
     devMinigameBtn.textContent = 'Minigame: ' + next + ' (dev)';
   });
 
-
-  // Dev tool: smooth walk (walkpace.js) on, or one step time for every way
-  // with the camera gliding after the player, as before, to compare.
-  devSmoothWalkBtn.addEventListener('click', () => {
-    state.settings.smoothWalk = !state.settings.smoothWalk;
-    devSmoothWalkBtn.textContent = state.settings.smoothWalk ? 'Smooth walk: ON (dev)' : 'Smooth walk: OFF (dev)';
-    devSmoothWalkBtn.setAttribute('aria-pressed', String(state.settings.smoothWalk));
-    requestMapDraw();
-  });
 
   // Dev tool (stick enemies plan): every stick enemy shows the one look
   // picked here: the walker (3D moves, one stick plan step F, the default),

@@ -97,7 +97,7 @@ Rows added when the map moved here (2026-10-28), for files the old map left out:
 |---|---|
 | `battery.js` | The player's light on a battery (light battery plan step A): on and off (V) at no cost, each switch on spends a charge, off gives one back, up to `LIGHT_BATTERY_MAX`; with One stick it drains by time (`drainLight`). Run out, it locks off until full. Off, the player sees only the small circle round them (sight.js). Comfort mode and DEV → Light battery off keep it always on. |
 | `gaze.js` | The eye (light battery plan step E): an eye over a stick man opens while the player's light rests on it, in real seconds; at `GAZE_MS` the stick man steps one closer and locks on. Firing at it shuts the eye. Cone only, never the hunter. Comfort mode and DEV → Gaze off leave it out. main.js runs the clock. |
-| `walkpace.js` | Smooth walk: a step's slide takes as long as its length on screen needs, so every way moves at the same speed and a held way repeats once its step has landed. DEV → Smooth walk off goes back to one step time for all. |
+| `walkpace.js` | Smooth walk: a step's slide takes as long as its length on screen needs, so every way moves at the same speed and a held way repeats once its step has landed. Always on since 2026-10-28 (its DEV toggle retired). |
 
 ## How the game moves (full)
 
