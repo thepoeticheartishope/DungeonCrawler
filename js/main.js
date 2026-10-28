@@ -43,7 +43,7 @@ import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runD
 import { t, TEXT, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { initDpad, initLookStick, initWalkStick, SCREEN_WAYS, padWay, sweepHold } from './dpad.js';
-import { lookUp } from './roomview.js';
+import { lookUp } from './roomsky.js';
 import { repeatMs, noteStep, heldStepReady } from './walkpace.js';
 import { aimLook, turnBody, sweepLook, wantsTurn, waysInUse } from './look.js';
 import { toggleLight, turnsToFull, secondsToFull, batteryInPlay } from './battery.js';

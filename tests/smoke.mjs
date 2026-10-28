@@ -2176,7 +2176,7 @@ async function checkRoomView(page, url) {
   // Step F: Space held fades the room into the sky with the eye, for no
   // turn; let go, the room comes back.
   const turnsBeforeLook = await turnsShown(page);
-  const share = () => page.evaluate(async () => (await import('./js/roomview.js')).roomLookUp());
+  const share = () => page.evaluate(async () => (await import('./js/roomsky.js')).roomLookUp());
   await page.keyboard.down(' ');
   await page.waitForTimeout(700);
   const upShare = await share();
