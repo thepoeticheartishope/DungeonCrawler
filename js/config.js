@@ -362,14 +362,14 @@ export const CHARGER = {
 // The safe room (safe room plan, `ideas/safe-room-plan.md` outside the repo;
 // Timothy 2026-10-27; saferoom.js): the start room of a danger floor gets a
 // shutter on each doorway and a pull switch inside. Shut, no stick man
-// comes in; the hunter lifts it. `on` is off until the room view draws it
-// (step B). A stick man at an open doorway stops `hesitateMs` before it
+// comes in; the hunter lifts it. `on` gives every danger
+// floor one. A stick man at an open doorway stops `hesitateMs` before it
 // comes in; one shut out gives up `waitMs` after the shutter stopped it;
 // the hunter stands `hunterLiftMs` at a shut one before it rolls up. The
 // shutter drops over `dropMs` (roomview.js). With Real time off a turn
 // counts as `turnMs` for these waits. Drafts; tune after play.
 export const SAFE_ROOM = {
-  on: false,
+  on: true,
   hesitateMs: 1500,
   waitMs: 3000,
   hunterLiftMs: 2500,

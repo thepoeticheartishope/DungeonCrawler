@@ -112,6 +112,14 @@
 //      the MAP tab turns to the minimap drawn on the page; the same tab
 //      again closes it. M opens it at MAP, L turns to LOG, Esc closes it,
 //      and walking keys do nothing while it is open.
+//  16. Safe room run (safe room plan step B): the turn game on the first
+//      depth, its stick men cleared. A SHARD that knows where the player is
+//      and is reaching for them follows them to the start room's doorway:
+//      stepping onto it breaks the reach. It stops at the open frame, the
+//      player pulls the switch ("You pull the shutter down."), it waits
+//      ("It waits at the shutter."), gives up ("It's gone.") and never gets
+//      in; a bump on the switch rolls the shutter up again. Saved as
+//      noesis-safe-room*.png.
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -1059,7 +1067,10 @@ async function checkLightBattery(page, url) {
   if (await batteryShown(page) !== 'LIGHT #### ON') return `V when charged left ${await batteryShown(page)}`;
 
   // Down to the first depth, where the stick men notice the light: a few
-  // turns with it on and off (any page error fails the run).
+  // turns with it on and off (any page error fails the run). Without the
+  // safe room: the player would start in it, where the lamp switches their
+  // light off and it doesn't charge; these are the rules outside it.
+  await page.evaluate(async () => { (await import('./js/config.js')).SAFE_ROOM.on = false; });
   await page.click('#devToggleBtn');
   await page.waitForSelector('#devPanel.show', { timeout: 5000 });
   await page.click('#devSkipBtn');
@@ -2289,6 +2300,128 @@ async function checkCharger(page, url) {
   return '';
 }
 
+// ---- The safe room ----
+
+async function runSafeRoom(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkSafeRoom(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'a reach broke at the doorway, the SHARD stopped at the open frame, the switch dropped the shutter, it waited, gave up and never got in, and the switch rolled it up', consoleErrors, pageErrors };
+}
+
+async function checkSafeRoom(page, url) {
+  await loadPageAndSet(page, url);
+  await startGameAndWaitForRoom(page);
+  await page.click('#devToggleBtn');
+  await page.waitForSelector('#devPanel.show', { timeout: 5000 });
+  await page.click('#devSkipBtn');
+  await page.waitForTimeout(300);
+  await page.click('#devToggleBtn');
+  await page.waitForTimeout(200);
+  const run = (fn, arg) => page.evaluate(fn, arg);
+  const log = () => page.locator('#roomFeedback').innerText();
+  const KEYS = { '-1,0': 'ArrowUp', '1,0': 'ArrowDown', '0,-1': 'ArrowLeft', '0,1': 'ArrowRight' };
+
+  // A doorway with the hall straight out from it and room straight in:
+  // the player in the hall just outside, a SHARD behind them reaching.
+  const way = await run(async () => {
+    const { state, key } = await import('./js/state.js');
+    const { spawnMinion } = await import('./js/combat.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const f = state.floor;
+    const sr = f.safeRoom;
+    if (!sr) return null;
+    const open = (r, c) => !f.wallSet.has(key(r, c)) && !f.pillarSet.has(key(r, c)) && !f.props.some(p => p.row === r && p.col === c && p.kind !== 'shutter');
+    for (const d of sr.doors) {
+      const [row, col] = d.split(',').map(Number);
+      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const out = [row + dr, col + dc], back = [row + 2 * dr, col + 2 * dc], inside = [row - dr, col - dc];
+        if (sr.cells.has(key(...out)) || !open(...out) || !open(...back) || !sr.cells.has(key(...inside)) || !open(...inside)) continue;
+        f.minions = [];
+        f.crawling = [];
+        f.playerRow = out[0];
+        f.playerCol = out[1];
+        sr.playerIn = false;
+        const m = spawnMinion({ row: back[0], col: back[1] }, 'SHARD');
+        m.lastSeen = { row: out[0], col: out[1] };
+        m.track = 5;
+        m.reaching = { left: 5000, ms: 5000 };
+        computeVisibility();
+        return { dir: [-dr, -dc] + '', door: [row, col], outside: out };
+      }
+    }
+    return null;
+  });
+  if (!way) return 'no doorway of the safe room with hall straight out and room straight in';
+  const inKey = KEYS[way.dir];
+  await page.keyboard.press(inKey);
+  await page.waitForTimeout(200);
+  const reach = await run(async () => (await import('./js/state.js')).state.floor.minions[0].reaching);
+  if (reach) return 'stepping onto the doorway did not break the reach';
+  await page.keyboard.press(inKey);
+  await page.waitForTimeout(200);
+  const frame = await run(async () => {
+    const { state } = await import('./js/state.js');
+    const m = state.floor.minions[0];
+    return { at: [m.row, m.col], stopped: !!m.atDoor };
+  });
+  if (frame.at + '' !== way.outside + '' || !frame.stopped) return `the SHARD did not stop at the open frame (at ${frame.at}, door ${way.door})`;
+  await page.locator('#mapWrap').screenshot({ path: path.join(os.tmpdir(), 'noesis-safe-room-open.png') });
+
+  // Beside the switch, and into it.
+  const toSwitch = await run(async () => {
+    const { state, key } = await import('./js/state.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const f = state.floor;
+    const sw = f.safeRoom.switchAt;
+    const free = (r, c) => f.safeRoom.cells.has(key(r, c)) && !f.safeRoom.doors.includes(key(r, c)) && !f.wallSet.has(key(r, c)) &&
+      !f.pillarSet.has(key(r, c)) && !f.props.some(p => p.row === r && p.col === c);
+    const side = [[1, 0], [-1, 0], [0, 1], [0, -1]].find(([dr, dc]) => free(sw.row + dr, sw.col + dc));
+    if (!side) return null;
+    f.playerRow = sw.row + side[0];
+    f.playerCol = sw.col + side[1];
+    computeVisibility();
+    return [-side[0], -side[1]] + '';
+  });
+  if (!toSwitch) return 'no free tile beside the switch';
+  await page.keyboard.press(KEYS[toSwitch]);
+  await page.waitForTimeout(300);
+  if (!await run(async () => (await import('./js/state.js')).state.floor.safeRoom.shut)) return 'bumping the switch did not drop the shutter';
+  if (!/pull the shutter down/i.test(await log())) return `no "You pull the shutter down." (log: ${await log()})`;
+  await page.waitForTimeout(900);
+  await page.locator('#mapWrap').screenshot({ path: path.join(os.tmpdir(), 'noesis-safe-room-shut.png') });
+
+  let waited = false, gone = false;
+  for (let i = 0; i < 12 && !gone; i++) {
+    await page.keyboard.press('.');
+    await page.waitForTimeout(150);
+    const text = await log();
+    waited = waited || /waits at the shutter/i.test(text);
+    gone = /gone/i.test(text);
+    const inside = await run(async () => {
+      const { state } = await import('./js/state.js');
+      const { inSafeRoom } = await import('./js/saferoom.js');
+      return state.floor.minions.some(m => inSafeRoom(m.row, m.col));
+    });
+    if (inside) return 'a stick man got into the shut safe room';
+  }
+  if (!waited) return 'no "It waits at the shutter."';
+  if (!gone) return 'the SHARD never gave up ("It\'s gone.")';
+
+  await page.keyboard.press(KEYS[toSwitch]);
+  await page.waitForTimeout(300);
+  if (await run(async () => (await import('./js/state.js')).state.floor.safeRoom.shut)) return 'a second bump on the switch did not roll the shutter up';
+  if (!/rolls up/i.test(await log())) return `no "The shutter rolls up." (log: ${await log()})`;
+  return '';
+}
+
 async function runRecordBook(browser, url) {
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true });
   const page = await context.newPage();
@@ -2412,7 +2545,7 @@ async function main() {
         ['answer line', runAnswerLine, url], ['vents', runVents, url],
         ['room view', runRoomView, url], ['charger', runCharger, url],
         ['one stick', runOneStick, url], ['tutorial stick', runTutorialStick, url],
-        ['record book', runRecordBook, url],
+        ['record book', runRecordBook, url], ['safe room', runSafeRoom, url],
       ];
       // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
       // of those words, SMOKE_REPEAT=20 runs each that many times: for

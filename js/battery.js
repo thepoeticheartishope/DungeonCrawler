@@ -51,7 +51,7 @@ export function drainLight(dtMs) {
 }
 
 // The battery runs `amount` charges: on, it spends them; off, it gets them
-// back, up to LIGHT_BATTERY_MAX. Returns the events it caused: 'lightDied'
+// back, up to LIGHT_BATTERY_MAX (not in the safe room). Returns the events it caused: 'lightDied'
 // when the charge runs out with the light on, 'lightCharged' when a locked
 // light is full again.
 function runLight(amount) {
@@ -67,6 +67,10 @@ function runLight(amount) {
     return [{ type: 'lightDied' }];
   }
   if (light.charge >= LIGHT_BATTERY_MAX) return [];
+  // Off in the safe room (saferoom.js), it doesn't charge: the room keeps
+  // the player alive, it doesn't refill them.
+  const safe = state.floor.safeRoom;
+  if (safe && safe.playerIn) return [];
   light.charge = Math.min(light.charge + amount, LIGHT_BATTERY_MAX);
   if (light.charge < LIGHT_BATTERY_MAX || !light.locked) return [];
   light.locked = false;

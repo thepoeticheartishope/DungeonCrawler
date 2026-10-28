@@ -217,14 +217,15 @@ export function buildFloor() {
   // The recipe's beats go down first, along the walk to the boss, so the
   // random coin can't take their spots (beats.js).
   const beats = placeBeats(recipe.beats, layout, placer, fixedTiles);
-  state.floor.beats = beats.placed;
+  // No stick man starts in the safe room: a beat's that would goes down at
+  // random with the rest instead (placeMinions), and isn't a beat.
+  const inSafe = p => inSafeRoom(p.row, p.col);
+  state.floor.beats = beats.placed.filter(b => b.kind !== 'minion' || !inSafe(b));
   beats.props.forEach(p => {
     if (p.kind === 'paper') makeSpaceForPaper(p);
     state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
   });
-  // No stick man starts in the safe room: a beat's that would goes down at
-  // random with the rest instead (placeMinions).
-  const beatMinions = beats.minionTiles.filter(p => !inSafeRoom(p.row, p.col));
+  const beatMinions = beats.minionTiles.filter(p => !inSafe(p));
   beatMinions.forEach(p => spawnMinion(p, nextMinionKind(recipe)));
 
   const freeRoomTiles = new Set([...roomTiles].filter(k => !placer.blocked.has(k)));

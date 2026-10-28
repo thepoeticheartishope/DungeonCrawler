@@ -4,14 +4,19 @@
 // a shutter is open floor and a stick man stops at the frame a moment
 // before it comes in. Down, it is solid like a wall: no stick man comes in
 // or sees in, and one that knew where the player was gives up and wanders
-// off. The hunter lifts it. The room keeps the player alive, it doesn't
-// refill them: the charger is still the only top-up. floor.js buildFloor()
+// off. The hunter lifts it. A lamp lights the room, so the player's own
+// light switches off as they come in; a stick man in the hall can see them
+// by it while the shutter is up. The lamp goes out when the boss falls.
+// The room keeps the player alive, it doesn't refill them: the battery
+// doesn't charge in it (battery.js) and the charger is still the only
+// top-up. floor.js buildFloor()
 // calls placeSafeRoom(); moves.js calls pullShutter() on a bump and
 // enterSafeRoom() on each step; combat.js asks where the room is. No DOM
 // access here.
 
 import { state, key } from './state.js';
 import { startRoom } from './desk.js';
+import { batteryInPlay } from './battery.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
@@ -97,10 +102,28 @@ export function liftShutters() {
   return [{ type: 'shutterLifted' }];
 }
 
+// Whether the safe room's lamp lights (row, col): one of its tiles, while
+// the lamp is on. It counts as light the player is seen by (combat.js).
+export function lampLit(row, col) {
+  const sr = state.floor.safeRoom;
+  return !!sr && sr.lamp && sr.cells.has(key(row, col));
+}
+
+// The tiles the lamp lights for the player: the safe room's, while they
+// are in it and the lamp is on (sight.js, like a window's light). None
+// from outside: its light ends at the doorway.
+export function lampLightHere() {
+  const f = state.floor;
+  return lampLit(f.playerRow, f.playerCol) ? new Set(f.safeRoom.cells) : new Set();
+}
+
 // The player has come onto a new tile (moves.js enterTile). Crossing into
 // the safe room breaks every reach in progress, as a landed shot does:
-// making it to the doorway is the answer to being jumped. Events:
-// reachBroken { minion } for each one that was reaching.
+// making it to the doorway is the answer to being jumped. With the lamp on
+// their own light switches off (call c: the room is lit, so it neither
+// drains nor fills in there), unless the battery is out of play or the
+// light is held on; it stays off when they leave. Events: reachBroken
+// { minion } for each one that was reaching, then lightSwitchedForLamp.
 export function enterSafeRoom() {
   const f = state.floor;
   const sr = f.safeRoom;
@@ -109,8 +132,13 @@ export function enterSafeRoom() {
   const came = inside && !sr.playerIn;
   sr.playerIn = inside;
   if (!came) return [];
-  return f.minions.filter(m => m.reaching).map(m => {
+  const events = f.minions.filter(m => m.reaching).map(m => {
     m.reaching = null;
     return { type: 'reachBroken', minion: m };
   });
+  if (sr.lamp && batteryInPlay() && f.light.on && !f.light.steady) {
+    f.light.on = false;
+    events.push({ type: 'lightSwitchedForLamp' });
+  }
+  return events;
 }

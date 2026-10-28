@@ -99,7 +99,7 @@ test('every kind of thing the game puts on the map has a room view drawing', asy
   const { ROOM_DRAWINGS } = await import('../js/roomview.js');
   // Props and the floor's other things are made with a `kind: '...'`
   // literal in these files; mapview.js mapThings adds the rest.
-  const files = ['decor.js', 'relays.js', 'desk.js', 'charger.js', 'tutorial.js', 'floor.js', 'combat.js'];
+  const files = ['decor.js', 'relays.js', 'desk.js', 'charger.js', 'saferoom.js', 'tutorial.js', 'floor.js', 'combat.js'];
   const kinds = new Set(['vent', 'coin', 'key', 'stairs', 'player', 'minion', 'hunter', 'boss', 'chest', 'exchange']);
   files.forEach(file => {
     const source = readFileSync(new URL('../js/' + file, import.meta.url), 'utf8');

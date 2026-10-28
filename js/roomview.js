@@ -46,7 +46,7 @@ import { state, key } from './state.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
   ISO_NARROW_MAP_WIDTH, PLAYER_EMBER, FIGURE3D, MAP_ANIMATION_MS, ENEMY_LIGHT, MINION_KINDS, ANSWER_RING,
-  SKY_EYE, WINDOW_LIGHT,
+  SKY_EYE, WINDOW_LIGHT, SAFE_ROOM,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
@@ -118,6 +118,7 @@ const POSE_SCALE = ROOM_VIEW.stickHeight / 0.75; // playerform's poses are sized
 export const ROOM_DRAWINGS = {
   paper: 'flat', vent: 'flat', stairs: 'flat',
   box: 'stand', furniture: 'stand', cell: 'stand', desk: 'stand', charger: 'stand', relay: 'stand', chest: 'stand', coin: 'stand', key: 'stand',
+  shutter: 'stand', switch: 'stand',
   minion: 'form', exchange: 'glyph', boss: 'glyph', hunter: 'glyph', player: 'player',
 };
 // The things' colours, in the picture's pixels.
@@ -128,6 +129,11 @@ const GRATE = { frame: '#2a2e32', edge: '#5d656c', bar: '#50575d', seal: '#8b939
 const DESK = { top: '#6e4d33', front: '#523a27', frame: '#4a3a30', glass: '#8fa3ad', shine: '#c9d6dc', dull: '#3a4448' };
 const CHARGER_ART = { body: '#3e4650', edge: '#56606b', shade: '#2b3138', window: '#1c2126', lit: '#e9c48a', cable: '#22272c', plug: '#6a737c' };
 const RELAY = { body: '#4a5058', seam: '#33383e', dead: '#2a2e32', leg: '#2e3236' };
+// The safe room (saferoom.js): its shutters' slats, posts and lintel box,
+// the pull switch, and the lamp's warm light over the room.
+const SHUTTER = { slat: '#5b6068', shade: '#454950', bar: '#8a9098', post: '#2f3338', box: '#3a3e44', rise: 1.5, slat_px: 2 };
+const SWITCH_ART = { plate: '#4a4e55', cord: '#2a2d31', warm: '#e9c48a', dim: '#5a5650' };
+const LAMP = { level: 0.55, reach: 0.65, bulb: 0.5 }; // reach: the pool's radius, a share of the room's longer side
 const CHEST = { lid: '#5a3d2c', lidLight: '#6e4b36', body: '#4a3224', band: '#2e211a', lock: '#b49a6a' };
 const COIN = { face: '#d8b45a', shine: '#f3dc8e', rgb: '216, 180, 90' };
 const KEY = { metal: '#dfe8ea', glow: 0.7 };   // glow: its light at the brightest of its pulse, as a share of the pulse's strength
@@ -328,6 +334,8 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   gctx.fillRect(head.x - ROOM_VIEW.ember.radius * T, head.y - ROOM_VIEW.ember.radius * T, ROOM_VIEW.ember.radius * T * 2, ROOM_VIEW.ember.radius * T * 2);
   const lit = built.windows.filter(w => w.room === space.room);
   lit.forEach(w => drawPool(w, ox, oy));
+  const safe = f.safeRoom;
+  if (safe && safe.lamp && space.room === safe.chamber) drawLamp(ox, oy, glows);
   bctx.globalCompositeOperation = 'multiply';
   bctx.drawImage(glow, 0, 0);
   // The windows' glass glows from outside.
@@ -793,10 +801,11 @@ function drawGlyphs(ctx, ox, oy) {
 }
 
 // How a map thing is drawn (ROOM_DRAWINGS), allowing for what isn't made
-// out yet: its '?', except the stairs and a grate, which show as they are.
+// out yet: its '?', except the stairs, a grate and a shutter, which show
+// as they are.
 function drawingOf(thing) {
   const drawing = ROOM_DRAWINGS[thing.kind] || 'glyph';
-  if (thing.glyph === null && thing.kind !== 'stairs' && thing.kind !== 'vent') return ENEMY_KINDS.includes(thing.kind) ? 'glyph' : 'unknown';
+  if (thing.glyph === null && !['stairs', 'vent', 'shutter'].includes(thing.kind)) return ENEMY_KINDS.includes(thing.kind) ? 'glyph' : 'unknown';
   if (drawing === 'form' && (state.settings.simpleEnemies || !minionOn(thing.tile) || !minionOn(thing.tile).minionKind)) return 'glyph';
   return drawing;
 }
@@ -1162,6 +1171,122 @@ function drawRelay(thing, x, y, glows) {
   });
 }
 
+// When each shutter last went up or down (saferoom.js), by tile, so its
+// slats can drop or roll up over SAFE_ROOM.dropMs: { down, at, floor }.
+const shutterMoves = new Map();
+
+// How far a shutter's slats are down, 0 (rolled up in the lintel) to 1
+// (shut), in whole slats of `slats`: they drop one at a time, slowly, and
+// go back the same way. Reduced motion: just up or down.
+function shutterDrop(tile, down, slats) {
+  const k = key(tile.row, tile.col);
+  let move = shutterMoves.get(k);
+  if (!move || move.floor !== state.run.floorsEntered) {
+    move = { down, at: -Infinity, floor: state.run.floorsEntered };
+    shutterMoves.set(k, move);
+  }
+  if (move.down !== down) {
+    move.down = down;
+    move.at = look.now;
+  }
+  const share = look.still ? 1 : Math.min(1, (look.now - move.at) / SAFE_ROOM.dropMs);
+  if (share < 1) look.keepMoving();
+  const drop = down ? share : 1 - share;
+  return Math.round(drop * slats) / slats;
+}
+
+// A shutter on one of the safe room's doorways: its slats hang from a box
+// over the doorway between two dark posts, rolled up into the box while it
+// is open. A doorway in a side wall shows it edge on, a narrow strip. While
+// the hunter lifts it, its cold blue hand is on the slats.
+function drawShutter(thing, x, y, glows) {
+  const { row, col } = thing.tile;
+  const across = isWall(row, col - 1) && isWall(row, col + 1);
+  const x0 = across ? x : x + T / 2 - 2, w = across ? T : 4;
+  const foot = y + T - 1;
+  const top = foot - Math.round(SHUTTER.rise * T);
+  const slats = Math.floor((foot - top) / SHUTTER.slat_px);
+  const f = state.floor;
+  const down = !!f.safeRoom && f.safeRoom.shut;
+  const bottom = top + Math.round(shutterDrop(thing.tile, down, slats) * slats) * SHUTTER.slat_px;
+  for (let sy = top; sy < bottom; sy += SHUTTER.slat_px) {
+    bctx.fillStyle = SHUTTER.slat;
+    bctx.fillRect(x0, sy, w, 1);
+    bctx.fillStyle = SHUTTER.shade;
+    bctx.fillRect(x0, sy + 1, w, 1);
+  }
+  if (bottom > top) {
+    bctx.fillStyle = SHUTTER.bar;
+    bctx.fillRect(x0, bottom - 1, w, 1);
+  }
+  bctx.fillStyle = SHUTTER.post;
+  if (across) {
+    bctx.fillRect(x0, top, 1, foot - top + 1);
+    bctx.fillRect(x0 + w - 1, top, 1, foot - top + 1);
+  }
+  bctx.fillStyle = SHUTTER.box;
+  bctx.fillRect(x0 - (across ? 1 : 0), top - 3, w + (across ? 2 : 0), 3);
+  const hunter = f.hunter;
+  if (!hunter || !hunter.lifting || Math.max(Math.abs(hunter.row - row), Math.abs(hunter.col - col)) > 1) return;
+  const hx = x0 + Math.floor(w / 2) - 1, hy = bottom - 3;
+  const hand = () => {
+    bctx.fillRect(hx, hy, 3, 2);
+    bctx.fillRect(hx, hy - 2, 1, 2);
+    bctx.fillRect(hx + 2, hy - 2, 1, 2);
+  };
+  bctx.fillStyle = 'rgb(' + ENEMY_LIGHT.core + ')';
+  hand();
+  glows.push(() => {
+    bctx.fillStyle = 'rgb(' + ENEMY_LIGHT.halo + ')';
+    hand();
+  });
+}
+
+// The safe room's pull switch: a plate on the wall with a cord and a
+// handle, warm while the shutter is up (pull it to be safe), dim once it
+// is down.
+function drawSwitch(thing, x, y, glows) {
+  const f = state.floor;
+  const up = !f.safeRoom || !f.safeRoom.shut;
+  bctx.fillStyle = SWITCH_ART.plate;
+  bctx.fillRect(x + 6, y - 8, 4, 6);
+  bctx.fillStyle = SWITCH_ART.cord;
+  bctx.fillRect(x + 8, y - 2, 1, up ? 8 : 11);
+  const hy = up ? y + 6 : y + 9;
+  bctx.fillStyle = up ? SWITCH_ART.warm : SWITCH_ART.dim;
+  bctx.fillRect(x + 7, hy, 3, 2);
+  if (!up) return;
+  glows.push(() => {
+    bctx.fillStyle = SWITCH_ART.warm;
+    bctx.fillRect(x + 7, hy, 3, 2);
+    halo(x + 8.5, hy + 1, T * 0.45, look.colours.kindRgb, DESK_GLOW[0]);
+  });
+}
+
+// The safe room's lamp while it is on and the player is in the room: a
+// warm pool of light over its floor, added to the light, and its bulb
+// hanging over the middle on a cord.
+function drawLamp(ox, oy, glows) {
+  const cells = [...state.floor.safeRoom.cells].map(tileOf);
+  const r0 = Math.min(...cells.map(([r]) => r)), r1 = Math.max(...cells.map(([r]) => r));
+  const c0 = Math.min(...cells.map(([, c]) => c)), c1 = Math.max(...cells.map(([, c]) => c));
+  const cx = ((c0 + c1 + 1) / 2) * T - ox, cy = ((r0 + r1 + 1) / 2) * T - oy;
+  const r = Math.max(r1 - r0 + 1, c1 - c0 + 1) * T * LAMP.reach;
+  const g = gctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+  g.addColorStop(0, 'rgba(' + POOL.rgb + ', ' + LAMP.level + ')');
+  g.addColorStop(1, 'rgba(' + POOL.rgb + ', 0)');
+  gctx.fillStyle = g;
+  gctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+  const by = Math.round(cy - T);
+  glows.push(() => {
+    bctx.fillStyle = SWITCH_ART.cord;
+    bctx.fillRect(Math.round(cx), by - T, 1, T - 1);
+    bctx.fillStyle = SWITCH_ART.warm;
+    bctx.fillRect(Math.round(cx) - 1, by - 1, 3, 2);
+    halo(cx, by, T * 0.8, POOL.rgb, LAMP.bulb);
+  });
+}
+
 // The chest: a dark trunk with bands and a brass lock.
 function drawChest(thing, x, y) {
   bctx.fillStyle = CHEST.lid;
@@ -1249,7 +1374,7 @@ function halo(x, y, r, rgb, a) {
 }
 
 const FLAT = { paper: drawPaper, vent: drawGrate, stairs: drawStairs };
-const STAND = { box: drawBox, furniture: drawFurniture, cell: drawCell, desk: drawDesk, charger: drawCharger, relay: drawRelay, chest: drawChest, coin: drawCoin, key: drawKey };
+const STAND = { box: drawBox, furniture: drawFurniture, cell: drawCell, desk: drawDesk, charger: drawCharger, relay: drawRelay, chest: drawChest, coin: drawCoin, key: drawKey, shutter: drawShutter, switch: drawSwitch };
 
 // ---- the gun on the map (step D) ----
 
