@@ -1160,7 +1160,7 @@ async function runOneStick(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'held arrows walked freely between tiles, letting go stopped, the NEXT meter showed, a tap turned, X crept, the round stick walked, a reach landed and a dodged one missed, the battery ran out by time, the dial held a reach', consoleErrors, pageErrors };
+  return { ok: true, detail: 'held arrows walked freely between tiles, letting go stopped, the NEXT meter showed, a tap turned, X crept, the round stick walked, a reach landed and a dodged one missed, the battery ran out by time, the dial held a reach, a full steady hold killed with the world running', consoleErrors, pageErrors };
 }
 
 // The player's free spot and tile now.
@@ -1267,6 +1267,7 @@ async function checkOneStick(page, url) {
     const { spawnMinion } = await import('./js/combat.js');
     const { computeVisibility } = await import('./js/sight.js');
     const f = state.floor;
+    state.settings.steadyAim = false;
     f.light = { on: true, charge: 4, locked: false };
     f.look = -Math.PI / 2;
     f.lookWant = -Math.PI / 2;
@@ -1298,6 +1299,58 @@ async function checkOneStick(page, url) {
     const { state } = await import('./js/state.js');
     state.floor.minions = state.floor.minions.filter(m => m !== window.__reacher);
   });
+
+  // Steady aim (steady aim plan): F held on a stick man two tiles west steadies
+  // the shot with no dial while the world goes on (the battery drains), and
+  // letting go after a full hold kills it for one energy. (placeInRow
+  // stands the player at the west end of open tiles, so it goes east.)
+  await placeInRow(page);
+  await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { spawnMinion } = await import('./js/combat.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const { refreshGunTarget } = await import('./js/gun.js');
+    const f = state.floor;
+    state.settings.steadyAim = true;
+    f.light = { on: true, charge: 4, locked: false };
+    f.look = Math.PI / 2;
+    f.lookWant = Math.PI / 2;
+    state.run.energy = 2;
+    state.run.rounds = [null, null];
+    const m = spawnMinion({ row: f.playerRow, col: f.playerCol + 2 }, 'SHARD');
+    m.hunts = false;
+    m.stepWait = 1e9;
+    computeVisibility();
+    refreshGunTarget();
+    window.__steadyTarget = m;
+  });
+  await page.keyboard.down('f');
+  await page.waitForTimeout(400);
+  const mid = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const aim = state.battle.aim;
+    return { phase: aim && aim.phase, steady: aim && aim.steady, charge: state.floor.light.charge, dial: !!document.querySelector('#aimPanel:not([hidden])') };
+  });
+  if (mid.phase !== 'steady') {
+    const why = await page.evaluate(async () => {
+      const { state } = await import('./js/state.js');
+      return JSON.stringify({ target: !!state.floor.gunTarget, energy: state.run.energy, note: (document.getElementById('roomNote') || {}).textContent, log: document.getElementById('roomLog').textContent.slice(-120), minions: state.floor.minions.length });
+    });
+    return `holding F on a stick man did not steady the shot (aim ${mid.phase}) ${why}`;
+  }
+  if (mid.dial) return 'steady aim opened the dial';
+  await page.waitForTimeout(800);
+  const late = await page.evaluate(async () => (await import('./js/state.js')).state.floor.light.charge);
+  if (!(late < mid.charge)) return 'the world stopped (the battery did not drain) while steadying';
+  await page.keyboard.up('f');
+  await page.waitForTimeout(200);
+  const shot = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    return { gone: !state.floor.minions.includes(window.__steadyTarget), energy: state.run.energy, aim: state.battle.aim };
+  });
+  if (!shot.gone) return 'letting go of F after a full hold did not kill the stick man';
+  if (shot.energy !== 1) return `a steady shot spent ${2 - shot.energy} energy, not 1`;
+  if (shot.aim) return 'the aim stayed up after the shot';
   return '';
 }
 

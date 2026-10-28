@@ -62,7 +62,9 @@ import {
   minionOn, eyeOf, EYE_LIFT, EYE_WIDTH, HEARD_LIFT, WEAK_RING, WEAK_RING_LEVEL, inReach, liveTarget, lastShot,
   recoilAt, darkRingAt, answerRingLetters, REACH_FILL, BRACKET_ARM, BRACKET_HALF, BRACKET_LEVEL, BRACKET_PULSE,
   BRACKET_TEXT_SIZE, BRACKET_HP_GAP, LASER_LEVEL, SHOT_RING, MISS_TEXT_SIZE, MISS_RISE, ISO_STICK_HEIGHT,
+  STEADY_OPEN, STEADY_MARK, STEADY_SHAKE, STEADY_TEXT_SIZE,
 } from './mapshared.js';
+import { steadyChance, steadyShaking } from './gun.js';
 import { canShoot } from './sight.js';
 import { lampsOn, lampPoolLit } from './lamps.js';
 import { shadowsAt } from './shadows.js';
@@ -1598,8 +1600,13 @@ function drawBrackets(ctx) {
     if (!m) return;
     const chosen = m === target;
     if (!chosen && !canShoot(m)) return;
+    // Steady aim: a lit shot being steadied on this one. In the dark there
+    // is no help at all (Timothy 2026-10-27: no spamming the gun to find them).
+    const aim = state.battle.aim;
+    const steady = aim && aim.phase === 'steady' && !aim.dark && aim.target === m ? aim : null;
     let breathe = 0;
-    if (chosen && !look.still) {
+    if (steady) breathe = (1 - steady.steady) * tw * STEADY_OPEN;
+    else if (chosen && !look.still) {
       look.keepMoving();
       breathe = look.pulse(MAP_ANIMATION_MS.target) * tw * BRACKET_PULSE;
     }
@@ -1616,6 +1623,7 @@ function drawBrackets(ctx) {
         ctx.lineTo(x, y + sy * arm);
       });
     }, level, scale * (chosen ? 1.6 : 1));
+    if (steady) drawSteadyMark(ctx, steady, [l, top, r, bottom], half, tw);
     if (!chosen || !m.guard) return;
     ctx.save();
     ctx.fillStyle = 'rgba(' + look.colours.glowRgb + ', ' + level + ')';
@@ -1625,6 +1633,29 @@ function drawBrackets(ctx) {
     ctx.fillText(t('stat.guard'), mid, top - tw * BRACKET_HP_GAP);
     ctx.restore();
   });
+}
+
+// Steady aim's mark inside the target's brackets (`box`, l top r bottom):
+// a line across the body that climbs from the feet to the head as the aim
+// steadies (shaking with the arm, not under reduced motion), and the
+// chance to land by the top right bracket.
+function drawSteadyMark(ctx, aim, [l, top, r, bottom], half, tw) {
+  const shake = steadyShaking(aim) && !look.still ? (Math.random() - 0.5) * 2 * tw * STEADY_SHAKE : 0;
+  const mid = (l + r) / 2 + shake;
+  const y = bottom - aim.steady * (bottom - top) + shake;
+  const level = BRACKET_LEVEL[1];
+  glowStroke(ctx, () => {
+    ctx.beginPath();
+    ctx.moveTo(mid - half * STEADY_MARK, y);
+    ctx.lineTo(mid + half * STEADY_MARK, y);
+  }, level, scale * 1.4);
+  ctx.save();
+  ctx.fillStyle = 'rgba(' + look.colours.glowRgb + ', ' + level + ')';
+  ctx.font = Math.round(tw * STEADY_TEXT_SIZE) + 'px VT323, monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(Math.round(steadyChance(aim) * 100) + '%', r + tw * 0.04, top);
+  ctx.restore();
 }
 
 // The dashed laser from the gun's muzzle to the target's chest, while it
