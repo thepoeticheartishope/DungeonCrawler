@@ -193,7 +193,7 @@ export function buildFloor() {
   // The safe room (saferoom.js): a shutter on each of the start room's
   // doorways and the switch inside, before anything else can take their
   // tiles. Nothing goes down on a doorway, so it can always shut.
-  const safe = state.settings.safeRoom ? placeSafeRoom(layout, placer, fixedTiles) : null;
+  const safe = placeSafeRoom(layout, placer, fixedTiles);
   if (safe) {
     state.floor.safeRoom = safe.safeRoom;
     safe.props.forEach(p => {
@@ -253,8 +253,8 @@ export function buildFloor() {
     minionTaken.push(desk);
   }
   // The charger (charger.js): energy to full, in the start room beside the
-  // desk. Only with the gun, which spends energy; DEV -> Charger turns it off.
-  if (state.settings.charger && state.settings.gunCombat) {
+  // desk. Only with the gun, which spends energy.
+  if (state.settings.gunCombat) {
     const charger = placeCharger(layout, placer, minionTaken);
     if (charger) {
       state.floor.props.push({ ...charger, identified: false, searched: false, sprung: false });

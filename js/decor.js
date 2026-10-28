@@ -9,7 +9,7 @@
 // the stairs. Papers are placed on the same rules (so they stay out of
 // doorways and off each other), though in play anyone walks over them.
 
-import { state, key, parseKey } from './state.js';
+import { key, parseKey } from './state.js';
 import { shuffle, randInt } from './random.js';
 import { FOUR_STEPS } from './grid.js';
 import {
@@ -173,7 +173,7 @@ function placePillars(chamber, placer, pillars) {
 // charger. Returns [{ row, col, kind: 'cell' }].
 export function placeEnergyCells(layout, placer, taken) {
   const free = (cells) => cells.filter(p => !taken.some(q => q.row === p.row && q.col === p.col));
-  const safe = state.settings.safeRoom ? startRoom(layout) : null;
+  const safe = startRoom(layout);
   const rooms = layout.chambers.filter(chamber => chamber !== safe);
   const boxes = [];
   const placeIn = (chamber) => {
