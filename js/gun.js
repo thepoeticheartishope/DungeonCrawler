@@ -151,7 +151,6 @@ export function pickTarget(tile) {
     refreshGunTarget();
     return [{ type: 'targetBlocked', target, reason: reason === 'notInLight' && wantsTurn() ? 'needsTurn' : reason }];
   }
-  // Free look off, the light can't move to it: a tap still picks it.
   f.gunTarget = target;
   return [{ type: 'targetPicked', target }];
 }

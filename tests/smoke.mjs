@@ -50,8 +50,7 @@
 //      does) waits one turn, a tap on the floor past the arc turns for one turn.
 //      Then the map is drawn looking ahead, at the arc's
 //      edge and past it, saved as noesis-free-look-*.png
-//      in the system's temp folder. Then DEV -> Free look off and a few
-//      turns played.
+//      in the system's temp folder.
 //   7. Light battery run: the battery reads LIGHT #### ON at the foot of
 //      the map (the HUD tube's label; its canvas shows 4 lit cells, 1
 //      after 3 turns, none empty); V switches it off (only the small circle lit, no turn spent)
@@ -722,8 +721,7 @@ async function runSimpleEnemies(browser, url) {
 // Free look (on by default): the gun run's walk until a reload and a
 // kill. Then a minion's tile is tapped through the real rule (gun.js
 // pickTarget): the aim goes to it and no turn passes. Then the look stick
-// and the map are checked (lookControls), pictures are taken (lookShots),
-// and with DEV -> Free look off a few turns are played.
+// and the map are checked (lookControls), and pictures are taken (lookShots).
 async function checkFreeLook(page, url) {
   const MAX_RESTARTS = 2;
   let done = false;
@@ -736,7 +734,6 @@ async function checkFreeLook(page, url) {
     const { pickTarget } = await import('./js/gun.js');
     const { seesEnemy } = await import('./js/sight.js');
     const f = state.floor;
-    if (!state.settings.freeLook) return 'free look did not switch on';
     f.look = 0;
     const turns = state.run.turnCount;
     const m = f.minions.find(x => x.kind === 'minion' && seesEnemy(x));
@@ -750,9 +747,7 @@ async function checkFreeLook(page, url) {
   if (tap) return tap;
   const controls = await lookControls(page);
   if (controls) return controls;
-  const shots = await lookShots(page);
-  if (shots) return shots;
-  return await playWithoutFreeLook(page);
+  return await lookShots(page);
 }
 
 // The look's state now: { look, facing, turns, wants }.
@@ -884,23 +879,6 @@ async function lookControls(page) {
   return '';
 }
 
-// DEV -> Free look off, then a few waits and arrow presses: the light
-// is straight ahead again and nothing breaks.
-async function playWithoutFreeLook(page) {
-  await page.evaluate(() => document.getElementById('devFreeLookBtn').click());
-  for (const k of ['.', 'ArrowLeft', '.', 'ArrowUp', 'ArrowRight']) {
-    await roomIdle(page);
-    await page.keyboard.press(k);
-    await page.waitForTimeout(80);
-  }
-  const off = await page.evaluate(async () => {
-    const { state } = await import('./js/state.js');
-    const { lookAngle, bodyAngle } = await import('./js/look.js');
-    return !state.settings.freeLook && lookAngle() === bodyAngle();
-  });
-  return off ? '' : 'with free look off the light was not straight ahead';
-}
-
 // Aims straight ahead, at the edge of the free arc, and past it, drawing each and saving a picture of the map to the system's
 // temp folder for a look by eye. Past the arc a turn must be wanted.
 async function lookShots(page) {
@@ -911,7 +889,7 @@ async function lookShots(page) {
       const { requestMapDraw } = await import('./js/mapview.js');
       aimLook(bodyAngle() + deg * Math.PI / 180);
       requestMapDraw();
-      return state.settings.freeLook && wantsTurn();
+      return wantsTurn();
     }, offset);
     if (wants !== (offset > 30)) return `aiming ${offset}° off the body: wantsTurn was ${wants}`;
     await page.waitForTimeout(400);
@@ -931,7 +909,7 @@ async function runFreeLook(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'a shot killed a minion, a tap aimed, the look stick swept, waited and turned, and free look off played', consoleErrors, pageErrors };
+  return { ok: true, detail: 'a shot killed a minion, a tap aimed, the look stick swept, waited and turned', consoleErrors, pageErrors };
 }
 
 // Eight ways plan step B, on a phone-sized screen: the square pad fits

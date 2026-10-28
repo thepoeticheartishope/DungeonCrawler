@@ -49,7 +49,7 @@ const SET = [
 function resetFloor(size = 21) {
   emptyFloor(size, {
     // downed.test.mjs checks stick men going down
-    settings: { freeLook: false, fogEnabled: true, activeData: SET, gunCombat: false, downed: false },
+    settings: { fogEnabled: true, activeData: SET, gunCombat: false, downed: false },
     run: { ...gunRun(1), reloadIndex: 0 },
     battle: { currentQuestion: SET[0] },
   });
@@ -320,11 +320,8 @@ test('a minion lit only by standing beside the player can\'t be shot until they 
   assert.ok(state.floor.sightSet.has(key(beside.row, beside.col)), 'it is lit');
   assert.equal(fireBlock(beside), 'notInLight');
   assert.deepEqual(refreshGunTarget(), [], 'never the target');
-  assert.deepEqual(pickTarget(beside), [{ type: 'targetBlocked', target: beside, reason: 'notInLight' }],
-    'free look off: the light can\'t go to it');
-  state.settings.freeLook = true;
   assert.deepEqual(pickTarget(beside), [{ type: 'targetPicked', target: beside }],
-    'free look on: aiming at it brings it into the cone (30° plus the slack reaches the tile beside)');
+    'aiming at it brings it into the cone (30° plus the slack reaches the tile beside)');
   const behind = minionAt(1, 0);
   const events = pickTarget(behind);
   assert.equal(events.at(-1).type, 'targetBlocked');
@@ -334,7 +331,6 @@ test('a minion lit only by standing beside the player can\'t be shot until they 
 test('with free look, tapping a minion swings the light to it and the target follows', () => {
   resetFloor();
   state.settings.gunCombat = true;
-  state.settings.freeLook = true;
   const ahead = minionAt(-1, 0);
   const off = minionAt(-3, 2); // 34° east of north, further away
   refreshGunTarget();
@@ -347,7 +343,6 @@ test('with free look, tapping a minion swings the light to it and the target fol
 test('with two in the cone, the one nearer the aim is the target even when further away', () => {
   resetFloor();
   state.settings.gunCombat = true;
-  state.settings.freeLook = true;
   const near = minionAt(-1, 1);  // 45° east, close
   const far = minionAt(-4, 0);   // straight north, far
   refreshGunTarget();

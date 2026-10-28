@@ -20,7 +20,7 @@ import { fire, readyShot, settleShot } from '../js/gun.js';
 // one round of energy.
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { freeLook: false, fogEnabled: true, gunCombat: true, downed: true, noise: true, simpleEnemies: false },
+    settings: { fogEnabled: true, gunCombat: true, downed: true, noise: true, simpleEnemies: false },
     run: gunRun(1),
   });
 }
@@ -141,13 +141,13 @@ test('reaching the player it grabs their ankle: no stability lost, no Struggle w
   assert.equal(state.run.hearts, MAX_HEARTS);
 });
 
-test('held, a step away is refused with no turn spent, but the player still turns', () => {
+test('held, a step away is refused, but the player still turns (spent like a bump)', () => {
   resetFloor();
   const m = downedAt(-1, 0);
   m.grabbing = true;
   const from = { row: state.floor.playerRow, col: state.floor.playerCol };
   const events = stepPlayer(1, 0);
-  assert.deepEqual(types(events), ['turned', 'heldFast']);
+  assert.deepEqual(types(events), ['turned', 'heldFast', 'bodyTurned']);
   assert.equal(events[1].minion, m);
   assert.equal(state.floor.facing, 'S');
   assert.deepEqual({ row: state.floor.playerRow, col: state.floor.playerCol }, from);

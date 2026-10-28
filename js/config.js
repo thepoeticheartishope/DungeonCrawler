@@ -637,11 +637,8 @@ export const GAZE_POLL_MS = 100;
 // aims, up to LOOK_FREE_ARC either side of the way the body faces, at no
 // cost; looking further round turns the body, which costs a turn. The cone
 // stays 90° wide (45° each side of the look) and PLAYER_CONE_RANGE deep.
-// DEV -> Free look switches it (state.settings.freeLook); off, the light
-// points where the body faces.
-// On by default since the controls (free look plan step C).
+// Always on since 2026-10-28 (its DEV toggle retired).
 export const LOOK_FREE_ARC = Math.PI / 6;
-export const FREE_LOOK = true;
 // Eight ways (eight ways plan): the player and the stick men walk and face
 // the 4 grid ways and the 4 diagonals between them. A diagonal step needs
 // both tiles it passes between free of walls and pillars (passage.js

@@ -41,9 +41,9 @@ export function bodyAngle() {
 }
 
 // How far the aim (state.floor.look) is off the body, -π..π. No aim yet,
-// free look off, or One stick (the light is the aim itself): 0.
+// or One stick (the light is the aim itself): 0.
 function aimOffset() {
-  if (state.settings.oneStick || !state.settings.freeLook || typeof state.floor.look !== 'number') return 0;
+  if (state.settings.oneStick || typeof state.floor.look !== 'number') return 0;
   return wrapAngle(state.floor.look - bodyAngle());
 }
 

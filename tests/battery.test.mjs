@@ -29,7 +29,7 @@ state.settings.oneStick = false;
 
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { freeLook: true, fogEnabled: true, gunCombat: false, lightBattery: true, simpleEnemies: false, gaze: true },
+    settings: { fogEnabled: true, gunCombat: false, lightBattery: true, simpleEnemies: false, gaze: true },
     floor: { look: 0 },
   });
 }

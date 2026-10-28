@@ -92,7 +92,7 @@ export function stepPlayer(dRow, dCol) {
     events.push(...bumpInto(block));
     // With free look, turning costs a turn, so a bump that turned the body
     // isn't a free turn: it's spent like one (free look plan, call 1).
-    if (turned && state.settings.freeLook && plainBump(block)) events.push({ type: 'bodyTurned', facing, bumped: true });
+    if (turned && plainBump(block)) events.push({ type: 'bodyTurned', facing, bumped: true });
     return events;
   }
   // A downed one has the player's ankle: they can turn, shoot, wait or
@@ -100,7 +100,7 @@ export function stepPlayer(dRow, dCol) {
   const holder = state.floor.minions.find(m => m.grabbing);
   if (holder) {
     events.push({ type: 'heldFast', minion: holder });
-    if (turned && state.settings.freeLook) events.push({ type: 'bodyTurned', facing, bumped: true });
+    if (turned) events.push({ type: 'bodyTurned', facing, bumped: true });
     return events;
   }
 

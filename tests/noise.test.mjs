@@ -22,7 +22,7 @@ import { settleReload } from '../js/gun.js';
 // stands at the bottom of room 0, light off, so no stick man sees them.
 function resetFloor() {
   emptyFloor(21, {
-    settings: { freeLook: true, fogEnabled: true, gunCombat: false, lightBattery: true, simpleEnemies: false, gaze: true, noise: true },
+    settings: { fogEnabled: true, gunCombat: false, lightBattery: true, simpleEnemies: false, gaze: true, noise: true },
     see: false,
   });
   twoRooms();
