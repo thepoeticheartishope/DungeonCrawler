@@ -111,7 +111,7 @@ test('every kind of thing the game puts on the map has a room view drawing', asy
 
 test('every furniture piece has a room view drawing', async () => {
   const { FURNITURE_PIECES } = await import('../js/config.js');
-  const source = (await import('node:fs')).readFileSync(new URL('../js/roomview.js', import.meta.url), 'utf8');
+  const source = (await import('node:fs')).readFileSync(new URL('../js/roomthings.js', import.meta.url), 'utf8');
   const table = source.slice(source.indexOf('const PIECES = {'));
   FURNITURE_PIECES.forEach(piece => assert.ok(new RegExp('\\b' + piece + ':').test(table), 'no drawing for ' + piece));
 });
