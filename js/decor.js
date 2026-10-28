@@ -9,9 +9,9 @@
 // the stairs. Papers are placed on the same rules (so they stay out of
 // doorways and off each other), though in play anyone walks over them.
 
-import { key } from './state.js';
+import { state, key } from './state.js';
 import {
-  ROOM_THEMES, PILLARS_PER_ROOM, ROOM_PILLARS, ENERGY_CELL_ROOM_CHANCE, ENERGY_CELLS_MIN, PAPER_LORE_CHANCE, PAPERS_PER_ROOM, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD, SAFE_ROOM,
+  ROOM_THEMES, PILLARS_PER_ROOM, ROOM_PILLARS, ENERGY_CELL_ROOM_CHANCE, ENERGY_CELLS_MIN, PAPER_LORE_CHANCE, PAPERS_PER_ROOM, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD,
 } from './config.js';
 import { startRoom } from './desk.js';
 
@@ -191,7 +191,7 @@ function placePillars(chamber, placer, pillars) {
 // charger. Returns [{ row, col, kind: 'cell' }].
 export function placeEnergyCells(layout, placer, taken) {
   const free = (cells) => cells.filter(p => !taken.some(q => q.row === p.row && q.col === p.col));
-  const safe = SAFE_ROOM.on ? startRoom(layout) : null;
+  const safe = state.settings.safeRoom ? startRoom(layout) : null;
   const rooms = layout.chambers.filter(chamber => chamber !== safe);
   const boxes = [];
   const placeIn = (chamber) => {

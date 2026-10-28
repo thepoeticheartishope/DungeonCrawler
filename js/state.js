@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, CHARGER, ONE_STICK, BOOK } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, TURN_BEFORE_STEP, FREE_LOOK, EIGHT_WAYS, SMOOTH_WALK, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, CHARGER, ONE_STICK, BOOK, SAFE_ROOM } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -39,6 +39,7 @@ export const state = {
     noise: NOISE,           // mistakes make a sound stick men hear (noise.js); DEV -> Noise flips it (off: mistakes are quiet)
     oneStick: ONE_STICK.on, // walk freely in real time with one stick (walk.js), not tile to tile; turns Real time on; DEV -> One stick flips it
     charger: CHARGER.on,   // a charger in each depth's start room, gun on (charger.js); DEV -> Charger flips it from the next floor
+    safeRoom: SAFE_ROOM.on, // each depth's start room is a safe room with shutters (saferoom.js); DEV -> Safe room flips it from the next floor
     staticNoise: STATIC_NOISE, // a faint grain grows as the closest stick man nears, in place of "I see you." (static.js); DEV -> Static flips it
     downed: DOWNED,         // a shot that leaves a stick man on 1 HP knocks it down: it crawls, grabs, and a bump finishes it (gun.js); DEV -> Downed flips it
     gaze: GAZE,             // an eye over a stick man opens in the player's light and it steps closer (gaze.js); DEV -> Gaze flips it
@@ -74,6 +75,7 @@ export const state = {
     coinsTotal: 0,
     energy: ENERGY_START, // energy held (0 to ENERGY_MAX, js/gun.js): the gun spends 1 a shot; carried from floor to floor
     chargerTold: false,    // the kind voice has said the charger's line this run (charger.js chargerLine)
+    shutterTold: false,    // the kind voice has said the safe room's line this run (saferoom.js shutterLine)
     reloadIndex: 0,        // reloads settled this run; picks the next category in the reload rotation (gun.js)
     lastMinigame: null,    // the minigame the last question ran as, or null if it was a plain question (minigames.js: never the same twice in a row)
     turnLocked: false,
@@ -117,7 +119,7 @@ export const state = {
     gunTarget: null,       // the minion (or hunter) the gun is aimed at, picked by a tap on the map (gun.js pickTarget), or null
     goals: [],             // this floor's side goals: [{ id, pay }] from FLOOR_GOALS (goals.js rollGoals); none on a rest floor
     heldChambers: new Set(), // rooms held by a relay (relays.js): no boss light, no minion from outside
-    safeRoom: null,        // the start room's shutters on a danger floor (saferoom.js): { chamber, cells: Set of its tile keys, doors: [keys], switchAt: { row, col }, shut, lamp, playerIn }; null on a rest or tutorial floor or with SAFE_ROOM off
+    safeRoom: null,        // the start room's shutters on a danger floor (saferoom.js): { chamber, cells: Set of its tile keys, doors: [keys], switchAt: { row, col }, shut, lamp, playerIn }; null on a rest or tutorial floor or with DEV -> Safe room off
     relayTurnsWon: 0,      // light turns relays have taken back on this floor (capped at RELAY_TURNS_CAP)
     path: null,            // the way down the player took to this depth (floors.js FLOOR_PATHS), or null
     stairsAlt: null,       // a between-rest's second stairs: { row, col, path, hidden } (hidden until scouted); null elsewhere

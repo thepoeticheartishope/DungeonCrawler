@@ -28,6 +28,7 @@ const devDownedBtn = document.getElementById('devDownedBtn');
 const devNoiseBtn = document.getElementById('devNoiseBtn');
 const devStaticBtn = document.getElementById('devStaticBtn');
 const devChargerBtn = document.getElementById('devChargerBtn');
+const devSafeRoomBtn = document.getElementById('devSafeRoomBtn');
 const devOneStickBtn = document.getElementById('devOneStickBtn');
 const devShowDuctsBtn = document.getElementById('devShowDuctsBtn');
 const dpadEl = document.getElementById('dpad');
@@ -206,6 +207,14 @@ export function initDevPanel({
     state.settings.charger = !state.settings.charger;
     devChargerBtn.textContent = state.settings.charger ? 'Charger: ON (dev)' : 'Charger: OFF (dev)';
     devChargerBtn.setAttribute('aria-pressed', String(state.settings.charger));
+  });
+
+  // Dev tool (safe room plan step C): the start room a safe room from the
+  // next floor on, or a plain room, to compare.
+  devSafeRoomBtn.addEventListener('click', () => {
+    state.settings.safeRoom = !state.settings.safeRoom;
+    devSafeRoomBtn.textContent = state.settings.safeRoom ? 'Safe room: ON (dev)' : 'Safe room: OFF (dev)';
+    devSafeRoomBtn.setAttribute('aria-pressed', String(state.settings.safeRoom));
   });
 
   // Dev tool (one stick plan step A): walk freely in real time with the
