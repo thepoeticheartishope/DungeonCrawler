@@ -1096,10 +1096,9 @@
      MAP, LOG and SELECT on the left. */
   .room-controls.dpad-right { flex-direction: row-reverse; }
 
-  /* With DEV -> 8 ways off, clips the turned d-pad's empty corners, which
-     would otherwise poke past the screen's edge and make a phone zoom out.
-     The padding keeps the button tips; the negative margin keeps the
-     layout as it was. The square 8-way pad never pokes out. */
+  /* Clipped the turned 4-way d-pad's empty corners (8 ways off, retired
+     2026-10-28) so a phone didn't zoom out. The square 8-way pad never
+     pokes out; the padding and negative margin cancel, so it changes nothing. */
   .dpad-clip {
     flex: none;
     padding: 12px;
@@ -1119,14 +1118,6 @@
     justify-content: center;
     flex: none;
   }
-  /* DEV -> 8 ways off: only the 4 edge arrows. North is up on screen
-     (the room view), so the pad stands straight with its corners hidden. */
-  .dpad.four-ways {
-    grid-template-columns: repeat(3, 48px);
-    grid-template-rows: repeat(3, 48px);
-  }
-  .dpad.four-ways .dpad-corner { visibility: hidden; }
-
   .dpad button {
     /* Held to walk (js/dpad.js): no scrolling, text selection or callout
        menu under a finger that stays down. */
@@ -1773,7 +1764,6 @@
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devFreeLookBtn" type="button" aria-pressed="true" title="Testing only: the light points where you aim, up to 30 degrees off the way you face (free look), or only where you face">Free look: ON (dev)</button>
-      <button class="dev-skip" id="devEightWaysBtn" type="button" aria-pressed="true" title="Testing only: you and the minions walk and face 8 ways (diagonals need both corner tiles open), or only the 4 ways, as before">8 ways: ON (dev)</button>
       <button class="dev-skip" id="devBookPaperBtn" type="button" title="Testing only: the record book's page (the ask screen): dark, as the game has it, or cold paper or cream, to compare">Book paper: dark (dev)</button>
       <button class="dev-skip" id="devLightBatteryBtn" type="button" aria-pressed="true" title="Testing only: your light goes on and off (V) and runs on a 4-turn battery, or is always on, as before">Light battery: ON (dev)</button>
       <button class="dev-skip" id="devNoiseBtn" type="button" aria-pressed="true" title="Testing only: mistakes make a sound that stick men hear and come to, through grates too, and hunting ones crawl the ducts; or mistakes are quiet and grates are just floor, as before">Noise: ON (dev)</button>

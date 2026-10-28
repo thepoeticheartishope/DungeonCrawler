@@ -17,7 +17,7 @@ import { inSafeRoom, shutIn, liftShutters, lampLit } from './saferoom.js';
 // True if `entity` stands on one of the tiles around the player: the 8
 // around them (eight ways plan, call 4), apart from a diagonal a corner
 // cuts off, so whatever can step onto the player can strike them, and the
-// other way round; only the 4 beside them with DEV -> 8 ways off.
+// other way round.
 export function isAdjacentToPlayer(entity) {
   return neighbors(entity.row, entity.col).some(([r, c]) => r === state.floor.playerRow && c === state.floor.playerCol);
 }
@@ -74,12 +74,11 @@ export function tileOccupied(row, col, excludeMinion) {
 }
 
 // The order neighbors() tries the ways in: the grid ways first, in the
-// order they were tried before the eight ways plan, so with 8 ways off a
-// chase picks the same path as it always did.
+// order they were tried before the eight ways plan, then the diagonals.
 const NEIGHBOR_ORDER = ['N', 'S', 'W', 'E', 'NE', 'SE', 'SW', 'NW'];
 
 // The tiles a minion (or the hunter) can step to from (r, c): one step
-// each way in use (look.js waysInUse: 8, or 4 with DEV -> 8 ways off),
+// each way in use (look.js waysInUse: all 8),
 // inside the grid, never cutting a corner (passage.js canPassCorner), the
 // same rule as the player's. Paths, wandering and the warning all go
 // through here.

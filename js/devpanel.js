@@ -3,10 +3,10 @@
 // toggles, a test shot and a test reload, and the map's frame meter, for testing. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw, mapDrawTimes } from './mapview.js';
-import { renderRoomHints, renderHud } from './render.js';
+import { renderHud } from './render.js';
 import { MINIGAMES } from './minigames.js';
 import { STICK_POSE_IDS, TENDRIL_STYLES } from './stickforms.js';
-import { followBody, lookAngle, bodyAngle, nearestWay } from './look.js';
+import { followBody, lookAngle, bodyAngle } from './look.js';
 import { computeVisibility } from './sight.js';
 import { refreshGunTarget } from './gun.js';
 import { refreshBook } from './bookview.js';
@@ -19,7 +19,6 @@ const devSkipBtn = document.getElementById('devSkipBtn');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devFreeLookBtn = document.getElementById('devFreeLookBtn');
-const devEightWaysBtn = document.getElementById('devEightWaysBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
 const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
 const devGazeBtn = document.getElementById('devGazeBtn');
@@ -130,26 +129,6 @@ export function initDevPanel({
     followBody();
     computeVisibility();
     if (state.settings.gunCombat) refreshGunTarget();
-    requestMapDraw();
-  });
-
-  // Dev tool (eight ways plan): the player and the minions walk and face 8
-  // ways, or only the 4 grid ways, as before, so the two can be compared.
-  // Off while facing a diagonal, the body turns to the nearest grid way.
-  // The d-pad shows the ways in use: square with 8 arrows, or turned 45°
-  // with its 4 (index.html .dpad.four-ways).
-  dpadEl.classList.toggle('four-ways', !state.settings.eightWays);
-  devEightWaysBtn.addEventListener('click', () => {
-    state.settings.eightWays = !state.settings.eightWays;
-    dpadEl.classList.toggle('four-ways', !state.settings.eightWays);
-    devEightWaysBtn.textContent = state.settings.eightWays ? '8 ways: ON (dev)' : '8 ways: OFF (dev)';
-    devEightWaysBtn.setAttribute('aria-pressed', String(state.settings.eightWays));
-    if (state.floor.playerRow === undefined) return;
-    state.floor.facing = nearestWay(bodyAngle());
-    followBody();
-    computeVisibility();
-    if (state.settings.gunCombat) refreshGunTarget();
-    renderRoomHints();
     requestMapDraw();
   });
 

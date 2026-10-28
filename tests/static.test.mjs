@@ -16,7 +16,6 @@ function resetFloor() {
   const f = state.floor;
   f.GRID_SIZE = 15;
   state.settings.staticNoise = true;
-  state.settings.eightWays = true;
   f.wallSet = new Set();
   for (let r = 0; r <= 12; r++) f.wallSet.add(key(r, 7));
   f.minions = [];

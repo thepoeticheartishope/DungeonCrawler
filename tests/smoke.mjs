@@ -937,8 +937,7 @@ async function runFreeLook(browser, url) {
 // Eight ways plan step B, on a phone-sized screen: the square pad fits
 // (swap sides off and on); walking goes by the body, all 8 ways: up steps
 // the way it faces, E ahead at a slant, down turns round and steps, the
-// up-left button ahead at the other slant; and DEV -> 8 ways off turns the
-// pad back with up still stepping ahead. Minions are cleared and the
+// up-left button ahead at the other slant. Minions are cleared and the
 // player put on an open tile, facing NW, so every press is a real step.
 async function checkEightWays(page) {
   await loadPageAndSet(page, page.url());
@@ -1015,12 +1014,6 @@ async function checkEightWays(page) {
     if (failed) return failed;
   }
 
-  await page.evaluate(() => document.getElementById('devEightWaysBtn').click());
-  if (!await page.locator('#dpad.four-ways').count()) return 'DEV -> 8 ways off did not hide the pad\'s corners';
-  facing = { way: 'N', look: 0 };
-  const old = await tryStep(() => page.keyboard.press('ArrowUp'), { step: [-1, 0], facing: 'N' }, '8 ways off, up key');
-  if (old) return old;
-  await page.locator('.room-controls').screenshot({ path: path.join(os.tmpdir(), 'noesis-eight-ways-pad-four.png') });
   return '';
 }
 
@@ -1036,7 +1029,7 @@ async function runEightWays(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'the square pad fit a phone, keys and buttons walked the way they point on screen all 8 ways, and 8 ways off walked ahead', consoleErrors, pageErrors };
+  return { ok: true, detail: 'the square pad fit a phone, keys and buttons walked the way they point on screen all 8 ways', consoleErrors, pageErrors };
 }
 
 // ---- Run 7: light battery ----

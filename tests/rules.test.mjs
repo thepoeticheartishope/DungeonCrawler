@@ -38,7 +38,7 @@ state.settings.oneStick = false;
 // gun plan step 9; its rules are tested in gun.test.mjs).
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { freeLook: false, fogEnabled: true, gunCombat: false, eightWays: true },
+    settings: { freeLook: false, fogEnabled: true, gunCombat: false },
     see: false,
   });
 }
@@ -802,27 +802,9 @@ test('a corner keeps a diagonal minion from striking', () => {
   assert.deepEqual(ofType(events, 'minionEngaged', 'minion'), []);
   assert.notDeepEqual({ row: m.row, col: m.col }, { row: r, col: c });
 });
-
-test('8 ways off: diagonals do nothing and minions chase 4 ways, as before', () => {
-  resetFloor(21);
-  state.settings.eightWays = false;
-  const r = state.floor.playerRow, c = state.floor.playerCol;
-  assert.deepEqual(stepPlayer(-1, 1), []);
-  assert.deepEqual([state.floor.playerRow, state.floor.playerCol, state.floor.facing], [r, c, 'N']);
-  const m = spawnMinion({ row: r - 1, col: c + 1 });
-  refreshTargetValidity();
-  assert.equal(state.battle.selectedTarget, null, 'a diagonal is not next to the player');
-  advanceMonsters();
-  assert.equal(Math.abs(m.row - r) + Math.abs(m.col - c), 1, 'it took a straight step');
-  state.settings.eightWays = true;
-});
-
-test('stepsAway counts a diagonal as one step, or two with 8 ways off', () => {
+test('stepsAway counts a diagonal as one step', () => {
   resetFloor();
   const r = state.floor.playerRow, c = state.floor.playerCol;
   assert.equal(stepsAway(r - 2, c + 2), 2);
   assert.equal(stepsAway(r + 1, c - 3), 3);
-  state.settings.eightWays = false;
-  assert.equal(stepsAway(r - 2, c + 2), 4);
-  state.settings.eightWays = true;
 });

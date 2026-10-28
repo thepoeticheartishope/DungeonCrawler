@@ -24,7 +24,7 @@ const FRAME = 16;
 // An open floor, player in the middle facing north, One stick on.
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { oneStick: true, freeLook: false, eightWays: true, fogEnabled: true },
+    settings: { oneStick: true, freeLook: false, fogEnabled: true },
     floor: { look: BODY_ANGLES.N },
     see: false,
   });

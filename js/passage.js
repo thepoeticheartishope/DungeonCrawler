@@ -25,13 +25,12 @@ export function canPassCorner(row, col, dRow, dCol) {
 }
 
 // How many steps (row, col) is from the player on open floor, walls
-// ignored: with 8 ways a diagonal is one step, so it is the larger of the
-// two distances; with DEV -> 8 ways off, their sum, as before. The strike
-// tells use it (one more step and it is next to them).
+// ignored: a diagonal is one step (8 ways), so it is the larger of the
+// two distances. The strike tells use it (one more step and it is next to them).
 export function stepsAway(row, col) {
   const dRow = Math.abs(row - state.floor.playerRow);
   const dCol = Math.abs(col - state.floor.playerCol);
-  return state.settings.eightWays ? Math.max(dRow, dCol) : dRow + dCol;
+  return Math.max(dRow, dCol);
 }
 
 // null if (row, col) is open, otherwise { kind, thing }: kind is 'wall'

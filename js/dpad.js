@@ -1,7 +1,6 @@
 // On-screen d-pad: hold an arrow to keep walking, the way a held arrow key
 // does, so a touch player doesn't have to tap once per tile. Since the
-// eight ways plan it is a square pad of 8 arrows; with DEV -> 8 ways off
-// only its 4 edge arrows. Every arrow walks the way it points on screen
+// eight ways plan it is a square pad of 8 arrows. Every arrow walks the way it points on screen
 // (padWay; the room view's camera never turns). The centre is the look
 // stick (free look plan step C): push it sideways to sweep the light
 // (sweepHold), up to look up, tap it to turn or (twice) to wait. main.js passes in the buttons and the actions; this file only

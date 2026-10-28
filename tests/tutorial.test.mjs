@@ -29,7 +29,6 @@ function resetRun() {
   state.settings.lightBattery = true;
   state.settings.simpleEnemies = false;
   state.settings.gunCombat = true;
-  state.settings.eightWays = true;
   state.settings.freeLook = true;
   state.settings.playerName = '';
   state.run.hearts = 3;
