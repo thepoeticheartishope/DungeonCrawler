@@ -50,10 +50,13 @@ test('a plan’s L is a lamp on open floor', () => {
   assert.ok(!state.floor.wallSet.has(key(LAMP.row, LAMP.col)));
 });
 
-test('the School has its four lamps on open floor in both versions', () => {
+test('the School has its eight lamps on open floor in both versions', () => {
   ['A', 'B'].forEach(v => {
     const layout = buildPlanLayout(FLOOR_PLANS.school, CORE_KEYS, v);
-    assert.deepEqual(layout.lamps, [{ row: 9, col: 16 }, { row: 15, col: 9 }, { row: 15, col: 23 }, { row: 21, col: 16 }]);
+    assert.deepEqual(layout.lamps, [
+      { row: 8, col: 7 }, { row: 8, col: 25 }, { row: 9, col: 16 }, { row: 15, col: 9 },
+      { row: 15, col: 23 }, { row: 21, col: 16 }, { row: 22, col: 7 }, { row: 22, col: 25 },
+    ]);
     layout.lamps.forEach(l => assert.ok(!layout.walls.has(key(l.row, l.col)), v + ' ' + l.row + ',' + l.col));
   });
 });
