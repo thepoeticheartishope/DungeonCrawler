@@ -133,7 +133,12 @@ const RELAY = { body: '#4a5058', seam: '#33383e', dead: '#2a2e32', leg: '#2e3236
 // the pull switch, and the lamp's warm light over the room.
 const SHUTTER = { slat: '#5b6068', shade: '#454950', bar: '#8a9098', post: '#2f3338', box: '#3a3e44', rise: 1.5, slat_px: 2 };
 const SWITCH_ART = { plate: '#4a4e55', cord: '#2a2d31', warm: '#e9c48a', dim: '#5a5650' };
-const LAMP = { level: 0.55, reach: 0.65, bulb: 0.5 }; // reach: the pool's radius, a share of the room's longer side
+// The lamp hangs from the ceiling over the room's middle: its shade
+// `hang` tiles above the floor (the walls stand 2), its cord up out of
+// sight to `ceiling`, a faint cone of light `beam` strong falling from it
+// to the pool on the floor. reach: the pool's radius, a share of the
+// room's longer side.
+const LAMP = { level: 0.55, reach: 0.65, bulb: 0.45, hang: 1.3, ceiling: 2.6, beam: 0.16, shade: '#34383e', rim: '#5a6068' };
 const CHEST = { lid: '#5a3d2c', lidLight: '#6e4b36', body: '#4a3224', band: '#2e211a', lock: '#b49a6a' };
 const COIN = { face: '#d8b45a', shine: '#f3dc8e', rgb: '216, 180, 90' };
 const KEY = { metal: '#dfe8ea', glow: 0.7 };   // glow: its light at the brightest of its pulse, as a share of the pulse's strength
@@ -315,6 +320,8 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   const tut = f.tutorial;
   if (tut && f.spotSet.size && inView(tut.spot.row, tut.spot.col)) glows.push(() => drawBeam((tut.spot.col + 0.5) * T - ox, (tut.spot.row + 0.7) * T - oy));
   items.push({ y: at.row + ROOM_VIEW.footAt + 0.01, draw: () => drawStickMan(at, ox, oy) });
+  // The safe room's lamp hangs from the ceiling, over all of it.
+  if (f.safeRoom && space.room === f.safeRoom.chamber) items.push({ y: Infinity, draw: () => drawLampShade(ox, oy) });
   items.sort((a, b) => a.y - b.y).forEach(item => item.draw());
   const standing = items.filter(item => item.row !== undefined);
 
@@ -1263,27 +1270,61 @@ function drawSwitch(thing, x, y, glows) {
   });
 }
 
-// The safe room's lamp while it is on and the player is in the room: a
-// warm pool of light over its floor, added to the light, and its bulb
-// hanging over the middle on a cord.
-function drawLamp(ox, oy, glows) {
+// Where the safe room's lamp hangs, in picture pixels: over the middle of
+// the room's floor (cx, cy), and how big the room is (`size`, tiles).
+function lampSpot(ox, oy) {
   const cells = [...state.floor.safeRoom.cells].map(tileOf);
   const r0 = Math.min(...cells.map(([r]) => r)), r1 = Math.max(...cells.map(([r]) => r));
   const c0 = Math.min(...cells.map(([, c]) => c)), c1 = Math.max(...cells.map(([, c]) => c));
-  const cx = ((c0 + c1 + 1) / 2) * T - ox, cy = ((r0 + r1 + 1) / 2) * T - oy;
-  const r = Math.max(r1 - r0 + 1, c1 - c0 + 1) * T * LAMP.reach;
+  return { cx: Math.round(((c0 + c1 + 1) / 2) * T - ox), cy: Math.round(((r0 + r1 + 1) / 2) * T - oy), size: Math.max(r1 - r0 + 1, c1 - c0 + 1) };
+}
+
+// The lamp's cord and shade, high over the room's middle, drawn over
+// everything below it and lit by the room like the rest. It hangs there
+// dark once the lamp is out.
+function drawLampShade(ox, oy) {
+  const { cx, cy } = lampSpot(ox, oy);
+  const sy = Math.round(cy - LAMP.hang * T);
+  const top = Math.round(cy - LAMP.ceiling * T);
+  bctx.fillStyle = SWITCH_ART.cord;
+  bctx.fillRect(cx, top, 1, sy - top - 2);
+  bctx.fillStyle = LAMP.shade;
+  bctx.fillRect(cx - 1, sy - 2, 3, 1);
+  bctx.fillRect(cx - 2, sy - 1, 5, 1);
+  bctx.fillRect(cx - 3, sy, 7, 1);
+  bctx.fillStyle = LAMP.rim;
+  bctx.fillRect(cx - 3, sy + 1, 7, 1);
+}
+
+// The safe room's lamp while it is on and the player is in the room: a
+// warm pool of light on the floor under it, added to the light, and over
+// the picture the bulb under its shade and a faint cone of light falling
+// from it to the floor.
+function drawLamp(ox, oy, glows) {
+  const { cx, cy, size } = lampSpot(ox, oy);
+  const r = size * T * LAMP.reach;
   const g = gctx.createRadialGradient(cx, cy, 0, cx, cy, r);
   g.addColorStop(0, 'rgba(' + POOL.rgb + ', ' + LAMP.level + ')');
   g.addColorStop(1, 'rgba(' + POOL.rgb + ', 0)');
   gctx.fillStyle = g;
   gctx.fillRect(cx - r, cy - r, r * 2, r * 2);
-  const by = Math.round(cy - T);
+  const sy = Math.round(cy - LAMP.hang * T) + 2;
   glows.push(() => {
-    bctx.fillStyle = SWITCH_ART.cord;
-    bctx.fillRect(Math.round(cx), by - T, 1, T - 1);
+    const spread = T * 1.2;
+    const cone = bctx.createLinearGradient(0, sy, 0, cy);
+    cone.addColorStop(0, 'rgba(' + POOL.rgb + ', ' + LAMP.beam + ')');
+    cone.addColorStop(1, 'rgba(' + POOL.rgb + ', 0)');
+    bctx.fillStyle = cone;
+    bctx.beginPath();
+    bctx.moveTo(cx - 3, sy);
+    bctx.lineTo(cx + 4, sy);
+    bctx.lineTo(cx + spread, cy);
+    bctx.lineTo(cx - spread, cy);
+    bctx.closePath();
+    bctx.fill();
     bctx.fillStyle = SWITCH_ART.warm;
-    bctx.fillRect(Math.round(cx) - 1, by - 1, 3, 2);
-    halo(cx, by, T * 0.8, POOL.rgb, LAMP.bulb);
+    bctx.fillRect(cx - 1, sy, 3, 1);
+    halo(cx + 0.5, sy, T * 0.5, POOL.rgb, LAMP.bulb);
   });
 }
 
