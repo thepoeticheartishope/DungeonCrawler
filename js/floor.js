@@ -9,7 +9,7 @@ import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { FLOOR_PLANS, buildPlanLayout } from './plans.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
 import {
-  CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
+  CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES, SAFE_ROOM
 } from './config.js';
 import { floorRecipe, pickPaths, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './quiz.js';
@@ -25,6 +25,8 @@ import { placeDesk } from './desk.js';
 import { placeCharger } from './charger.js';
 import { placeVents } from './vents.js';
 import { placeWindows } from './windows.js';
+import { placeSafeRoom, inSafeRoom } from './saferoom.js';
+import { solidProp } from './passage.js';
 import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
@@ -48,7 +50,7 @@ function pickCoinTile(walls, avoidList, allowedTiles) {
 function stepsFromStart() {
   const blocked = new Set(state.floor.wallSet);
   state.floor.pillarSet.forEach(k => blocked.add(k));
-  state.floor.props.forEach(p => { if (p.kind !== 'paper') blocked.add(key(p.row, p.col)); });
+  state.floor.props.forEach(p => { if (solidProp(p)) blocked.add(key(p.row, p.col)); });
   blocked.add(key(state.floor.boss.row, state.floor.boss.col));
   const dist = new Map([[key(state.floor.PLAYER_START.row, state.floor.PLAYER_START.col), 0]]);
   const queue = [state.floor.PLAYER_START];
@@ -71,11 +73,12 @@ function stepsFromStart() {
 // beats placed), put on room tiles outside the boss chamber and at least MINION_MIN_START_DISTANCE steps
 // from the player's start, so a room never opens with one in the player's
 // face. Falls back to any free reachable room tile if a small room can't
-// fit them that far away.
+// fit them that far away. Never in the safe room (saferoom.js).
 function placeMinions(roomTiles, takenTiles, count, recipe) {
   const dist = stepsFromStart();
   const isTaken = (k) => takenTiles.some(p => key(p.row, p.col) === k);
-  const free = [...dist.keys()].filter(k => roomTiles.has(k) && !isTaken(k));
+  const safe = state.floor.safeRoom;
+  const free = [...dist.keys()].filter(k => roomTiles.has(k) && !isTaken(k) && !(safe && safe.cells.has(k)));
   const far = shuffle(free.filter(k => dist.get(k) >= MINION_MIN_START_DISTANCE));
   const near = shuffle(free.filter(k => dist.get(k) < MINION_MIN_START_DISTANCE && dist.get(k) >= 3));
   [...far, ...near].slice(0, count).forEach(k => {
@@ -138,6 +141,7 @@ export function buildFloor() {
   state.floor.misses = 0;
   state.floor.heldChambers = new Set();
   state.floor.relayTurnsWon = 0;
+  state.floor.safeRoom = null;
   state.floor.exchange = null; // THE UNFOLDING lives on rest floors only
   state.floor.darkTurns = 0;
   state.floor.props = [];
@@ -198,6 +202,18 @@ export function buildFloor() {
   const placer = furnishing.placer;
   const fixedTiles = [state.floor.PLAYER_START, { row: state.floor.boss.row, col: state.floor.boss.col }, state.floor.stairs, ...state.floor.keys];
 
+  // The safe room (saferoom.js): a shutter on each of the start room's
+  // doorways and the switch inside, before anything else can take their
+  // tiles. Nothing goes down on a doorway, so it can always shut.
+  const safe = SAFE_ROOM.on ? placeSafeRoom(layout, placer, fixedTiles) : null;
+  if (safe) {
+    state.floor.safeRoom = safe.safeRoom;
+    safe.props.forEach(p => {
+      state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
+      fixedTiles.push({ row: p.row, col: p.col });
+    });
+  }
+
   // The recipe's beats go down first, along the walk to the boss, so the
   // random coin can't take their spots (beats.js).
   const beats = placeBeats(recipe.beats, layout, placer, fixedTiles);
@@ -206,11 +222,14 @@ export function buildFloor() {
     if (p.kind === 'paper') makeSpaceForPaper(p);
     state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
   });
-  beats.minionTiles.forEach(p => spawnMinion(p, nextMinionKind(recipe)));
+  // No stick man starts in the safe room: a beat's that would goes down at
+  // random with the rest instead (placeMinions).
+  const beatMinions = beats.minionTiles.filter(p => !inSafeRoom(p.row, p.col));
+  beatMinions.forEach(p => spawnMinion(p, nextMinionKind(recipe)));
 
   const freeRoomTiles = new Set([...roomTiles].filter(k => !placer.blocked.has(k)));
 
-  const takenTiles = [...fixedTiles, ...beats.minionTiles];
+  const takenTiles = [...fixedTiles, ...beatMinions];
   const coinTile = pickCoinTile(state.floor.wallSet, takenTiles, freeRoomTiles);
   state.floor.coin = coinTile ? { row: coinTile.row, col: coinTile.col } : null;
 
@@ -262,7 +281,7 @@ export function buildFloor() {
   // stick man starts on one.
   state.floor.vents = placeVents(layout, placer, minionTaken, state.floor.props);
   minionTaken.push(...state.floor.vents);
-  placeMinions(roomTiles, minionTaken, recipe.minions - beats.minionTiles.length, recipe);
+  placeMinions(roomTiles, minionTaken, recipe.minions - beatMinions.length, recipe);
 
   state.floor.darkness = false;
   initBossLight();
@@ -295,6 +314,7 @@ function clearDanger() {
   f.stairsAlt = null;
   f.heldChambers = new Set();
   f.relayTurnsWon = 0;
+  f.safeRoom = null;
   f.goals = [];
   f.darkness = false;
   f.darkTurns = 0;

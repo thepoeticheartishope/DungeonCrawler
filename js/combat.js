@@ -3,15 +3,16 @@
 // that change what's on the map return what changed, and main.js draws it.
 
 import { state, key } from './state.js';
-import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIGHT, MINION_TRACK_TURNS, MINION_LINGER_TURNS, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS, DOWNED_SLOWDOWN, ONE_STICK } from './config.js';
+import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIGHT, MINION_TRACK_TURNS, MINION_LINGER_TURNS, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS, DOWNED_SLOWDOWN, ONE_STICK, SAFE_ROOM } from './config.js';
 import { advanceLight } from './light.js';
 import { tickLight, drainLight, batteryInPlay, lightOn } from './battery.js';
 import { minionStrike, struggleDial } from './gun.js';
 import { keptOut } from './relays.js';
-import { canPassCorner } from './passage.js';
+import { canPassCorner, solidProp } from './passage.js';
 import { computeVisibility, clearLine, seesEnemy, hiddenFrom, FACING_VECTORS } from './sight.js';
 import { waysInUse } from './look.js';
 import { ductStep, crawlInto, crawlTurn } from './vents.js';
+import { inSafeRoom, shutIn, liftShutters } from './saferoom.js';
 
 // True if `entity` stands on one of the tiles around the player: the 8
 // around them (eight ways plan, call 4), apart from a diagonal a corner
@@ -61,7 +62,7 @@ export function refreshTargetValidity() {
 // currently occupies this tile (papers lie flat, so they don't count).
 export function tileOccupied(row, col, excludeMinion) {
   if (state.floor.pillarSet.has(key(row, col))) return true;
-  if (state.floor.props.some(p => p.kind !== 'paper' && p.row === row && p.col === col)) return true;
+  if (state.floor.props.some(p => solidProp(p) && p.row === row && p.col === col)) return true;
   if (state.floor.boss && state.floor.boss.row === row && state.floor.boss.col === col) return true;
   if (state.floor.playerRow === row && state.floor.playerCol === col) return true;
   if (state.floor.chest && state.floor.chest.row === row && state.floor.chest.col === col) return true;
@@ -102,7 +103,7 @@ export function blockedTilesFor(minion) {
   const blocked = new Set(state.floor.wallSet);
   keptOut(minion).forEach(k => blocked.add(k));
   state.floor.pillarSet.forEach(k => blocked.add(k));
-  state.floor.props.forEach(p => { if (p.kind !== 'paper') blocked.add(key(p.row, p.col)); });
+  state.floor.props.forEach(p => { if (solidProp(p)) blocked.add(key(p.row, p.col)); });
   if (state.floor.boss) blocked.add(key(state.floor.boss.row, state.floor.boss.col));
   for (const other of state.floor.minions) {
     if (other === minion) continue;
@@ -135,11 +136,13 @@ export function bfsPath(start, target, walls) {
 }
 
 // The free floor tile the most walkable steps from the player, for the
-// hunter to wake on or be thrown back to.
+// hunter to wake on or be thrown back to. The safe room's shutters don't
+// count, so a player shut in it doesn't make the hunter wake inside; and
+// never a tile of the safe room itself.
 function farthestFromPlayer() {
   const blocked = new Set(state.floor.wallSet);
   state.floor.pillarSet.forEach(k => blocked.add(k));
-  state.floor.props.forEach(p => { if (p.kind !== 'paper') blocked.add(key(p.row, p.col)); });
+  state.floor.props.forEach(p => { if (p.kind !== 'paper' && p.kind !== 'shutter') blocked.add(key(p.row, p.col)); });
   const start = { row: state.floor.playerRow, col: state.floor.playerCol };
   const dist = new Map([[key(start.row, start.col), 0]]);
   const queue = [start];
@@ -147,7 +150,7 @@ function farthestFromPlayer() {
   while (queue.length) {
     const cur = queue.shift();
     const d = dist.get(key(cur.row, cur.col));
-    if (d > 0 && !tileOccupied(cur.row, cur.col) && (!best || d > best.d)) best = { ...cur, d };
+    if (d > 0 && !tileOccupied(cur.row, cur.col) && !inSafeRoom(cur.row, cur.col) && (!best || d > best.d)) best = { ...cur, d };
     for (const [nr, nc] of neighbors(cur.row, cur.col)) {
       const k = key(nr, nc);
       if (dist.has(k) || blocked.has(k)) continue;
@@ -201,6 +204,9 @@ export function spawnMinion(spot, minionKind = 'SHARD') {
     gaze: 0,       // ms of the player's light on it so far, toward GAZE_MS (gaze.js)
     downed: false, // a shot in the dial's maim zone: it crawls at half speed and a bump finishes it (gun.js settleShot)
     grabbing: false, // downed, it reached the player and holds their ankle: they can't step away until it dies
+    atDoor: null,   // { ms } it has stood at the safe room's open doorway, toward SAFE_ROOM.hesitateMs (combat.js hesitates)
+    shutWait: null, // { ms } since the safe room's shutter shut it out, toward SAFE_ROOM.waitMs (shutOut)
+    lifting: null,  // the hunter's { ms } with its hand on a shut shutter, toward SAFE_ROOM.hunterLiftMs (shutOut)
   };
   state.floor.minions.push(m);
   return m;
@@ -436,9 +442,11 @@ export function advanceMonsters({ canStruggle = true, minions = true } = {}) {
 // search or its idle plan, a duct, or reaching the player. `everyTurn`
 // (the shared turn) skips a slow kind's off turns; on its own clock the
 // pace does that instead. `reach(m)` replaces reaching the player at once
-// (one stick: it reaches first). Returns { events, chasing, over }:
-// `over` when a strike took the last stability.
-function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), everyTurn = true, reach = null } = {}) {
+// (one stick: it reaches first). `elapsedMs` is how long since its last
+// move, for the safe room's waits (on the shared turn, SAFE_ROOM.turnMs a
+// turn). Returns { events, chasing, over }: `over` when a strike took the
+// last stability.
+function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), everyTurn = true, reach = null, elapsedMs = null } = {}) {
   const gun = state.settings.gunCombat;
   const events = [];
   const done = { events, chasing: false };
@@ -462,6 +470,16 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
   }
   // A strike took the last stability: the run is over, nothing else moves.
   if (state.run.hearts <= 0) return { ...done, over: true };
+  const ms = elapsedMs ?? SAFE_ROOM.turnMs * (gun ? movesEvery(m) : 1);
+  // The safe room shut with the player in it: to its shutter, then wait or
+  // lift (shutOut).
+  if (shutIn(state.floor.playerRow, state.floor.playerCol) && !inSafeRoom(m.row, m.col)) {
+    const shut = shutOut(m, ms);
+    if (shut) return shut;
+  } else {
+    m.shutWait = null;
+    m.lifting = null;
+  }
   // A player inside a room held by a relay can't be reached from outside
   // it, not even from the doorway (bfsPath would let the last step in).
   const sheltered = keptOut(m).has(key(state.floor.playerRow, state.floor.playerCol));
@@ -490,6 +508,7 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
   }
   if (duct && m.lastSeen && duct.step.row === m.lastSeen.row && duct.step.col === m.lastSeen.col) m.lastSeen = null;
   const next = duct ? duct.step : chasing ? path[1] : (tracking && towardLastSeen(m)) || (searching ? wanderStep(m, noticing) : idleStep(m, noticing));
+  if (next && hesitates(m, next, ms)) return { events, chasing: !!chasing };
   if (next) {
     const isPlayerTile = next.row === state.floor.playerRow && next.col === state.floor.playerCol;
     // Reaching the player, even by blundering into them, it knows them.
@@ -498,16 +517,94 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
     if (isPlayerTile) {
       events.push(...(reach ? reach(m) : reachPlayer(m, { canStruggle })));
     } else {
-      const from = { row: m.row, col: m.col };
-      m.row = next.row;
-      m.col = next.col;
-      m.trail = [...m.trail, from].slice(-MINION_TRAIL_LENGTH);
-      events.push({ type: 'minionMoved', minion: m, from });
+      events.push(stepTo(m, next));
     }
   }
   // If next is null, this minion has no route around current
   // obstacles this turn — it waits rather than overlapping anything.
   return { events, chasing: !!chasing };
+}
+
+// `m` steps onto `next`, its last tiles kept for the map's trail.
+// Event: minionMoved { minion, from } (from = the tile it left).
+function stepTo(m, next) {
+  const from = { row: m.row, col: m.col };
+  m.row = next.row;
+  m.col = next.col;
+  m.trail = [...m.trail, from].slice(-MINION_TRAIL_LENGTH);
+  return { type: 'minionMoved', minion: m, from };
+}
+
+// An open safe room (saferoom.js): a stick man whose next step takes it in
+// from outside stops at the frame SAFE_ROOM.hesitateMs first, a moment for
+// the player to pull the shutter (Timothy: an open door is not safe, but
+// it gives them time). It stops there whether it chases, searches or only
+// wanders in. The hunter doesn't stop. Returns true while it waits.
+function hesitates(m, next, ms) {
+  if (m.kind === 'hunter' || !inSafeRoom(next.row, next.col) || inSafeRoom(m.row, m.col)) {
+    m.atDoor = null;
+    return false;
+  }
+  if (!m.atDoor) {
+    m.atDoor = { ms: 0 };
+    return true;
+  }
+  m.atDoor.ms += ms;
+  if (m.atDoor.ms < SAFE_ROOM.hesitateMs) return true;
+  m.atDoor = null;
+  return false;
+}
+
+// A stick man outside the safe room while it is shut with the player in
+// it. One that doesn't know where they are goes about its business (null:
+// moveMinion carries on). One that does (it saw or heard them) walks to
+// the nearest shutter and stops at it; SAFE_ROOM.waitMs after the shutter
+// first stopped it, it forgets them and wanders off (pickGoal never picks
+// the shut room). The hunter walks there too and stands
+// SAFE_ROOM.hunterLiftMs with its hand on the slats, then every shutter
+// rolls up (saferoom.js liftShutters). `ms` = time since its last move.
+// Returns { events, chasing } or null. Events: shutterWaited { minion },
+// shutterGaveUp { minion }, shutterLifting { minion }, shutterLifted,
+// minionMoved { minion, from }.
+function shutOut(m, ms) {
+  const hunter = m.kind === 'hunter';
+  if (!hunter && !m.lastSeen && !(m.track > 0)) return null;
+  const events = [];
+  if (!hunter && !m.shutWait) {
+    m.shutWait = { ms: 0 };
+    events.push({ type: 'shutterWaited', minion: m });
+  } else if (!hunter) {
+    m.shutWait.ms += ms;
+  }
+  if (!hunter && m.shutWait.ms >= SAFE_ROOM.waitMs) {
+    m.shutWait = null;
+    m.lastSeen = null;
+    m.track = 0;
+    m.goal = null;
+    m.linger = 0;
+    return { events: [...events, { type: 'shutterGaveUp', minion: m }], chasing: false };
+  }
+  const next = towardShutter(m);
+  if (next && !inSafeRoom(next.row, next.col)) return { events: [...events, stepTo(m, next)], chasing: true };
+  if (!hunter || !next) return { events, chasing: true };
+  if (!m.lifting) {
+    m.lifting = { ms: 0 };
+    return { events: [...events, { type: 'shutterLifting', minion: m }], chasing: true };
+  }
+  m.lifting.ms += ms;
+  if (m.lifting.ms < SAFE_ROOM.hunterLiftMs) return { events, chasing: true };
+  m.lifting = null;
+  return { events: [...events, ...liftShutters()], chasing: true };
+}
+
+// The next tile on the shortest way from `m` to the player as if the safe
+// room were open (its tiles count as free), or null with no way. The first
+// tile of the room on it is the shutter `m` stops at.
+function towardShutter(m) {
+  const blocked = blockedTilesFor(m);
+  state.floor.safeRoom.cells.forEach(k => blocked.delete(k));
+  const path = bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blocked);
+  return path && path[1];
 }
 
 // One stick (one stick plan steps C and D): a frame of the world in real
@@ -538,8 +635,10 @@ export function clockFrame(dtMs, { canStruggle = true } = {}) {
     }
     if (m.stepWait === undefined) m.stepWait = paceOf(m, false);
     m.stepWait -= dtMs;
+    m.sinceMove = (m.sinceMove || 0) + dtMs;
     if (m.stepWait > 0) continue;
-    const step = moveMinion(m, { canStruggle, lightRules, everyTurn: false, reach: startReach });
+    const step = moveMinion(m, { canStruggle, lightRules, everyTurn: false, reach: startReach, elapsedMs: m.sinceMove });
+    m.sinceMove = 0;
     const pace = paceOf(m, step.chasing);
     m.stepWait = pace;
     step.events.forEach(e => { if (e.type === 'minionMoved') e.ms = pace; });
@@ -635,12 +734,9 @@ export function lungeAt(m) {
   const next = path[1];
   // One stick: even a lunge reaches first, so no strike comes from nowhere.
   if (next.row === player.row && next.col === player.col) return state.settings.oneStick ? startReach(m) : reachPlayer(m);
-  const from = { row: m.row, col: m.col };
-  m.row = next.row;
-  m.col = next.col;
-  m.trail = [...m.trail, from].slice(-MINION_TRAIL_LENGTH);
+  const moved = stepTo(m, next);
   computeVisibility();
-  return [{ type: 'minionMoved', minion: m, from }];
+  return [moved];
 }
 
 // The warning that lets a press turn and step at once: a minion or the

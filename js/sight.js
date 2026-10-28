@@ -10,6 +10,8 @@ import {
 } from './config.js';
 import { lookAngle, angleTo, wrapAngle } from './look.js';
 import { lightOn } from './battery.js';
+import { solidProp } from './passage.js';
+import { shutterDownAt } from './saferoom.js';
 
 // One step each way the body can face. The 4 grid ways, then the 4
 // diagonals (eight ways plan); on screen the diagonals are straight up,
@@ -44,7 +46,8 @@ export function inLookCone(row, col) {
 // plus open tiles up to PLAYER_CONE_RANGE steps inside the look cone (none
 // with the light off: only the circle).
 // Walls fully block it (a lit cone never bleeds through a wall into an
-// adjacent corridor); pillars are lit themselves but cast a shadow behind. Everything the boss's light reaches is visible too
+// adjacent corridor); pillars and a shutter that is down (saferoom.js) are
+// lit themselves but cast a shadow behind. Everything the boss's light reaches is visible too
 // (state.floor.bossLitSet, from light.js) — the thing that ends the run is also
 // what shows the player the way — and so is the tutorial's light from above
 // (state.floor.spotSet, tutorial.js).
@@ -68,6 +71,13 @@ export function computeVisibility() {
       if (seen.has(nk) || state.floor.wallSet.has(nk)) continue;
       seen.add(nk);
       const dist = cur.dist + 1;
+      // A shutter that is down: the player sees its inside face, but that
+      // light doesn't reach the hall, so it draws no stick man (combat.js
+      // notice reads sightSet).
+      if (shutterDownAt(nk)) {
+        if (dist <= PLAYER_LIGHT_RADIUS || inLookCone(nr, nc)) state.floor.visibleSet.add(nk);
+        continue;
+      }
       if (state.floor.pillarSet.has(nk)) {
         if (dist <= PLAYER_LIGHT_RADIUS || inLookCone(nr, nc)) {
           state.floor.visibleSet.add(nk);
@@ -93,7 +103,7 @@ export function computeVisibility() {
 }
 
 // True if a straight line from (fromRow, fromCol) to (row, col) passes no
-// wall or pillar between them (the ends don't count). A stick man's view
+// wall, pillar or shutter that is down between them (the ends don't count). A stick man's view
 // of the player's light uses it too (combat.js notice).
 export function clearLine(fromRow, fromCol, row, col) {
   const dr = row - fromRow;
@@ -104,7 +114,7 @@ export function clearLine(fromRow, fromCol, row, col) {
     const c = Math.round(fromCol + (dc * i) / steps);
     if ((r === row && c === col) || (r === fromRow && c === fromCol)) continue;
     const k = key(r, c);
-    if (state.floor.wallSet.has(k) || state.floor.pillarSet.has(k)) return false;
+    if (state.floor.wallSet.has(k) || state.floor.pillarSet.has(k) || shutterDownAt(k)) return false;
   }
   return true;
 }
@@ -120,12 +130,13 @@ export function crouching() {
 
 // Whether (row, col) is cover: something solid that isn't wall, the
 // player hides behind it (a pillar, furniture, a box, a cell, a relay,
-// the desk, the charger, the chest). A paper lies flat; a stick man isn't.
+// the desk, the charger, the chest, a shutter that is down). A paper lies
+// flat, an up shutter is open floor; a stick man isn't cover.
 function coverAt(row, col) {
   const f = state.floor;
   if (f.pillarSet.has(key(row, col))) return true;
   if (f.chest && f.chest.row === row && f.chest.col === col) return true;
-  return f.props.some(p => p.kind !== 'paper' && p.row === row && p.col === col);
+  return f.props.some(p => solidProp(p) && p.row === row && p.col === col);
 }
 
 // Whether the player, crouched, has cover on one of the 8 tiles round

@@ -11,8 +11,9 @@
 
 import { key } from './state.js';
 import {
-  ROOM_THEMES, PILLARS_PER_ROOM, ROOM_PILLARS, ENERGY_CELL_ROOM_CHANCE, ENERGY_CELLS_MIN, PAPER_LORE_CHANCE, PAPERS_PER_ROOM, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD,
+  ROOM_THEMES, PILLARS_PER_ROOM, ROOM_PILLARS, ENERGY_CELL_ROOM_CHANCE, ENERGY_CELLS_MIN, PAPER_LORE_CHANCE, PAPERS_PER_ROOM, BOX_TRAP_CHANCE, BOX_LOOT, BOX_GOLD, SAFE_ROOM,
 } from './config.js';
+import { startRoom } from './desk.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
@@ -186,16 +187,19 @@ function placePillars(chamber, placer, pillars) {
 // these, so a floor always has a few to find. Solid, on the furniture's
 // rules (never in a hallway or doorway, never cutting the floor in two),
 // and never on a `taken` tile (the coin, a beat's minion, the special item).
-// Returns [{ row, col, kind: 'cell' }].
+// Never in the safe room (saferoom.js): nothing refills there but the
+// charger. Returns [{ row, col, kind: 'cell' }].
 export function placeEnergyCells(layout, placer, taken) {
   const free = (cells) => cells.filter(p => !taken.some(q => q.row === p.row && q.col === p.col));
+  const safe = SAFE_ROOM.on ? startRoom(layout) : null;
+  const rooms = layout.chambers.filter(chamber => chamber !== safe);
   const boxes = [];
   const placeIn = (chamber) => {
     const spot = placer.pick(free(chamber.floorCells), true);
     if (spot) boxes.push({ ...spot, kind: 'cell' });
     return Boolean(spot);
   };
-  const without = layout.chambers.filter(chamber => !(Math.random() < ENERGY_CELL_ROOM_CHANCE && placeIn(chamber)));
+  const without = rooms.filter(chamber => !(Math.random() < ENERGY_CELL_ROOM_CHANCE && placeIn(chamber)));
   for (const chamber of shuffle(without)) {
     if (boxes.length >= ENERGY_CELLS_MIN) break;
     placeIn(chamber);

@@ -7,6 +7,7 @@ import { state, key } from './state.js';
 import { reachGate } from './gate.js';
 import { useDesk } from './desk.js';
 import { useCharger } from './charger.js';
+import { pullShutter, enterSafeRoom } from './saferoom.js';
 import { ventUnderfoot } from './vents.js';
 import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
@@ -144,7 +145,8 @@ function plainBump(block) {
 // walking (walk.js, which passes `free` so the map doesn't slide the
 // player a whole tile). Events: stepped { facing, free }, then
 // tutorialLeft, or stairsReached { path, hidden }, or coinTaken { gold },
-// keyTaken, paperRead, the vent events from ventUnderfoot and
+// keyTaken, paperRead, the vent events from ventUnderfoot, reachBroken from
+// crossing into the safe room (saferoom.js enterSafeRoom) and
 // roomEntered { theme, name }.
 export function enterTile(facing, free = false) {
   const events = [];
@@ -180,6 +182,7 @@ export function enterTile(facing, free = false) {
     p.row === state.floor.playerRow && p.col === state.floor.playerCol);
   if (paper) events.push(readPaper(paper));
   events.push(...ventUnderfoot());
+  events.push(...enterSafeRoom());
   // First step into a room: its name on a fixed plan, else its theme line.
   const chamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
   if (chamber !== undefined && !state.floor.visitedChambers.has(chamber)) {
@@ -222,9 +225,12 @@ function reachItem(block) {
 // the same: main.js asks its question, relays.js settleRelay settles it.
 // The tutorial's barrel asks the player's name instead (tutorial.js; main.js
 // opens the ask screen, settleName settles it). The reflective desk heals
-// (desk.js useDesk), no turn spent.
+// (desk.js useDesk), no turn spent. The safe room's switch, or a shutter
+// that is down, drops or lifts its shutters (saferoom.js pullShutter), no
+// turn spent either.
 // Events: blocked, boxSprung, cellFound { prop }, relayFound { prop }, nameAsked { prop },
-// deskUntouched, deskHealed { healed }, or propSearched then boxOpened.
+// deskUntouched, deskHealed { healed }, shutterDown, shutterUp, shutterBlocked,
+// or propSearched then boxOpened.
 function examineProp(prop) {
   if (prop.searched) return [{ type: 'blocked', kind: 'prop', thing: prop }];
   prop.identified = true;
@@ -233,6 +239,7 @@ function examineProp(prop) {
   if (prop.kind === 'relay') return [{ type: 'relayFound', prop }];
   if (prop.kind === 'desk') return useDesk(prop);
   if (prop.kind === 'charger') return useCharger(prop);
+  if (prop.kind === 'switch' || prop.kind === 'shutter') return pullShutter();
   if (prop.kind === 'box' && prop.trapped) {
     prop.sprung = true;
     state.battle.selectedTarget = prop;

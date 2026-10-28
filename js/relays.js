@@ -35,10 +35,15 @@ export function placeRelays(layout, placer, taken) {
 
 // The held room's tiles a minion can't step onto: every held room it isn't
 // standing in. One already inside when the room is held may stay, but
-// once it leaves it can't come back.
+// once it leaves it can't come back. The safe room's tiles too while its
+// shutters are down (saferoom.js), for every kind but the hunter, which
+// lifts them; one shut in with the player stays in. Chase paths,
+// wandering, reaches, lunges and vent drops all go through here.
 export function keptOut(minion) {
   const f = state.floor;
   const out = new Set();
+  const sr = f.safeRoom;
+  if (sr && sr.shut && minion.kind !== 'hunter' && !sr.cells.has(key(minion.row, minion.col))) sr.cells.forEach(k => out.add(k));
   if (!f.heldChambers.size) return out;
   const inside = f.chamberAt.get(key(minion.row, minion.col));
   f.chamberAt.forEach((room, k) => { if (f.heldChambers.has(room) && room !== inside) out.add(k); });

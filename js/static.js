@@ -8,6 +8,7 @@
 import { state } from './state.js';
 import { STATIC } from './config.js';
 import { bfsPath } from './combat.js';
+import { shutIn } from './saferoom.js';
 
 // How strong the static should be, 0 to 1: nothing at STATIC.startSteps
 // walking steps or more from the closest stick man, full right beside the
@@ -15,10 +16,13 @@ import { bfsPath } from './combat.js';
 // Walking steps, so a wall between really keeps it quiet. Every
 // stick man on the floor counts, downed ones too; one in a duct is in
 // state.floor.crawling, not minions, so it doesn't (the grate's shudder is
-// its warning). 0 with DEV -> Static off or no stick man in reach.
+// its warning). 0 with DEV -> Static off or no stick man in reach, and 0
+// shut in the safe room (saferoom.js): it fades and can't rise while the
+// shutter stays down.
 export function staticLevel() {
   if (!state.settings.staticNoise) return 0;
   const player = { row: state.floor.playerRow, col: state.floor.playerCol };
+  if (shutIn(player.row, player.col)) return 0;
   let nearest = Infinity;
   for (const m of state.floor.minions) {
     const path = bfsPath(player, { row: m.row, col: m.col }, state.floor.wallSet);

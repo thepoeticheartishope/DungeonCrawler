@@ -55,8 +55,9 @@ export function sealGate() {
 // The boss falls: it leaves the doorway, so the stairs behind it can be
 // reached. Its light dies with it, and the floor goes dark: explored
 // tiles are forgotten, the minions left start hunting, misses cost more
-// and gold pays more (DARK_* in config.js). Events: bossDefeated { boss },
-// darknessFell.
+// and gold pays more (DARK_* in config.js). The safe room's lamp goes out
+// too (saferoom.js), the first sign it's time to leave. Events:
+// bossDefeated { boss }, darknessFell, then lampWentOut with a safe room.
 export function breakGate() {
   const boss = state.floor.boss;
   state.floor.boss = null;
@@ -65,5 +66,8 @@ export function breakGate() {
   state.floor.darkness = true;
   state.floor.exploredSet = new Set();
   computeVisibility();
-  return [{ type: 'bossDefeated', boss }, { type: 'darknessFell' }];
+  const events = [{ type: 'bossDefeated', boss }, { type: 'darknessFell' }];
+  if (!state.floor.safeRoom) return events;
+  state.floor.safeRoom.lamp = false;
+  return [...events, { type: 'lampWentOut' }];
 }

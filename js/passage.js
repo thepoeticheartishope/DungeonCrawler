@@ -5,6 +5,13 @@
 
 import { state, key } from './state.js';
 
+// Whether a prop stops a step: everything but a paper (it lies flat) and a
+// shutter that is up (saferoom.js: rolled up in the lintel, it is open
+// floor). The one rule for the player, the stick men, sight and cover.
+export function solidProp(p) {
+  return p.kind !== 'paper' && !(p.kind === 'shutter' && p.up);
+}
+
 // True if a step from (row, col) by (dRow, dCol) doesn't cut a corner: a
 // diagonal step needs both tiles it passes between free of walls and
 // pillars (eight ways plan, Timothy: no cutting corners). That also keeps a
@@ -33,8 +40,9 @@ export function stepsAway(row, col) {
 // (the tutorial room's door, until its key is taken: tutorial.js), 'dark'
 // (anywhere but the player's tile while the tutorial's ring holds them),
 // 'furniture' (a fixed plan's desks, shelves and the like: solid, but a bump
-// only says what it is) or 'prop' (a box or an energy cell, which a bump
-// examines — papers lie flat and never block); thing is the minion/prop
+// only says what it is) or 'prop' (a box, an energy cell, the safe room's
+// switch or a shutter that is down, which a bump examines — papers lie flat
+// and an up shutter is open floor, so they never block); thing is the minion/prop
 // itself where there is one.
 export function whatBlocks(row, col) {
   if (row < 0 || row >= state.floor.GRID_SIZE || col < 0 || col >= state.floor.GRID_SIZE) return { kind: 'wall' };
@@ -52,7 +60,7 @@ export function whatBlocks(row, col) {
   if (minion) return { kind: 'minion', thing: minion };
   if (at(state.floor.chest)) return { kind: 'chest' };
   if (at(state.floor.exchange)) return { kind: 'exchange', thing: state.floor.exchange };
-  const prop = state.floor.props.find(p => p.kind !== 'paper' && at(p));
+  const prop = state.floor.props.find(p => solidProp(p) && at(p));
   if (prop) return { kind: prop.kind === 'furniture' ? 'furniture' : 'prop', thing: prop };
   return null;
 }
