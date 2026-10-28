@@ -42,7 +42,6 @@ const WORD = { term: 'Who built the ark?', meaning: 'Noah', answerType: 'name' }
 function reset() {
   state.settings.minigame = 'roll';
   state.settings.activeData = [NUMBER, BIG, WORD];
-  state.settings.gunCombat = true;
   state.run.lastMinigame = null;
   state.run.energy = 0;
   state.run.rounds = [];

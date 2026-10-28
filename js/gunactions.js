@@ -17,9 +17,8 @@ import { onStairs } from './moves.js';
 import { settleRelay } from './relays.js';
 import { requestMapDraw } from './mapview.js';
 import {
-  refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, startSteady, steadying,
-  releaseSteady, cancelSteady, holdSteady, reloadCategory, reloadOffers, settleReload, readyStruggle,
-  settleStruggle, addRounds,
+  cycleTarget, fire, readyShot, cancelShot, settleShot, startSteady, steadying, releaseSteady, cancelSteady,
+  holdSteady, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, addRounds,
 } from './gun.js';
 import {
   showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, runStruggleBar, closeMapPanels, fadeDial,
@@ -43,10 +42,10 @@ export function initGunActions(actions) {
   ({ applyTurnOutcome, drawEvents, goDown, showRoomNote } = actions);
 }
 
-// Whether the gun can be used right now: gun combat on, the room screen
-// up with no gun panel over it, and no turn in progress.
+// Whether the gun can be used right now: the room screen up with no gun
+// panel over it, and no turn in progress.
 export function gunReady() {
-  return state.settings.gunCombat && !state.run.turnLocked && !state.run.runEnded &&
+  return !state.run.turnLocked && !state.run.runEnded &&
     roomScreen.classList.contains('show') && !mapPanelShown();
 }
 
@@ -371,18 +370,6 @@ export function endReload(settle) {
   state.battle.struggle = null;
   if (settle) finishGunAction(settle());
   state.run.turnLocked = false;
-}
-
-// DEV -> Combat back to classic: close whatever gun panel is open, and
-// drop a shot waiting for the dial.
-export function endGunTests() {
-  if (!mapPanelShown()) return;
-  endReload();
-}
-
-// DEV -> Combat switched: the gun's target and the HUD catch up.
-export function gunCombatChanged() {
-  drawEvents(state.settings.gunCombat ? refreshGunTarget() : []);
 }
 
 // DEV -> Auto-win, with a gun panel open: picks the first reload, answers

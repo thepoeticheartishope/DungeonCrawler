@@ -10,10 +10,9 @@ import { FLOOR_GOALS, GOALS_PER_FLOOR, GOAL_PAPERS_MIN, GOAL_SWIFT_SHARE } from 
 const papers = () => state.floor.props.filter(p => p.kind === 'paper');
 
 // Whether a goal can be asked for on this floor: no paper goal on a floor
-// with few papers, no Struggle goal with the gun off.
+// with few papers.
 function fits(id) {
   if (id === 'allPapers') return papers().length >= GOAL_PAPERS_MIN;
-  if (id === 'noStruggle') return state.settings.gunCombat;
   if (id === 'swift' || id === 'noHunter') return !!state.floor.boss;
   return true;
 }

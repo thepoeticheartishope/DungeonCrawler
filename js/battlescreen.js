@@ -1,5 +1,5 @@
-// The battle screen: the boss, the chest and trapped boxes (and minions
-// in classic combat) are met here, off the map. It owns the encounter log,
+// The battle screen: the boss (the gate), the chest and trapped boxes are
+// met here, off the map; minions and the hunter are fought on the map. It owns the encounter log,
 // the category choices, a turn of questions, settling an answer
 // (answers.js settleAnswer) and leaving the encounter. Moved out of main.js
 // (tech-debt item 4c). Like devpanel.js it looks up its own elements and
@@ -225,7 +225,7 @@ function startBattleTurn() {
     endEncounter();
     return;
   }
-  const isFight = target.kind === 'boss' || target.kind === 'minion' || target.kind === 'hunter';
+  const isFight = target.kind === 'boss';
   state.battle.categoryChoices = isFight
     ? buildCategoryChoices(state.settings.activeData, BATTLE_CHOICE_COUNT, state.floor.lastChoiceType)
     : [];

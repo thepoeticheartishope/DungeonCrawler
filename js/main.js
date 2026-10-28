@@ -7,8 +7,8 @@ import {
   mountBattleQuestion, syncBattleScreen, syncQuestionForTarget,
 } from './battlescreen.js';
 import {
-  initGunActions, askQuestion, autoWinGun, devTestReload, devTestShot, dressQuestion, endGunTests, endReload,
-  gunCombatChanged, letterPoolQuestion, lowerGun, pickReload, readyDial, stopDamageBar, stopStruggleBar,
+  initGunActions, askQuestion, autoWinGun, devTestReload, devTestShot, dressQuestion,  endReload,
+  letterPoolQuestion, lowerGun, pickReload, readyDial, stopDamageBar, stopStruggleBar,
   sumLockQuestion,
 } from './gunactions.js';
 import { initControls, syncLookStick, tapMap, walkHeld } from './controls.js';
@@ -153,8 +153,8 @@ initSetLoader({ showSets: showSetPicker });
 initSetPicker({ startGame, openWorkshop: showWorkshop });
 initPractice({ letterPoolQuestion, sumLockQuestion, mountBattleQuestion });
 initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
-  gunCombatChanged, autoWinGun, battleScreen, wagerRow,
+  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
+  autoWinGun, battleScreen, wagerRow,
 });
 
 // Switches the light on or off (battery.js toggleLight; V, the LIGHT
@@ -180,7 +180,7 @@ function switchLight() {
   computeVisibility();
   // In the tutorial's ring, the light on is the way out (tutorial.js breakRing).
   const freed = result === 'on' ? breakRing() : [];
-  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }, ...freed, ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
+  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }, ...freed, ...refreshGunTarget()]);
   showRoomNote(note.cls, note.text);
 }
 // The LIGHT button under the map (light button prototype, Timothy
@@ -200,7 +200,7 @@ function speakInRing() {
     if (batteryInPlay()) return;
     setTimeout(() => {
       if (!inRing()) return;
-      const note = drawEvents([...breakRing(), ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
+      const note = drawEvents([...breakRing(), ...refreshGunTarget()]);
       if (note.text) showRoomNote(note.cls, note.text);
     }, TUTORIAL_COMFORT_BREAK_MS);
   }, TUTORIAL_KIND_DELAY_MS);
@@ -350,7 +350,7 @@ function drawFloor() {
   resetClock();
   resetWalk();
   fadeAnswerLine(true);
-  if (state.settings.gunCombat) refreshGunTarget();
+  refreshGunTarget();
   renderHud();
   // Per-room wording overrides (text.js AREAS) apply from here on.
   setTextArea(state.run.roomIndex + 1);
@@ -502,7 +502,7 @@ function applyTurnOutcome(events, worldMoves = !realTimeOn()) {
   turn.push(...tutorialTurn(turn));
   turn.push(...chargerLine());
   turn.push(...shutterLine(turn));
-  if (state.settings.gunCombat) turn.push(...refreshGunTarget());
+  turn.push(...refreshGunTarget());
   const note = drawEvents(turn);
   if (lightConsumed()) {
     loseToLight();
@@ -578,7 +578,7 @@ function gazeTick() {
   const events = tickGaze(dt);
   if (events.length) {
     computeVisibility();
-    const note = drawEvents([...events, ...(state.settings.gunCombat ? refreshGunTarget() : [])]);
+    const note = drawEvents([...events, ...refreshGunTarget()]);
     showRoomNote(note.cls, note.text);
   } else if (state.floor.minions.some(m => m.gaze > 0)) {
     requestMapDraw();
@@ -595,7 +595,6 @@ const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'pro
 function drawEvents(events) {
   const parts = [];
   let cls = 'move-msg';
-  let engaged = false;
   // The player's own move (a step, a turn, a wait, a bump) puts away the
   // answer a miss left on the map (answer swirl). The world's turn alone
   // (Real time) and looking around with the light don't.
@@ -847,11 +846,6 @@ function drawEvents(events) {
       case 'reachMissed':
         parts.push(t('room.reach.missed'));
         break;
-      case 'minionEngaged':
-        if (!engaged) parts.push(t('room.engage'));
-        engaged = true;
-        cls = 'warn-msg';
-        break;
       // Answer events (answers.js): one encounter log line each.
       case 'answerGiven':
         logLine(t('log.input', { answer: e.given }));
@@ -908,13 +902,6 @@ function drawEvents(events) {
         break;
       case 'darknessFell':
         logLine(t('log.darkness'), 'alert');
-        break;
-      case 'hunterRepelled':
-        logLine(t(e.right ? 'log.hunter.repelled' : 'log.hunter.retreats'), e.right ? 'bright' : undefined);
-        break;
-      case 'minionCleared':
-        deathOnMap(e.minion);
-        logLine(t(e.right ? 'log.minion.cleared' : 'log.minion.disperses'), e.right ? 'bright' : undefined);
         break;
       case 'targetSpent':
         if (!e.right) {

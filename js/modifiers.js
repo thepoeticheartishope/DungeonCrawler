@@ -45,14 +45,9 @@ export function rollModifier(target) {
 // categories differ where possible (three categories get three different
 // ones; Gambler only with gold for a wager), so which category to pick is
 // still a real choice; none is none.
-// Minions roll each category on its own. Each entry is one modifier, null,
-// or (for the hunter) a pair.
+// Anything else rolls each category on its own. Each entry is one
+// modifier, null, or a pair.
 export function rollCategoryModifiers(target, count) {
-  // The hunter's choices each carry a pair, a different pair per choice.
-  if (target && target.kind === 'hunter') {
-    const pairs = shuffle(HUNTER_MODIFIER_PAIRS);
-    return Array.from({ length: count }, (_, i) => pairs[i % pairs.length]);
-  }
   if (!target || target.kind !== 'boss') return Array.from({ length: count }, () => rollModifier(target));
   const perQuestion = gateModifierCount();
   if (perQuestion === 0) return Array.from({ length: count }, () => null);

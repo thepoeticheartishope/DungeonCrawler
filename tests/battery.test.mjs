@@ -29,7 +29,7 @@ state.settings.oneStick = false;
 
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { fogEnabled: true, gunCombat: false, lightBattery: true, simpleEnemies: false, gaze: true },
+    settings: { fogEnabled: true, lightBattery: true, simpleEnemies: false, gaze: true },
     floor: { look: 0 },
   });
 }
@@ -193,7 +193,7 @@ test('one that never saw the player can still blunder into them in the dark, and
   computeVisibility();
   const m = spawnMinion({ row: pr, col: c });
   const events = advanceMonsters();
-  assert.ok(events.some(e => e.type === 'minionEngaged' && e.minion === m));
+  assert.ok(events.some(e => (e.type === 'minionStruck' || e.type === 'struggleStarted') && e.minion === m), 'it reached them');
   assert.equal(m.track, MINION_TRACK_TURNS);
 });
 
@@ -232,7 +232,6 @@ test('Comfort mode keeps the old chase range and nothing is noticed', () => {
 // The battery's light off, the gun on with `energy` plain rounds.
 function darkWithGun(energy = 2) {
   resetFloor();
-  state.settings.gunCombat = true;
   state.run.energy = energy;
   state.run.rounds = Array(energy).fill(null);
   state.run.weakTo = {};
@@ -395,7 +394,6 @@ test('a full eye beside the player only stares, and never steps onto them', () =
 
 test('firing at a stick man shuts its eye, in the light or the dark', () => {
   resetFloor();
-  state.settings.gunCombat = true;
   state.run.energy = 2;
   state.run.rounds = [null, null];
   state.run.weakTo = {};

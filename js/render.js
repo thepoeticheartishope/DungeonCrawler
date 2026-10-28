@@ -17,7 +17,6 @@ import { FACING_VECTORS } from './sight.js';
 import { waysInUse } from './look.js';
 import { clockReading } from './realclock.js';
 import { goalMark } from './goals.js';
-import { onStairs } from './moves.js';
 import { t } from './text.js';
 
 let els = {};
@@ -254,16 +253,12 @@ export function renderClock(running) {
   els.clockStat.classList.toggle('clock-held', !running);
 }
 
-// The gun's part of the HUD (gun plan step 6), shown only with DEV ->
-// Combat on gun: energy held, the target and its guard, and whether SELECT
-// can be pressed. Part of renderHud, the one writer of the HUD.
+// The gun's part of the HUD (gun plan step 6): energy held, the target and
+// its guard, and whether SELECT can be pressed. Part of renderHud, the one
+// writer of the HUD.
 function renderGunHud() {
-  const on = state.settings.gunCombat;
-  [els.energyStat, els.gunTargetStat].forEach(el => { el.hidden = !on; });
-  // SELECT also takes the stairs, so it shows there with the gun off too.
-  els.btnSelect.hidden = !on && !onStairs();
-  els.btnSelect.disabled = state.run.runEnded;
-  if (!on) return;
+  [els.energyStat, els.gunTargetStat].forEach(el => { el.hidden = false; });
+  els.btnSelect.hidden = false;
   const energy = state.run.energy;
   const target = state.floor.gunTarget;
   // A round that matches the target's known weakness shows as *.

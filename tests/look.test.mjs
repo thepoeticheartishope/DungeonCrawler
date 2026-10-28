@@ -26,7 +26,7 @@ state.settings.oneStick = false;
 // on, nothing else on it.
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { fogEnabled: true, gunCombat: false },
+    settings: { fogEnabled: true },
     floor: { look: 0 },
   });
 }

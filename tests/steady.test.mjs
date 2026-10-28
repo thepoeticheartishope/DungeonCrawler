@@ -26,7 +26,7 @@ const near = (a, b) => Math.abs(a - b) < 1e-9;
 function resetFloor(size = 21) {
   emptyFloor(size, {
     settings: {
-      oneStick: true, fogEnabled: true, gunCombat: true, downed: true,
+      oneStick: true, fogEnabled: true, downed: true,
       noise: true, simpleEnemies: false, lightBattery: true, steadyAim: true,
     },
     run: gunRun(2),

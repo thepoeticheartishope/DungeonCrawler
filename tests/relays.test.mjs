@@ -43,7 +43,6 @@ function resetFloor() {
   f.heldChambers = new Set();
   f.relayTurnsWon = 0;
   f.misses = 0;
-  state.settings.gunCombat = false;
   state.settings.fogEnabled = false;
   state.run.correctTotal = 0;
   state.run.turnCount = 0;
@@ -123,7 +122,7 @@ test('a player inside a held room is not chased, even from the doorway', () => {
   state.floor.minions = [m];
   for (let i = 0; i < 10; i++) {
     const events = advanceMonsters();
-    assert.ok(!events.some(e => e.type === 'minionEngaged'), 'never engages');
+    assert.ok(!events.some(e => e.type === 'minionStruck' || e.type === 'struggleStarted'), 'never reaches the player');
     assert.notEqual(state.floor.chamberAt.get(key(m.row, m.col)), 1, 'never steps in');
   }
 });

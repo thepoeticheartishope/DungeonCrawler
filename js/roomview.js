@@ -305,7 +305,7 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   glows.forEach(draw => draw());
   drawMist(c0, r0, c1, r1, ox, oy);
   drawSounds(ox, oy);
-  if (state.settings.gunCombat) drawReach(c0, r0, c1, r1, ox, oy);
+  drawReach(c0, r0, c1, r1, ox, oy);
   bctx.globalCompositeOperation = 'source-over';
 
   ctx.imageSmoothingEnabled = false;
@@ -318,11 +318,9 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   tapBoxes = [...formBoxes, ...tapBoxes];
   gunTargets(tapBoxes);
   if (ring) drawAnswerRing(ctx, ring, true);
-  if (state.settings.gunCombat) {
-    drawBrackets(ctx);
-    drawLaser(ctx);
-    drawShot(ctx);
-  }
+  drawBrackets(ctx);
+  drawLaser(ctx);
+  drawShot(ctx);
   drawDarkRing(ctx);
   drawEdgeMarks(ctx, ox, oy);
   drawSky(ctx, viewW, viewH, at, ox, oy);
@@ -739,7 +737,7 @@ function drawStickMan(at, ox, oy) {
   const J = projectFigure(joints, phiOfAngle(angle), fx, fy, pxPerM);
   // A crouch lowers the gun with his shoulders.
   const drop = (STANDING_NECK - joints[NECK_Y]) * pxPerM;
-  const gun = state.settings.gunCombat ? holdGun(fx, fy, ax, ay, h, pose.gunRise * h - drop) : null;
+  const gun = holdGun(fx, fy, ax, ay, h, pose.gunRise * h - drop);
   const hands = gun ? [gun.grip, gun.backHand] : [J.haL, J.haR];
   const px = v => Math.round(v) + 0.5;
   const path = (points) => points.forEach(([x, y], i) => (i ? bctx.lineTo(px(x), px(y)) : bctx.moveTo(px(x), px(y))));

@@ -3,7 +3,7 @@
 // that change what's on the map return what changed, and main.js draws it.
 
 import { state, key, parseKey } from './state.js';
-import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIGHT, MINION_TRACK_TURNS, MINION_LINGER_TURNS, HUNTER_SPAWN_DELAY, HUNTER_REST_TURNS, HUNTER_REST_AFTER_MISS, SENSE_STEPS, DOWNED_SLOWDOWN, ONE_STICK, SAFE_ROOM } from './config.js';
+import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIGHT, MINION_TRACK_TURNS, MINION_LINGER_TURNS, HUNTER_SPAWN_DELAY, SENSE_STEPS, DOWNED_SLOWDOWN, ONE_STICK, SAFE_ROOM } from './config.js';
 import { advanceLight } from './light.js';
 import { tickLight, drainLight, batteryInPlay, lightOn } from './battery.js';
 import { minionStrike, struggleDial } from './gun.js';
@@ -22,20 +22,15 @@ export function isAdjacentToPlayer(entity) {
   return neighbors(entity.row, entity.col).some(([r, c]) => r === state.floor.playerRow && c === state.floor.playerCol);
 }
 
-// Everything next to the player that opens the battle screen. With the
-// gun on (DEV -> Combat), minions and the hunter are fought on the map, so
-// they're left out. The chest opens it only when the
+// Everything next to the player that opens the battle screen. Minions and
+// the hunter are fought on the map with the gun, so they're left out. The
+// chest opens it only when the
 // player walks into it (moves.js reachItem), so walking past it never
 // pulls the player into a question.
 export function findAdjacentEnemies() {
   const result = [];
   // The boss is the gate (gate.js): only a bump opens it (moves.js), so
   // walking past it never starts a fight the player didn't choose.
-  if (!state.settings.gunCombat) {
-    for (const m of state.floor.minions) {
-      if (isAdjacentToPlayer(m)) result.push(m);
-    }
-  }
   // A trapped box only becomes something to answer once it's been
   // bumped (main.js examineProp); until then it looks like any other.
   for (const p of state.floor.props) {
@@ -169,19 +164,6 @@ function wakeHunter() {
   m.rest = 0;
   state.floor.hunter = m;
   return m;
-}
-
-// After its question is answered, the hunter loses the trail: back to the
-// far side of the floor, where it waits a few turns before hunting again.
-// Returns true if it was moved (the caller redraws it in place).
-export function repelHunter(m, answeredRight) {
-  const spot = farthestFromPlayer();
-  if (spot) {
-    m.row = spot.row;
-    m.col = spot.col;
-  }
-  m.rest = answeredRight ? HUNTER_REST_TURNS : HUNTER_REST_AFTER_MISS;
-  return !!spot;
 }
 
 // Places a minion of `minionKind` (a MINION_KINDS name) on `spot` (a free
@@ -381,9 +363,8 @@ function towardLastSeen(m) {
 // the turn counter increases. Called after any player action. Touches no
 // page element; returns the events of the turn, in the order they happened,
 // for main.js to draw: { type: 'hunterWoke', hunter }, { type: 'minionMoved',
-// minion, from } (from = the tile it left, so the map can slide it) and
-// { type: 'minionEngaged', minion }; with the gun on, a minion's strike
-// instead, the hunter's too (gun.js minionStrike: minionStruck,
+// minion, from } (from = the tile it left, so the map can slide it) and a
+// minion's strike, the hunter's too (gun.js minionStrike: minionStruck,
 // knockedBack, signalLost). With no energy left, the first one to reach
 // the player this turn starts a Struggle instead ({ type: 'struggleStarted',
 // minion, zone, lapMs, count, phase }: gun.js struggleDial, harder each time
@@ -401,11 +382,8 @@ export function advanceMonsters({ canStruggle = true, minions = true } = {}) {
   state.run.turnCount++;
   advanceLight();
 
-  // In classic combat walking around is safe: a minion that reaches the
-  // player never deals damage. It engages instead — it becomes the target,
-  // which puts the battle screen up, and hearts are only ever lost by
-  // missing a question. With the gun on, it strikes (so does the hunter),
-  // and slow kinds only move every MINION_KINDS moveEvery turns. Minions roam freely and only
+  // A minion that reaches the player strikes (so does the hunter), and
+  // slow kinds only move every MINION_KINDS moveEvery turns. Minions roam freely and only
   // give chase once they notice the player (notice: their light, or
   // tracking them in the dark), or in Comfort mode once the player is
   // within MINION_CHASE_RANGE walkable steps.
@@ -449,7 +427,6 @@ export function advanceMonsters({ canStruggle = true, minions = true } = {}) {
 // turn). Returns { events, chasing, over }: `over` when a strike took the
 // last stability.
 function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), everyTurn = true, reach = null, elapsedMs = null } = {}) {
-  const gun = state.settings.gunCombat;
   const events = [];
   const done = { events, chasing: false };
   // What it knows comes first, every turn, even one it won't move on.
@@ -465,14 +442,14 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
   // player is somehow no longer beside lets go.
   if (m.grabbing && isAdjacentToPlayer(m)) return done;
   m.grabbing = false;
-  if (gun && everyTurn && state.run.turnCount % movesEvery(m) !== 0) return done;
+  if (everyTurn && state.run.turnCount % movesEvery(m) !== 0) return done;
   if (m.rest > 0) {
     m.rest--;
     return done;
   }
   // A strike took the last stability: the run is over, nothing else moves.
   if (state.run.hearts <= 0) return { ...done, over: true };
-  const ms = elapsedMs ?? SAFE_ROOM.turnMs * (gun ? movesEvery(m) : 1);
+  const ms = elapsedMs ?? SAFE_ROOM.turnMs * movesEvery(m);
   // The safe room shut with the player in it: to its shutter, then wait or
   // lift (shutOut).
   if (shutIn(state.floor.playerRow, state.floor.playerCol) && !inSafeRoom(m.row, m.col)) {
@@ -698,21 +675,16 @@ function tuckIntoDucts() {
 }
 
 // What `m` does on reaching the player's tile (it never takes the tile):
-// a downed one grabs their ankle and holds on where it is; with the gun on,
-// the first one to reach a player with no energy starts a Struggle (unless
-// `canStruggle` is false), any other strikes (gun.js minionStrike); in
-// classic combat it engages from where it stands. The turn advance and a
+// a downed one grabs their ankle and holds on where it is; the first one to
+// reach a player with no energy starts a Struggle (unless `canStruggle` is
+// false), any other strikes (gun.js minionStrike). The turn advance and a
 // lunge (lungeAt) both end here.
 // Events: ankleGrabbed { minion }, struggleStarted { minion, zone, lapMs,
-// count, phase }, minionStrike's, or minionEngaged { minion }.
+// count, phase }, or minionStrike's.
 export function reachPlayer(m, { canStruggle = true } = {}) {
   if (m.downed) {
     m.grabbing = true;
     return [{ type: 'ankleGrabbed', minion: m }];
-  }
-  if (!state.settings.gunCombat) {
-    if (!state.battle.selectedTarget) state.battle.selectedTarget = m;
-    return [{ type: 'minionEngaged', minion: m }];
   }
   if (canStruggle && state.run.energy <= 0 && !state.battle.struggle) {
     state.battle.struggle = { minion: m, ...struggleDial() };
@@ -748,7 +720,6 @@ export function lungeAt(m) {
 // seen or has drifted off. Returns { type: 'presenceSensed', minion } per
 // warning; main.js shows "I see you." once however many there are.
 function senseUnseen() {
-  const gun = state.settings.gunCombat;
   const player = { row: state.floor.playerRow, col: state.floor.playerCol };
   const events = [];
   for (const m of state.floor.minions) {
@@ -759,7 +730,7 @@ function senseUnseen() {
       continue;
     }
     if (m.sensed || m.rest > 0) continue;
-    if (gun && (state.run.turnCount + 1) % movesEvery(m) !== 0) continue;
+    if ((state.run.turnCount + 1) % movesEvery(m) !== 0) continue;
     m.sensed = true;
     events.push({ type: 'presenceSensed', minion: m });
   }

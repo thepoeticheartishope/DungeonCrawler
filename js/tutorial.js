@@ -146,8 +146,8 @@ export function tutorialSteady(events) {
 // player learns a bump finishes it; whispered { line: 'tut.reach', tone:
 // 'kind' } the first time it reaches for them with One stick (see
 // reachLine); whispered { line: 'tut.static', tone:
-// 'kind' } the first time the static shows (see staticLine); keyDropped { row, col } once the stick man is gone (shot, or
-// cleared in classic combat); doorUnlocked once the key is taken. None
+// 'kind' } the first time the static shows (see staticLine); keyDropped { row, col } once the stick man is gone (shot);
+// doorUnlocked once the key is taken. None
 // off the tutorial. In the fight the energy is filled again every turn,
 // so a miss never leaves the player with nothing to shoot (Timothy).
 export function tutorialTurn(events) {

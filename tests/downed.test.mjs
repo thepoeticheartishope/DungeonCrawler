@@ -20,7 +20,7 @@ import { fire, readyShot, settleShot } from '../js/gun.js';
 // one round of energy.
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { fogEnabled: true, gunCombat: true, downed: true, noise: true, simpleEnemies: false },
+    settings: { fogEnabled: true, downed: true, noise: true, simpleEnemies: false },
     run: gunRun(1),
   });
 }

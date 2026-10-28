@@ -2,8 +2,8 @@
 // picking a target on the map, firing at a minion in the player's light,
 // the dial (kill or maim plan: READY, then kill, maim or harmful zones), a
 // minion's strike when it reaches the player, and a landed shot staggering
-// the hunter. Played with DEV -> Combat on gun
-// (state.settings.gunCombat): main.js runs reload and fire as turns, and
+// the hunter. The only combat since 2026-10-28 (classic retired): main.js
+// runs reload and fire as turns, and
 // combat.js advanceMonsters calls minionStrike. Each rule changes state and returns an events list
 // in the order things happened, for main.js drawEvents() to draw.
 // Spending the turn (minions move, the light spreads) is the caller's job.
@@ -715,7 +715,6 @@ function pushBack(m, tiles) {
 
 // A landed shot can't hurt the hunter, but it stops it where it stands
 // for HUNTER_REST_TURNS turns, long enough for the player to get away.
-// Unlike a question (combat.js repelHunter) it isn't thrown to the far side.
 // Events: hunterStaggered { hunter }.
 export function staggerHunter(hunter) {
   hunter.rest = HUNTER_REST_TURNS;

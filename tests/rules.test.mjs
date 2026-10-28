@@ -34,11 +34,10 @@ import { rollCategoryModifiers } from '../js/modifiers.js';
 state.settings.oneStick = false;
 
 // An open size x size floor, player in the middle facing north, fog on,
-// nothing else on it. Classic combat (the gun is the game's default since
-// gun plan step 9; its rules are tested in gun.test.mjs).
+// nothing else on it. The gun's own rules are tested in gun.test.mjs.
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { fogEnabled: true, gunCombat: false },
+    settings: { fogEnabled: true },
     see: false,
   });
 }
@@ -354,24 +353,28 @@ test('a moving minion remembers its last MINION_TRAIL_LENGTH tiles, newest last'
   assert.deepEqual(m.trail, left.slice(-MINION_TRAIL_LENGTH));
 });
 
-test('a minion next to the player engages from where it stands', () => {
+// What reaching the player looks like for `m` in `events`: a strike, or a
+// Struggle when the player has no energy (combat.js reachPlayer).
+const reached = (events, m) => events.some(e => (e.type === 'minionStruck' || e.type === 'struggleStarted') && e.minion === m);
+
+test('a minion next to the player reaches them from where it stands, never onto their tile', () => {
   resetFloor(21);
   const m = spawnMinion({ row: state.floor.playerRow - 1, col: state.floor.playerCol });
   const events = advanceMonsters();
-  assert.deepEqual({ row: m.row, col: m.col }, { row: state.floor.playerRow - 1, col: state.floor.playerCol });
+  assert.ok(reached(events, m));
   assert.deepEqual(ofType(events, 'minionMoved', 'minion'), []);
-  assert.equal(state.battle.selectedTarget, m);
+  assert.notDeepEqual({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol });
 });
 
-test('an engaging minion is reported as minionEngaged, in turn order', () => {
+test('a reaching minion is reported in turn order', () => {
   resetFloor(21);
   const near = spawnMinion({ row: state.floor.playerRow - 1, col: state.floor.playerCol });
   const far = spawnMinion({ row: state.floor.playerRow + 2, col: state.floor.playerCol });
   const events = advanceMonsters();
-  assert.deepEqual(events, [
-    { type: 'minionEngaged', minion: near },
-    { type: 'minionMoved', minion: far, from: { row: state.floor.playerRow + 2, col: state.floor.playerCol } },
-  ]);
+  const first = events.findIndex(e => e.minion === near);
+  const moved = events.findIndex(e => e.type === 'minionMoved' && e.minion === far);
+  assert.ok(reached(events, near));
+  assert.ok(first !== -1 && moved > first, 'the near one first, then the far one moves');
 });
 
 test('a resting minion waits out its rest', () => {
@@ -666,31 +669,29 @@ test('a chest pays 2 gold and is spent', () => {
 });
 
 test('a lost wager cannot take gold below 0; a won one pays it', () => {
-  resetAnswer(null);
-  const minion = spawnMinion({ row: 0, col: 0 });
-  state.battle.selectedTarget = minion;
+  resetAnswer({ row: 0, col: 0, kind: 'chest' });
   state.run.coinsTotal = 1;
   state.battle.wager = 3;
   const lost = settleAnswer(false, false, 'Moses');
-  assert.deepEqual(types(lost), ['answerGiven', 'rejected', 'wagerSettled', 'minionCleared']);
+  assert.deepEqual(types(lost), ['answerGiven', 'rejected', 'wagerSettled', 'targetSpent']);
   assert.deepEqual(lost[2], { type: 'wagerSettled', won: false, n: 3 });
   assert.equal(state.run.coinsTotal, 0);
   assert.equal(state.battle.wager, 0);
-  assert.deepEqual(state.floor.minions, []);
 
-  state.battle.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  state.battle.selectedTarget = { row: 0, col: 0, kind: 'chest' };
   state.battle.wager = 2;
-  settleAnswer(true, false, 'Noah');
-  assert.equal(state.run.coinsTotal, 2);
+  const won = settleAnswer(true, false, 'Noah');
+  const gold = won.filter(e => e.type === 'goldGained').reduce((sum, e) => sum + e.amount, 0);
+  assert.equal(state.run.coinsTotal, 2 + gold, 'the wager and the chest\'s gold');
 });
 
 test('a missed question lingers when missed again and is silenced when answered right', () => {
   resetAnswer(null);
-  state.battle.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  state.battle.selectedTarget = { row: 0, col: 0, kind: 'chest' };
   assert.ok(!types(settleAnswer(false, false, 'Moses')).some(t => t.startsWith('haunt')));
-  state.battle.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  state.battle.selectedTarget = { row: 0, col: 0, kind: 'chest' };
   assert.ok(types(settleAnswer(false, false, 'Moses')).includes('hauntLingers'));
-  state.battle.selectedTarget = spawnMinion({ row: 0, col: 0 });
+  state.battle.selectedTarget = { row: 0, col: 0, kind: 'chest' };
   assert.ok(types(settleAnswer(true, false, 'Noah')).includes('hauntSilenced'));
   assert.equal(state.run.hauntsSilenced, 1);
 });
@@ -777,7 +778,7 @@ test('diagonal bumps open the gate and the chest', () => {
   assert.equal(state.battle.selectedTarget, state.floor.chest);
 });
 
-test('a minion chases on a diagonal and engages from a diagonal tile', () => {
+test('a minion chases on a diagonal and reaches from a diagonal tile', () => {
   resetFloor(21);
   const r = state.floor.playerRow, c = state.floor.playerCol;
   const m = spawnMinion({ row: r - 3, col: c + 3 });
@@ -786,8 +787,7 @@ test('a minion chases on a diagonal and engages from a diagonal tile', () => {
   advanceMonsters();
   assert.deepEqual({ row: m.row, col: m.col }, { row: r - 1, col: c + 1 });
   const events = advanceMonsters();
-  assert.deepEqual(ofType(events, 'minionEngaged', 'minion'), [m], 'next to the player on a diagonal');
-  assert.deepEqual({ row: m.row, col: m.col }, { row: r - 1, col: c + 1 });
+  assert.ok(reached(events, m), 'next to the player on a diagonal');
 });
 
 test('a corner keeps a diagonal minion from striking', () => {
@@ -799,7 +799,7 @@ test('a corner keeps a diagonal minion from striking', () => {
   refreshTargetValidity();
   assert.equal(state.battle.selectedTarget, null, 'not next to the player through a corner');
   const events = advanceMonsters();
-  assert.deepEqual(ofType(events, 'minionEngaged', 'minion'), []);
+  assert.ok(!reached(events, m));
   assert.notDeepEqual({ row: m.row, col: m.col }, { row: r, col: c });
 });
 test('stepsAway counts a diagonal as one step', () => {

@@ -20,7 +20,7 @@ import { computeVisibility } from '../js/sight.js';
 // stick man notices them.
 function resetFloor() {
   emptyFloor(21, {
-    settings: { fogEnabled: true, gunCombat: false, lightBattery: true, simpleEnemies: false, gaze: true },
+    settings: { fogEnabled: true, lightBattery: true, simpleEnemies: false, gaze: true },
     see: false,
   });
   twoRooms();
