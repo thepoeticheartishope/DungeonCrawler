@@ -131,7 +131,8 @@ Drawing and page code:
 
 | File | Job |
 |---|---|
-| `main.js` | Everything else: wiring, `drawEvents()`, turn and frame flow, room log, end screens (~1,650 lines). |
+| `main.js` | Everything else: wiring, `drawEvents()`, the world's clock and turn outcome, room log, end screens (~1,260 lines). |
+| `controls.js` | The player's controls: taps, aiming, the sticks and keys, SELECT's hold, `walkFrame` and `movePlayer`. |
 | `battlescreen.js` | The battle screen: encounter log, category choices, a turn of questions, settling answers. |
 | `gunactions.js` | The gun's actions: SELECT / fire, steady aim, the dial, reloads, relays, dressing a question. |
 | `render.js` | Screens, the HUD (`renderHud()` only writer of hearts / gold / turns), edge glow, d-pad hints. |
@@ -167,12 +168,12 @@ Drawing and page code:
 
 ## How the game moves
 
-- **One stick (the default):** main.js `walkFrame()` runs every animation frame: input →
+- **One stick (the default):** controls.js `walkFrame()` runs every animation frame: input →
   walk.js `walkFree()` → moves.js `enterTile()` / `bumpInto()` → events →
-  `applyTurnOutcome(events)`. Then `worldFrame()` → combat.js `clockFrame(dt)` (battery, each
+  main.js `applyTurnOutcome(events)`. Then `worldFrame()` → combat.js `clockFrame(dt)` (battery, each
   stick man on its own clock). Every `REALTIME_STEP_MS` the beat (`clockTick`) runs what still
   counts in turns: the boss's light, the hunter, the ducts.
-- **Turns (start screen option):** `movePlayer()` → `stepPlayer()` → events →
+- **Turns (start screen option):** controls.js `movePlayer()` → `stepPlayer()` → events →
   `applyTurnOutcome(events)` → `advanceMonsters()` → `drawEvents()`.
 - **Fights:** SELECT → gunactions.js `pressSelect()` → `fireGun()` → `fire()` → dial or steady aim →
   `settleShot()`. Energy cells and relays ask on the ask screen; the boss and the chest use the
