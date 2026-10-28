@@ -73,16 +73,12 @@ test('player starts on PLAYER_START facing north; boss has full HP', () => {
   });
 });
 
-test('with the gun on, a floor has at least ENERGY_CELLS_MIN energy cells, all in rooms; classic has none', () => {
-  state.settings.gunCombat = true;
+test('a floor has at least ENERGY_CELLS_MIN energy cells, all in rooms', () => {
   eachFloor(f => {
     const drums = f.props.filter(p => p.kind === 'cell');
     assert.ok(drums.length >= ENERGY_CELLS_MIN, 'only ' + drums.length + ' drums');
     drums.forEach(d => assert.ok(f.chamberAt.has(key(d.row, d.col)), 'drum outside a room'));
   });
-  state.settings.gunCombat = false;
-  eachFloor(f => assert.equal(f.props.filter(p => p.kind === 'cell').length, 0));
-  state.settings.gunCombat = true;
 });
 
 test('at most one special item: the chest', () => {

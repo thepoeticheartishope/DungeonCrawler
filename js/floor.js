@@ -238,14 +238,11 @@ export function buildFloor() {
   const minionTaken = takenTiles.slice();
   if (state.floor.chest) minionTaken.push(state.floor.chest);
 
-  // Energy cells, the only energy (decor.js placeEnergyCells). Classic
-  // combat has no gun, so no cells.
-  if (state.settings.gunCombat) {
-    placeEnergyCells(layout, placer, minionTaken).forEach(p => {
-      state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
-      minionTaken.push(p);
-    });
-  }
+  // Energy cells, the only energy (decor.js placeEnergyCells).
+  placeEnergyCells(layout, placer, minionTaken).forEach(p => {
+    state.floor.props.push({ ...p, identified: false, searched: false, sprung: false });
+    minionTaken.push(p);
+  });
   // The reflective desk (desk.js): one heal to full, in the start room.
   const desk = placeDesk(layout, placer, minionTaken);
   if (desk) {
@@ -253,13 +250,11 @@ export function buildFloor() {
     minionTaken.push(desk);
   }
   // The charger (charger.js): energy to full, in the start room beside the
-  // desk. Only with the gun, which spends energy.
-  if (state.settings.gunCombat) {
-    const charger = placeCharger(layout, placer, minionTaken);
-    if (charger) {
-      state.floor.props.push({ ...charger, identified: false, searched: false, sprung: false });
-      minionTaken.push(charger);
-    }
+  // desk.
+  const charger = placeCharger(layout, placer, minionTaken);
+  if (charger) {
+    state.floor.props.push({ ...charger, identified: false, searched: false, sprung: false });
+    minionTaken.push(charger);
   }
   // Relays (relays.js), with either kind of combat.
   placeRelays(layout, placer, minionTaken).forEach(p => {

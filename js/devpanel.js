@@ -33,7 +33,6 @@ const devFrameOut = document.getElementById('devFrameOut');
 const devLookBtn = document.getElementById('devLookBtn');
 const devTendrilsBtn = document.getElementById('devTendrilsBtn');
 const devMinigameBtn = document.getElementById('devMinigameBtn');
-const devCombatBtn = document.getElementById('devCombatBtn');
 const devShotBtn = document.getElementById('devShotBtn');
 const devReloadBtn = document.getElementById('devReloadBtn');
 
@@ -45,8 +44,8 @@ export function syncDevOneStick() {
 }
 
 export function initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, endGunTests,
-  gunCombatChanged, autoWinGun,
+  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
+  autoWinGun,
   battleScreen, wagerRow,
 }) {
   // Players never see DEV: it shows only when the address has ?dev
@@ -90,7 +89,7 @@ export function initDevPanel({
   let autoWinTimer = null;
 
   function autoWinStep() {
-    if (state.settings.gunCombat && !battleScreen.classList.contains('show')) { autoWinGun(); return; }
+    if (!battleScreen.classList.contains('show')) { autoWinGun(); return; }
     if (!battleScreen.classList.contains('show') || state.run.turnLocked || state.run.runEnded) return;
     if (state.battle.battlePhase === 'choosing') chooseCategory(0);
     else if (!wagerRow.hidden) placeWager(1);
@@ -133,7 +132,7 @@ export function initDevPanel({
     devLightBatteryBtn.setAttribute('aria-pressed', String(state.settings.lightBattery));
     if (state.floor.playerRow === undefined) return;
     computeVisibility();
-    if (state.settings.gunCombat) refreshGunTarget();
+    refreshGunTarget();
     renderHud();
     requestMapDraw();
   });
@@ -243,29 +242,6 @@ export function initDevPanel({
     state.settings.enemyTendrils = next;
     devTendrilsBtn.textContent = 'Tendrils: ' + next + ' (dev)';
     requestMapDraw();
-  });
-
-  // Dev tool (gun plan): the gun on the map (the default since step 9), or
-  // classic combat. With the gun, minions don't open the battle screen: they
-  // strike when they reach the player, and are fought with SELECT
-  // (main.js), each a turn. It also shows Test shot and Test reload, which spend no turn.
-  // Turning it off drops the target and any shot waiting for the dial,
-  // and closes a gun panel left open over the map.
-  devCombatBtn.addEventListener('click', () => {
-    const on = !state.settings.gunCombat;
-    state.settings.gunCombat = on;
-    if (!on) {
-      state.floor.gunTarget = null;
-      state.battle.aim = null;
-    }
-    devCombatBtn.textContent = on ? 'Combat: gun (dev)' : 'Combat: classic (dev)';
-    devCombatBtn.setAttribute('aria-pressed', String(on));
-    devShotBtn.hidden = !on;
-    devReloadBtn.hidden = !on;
-    if (!on) endGunTests();
-    gunCombatChanged();
-    requestMapDraw();
-    refreshInspector();
   });
 
   devShotBtn.addEventListener('click', devTestShot);

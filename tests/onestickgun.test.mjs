@@ -19,7 +19,7 @@ import { fire, readyShot, settleShot, pickTarget, refreshGunTarget } from '../js
 // on, two rounds of energy.
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { oneStick: true, fogEnabled: true, gunCombat: true, downed: true, noise: true, simpleEnemies: false, lightBattery: true },
+    settings: { oneStick: true, fogEnabled: true, downed: true, noise: true, simpleEnemies: false, lightBattery: true },
     run: gunRun(2),
     floor: { look: BODY_ANGLES.N },
   });

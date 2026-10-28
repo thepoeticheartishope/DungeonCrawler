@@ -42,7 +42,7 @@ const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-mo
 let applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveTutorial, openCharger,
   openExchange, realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame;
 
-// A tap on the map. With the gun on (DEV -> Combat), it picks the gun's
+// A tap on the map. It picks the gun's
 // target: the light swings to the minion on that tile and the target
 // follows it, or a note says why it can't be shot. Costs no turn. Only SELECT
 // fires (Timothy: tap, then SELECT), so a tap can never shoot by accident.

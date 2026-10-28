@@ -11,7 +11,7 @@ import { emptyFloor, twoRooms } from './helpers.mjs';
 import { state, key } from '../js/state.js';
 import { MINION_TRACK_TURNS, NOISE_RANGES } from '../js/config.js';
 import { spreadSound, makeNoise } from '../js/noise.js';
-import { advanceMonsters, spawnMinion } from '../js/combat.js';
+import { advanceMonsters, spawnMinion, movesEvery } from '../js/combat.js';
 import { toggleLight } from '../js/battery.js';
 import { computeVisibility } from '../js/sight.js';
 import { settleReload } from '../js/gun.js';
@@ -22,7 +22,7 @@ import { settleReload } from '../js/gun.js';
 // stands at the bottom of room 0, light off, so no stick man sees them.
 function resetFloor() {
   emptyFloor(21, {
-    settings: { fogEnabled: true, gunCombat: false, lightBattery: true, simpleEnemies: false, gaze: true, noise: true },
+    settings: { fogEnabled: true, lightBattery: true, simpleEnemies: false, gaze: true, noise: true },
     see: false,
   });
   twoRooms();
@@ -86,7 +86,8 @@ test('a stick man the sound reaches goes to where it was made and searches', () 
   assert.equal(m.track, MINION_TRACK_TURNS);
   assert.equal(m.goal, null, 'its idle plan is dropped');
   const before = m.row + m.col;
-  advanceMonsters();
+  // A HUSK moves every movesEvery turns.
+  for (let i = 0; i < movesEvery(m); i++) advanceMonsters();
   assert.ok(m.lastSeen, 'still walking to the sound');
   assert.notEqual(m.row + m.col, before, 'it moved');
 });

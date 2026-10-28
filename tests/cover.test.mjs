@@ -21,7 +21,7 @@ import { walkFree, resetWalk, switchSneak } from '../js/walk.js';
 // An open floor, player in the middle facing north (light on), One stick.
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { oneStick: true, lightBattery: true, simpleEnemies: false, gunCombat: true, noise: true, fogEnabled: true },
+    settings: { oneStick: true, lightBattery: true, simpleEnemies: false, noise: true, fogEnabled: true },
     floor: { look: BODY_ANGLES.N },
     see: false,
   });

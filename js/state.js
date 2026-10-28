@@ -46,7 +46,6 @@ export const state = {
     downed: DOWNED,         // a shot that leaves a stick man on 1 HP knocks it down: it crawls, grabs, and a bump finishes it (gun.js); DEV -> Downed flips it
     gaze: GAZE,             // an eye over a stick man opens in the player's light and it steps closer (gaze.js); DEV -> Gaze flips it
     minigame: 'roll',       // DEV -> Minigame: 'roll' (minigames roll as usual), 'off' (never), or a minigame id (always, when it fits)
-    gunCombat: true,        // the gun on the map (gun plan; the default since step 9). DEV -> Combat switches back to classic (minions on the battle screen)
     usingSample: true, // the workshop list is the built-in sample (it can't be saved as a set); false once a list is pasted or loaded there
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
     activeDictionary: null, // the active set's subject dictionary (lists/dictionaries/), or null (pasted, saved and sample sets)

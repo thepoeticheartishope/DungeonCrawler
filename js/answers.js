@@ -1,6 +1,6 @@
 // Settling an answer on the battle screen: hearts, haunts, the Gambler
-// wager, then what the answer does to the target (boss HP, a cleared
-// minion, a repelled hunter, a spent chest / box).
+// wager, then what the answer does to the target (boss HP, a spent chest
+// or box).
 // Changes state and returns an events list in the order things happened
 // (one per encounter log line); main.js drawEvents() draws it and picks
 // the wording. No DOM access here.
@@ -9,7 +9,6 @@ import { state } from './state.js';
 import { DARK_MISS_COST, MINIGAME_TIER_PAY } from './config.js';
 import { recordHauntAnswer } from './haunts.js';
 import { sealGate, breakGate } from './gate.js';
-import { repelHunter } from './combat.js';
 import { makeNoise } from './noise.js';
 import { goldReward, openBox } from './moves.js';
 
@@ -17,15 +16,14 @@ import { goldReward, openBox } from './moves.js';
 // caller has already checked adjacency and counted the attempt; `given`
 // is the player's answer, echoed back as answerGiven.
 //
-// One answer settles a minion, the chest or a box,
-// right or wrong: it's cleared or spent. Only the boss (the gate) goes on
+// One answer settles the chest or a box, right or wrong: it's spent. Only the boss (the gate) goes on
 // past a right answer, until its HP runs out; a wrong one seals it. A
 // miss costs 1 heart (DARK_MISS_COST in the darkness), except at the gate,
 // where the seal and the light's turns are the cost (Timothy); at 0
 // hearts the events end with signalLost.
 // `tier` is a minigame's tier for a right answer ('1', '2' or 'X',
 // MINIGAME_TIER_PAY); a plain question is '2'. X takes more off a boss
-// and pays more gold; a minion or the hunter is settled the same by any.
+// and pays more gold.
 export function settleAnswer(isCorrect, hadExtraSpace, given, tier = '2') {
   const target = state.battle.selectedTarget;
   const q = state.battle.currentQuestion;
@@ -84,20 +82,10 @@ function resolveBossAnswer(isCorrect, pay) {
   return breakGate();
 }
 
-// Everything but the boss is settled by a single answer. Success pays out
-// (gold for a chest or trapped box); a miss has already cost its heart. Either way the target is
-// cleared or spent. Gold is scaled by the tier's `goldScale`.
+// The chest and a trapped box are settled by a single answer. Success pays
+// out gold; a miss has already cost its heart. Either way the target is
+// spent. Gold is scaled by the tier's `goldScale`.
 function resolveOneShot(target, isCorrect, q, pay) {
-  // The hunter can't be cleared, only thrown off the trail for a while.
-  if (target.kind === 'hunter') {
-    repelHunter(target, isCorrect);
-    return [{ type: 'hunterRepelled', hunter: target, right: isCorrect }];
-  }
-  if (target.kind === 'minion') {
-    state.floor.minions = state.floor.minions.filter(m => m !== target);
-    return [{ type: 'minionCleared', minion: target, right: isCorrect }];
-  }
-
   const events = [{ type: 'targetSpent', target, right: isCorrect }];
   if (target.kind === 'box') {
     // A trapped box stays on the map (it's furniture), just spent.

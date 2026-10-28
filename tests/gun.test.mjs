@@ -49,7 +49,7 @@ const SET = [
 function resetFloor(size = 21) {
   emptyFloor(size, {
     // downed.test.mjs checks stick men going down
-    settings: { fogEnabled: true, activeData: SET, gunCombat: false, downed: false },
+    settings: { fogEnabled: true, activeData: SET, downed: false },
     run: { ...gunRun(1), reloadIndex: 0 },
     battle: { currentQuestion: SET[0] },
   });
@@ -315,7 +315,6 @@ test('a minion lit only by the boss isn\'t seen, so it can\'t be picked', () => 
 
 test('a minion lit only by standing beside the player can\'t be shot until they look at it', () => {
   resetFloor();
-  state.settings.gunCombat = true;
   const beside = minionAt(0, 1);
   assert.ok(state.floor.sightSet.has(key(beside.row, beside.col)), 'it is lit');
   assert.equal(fireBlock(beside), 'notInLight');
@@ -330,7 +329,6 @@ test('a minion lit only by standing beside the player can\'t be shot until they 
 
 test('with free look, tapping a minion swings the light to it and the target follows', () => {
   resetFloor();
-  state.settings.gunCombat = true;
   const ahead = minionAt(-1, 0);
   const off = minionAt(-3, 2); // 34° east of north, further away
   refreshGunTarget();
@@ -342,7 +340,6 @@ test('with free look, tapping a minion swings the light to it and the target fol
 
 test('with two in the cone, the one nearer the aim is the target even when further away', () => {
   resetFloor();
-  state.settings.gunCombat = true;
   const near = minionAt(-1, 1);  // 45° east, close
   const far = minionAt(-4, 0);   // straight north, far
   refreshGunTarget();
@@ -418,7 +415,6 @@ test('a HUSK\'s guard takes the first hit and breaks: stun 2 from the kill zone,
 
 test('a hit stuns the minion: it skips its next move, then comes on', () => {
   resetFloor();
-  state.settings.gunCombat = true;
   const m = minionAt(-1, 0, 'SHARD');
   state.run.energy = 2;
   aimAt(m);
@@ -439,7 +435,6 @@ test('a miss does not stun', () => {
 
 test('a slow minion\'s stun is spent on a turn it would have moved', () => {
   resetFloor();
-  state.settings.gunCombat = true;
   const m = minionAt(-1, 0, 'HUSK');
   m.rest = 1;
   state.run.turnCount = 0; // the next turn (1) is an off turn for moveEvery 2
@@ -477,7 +472,6 @@ test('a loud zone makes a noise', () => {
 
 test('a lunge zone brings it one step closer at once; next to the player, it strikes', () => {
   resetFloor();
-  state.settings.gunCombat = true;
   const m = minionAt(-3, 0, 'SHARD');
   state.run.energy = 3; // energy left after both shots, so no Struggle
   aimAt(m);
@@ -599,7 +593,6 @@ test('cycleTarget goes round the shootable minions, and says when there are none
 
 test('with the gun on, a minion that reaches the player strikes instead of engaging', () => {
   resetFloor();
-  state.settings.gunCombat = true;
   state.run.turnCount = 0;
   const m = minionAt(-1, 0);
   m.trail = [{ row: m.row - 3, col: m.col }];
@@ -612,7 +605,6 @@ test('with the gun on, a minion that reaches the player strikes instead of engag
 
 test('with the gun on, the hunter strikes like a minion and never opens the battle screen', () => {
   resetFloor();
-  state.settings.gunCombat = true;
   state.floor.darkness = true;
   state.floor.darkTurns = 0;
   const hunter = minionAt(-1, 0, null);
@@ -630,7 +622,6 @@ test('with the gun on, the hunter strikes like a minion and never opens the batt
 
 test('with the gun on, a staggered hunter stands still for HUNTER_REST_TURNS turns, then hunts again', () => {
   resetFloor();
-  state.settings.gunCombat = true;
   state.floor.darkness = true;
   state.floor.darkTurns = 0;
   const hunter = minionAt(-3, 0, null);
@@ -646,7 +637,6 @@ test('with the gun on, a staggered hunter stands still for HUNTER_REST_TURNS tur
 
 test('with the gun on, a slow kind moves only every moveEvery turns', () => {
   resetFloor();
-  state.settings.gunCombat = true;
   state.run.turnCount = 0;
   const husk = minionAt(-3, 0, 'HUSK');
   const moves = [];
@@ -661,7 +651,6 @@ test('with the gun on, a slow kind moves only every moveEvery turns', () => {
 // a turn every kind moves.
 function struggleSetUp() {
   resetFloor();
-  state.settings.gunCombat = true;
   state.run.turnCount = 0;
   state.run.energy = 0;
   return minionAt(-1, 0);
@@ -758,14 +747,6 @@ test('only the first minion to reach an empty-handed player struggles; others st
   const types = advanceMonsters().map(e => e.type);
   assert.equal(types.filter(t => t === 'struggleStarted').length, 1);
   assert.ok(types.includes('minionStruck'));
-});
-
-test('in classic combat a minion that reaches the player engages, as before', () => {
-  resetFloor();
-  const m = minionAt(-1, 0);
-  assert.deepEqual(advanceMonsters().map(e => e.type), ['minionEngaged']);
-  assert.equal(state.battle.selectedTarget, m);
-  assert.equal(state.run.hearts, MAX_HEARTS);
 });
 
 // --- Category weaknesses (strategy plan step D) ---

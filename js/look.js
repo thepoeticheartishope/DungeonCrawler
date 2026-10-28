@@ -71,7 +71,7 @@ export function aimLook(angle) {
   }
   state.floor.look = wrapAngle(angle);
   computeVisibility();
-  return state.settings.gunCombat ? refreshGunTarget() : [];
+  return refreshGunTarget();
 }
 
 // Turns the body to whichever way in use is closest to the aim, so the
@@ -101,7 +101,7 @@ export function sweepLook(delta) {
     events.push({ type: 'bodyTurned', facing });
   }
   computeVisibility();
-  if (state.settings.gunCombat) events.push(...refreshGunTarget());
+  events.push(...refreshGunTarget());
   return events;
 }
 
@@ -139,5 +139,5 @@ export function swingLook(dtMs, still = false) {
   f.look = still ? f.lookWant : wrapAngle(from + Math.max(-most, Math.min(most, gap)));
   f.facing = nearestWay(f.look);
   computeVisibility();
-  return state.settings.gunCombat ? refreshGunTarget() : [];
+  return refreshGunTarget();
 }

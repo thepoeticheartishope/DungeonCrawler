@@ -36,7 +36,6 @@ function resetFloor() {
   f.lightTurnBudget = 40;
   f.stairs = null;
   f.coin = null;
-  state.settings.gunCombat = true;
   state.run.coinsTotal = 0;
 }
 
@@ -44,13 +43,11 @@ test('a floor rolls GOALS_PER_FLOOR different goals, all of them ones that fit',
   for (let i = 0; i < 30; i++) {
     resetFloor();
     state.floor.props = [];
-    state.settings.gunCombat = false;
     rollGoals();
     const ids = state.floor.goals.map(g => g.id);
     assert.equal(ids.length, GOALS_PER_FLOOR);
     assert.equal(new Set(ids).size, ids.length);
     assert.ok(!ids.includes('allPapers'), 'no paper goal without papers');
-    assert.ok(!ids.includes('noStruggle'), 'no Struggle goal with the gun off');
   }
 });
 

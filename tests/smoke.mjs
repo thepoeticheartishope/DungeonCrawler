@@ -20,12 +20,11 @@
 //      clear the floor, asserting the win or lose screen is reached.
 //      A run is 7 floors (opening rest, then depth / rest three times, the
 //      last rest being the epilogue), so it takes 7 skips; the cap is 10.
-//   2. Battle run: DEV -> Combat back to classic (the gun is the default),
-//      skips out of the opening rest (it has no minions), then
-//      walks with the arrow keys and "Skip turn" to the boss (beside
-//      the start) until it or a minion engages and the battle screen appears, then lets Auto-win settle the
-//      fight, asserting an ACCEPTED. line appeared in the encounter log and
-//      the game is back on the room screen afterward (classic combat).
+//   2. Battle run: skips out of the opening rest, then walks with the
+//      arrow keys and "Skip turn" to the boss (beside the start) until its
+//      gate opens the battle screen, then lets Auto-win settle the fight,
+//      asserting an ACCEPTED. line appeared in the encounter log and the
+//      game is back on the room screen afterward.
 //   3. Gun run (the default combat), walks toward the nearest minion, bumping an
 //      energy cell to reload and pressing F (SELECT) to fire (Auto-win answers
 //      the reload and starts and stops the dial in its kill zone) until a
@@ -355,9 +354,6 @@ async function attemptBattle(page, url) {
   await installBattleWatchers(page);
   await startGameAndWaitForRoom(page);
   await turnOnAutoWin(page);
-  // The gun is the default (gun plan step 9): DEV -> Combat back to classic,
-  // so a minion that reaches the player opens the battle screen.
-  await page.click('#devCombatBtn');
   // The run opens on a rest floor with no minions: go down to depth 1.
   await page.click('#devSkipBtn');
   await page.waitForTimeout(200);

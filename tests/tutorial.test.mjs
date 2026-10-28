@@ -28,7 +28,6 @@ function resetRun() {
   state.settings.fogEnabled = true;
   state.settings.lightBattery = true;
   state.settings.simpleEnemies = false;
-  state.settings.gunCombat = true;
   state.settings.playerName = '';
   state.run.hearts = 3;
   state.run.energy = 0;

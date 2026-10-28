@@ -22,7 +22,7 @@ import { whatBlocks } from '../js/passage.js';
 // stands at the bottom of room 0, light off, so no stick man sees them.
 function resetFloor() {
   emptyFloor(21, {
-    settings: { fogEnabled: true, gunCombat: false, lightBattery: true, simpleEnemies: false, gaze: true, noise: true },
+    settings: { fogEnabled: true, lightBattery: true, simpleEnemies: false, gaze: true, noise: true },
     see: false,
   });
   twoRooms();
@@ -84,7 +84,7 @@ test('in a duct it is out of play: off the floor, no strike, no warning, nothing
   state.floor.playerCol = 2;
   const next = advanceMonsters();
   assert.ok(!types(next).includes('presenceSensed'));
-  assert.ok(!types(next).includes('minionEngaged'));
+  assert.ok(!types(next).some(t => t === 'minionStruck' || t === 'struggleStarted'));
 });
 
 test('a HUSK is too big for the ducts', () => {

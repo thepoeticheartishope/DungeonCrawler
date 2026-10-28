@@ -18,7 +18,6 @@ import { TEXT } from '../js/text.js';
 // Standing on the between-rest after depth 1.
 function startBetween() {
   state.settings.activeData = MC_SAMPLE_DATA;
-  state.settings.gunCombat = true;
   state.run.order = MC_SAMPLE_DATA.slice(0, 3);
   state.run.roomIndex = 1;
   state.run.resting = true;

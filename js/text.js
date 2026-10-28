@@ -100,12 +100,6 @@ export const TEXT = {
   // ---- Encounter log: opening lines (what it is, a hint of what's at stake) ----
   'log.start.boss': 'ENCOUNTER: {@term.boss.symbol}',
   'log.rules.boss': 'CLEAR {queries} QUERIES TO PROCEED. ONE WRONG SEALS IT.', // draft
-  'log.start.minion': 'ENCOUNTER: {@term.minion.symbol}',
-  'log.rules.minion': '{@term.query} REQUIRED FOR NEURON FUSION.',
-  'log.start.hunter': 'ENCOUNTER: {@term.hunter}', // draft
-  'log.rules.hunter': 'IT CANNOT BE PRUNED. ANSWER, AND IT LOSES YOUR TRAIL.', // draft
-  'log.hunter.repelled': 'THE {@term.hunter} LOSES YOUR TRAIL. FOR NOW.', // draft
-  'log.hunter.retreats': 'THE {@term.hunter} FEEDS, AND FALLS BACK TO CIRCLE AGAIN.', // draft
   'log.start.chest': 'ENCOUNTER: {@term.chest}',
   'log.rules.chest': 'WE ALL SEEK TO BE FREE.',
   'log.start.box': 'ENCOUNTER: SEALED {@term.box}', // draft
@@ -130,8 +124,6 @@ export const TEXT = {
   'log.gate.sealed': 'IT SEALS. THE LIGHT GAINS {turns}. FIND ANOTHER {@term.key}.', // draft. A wrong answer at the gate
   'log.gate.opened': 'EVERY {@term.key} TURNS. IT CANNOT HOLD.', // draft. All keys held: the gate gives
   'log.darkness': 'ITS LIGHT DIES WITH IT. WHAT REMAINS HUNTS YOU. MISSES COST MORE; {@term.gold} PAYS DOUBLE.', // draft
-  'log.minion.cleared': '{@term.minion} PRUNED.', // draft (was: MINOR DOUBT ERASED. — the minion is a DENDRITE now)
-  'log.minion.disperses': 'THE {@term.minion} RETRACTS INTO THE DARK.', // draft (minions no longer grow back; was: IT WILL GROW BACK. BE READY.)
   'log.chest.opened': 'THOUGHT RELEASED. +{gold} {@term.gold}.', // draft (was: CHEST OPENED. +{gold} PROCESS.)
   'log.chest.trapped': 'IT DOES NOT WANT YOU TO ASCEND.',
   'log.box.gold': 'IT OPENS. +{gold} {@term.gold}.', // draft
@@ -388,7 +380,6 @@ export const TEXT = {
   'room.key': '{@term.key} {held} of {total}.', // draft. A key taken (locked core plan)
   'room.gate.unsealed': 'Somewhere behind you, the {@term.boss} listens again.', // draft. A key taken while the gate was sealed
   'room.blocked.gate': 'The {@term.boss} is sealed. Find another {@term.key}.', // draft. Bumped the gate after a wrong answer
-  'room.engage': 'Something fires in the dark.', // draft
   'room.light.consumed': 'The light reaches everything.', // draft
   // The player's own light on its battery (battery.js; light battery plan, wording from the mockup)
   'room.ownLight.on': 'Light on.', // draft
