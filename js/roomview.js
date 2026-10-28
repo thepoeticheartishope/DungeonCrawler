@@ -668,9 +668,10 @@ function moveCamera(goal) {
 const shadowFeet = new Map();
 let shadowClock = null;
 
-// The stick men's shadows (shadows.js), darkening the light itself, so
-// they show only on floor that is lit: a dark wedge from his feet,
-// widening to SHADOW.width at its tip and fading a little along it.
+// The stick men's shadows (shadows.js), darkening the light itself and
+// only on floor that is lit (visibleSet, not the dim room shape or memory:
+// Timothy, they showed where there was no light): a faint wedge from his
+// feet, widening to SHADOW.width at its tip and fading a little along it.
 function drawShadows(ox, oy, inView) {
   const f = state.floor;
   const dt = shadowClock === null ? 0 : look.now - shadowClock;
@@ -678,6 +679,13 @@ function drawShadows(ox, oy, inView) {
   const seenAt = new Map(look.things.filter(thing => drawingOf(thing) === 'form').map(thing => [minionOn(thing.tile), thing.at]));
   [...shadowFeet.keys()].forEach(m => { if (!f.minions.includes(m)) shadowFeet.delete(m); });
   gctx.globalCompositeOperation = 'source-over';
+  gctx.save();
+  gctx.beginPath();
+  f.visibleSet.forEach(k => {
+    const [row, col] = tileOf(k);
+    if (inView(row, col) && !isWall(row, col)) gctx.rect(col * T - ox, row * T - oy, T, T);
+  });
+  gctx.clip();
   f.minions.forEach(m => {
     const goal = seenAt.get(m) || { row: m.row, col: m.col };
     const feet = glideFeet(m, goal, dt);
@@ -700,6 +708,7 @@ function drawShadows(ox, oy, inView) {
       gctx.fill();
     });
   });
+  gctx.restore();
 }
 
 // Moves stick man m's shadow's feet toward `goal` by `dt` ms of gliding
