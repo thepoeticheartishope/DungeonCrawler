@@ -41,7 +41,7 @@ import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, s
 import { turnWire, chargerLine } from './charger.js';
 import { shutterLine } from './saferoom.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
-import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, startSteady, steadying, tickSteady, releaseSteady, cancelSteady, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
+import { pickTarget, refreshGunTarget, cycleTarget, fire, readyShot, cancelShot, settleShot, startSteady, steadying, tickSteady, releaseSteady, cancelSteady, holdSteady, reloadCategory, reloadOffers, settleReload, readyStruggle, settleStruggle, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showReloadPanel, showQuestionScreen, showDamageBar, runDamageBar, showStruggleBar, runStruggleBar, closeMapPanels, fadeDial, mapPanelShown, pressBar, turnAskPage, holdAskScreen, askHeld, closeHeldAsk } from './gunpanels.js';
 import { t, TEXT, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
@@ -730,6 +730,7 @@ function gunCombatChanged() {
 // kill zone (a Struggle's in its zone). Walking, reloading and firing stay the player's.
 function autoWinGun() {
   if (askHeld()) { closeHeldAsk(); return; }
+  if (steadying()) { holdSteady(); releaseSelect(); return; }
   const shown = mapPanelShown();
   if (shown === 'reload') pickReload(reloadOffers().offers[0], reloadCategory());
   else if (shown === 'question' && askAnswers && state.battle.minigame) playMinigameOut();

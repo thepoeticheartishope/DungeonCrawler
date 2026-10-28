@@ -490,6 +490,15 @@ export function releaseSteady() {
   return [...events, ...settled];
 }
 
+// DEV -> Auto-win while steadying: the aim at full hold, the arm not yet
+// shaking, so letting go kills. Events: none.
+export function holdSteady() {
+  if (!steadying()) return [];
+  state.battle.aim.steady = 1;
+  state.battle.aim.heldMs = 0;
+  return [];
+}
+
 // The gun lowered while steadying (SELECT slid off, Escape): nothing was
 // spent. Events: shotCancelled.
 export function cancelSteady() {

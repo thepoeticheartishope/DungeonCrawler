@@ -18,7 +18,7 @@ import { spawnMinion } from '../js/combat.js';
 import { resetHaunts } from '../js/haunts.js';
 import { BODY_ANGLES } from '../js/look.js';
 import {
-  fire, refreshGunTarget, startSteady, steadying, tickSteady, steadyChance, steadyShaking, releaseSteady, cancelSteady,
+  fire, refreshGunTarget, startSteady, steadying, tickSteady, steadyChance, steadyShaking, releaseSteady, cancelSteady, holdSteady,
 } from '../js/gun.js';
 
 const near = (a, b) => Math.abs(a - b) < 1e-9;
@@ -142,8 +142,16 @@ test('a weaving STALKER steadies slower (STEADY_AIM.kindSlow)', () => {
   assert.ok(near(state.battle.aim.steady, 0.5 * STEADY_AIM.kindSlow.STALKER));
 });
 
-test('steady aim is off by default until step C', () => {
-  assert.equal(STEADY_AIM.on, false);
+test('steady aim is the default since step C', () => {
+  assert.equal(STEADY_AIM.on, true);
+});
+
+test('DEV -> Auto-win holds the aim at full, so letting go kills', () => {
+  const m = steadyOn();
+  holdSteady();
+  const types = releaseSteady().map(e => e.type);
+  assert.ok(types.includes('minionKilled'), types.join());
+  assert.ok(!state.floor.minions.includes(m));
 });
 
 test('the light narrows to a beam as the aim steadies, and opens again after', () => {
