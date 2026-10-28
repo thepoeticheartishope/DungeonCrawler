@@ -1,7 +1,15 @@
 // Smoke tests for the Noesis Protocol dungeon crawler.
 //
 // Run: node tests/smoke.mjs (SMOKE_ONLY=answer,tutorial and SMOKE_REPEAT=20
-// pick runs and repeat them; see main)
+// pick runs and repeat them; SMOKE_JOBS=4, the default, runs that many at
+// once, SMOKE_JOBS=1 one after another; see main). Each run's time is in
+// the report.
+//
+// Waiting: wait for what a check needs (waitUntil, roomIdle, a selector),
+// not a fixed time, where you can: on a busy machine frames come slower and
+// the world's clock with them. Never Playwright's waitForFunction with an
+// async check: it counts the promise as true and doesn't wait. Keep no
+// shared state between runs (they go at once): per page, as lastBumps.
 //
 // Starts a static server for this repo, then drives the game in a real
 // browser via Playwright (imported from ~/Repo/codecraft-classroom/node_modules
@@ -474,7 +482,17 @@ async function bumpEnergyCell(page) {
     computeVisibility();
     return true;
   });
-  if (placed) await page.keyboard.press('Numpad8');
+  // Pushed until the cell answers (bumpUntil): its reload panel or question
+  // shows, or it is used up already (Auto-win answers fast). A press on a
+  // busy machine can be too short to count.
+  if (placed) {
+    await bumpUntil(page, 'Numpad8', () => page.evaluate(async () => {
+      const { state } = await import('./js/state.js');
+      const f = state.floor;
+      const cell = f.props.find(p => p.kind === 'cell' && p.row === f.playerRow - 1 && p.col === f.playerCol);
+      return !cell || cell.searched || ['reloadPanel', 'askQuestionPanel'].some(id => !document.getElementById(id).hidden);
+    }));
+  }
   return placed;
 }
 
@@ -746,13 +764,27 @@ function lookNow(page) {
   });
 }
 
+// Asks `fn` in the page (it may be async) every 50 ms until it gives
+// something truthy, up to `timeout` ms; returns it, or throws on timeout.
+// Not Playwright's waitForFunction: an async check hands it a promise,
+// which counts as true at once, so it never waited (found 2026-10-28).
+async function waitUntil(page, fn, arg = null, timeout = 5000) {
+  const end = Date.now() + timeout;
+  for (;;) {
+    const value = await page.evaluate(fn, arg);
+    if (value) return value;
+    if (Date.now() > end) throw new Error('timed out after ' + timeout + ' ms waiting for ' + fn.toString().replace(/\s+/g, ' ').slice(0, 100));
+    await page.waitForTimeout(50);
+  }
+}
+
 // Waits until the room screen takes input again (no panel, no turn).
 async function roomIdle(page) {
-  await page.waitForFunction(async () => {
+  await waitUntil(page, async () => {
     const { state } = await import('./js/state.js');
     return document.getElementById('roomScreen').classList.contains('show') && !state.run.turnLocked &&
       ['reloadPanel', 'askQuestionPanel', 'aimPanel'].every(id => document.getElementById(id).hidden);
-  }, null, { timeout: 10000 });
+  }, null, 10000);
 }
 
 // The look stick (dpad.js initLookStick): a short drag sideways sweeps
@@ -783,7 +815,9 @@ async function lookControls(page) {
   await page.mouse.down();
   await page.mouse.move(cx + 10, cy, { steps: 2 });
   await page.mouse.move(cx + 18, cy, { steps: 2 });
-  await page.waitForTimeout(150); // the sweep runs while it is held
+  // The sweep runs while it is held, a frame at a time: held until it has
+  // moved the light (frames come slower on a busy machine), a second at most.
+  await waitUntil(page, async (look) => (await import('./js/state.js')).state.floor.look !== look, before.look, 1000).catch(() => {});
   await page.mouse.up();
   await page.waitForTimeout(100);
   let after = await lookNow(page);
@@ -805,21 +839,45 @@ async function lookControls(page) {
   await page.mouse.move(cx, cy);
   await page.mouse.down();
   await page.mouse.move(cx + 6, cy + 5, { steps: 2 });
-  if (!await page.locator('#btnSkip.holding').count()) return 'holding the look stick showed no ring';
+  // The ring shows as the press starts; on a busy machine the class can
+  // land a frame later, so it is waited for, briefly.
+  if (!await page.waitForSelector('#btnSkip.holding', { timeout: 500 }).then(() => true, () => false)) return 'holding the look stick showed no ring';
   await page.waitForTimeout(holdMs + 150);
   await page.mouse.up();
   await roomIdle(page);
   after = await lookNow(page);
   if (after.turns !== before.turns + 1) return `holding the look stick passed ${after.turns - before.turns} turns, not 1`;
 
-  // A tap on the floor past the free arc (near the map's bottom-right
-  // corner, close beside the player) turns the body there at once, for
-  // one turn: the turn is spent at once,
-  // with nothing left waiting for the stick's tap.
+  // A tap on the floor past the free arc turns the body there at once, for
+  // one turn: the turn is spent at once, with nothing left waiting for the
+  // stick's tap. The spot is found on screen (roomview.js roomTileAt): an
+  // open tile close by, well past the arc from where the body faces (a
+  // fixed corner of the map was sometimes inside it).
   const map = await page.locator('#mapCanvas').boundingBox();
+  const spot = await page.evaluate(async () => {
+    const { state, key } = await import('./js/state.js');
+    const { roomTileAt } = await import('./js/roomview.js');
+    const { bodyAngle, angleTo, wrapAngle } = await import('./js/look.js');
+    const { LOOK_FREE_ARC } = await import('./js/config.js');
+    const f = state.floor;
+    const box = document.getElementById('mapCanvas').getBoundingClientRect();
+    for (let j = 1; j < 20; j++) {
+      for (let i = 1; i < 20; i++) {
+        const [px, py] = [box.width * i / 20, box.height * j / 20];
+        const tile = roomTileAt(px, py);
+        if (!tile || f.wallSet.has(key(tile.row, tile.col))) continue;
+        const far = Math.max(Math.abs(tile.row - f.playerRow), Math.abs(tile.col - f.playerCol));
+        if (far < 1 || far > 3) continue;
+        if (Math.abs(wrapAngle(angleTo(tile.row, tile.col) - bodyAngle())) > LOOK_FREE_ARC * 2) return [px, py];
+      }
+    }
+    return null;
+  });
+  if (!spot) return 'found no open tile on screen past the free arc to tap';
   before = await lookNow(page);
-  await page.mouse.click(map.x + map.width * 0.97, map.y + map.height * 0.97);
+  await page.mouse.click(map.x + spot[0], map.y + spot[1]);
   await roomIdle(page);
+  await waitUntil(page, async (facing) => (await import('./js/state.js')).state.floor.facing !== facing, before.facing, 2000).catch(() => {});
   after = await lookNow(page);
   if (after.facing === before.facing) return 'a tap on the floor past the arc did not turn the body';
   if (after.turns !== before.turns + 1) return `turning passed ${after.turns - before.turns} turns, not 1`;
@@ -1114,9 +1172,13 @@ async function checkLightBattery(page, url) {
   });
   if (placed) {
     const gazeMs = await page.evaluate(async () => (await import('./js/config.js')).GAZE_MS);
-    await page.waitForTimeout(gazeMs + 600);
-    const log = await page.evaluate(() => document.getElementById('roomFeedback').textContent);
-    if (!log.includes('It comes closer while you look.') && !log.includes('It stares at you.')) return 'the eye did nothing after 3 s in the light';
+    // Waited for, not slept: the eye's time runs with the frames, which
+    // come slower on a busy machine.
+    const eyed = await page.waitForFunction(() => {
+      const log = document.getElementById('roomFeedback').textContent;
+      return log.includes('It comes closer while you look.') || log.includes('It stares at you.');
+    }, null, { timeout: gazeMs * 3 }).then(() => true, () => false);
+    if (!eyed) return 'the eye did nothing after ' + (gazeMs * 3 / 1000) + ' s in the light';
   }
 
   await loadPageAndSet(page, url);
@@ -1231,12 +1293,14 @@ async function checkOneStick(page, url) {
   // Step C: a stick man next to the player reaches, then strikes; one the
   // player walks away from misses.
   await placeInRow(page);
-  const struck = await reachFrom(page, 1500);
+  // Up to 3 s, not the reach's own 0.6 s: the world's clock runs on capped
+  // frames, so on a busy machine its time passes slower than the wall's.
+  const struck = await reachFrom(page, 3000);
   if (!struck.started) return 'a stick man beside the player never reached';
   if (!struck.hurt) return 'a reach the player stood in did not land';
   await placeInRow(page);
   await page.keyboard.down('ArrowRight');
-  const dodged = await reachFrom(page, 1400);
+  const dodged = await reachFrom(page, 3000);
   await page.keyboard.up('ArrowRight');
   if (!dodged.started) return 'a stick man beside the player walking away never reached';
   if (dodged.hurt) return 'a reach landed on a player who walked away';
@@ -1370,10 +1434,18 @@ async function reachFrom(page, ms) {
     m.stepWait = 0;
     window.__reacher = m;
   });
+  // Watched until the reach has played out (it landed, or it started and
+  // ended), `ms` at most: one that comes back for a second strike could
+  // end the run before the next check.
   let started = false;
   for (let t = 0; t < ms; t += 50) {
     await page.waitForTimeout(50);
-    started = started || await page.evaluate(() => !!window.__reacher.reaching);
+    const now = await page.evaluate(async () => {
+      const { state } = await import('./js/state.js');
+      return { reaching: !!window.__reacher.reaching, hurt: state.run.hearts < window.__hearts };
+    });
+    if (now.hurt || (started && !now.reaching)) break;
+    started = started || now.reaching;
   }
   return page.evaluate(async () => {
     const { state } = await import('./js/state.js');
@@ -2265,8 +2337,10 @@ async function runCharger(browser, url) {
   return { ok: true, detail: 'CHARGE.SYS opened over the map on a phone, 2 wire turns = 1 turn, wires kept on leaving, solved to full energy, full = no open, a stick man closed it', consoleErrors, pageErrors };
 }
 
-// The arrow key bumpCharger last walked into the charger with.
-let lastBump = 'ArrowUp';
+// The arrow key bumpCharger last walked into the charger with, per page:
+// runs go at once (SMOKE_JOBS), so one shared key would be overwritten.
+const lastBumps = new WeakMap();
+const lastBump = page => lastBumps.get(page) || 'ArrowUp';
 
 // Stands the player on a free side of the charger, energy as given, no
 // stick men, and walks into it (the map saved to `shot` first, if given). Returns false if there is no charger or no
@@ -2280,9 +2354,18 @@ async function bumpCharger(page, energy, shot = null) {
     if (!charger) return false;
     // A free side of it, and the key that walks into it from there.
     const free = (r, c) => !f.wallSet.has(key(r, c)) && !f.pillarSet.has(key(r, c)) && !f.props.some(p => p.row === r && p.col === c);
-    const side = [[1, 0, 'N', 0, 'ArrowUp'], [0, -1, 'E', Math.PI / 2, 'ArrowRight'], [0, 1, 'W', -Math.PI / 2, 'ArrowLeft'], [-1, 0, 'S', Math.PI, 'ArrowDown']]
-      .find(([dr, dc]) => free(charger.row + dr, charger.col + dc));
-    if (!side) return false;
+    const SIDES = [[1, 0, 'N', 0, 'ArrowUp'], [0, -1, 'E', Math.PI / 2, 'ArrowRight'], [0, 1, 'W', -Math.PI / 2, 'ArrowLeft'], [-1, 0, 'S', Math.PI, 'ArrowDown']];
+    const sideOf = (row, col) => SIDES.find(([dr, dc]) => free(row + dr, col + dc));
+    // Now and then it stands boxed in by walls and furniture: then it is
+    // moved to an open tile of the same room that has a free side.
+    if (!sideOf(charger.row, charger.col)) {
+      const room = f.chamberAt.get(key(charger.row, charger.col));
+      const spot = [...f.chamberAt].filter(([k, i]) => i === room).map(([k]) => k.split(',').map(Number))
+        .find(([r, c]) => free(r, c) && sideOf(r, c));
+      if (!spot) return false;
+      [charger.row, charger.col] = spot;
+    }
+    const side = sideOf(charger.row, charger.col);
     const [dr, dc, facing, look, press] = side;
     const r = charger.row + dr, c = charger.col + dc;
     f.minions = [];
@@ -2298,9 +2381,25 @@ async function bumpCharger(page, energy, shot = null) {
   await page.waitForTimeout(250);
   if (shot) await page.locator('#mapWrap').screenshot({ path: shot });
   await page.keyboard.press(stood);
-  lastBump = stood;
+  lastBumps.set(page, stood);
   await page.waitForTimeout(250);
   return true;
+}
+
+// Walks into what is ahead with `press` until `done()` says it answered, up
+// to 3 tries, a second each: with One stick a key let go quickly only turns
+// (walk.js tapMs), and on a busy machine a press can come out that short.
+async function bumpUntil(page, press, done) {
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.down(press);
+    await page.waitForTimeout(200);
+    await page.keyboard.up(press);
+    for (let t = 0; t < 1000; t += 100) {
+      if (await done()) return true;
+      await page.waitForTimeout(100);
+    }
+  }
+  return false;
 }
 
 async function checkCharger(page, url) {
@@ -2317,7 +2416,7 @@ async function checkCharger(page, url) {
   const turns = () => run(async () => (await import('./js/state.js')).state.run.turnCount);
 
   if (!await bumpCharger(page, 0, path.join(os.tmpdir(), 'noesis-charger-room.png'))) return 'no charger in the start room with a free tile beside it';
-  if (!await panel.isVisible()) return 'bumping the charger at 0 energy did not open CHARGE.SYS';
+  if (!await panel.waitFor({ state: 'visible', timeout: 1000 }).then(() => true, () => bumpUntil(page, lastBump(page), () => panel.isVisible()))) return 'bumping the charger at 0 energy did not open CHARGE.SYS';
   const box = await panel.boundingBox();
   const wrap = await page.locator('#mapWrap').boundingBox();
   if (!box || !wrap || box.x < wrap.x - 1 || box.x + box.width > wrap.x + wrap.width + 1) return 'CHARGE.SYS does not fit the map on a phone';
@@ -2341,9 +2440,7 @@ async function checkCharger(page, url) {
   await page.keyboard.press('Escape');
   await page.waitForTimeout(150);
   if (await panel.isVisible()) return 'Escape did not close CHARGE.SYS';
-  await page.keyboard.press(lastBump);
-  await page.waitForTimeout(250);
-  if (!await panel.isVisible()) return 'a second bump did not open CHARGE.SYS';
+  if (!await bumpUntil(page, lastBump(page), () => panel.isVisible())) return 'a second bump did not open CHARGE.SYS';
   const kept = await run(async () => (await import('./js/state.js')).state.floor.props.find(p => p.kind === 'charger').puzzle.wires.join());
   if (kept !== left) return 'the wires were not kept as they were left';
 
@@ -2359,14 +2456,22 @@ async function checkCharger(page, url) {
   }
   const energy = await run(async () => (await import('./js/state.js')).state.run.energy);
   if (energy !== 4) return `solving the wires left energy at ${energy}`;
-  await page.waitForTimeout(1200);
+  await panel.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {});
   if (await panel.isVisible()) return 'CHARGE.SYS did not close after charging';
 
-  await page.keyboard.press(lastBump);
-  await page.waitForTimeout(250);
+  // Full means the light's battery too (chargerHasMore): it drains while
+  // on, so it is topped up for this bump, or a moment's wait makes the
+  // charger open again, rightly.
+  await run(async () => {
+    const { state } = await import('./js/state.js');
+    const { LIGHT_BATTERY_MAX } = await import('./js/config.js');
+    state.floor.light.charge = LIGHT_BATTERY_MAX;
+  });
+  await page.keyboard.press(lastBump(page));
+  const said = await page.waitForFunction(() => /nothing to give/i.test(document.getElementById('roomFeedback').innerText), null, { timeout: 2000 })
+    .then(() => true, () => false);
   if (await panel.isVisible()) return 'bumping the charger at full energy opened CHARGE.SYS';
-  const full = await page.locator('#roomFeedback').innerText();
-  if (!/nothing to give/i.test(full)) return `no "nothing to give" line at full energy (log: ${full})`;
+  if (!said) return `no "nothing to give" line at full energy (log: ${await page.locator('#roomFeedback').innerText()})`;
 
   await bumpCharger(page, 0);
   if (!await panel.isVisible()) return 'CHARGE.SYS did not open the third time';
@@ -2653,20 +2758,36 @@ async function main() {
       const only = (process.env.SMOKE_ONLY || '').split(',').map(w => w.trim()).filter(Boolean);
       const repeat = Math.max(1, Number(process.env.SMOKE_REPEAT) || 1);
       const chosen = RUNS.filter(([name]) => !only.length || only.some(w => name.includes(w)));
-      const results = [];
-      for (const [name, run, address] of chosen) {
-        for (let i = 0; i < repeat; i++) results.push([repeat > 1 ? `${name} #${i + 1}` : name, await guarded(run, browser, address)]);
-      }
+      // SMOKE_JOBS=4 (the default) runs that many at once, each in its own
+      // browser context; SMOKE_JOBS=1 runs them one after another. The
+      // report keeps the runs' order either way.
+      const jobs = Math.max(1, Number(process.env.SMOKE_JOBS) || 4);
+      const queue = chosen.flatMap(([name, run, address]) =>
+        Array.from({ length: repeat }, (_, i) => [repeat > 1 ? `${name} #${i + 1}` : name, run, address]));
+      const results = new Array(queue.length);
+      let next = 0;
+      const worker = async () => {
+        while (next < queue.length) {
+          const i = next++;
+          const [name, run, address] = queue[i];
+          const started = Date.now();
+          const result = await guarded(run, browser, address);
+          results[i] = [name, { ...result, secs: (Date.now() - started) / 1000 }];
+        }
+      };
+      const started = Date.now();
+      await Promise.all(Array.from({ length: Math.min(jobs, queue.length) }, worker));
+      console.log(`${queue.length} runs, ${jobs} at a time, in ${((Date.now() - started) / 1000).toFixed(1)} s`);
 
       await browser.close();
 
       let failed = false;
       for (const [name, result] of results) {
         if (result.ok) {
-          console.log(`PASS (${name}): ${result.detail}`);
+          console.log(`PASS (${name}, ${result.secs.toFixed(1)} s): ${result.detail}`);
         } else {
           failed = true;
-          console.error(`FAIL (${name}): ${result.reason}`);
+          console.error(`FAIL (${name}, ${result.secs.toFixed(1)} s): ${result.reason}`);
           if (result.consoleErrors.length) console.error(`  console errors: ${JSON.stringify(result.consoleErrors)}`);
           if (result.pageErrors.length) console.error(`  page errors: ${JSON.stringify(result.pageErrors)}`);
         }
