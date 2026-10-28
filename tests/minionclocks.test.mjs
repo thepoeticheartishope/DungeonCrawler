@@ -9,68 +9,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { freshLight } from '../js/battery.js';
+import { emptyFloor, gunRun } from './helpers.mjs';
 import { state } from '../js/state.js';
 import { MAX_HEARTS, MINION_KINDS, ONE_STICK } from '../js/config.js';
-import { computeVisibility } from '../js/sight.js';
 import { spawnMinion, clockFrame } from '../js/combat.js';
-import { resetHaunts } from '../js/haunts.js';
 
 const FRAME = 10;
 
 // An open floor, player in the middle facing north, the gun on, One stick
 // on, energy left (so a landed reach strikes, no Struggle).
 function resetFloor(size = 21) {
-  const f = state.floor;
-  f.GRID_SIZE = size;
-  f.playerRow = Math.floor(size / 2);
-  f.playerCol = Math.floor(size / 2);
-  f.playerAt = null;
-  f.facing = 'N';
-  f.look = null;
-  f.lookWant = null;
-  f.darkness = false;
-  f.darkTurns = 0;
-  f.light = freshLight();
-  f.wallSet = new Set();
-  f.pillarSet = new Set();
-  f.bossLitSet = new Set();
-  f.exploredSet = new Set();
-  f.heldChambers = new Set();
-  f.chamberAt = new Map();
-  f.visitedChambers = new Set();
-  f.boss = null;
-  f.hunter = null;
-  f.minions = [];
-  f.crawling = [];
-  f.vents = [];
-  f.keys = [];
-  f.chest = null;
-  f.exchange = null;
-  f.tutorial = null;
-  f.props = [];
-  f.gunTarget = null;
-  f.struggles = 0;
-  state.settings.oneStick = true;
-  state.settings.freeLook = false;
-  state.settings.eightWays = true;
-  state.settings.fogEnabled = true;
-  state.settings.gunCombat = true;
-  state.settings.downed = true;
-  state.settings.noise = true;
-  state.settings.simpleEnemies = false;
-  state.run.roomIndex = 0;
-  state.run.turnCount = 0;
-  state.run.hearts = MAX_HEARTS;
-  state.run.energy = 1;
-  state.run.rounds = [null];
-  state.run.weakTo = {};
-  state.run.weakKnown = new Set();
-  state.battle.selectedTarget = null;
-  state.battle.aim = null;
-  state.battle.struggle = null;
-  resetHaunts();
-  computeVisibility();
+  emptyFloor(size, {
+    settings: { oneStick: true, freeLook: false, eightWays: true, fogEnabled: true, gunCombat: true, downed: true, noise: true, simpleEnemies: false },
+    run: gunRun(1),
+  });
 }
 
 // A stick man `dr`, `dc` tiles from the player that always comes for them.

@@ -10,6 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { FOUR_STEPS } from '../js/grid.js';
 import { state, key } from '../js/state.js';
 import { CORE_KEYS, FURNITURE_PIECES } from '../js/config.js';
 import { FLOOR_PLANS, PLAN_VERSIONS, buildPlanLayout } from '../js/plans.js';
@@ -17,7 +18,6 @@ import { furnishFloor } from '../js/decor.js';
 import { whatBlocks } from '../js/passage.js';
 import { TEXT } from '../js/text.js';
 
-const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const school = FLOOR_PLANS.school;
 
 // The School laid out in version `v` and furnished.
@@ -56,7 +56,7 @@ test('the floor stays whole round the furniture: the start reaches every other o
     const queue = [layout.start];
     while (queue.length) {
       const cur = queue.shift();
-      DIRS.forEach(([dr, dc]) => {
+      FOUR_STEPS.forEach(([dr, dc]) => {
         const r = cur.row + dr, c = cur.col + dc, k = key(r, c);
         if (r < 0 || c < 0 || r >= size || c >= size || solid.has(k) || seen.has(k)) return;
         seen.add(k);

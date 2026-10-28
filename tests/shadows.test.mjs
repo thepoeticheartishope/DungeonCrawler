@@ -9,7 +9,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { state, key } from '../js/state.js';
+import { state, key, parseKey } from '../js/state.js';
 import { CORE_KEYS, SHADOW } from '../js/config.js';
 import { FLOOR_PLANS, buildPlanLayout } from '../js/plans.js';
 import { placeLamps } from '../js/lamps.js';
@@ -71,7 +71,7 @@ test('no shadow from a lamp too far, behind a wall, right overhead or out', () =
 test('a window throws a shadow, down its pool, for a stick man standing in it', () => {
   school();
   const f = state.floor;
-  const [row, col] = [...f.windowLitSet][0].split(',').map(Number);
+  const { row, col } = parseKey([...f.windowLitSet][0]);
   const shadows = shadowsAt({ row, col });
   assert.ok(shadows.length >= 1);
   shadows.forEach(s => assert.ok(s.dir[0] > 0, 'away from the back wall'));

@@ -10,7 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { freshLight } from '../js/battery.js';
+import { emptyFloor, gunRun, minionAt, withRandom } from './helpers.mjs';
 import { state, key } from '../js/state.js';
 import {
   ENERGY_MAX, RELOAD_ENERGY, MATCH_KILL_SCALE, MINION_KINDS, DIAL_DEPTHS, DIAL_ZONE_GAP, DIAL_LAP_MS, DIAL_LAP_LIMIT_MS,
@@ -19,8 +19,7 @@ import {
   STRUGGLE_ZONE_WIDTH, STRUGGLE_LAP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_WIDTH,
 } from '../js/config.js';
 import { computeVisibility, seesEnemy } from '../js/sight.js';
-import { spawnMinion, advanceMonsters, findAdjacentEnemies } from '../js/combat.js';
-import { resetHaunts } from '../js/haunts.js';
+import { advanceMonsters, findAdjacentEnemies } from '../js/combat.js';
 import { stepPlayer } from '../js/moves.js';
 import { whatBlocks } from '../js/passage.js';
 import { buildFloor } from '../js/floor.js';
@@ -48,58 +47,12 @@ const SET = [
 
 // An open floor, player in the middle facing north, a full-ish run.
 function resetFloor(size = 21) {
-  state.floor.GRID_SIZE = size;
-  state.run.roomIndex = 0;
-  state.floor.playerRow = Math.floor(size / 2);
-  state.floor.playerCol = Math.floor(size / 2);
-  state.floor.facing = 'N';
-  state.floor.look = null;
-  state.settings.freeLook = false;
-  state.settings.fogEnabled = true;
-  state.settings.activeData = SET;
-  state.settings.gunCombat = false;
-  state.settings.downed = false; // downed.test.mjs checks stick men going down
-  state.floor.darkness = false;
-  state.floor.light = freshLight();
-  state.floor.wallSet = new Set();
-  state.floor.pillarSet = new Set();
-  state.floor.bossLitSet = new Set();
-  state.floor.exploredSet = new Set();
-  state.floor.boss = null;
-  state.floor.hunter = null;
-  state.floor.minions = [];
-  state.floor.chest = null;
-  state.floor.props = [];
-  state.run.coinsTotal = 0;
-  state.run.correctTotal = 0;
-  state.run.hearts = MAX_HEARTS;
-  state.run.energy = 1;
-  state.run.rounds = [null];
-  state.run.weakTo = {};
-  state.run.weakKnown = new Set();
-  state.run.reloadIndex = 0;
-  state.battle.selectedTarget = null;
-  state.floor.gunTarget = null;
-  state.battle.aim = null;
-  state.battle.struggle = null;
-  state.floor.struggles = 0;
-  state.battle.currentQuestion = SET[0];
-  resetHaunts();
-  computeVisibility();
-}
-
-// A minion `dr`, `dc` tiles from the player, with the light recomputed.
-function minionAt(dr, dc, kind = 'SHARD') {
-  const m = spawnMinion({ row: state.floor.playerRow + dr, col: state.floor.playerCol + dc }, kind);
-  computeVisibility();
-  return m;
-}
-
-// Runs `fn` with Math.random always returning `value`.
-function withRandom(value, fn) {
-  const real = Math.random;
-  Math.random = () => value;
-  try { return fn(); } finally { Math.random = real; }
+  emptyFloor(size, {
+    // downed.test.mjs checks stick men going down
+    settings: { freeLook: false, fogEnabled: true, activeData: SET, gunCombat: false, downed: false },
+    run: { ...gunRun(1), reloadIndex: 0 },
+    battle: { currentQuestion: SET[0] },
+  });
 }
 
 // --- reload ---

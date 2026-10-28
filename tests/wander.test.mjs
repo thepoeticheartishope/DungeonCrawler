@@ -7,10 +7,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { emptyFloor, twoRooms } from './helpers.mjs';
 import { state, key } from '../js/state.js';
 import { MINION_LINGER_TURNS } from '../js/config.js';
 import { advanceMonsters, spawnMinion } from '../js/combat.js';
-import { freshLight, toggleLight } from '../js/battery.js';
+import { toggleLight } from '../js/battery.js';
 import { computeVisibility } from '../js/sight.js';
 
 // A 21x21 floor: room 0 on the left (cols 1-6), room 1 on the right
@@ -18,41 +19,12 @@ import { computeVisibility } from '../js/sight.js';
 // everywhere else. The player stands far down room 0, light off, so no
 // stick man notices them.
 function resetFloor() {
-  const f = state.floor;
-  f.GRID_SIZE = 21;
-  state.run.roomIndex = 0;
-  state.run.resting = false;
-  state.run.hearts = 3;
-  state.run.turnCount = 0;
-  state.settings.freeLook = true;
-  state.settings.fogEnabled = true;
-  state.settings.gunCombat = false;
-  state.settings.eightWays = true;
-  state.settings.lightBattery = true;
-  state.settings.simpleEnemies = false;
-  state.settings.gaze = true;
-  f.darkness = false;
-  f.darkTurns = 0;
-  f.light = freshLight();
-  f.wallSet = new Set();
-  f.pillarSet = new Set();
-  f.bossLitSet = new Set();
-  f.exploredSet = new Set();
-  f.boss = null;
-  f.hunter = null;
-  f.minions = [];
-  f.props = [];
-  f.heldChambers = new Set();
-  f.chamberAt = new Map();
-  for (let r = 0; r < 21; r++) for (let c = 0; c < 21; c++) {
-    const room = r >= 1 && r <= 19 && c >= 1 && c <= 6 ? 0 : r >= 1 && r <= 19 && c >= 14 && c <= 19 ? 1 : null;
-    if (room !== null) f.chamberAt.set(key(r, c), room);
-    else if (!(r === 10 && c > 6 && c < 14)) f.wallSet.add(key(r, c));
-  }
-  f.playerRow = 19;
-  f.playerCol = 1;
-  f.facing = 'N';
-  f.look = 0;
+  emptyFloor(21, {
+    settings: { freeLook: true, fogEnabled: true, gunCombat: false, eightWays: true, lightBattery: true, simpleEnemies: false, gaze: true },
+    see: false,
+  });
+  twoRooms();
+  state.floor.look = 0;
   toggleLight();
   computeVisibility();
 }

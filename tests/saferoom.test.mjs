@@ -8,7 +8,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { state, key } from '../js/state.js';
+import { FOUR_STEPS } from '../js/grid.js';
+import { state, key, parseKey } from '../js/state.js';
 import { MC_SAMPLE_DATA, SAFE_ROOM } from '../js/config.js';
 import { buildFloor, buildRestFloor, buildTutorialFloor } from '../js/floor.js';
 import { FLOOR_RECIPES } from '../js/floors.js';
@@ -39,20 +40,18 @@ function build(depth = 0) {
   return state.floor;
 }
 
-const parse = (k) => { const [row, col] = k.split(',').map(Number); return { row, col }; };
-const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 // A doorway of the safe room, the hall tile outside it, and the room tile
 // farthest from it that nothing stands on, with the floor's own stick men
 // cleared away and the player put on that far tile.
 function atTheDoor(f) {
-  const door = parse(f.safeRoom.doors[0]);
-  const [dr, dc] = DIRS.find(([r, c]) => {
+  const door = parseKey(f.safeRoom.doors[0]);
+  const [dr, dc] = FOUR_STEPS.find(([r, c]) => {
     const k = key(door.row + r, door.col + c);
     return !f.wallSet.has(k) && !f.safeRoom.cells.has(k);
   });
   const outside = { row: door.row + dr, col: door.col + dc };
-  const far = [...f.safeRoom.cells].map(parse)
+  const far = [...f.safeRoom.cells].map(parseKey)
     .filter(p => !f.safeRoom.doors.includes(key(p.row, p.col)))
     .filter(p => !tileOccupied(p.row, p.col) || (p.row === f.playerRow && p.col === f.playerCol))
     .sort((a, b) => Math.hypot(b.row - door.row, b.col - door.col) - Math.hypot(a.row - door.row, a.col - door.col))[0];
@@ -84,7 +83,7 @@ test('every depth gets a shutter on each doorway of the start room and a switch 
       assert.deepEqual(shutters.map(p => key(p.row, p.col)).sort(), [...sr.doors].sort());
       assert.ok(shutters.every(p => p.up), 'they start up');
       // A doorway leads out: open floor outside the room beside it.
-      sr.doors.map(parse).forEach(d => assert.ok(DIRS.some(([dr, dc]) => {
+      sr.doors.map(parseKey).forEach(d => assert.ok(FOUR_STEPS.some(([dr, dc]) => {
         const k = key(d.row + dr, d.col + dc);
         return !f.wallSet.has(k) && !sr.cells.has(k);
       })));
@@ -92,7 +91,7 @@ test('every depth gets a shutter on each doorway of the start room and a switch 
       assert.equal(sw.length, 1);
       assert.ok(sr.cells.has(key(sw[0].row, sw[0].col)), 'the switch is inside');
       assert.ok(!sr.doors.includes(key(sw[0].row, sw[0].col)), 'never in a doorway');
-      assert.ok(DIRS.some(([dr, dc]) => f.wallSet.has(key(sw[0].row + dr, sw[0].col + dc))), 'on a wall');
+      assert.ok(FOUR_STEPS.some(([dr, dc]) => f.wallSet.has(key(sw[0].row + dr, sw[0].col + dc))), 'on a wall');
       if (FLOOR_RECIPES[depth].plan === 'observatory') assert.equal(sr.doors.length, 2, 'the lobby has two doorways');
     }
   });

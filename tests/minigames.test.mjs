@@ -14,6 +14,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { withRandom } from './helpers.mjs';
 import { freshLight } from '../js/battery.js';
 import { state } from '../js/state.js';
 import {
@@ -57,13 +58,6 @@ function reset() {
   state.battle.wager = 0;
   state.battle.currentQuestion = NUMBER;
   resetHaunts();
-}
-
-// Runs `fn` with Math.random always returning `value`.
-function withRandom(value, fn) {
-  const real = Math.random;
-  Math.random = () => value;
-  try { return fn(); } finally { Math.random = real; }
 }
 
 test('every minigame supports at least two modifiers, but Sum Lock (a box carries none)', () => {

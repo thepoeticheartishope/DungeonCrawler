@@ -14,7 +14,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { state, key } from '../js/state.js';
+import { emptyFloor, withRandom } from './helpers.mjs';
+import { state, key, parseKey } from '../js/state.js';
 import { LIGHT_BATTERY_MAX, PLAYER_LIGHT_RADIUS, MINION_TRACK_TURNS, GAZE_MS, DIAL_DEPTHS, DIAL_LAP_MS, DIAL_LAP_LIMIT_MS, DARK_SWEEP_SCALE, LOW_BATTERY_CHARGE } from '../js/config.js';
 import { tickGaze } from '../js/gaze.js';
 import { fire, fireBlock, readyShot, settleShot, darkShotPath } from '../js/gun.js';
@@ -27,34 +28,10 @@ import { advanceMonsters, spawnMinion, lockOn } from '../js/combat.js';
 state.settings.oneStick = false;
 
 function resetFloor(size = 21) {
-  state.floor.GRID_SIZE = size;
-  state.run.roomIndex = 0;
-  state.run.resting = false;
-  state.run.hearts = 3;
-  state.floor.playerRow = Math.floor(size / 2);
-  state.floor.playerCol = Math.floor(size / 2);
-  state.floor.facing = 'N';
-  state.floor.look = 0;
-  state.settings.freeLook = true;
-  state.settings.fogEnabled = true;
-  state.settings.gunCombat = false;
-  state.settings.eightWays = true;
-  state.settings.lightBattery = true;
-  state.settings.simpleEnemies = false;
-  state.settings.gaze = true;
-  state.floor.darkness = false;
-  state.floor.darkTurns = 0;
-  state.floor.light = freshLight();
-  state.floor.wallSet = new Set();
-  state.floor.pillarSet = new Set();
-  state.floor.bossLitSet = new Set();
-  state.floor.exploredSet = new Set();
-  state.floor.boss = null;
-  state.floor.hunter = null;
-  state.floor.minions = [];
-  state.floor.props = [];
-  state.floor.heldChambers = new Set();
-  computeVisibility();
+  emptyFloor(size, {
+    settings: { freeLook: true, fogEnabled: true, gunCombat: false, eightWays: true, lightBattery: true, simpleEnemies: false, gaze: true },
+    floor: { look: 0 },
+  });
 }
 
 const types = events => events.map(e => e.type);
@@ -117,8 +94,8 @@ test('with the light off only the small circle is lit, and nothing in the cone c
   assert.ok(state.floor.sightSet.has(key(ahead.row, ahead.col)));
   toggleLight();
   computeVisibility();
-  const far = [...state.floor.sightSet].map(k => k.split(',').map(Number))
-    .filter(([r, c]) => Math.max(Math.abs(r - state.floor.playerRow), Math.abs(c - state.floor.playerCol)) > PLAYER_LIGHT_RADIUS);
+  const far = [...state.floor.sightSet].map(parseKey)
+    .filter(({ row, col }) => Math.max(Math.abs(row - state.floor.playerRow), Math.abs(col - state.floor.playerCol)) > PLAYER_LIGHT_RADIUS);
   assert.deepEqual(far, []);
   assert.ok(state.floor.sightSet.has(key(state.floor.playerRow - 1, state.floor.playerCol)));
   assert.ok(!inLookCone(ahead.row, ahead.col));
@@ -263,13 +240,6 @@ function darkWithGun(energy = 2) {
   state.battle.aim = null;
   toggleLight();
   computeVisibility();
-}
-
-// Runs `fn` with Math.random fixed at `value`.
-function withRandom(value, fn) {
-  const real = Math.random;
-  Math.random = () => value;
-  try { return fn(); } finally { Math.random = real; }
 }
 
 test('a dark shot goes along the aim to the first stick man in the way, and stops at a wall', () => {

@@ -11,11 +11,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { freshLight } from '../js/battery.js';
+import { emptyFloor } from './helpers.mjs';
 import { state, key } from '../js/state.js';
-import { MAX_HEARTS, ONE_STICK } from '../js/config.js';
+import { ONE_STICK } from '../js/config.js';
 import { computeVisibility } from '../js/sight.js';
-import { resetHaunts } from '../js/haunts.js';
 import { walkFree, freeSpot, resetWalk, switchSneak } from '../js/walk.js';
 import { lookAngle, BODY_ANGLES } from '../js/look.js';
 import { inLookCone } from '../js/sight.js';
@@ -24,45 +23,11 @@ const FRAME = 16;
 
 // An open floor, player in the middle facing north, One stick on.
 function resetFloor(size = 21) {
-  const f = state.floor;
-  f.GRID_SIZE = size;
-  f.playerRow = Math.floor(size / 2);
-  f.playerCol = Math.floor(size / 2);
-  f.playerAt = null;
-  f.facing = 'N';
-  f.look = BODY_ANGLES.N;
-  f.lookWant = null;
-  f.sneaking = false;
-  f.creeping = false;
-  f.darkness = false;
-  f.light = freshLight();
-  f.wallSet = new Set();
-  f.pillarSet = new Set();
-  f.bossLitSet = new Set();
-  f.exploredSet = new Set();
-  f.chamberAt = new Map();
-  f.visitedChambers = new Set();
-  f.boss = null;
-  f.hunter = null;
-  f.minions = [];
-  f.crawling = [];
-  f.vents = [];
-  f.keys = [];
-  f.coin = null;
-  f.stairs = null;
-  f.stairsAlt = null;
-  f.chest = null;
-  f.exchange = null;
-  f.tutorial = null;
-  f.props = [];
-  state.settings.oneStick = true;
-  state.settings.freeLook = false;
-  state.settings.eightWays = true;
-  state.settings.fogEnabled = true;
-  state.run.hearts = MAX_HEARTS;
-  state.run.coinsTotal = 0;
-  state.run.loreQueue = [];
-  resetHaunts();
+  emptyFloor(size, {
+    settings: { oneStick: true, freeLook: false, eightWays: true, fogEnabled: true },
+    floor: { look: BODY_ANGLES.N },
+    see: false,
+  });
   resetWalk();
   computeVisibility();
 }

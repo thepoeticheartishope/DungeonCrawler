@@ -10,7 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { freshLight } from '../js/battery.js';
+import { emptyFloor } from './helpers.mjs';
 import { state, key } from '../js/state.js';
 import {
   PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE,
@@ -26,7 +26,7 @@ import { advanceMonsters, spawnMinion, refreshTargetValidity } from '../js/comba
 import { stepPlayer, goldReward } from '../js/moves.js';
 import { settleAnswer } from '../js/answers.js';
 import { resetHaunts } from '../js/haunts.js';
-import { reachGate, openGateFree } from '../js/gate.js';
+import { openGateFree } from '../js/gate.js';
 import { rollCategoryModifiers } from '../js/modifiers.js';
 
 // These are the turn game's rules (the start screen's Turns option): One
@@ -37,45 +37,10 @@ state.settings.oneStick = false;
 // nothing else on it. Classic combat (the gun is the game's default since
 // gun plan step 9; its rules are tested in gun.test.mjs).
 function resetFloor(size = 21) {
-  state.floor.GRID_SIZE = size;
-  state.run.roomIndex = 0;
-  state.run.resting = false;
-  state.floor.playerRow = Math.floor(size / 2);
-  state.floor.playerCol = Math.floor(size / 2);
-  state.floor.facing = 'N';
-  state.floor.look = null;
-  state.settings.freeLook = false;
-  state.settings.fogEnabled = true;
-  state.settings.gunCombat = false;
-  state.settings.turnBeforeStep = false;
-  state.settings.eightWays = true;
-  state.floor.darkness = false;
-  state.floor.light = freshLight();
-  state.floor.wallSet = new Set();
-  state.floor.pillarSet = new Set();
-  state.floor.bossLitSet = new Set();
-  state.floor.visibleSet = new Set();
-  state.floor.sightSet = new Set();
-  state.floor.exploredSet = new Set();
-  state.floor.boss = null;
-  state.floor.hunter = null;
-  state.floor.minions = [];
-  state.floor.chest = null;
-  state.floor.props = [];
-  state.floor.coin = null;
-  state.floor.keys = [];
-  state.floor.keysHeld = 0;
-  state.floor.gateSealed = false;
-  state.floor.stairs = null;
-  state.run.coinsTotal = 0;
-  state.run.loreQueue = [];
-  state.floor.chamberAt = new Map();
-  state.floor.chamberThemes = [];
-  state.floor.chamberNames = [];
-  state.floor.visitedChambers = new Set();
-  state.battle.selectedTarget = null;
-  state.run.turnCount = 0;
-  state.floor.darkTurns = 0;
+  emptyFloor(size, {
+    settings: { freeLook: false, fogEnabled: true, gunCombat: false, turnBeforeStep: false, eightWays: true },
+    see: false,
+  });
 }
 
 // A tile relative to the player.
