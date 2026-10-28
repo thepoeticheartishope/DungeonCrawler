@@ -6,7 +6,7 @@ import { requestMapDraw, mapDrawTimes } from './mapview.js';
 import { renderHud } from './render.js';
 import { MINIGAMES } from './minigames.js';
 import { STICK_POSE_IDS, TENDRIL_STYLES } from './stickforms.js';
-import { followBody, lookAngle, bodyAngle } from './look.js';
+import { lookAngle, bodyAngle } from './look.js';
 import { computeVisibility } from './sight.js';
 import { refreshGunTarget } from './gun.js';
 import { refreshBook } from './bookview.js';
@@ -18,7 +18,6 @@ const devPanel = document.getElementById('devPanel');
 const devSkipBtn = document.getElementById('devSkipBtn');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
-const devFreeLookBtn = document.getElementById('devFreeLookBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
 const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
 const devGazeBtn = document.getElementById('devGazeBtn');
@@ -115,20 +114,6 @@ export function initDevPanel({
   devFogBtn.addEventListener('click', () => {
     state.settings.fogEnabled = !state.settings.fogEnabled;
     devFogBtn.textContent = state.settings.fogEnabled ? 'Fog: ON (dev)' : 'Fog: OFF (dev)';
-    requestMapDraw();
-  });
-
-  // Dev tool (free look plan): the light points where the player aims,
-  // within the free arc, or only where the body faces. Off, the aim goes
-  // back with the body, so the light is straight ahead again.
-  devFreeLookBtn.addEventListener('click', () => {
-    state.settings.freeLook = !state.settings.freeLook;
-    devFreeLookBtn.textContent = state.settings.freeLook ? 'Free look: ON (dev)' : 'Free look: OFF (dev)';
-    devFreeLookBtn.setAttribute('aria-pressed', String(state.settings.freeLook));
-    if (state.floor.playerRow === undefined) return;
-    followBody();
-    computeVisibility();
-    if (state.settings.gunCombat) refreshGunTarget();
     requestMapDraw();
   });
 

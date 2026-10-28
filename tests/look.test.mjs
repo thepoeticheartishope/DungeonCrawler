@@ -26,7 +26,7 @@ state.settings.oneStick = false;
 // on, nothing else on it.
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { freeLook: true, fogEnabled: true, gunCombat: false },
+    settings: { fogEnabled: true, gunCombat: false },
     floor: { look: 0 },
   });
 }
@@ -56,15 +56,6 @@ test('aiming costs no turn and moves the cone', () => {
   assert.equal(state.run.turnCount, turns);
 });
 
-test('free look off: the light stays where the body faces', () => {
-  resetFloor();
-  state.settings.freeLook = false;
-  aimLook(25 * DEG);
-  assert.equal(lookAngle(), 0);
-  assert.ok(!wantsTurn());
-  assert.deepEqual(turnBody(), []);
-});
-
 test('turnBody picks the way closest to the aim', () => {
   resetFloor();
   assert.deepEqual(turnBody(), [], 'no turn wanted, no turn');
@@ -88,15 +79,6 @@ test('walking points the light straight ahead again', () => {
   assert.ok(!wantsTurn());
 });
 
-test('free look off: walking a new way points the light straight ahead', () => {
-  resetFloor();
-  state.settings.freeLook = false;
-  stepPlayer(0, 1);
-  assert.equal(lookAngle(), BODY_ANGLES.E);
-  state.settings.freeLook = true;
-  assert.equal(lookAngle(), BODY_ANGLES.E, 'turning it on later doesn\'t jump');
-});
-
 test('a bump that turns the body is a spent turn; a bump straight ahead is free', () => {
   resetFloor();
   state.floor.wallSet.add(key(state.floor.playerRow, state.floor.playerCol + 1));
@@ -106,8 +88,6 @@ test('a bump that turns the body is a spent turn; a bump straight ahead is free'
   assert.equal(turned.at(-1).bumped, true);
   const ahead = stepPlayer(0, 1);
   assert.deepEqual(ahead.map(e => e.type), ['blocked'], 'already facing it: free');
-  state.settings.freeLook = false;
-  assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['turned', 'blocked'], 'free look off: free, as before');
 });
 
 test('looking straight along a way, the cone lights exactly the old diamond', () => {

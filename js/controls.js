@@ -64,11 +64,11 @@ export function tapMap(tile, pointerType, point) {
   if (note.text) showRoomNote(note.cls, note.text);
 }
 
-// Whether the player can aim right now: free look on, the room screen up
-// with no panel over it, and no turn in progress. Aiming is free, so the
+// Whether the player can aim right now: the room screen up with no panel
+// over it, and no turn in progress. Aiming is free, so the
 // real-time clock doesn't matter.
 function lookReady() {
-  return state.settings.freeLook && roomScreen.classList.contains('show') && !mapPanelShown() &&
+  return roomScreen.classList.contains('show') && !mapPanelShown() &&
     !state.run.turnLocked && !state.run.runEnded;
 }
 

@@ -38,7 +38,7 @@ state.settings.oneStick = false;
 // gun plan step 9; its rules are tested in gun.test.mjs).
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { freeLook: false, fogEnabled: true, gunCombat: false },
+    settings: { fogEnabled: true, gunCombat: false },
     see: false,
   });
 }
@@ -419,9 +419,9 @@ test('by default a press in a new direction turns and steps at once', () => {
   assert.deepEqual(stepPlayer(1, 0).map(e => e.type), ['turned', 'stepped']);
   assert.equal(state.floor.facing, 'S');
   assert.deepEqual([state.floor.playerRow, state.floor.playerCol], [r + 1, c]);
-  // Toward a wall it turns and bumps in the same press.
+  // Toward a wall it turns and bumps in the same press; the turn is spent.
   state.floor.wallSet.add(key(r + 1, c + 1));
-  assert.deepEqual(stepPlayer(0, 1).map(e => e.type), ['turned', 'blocked']);
+  assert.deepEqual(stepPlayer(0, 1).map(e => e.type), ['turned', 'blocked', 'bodyTurned']);
   assert.equal(state.floor.facing, 'E');
 });
 
@@ -749,7 +749,7 @@ test('a cut corner is a bump: no step, "corner"', () => {
   const r = state.floor.playerRow, c = state.floor.playerCol;
   state.floor.wallSet.add(key(r - 1, c));
   const events = stepPlayer(-1, 1);
-  assert.deepEqual(events.map(e => e.type), ['turned', 'blocked']);
+  assert.deepEqual(events.map(e => e.type), ['turned', 'blocked', 'bodyTurned']);
   assert.equal(events[1].kind, 'corner');
   assert.deepEqual([state.floor.playerRow, state.floor.playerCol], [r, c]);
 });
