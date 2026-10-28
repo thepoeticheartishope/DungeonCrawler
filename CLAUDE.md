@@ -131,8 +131,9 @@ Drawing and page code:
 
 | File | Job |
 |---|---|
-| `main.js` | Everything else: wiring, `drawEvents()`, turn and frame flow, room log, end screens (~2,050 lines). |
+| `main.js` | Everything else: wiring, `drawEvents()`, turn and frame flow, room log, end screens (~1,650 lines). |
 | `battlescreen.js` | The battle screen: encounter log, category choices, a turn of questions, settling answers. |
+| `gunactions.js` | The gun's actions: SELECT / fire, steady aim, the dial, reloads, relays, dressing a question. |
 | `render.js` | Screens, the HUD (`renderHud()` only writer of hearts / gold / turns), edge glow, d-pad hints. |
 | `mapview.js` | The map canvas, its animations and taps; `requestMapDraw()`, `glyphOf()`, `mapThings()`. |
 | `roomview.js` | The room view, the only map view: camera, walls and floors, light map, stick men, shadows (~1,000 lines). |
@@ -173,7 +174,7 @@ Drawing and page code:
   counts in turns: the boss's light, the hunter, the ducts.
 - **Turns (start screen option):** `movePlayer()` → `stepPlayer()` → events →
   `applyTurnOutcome(events)` → `advanceMonsters()` → `drawEvents()`.
-- **Fights:** SELECT → `pressSelect()` → `fireGun()` → `fire()` → dial or steady aim →
+- **Fights:** SELECT → gunactions.js `pressSelect()` → `fireGun()` → `fire()` → dial or steady aim →
   `settleShot()`. Energy cells and relays ask on the ask screen; the boss and the chest use the
   battle screen → `settleAnswer()`.
 - The clock pauses for the ask screen, a dial, the Struggle, the battle screen, THE UNFOLDING,
