@@ -9,7 +9,7 @@
 // No DOM access here.
 
 import { state, key, parseKey } from './state.js';
-import { FOUR_STEPS } from './grid.js';
+import { FOUR_STEPS, stepsFrom } from './grid.js';
 import { MINION_MIN_START_DISTANCE } from './config.js';
 import { rollProp } from './decor.js';
 import { solidProp } from './passage.js';
@@ -36,48 +36,20 @@ function solidTiles() {
   return solid;
 }
 
-// Open neighbours of a tile, inside the grid and not solid.
-function openNeighbours(p, solid) {
-  const size = state.floor.GRID_SIZE;
-  return FOUR_STEPS
-    .map(([dr, dc]) => ({ row: p.row + dr, col: p.col + dc }))
-    .filter(q => q.row >= 0 && q.row < size && q.col >= 0 && q.col < size && !solid.has(key(q.row, q.col)));
-}
-
-// Walkable steps from `from` to every tile it reaches. The boss's tile is
-// reached but never walked through: it guards the only door into its room,
-// so nothing behind it counts.
-function stepsFrom(from, solid) {
-  const f = state.floor;
-  const bossKey = key(f.boss.row, f.boss.col);
-  const steps = new Map([[key(from.row, from.col), 0]]);
-  const queue = [from];
-  while (queue.length) {
-    const cur = queue.shift();
-    const curKey = key(cur.row, cur.col);
-    if (curKey === bossKey && steps.get(curKey) > 0) continue;
-    openNeighbours(cur, solid).forEach(q => {
-      const k = key(q.row, q.col);
-      if (steps.has(k)) return;
-      steps.set(k, steps.get(curKey) + 1);
-      queue.push(q);
-    });
-  }
-  return steps;
-}
-
 // Where along the walk from the start to its end (the farthest key, or
 // the boss on a floor with none) each tile lies. `at` is how far along,
 // in steps of the shortest walk: a tile's steps from the start, as a
 // share of its steps from the start plus its steps on to the end. On the walk itself that is exactly the step it's on; a side room
 // counts as far along as it is on the way. `off` is how far the player
 // strays from the walk to reach it (half the detour: there and back).
-// Only tiles the player can reach before the boss count.
+// Only tiles the player can reach before the boss count: the boss's tile
+// is reached but never walked through, as it guards the only door into
+// its room.
 function progressAlong(solid) {
   const f = state.floor;
-  const fromStart = stepsFrom(f.PLAYER_START, solid);
+  const fromStart = stepsFrom(f.PLAYER_START, solid, key(f.boss.row, f.boss.col));
   const end = walkEnd(fromStart);
-  const toEnd = stepsFrom(end, solid);
+  const toEnd = stepsFrom(end, solid, key(f.boss.row, f.boss.col));
   const walk = fromStart.get(key(end.row, end.col));
   const progress = new Map();
   if (!walk) return { walk: 0, progress };

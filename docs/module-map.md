@@ -10,7 +10,7 @@ Rules and data (no page/DOM access):
 |---|---|
 | `config.js` | Tunable constants and sample data. Never changes at runtime. |
 | `state.js` | The one shared `state` object, plus `key(r, c)` and its reverse `parseKey(k)` (→ `{ row, col }`). Grouped by lifetime: `state.settings` (start screen / DEV panel), `state.run` (one run), `state.floor` (rebuilt each floor), `state.battle` (the current fight). |
-| `grid.js` | `FOUR_STEPS` (the four ways, in the order every four-way search uses) and `EIGHT_STEPS` (with the diagonals, as noise.js and vents.js spread). One copy instead of the eleven tables the rules used to carry. |
+| `grid.js` | `FOUR_STEPS` (the four ways, in the order every four-way search uses) and `EIGHT_STEPS` (with the diagonals, as noise.js and vents.js spread). One copy instead of the eleven tables the rules used to carry. `stepsFrom(from, blocked, stopAt)`: walkable four-way steps to every tile reached (a Map), `stopAt` reached but not walked through; light.js (the light's budget and spread), floor.js (minions away from the start) and beats.js (how far along the walk) all use it. sight.js's light and combat.js `bfsPath` (8 ways, returns the path) are their own walks. |
 | `random.js` | `shuffle(list)` (a shuffled copy) and `randInt(lo, hi)` (both ends included), shared by every rule that rolls; moved here from quiz.js, dungeon.js, decor.js and introview.js. |
 | `text.js` | All wording. `t()`, per-floor overrides, `data-t` labels. |
 | `rooms.js` | Hand-drawn room templates (`#` wall, `.` floor, `?` prop, `+` inner door). |
