@@ -5,7 +5,7 @@
 // one of them, then drawFloor() puts the result on the page.
 
 import { state, key, parseKey } from './state.js';
-import { FOUR_STEPS } from './grid.js';
+import { stepsFrom } from './grid.js';
 import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { FLOOR_PLANS, buildPlanLayout } from './plans.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
@@ -54,21 +54,7 @@ function stepsFromStart() {
   state.floor.pillarSet.forEach(k => blocked.add(k));
   state.floor.props.forEach(p => { if (solidProp(p)) blocked.add(key(p.row, p.col)); });
   blocked.add(key(state.floor.boss.row, state.floor.boss.col));
-  const dist = new Map([[key(state.floor.PLAYER_START.row, state.floor.PLAYER_START.col), 0]]);
-  const queue = [state.floor.PLAYER_START];
-  while (queue.length) {
-    const cur = queue.shift();
-    const d = dist.get(key(cur.row, cur.col));
-    for (const [dr, dc] of FOUR_STEPS) {
-      const nr = cur.row + dr, nc = cur.col + dc;
-      if (nr < 0 || nr >= state.floor.GRID_SIZE || nc < 0 || nc >= state.floor.GRID_SIZE) continue;
-      const k = key(nr, nc);
-      if (dist.has(k) || blocked.has(k)) continue;
-      dist.set(k, d + 1);
-      queue.push({ row: nr, col: nc });
-    }
-  }
-  return dist;
+  return stepsFrom(state.floor.PLAYER_START, blocked);
 }
 
 // The rest of the floor's minions (`count` of the recipe's, after any the

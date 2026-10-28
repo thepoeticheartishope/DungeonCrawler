@@ -6,28 +6,9 @@
 // it's full.
 
 import { state, key } from './state.js';
-import { FOUR_STEPS } from './grid.js';
+import { stepsFrom } from './grid.js';
 import { LIGHT_TURNS_PER_STEP, ONE_STICK, REALTIME_STEP_MS } from './config.js';
 import { floorRecipe } from './floors.js';
-
-// Walkable steps from (row, col) to every reachable floor tile, walls only.
-function stepsFrom(row, col) {
-  const dist = new Map([[key(row, col), 0]]);
-  const queue = [{ row, col }];
-  while (queue.length) {
-    const cur = queue.shift();
-    const d = dist.get(key(cur.row, cur.col));
-    for (const [dr, dc] of FOUR_STEPS) {
-      const nr = cur.row + dr, nc = cur.col + dc;
-      if (nr < 0 || nr >= state.floor.GRID_SIZE || nc < 0 || nc >= state.floor.GRID_SIZE) continue;
-      const k = key(nr, nc);
-      if (dist.has(k) || state.floor.wallSet.has(k)) continue;
-      dist.set(k, d + 1);
-      queue.push({ row: nr, col: nc });
-    }
-  }
-  return dist;
-}
 
 // Called once per room, after the layout, boss, keys and player start are
 // set. Works out how many turns the player gets before the light consumes
@@ -44,7 +25,7 @@ function stepsFrom(row, col) {
 // (state.run.bonusSlack) are added on top and spent here, so they only
 // help the next depth.
 export function initBossLight() {
-  state.floor.bossDist = stepsFrom(state.floor.boss.row, state.floor.boss.col);
+  state.floor.bossDist = stepsFrom(state.floor.boss, state.floor.wallSet);
   state.floor.floorCount = state.floor.bossDist.size;
   state.floor.keyRoute = keyRoute();
   const walk = lightTurnsFor(state.floor.keyRoute);
@@ -79,7 +60,7 @@ function keyRoute() {
   const here = key(f.playerRow, f.playerCol);
   const stops = f.keySpots.length ? f.keySpots : f.keys;
   if (!stops.length) return f.bossDist.get(here) || 0;
-  const fromStop = stops.map(p => stepsFrom(p.row, p.col));
+  const fromStop = stops.map(p => stepsFrom(p, state.floor.wallSet));
   const steps = (dist, p) => dist.get(key(p.row, p.col)) || 0;
   const n = stops.length;
   const all = (1 << n) - 1;
