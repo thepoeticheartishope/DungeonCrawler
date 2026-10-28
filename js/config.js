@@ -449,7 +449,10 @@ export const DOWNED_SLOWDOWN = 2;
 // shakeFloor; at dropAtMs it drops back to `dropTo`. The world never stops
 // for it, and the player stands still while aiming (Timothy's calls,
 // 2026-10-28: the aim climbs with time, stand still, a wild early miss,
-// no change by depth). A kind in `kindSlow` steadies that much slower on
+// no change by depth). While it steadies the light narrows to a beam
+// (step B, Timothy's call): the cone's half-angle runs from LOOK_CONE_HALF
+// to `beamHalf` and its slack from LOOK_CONE_SLACK to `beamSlack` with the
+// aim, and the beam stays on the stick man. A kind in `kindSlow` steadies that much slower on
 // it: the STALKER weaves. `on` is the start setting, off until step C
 // (DEV -> Steady aim, or ?aim=steady / ?aim=dial); One stick only.
 export const STEADY_AIM = {
@@ -464,6 +467,8 @@ export const STEADY_AIM = {
   lowBattery: 0.75,
   dark: 0.55,
   kindSlow: { STALKER: 0.8 },
+  beamHalf: Math.PI / 16,
+  beamSlack: 0.1,
 };
 // How much of a crawl (MAP_ANIMATION_MS.crawl) the leading hand takes to
 // reach and plant before the body starts to drag (mapview.js holds the

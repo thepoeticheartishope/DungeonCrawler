@@ -6,7 +6,7 @@
 import { state, key } from './state.js';
 import { windowLightHere } from './windows.js';
 import {
-  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, LOOK_CONE_HALF, LOOK_CONE_SLACK, LAMP_LIGHT,
+  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, LOOK_CONE_HALF, LOOK_CONE_SLACK, LAMP_LIGHT, STEADY_AIM,
 } from './config.js';
 import { lookAngle, angleTo, wrapAngle } from './look.js';
 import { lightOn } from './battery.js';
@@ -33,6 +33,7 @@ export function facingOf(dRow, dCol) {
 // ragged; looking straight along a way it lights exactly the old diamond
 // (tests/look.test.mjs checks). Walls are the caller's job. The player's
 // own tile always passes. With the light off (battery.js) there is no cone.
+// While a shot steadies it narrows to a beam (coneShape).
 export function inLookCone(row, col) {
   const dr = row - state.floor.playerRow;
   const dc = col - state.floor.playerCol;
@@ -40,7 +41,21 @@ export function inLookCone(row, col) {
   if (dist === 0) return true;
   if (!lightOn()) return false;
   const off = Math.abs(wrapAngle(angleTo(row, col) - lookAngle()));
-  return off <= LOOK_CONE_HALF + Math.atan2(LOOK_CONE_SLACK, dist);
+  const { half, slack } = coneShape();
+  return off <= half + Math.atan2(slack, dist);
+}
+
+// How wide the cone opens: LOOK_CONE_HALF each side with LOOK_CONE_SLACK,
+// narrowing toward a beam (STEADY_AIM.beamHalf, beamSlack) as a shot
+// steadies (steady aim plan step B, Timothy 2026-10-28). Aiming costs the
+// player what is to either side.
+function coneShape() {
+  const aim = state.battle.aim;
+  const s = aim && aim.phase === 'steady' ? aim.steady : 0;
+  return {
+    half: LOOK_CONE_HALF + (STEADY_AIM.beamHalf - LOOK_CONE_HALF) * s,
+    slack: LOOK_CONE_SLACK + (STEADY_AIM.beamSlack - LOOK_CONE_SLACK) * s,
+  };
 }
 
 // The player's own light: every open tile within PLAYER_LIGHT_RADIUS steps,
