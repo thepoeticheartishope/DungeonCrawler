@@ -1,4 +1,4 @@
-// Unit tests for saferoom.js (safe room plan steps A and B): where the shutters
+// Unit tests for saferoom.js (safe room plan steps A to C): where the shutters
 // and switch go, up = open floor and down = solid, stick men kept out,
 // stopping at an open door, giving up at a shut one, the hunter lifting
 // it, a reach broken at the doorway, static, the lamp, and no energy cells.
@@ -12,7 +12,7 @@ import { state, key } from '../js/state.js';
 import { MC_SAMPLE_DATA, SAFE_ROOM } from '../js/config.js';
 import { buildFloor, buildRestFloor, buildTutorialFloor } from '../js/floor.js';
 import { FLOOR_RECIPES } from '../js/floors.js';
-import { pullShutter, inSafeRoom } from '../js/saferoom.js';
+import { pullShutter, inSafeRoom, shutterLine } from '../js/saferoom.js';
 import { whatBlocks } from '../js/passage.js';
 import { advanceMonsters, clockFrame, spawnMinion, tileOccupied, blockedTilesFor, bfsPath } from '../js/combat.js';
 import { keptOut } from '../js/relays.js';
@@ -22,7 +22,7 @@ import { staticLevel } from '../js/static.js';
 import { breakGate } from '../js/gate.js';
 import { freshLight, tickLight } from '../js/battery.js';
 
-SAFE_ROOM.on = true;
+state.settings.safeRoom = true;
 const DEPTHS = FLOOR_RECIPES.map((_, i) => i);
 const turns = (ms) => Math.round(ms / SAFE_ROOM.turnMs);
 
@@ -278,14 +278,14 @@ test('the lamp goes out when the boss falls', () => {
   assert.ok(events.some(e => e.type === 'lampWentOut'));
 });
 
-test('with SAFE_ROOM off a floor has no safe room', () => {
-  SAFE_ROOM.on = false;
+test('with DEV -> Safe room off a floor has no safe room', () => {
+  state.settings.safeRoom = false;
   try {
     const f = build(0);
     assert.equal(f.safeRoom, null);
     assert.ok(!f.props.some(p => p.kind === 'shutter' || p.kind === 'switch'));
   } finally {
-    SAFE_ROOM.on = true;
+    state.settings.safeRoom = true;
   }
 });
 
@@ -357,4 +357,21 @@ test('the lamp lights the whole room for the player inside it', () => {
   f.safeRoom.lamp = false;
   computeVisibility();
   assert.ok(![...f.safeRoom.cells].every(k => f.visibleSet.has(k)), 'with the lamp out and no light it is dark');
+});
+
+// ---- step C: the kind voice ----
+
+test('the kind voice says the shutter line once a run, in the room with the switch made out', () => {
+  const f = build(0);
+  state.run.shutterTold = false;
+  const sw = f.props.find(p => p.kind === 'switch');
+  sw.identified = false;
+  assert.deepEqual(shutterLine(), [], 'not before the switch is made out');
+  sw.identified = true;
+  assert.deepEqual(shutterLine([{ type: 'whispered', line: 'tut.charger', tone: 'kind' }]), [], 'not over the charger\'s line');
+  f.safeRoom.playerIn = false;
+  assert.deepEqual(shutterLine(), [], 'not from outside the room');
+  f.safeRoom.playerIn = true;
+  assert.deepEqual(shutterLine(), [{ type: 'whispered', line: 'tut.shutter', tone: 'kind' }]);
+  assert.deepEqual(shutterLine(), [], 'only once a run');
 });

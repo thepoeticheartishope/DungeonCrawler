@@ -9,7 +9,7 @@ import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { FLOOR_PLANS, buildPlanLayout } from './plans.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
 import {
-  CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES, SAFE_ROOM
+  CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
 } from './config.js';
 import { floorRecipe, pickPaths, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './quiz.js';
@@ -205,7 +205,7 @@ export function buildFloor() {
   // The safe room (saferoom.js): a shutter on each of the start room's
   // doorways and the switch inside, before anything else can take their
   // tiles. Nothing goes down on a doorway, so it can always shut.
-  const safe = SAFE_ROOM.on ? placeSafeRoom(layout, placer, fixedTiles) : null;
+  const safe = state.settings.safeRoom ? placeSafeRoom(layout, placer, fixedTiles) : null;
   if (safe) {
     state.floor.safeRoom = safe.safeRoom;
     safe.props.forEach(p => {

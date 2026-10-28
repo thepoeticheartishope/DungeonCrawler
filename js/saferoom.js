@@ -117,6 +117,21 @@ export function lampLightHere() {
   return lampLit(f.playerRow, f.playerCol) ? new Set(f.safeRoom.cells) : new Set();
 }
 
+// The kind voice's line the first time in a run the player stands in the
+// safe room with its switch made out (sight.js marks it `identified`), so
+// they learn the room can be shut (Timothy's rule: every new mechanic gets
+// a tutorial beat). Once a run, and not on a turn the voice already speaks
+// (`turn`'s events), so the charger's line isn't talked over.
+// Returns whispered { line: 'tut.shutter', tone: 'kind' }, or nothing.
+export function shutterLine(turn = []) {
+  const f = state.floor;
+  if (state.run.shutterTold || !f.safeRoom || !f.safeRoom.playerIn) return [];
+  if (turn.some(e => e.type === 'whispered')) return [];
+  if (!f.props.some(p => p.kind === 'switch' && p.identified)) return [];
+  state.run.shutterTold = true;
+  return [{ type: 'whispered', line: 'tut.shutter', tone: 'kind' }];
+}
+
 // The player has come onto a new tile (moves.js enterTile). Crossing into
 // the safe room breaks every reach in progress, as a landed shot does:
 // making it to the doorway is the answer to being jumped. With the lamp on

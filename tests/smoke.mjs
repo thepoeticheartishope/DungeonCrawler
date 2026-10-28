@@ -118,7 +118,8 @@
 //      stepping onto it breaks the reach. It stops at the open frame, the
 //      player pulls the switch ("You pull the shutter down."), it waits
 //      ("It waits at the shutter."), gives up ("It's gone.") and never gets
-//      in; a bump on the switch rolls the shutter up again. Saved as
+//      in; the kind voice says "Pull the shutter. They won't follow you
+//      in." (step C); a bump on the switch rolls the shutter up again. Saved as
 //      noesis-safe-room*.png.
 //
 // Every run plays the room view, the game's only map view since room view
@@ -1067,12 +1068,12 @@ async function checkLightBattery(page, url) {
   if (await batteryShown(page) !== 'LIGHT #### ON') return `V when charged left ${await batteryShown(page)}`;
 
   // Down to the first depth, where the stick men notice the light: a few
-  // turns with it on and off (any page error fails the run). Without the
-  // safe room: the player would start in it, where the lamp switches their
+  // turns with it on and off (any page error fails the run). DEV -> Safe
+  // room off: the player would start in it, where the lamp switches their
   // light off and it doesn't charge; these are the rules outside it.
-  await page.evaluate(async () => { (await import('./js/config.js')).SAFE_ROOM.on = false; });
   await page.click('#devToggleBtn');
   await page.waitForSelector('#devPanel.show', { timeout: 5000 });
+  await page.click('#devSafeRoomBtn');
   await page.click('#devSkipBtn');
   await page.click('#devToggleBtn');
   await roomIdle(page);
@@ -2313,7 +2314,7 @@ async function runSafeRoom(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'a reach broke at the doorway, the SHARD stopped at the open frame, the switch dropped the shutter, it waited, gave up and never got in, and the switch rolled it up', consoleErrors, pageErrors };
+  return { ok: true, detail: 'a reach broke at the doorway, the SHARD stopped at the open frame, the kind voice said to pull the shutter, the switch dropped it, it waited, gave up and never got in, and the switch rolled it up', consoleErrors, pageErrors };
 }
 
 async function checkSafeRoom(page, url) {
@@ -2398,10 +2399,13 @@ async function checkSafeRoom(page, url) {
   await page.waitForTimeout(900);
   await page.locator('#mapWrap').screenshot({ path: path.join(os.tmpdir(), 'noesis-safe-room-shut.png') });
 
-  let waited = false, gone = false;
+  let waited = false, gone = false, voice = '';
+  const heard = async () => { voice += ' ' + await page.locator('#senseNote').innerText().catch(() => ''); };
+  await heard();
   for (let i = 0; i < 12 && !gone; i++) {
     await page.keyboard.press('.');
     await page.waitForTimeout(150);
+    await heard();
     const text = await log();
     waited = waited || /waits at the shutter/i.test(text);
     gone = /gone/i.test(text);
@@ -2414,6 +2418,9 @@ async function checkSafeRoom(page, url) {
   }
   if (!waited) return 'no "It waits at the shutter."';
   if (!gone) return 'the SHARD never gave up ("It\'s gone.")';
+  // In the room with the switch made out, the kind voice says so once a run.
+  const told = await run(async () => (await import('./js/state.js')).state.run.shutterTold);
+  if (!told || !/pull the shutter/i.test(voice)) return `no "Pull the shutter. They won't follow you in." in the room (said: ${voice.trim()})`;
 
   await page.keyboard.press(KEYS[toSwitch]);
   await page.waitForTimeout(300);
