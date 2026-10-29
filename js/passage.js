@@ -50,7 +50,9 @@ export function whatBlocks(row, col) {
   if (state.floor.wallSet.has(k)) return { kind: 'wall' };
   if (state.floor.pillarSet.has(k)) return { kind: 'pillar' };
   const tut = state.floor.tutorial;
-  if (tut && tut.stage !== 'open' && at(tut.door)) return { kind: 'door' };
+  if (tut && tut.stage !== 'open' && (at(tut.door) || at(tut.advancedDoor))) return { kind: 'door' };
+  const station = state.floor.advanced;
+  if (station && !station.open && at(station.door)) return { kind: 'door' };
   // The tutorial's ring of dark holds the player where they stand.
   if (tut && tut.stage === 'ring' && !at({ row: state.floor.playerRow, col: state.floor.playerCol })) return { kind: 'dark' };
   if (at(state.floor.boss)) return { kind: 'boss' };

@@ -1,5 +1,6 @@
 import { state, key } from './state.js';
-import { buildFloor, buildRestFloor, buildTutorialFloor, buildTestFloor } from './floor.js';
+import { buildFloor, buildRestFloor, buildTutorialFloor, buildTestFloor, buildAdvancedFloor } from './floor.js';
+import { advancedTurn, lastStation, ADVANCED_STATIONS } from './advanced.js';
 import { tutorialTurn, breakRing } from './tutorial.js';
 import { nextFloor } from './run.js';
 import {
@@ -22,7 +23,7 @@ import { pickQuestion, escapeHtml, normalizeSpaces, buildChoices } from './quiz.
 import { shuffle } from './random.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
-  formatTime, startTimer, stopTimer, renderClock, showSensed, showWhisper,
+  formatTime, startTimer, stopTimer, renderClock, showSensed, showWhisper, hideWhisper,
   showAnswerLine, fadeAnswerLine
 } from './render.js';
 import {
@@ -226,21 +227,26 @@ const STUCK_HINTS = { dark: 'tut.hint.move', name: 'tut.hint.barrel', ring: 'tut
 let watchedStage = null;
 let stuckTimer = null;
 
-// Starts the stuck clock when the tutorial's stage changes (`restart`:
+// Starts the stuck clock when the tutorial's stage, or the advanced
+// tutorial's station or its door, changes (`restart`:
 // start it again on the same stage, as when the intro ends). Called after
 // every drawEvents and floor load.
 function watchTutorial(restart = false) {
   const tut = state.floor.tutorial;
-  const stage = tut ? tut.stage : null;
+  const station = state.floor.advanced;
+  const stage = tut ? tut.stage : station ? 'adv.' + station.index + (station.open ? '.open' : '') : null;
   if (stage === watchedStage && !restart) return;
   watchedStage = stage;
   clearTimeout(stuckTimer);
-  const plain = STUCK_HINTS[stage];
+  // An advanced tutorial station's hint, while its mechanic isn't done.
+  const plain = station ? (station.open ? null : ADVANCED_STATIONS[station.index].hint) : STUCK_HINTS[stage];
   const hint = plain && state.settings.oneStick && TEXT[plain + '.stick'] ? plain + '.stick' : plain;
   if (!hint || (stage === 'ring' && !batteryInPlay())) return;
   stuckTimer = setTimeout(() => {
     const now = state.floor.tutorial;
-    if (now && now.stage === stage && !state.run.runEnded) showRoomNote('move-msg', t(hint));
+    const still = state.floor.advanced;
+    const same = now ? now.stage === stage : still ? 'adv.' + still.index + (still.open ? '.open' : '') === stage : false;
+    if (same && !state.run.runEnded) showRoomNote('move-msg', t(hint));
   }, TUTORIAL_STUCK_MS);
 }
 
@@ -342,13 +348,16 @@ function startGame() {
 
 // A new floor: make the new floor's data, then put it on the page.
 // `restKind` ('opening' / 'between' / 'epilogue') builds a rest floor,
-// 'tutorial' the tutorial room, 'test' the DEV test room `testRoom`
-// (testroom.js); none builds the danger floor at the current depth.
-function loadRoom(restKind, testRoom) {
-  if (restKind === 'test') buildTestFloor(testRoom);
+// 'tutorial' the tutorial room, 'test' the DEV test room `which`
+// (testroom.js), 'advanced' the advanced tutorial's station `which`
+// (advanced.js); none builds the danger floor at the current depth.
+function loadRoom(restKind, which) {
+  if (restKind === 'test') buildTestFloor(which);
+  else if (restKind === 'advanced') buildAdvancedFloor(which);
   else if (restKind === 'tutorial') buildTutorialFloor();
   else if (restKind) buildRestFloor(restKind);
   else buildFloor();
+  hideWhisper();
   drawFloor();
   watchTutorial();
   startTally();
@@ -380,8 +389,9 @@ function drawFloor() {
   roomFeedback.innerHTML = '';
   // The room the player wakes in announces itself like any other; on a
   // fixed plan, after the building's name.
-  // The tutorial room has no name or theme line: its whispers speak instead.
-  const startChamber = state.floor.tutorial ? undefined : state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
+  // The tutorial room and the advanced tutorial's stations have no name or
+  // theme line: their whispers and station names speak instead.
+  const startChamber = state.floor.tutorial || state.floor.advanced ? undefined : state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
   const startName = state.floor.chamberNames[startChamber];
   if (startName) {
     showRoomNote('move-msg', t('room.enter.plan', { floor: t(state.floor.plan.name), name: t(startName) }));
@@ -402,6 +412,7 @@ function drawFloor() {
 // run.js decides what comes next: a depth, a rest floor, or the win.
 function advanceRoom() {
   if (state.floor.tutorial) { leaveTutorial(); return; }
+  if (state.floor.advanced) { leaveStation(); return; }
   // A test room has no way on: DEV -> Skip room starts the run proper.
   if (state.floor.testRoom) {
     resetRun();
@@ -420,15 +431,36 @@ function restartTestRoom() {
   startGame();
 }
 
-// Out through the tutorial room's door (or DEV -> Skip room): the
+// Out through one of the tutorial room's doors (or DEV -> Skip room): the
 // tutorial is done, so its toggle goes off and is saved (setloader.js
 // listens), and the run starts fresh on the opening rest, with
-// TUTORIAL_EXIT_ENERGY.
-function leaveTutorial() {
+// TUTORIAL_EXIT_ENERGY; or, through the right-hand door (`advanced`), the
+// advanced tutorial's first station comes first (advanced.js).
+function leaveTutorial(advanced = false) {
   tutorialToggle.checked = false;
   tutorialToggle.dispatchEvent(new Event('change'));
   resetRun(TUTORIAL_EXIT_ENERGY);
-  loadRoom('opening');
+  loadRoom(advanced ? 'advanced' : 'opening', 0);
+  if (advanced) showStationName();
+}
+
+// Out through an advanced tutorial station's door (or DEV -> Skip room):
+// the next station, or after the last, the run, fresh, as from the
+// tutorial.
+function leaveStation() {
+  const index = state.floor.advanced.index;
+  if (lastStation(index)) {
+    resetRun(TUTORIAL_EXIT_ENERGY);
+    loadRoom('opening');
+    return;
+  }
+  loadRoom('advanced', index + 1);
+  showStationName();
+}
+
+// Each station says which mechanic it shows as the player comes in.
+function showStationName() {
+  showRoomNote('move-msg', t('adv.station.' + state.floor.advanced.name));
 }
 
 // Going down the stairs, once the player says so (SELECT or Enter while
@@ -524,6 +556,7 @@ function applyTurnOutcome(events, worldMoves = !realTimeOn()) {
   if (bookReading() && turn.some(e => CHARGER_BREAKERS.has(e.type))) closeBook();
   // The tutorial room moves on (tutorial.js) after any spent turn.
   turn.push(...tutorialTurn(turn));
+  turn.push(...advancedTurn(turn));
   turn.push(...chargerLine());
   turn.push(...shutterLine(turn));
   turn.push(...refreshGunTarget());
@@ -679,6 +712,7 @@ function drawEvents(events) {
       // The tutorial room (tutorial.js).
       case 'nameAsked':
       case 'tutorialLeft':
+      case 'stationLeft':
       case 'spotLit':
       case 'barrelAppeared':
       case 'ringBroken':
@@ -700,7 +734,7 @@ function drawEvents(events) {
         parts.push(t('tut.key.dropped'));
         break;
       case 'doorUnlocked':
-        parts.push(t('tut.door.open'));
+        parts.push(t(e.advanced ? 'adv.door.open' : 'tut.door.open'));
         break;
       case 'relayHeld':
         parts.push(t(e.turns ? 'room.relay.held' : 'room.relay.heldDark', { turns: e.turns }));
@@ -1216,7 +1250,7 @@ function skipTurn() {
 
 initBattleScreen({ drawEvents, askQuestion, dressQuestion, endLose, loseToLight, setControlsEnabled });
 initControls({
-  applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveTutorial, openCharger,
+  applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger,
   openExchange, realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame,
 });
 

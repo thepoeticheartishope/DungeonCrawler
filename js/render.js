@@ -49,6 +49,17 @@ export function showWhisper(text, tone = 'dread', ms = SENSE_NOTE_MS) {
   senseFadeTimer = setTimeout(() => els.senseNote.classList.remove('show'), ms);
 }
 
+// Takes a whisper off the map at once (a new floor: a line from the last
+// one, an advanced tutorial station's say, doesn't carry over).
+export function hideWhisper() {
+  clearTimeout(senseFadeTimer);
+  // No fade: it goes with the floor it was said on.
+  els.senseNote.style.transition = 'none';
+  els.senseNote.classList.remove('show', 'slow');
+  void els.senseNote.offsetWidth;
+  els.senseNote.style.transition = '';
+}
+
 // When the answer line is taken off the map after its fade (view-only
 // timing, so a module var, not state).
 let answerHideTimer = null;

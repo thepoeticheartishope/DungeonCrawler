@@ -9,6 +9,9 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 - Changed a file listed in `service-worker.js` `APP_SHELL`? Bump `CACHE_NAME` in the same commit.
 - Added a core mechanic (a new way to move, see, fight, answer or get out)? Give the tutorial room
   (`tutorial.js`) a beat for it: the tutorial shows the game's central mechanics (Timothy).
+  The tutorial stays simple (Timothy 2026-10-29): a mechanic Timothy tags as one the player needs,
+  but not central, gets a station in the optional advanced tutorial (`advanced.js`
+  `ADVANCED_STATIONS`) instead. Ask him which when it isn't clear.
   New JS file? Add it to `APP_SHELL` too.
 - All player-facing wording lives in `js/text.js` (`t(key, vars)`). Never write wording inline.
 - Tunables live in `js/config.js`. Game state lives in `js/state.js`.
@@ -94,6 +97,7 @@ Rules and data (no page/DOM access):
 | `beats.js` | `placeBeats()`: the recipe's beats along the walk to the farthest key. |
 | `run.js` | `nextFloor()`: the run's shape, rests between depths. |
 | `tutorial.js` | The tutorial room and its stages; the kind voice's lines for each core mechanic. |
+| `advanced.js` | The optional advanced tutorial: a chain of small stations, one per mechanic the player needs. |
 | `testroom.js` | DEV test rooms: one hand-drawn room per mechanic, a stick man on a set route (start screen's DEV "Start in"). |
 | `passage.js` | `whatBlocks()` (can I step here?), `canPassCorner()`, `stepsAway()`. |
 | `sight.js` | The player's light (`computeVisibility`), the look cone, `canMakeOut`, `shootBlock`, cover. |

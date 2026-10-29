@@ -2,7 +2,8 @@
 // beats (beats.js), coin, the one special item and minions, plus the
 // light, sight and camera that follow from them; and a rest floor's one
 // quiet room (buildRestFloor), the tutorial room and a DEV test room
-// (buildTestFloor). No page access — main.js loadRoom() calls
+// (buildTestFloor), and the advanced tutorial's stations
+// (buildAdvancedFloor). No page access — main.js loadRoom() calls
 // one of them, then drawFloor() puts the result on the page.
 
 import { state, key, parseKey } from './state.js';
@@ -34,6 +35,7 @@ import { placeSafeRoom, inSafeRoom } from './saferoom.js';
 import { solidProp } from './passage.js';
 import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
 import { parseTestRoom } from './testroom.js';
+import { parseStation, freshStation, beginStation } from './advanced.js';
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
 function pickCoinTile(walls, avoidList, allowedTiles) {
@@ -118,6 +120,7 @@ export function buildFloor() {
   state.floor.stairsAlt = null;
   state.floor.tutorial = null;
   state.floor.testRoom = null;
+  state.floor.advanced = null;
   state.floor.spotSet = new Set();
   const recipe = floorRecipe(state.run.roomIndex, state.floor.path);
   const plan = recipe.plan ? FLOOR_PLANS[recipe.plan] : null;
@@ -330,6 +333,7 @@ function clearDanger() {
   f.lampPoolSet = new Set();
   f.tutorial = null;
   f.testRoom = null;
+  f.advanced = null;
   f.bossDist = new Map();
   f.floorCount = 0;
   f.lightTurns = 0;
@@ -456,8 +460,7 @@ export function buildRestFloor(kind) {
 }
 
 // The tutorial room as data (tutorial.js): the hand-drawn room, never
-// generated, with its pillars, empty boxes and furniture (its stall and
-// bookcase are plain until the hide stage), the locked door at the top
+// generated, with its pillars and empty boxes, the two locked doors at the top
 // and no stairs. Nothing dangerous yet: the stick man comes only once the
 // barrel's question is answered. The player wakes in the dark facing the
 // door, and their light won't come on. No page access.
@@ -484,15 +487,16 @@ export function buildTutorialFloor() {
   const themeKeys = Object.keys(ROOM_THEMES);
   const theme = themeKeys[Math.floor(Math.random() * themeKeys.length)];
   f.pillarSet = new Set(room.pillars.map(p => key(p.row, p.col)));
-  f.chamberAt = new Map([...room.roomTiles, key(room.door.row, room.door.col)].map(k => [k, 0]));
-  f.doorSet = new Set([key(room.door.row, room.door.col)]);
+  const doors = [room.door, room.advancedDoor].map(d => key(d.row, d.col));
+  f.chamberAt = new Map([...room.roomTiles, ...doors].map(k => [k, 0]));
+  f.doorSet = new Set(doors);
   f.chamberThemes = [theme];
   f.chamberNames = [];
   f.visitedChambers = new Set([0]);
   f.props = room.boxes.map(b => ({
     row: b.row, col: b.col, kind: 'box', theme, loot: 'junk', gold: 0, trapped: false,
     identified: false, searched: true, sprung: false,
-  })).concat(room.props);
+  }));
   f.stairs = null;
   f.exchange = null;
   f.exchangeBought = new Set();
@@ -554,5 +558,52 @@ export function buildTestFloor(name) {
   // the light) and a test starts with the layout in view.
   f.exploredSet = new Set(room.roomTiles);
   computeVisibility();
+  state.battle.selectedTarget = null;
+}
+
+// Station `index` of the advanced tutorial as data (advanced.js): its
+// hand-drawn room with its furniture down and its spots live, its door
+// shut, a grate if it has one, then the station set going (beginStation:
+// the book, its stick man). Already remembered, so its furniture shows.
+// The light is the run's usual one. No page access.
+export function buildAdvancedFloor(index) {
+  const room = parseStation(index);
+  const f = state.floor;
+  clearDanger();
+  f.light = freshLight();
+  f.advanced = freshStation(index, room);
+  f.GRID_SIZE = room.size;
+  f.CHAMBER_TARGET = 1;
+  f.plan = null;
+  f.wallSet = room.walls;
+  f.PLAYER_START = { row: room.start.row, col: room.start.col };
+  f.playerRow = f.PLAYER_START.row;
+  f.playerCol = f.PLAYER_START.col;
+  f.playerAt = null;
+  f.lookWant = null;
+  f.sneaking = false;
+  f.creeping = false;
+  f.facing = 'N';
+  f.look = BODY_ANGLES[f.facing];
+
+  const themeKeys = Object.keys(ROOM_THEMES);
+  const door = key(room.door.row, room.door.col);
+  f.pillarSet = new Set();
+  f.chamberAt = new Map([...room.roomTiles, door].map(k => [k, 0]));
+  f.doorSet = new Set([door]);
+  f.chamberThemes = [themeKeys[0]];
+  f.chamberNames = [];
+  f.visitedChambers = new Set([0]);
+  f.props = room.props;
+  f.roomSpots = room.spots;
+  f.stairs = null;
+  f.exchange = null;
+  f.exchangeBought = new Set();
+  f.coin = null;
+  f.vents = room.grate ? [{ row: room.grate.row, col: room.grate.col, pair: 0, known: false }] : [];
+
+  f.visibleSet = new Set();
+  f.exploredSet = new Set(room.roomTiles);
+  beginStation();
   state.battle.selectedTarget = null;
 }

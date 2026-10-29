@@ -4,11 +4,9 @@
 // locked door, the light from above falls after a few turns, walking to
 // it brings the barrel, any non-blank name is right and closes the ring
 // of dark, which only the light switched on breaks, bringing a slow
-// stick man that always hunts, killing it leaves a key, and taking the
-// key brings the hide and push stages: the stall and the bookcase come
-// alive, a second stick man the empty book can't stop paces under the
-// bookcase once the player hides, and pushed onto it, the door opens and
-// is the way out.
+// stick man that always hunts, killing it leaves a key, and the key
+// opens both doors: the left is the way out into the run, the right into
+// the advanced tutorial.
 //
 // Run: node --test tests/*.test.mjs
 
@@ -72,7 +70,7 @@ test('in Comfort mode the light is always on, so the ring can break with no swit
   assert.equal(state.floor.tutorial.stage, 'fight');
 });
 
-test('it wakes in the dark, the light will not come on, and the door is locked', () => {
+test('it wakes in the dark, the light will not come on, and both doors are locked', () => {
   resetRun();
   const f = state.floor;
   assert.equal(f.tutorial.stage, 'dark');
@@ -80,6 +78,7 @@ test('it wakes in the dark, the light will not come on, and the door is locked',
   assert.equal(toggleLight(), 'locked');
   assert.deepEqual(tickLight(), [], 'a steady light never charges');
   assert.deepEqual(whatBlocks(f.tutorial.door.row, f.tutorial.door.col), { kind: 'door' });
+  assert.deepEqual(whatBlocks(f.tutorial.advancedDoor.row, f.tutorial.advancedDoor.col), { kind: 'door' });
   assert.equal(f.minions.length, 0);
   assert.equal(f.stairs, null);
 });
@@ -226,9 +225,7 @@ test('in the fight the light stays on (no dark shot there); after it, it switche
   assert.equal(toggleLight(), 'off');
 });
 
-// From a fresh tutorial to the key taken (the stick man gone at 3,3, the
-// key picked up from below). Returns the key turn's events.
-function takeKey() {
+test('the stick man gone leaves a key; taking it opens both doors: the left into the run, the right into the advanced tutorial', () => {
   resetRun();
   passTurns(TUTORIAL_SPOT_TURNS);
   walkToSpot();
@@ -246,125 +243,21 @@ function takeKey() {
   const dropped = tutorialTurn([]);
   assert.deepEqual(dropped, [{ type: 'keyDropped', row: 3, col: 3 }]);
   assert.deepEqual(f.keys, [{ row: 3, col: 3 }]);
+
   f.playerRow = 4; f.playerCol = 3; f.facing = 'N';
   const took = stepPlayer(-1, 0);
   assert.ok(took.some(e => e.type === 'keyTaken'));
-  return took;
-}
-
-// The tutorial's stall and bookcase spots.
-function tutorialSpots() {
-  const spots = state.floor.tutorial.spots;
-  return { stall: spots.find(s => s.kind === 'hide'), shelf: spots.find(s => s.kind === 'takedown') };
-}
-
-// Turns of the stick men and the tutorial together, as main.js runs them.
-// Returns every event.
-function fullTurns(n) {
-  const events = [];
-  for (let i = 0; i < n; i++) {
-    const turn = advanceMonsters();
-    events.push(...turn, ...tutorialTurn(turn));
-  }
-  return events;
-}
-
-// From the key to hidden in the stall: the second stick man out of the
-// grate, the player bumped into the stall from below.
-function hideInStall() {
-  tutorialTurn(takeKey());
-  const { stall } = tutorialSpots();
-  const f = state.floor;
-  f.playerRow = stall.row + 1; f.playerCol = stall.col; f.facing = 'N';
-  const hid = stepPlayer(-1, 0);
-  assert.ok(hid.some(e => e.type === 'hid'));
-  return hid;
-}
-
-test('before the key the stall and the bookcase are only furniture', () => {
-  resetRun();
-  const { stall, shelf } = tutorialSpots();
-  assert.equal(state.floor.roomSpots.length, 0);
-  assert.equal(stall.tiles.length, 1);
-  assert.equal(shelf.tiles.length, 3);
-  const f = state.floor;
-  f.playerRow = stall.row + 1; f.playerCol = stall.col; f.facing = 'N';
-  assert.ok(stepPlayer(-1, 0).some(e => e.type === 'blocked' && e.kind === 'furniture'));
-});
-
-test('taking the key leaves the door shut and the book empty, makes the spots live and sends a second stick man', () => {
-  const took = takeKey();
-  assert.deepEqual(tutorialTurn(took), []);
-  const f = state.floor;
-  assert.equal(f.tutorial.stage, 'hide');
-  assert.deepEqual(whatBlocks(f.tutorial.door.row, f.tutorial.door.col), { kind: 'door' });
-  assert.equal(state.run.energy, 0);
-  assert.equal(f.roomSpots.length, 2);
-  assert.ok(f.roomSpots.every(s => !s.used));
-  assert.equal(f.crawling.length, 1, 'a stick man is in the grate\'s duct');
-  assert.equal(f.tutorial.minion, f.crawling[0]);
-  tutorialTurn([]);
-  assert.equal(state.run.energy, 0, 'the book is not filled again');
-});
-
-test('as the second stick man drops out, the kind voice says to hide, once', () => {
-  tutorialTurn(takeKey());
-  const lines = fullTurns(4).filter(e => e.type === 'whispered').map(e => e.line);
-  assert.deepEqual(lines, ['tut.hide']);
-});
-
-test('hidden, the stage moves to push: it paces in front of the bookcase and never gets the player', () => {
-  const hid = hideInStall();
-  tutorialTurn(hid);
-  const f = state.floor;
-  assert.equal(f.tutorial.stage, 'push');
-  const m = f.tutorial.minion;
-  const { shelf } = tutorialSpots();
-  assert.ok(m.route && m.route.loop && !m.hunts);
-  const hearts = state.run.hearts;
-  const cols = new Set();
-  const events = fullTurns(60);
-  assert.ok(!events.some(e => e.type === 'minionStruck' || e.type === 'struggleStarted'));
-  assert.equal(state.run.hearts, hearts);
-  for (let i = 0; i < 30; i++) { fullTurns(1); if (m.row === shelf.row + 1) cols.add(m.col); }
-  assert.ok(shelf.tiles.every(t => cols.has(t.col)), 'it passes under every tile of the bookcase');
-});
-
-test('behind the bookcase as it passes under: "Now. Push."; the push kills it and the door opens', () => {
-  tutorialTurn(hideInStall());
-  const f = state.floor;
-  const m = f.tutorial.minion;
-  const { shelf } = tutorialSpots();
-  f.hidden = null;
-  f.playerRow = shelf.row - 1; f.playerCol = shelf.tiles[1].col; f.facing = 'S';
-  let said = [];
-  for (let i = 0; i < 40 && !(m.row === shelf.row + 1 && m.col === shelf.tiles[1].col); i++) {
-    said = said.concat(fullTurns(1).filter(e => e.type === 'whispered').map(e => e.line));
-  }
-  assert.ok(said.includes('tut.push'), 'the kind voice said to push: ' + said);
-  const push = stepPlayer(1, 0);
-  assert.ok(push.some(e => e.type === 'toppled'));
-  assert.ok(push.some(e => e.type === 'minionKilled' && e.minion === m));
-  assert.deepEqual(tutorialTurn(push), [{ type: 'doorUnlocked' }]);
+  assert.deepEqual(tutorialTurn(took), [{ type: 'doorUnlocked' }]);
   const door = f.tutorial.door;
   assert.equal(whatBlocks(door.row, door.col), null);
-  f.playerRow = door.row + 1; f.playerCol = door.col; f.facing = 'N';
-  assert.deepEqual(stepPlayer(-1, 0).map(e => e.type).slice(-1), ['tutorialLeft']);
-});
 
-test('the bookcase pushed onto nothing: "Too soon. The book, then." and the book is filled again', () => {
-  tutorialTurn(hideInStall());
-  const f = state.floor;
-  const m = f.tutorial.minion;
-  const { shelf } = tutorialSpots();
-  m.row = shelf.row + 1; m.col = shelf.tiles[2].col + 2;
-  f.hidden = null;
-  f.playerRow = shelf.row - 1; f.playerCol = shelf.tiles[0].col; f.facing = 'S';
-  const push = stepPlayer(1, 0);
-  assert.ok(push.some(e => e.type === 'toppled') && !push.some(e => e.type === 'minionKilled'));
-  assert.deepEqual(tutorialTurn(push).map(e => e.line), ['tut.missed']);
-  assert.equal(state.run.energy, ENERGY_MAX);
-  assert.equal(f.tutorial.stage, 'push', 'the door stays shut until it is gone');
+  const advancedDoor = f.tutorial.advancedDoor;
+  assert.equal(whatBlocks(advancedDoor.row, advancedDoor.col), null, 'the key opens the right-hand door too');
+
+  f.playerRow = door.row + 1; f.playerCol = door.col; f.facing = 'N';
+  assert.deepEqual(stepPlayer(-1, 0).slice(-1), [{ type: 'tutorialLeft', advanced: false }]);
+  f.playerRow = advancedDoor.row + 1; f.playerCol = advancedDoor.col; f.facing = 'N';
+  assert.deepEqual(stepPlayer(-1, 0).slice(-1), [{ type: 'tutorialLeft', advanced: true }], 'the right-hand door is the way to the advanced tutorial');
 });
 
 test('the first time the static shows in the fight, the kind voice names it, once', () => {

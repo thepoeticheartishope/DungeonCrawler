@@ -68,10 +68,8 @@
 //      be listening. Be ready.", the grate shudders a turn
 //      later and a stick man drops out of it; one shot (Auto-win stops the
 //      bar on a plain hit) drops it ("Finish it.", downed plan) and a bump
-//      finishes it; taking its key brings a second stick man ("Not this
-//      one. Hide."): into the stall, out and round behind the bookcase by
-//      the free side, and pushed as it passes under ("Now. Push.") it
-//      falls on it; then the door opens, and through it the opening rest starts
+//      finishes it; its key opens both doors (the line says which is which),
+//      and through the left one the opening rest starts
 //      with the run's numbers fresh (2 energy), the name kept and the toggle off.
 //   9. Answer line run (answer swirl plan steps A and B): Reveal on, Auto-win off,
 //      minigames off, the first depth's stick men cleared; a reload from an energy cell answered wrong puts the
@@ -141,6 +139,13 @@
 //      twice his gold (tally "fell 1", "kills 1"). Lure: light out, into the sink
 //      ("lured 1") draws the pacing stick man off his route to stand under
 //      the bookcase beside it; pushed from behind, it kills him.
+//  18. Advanced tutorial run (tutorial split plan), in turns: the tutorial
+//      jumped to its open doors, through the right-hand one into the
+//      advanced tutorial. Hide station ("Hiding."): into the stall as the
+//      stick man comes, the door opens, out
+//      through it. Takedown station ("Takedowns."): round behind the
+//      bookcase, pushed as he passes under ("Now. Push."), the door opens,
+//      and through it the opening rest starts with the toggle off.
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -1672,32 +1677,10 @@ async function checkTutorial(page, url) {
   st = await walkUntil(page, s => s.minion, s => s.stage !== 'fight' || s.hearts <= 0);
   if (!st || st.stage !== 'key') return 'a bump did not finish the downed stick man, or it left no key (stage ' + (st && st.stage) + ')';
 
-  st = await walkUntil(page, st.key, s => s.stage === 'hide');
-  if (!st) return 'taking the key did not bring the hide stage';
-  const spots = await page.evaluate(async () => {
-    const { state } = await import('/js/state.js');
-    const all = state.floor.tutorial.spots;
-    return { stall: all.find(s => s.kind === 'hide'), shelf: all.find(s => s.kind === 'takedown') };
-  });
-  st = await walkUntil(page, spots.stall, s => s.stage === 'push' || s.hearts <= 0);
-  if (!st || st.stage !== 'push') return 'hiding in the stall did not bring the push stage (stage ' + (st && st.stage) + ')';
-  if (!st.sense.includes('Not this one. Hide.')) return 'no "Not this one. Hide." as the second stick man came: ' + st.sense;
-  const shelf = spots.shelf;
-  const behind = { row: shelf.row - 1, col: shelf.tiles[1].col };
-  st = await walkUntil(page, behind, s => s.player && s.player.row === behind.row && s.player.col === behind.col);
-  if (!st) return 'could not get behind the bookcase';
-  const under = s => s.minion && s.minion.row === shelf.row + 1 && shelf.tiles.some(t => t.col === s.minion.col);
-  for (let i = 0; i < 40 && !under(st); i++) {
-    await page.keyboard.press('.');
-    await page.waitForTimeout(40);
-    st = await tutorialState(page);
-  }
-  if (!under(st)) return 'the second stick man never passed under the bookcase';
-  if (!st.sense.includes('Now. Push.')) return 'no "Now. Push." with it under the bookcase: ' + st.sense;
-  await page.keyboard.press(ARROW_KEYS[2]);
-  await page.waitForTimeout(100);
-  st = await tutorialState(page);
-  if (st.stage !== 'open') return 'the bookcase pushed onto it did not open the door (stage ' + st.stage + ')';
+  st = await walkUntil(page, st.key, s => s.stage === 'open');
+  if (!st) return 'taking the key did not open the doors';
+  const doorsLog = await page.evaluate(() => document.getElementById('roomFeedback').textContent);
+  if (!doorsLog.includes('The right teaches more.')) return 'no line saying which door is which: ' + doorsLog;
   st = await walkUntil(page, st.door, s => s.stage === null);
   if (!st) return 'the open door did not lead out of the tutorial';
   if (!st.rest) return 'leaving the tutorial did not start the opening rest';
@@ -1775,7 +1758,7 @@ async function runTutorial(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, grate shudders, stick man drops out, the first shot at READY ("Breathe.", BACK spent nothing, the dial ran with its key line), one shot drops it ("Finish it."), a bump finishes it, key, a second stick man ("Not this one. Hide."), hid in the stall, pushed the bookcase onto it ("Now. Push."), door, out to the opening rest', consoleErrors, pageErrors };
+  return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, grate shudders, stick man drops out, the first shot at READY ("Breathe.", BACK spent nothing, the dial ran with its key line), one shot drops it ("Finish it."), a bump finishes it, key, both doors open (the line says which is which), out the left to the opening rest', consoleErrors, pageErrors };
 }
 
 // ---- Run 14: the tutorial with One stick ----
@@ -2903,6 +2886,126 @@ async function runTestRooms(browser, url) {
   return { ok: true, detail: 'hid in the stall and the stick man never got in, stepped out and he did, Restart started it over, a bookcase pushed as he passed under killed him for double gold, and a lure brought one under a bookcase to the same end', consoleErrors, pageErrors };
 }
 
+// ---- Run 18: the advanced tutorial ----
+
+// The advanced tutorial's state in the page: { name, open, hidden, player,
+// minion, sense, log, rest, toggle }.
+function advancedState(page) {
+  return page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const f = state.floor;
+    const st = f.advanced;
+    const m = f.minions[0];
+    return {
+      name: st ? st.name : null, open: !!(st && st.open), hidden: !!f.hidden,
+      player: { row: f.playerRow, col: f.playerCol }, minion: m ? { row: m.row, col: m.col } : null,
+      sense: document.getElementById('senseNote').textContent,
+      log: document.getElementById('roomFeedback').textContent,
+      rest: !!f.exchange, toggle: document.getElementById('tutorialToggle').checked,
+    };
+  });
+}
+
+// Walks toward `goal` (arrow keys, or a wait with no way) until
+// `done(advancedState)` is true or `steps` run out. Returns the last state.
+async function walkAdvanced(page, goal, done, steps = 30) {
+  let st = await advancedState(page);
+  for (let i = 0; i < steps && !done(st); i++) {
+    const dir = await stepTo(page, goal);
+    await page.keyboard.press(dir === null ? '.' : ARROW_KEYS[dir]);
+    await page.waitForTimeout(60);
+    st = await advancedState(page);
+  }
+  return st;
+}
+
+// The checks listed in the header. Returns what failed ('' when all held).
+async function checkAdvanced(page, url) {
+  await page.goto(url, { waitUntil: 'load' });
+  await page.waitForSelector('#startBtn', { timeout: 10000 });
+  await page.check('#tutorialToggle');
+  await page.check('#turnsToggle');
+  await startGameAndWaitForRoom(page);
+  // Straight to the tutorial's open doors, the player under the right one.
+  const doorA = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const { computeVisibility } = await import('/js/sight.js');
+    const f = state.floor;
+    f.tutorial.stage = 'open';
+    f.minions = [];
+    f.crawling = [];
+    const a = f.tutorial.advancedDoor;
+    f.playerRow = a.row + 1;
+    f.playerCol = a.col;
+    computeVisibility();
+    return a;
+  });
+  let st = await walkAdvanced(page, doorA, s => s.name !== null, 3);
+  if (st.name !== 'hide') return 'the right-hand door did not lead to the hide station (' + st.name + ')';
+  if (!st.log.includes('Hiding.')) return 'no "Hiding." as the hide station began: ' + st.log;
+
+  const stall = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const s = state.floor.roomSpots.find(r => r.kind === 'hide');
+    return { row: s.row, col: s.col };
+  });
+  st = await walkAdvanced(page, stall, s => s.hidden);
+  if (!st.hidden) return 'could not hide in the hide station\'s stall';
+  for (let i = 0; i < 6 && !st.open; i++) {
+    await page.keyboard.press('.');
+    await page.waitForTimeout(40);
+    st = await advancedState(page);
+  }
+  if (!st.open) return 'hiding did not open the hide station\'s door';
+  if (!st.log.includes('The door opens.')) return 'no "The door opens." in the hide station: ' + st.log;
+  const door = await page.evaluate(async () => (await import('/js/state.js')).state.floor.advanced.door);
+  st = await walkAdvanced(page, door, s => s.name !== 'hide');
+  if (st.name !== 'takedown') return 'the hide station\'s door did not lead to the takedown station (' + st.name + ')';
+  if (!st.log.includes('Takedowns.')) return 'no "Takedowns." as the takedown station began: ' + st.log;
+
+  const shelf = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    return state.floor.roomSpots.find(r => r.kind === 'takedown');
+  });
+  const behind = { row: shelf.row - 1, col: shelf.tiles[1].col };
+  // Up the free side (he paces from column 2), then along the back.
+  for (const goal of [{ row: st.player.row, col: 1 }, { row: 1, col: 1 }, behind]) {
+    st = await walkAdvanced(page, goal, s => s.player.row === goal.row && s.player.col === goal.col);
+    if (st.player.row !== goal.row || st.player.col !== goal.col) return 'could not walk to ' + goal.row + ',' + goal.col + ' in the takedown station';
+  }
+  const under = s => s.minion && s.minion.row === shelf.row + 1 && shelf.tiles.some(t => t.col === s.minion.col);
+  for (let i = 0; i < 40 && !under(st); i++) {
+    await page.keyboard.press('.');
+    await page.waitForTimeout(40);
+    st = await advancedState(page);
+  }
+  if (!under(st)) return 'the takedown station\'s stick man never passed under the bookcase';
+  if (!st.sense.includes('Now. Push.')) return 'no "Now. Push." with him under the bookcase: ' + st.sense;
+  await page.keyboard.press(ARROW_KEYS[2]);
+  await page.waitForTimeout(100);
+  st = await advancedState(page);
+  if (!st.open) return 'the push did not open the takedown station\'s door';
+  const last = await page.evaluate(async () => (await import('/js/state.js')).state.floor.advanced.door);
+  st = await walkAdvanced(page, last, s => s.name === null);
+  if (st.name !== null || !st.rest) return 'the last station\'s door did not lead to the opening rest';
+  if (st.toggle) return 'the tutorial toggle was not switched off';
+  return '';
+}
+
+async function runAdvanced(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkAdvanced(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'the right-hand door into the advanced tutorial, hid in the stall and the door opened, a bookcase pushed onto the pacing stick man ("Now. Push."), out to the opening rest', consoleErrors, pageErrors };
+}
+
 async function main() {
   const port = await findFreePort();
   const server = spawn(process.execPath, [
@@ -2932,7 +3035,7 @@ async function main() {
         ['room view', runRoomView, url], ['charger', runCharger, url],
         ['one stick', runOneStick, url], ['tutorial stick', runTutorialStick, url],
         ['record book', runRecordBook, url], ['safe room', runSafeRoom, url],
-        ['test rooms', runTestRooms, url],
+        ['test rooms', runTestRooms, url], ['advanced tutorial', runAdvanced, url],
       ];
       // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
       // of those words, SMOKE_REPEAT=20 runs each that many times: for
