@@ -56,6 +56,29 @@ export const TEST_ROOMS = {
     spots: { B: 'takedown' },
     loop: true,
   },
+  // A sink in a nook beside a bookcase (room spots plan step D: a lure next
+  // to a takedown is the combo). Put your light out (one who sees it
+  // doesn't listen), then turn the tap on from above the sink; the stick
+  // man pacing below comes to it. The row behind the bookcase is walled
+  // off, so the only way up to the sink, or to the player, is under the
+  // bookcase. Push it on him from behind.
+  lure: {
+    rows: [
+      '##########',
+      '#S.......#',
+      '#.BBB#####',
+      '#W.......#',
+      '###......#',
+      '#........#',
+      '#...2..1.#',
+      '#........#',
+      '#........#',
+      '##########',
+    ],
+    pieces: { B: 'shelf', W: 'sink' },
+    spots: { B: 'takedown', W: 'lure' },
+    loop: true,
+  },
 };
 
 // The test room `name` as tiles: { size, walls, roomTiles (Set of keys),

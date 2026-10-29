@@ -509,6 +509,7 @@ export const NOISE_RANGES = {
   loud: 5,     // the dial stopped in a loud zone
   struggle: 4, // a lost Struggle
   gate: 10,    // a wrong answer at the gate
+  lure: 10,    // a room spot's lure set off (spots.js soundLure): the tap on full
 };
 // Cover (Timothy 2026-10-26, sight.js): crouched (One stick: sneaking or
 // creeping) with something solid beside them, the player is quieter: a

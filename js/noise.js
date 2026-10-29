@@ -57,15 +57,17 @@ export function spreadSound(origin, range) {
 
 // The player made a mistake of `kind` (a NOISE_RANGES key): its sound
 // spreads from their tile, and every stick man it reaches that doesn't
-// have them in view hears it (combat.js hearNoise). Nothing with
-// DEV -> Noise off. Events: noiseMade { kind, tiles } (spreadSound's
-// tiles), then noiseHeard { minion } for each one that heard it.
-export function makeNoise(kind) {
+// have them in view hears it (combat.js hearNoise). `at` makes it
+// somewhere else instead (a lure, spots.js soundLure), where cover makes
+// no difference. Nothing with DEV -> Noise off. Events: noiseMade { kind,
+// tiles } (spreadSound's tiles), then noiseHeard { minion } for each one
+// that heard it.
+export function makeNoise(kind, at = null) {
   if (!state.settings.noise) return [];
   const f = state.floor;
-  const origin = { row: f.playerRow, col: f.playerCol };
-  // Crouched in cover, it carries half as far (COVER.noiseShare).
-  const range = besideCover() ? Math.max(1, Math.round(NOISE_RANGES[kind] * COVER.noiseShare)) : NOISE_RANGES[kind];
+  const origin = at || { row: f.playerRow, col: f.playerCol };
+  // Crouched in cover, their own sound carries half as far (COVER.noiseShare).
+  const range = !at && besideCover() ? Math.max(1, Math.round(NOISE_RANGES[kind] * COVER.noiseShare)) : NOISE_RANGES[kind];
   const tiles = spreadSound(origin, range);
   const reached = new Set(tiles.map(t => key(t.row, t.col)));
   const events = [{ type: 'noiseMade', kind, tiles }];

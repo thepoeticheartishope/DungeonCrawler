@@ -344,6 +344,9 @@ export function hearNoise(m, origin) {
   m.track = MINION_TRACK_TURNS;
   m.goal = null;
   m.linger = 0;
+  // A sound draws a test room's stick man (testroom.js) off its set route
+  // too, so a lure can be tried there.
+  m.route = null;
   return true;
 }
 

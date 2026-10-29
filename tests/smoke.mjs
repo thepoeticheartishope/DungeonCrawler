@@ -138,7 +138,9 @@
 //      Restart test room starts it over (the tally back to 0). Takedown:
 //      round behind the bookcase by the free side, wait for the pacing
 //      stick man to pass under it, push: it falls and kills him for
-//      twice his gold (tally "fell 1", "kills 1").
+//      twice his gold (tally "fell 1", "kills 1"). Lure: light out, into the sink
+//      ("lured 1") draws the pacing stick man off his route to stand under
+//      the bookcase beside it; pushed from behind, it kills him.
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -2773,7 +2775,7 @@ function testRoomState(page) {
     const m = f.minions[0];
     return {
       room: f.testRoom, player: { row: f.playerRow, col: f.playerCol }, hidden: !!f.hidden,
-      minion: m ? { row: m.row, col: m.col, routed: !!m.route } : null,
+      minion: m ? { row: m.row, col: m.col, routed: !!m.route, lastSeen: m.lastSeen, track: m.track } : null,
       hearts: state.run.hearts, tally: document.getElementById('devTallyOut').textContent,
     };
   });
@@ -2856,6 +2858,34 @@ async function checkTestRooms(page, url) {
   st = await testRoomState(page);
   if (tallyOf(st, 'fell') !== 1 || tallyOf(st, 'kills') !== 1) return 'the bookcase did not fall on him: ' + st.tally;
   if (tallyOf(st, 'gold') !== shelf.gold) return 'the takedown did not pay ' + shelf.gold + ' gold: ' + st.tally;
+
+  await startTestRoom(page, url, 'lure');
+  const lure = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const spots = state.floor.roomSpots;
+    return { sink: spots.find(s => s.kind === 'lure'), shelf: spots.find(s => s.kind === 'takedown') };
+  });
+  // Light out first: a stick man who can see it comes for that, not a sound.
+  await page.keyboard.press('v');
+  await page.waitForTimeout(100);
+  if (await page.evaluate(async () => (await import('/js/state.js')).state.floor.light.on)) return 'V did not put the light out in the lure room';
+  st = await walkTestRoom(page, lure.sink, s => tallyOf(s, 'lured') > 0, 10);
+  if (tallyOf(st, 'lured') !== 1) return 'walking into the sink did not set the lure off: ' + st.tally;
+  if (st.minion.routed) return 'the lure did not draw the stick man off his route';
+  const back = { row: lure.shelf.row - 1, col: lure.shelf.tiles[1].col };
+  st = await walkTestRoom(page, back, s => s.player.row === back.row && s.player.col === back.col);
+  if (st.player.row !== back.row || st.player.col !== back.col) return 'could not get behind the lure room\'s bookcase';
+  const lured = s => s.minion && s.minion.row === lure.shelf.row + 1 && lure.shelf.tiles.some(t => t.col === s.minion.col);
+  for (let i = 0; i < 30 && !lured(st); i++) {
+    await page.keyboard.press('.');
+    await page.waitForTimeout(40);
+    st = await testRoomState(page);
+  }
+  if (!lured(st)) return 'the lured stick man never came under the bookcase: ' + JSON.stringify(st.minion);
+  await page.keyboard.press(ARROW_KEYS[2]);
+  await page.waitForTimeout(100);
+  st = await testRoomState(page);
+  if (tallyOf(st, 'kills') !== 1) return 'the bookcase did not fall on the lured stick man: ' + st.tally;
   return '';
 }
 
@@ -2870,7 +2900,7 @@ async function runTestRooms(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'hid in the stall and the stick man never got in, stepped out and he did, Restart started it over, and a bookcase pushed as he passed under killed him for double gold', consoleErrors, pageErrors };
+  return { ok: true, detail: 'hid in the stall and the stick man never got in, stepped out and he did, Restart started it over, a bookcase pushed as he passed under killed him for double gold, and a lure brought one under a bookcase to the same end', consoleErrors, pageErrors };
 }
 
 async function main() {

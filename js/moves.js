@@ -13,7 +13,7 @@ import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
 import { followBody, waysInUse } from './look.js';
 import { finishDowned } from './gun.js';
-import { liveSpotAt, hideIn, leaveHiding, topple } from './spots.js';
+import { liveSpotAt, hideIn, leaveHiding, topple, soundLure } from './spots.js';
 import { DARK_GOLD_MULTIPLIER, BOX_GOLD } from './config.js';
 
 // Gold pays DARK_GOLD_MULTIPLIER times as much in the darkness after the boss.
@@ -122,7 +122,8 @@ export function stepPlayer(dRow, dCol) {
 // What a bump into `block` (passage.js whatBlocks) does: a box or another
 // prop is examined (examineProp), a piece of furniture that is a live hide
 // spot is hidden in (spots.js hideIn: hid), one that is a live takedown is
-// pushed over (spots.js topple: toppled, kills), THE UNFOLDING opens (no turn: a rest
+// pushed over (spots.js topple: toppled, kills), one that is a live lure
+// is set off (spots.js soundLure: lureSounded, a sound), THE UNFOLDING opens (no turn: a rest
 // floor has no light to feed), the gate asks, the chest is selected, a
 // downed stick man is finished, and anything else just stops the player.
 // Shared by the step (stepPlayer) and free walking (walk.js). Events:
@@ -136,6 +137,8 @@ export function bumpInto(block) {
   }
   const takedown = block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'takedown');
   if (takedown) return topple(takedown, block.thing.row, block.thing.col, block.thing.piece);
+  const lure = block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'lure');
+  if (lure) return soundLure(lure, block.thing.row, block.thing.col, block.thing.piece);
   if (block.kind === 'exchange') return [{ type: 'exchangeOpened' }];
   if (block.kind === 'boss') return [reachGate()];
   if (block.kind === 'chest') return [reachItem(block)];
@@ -149,6 +152,7 @@ function plainBump(block) {
   if (['prop', 'exchange', 'boss', 'chest'].includes(block.kind)) return false;
   if (block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'hide')) return false;
   if (block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'takedown')) return false;
+  if (block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'lure')) return false;
   return !(block.kind === 'minion' && block.thing.downed);
 }
 
