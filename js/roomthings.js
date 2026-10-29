@@ -537,13 +537,13 @@ export const STAND = { box: drawBox, furniture: drawFurniture, cell: drawCell, d
 const WOODWORK = { top: '#7a5638', topLight: '#8c6644', front: '#5a3f29', dark: '#3f2c1e', leg: '#2f2016' };
 const BOOKS = ['#6b3b34', '#3f4f5f', '#5c5a3a', '#4c3a52', '#7a6a4e', '#2f4a42', '#5e3a2c'];
 const METAL = { top: '#7c8186', front: '#4e5358', seam: '#3a3e42', tap: '#a9b0b5' };
-const PORCELAIN = { bowl: '#c9ccc8', shade: '#9fa29e', pipe: '#6a6e6c' };
+const PORCELAIN = { bowl: '#c9ccc8', shade: '#9fa29e', pipe: '#6a6e6c', drop: '#8fa7b3', wet: '#2b3439' };
 const STALL = { door: '#5b6b73', edge: '#6f8089', gap: '#1c2124' };
 const SOFA = { back: '#5a3b3e', seat: '#6b474a', arm: '#4a3033' };
 const EASEL = { leg: '#5a3f29', board: '#b9ab8e', frame: '#8a7a5e' };
 
 // Draws furniture prop `thing` on its tile at (x, y), with its tell over
-// it when it is a live hide spot (room spots plan step B, spots.js).
+// it when it is a live room spot (room spots plan, spots.js).
 function drawFurniture(thing, x, y) {
   const { piece, part } = thing.at;
   const left = part === 'single' || part === 'left';
@@ -558,6 +558,19 @@ function drawFurniture(thing, x, y) {
   if (here(hide) && HIDE_TELLS[piece]) HIDE_TELLS[piece](x, y);
   const takedown = liveSpotAt(thing.at.row, thing.at.col, 'takedown');
   if (here(takedown) && piece === 'shelf') drawShelfLeaning(x, y);
+  const lure = liveSpotAt(thing.at.row, thing.at.col, 'lure');
+  if (here(lure) && piece === 'sink') drawSinkDripping(x, y);
+}
+
+// A live lure's tell (room spots plan step D): the sink's tap drips, a
+// bead under it and a wet patch on the floor below. Still, not animated
+// (slow and quiet on the eye, Timothy).
+function drawSinkDripping(x, y) {
+  bctx.fillStyle = PORCELAIN.drop;
+  bctx.fillRect(x + 8, y + 4, 1, 2);
+  bctx.fillStyle = PORCELAIN.wet;
+  bctx.fillRect(x + 3, y + 15, 9, 1);
+  bctx.fillRect(x + 5, y + 14, 5, 1);
 }
 
 // A live takedown's tell (room spots plan step C): the bookcase leans a

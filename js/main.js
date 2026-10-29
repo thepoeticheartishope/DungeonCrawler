@@ -876,6 +876,9 @@ function drawEvents(events) {
       case 'toppled':
         parts.push(t('room.takedown.' + e.piece));
         break;
+      case 'lureSounded':
+        parts.push(t('room.lure.' + e.piece));
+        break;
       case 'reachMissed':
         parts.push(t('room.reach.missed'));
         break;

@@ -296,12 +296,12 @@ export function recordEvents(events) {
 
 // Dev tool (test rooms, testroom.js): in a test room, a running count of
 // what happened since it started, so a mechanic's tries can be tracked:
-// times hidden, pieces fallen, kills, gold, reaches (and how many missed),
+// times hidden, lures set off, pieces fallen, kills, gold, reaches (and how many missed),
 // hits taken and Struggles. View-only (not in state), counted from
 // drawEvents' events like the event ring. Each counts one event type, by
 // one or by its `amount`.
 const TALLY_COUNTS = {
-  hid: 'hid', toppled: 'fell', minionKilled: 'kills', goldGained: 'gold',
+  hid: 'hid', lureSounded: 'lured', toppled: 'fell', minionKilled: 'kills', goldGained: 'gold',
   reachStarted: 'reaches', reachMissed: 'missed', minionStruck: 'hit', struggleStarted: 'struggles',
 };
 let tally = null; // { [event type]: count } in a test room, else null

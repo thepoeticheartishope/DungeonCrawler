@@ -8,6 +8,8 @@
 // Step C: a pushed takedown falls away from the player, kills what is
 // under it for TAKEDOWN_GOLD_TIMES its gold, falls even with nobody there,
 // is spent and stops blocking, and won't tip sideways or onto a wall.
+// Step D: a live lure sounds once from the piece itself, drawing stick men
+// (a test room's too) to it and away from the player.
 //
 // Run: node --test tests/*.test.mjs
 
@@ -209,4 +211,71 @@ test('a takedown won\'t tip sideways, nor onto a wall', () => {
   state.floor.wallSet.add(key(tiles[0].row - 1, tiles[0].col));
   assert.ok(stepPlayer(-1, 0).some(e => e.type === 'blocked' && e.kind === 'noRoom'));
   assert.ok(!state.floor.roomSpots[0].used);
+});
+
+// ---- Step D: lures ----
+
+// An empty floor with a sink two tiles east of the player that is a live
+// lure spot, noise on and the light battery's rules off (so a stick man
+// hears whether or not it could see the player).
+function sinkFloor() {
+  emptyFloor(21, { settings: { oneStick: false, lightBattery: false, noise: true } });
+  const f = state.floor;
+  const sink = { row: f.playerRow, col: f.playerCol + 1 };
+  f.props = [{ ...sink, kind: 'furniture', piece: 'sink', part: 'single', identified: true, searched: false, sprung: false }];
+  f.roomSpots = [{ ...sink, kind: 'lure', used: false, tiles: [sink] }];
+  f.hidden = null;
+  computeVisibility();
+  return sink;
+}
+
+test('bumping a live lure sounds from the sink itself, once; then it is only a sink', () => {
+  const sink = sinkFloor();
+  const events = stepPlayer(0, 1);
+  assert.ok(events.some(e => e.type === 'lureSounded' && e.piece === 'sink'));
+  const made = events.find(e => e.type === 'noiseMade');
+  assert.equal(made.kind, 'lure');
+  assert.equal(made.tiles.find(t => t.d === 0).col, sink.col, 'the sound starts at the sink, not the player');
+  assert.ok(state.floor.roomSpots[0].used);
+  const again = stepPlayer(0, 1);
+  assert.ok(!again.some(e => e.type === 'lureSounded'));
+  assert.ok(again.some(e => e.type === 'blocked' && e.kind === 'furniture'));
+});
+
+test('a stick man in its range goes to the sink and searches round it, not to the player', () => {
+  const sink = sinkFloor();
+  const f = state.floor;
+  const m = spawnMinion({ row: f.playerRow - 6, col: f.playerCol + 6 }, 'SHARD');
+  const events = stepPlayer(0, 1);
+  assert.ok(events.some(e => e.type === 'noiseHeard' && e.minion === m));
+  assert.deepEqual(m.lastSeen, { row: sink.row, col: sink.col });
+  // Walk the player away west; the stick man still makes for the sink.
+  // (Once there it searches round it at random, so only the walk is checked.)
+  f.playerCol -= 8;
+  computeVisibility();
+  const steps = (a, b) => Math.max(Math.abs(a.row - b.row), Math.abs(a.col - b.col));
+  for (let i = 0; i < 10 && steps(m, sink) > 1; i++) {
+    advanceMonsters();
+    assert.ok(steps(m, { row: f.playerRow, col: f.playerCol }) > 3, 'it never came for the player');
+  }
+  assert.equal(steps(m, sink), 1, 'it came to stand beside the sink');
+});
+
+test('a lure draws a test room\'s stick man off its set route', () => {
+  const sink = sinkFloor();
+  const f = state.floor;
+  const m = spawnMinion({ row: f.playerRow - 5, col: f.playerCol - 5 }, 'SHARD');
+  m.route = { points: [{ row: m.row, col: m.col }, { row: m.row, col: m.col - 3 }], at: 0, loop: true };
+  stepPlayer(0, 1);
+  assert.equal(m.route, null);
+  assert.deepEqual(m.lastSeen, { row: sink.row, col: sink.col });
+});
+
+test('with DEV -> Noise off a lure is still spent, but nothing is heard', () => {
+  sinkFloor();
+  state.settings.noise = false;
+  const events = stepPlayer(0, 1);
+  assert.ok(events.some(e => e.type === 'lureSounded'));
+  assert.ok(!events.some(e => e.type === 'noiseMade'));
+  assert.ok(state.floor.roomSpots[0].used);
 });

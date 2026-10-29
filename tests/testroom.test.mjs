@@ -3,7 +3,8 @@
 // and known furniture with its spots live; the hide room's stick man walks
 // to the player's side and then hunts, but never gets one who hid; the
 // takedown room's walks its row back and forth for ever, and a bookcase
-// pushed onto it as it passes kills it.
+// pushed onto it as it passes kills it; the lure room's tap brings its
+// stick man off his route to stand under the bookcase.
 //
 // Run: node --test tests/*.test.mjs
 
@@ -112,4 +113,25 @@ test('a bookcase pushed from behind as the stick man passes under it kills him',
   assert.ok(events.some(e => e.type === 'toppled'));
   assert.ok(events.some(e => e.type === 'minionKilled' && e.minion === m));
   assert.equal(f.minions.length, 0);
+});
+
+test('in the lure room the tap brings the pacing stick man under the bookcase, and a push kills him', () => {
+  const m = testFloor('lure');
+  state.settings.noise = true;
+  const shelf = state.floor.roomSpots.find(s => s.kind === 'takedown');
+  // From the start, down beside the sink, then a bump down into it.
+  stepPlayer(1, 0);
+  const lured = stepPlayer(1, 0);
+  assert.ok(lured.some(e => e.type === 'lureSounded'));
+  assert.ok(lured.some(e => e.type === 'noiseHeard' && e.minion === m));
+  assert.equal(m.route, null, 'off his route');
+  // Back up and along behind the bookcase.
+  stepPlayer(-1, 0);
+  stepPlayer(0, 1);
+  stepPlayer(0, 1);
+  const under = () => m.row === shelf.row + 1 && shelf.tiles.some(t => t.col === m.col);
+  for (let i = 0; i < 30 && !under(); i++) turns(1);
+  assert.ok(under(), 'he came to stand under the bookcase: ' + [m.row, m.col]);
+  const push = stepPlayer(1, 0);
+  assert.ok(push.some(e => e.type === 'minionKilled' && e.minion === m));
 });

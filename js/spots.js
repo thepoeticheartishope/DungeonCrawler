@@ -4,7 +4,8 @@
 // scout. The building is the same every run; which spots are live is not.
 // "I would like the ingenuity of the player to be how they take out
 // threats, and doing that rewards them." floor.js buildFloor() calls
-// rollSpots() once the furniture is down. Step B: a live hide spot is
+// rollSpots() once the furniture is down. Step D: a live lure is set off
+// (soundLure) from moves.js's bump. Step B: a live hide spot is
 // somewhere to hide (hideIn, leaveHiding): moves.js calls them on a bump
 // and a step, walk.js on a push; combat.js, gaze.js and sight.js ask
 // `state.floor.hidden`. Step C: a live takedown is pushed over (topple),
@@ -17,6 +18,7 @@ import { followBody } from './look.js';
 import { whatBlocks } from './passage.js';
 import { FOUR_STEPS } from './grid.js';
 import { killMinion } from './gun.js';
+import { makeNoise } from './noise.js';
 
 // This floor's spots from the plan's rooms (`layout.chambers[i].spots`):
 // each holds nothing SPOT_EMPTY_CHANCE of the time, else one of its kinds
@@ -36,6 +38,18 @@ export function rollSpots(layout, props) {
     spots.push({ row, col, kind, used: false, tiles });
   }));
   return spots;
+}
+
+// The player sets off the piece at (row, col), a live lure spot: the School's
+// sinks, the tap turned on full. One loud sound (NOISE_RANGES.lure) from
+// the piece itself, not from the player, so the stick men it reaches walk
+// to it and search round it, away from wherever the player goes next; set
+// beside a takedown, they come to stand under it. Once only: the spot is
+// spent. Events: lureSounded { piece }, then makeNoise's (noiseMade, then
+// noiseHeard for each one that heard it).
+export function soundLure(spot, row, col, piece) {
+  spot.used = true;
+  return [{ type: 'lureSounded', piece }, ...makeNoise('lure', { row, col })];
 }
 
 // The furniture in a hand-drawn room (testroom.js's rooms, the tutorial
