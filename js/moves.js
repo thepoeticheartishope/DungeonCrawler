@@ -161,7 +161,7 @@ function plainBump(block) {
 // whatever lies there counts. Shared by the step (stepPlayer) and free
 // walking (walk.js, which passes `free` so the map doesn't slide the
 // player a whole tile). Events: stepped { facing, free }, then
-// tutorialLeft, or stairsReached { path, hidden }, or coinTaken { gold },
+// tutorialLeft { advanced }, stationLeft, or stairsReached { path, hidden }, or coinTaken { gold },
 // keyTaken, paperRead, the vent events from ventUnderfoot, reachBroken from
 // crossing into the safe room (saferoom.js enterSafeRoom) and
 // roomEntered { theme, name }.
@@ -172,11 +172,20 @@ export function enterTile(facing, free = false) {
   computeVisibility();
   events.push({ type: 'stepped', facing, free });
 
-  // The tutorial's open door is the way out of it (tutorial.js): main.js
-  // starts the run.
+  // The tutorial's open doors are the ways out of it (tutorial.js): main.js
+  // starts the run, or the advanced tutorial (advanced.js) through the
+  // other door.
   const tut = state.floor.tutorial;
-  if (tut && tut.stage === 'open' && tut.door.row === newRow && tut.door.col === newCol) {
-    events.push({ type: 'tutorialLeft' });
+  const on = d => d.row === newRow && d.col === newCol;
+  if (tut && tut.stage === 'open' && (on(tut.door) || on(tut.advancedDoor))) {
+    events.push({ type: 'tutorialLeft', advanced: on(tut.advancedDoor) });
+    return events;
+  }
+  // An advanced tutorial station's open door (advanced.js): main.js loads
+  // the next station, or starts the run after the last.
+  const station = state.floor.advanced;
+  if (station && station.open && on(station.door)) {
+    events.push({ type: 'stationLeft' });
     return events;
   }
 

@@ -39,7 +39,7 @@ const btnSelect = document.getElementById('btnSelect');
 const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // The main.js actions these call, passed in by initControls.
-let applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveTutorial, openCharger,
+let applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger,
   openExchange, realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame;
 
 // A tap on the map. It picks the gun's
@@ -305,7 +305,9 @@ function settleMove(events) {
   const relay = events.find(e => e.type === 'relayFound');
   if (relay) openRelay(relay.prop);
   if (has('nameAsked')) openNameBarrel();
-  if (has('tutorialLeft')) leaveTutorial();
+  const left = events.find(e => e.type === 'tutorialLeft');
+  if (left) leaveTutorial(left.advanced);
+  if (has('stationLeft')) leaveStation();
   const charger = events.find(e => e.type === 'chargerOpened');
   if (charger) openCharger(charger.charger);
 }
@@ -323,7 +325,7 @@ export function walkHeld() {
 // it once at load, where these used to be set up.
 export function initControls(actions) {
   ({
-    applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveTutorial, openCharger,
+    applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger,
     openExchange, realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame,
   } = actions);
   window.addEventListener('blur', () => sweep.reset());
