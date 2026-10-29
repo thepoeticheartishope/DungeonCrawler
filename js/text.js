@@ -649,7 +649,7 @@ export const TEXT = {
   'gun.block.noLineOfSight': 'No line of sight.', // draft
   'gun.block.noEnergy': 'No energy. Find a cell.', // draft
   'gun.block.energyFull': 'Energy is full.', // draft
-  'gun.block.notShootable': 'The gun does nothing to that.', // draft
+  'gun.block.notShootable': 'The book does nothing to that.', // draft
   'gun.block.noTarget': 'Nothing in reach.', // draft. FIRE or T with nothing the gun can reach
   'gun.miss': 'MISS', // floats up over a minion when a shot backfires
   // The gun's panels over the map (gunpanels.js).
@@ -681,7 +681,7 @@ export const TEXT = {
   'gun.dial.dark.fast': 'DARK SHOT · FASTER', // draft. A shot in the dark whose dial goes round faster (light battery plan)
   'gun.dial.dark.plain': 'DARK SHOT', // draft. A shot in the dark in the tutorial room, no harder than a lit one
   'gun.dial.dark.x': 'DARK SHOT · ONE MORE HARMFUL ZONE', // draft. A shot in the dark with one more harmful zone
-  'gun.dial.label': 'Dial. Press SELECT, Space, F or READY to start it, then SELECT, Space or F to fire. Escape or BACK puts the gun down before it starts.', // draft. Read out by screen readers
+  'gun.dial.label': 'Dial. Press SELECT, Space, F or READY to start it, then SELECT, Space or F to fire. Escape or BACK lowers the book before it starts.', // draft. Read out by screen readers
   'gun.dial.zone.kill': 'K', // draft. Marked on the kill zone
   'gun.dial.zone.maim': 'M', // draft. Marked on the maim zone
   'gun.dial.zone.jam': 'X', // draft. Marked on a jam zone
@@ -784,8 +784,8 @@ export const TEXT = {
   'gun.shotLoud': 'Too loud. It carries.', // draft. The dial stopped in a loud zone
   'gun.shotLunged': 'It lunges.', // draft. The dial stopped in a lunge zone: it steps closer
   'gun.guardBroken': 'The guard breaks. It reels.', // draft. A hit on a guard (the HUSK's)
-  'gun.lowered': 'You lower the gun.', // draft. BACK before READY: nothing spent
-  'gun.steady.lost': 'It left your aim. You lower the gun.', // draft. Steady aim: the stick man went out of the light or reach while SELECT was held
+  'gun.lowered': 'You lower the book.', // draft. BACK before READY: nothing spent
+  'gun.steady.lost': 'It left your aim. You lower the book.', // draft. Steady aim: the stick man went out of the light or reach while SELECT was held
   'gun.steady.knocked': 'The hit knocks your aim away.', // draft. Steady aim: struck while SELECT was held; nothing spent
   'gun.steady.dropped': 'Your arm tires and drops.', // draft. Steady aim: held on the head too long, the aim falls back down
   'gun.stunned': 'It reels.', // draft. A maim with DEV -> Downed off: the minion skips its next move
