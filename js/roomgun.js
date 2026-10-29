@@ -46,8 +46,9 @@ const OPEN_MID = 7;
 const OPEN_DIP = 2;        // the pages bow into a V: the outer edges this many pixels above the fold
 const OPEN_NARROW = 0.25;  // the top edge's narrowing at full lean, a share of its width (it is farther away)
 const OPEN_FROM = 0.4;     // how wide it is as it starts to open, a share of open
-// The shut book hanging from his hand: K spine, C cover, P page edges.
+// The shut book tucked under his arm: K spine, C cover, P page edges.
 const SHUT_BOOK = ['KCCCC', 'KCCCP', 'KCCCP', 'KCCCP', 'KCCCP', 'KCCCP', 'KCCCP', 'KCCCC'];
+const TUCK_AHEAD = 2;     // how far ahead of his forearm's middle the shut book sits, in picture pixels
 const BOOK_COLOURS = { P: '#dde8ea', L: '#7f9396', S: '#4a5759', E: '#a3aeb0', C: '#8a6440', K: '#5a3e26' };
 const BOOK_GLOW = { size: 8, level: 0.2 }; // the pages' glow while a shot waits: its reach in picture pixels and its level
 const SHOT_AT = 0.55;            // a shot goes to this share of a stick man's height
@@ -81,15 +82,19 @@ export function gunTargets(boxes) {
 
 // What the player's stick man (feet at (fx, fy), `h` tall, picture
 // pixels, looking the way (ax, ay)) does with the book this frame. While
-// nothing can be shot it is shut and hangs from `hand`. Once something can
+// nothing can be shot it is shut and tucked under his arm, against his
+// side between `elbow` and `hand`; the arm is drawn over it so his hand
+// holds it from outside instead of vanishing into it (Timothy
+// 2026-10-28). Once something can
 // be shot (or a shot waits or has just gone) he lifts it and opens it
 // over BOOK_OPEN_MS: read close, `rise` higher as his body breathes,
 // lifted while a shot waits, pushed out at the enemy by a shot
 // (pointedAt). Notes the top of its fold for the laser and the shot.
-// Gives back { open: false, hand } or { open: true, spine, lean, spread,
+// Gives back { open: false, at, flip, hand } (at: the shut book's
+// top-left; flip: drawn mirrored, facing left; hand: where his hand is) or { open: true, spine, lean, spread,
 // turn, behind, hands }: behind when he faces away, so the body is drawn
 // over it.
-export function holdBook(fx, fy, ax, ay, h, rise, hand) {
+export function holdBook(fx, fy, ax, ay, h, rise, elbow, hand) {
   const target = liveTarget();
   const shot = lastShot();
   const age = shot ? look.now - shot.start : Infinity;
@@ -97,12 +102,12 @@ export function holdBook(fx, fy, ax, ay, h, rise, hand) {
   muzzle = null;
   if (!state.battle.aim && !(target && canShoot(target)) && !pointing) {
     bookOpenedAt = null;
-    return { open: false, hand };
+    return tucked(elbow, hand, ax, 0);
   }
   if (bookOpenedAt === null) bookOpenedAt = look.now;
   const opened = look.still ? 1 : ease((look.now - bookOpenedAt) / MAP_ANIMATION_MS.bookOpen);
   if (!look.still && (opened < 1 || pointing)) look.keepMoving();
-  if (opened < 0.5) return { open: false, hand: [hand[0], hand[1] - opened * BOOK.lift * h] };
+  if (opened < 0.5) return tucked(elbow, hand, ax, opened * BOOK.lift * h);
   const out = pointedAt(age, look.still);
   const ahead = (BOOK.read + (BOOK.point - BOOK.read) * out) * h;
   const up = (BOOK.height + (state.battle.aim ? BOOK.raise : 0) - (1 - opened) * BOOK.lift) * h + rise;
@@ -117,6 +122,15 @@ export function holdBook(fx, fy, ax, ay, h, rise, hand) {
     behind: ay < 0,
     hands: [[spine[0] + OPEN_MID * spread, spine[1] - OPEN_DIP], [spine[0] - OPEN_MID * spread, spine[1] - OPEN_DIP]],
   };
+}
+
+// The shut book under his arm, `up` pixels higher as he lifts it to open
+// it: its middle halfway down his forearm and TUCK_AHEAD pixels the way he
+// looks (ax), so it shows in front of his body, its page edges forward.
+function tucked(elbow, hand, ax, up) {
+  const mid = [(elbow[0] + hand[0]) / 2 + ax * TUCK_AHEAD, (elbow[1] + hand[1]) / 2 - up];
+  const at = [Math.round(mid[0] - SHUT_BOOK[0].length / 2), Math.round(mid[1] - SHUT_BOOK.length / 2)];
+  return { open: false, at, flip: ax < 0, hand: [hand[0], hand[1] - up] };
 }
 
 // How far out the book is `age` ms after the last shot: 0 read close, 1
@@ -141,7 +155,7 @@ function openHeight(lean) {
   return Math.max(5, Math.round(OPEN_BOOK.length * (0.6 + 0.4 * Math.cos(lean * Math.PI / 180))));
 }
 
-// Draws the book holdBook gave back into the picture: shut from its hand,
+// Draws the book holdBook gave back into the picture: shut under his arm,
 // or open with its left and right pages level so it reads left to right,
 // leaning back (shorter, its top edge narrower), the pages bowed into a V,
 // glowing while a shot waits, and a page turning from right to left after
@@ -153,7 +167,7 @@ export function drawBook(book) {
     bctx.fillRect(Math.round(x), Math.round(y), 1, 1);
   };
   if (!book.open) {
-    SHUT_BOOK.forEach((row, r) => [...row].forEach((ch, c) => dot(book.hand[0] - 1 + c, book.hand[1] + r, ch)));
+    SHUT_BOOK.forEach((row, r) => [...row].forEach((ch, c) => dot(book.at[0] + (book.flip ? row.length - 1 - c : c), book.at[1] + r, ch)));
     return;
   }
   const [cx, cy] = book.spine;

@@ -736,12 +736,13 @@ function drawStickMan(at, ox, oy) {
   const J = projectFigure(joints, phiOfAngle(angle), fx, fy, pxPerM);
   // A crouch lowers the book with his shoulders.
   const drop = (STANDING_NECK - joints[NECK_Y]) * pxPerM;
-  const book = holdBook(fx, fy, ax, ay, h, pose.gunRise * h - drop, J.haR);
+  const book = holdBook(fx, fy, ax, ay, h, pose.gunRise * h - drop, J.elR, J.haR);
   const px = v => Math.round(v) + 0.5;
   const path = (points) => points.forEach(([x, y], i) => (i ? bctx.lineTo(px(x), px(y)) : bctx.moveTo(px(x), px(y))));
   bctx.save();
-  // Facing away, the open book is beyond him, so his body is drawn over it.
-  if (book.open && book.behind) drawBook(book);
+  // The shut book is under his arm, so the arm is drawn over it; facing
+  // away, the open book is beyond him, so his body is drawn over it.
+  if (!book.open || book.behind) drawBook(book);
   bctx.strokeStyle = look.colours.text;
   bctx.lineWidth = STICK_LINE;
   bctx.lineCap = 'square';
@@ -750,7 +751,7 @@ function drawStickMan(at, ox, oy) {
   path([J.pelvis, J.chest, J.neck]);
   path(book.open ? [book.hands[0], J.neck, book.hands[1]] : [J.haL, J.elL, J.neck, J.elR, book.hand]);
   bctx.stroke();
-  if (!book.open || !book.behind) drawBook(book);
+  if (book.open && !book.behind) drawBook(book);
   // The ember head: dark inside, a glow in the middle that breathes and
   // leans the way he looks, and the ring round it.
   const headR = Math.max(2.5, h * HEAD_SHARE);
