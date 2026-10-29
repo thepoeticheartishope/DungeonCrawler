@@ -1,6 +1,6 @@
 import { state, key } from './state.js';
 import { buildFloor, buildRestFloor, buildTutorialFloor, buildTestFloor, buildAdvancedFloor } from './floor.js';
-import { advancedTurn, lastStation, ADVANCED_STATIONS } from './advanced.js';
+import { advancedTurn, nextStation, ADVANCED_STATIONS } from './advanced.js';
 import { tutorialTurn, breakRing } from './tutorial.js';
 import { nextFloor } from './run.js';
 import {
@@ -440,27 +440,31 @@ function leaveTutorial(advanced = false) {
   tutorialToggle.checked = false;
   tutorialToggle.dispatchEvent(new Event('change'));
   resetRun(TUTORIAL_EXIT_ENERGY);
-  loadRoom(advanced ? 'advanced' : 'opening', 0);
+  loadRoom(advanced ? 'advanced' : 'opening', nextStation(-1));
   if (advanced) showStationName();
 }
 
 // Out through an advanced tutorial station's door (or DEV -> Skip room):
-// the next station, or after the last, the run, fresh, as from the
-// tutorial.
+// the next station (advanced.js nextStation: One stick's skipped with
+// Turns), or after the last, the run, fresh, as from the tutorial.
 function leaveStation() {
-  const index = state.floor.advanced.index;
-  if (lastStation(index)) {
+  const next = nextStation(state.floor.advanced.index);
+  if (next === -1) {
     resetRun(TUTORIAL_EXIT_ENERGY);
     loadRoom('opening');
     return;
   }
-  loadRoom('advanced', index + 1);
+  loadRoom('advanced', next);
   showStationName();
 }
 
-// Each station says which mechanic it shows as the player comes in.
+// Each station says which mechanic it shows as the player comes in, and
+// the kind voice says its opening line if it has one.
 function showStationName() {
-  showRoomNote('move-msg', t('adv.station.' + state.floor.advanced.name));
+  const station = state.floor.advanced;
+  showRoomNote('move-msg', t('adv.station.' + station.name));
+  const intro = ADVANCED_STATIONS[station.index].intro;
+  if (intro) showWhisper(t(intro), 'kind', TUTORIAL_WHISPER_MS);
 }
 
 // Going down the stairs, once the player says so (SELECT or Enter while

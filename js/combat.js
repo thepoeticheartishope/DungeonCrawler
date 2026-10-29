@@ -467,6 +467,10 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
     m.shutWait = null;
     m.lifting = null;
   }
+  // A route that holds only until he notices the player (`untilSeen`: the
+  // advanced tutorial's sneak station, advanced.js) ends then, and from
+  // there he chases them as any other would.
+  if (m.route && m.route.untilSeen && seen) m.route = null;
   // A DEV test room's stick man (testroom.js) walks its set route, so a
   // test plays out the same every time: it reaches the player only if
   // they stand in its way, and never one who is hidden. A looping route

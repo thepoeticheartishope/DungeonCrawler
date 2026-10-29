@@ -144,8 +144,11 @@
 //      advanced tutorial. Hide station ("Hiding."): into the stall as the
 //      stick man comes, the door opens, out
 //      through it. Takedown station ("Takedowns."): round behind the
-//      bookcase, pushed as he passes under ("Now. Push."), the door opens,
-//      and through it the opening rest starts with the toggle off.
+//      bookcase, pushed as he passes under ("Now. Push."), the door opens.
+//      Lure station ("Lures."): light out, into the sink ("He heard it."),
+//      behind the bookcase, pushed as he comes under it. The sneak station
+//      is One stick's, so with Turns its door leads on into the opening
+//      rest, the toggle off.
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -2985,9 +2988,38 @@ async function checkAdvanced(page, url) {
   await page.waitForTimeout(100);
   st = await advancedState(page);
   if (!st.open) return 'the push did not open the takedown station\'s door';
+  const takedownDoor = await page.evaluate(async () => (await import('/js/state.js')).state.floor.advanced.door);
+  st = await walkAdvanced(page, takedownDoor, s => s.name !== 'takedown');
+  if (st.name !== 'lure') return 'the takedown station\'s door did not lead to the lure station (' + st.name + ')';
+  if (!st.log.includes('Lures.')) return 'no "Lures." as the lure station began: ' + st.log;
+
+  // Light out, then into the sink: he hears it and comes under the bookcase.
+  await page.keyboard.press('v');
+  await page.waitForTimeout(100);
+  const lure = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const spots = state.floor.roomSpots;
+    return { sink: spots.find(r => r.kind === 'lure'), shelf: spots.find(r => r.kind === 'takedown') };
+  });
+  st = await walkAdvanced(page, lure.sink, s => s.sense.includes('He heard it.'), 10);
+  if (!st.sense.includes('He heard it.')) return 'the tap did not draw the lure station\'s stick man: ' + st.sense + ' / log: ' + st.log + ' / at ' + st.player.row + ',' + st.player.col;
+  const back = { row: lure.shelf.row - 1, col: lure.shelf.tiles[1].col };
+  st = await walkAdvanced(page, back, s => s.player.row === back.row && s.player.col === back.col);
+  const lured = s => s.minion && s.minion.row === lure.shelf.row + 1 && lure.shelf.tiles.some(t => t.col === s.minion.col);
+  for (let i = 0; i < 30 && !lured(st); i++) {
+    await page.keyboard.press('.');
+    await page.waitForTimeout(40);
+    st = await advancedState(page);
+  }
+  if (!lured(st)) return 'the lured stick man never came under the bookcase';
+  await page.keyboard.press(ARROW_KEYS[2]);
+  await page.waitForTimeout(100);
+  st = await advancedState(page);
+  if (!st.open) return 'the push did not open the lure station\'s door';
+  // With Turns the sneak station (One stick only) is skipped: the run.
   const last = await page.evaluate(async () => (await import('/js/state.js')).state.floor.advanced.door);
   st = await walkAdvanced(page, last, s => s.name === null);
-  if (st.name !== null || !st.rest) return 'the last station\'s door did not lead to the opening rest';
+  if (st.name !== null || !st.rest) return 'the last station\'s door did not lead to the opening rest (' + st.name + ')';
   if (st.toggle) return 'the tutorial toggle was not switched off';
   return '';
 }
@@ -3003,7 +3035,7 @@ async function runAdvanced(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'the right-hand door into the advanced tutorial, hid in the stall and the door opened, a bookcase pushed onto the pacing stick man ("Now. Push."), out to the opening rest', consoleErrors, pageErrors };
+  return { ok: true, detail: 'the right-hand door into the advanced tutorial, hid in the stall and the door opened, a bookcase pushed onto the pacing stick man ("Now. Push."), a tap that brought one under a bookcase, the sneak station skipped with Turns, out to the opening rest', consoleErrors, pageErrors };
 }
 
 async function main() {
