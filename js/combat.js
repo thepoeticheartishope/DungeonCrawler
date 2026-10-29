@@ -314,6 +314,11 @@ function inView(m) {
 }
 function notice(m) {
   m.drawn = false;
+  // Hidden in a room spot (spots.js), nothing sees the player.
+  if (state.floor.hidden) {
+    if (m.track > 0 && !m.lastSeen) m.track--;
+    return false;
+  }
   // Crouched behind cover from it (Timothy 2026-10-26), the player and
   // their light go unnoticed.
   if (inView(m) && !hiddenFrom(m.row, m.col)) {
@@ -461,7 +466,9 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
   }
   // A player inside a room held by a relay can't be reached from outside
   // it, not even from the doorway (bfsPath would let the last step in).
-  const sheltered = keptOut(m).has(key(state.floor.playerRow, state.floor.playerCol));
+  // Hidden in a room spot (spots.js), nobody can get to them, the hunter
+  // included: as if sheltered, and no step onto their tile.
+  const sheltered = !!state.floor.hidden || keptOut(m).has(key(state.floor.playerRow, state.floor.playerCol));
   const path = sheltered ? null : bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blockedTilesFor(m));
   // In the darkness after the boss falls, every minion hunts, from anywhere.
   const noticed = noticing ? seen : path && path.length - 1 <= MINION_CHASE_RANGE && !hiddenFrom(m.row, m.col);
@@ -486,7 +493,8 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
     return { events, chasing: !!chasing };
   }
   if (duct && m.lastSeen && duct.step.row === m.lastSeen.row && duct.step.col === m.lastSeen.col) m.lastSeen = null;
-  const next = duct ? duct.step : chasing ? path[1] : (tracking && towardLastSeen(m)) || (searching ? wanderStep(m, noticing) : idleStep(m, noticing));
+  let next = duct ? duct.step : chasing ? path[1] : (tracking && towardLastSeen(m)) || (searching ? wanderStep(m, noticing) : idleStep(m, noticing));
+  if (next && state.floor.hidden && next.row === state.floor.playerRow && next.col === state.floor.playerCol) next = null;
   if (next && hesitates(m, next, ms)) return { events, chasing: !!chasing };
   if (next) {
     const isPlayerTile = next.row === state.floor.playerRow && next.col === state.floor.playerCol;
@@ -648,8 +656,8 @@ function startReach(m) {
 
 // A reach runs on by `dtMs`; once it is done, it lands (reachPlayer: a
 // strike, a Struggle, a grab) if the player's free spot is still within
-// ONE_STICK.reach tiles of its tile's centre and no relay holds them from
-// it, or else misses. Either way it waits a chase step before it moves
+// ONE_STICK.reach tiles of its tile's centre, no relay holds them from it
+// and they haven't hidden (spots.js), or else misses. Either way it waits a chase step before it moves
 // again. Events: none while it reaches, reachMissed { minion }, or
 // reachPlayer's.
 function reachOn(m, dtMs, canStruggle) {
@@ -661,7 +669,7 @@ function reachOn(m, dtMs, canStruggle) {
   const at = f.playerAt && Math.floor(f.playerAt.x) === f.playerCol && Math.floor(f.playerAt.y) === f.playerRow
     ? f.playerAt : { x: f.playerCol + 0.5, y: f.playerRow + 0.5 };
   const far = Math.hypot(m.col + 0.5 - at.x, m.row + 0.5 - at.y) > ONE_STICK.reach;
-  if (far || keptOut(m).has(key(f.playerRow, f.playerCol))) return [{ type: 'reachMissed', minion: m }];
+  if (far || f.hidden || keptOut(m).has(key(f.playerRow, f.playerCol))) return [{ type: 'reachMissed', minion: m }];
   return reachPlayer(m, { canStruggle });
 }
 
@@ -697,12 +705,13 @@ export function reachPlayer(m, { canStruggle = true } = {}) {
 // `m` takes one step toward the player at once, out of turn, along the
 // way it would chase them. A step onto the player is reaching them
 // (reachPlayer). It goes nowhere with no way through, from outside a room
-// a relay holds the player in, or while it already holds their ankle.
+// a relay holds the player in, while they hide (spots.js), or while it
+// already holds their ankle.
 // Events: minionMoved { minion, from }, reachPlayer's (with One stick
 // reachStarted { minion } instead), or none.
 export function lungeAt(m) {
   const player = { row: state.floor.playerRow, col: state.floor.playerCol };
-  if (m.grabbing || keptOut(m).has(key(player.row, player.col))) return [];
+  if (m.grabbing || state.floor.hidden || keptOut(m).has(key(player.row, player.col))) return [];
   const path = bfsPath({ row: m.row, col: m.col }, player, blockedTilesFor(m));
   if (!path || path.length < 2) return [];
   const next = path[1];

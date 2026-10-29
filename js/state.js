@@ -141,6 +141,7 @@ export const state = {
     keys: [],              // the floor's keys still lying where dungeon.js put them: [{ row, col }] (CORE_KEYS on a depth, none on a rest)
     keysHeld: 0,           // keys the player has taken on this floor
     gateSealed: false,     // a wrong answer at the gate (the boss) since the last key: it won't fight until another key is taken (gate.js)
+    hidden: null,          // the player hidden in a room spot (spots.js hideIn): { row, col, from } (from: the tile they went in from), or null
     roomSpots: [],         // the plan's room spots this floor (spots.js rollSpots): [{ row, col, kind, used }], kind one of SPOT_KINDS or null (nothing this run). Empty on a random floor or a rest
     keySpots: [],          // on a fixed plan (plans.js), every spot a key could be in: [{ row, col }]; the light's walk sweeps them all. Empty on a random floor or a rest
     keyRoute: 0,           // steps of the shortest walk from the start through every key (every key spot on a fixed plan) to the boss (light.js); the light's budget is this plus slack

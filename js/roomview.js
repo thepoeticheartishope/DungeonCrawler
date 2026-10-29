@@ -108,6 +108,7 @@ const LAMP_TINT = [255, 214, 170];
 const STICK_LINE = 1;
 const SPOT_MARK_COLOUR = '#ffd36b'; // DEV -> Spots' letters (drawSpotMarks)
 const HEAD_SHARE = 0.12;         // the head's radius, a share of his height
+const HIDDEN_HEAD = 0.45;        // hidden in a room spot, how high his head shows, a share of his height
 
 // How each kind of thing is drawn (step B; tests/roomview.test.mjs checks
 // every kind the game puts on the map has one): 'flat' lies on the floor
@@ -264,7 +265,9 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   // The tutorial's light from above falls in a column like the stairs' light.
   const tut = f.tutorial;
   if (tut && f.spotSet.size && inView(tut.spot.row, tut.spot.col)) glows.push(() => drawBeam((tut.spot.col + 0.5) * T - ox, (tut.spot.row + 0.7) * T - oy));
-  items.push({ y: at.row + ROOM_VIEW.footAt + 0.01, draw: () => drawStickMan(at, ox, oy) });
+  // Hidden in a room spot, the player is drawn after its piece (only his
+  // ember head shows).
+  items.push({ y: at.row + (f.hidden ? 1.01 : ROOM_VIEW.footAt + 0.01), draw: () => drawStickMan(at, ox, oy) });
   // The safe room's lamp hangs from the ceiling, over all of it.
   if (f.safeRoom && space.room === f.safeRoom.chamber) items.push({ y: Infinity, draw: () => drawLampShade(ox, oy) });
   // A plan's lamps hang the same way, in the halls as well as rooms.
@@ -729,6 +732,12 @@ function drawStickMan(at, ox, oy) {
   const fx = (at.col + 0.5) * T - ox;
   const fy = (at.row + ROOM_VIEW.footAt) * T - oy;
   const ax = Math.sin(angle), ay = -Math.cos(angle);
+  // Hidden in a room spot (spots.js): only his ember head, low, peering
+  // out from the piece; no body and no book.
+  if (state.floor.hidden) {
+    drawEmberHead(fx, fy - h * HIDDEN_HEAD, h, ax, pose);
+    return;
+  }
   // The body is the 3D moves' (figure3d.js, one stick plan step F): it
   // walks as far as he goes, crouches while he sneaks, and faces his light.
   const f = state.floor;
@@ -754,10 +763,18 @@ function drawStickMan(at, ox, oy) {
   path(book.open ? [book.hands[0], J.neck, book.hands[1]] : [J.haL, J.elL, J.neck, J.elR, book.hand]);
   bctx.stroke();
   if (book.open && !book.behind) drawBook(book);
-  // The ember head: dark inside, a glow in the middle that breathes and
-  // leans the way he looks, and the ring round it.
+  drawEmberHead(J.headMid[0], J.headMid[1], h, ax, pose);
+  bctx.restore();
+}
+
+// The ember head at (hx, headY), for a stick man `h` tall looking along
+// `ax`: dark inside, a glow in the middle that breathes and leans the way
+// he looks, and the ring round it.
+function drawEmberHead(hx, headY, h, ax, pose) {
   const headR = Math.max(2.5, h * HEAD_SHARE);
-  const [hx, headY] = J.headMid;
+  bctx.save();
+  bctx.strokeStyle = look.colours.text;
+  bctx.lineWidth = STICK_LINE;
   bctx.beginPath();
   bctx.arc(hx, headY, headR, 0, Math.PI * 2);
   bctx.fillStyle = look.colours.hidden;

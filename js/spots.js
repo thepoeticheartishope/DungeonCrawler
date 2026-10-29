@@ -3,26 +3,78 @@
 // something to help the player: somewhere to hide, a takedown, a lure, a
 // scout. The building is the same every run; which spots are live is not.
 // "I would like the ingenuity of the player to be how they take out
-// threats, and doing that rewards them." Step A only rolls them; using
-// them comes in later steps. floor.js buildFloor() calls rollSpots() once
-// the furniture is down. No DOM access here.
+// threats, and doing that rewards them." floor.js buildFloor() calls
+// rollSpots() once the furniture is down. Step B: a live hide spot is
+// somewhere to hide (hideIn, leaveHiding): moves.js calls them on a bump
+// and a step, walk.js on a push; combat.js, gaze.js and sight.js ask
+// `state.floor.hidden`. No DOM access here.
 
-import { key } from './state.js';
+import { state, key } from './state.js';
 import { SPOT_EMPTY_CHANCE } from './config.js';
+import { computeVisibility } from './sight.js';
+import { followBody } from './look.js';
+import { whatBlocks } from './passage.js';
+import { FOUR_STEPS } from './grid.js';
 
 // This floor's spots from the plan's rooms (`layout.chambers[i].spots`):
 // each holds nothing SPOT_EMPTY_CHANCE of the time, else one of its kinds
 // at random. A spot whose furniture was left out (decor.js placeFurniture
 // drops a piece that would cut a room in two) is left out too: there is
 // nothing to use. `props` is the floor's props so far.
-// Returns [{ row, col, kind, used }], kind null for nothing.
+// Returns [{ row, col, kind, used, tiles }], kind null for nothing, tiles
+// every tile of the piece it is on (a bump on any of them uses it).
 export function rollSpots(layout, props) {
   const pieces = new Set(props.filter(p => p.kind === 'furniture').map(p => key(p.row, p.col)));
   const spots = [];
   layout.chambers.forEach(chamber => (chamber.spots || []).forEach(([row, col, kinds]) => {
     if (!pieces.has(key(row, col))) return;
     const kind = Math.random() < SPOT_EMPTY_CHANCE ? null : kinds[Math.floor(Math.random() * kinds.length)];
-    spots.push({ row, col, kind, used: false });
+    const [, , c0, width = 1] = chamber.furniture.find(([, r, c, w = 1]) => r === row && col >= c && col < c + w);
+    const tiles = Array.from({ length: width }, (_, i) => ({ row, col: c0 + i }));
+    spots.push({ row, col, kind, used: false, tiles });
   }));
   return spots;
+}
+
+// The live spot of `kind` on the piece at (row, col), or null.
+export function liveSpotAt(row, col, kind) {
+  return state.floor.roomSpots.find(s => s.kind === kind && !s.used && s.tiles.some(p => p.row === row && p.col === col)) || null;
+}
+
+// The player hides in the piece at (row, col), a live hide spot: they go
+// onto its tile, out of sight. While hidden no stick man, and not the
+// hunter either (Timothy 2026-10-28: "he can't get you for now"), can
+// see them, reach them or be drawn to them, and they can't use the book;
+// the light and the clock go on. As long as they like ("for now you can
+// hide as long as you like"). Event: hid { piece }.
+export function hideIn(row, col, piece) {
+  const f = state.floor;
+  f.hidden = { row, col, from: { row: f.playerRow, col: f.playerCol } };
+  f.playerRow = row;
+  f.playerCol = col;
+  f.playerAt = null;
+  f.sneaking = false;
+  f.creeping = false;
+  followBody();
+  computeVisibility();
+  return [{ type: 'hid', piece }];
+}
+
+// The player comes out of hiding: back to the tile they went in from, or,
+// with something standing there, the first free tile beside the piece.
+// With none free they stay hidden. Events: hideLeft, or blocked
+// { kind: 'hideBlocked' }.
+export function leaveHiding() {
+  const f = state.floor;
+  const { row, col, from } = f.hidden;
+  const out = [from, ...FOUR_STEPS.map(([dr, dc]) => ({ row: row + dr, col: col + dc }))]
+    .find(p => !whatBlocks(p.row, p.col));
+  if (!out) return [{ type: 'blocked', kind: 'hideBlocked' }];
+  f.hidden = null;
+  f.playerRow = out.row;
+  f.playerCol = out.col;
+  f.playerAt = null;
+  followBody();
+  computeVisibility();
+  return [{ type: 'hideLeft' }];
 }

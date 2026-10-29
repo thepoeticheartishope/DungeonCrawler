@@ -32,7 +32,8 @@ export function inCone(m) {
 // to its eye; a full one steps (or stares). Returns the events:
 // gazeStep { minion, from } or gazeStare { minion }.
 export function tickGaze(dt) {
-  if (!gazeInPlay() || dt <= 0) return [];
+  // Hidden in a room spot (spots.js), no eye fills.
+  if (!gazeInPlay() || dt <= 0 || state.floor.hidden) return [];
   const events = [];
   for (const m of [...state.floor.minions]) {
     if (m.kind === 'hunter' || !inCone(m)) continue;
