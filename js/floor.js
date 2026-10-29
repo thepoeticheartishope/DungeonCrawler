@@ -27,6 +27,7 @@ import { placeCharger } from './charger.js';
 import { placeVents } from './vents.js';
 import { placeWindows } from './windows.js';
 import { placeLamps } from './lamps.js';
+import { rollSpots } from './spots.js';
 import { placeSafeRoom, inSafeRoom } from './saferoom.js';
 import { solidProp } from './passage.js';
 import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
@@ -165,6 +166,8 @@ export function buildFloor() {
   furnishing.props.forEach(p => {
     state.floor.props.push({ ...p, identified: p.kind === 'furniture', searched: false, sprung: false });
   });
+  // Which of the plan's room spots hold something this run (spots.js).
+  state.floor.roomSpots = rollSpots(layout, state.floor.props);
 
   // The gate's full count; reachGate (gate.js) sets it again by the keys held.
   state.floor.boss = { row: layout.spawn.row, col: layout.spawn.col, hp: GATE_QUESTIONS[0], max: GATE_QUESTIONS[0], kind: 'boss' };
@@ -310,6 +313,7 @@ function clearDanger() {
   f.vents = [];
   f.keysHeld = 0;
   f.keySpots = [];
+  f.roomSpots = [];
   f.keyRoute = 0;
   f.gateSealed = false;
   f.bossLitSet = new Set();

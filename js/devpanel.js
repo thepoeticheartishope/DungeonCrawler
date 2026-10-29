@@ -28,6 +28,7 @@ const devStaticBtn = document.getElementById('devStaticBtn');
 const devWarningBtn = document.getElementById('devWarningBtn');
 const devOneStickBtn = document.getElementById('devOneStickBtn');
 const devShowDuctsBtn = document.getElementById('devShowDuctsBtn');
+const devShowSpotsBtn = document.getElementById('devShowSpotsBtn');
 const dpadEl = document.getElementById('dpad');
 const devFrameOut = document.getElementById('devFrameOut');
 const devLookBtn = document.getElementById('devLookBtn');
@@ -176,6 +177,15 @@ export function initDevPanel({
     state.settings.showDucts = !state.settings.showDucts;
     devShowDuctsBtn.textContent = state.settings.showDucts ? 'Show ducts: ON (dev)' : 'Show ducts: OFF (dev)';
     devShowDuctsBtn.setAttribute('aria-pressed', String(state.settings.showDucts));
+    requestMapDraw();
+  });
+
+  // Dev tool (room spots plan step A): every room spot marked with what it
+  // rolled this run, to check the rolls in play.
+  devShowSpotsBtn.addEventListener('click', () => {
+    state.settings.showSpots = !state.settings.showSpots;
+    devShowSpotsBtn.textContent = state.settings.showSpots ? 'Spots: ON (dev)' : 'Spots: OFF (dev)';
+    devShowSpotsBtn.setAttribute('aria-pressed', String(state.settings.showSpots));
     requestMapDraw();
   });
 

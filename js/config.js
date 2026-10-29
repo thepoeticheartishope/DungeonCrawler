@@ -519,6 +519,13 @@ export const COVER = { noiseShare: 0.5 };
 export const NOISE = true;
 // DEV -> Show ducts: who is in a duct, and every pair known. Off by default.
 export const SHOW_DUCTS = false;
+// Room spots (room spots plan, spots.js; Timothy 2026-10-28): what a
+// plan's spot may hold, and how often one holds nothing ("33% of the time
+// it has nothing I think is fair").
+export const SPOT_KINDS = ['hide', 'takedown', 'lure', 'scout'];
+export const SPOT_EMPTY_CHANCE = 0.33;
+// DEV -> Spots: each spot marked with what it rolled. Off by default.
+export const SHOW_SPOTS = false;
 // Static (static.js, staticview.js; Timothy 2026-10-19): a faint grain
 // over the map as the closest stick man nears, in place of "I see you.".
 // On by default; DEV -> Static switches it off.
