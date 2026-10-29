@@ -102,6 +102,30 @@ test('furniture stops the body, and a push bumps it once per ONE_STICK.bumpRepea
   assert.equal(count(walk(1, 0, FRAME), 'blocked'), 1, 'a new push bumps at once');
 });
 
+test('on slow frames (ONE_STICK.frameMs each) a wall or furniture still stops the body, every way', () => {
+  // A stop leaves the body's edge on the tile line; rounding once let the
+  // next frame skip that tile and walk through (Fix: walked through the
+  // tutorial's stall). With ONE_STICK.body 0.28 it was the line at 8, going
+  // north or west, so the player starts on (8, 8).
+  [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([dx, dy]) => {
+    resetFloor();
+    const f = state.floor;
+    const [row, col] = [8, 8];
+    f.playerRow = row;
+    f.playerCol = col;
+    f.playerAt = null;
+    const desk = { kind: 'furniture', piece: 'desk', row: row + dy, col: col + dx, searched: true };
+    f.props.push(desk);
+    for (let i = 0; i < 40; i++) walkFree(dx, dy, { dtMs: ONE_STICK.frameMs });
+    assert.deepEqual([f.playerRow, f.playerCol], [row, col], 'stopped at the desk going ' + [dx, dy]);
+    f.props = [];
+    f.wallSet = new Set([key(row + dy, col + dx)]);
+    resetWalk();
+    for (let i = 0; i < 40; i++) walkFree(dx, dy, { dtMs: ONE_STICK.frameMs });
+    assert.deepEqual([f.playerRow, f.playerCol], [row, col], 'stopped at the wall going ' + [dx, dy]);
+  });
+});
+
 test('a box in the way is examined, once', () => {
   resetFloor();
   const { playerRow: row, playerCol: col } = state.floor;

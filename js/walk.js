@@ -50,6 +50,10 @@ function blockerAt(row, col) {
   return whatBlocks(row, col);
 }
 
+// How far past a tile line the body's edge may be rounded and still count
+// as on it (slide). Not a tunable: far below anything a frame moves.
+const EDGE_SLACK = 1e-9;
+
 // Moves the spot `delta` tiles along one axis ('x' = columns, 'y' = rows),
 // stopping the body's edge at the first tile in the way. Only tiles the
 // edge newly reaches are checked, so a stick man stepping into a tile the
@@ -66,7 +70,11 @@ function slide(spot, axis, delta) {
   lines.sort((a, b) => Math.abs(a + 0.5 - across) - Math.abs(b + 0.5 - across));
   const from = spot[axis];
   const to = from + delta;
-  const ahead = delta > 0 ? e => Math.ceil(e + R) - 1 : e => Math.floor(e - R);
+  // The tile the body's front edge is in. A stop leaves the edge exactly
+  // on a tile line, and rounding can put it a hair past: EDGE_SLACK keeps
+  // it on this side, or the next frame would skip the tile that stopped it
+  // and walk through (a slow frame, ONE_STICK.frameMs, moves far enough).
+  const ahead = delta > 0 ? e => Math.ceil(e + R - EDGE_SLACK) - 1 : e => Math.floor(e - R + EDGE_SLACK);
   const step = delta > 0 ? 1 : -1;
   for (let n = ahead(from) + step; step > 0 ? n <= ahead(to) : n >= ahead(to); n += step) {
     for (const m of lines) {
