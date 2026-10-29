@@ -5,17 +5,21 @@
 // a spot off its furniture is a mistake. Step B: a live hide spot hides
 // the player, a step brings them out (beside the piece if the way in is
 // taken), and while hidden nothing strikes them and the book stays down.
+// Step C: a pushed takedown falls away from the player, kills what is
+// under it for TAKEDOWN_GOLD_TIMES its gold, falls even with nobody there,
+// is spent and stops blocking, and won't tip sideways or onto a wall.
 //
 // Run: node --test tests/*.test.mjs
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { CORE_KEYS, SPOT_KINDS, SPOT_EMPTY_CHANCE } from '../js/config.js';
+import { CORE_KEYS, SPOT_KINDS, SPOT_EMPTY_CHANCE, MINION_KINDS, TAKEDOWN_GOLD_TIMES } from '../js/config.js';
 import { FLOOR_PLANS, buildPlanLayout } from '../js/plans.js';
 import { rollSpots } from '../js/spots.js';
 import { withRandom, emptyFloor, minionAt } from './helpers.mjs';
-import { state } from '../js/state.js';
+import { state, key } from '../js/state.js';
+import { whatBlocks } from '../js/passage.js';
 import { stepPlayer } from '../js/moves.js';
 import { advanceMonsters, spawnMinion, clockFrame } from '../js/combat.js';
 import { computeVisibility, shootBlock } from '../js/sight.js';
@@ -150,4 +154,59 @@ test('One stick: hidden, a stick man that was reaching misses and none lands ove
   assert.ok(!events.some(e => e.type === 'minionStruck' || e.type === 'struggleStarted'));
   assert.equal(state.run.hearts, hearts);
   state.settings.oneStick = false;
+});
+
+// ---- Step C: takedowns ----
+
+// An empty floor with a 3-wide bookcase two rows north of the player that
+// is a live takedown, the player one row south of it. Returns its tiles.
+function shelfFloor() {
+  emptyFloor(21, { settings: { oneStick: false, lightBattery: false } });
+  const f = state.floor;
+  const row = f.playerRow - 1, c0 = f.playerCol - 1;
+  const tiles = [0, 1, 2].map(i => ({ row, col: c0 + i }));
+  f.props = tiles.map((p, i) => ({ ...p, kind: 'furniture', piece: 'shelf', part: ['left', 'mid', 'right'][i], identified: true, searched: false, sprung: false }));
+  f.roomSpots = [{ row, col: c0 + 1, kind: 'takedown', used: false, tiles }];
+  f.hidden = null;
+  state.run.coinsTotal = 0;
+  computeVisibility();
+  return tiles;
+}
+
+test('pushing a live takedown drops it away from the player: a stick man under it dies for twice its gold', () => {
+  const tiles = shelfFloor();
+  const m = minionAt(-2, 1, 'STALKER');
+  const events = stepPlayer(-1, 0);
+  assert.ok(events.some(e => e.type === 'toppled' && e.piece === 'shelf'));
+  assert.ok(events.some(e => e.type === 'minionKilled' && e.minion === m));
+  const gold = events.find(e => e.type === 'goldGained');
+  assert.equal(gold.from, 'takedown');
+  assert.equal(gold.amount, MINION_KINDS.STALKER.gold * TAKEDOWN_GOLD_TIMES);
+  assert.equal(state.run.coinsTotal, gold.amount);
+  assert.ok(!state.floor.minions.includes(m));
+  assert.ok(state.floor.roomSpots[0].used);
+  // It lies one row further on, and no longer blocks: the player walks onto where it stood.
+  assert.ok(state.floor.props.every(p => p.fallen && p.row === tiles[0].row - 1));
+  assert.equal(whatBlocks(tiles[1].row, tiles[1].col), null);
+});
+
+test('a takedown falls even with nobody under it, and is spent', () => {
+  shelfFloor();
+  const events = stepPlayer(-1, 0);
+  assert.ok(events.some(e => e.type === 'toppled'));
+  assert.ok(!events.some(e => e.type === 'goldGained'));
+  assert.ok(state.floor.roomSpots[0].used);
+});
+
+test('a takedown won\'t tip sideways, nor onto a wall', () => {
+  const tiles = shelfFloor();
+  const f = state.floor;
+  f.playerCol = tiles[2].col + 1;
+  f.playerRow = tiles[2].row;
+  computeVisibility();
+  assert.ok(stepPlayer(0, -1).some(e => e.type === 'blocked' && e.kind === 'wontTip'));
+  shelfFloor();
+  state.floor.wallSet.add(key(tiles[0].row - 1, tiles[0].col));
+  assert.ok(stepPlayer(-1, 0).some(e => e.type === 'blocked' && e.kind === 'noRoom'));
+  assert.ok(!state.floor.roomSpots[0].used);
 });

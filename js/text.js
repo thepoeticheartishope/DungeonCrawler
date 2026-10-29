@@ -372,6 +372,11 @@ export const TEXT = {
   'room.hide.in.sofa': 'You squeeze in behind the sofa.', // draft
   'room.hide.in.table': 'You crawl under the cloth.', // draft
   'room.hide.out': 'You come out.', // draft
+  // Room spots step C: a live takedown pushed over (spots.js topple).
+  'room.takedown.shelf': 'You push. The bookcase leans, then comes down.', // draft
+  'room.takedown.killed': 'It lands on something. {gold} {@term.gold}.', // draft. One under it, and the gold it paid
+  'room.blocked.wontTip': 'It won\'t tip that way. Push it from the front or the back.', // draft. A takedown bumped from the side
+  'room.blocked.noRoom': 'There\'s no room for it to fall.', // draft. A takedown with a wall or furniture where it would land
   'room.blocked.hideBlocked': 'Something is right outside. You stay where you are.', // draft. Hidden, a step with every way out taken
   'room.cover': 'In cover. Keep low.', // draft (Timothy 2026-10-26). Crouched beside something solid: quieter, and unseen from its far side
   'room.dev.warning': 'DEV: warned {s} s before, by {kind}.', // DEV -> Warning timer (warning.js, presence cues plan step D): how long before a stick man's reach he first gave himself away

@@ -590,7 +590,7 @@ setInterval(gazeTick, GAZE_POLL_MS);
 // and targeting once. Returns the room note the events add up to
 // ({ cls, text }, text in event order); the caller decides whether to show it.
 // The events that mean the player moved: they put the answer (line or ring) away.
-const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched', 'minionFinished', 'heldFast', 'hid', 'hideLeft']);
+const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched', 'minionFinished', 'heldFast', 'hid', 'hideLeft', 'toppled']);
 
 function drawEvents(events) {
   const parts = [];
@@ -849,6 +849,9 @@ function drawEvents(events) {
       case 'hideLeft':
         parts.push(t('room.hide.out'));
         break;
+      case 'toppled':
+        parts.push(t('room.takedown.' + e.piece));
+        break;
       case 'reachMissed':
         parts.push(t('room.reach.missed'));
         break;
@@ -916,6 +919,7 @@ function drawEvents(events) {
         break;
       case 'goldGained':
         if (e.from === 'kill') { parts.push(t('gun.killed', { gold: e.amount })); break; }
+        if (e.from === 'takedown') { parts.push(t('room.takedown.killed', { gold: e.amount })); break; }
         logLine(t(e.from === 'chest' ? 'log.chest.opened' : 'log.box.gold', { gold: e.amount }), 'bright');
         break;
       // The gun (gun plan): room notes, and the map's effects. A landed

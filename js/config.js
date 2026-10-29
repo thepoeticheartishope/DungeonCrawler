@@ -524,6 +524,9 @@ export const SHOW_DUCTS = false;
 // it has nothing I think is fair").
 export const SPOT_KINDS = ['hide', 'takedown', 'lure', 'scout'];
 export const SPOT_EMPTY_CHANCE = 0.33;
+// A takedown pays the stick man's own gold this many times over (Timothy
+// 2026-10-28: gold, x2; a kill with the book pays it once and costs energy).
+export const TAKEDOWN_GOLD_TIMES = 2;
 // DEV -> Spots: each spot marked with what it rolled. Off by default.
 export const SHOW_SPOTS = false;
 // Static (static.js, staticview.js; Timothy 2026-10-19): a faint grain

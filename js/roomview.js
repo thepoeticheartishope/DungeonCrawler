@@ -791,7 +791,7 @@ function drawEmberHead(hx, headY, h, ax, pose) {
 
 // DEV -> Spots (room spots plan step A): each room spot's letter in its
 // tile's top-left corner, over everything: H hide, T takedown, L lure,
-// S scout, - nothing this run.
+// S scout, - nothing this run, x used up.
 function drawSpotMarks(ctx, ox, oy) {
   const tile = T * scale;
   ctx.save();
@@ -802,7 +802,7 @@ function drawSpotMarks(ctx, ox, oy) {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(x - 1, y, tile * 0.32, tile * 0.45);
     ctx.fillStyle = SPOT_MARK_COLOUR;
-    ctx.fillText(s.kind ? s.kind[0].toUpperCase() : '-', x, y);
+    ctx.fillText(s.used ? 'x' : s.kind ? s.kind[0].toUpperCase() : '-', x, y);
   });
   ctx.restore();
 }
