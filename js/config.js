@@ -710,6 +710,9 @@ export const TUTORIAL_SPOT_NEAR = 2;
 // The stick man that comes after the name: a slow kind (moves every other
 // turn), without its guard (tutorial.js), so a maim drops it and a kill ends it.
 export const TUTORIAL_MINION_KIND = 'HUSK';
+// The DEV test rooms' stick man (testroom.js): slow, as the tutorial's, so
+// there is time to watch what a mechanic does.
+export const TEST_ROOM_MINION_KIND = 'HUSK';
 // How long a tutorial line stays on the map before it fades (slowly: render.js showWhisper).
 export const TUTORIAL_WHISPER_MS = 5000;
 // After "Die in darkness.", how long until the kind voice: "Don't let them dim your light."

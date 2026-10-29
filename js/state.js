@@ -133,6 +133,7 @@ export const state = {
     windowLitSet: new Set(), // tiles the windows light (windows.js); a stick man in them is seen (sight.js canMakeOut)
     lamps: [],             // a fixed plan's lamps (lamps.js, plans.js `L`): [{ row, col }]; none on a random floor or a rest
     lampPoolSet: new Set(), // tiles the lamps light (lamps.js); a stick man in them is seen from afar while they're on (sight.js canMakeOut)
+    testRoom: null,        // the DEV test room this floor is (testroom.js TEST_ROOMS key, floor.js buildTestFloor); null on every other floor
     tutorial: null,        // the tutorial room's progress (tutorial.js freshTutorial): { stage, turns, door, spot, roomTiles, minion, minionAt }; null on every other floor
     lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
     coin: null,            // { row, col } or null once collected

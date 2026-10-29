@@ -234,6 +234,14 @@
     cursor: pointer;
   }
   .option-toggle[hidden] { display: none; }
+  /* DEV "Start in" (only with ?dev; devpanel.js): a test room instead of the run. */
+  .dev-start select {
+    font: inherit;
+    font-size: 16px;
+    color: var(--text);
+    background: var(--stone-dark);
+    border: 1px solid var(--muted);
+  }
   /* A drawn phosphor box instead of the browser's own checkbox widget. */
   .option-toggle input {
     appearance: none;
@@ -1781,6 +1789,7 @@
       <button class="dev-skip" id="devShotBtn" type="button" title="Testing only: fire at the book&#39;s target; a landed shot opens the dial over the map (fills empty energy, spends no turn)">Test shot (dev)</button>
       <button class="dev-skip" id="devReloadBtn" type="button" title="Testing only: the reload panel and its question over the map (spends no turn)">Test reload (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
+      <button class="dev-skip" id="devRestartTestBtn" type="button" title="Testing only: start the test room picked on the start screen over, as new">Restart test room (dev)</button>
       <button class="dev-skip" id="devAutoWinBtn" type="button" aria-pressed="false" title="Testing only: every encounter plays itself out with correct answers">Auto-win: OFF (dev)</button>
       <button class="dev-skip" id="devInspectBtn" type="button" aria-pressed="false" title="Testing only: show live game state and the last events">Inspect: OFF (dev)</button>
       <pre class="dev-inspect" id="devInspectOut" hidden></pre>
@@ -1848,6 +1857,16 @@
     <label class="option-toggle">
       <input type="checkbox" id="tutorialToggle" checked>
       <span data-t="start.tutorial"></span>
+    </label>
+
+    <!-- DEV (js/devpanel.js shows it only with ?dev): start in a test room
+         (js/testroom.js) instead of the run, to try one mechanic at a time.
+         devpanel.js adds one option per room. -->
+    <label class="option-toggle dev-start" id="devStartRow" hidden>
+      <span>Start in (dev)</span>
+      <select id="devStartIn">
+        <option value="">The run</option>
+      </select>
     </label>
 
 
