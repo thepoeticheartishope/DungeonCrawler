@@ -38,6 +38,40 @@ export function rollSpots(layout, props) {
   return spots;
 }
 
+// The furniture in a hand-drawn room (testroom.js's rooms, the tutorial
+// room): each letter `pieces` names is a piece, `pieces` saying which
+// (FURNITURE_PIECES in config.js), and the same letter side by side along
+// a row is one wide piece. Returns { props, spots }: the props
+// as decor.js lays them down ({ kind: 'furniture', piece, part }, known
+// from the start), and a spot for every piece whose letter `kinds` names,
+// { row, col, kind, used, tiles } as rollSpots gives them, never empty.
+export function drawnFurniture(rows, pieces, kinds = {}) {
+  const props = [];
+  const spots = [];
+  rows.forEach((line, row) => pieceRuns(line, pieces).forEach(({ ch, col, width }) => {
+    const tiles = Array.from({ length: width }, (_, i) => ({ row, col: col + i }));
+    tiles.forEach((p, i) => {
+      const part = width === 1 ? 'single' : i === 0 ? 'left' : i === width - 1 ? 'right' : 'mid';
+      props.push({ row: p.row, col: p.col, kind: 'furniture', piece: pieces[ch], part, identified: true, searched: false, sprung: false });
+    });
+    if (kinds[ch]) spots.push({ row, col, kind: kinds[ch], used: false, tiles });
+  }));
+  return { props, spots };
+}
+
+// The furniture along one row of a drawn room: [{ ch, col, width }], one
+// for each run of the same letter of `pieces`.
+function pieceRuns(line, pieces) {
+  const runs = [];
+  [...line].forEach((ch, col) => {
+    if (!(ch in pieces)) return;
+    const last = runs[runs.length - 1];
+    if (last && last.ch === ch && last.col + last.width === col) last.width++;
+    else runs.push({ ch, col, width: 1 });
+  });
+  return runs;
+}
+
 // The live spot of `kind` on the piece at (row, col), or null.
 export function liveSpotAt(row, col, kind) {
   return state.floor.roomSpots.find(s => s.kind === kind && !s.used && s.tiles.some(p => p.row === row && p.col === col)) || null;

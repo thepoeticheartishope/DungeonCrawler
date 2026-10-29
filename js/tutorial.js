@@ -21,7 +21,17 @@
 //          With One stick, the first time it reaches for the player:
 //          "When it reaches, step away." (one stick plan step G)
 //   key    it falls and leaves a key
-//   open   the key opens the door at the top; through it, the run begins
+//   hide   taking it (room spots plan; Timothy 2026-10-29: hiding and
+//          takedowns get a beat of their own) leaves the door shut and the
+//          book empty, and a second slow stick man comes out of the grate:
+//          "Not this one. Hide." The stall stands ajar now (a live hide
+//          spot) and the bookcase leans (a live takedown)
+//   push   once the player hides, it walks past and paces the row in front
+//          of the bookcase; behind it as it passes under, "Now. Push." It
+//          falls on it. Pushed too soon (it falls on nothing), "Too soon.
+//          The book, then." and the book fills again as in the fight
+//   open   that stick man gone, any way, the door at the top opens;
+//          through it, the run begins
 // It shows the game's central mechanics, so when a core mechanic is added,
 // the tutorial gets a beat for it.
 // floor.js buildTutorialFloor() builds the room from TUTORIAL_ROOM; main.js
@@ -41,28 +51,35 @@ import { crawlInto } from './vents.js';
 import { addRounds } from './gun.js';
 import { lightOn } from './battery.js';
 import { staticLevel } from './static.js';
+import { drawnFurniture } from './spots.js';
 
 // The room: '#' wall, '.' floor, 'S' where the player wakes, 'D' the
 // locked door (in the top wall), 'L' the middle of the light from above,
 // 'o' a pillar, 'b' an empty box, 'g' a grate (vents and noise plan step
-// D: the stick man comes out of it; it has no pair). Furniture is there to
-// bump into, not to use. The floor inside is 8 tiles each way (Timothy).
+// D: the stick men come out of it; it has no pair), 'B' a bookcase and 'H'
+// a stall (TUTORIAL_PIECES): plain furniture until the hide stage, when
+// they become live room spots (TUTORIAL_SPOTS). The floor inside is 8
+// tiles each way (Timothy).
 export const TUTORIAL_ROOM = [
   '####D#####',
   '#g.......#',
-  '#.o....b.#',
+  '#.o.BBB..#',
   '#........#',
   '#......L.#',
   '#........#',
   '#.b......#',
-  '#......o.#',
+  '#......oH#',
   '#...S....#',
   '##########',
 ];
+const TUTORIAL_PIECES = { B: 'shelf', H: 'stall' };
+const TUTORIAL_SPOTS = { B: 'takedown', H: 'hide' };
 
 // TUTORIAL_ROOM as tiles: { size, walls, roomTiles (Set of keys), start,
-// door, spot, grate, pillars, boxes } (all positions { row, col }). The door is
-// floor, not wall: it is shut by passage.js whatBlocks until it opens.
+// door, spot, grate, pillars, boxes, props, spots } (all positions { row,
+// col }; props the furniture and spots its room spots, spots.js
+// drawnFurniture). The door is floor, not wall: it is shut by passage.js
+// whatBlocks until it opens.
 export function parseTutorialRoom(rows = TUTORIAL_ROOM) {
   const room = { size: rows.length, walls: new Set(), roomTiles: new Set(), pillars: [], boxes: [] };
   rows.forEach((line, row) => [...line].forEach((ch, col) => {
@@ -76,12 +93,14 @@ export function parseTutorialRoom(rows = TUTORIAL_ROOM) {
     if (ch === 'o') room.pillars.push(at);
     if (ch === 'b') room.boxes.push(at);
   }));
-  return room;
+  return { ...room, ...drawnFurniture(rows, TUTORIAL_PIECES, TUTORIAL_SPOTS) };
 }
 
-// A fresh tutorial's own state, for state.floor.tutorial.
+// A fresh tutorial's own state, for state.floor.tutorial. `spots` are the
+// stall's and the bookcase's room spots, kept here until the hide stage
+// makes them live.
 export function freshTutorial(room) {
-  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, minion: null, minionAt: null, toldReady: false, toldDial: false, toldHold: false, toldSteady: false, toldLookUp: false, toldStatic: false, toldReach: false };
+  return { stage: 'dark', turns: 0, door: room.door, spot: room.spot, roomTiles: room.roomTiles, spots: room.spots, minion: null, minionAt: null, toldReady: false, toldDial: false, toldHold: false, toldSteady: false, toldLookUp: false, toldStatic: false, toldReach: false, toldHide: false, toldPush: false, toldMissed: false };
 }
 
 // The light that won't come on: off, locked and steady (battery.js: a
@@ -147,13 +166,14 @@ export function tutorialSteady(events) {
 // 'kind' } the first time it reaches for them with One stick (see
 // reachLine); whispered { line: 'tut.static', tone:
 // 'kind' } the first time the static shows (see staticLine); keyDropped { row, col } once the stick man is gone (shot);
-// doorUnlocked once the key is taken. None
+// then the hide and push stages' (hideTurn) once the key is taken. None
 // off the tutorial. In the fight the energy is filled again every turn,
-// so a miss never leaves the player with nothing to shoot (Timothy).
+// so a miss never leaves the player with nothing to shoot (Timothy); so
+// it is after a push that fell on nothing (bookBack).
 export function tutorialTurn(events) {
   const tut = state.floor.tutorial;
   if (!tut) return [];
-  if (tut.stage === 'fight' && state.run.energy < ENERGY_MAX) addRounds(ENERGY_MAX - state.run.energy);
+  if ((tut.stage === 'fight' || bookBack(tut)) && state.run.energy < ENERGY_MAX) addRounds(ENERGY_MAX - state.run.energy);
   if (tut.stage === 'dark') {
     tut.turns++;
     if (tut.turns < TUTORIAL_SPOT_TURNS) return [];
@@ -180,11 +200,84 @@ export function tutorialTurn(events) {
     tut.stage = 'key';
     return [{ type: 'keyDropped', row: at.row, col: at.col }];
   }
-  if (tut.stage === 'key' && events.some(e => e.type === 'keyTaken')) {
+  if (tut.stage === 'key' && events.some(e => e.type === 'keyTaken')) return beginHide(tut);
+  if (tut.stage === 'hide' || tut.stage === 'push') return hideTurn(tut, events);
+  return [];
+}
+
+// The key is taken: the door stays shut, the stall and the bookcase become
+// live room spots (spots.js: the stall shows ajar, the bookcase leans), the
+// book is emptied so this one can't be shot, and a second slow stick man
+// goes into the grate's duct, hunting (sendFromGrate). No events: its drop
+// brings the kind voice's line (hideTurn).
+function beginHide(tut) {
+  state.floor.roomSpots = tut.spots;
+  state.run.energy = 0;
+  state.run.rounds = [];
+  tut.minion = sendFromGrate();
+  tut.minionAt = { row: tut.minion.row, col: tut.minion.col };
+  tut.stage = 'hide';
+  computeVisibility();
+  return [];
+}
+
+// The hide and push stages after a spent turn (`events` the turn's). Their
+// stick man gone, any way, the door opens: doorUnlocked. Otherwise, once
+// each: whispered { line: 'tut.hide', tone: 'kind' } as it drops out of
+// the grate; with the player hidden the stage moves to push and it paces
+// in front of the bookcase (paceUnder), no line; whispered { line:
+// 'tut.push', tone: 'kind' } while the player stands behind the bookcase
+// and it is under it; whispered { line: 'tut.missed', tone: 'kind' } once
+// the bookcase fell on nothing (the book is filled again, bookBack).
+function hideTurn(tut, events) {
+  const f = state.floor;
+  const m = tut.minion;
+  if (!f.minions.includes(m) && !f.crawling.includes(m)) {
     tut.stage = 'open';
     return [{ type: 'doorUnlocked' }];
   }
-  return [];
+  const out = [];
+  if (!tut.toldHide && events.some(e => e.type === 'ventDropped' && e.minion === m)) {
+    tut.toldHide = true;
+    out.push({ type: 'whispered', line: 'tut.hide', tone: 'kind' });
+  }
+  const shelf = tut.spots.find(s => s.kind === 'takedown');
+  if (tut.stage === 'hide' && f.hidden) {
+    tut.stage = 'push';
+    paceUnder(m, shelf);
+  }
+  if (tut.stage !== 'push') return out;
+  if (shelf.used && !tut.toldMissed) {
+    tut.toldMissed = true;
+    out.push({ type: 'whispered', line: 'tut.missed', tone: 'kind' });
+  }
+  const across = p => shelf.tiles.some(t => t.col === p.col);
+  const behind = f.playerRow === shelf.row - 1 && across({ col: f.playerCol });
+  const under = m.row === shelf.row + 1 && across(m);
+  if (!shelf.used && !tut.toldPush && behind && under) {
+    tut.toldPush = true;
+    out.push({ type: 'whispered', line: 'tut.push', tone: 'kind' });
+  }
+  return out;
+}
+
+// The push stage's stick man gives up on the hidden player and paces the
+// row in front of the bookcase, from one tile past one end to one past the
+// other, for ever (combat.js routeStep): it never comes for the player, so
+// they can get behind the bookcase and time the push.
+function paceUnder(m, shelf) {
+  const row = shelf.row + 1;
+  const ends = [shelf.tiles[shelf.tiles.length - 1].col + 1, shelf.tiles[0].col - 1];
+  m.hunts = false;
+  m.lastSeen = null;
+  m.track = 0;
+  m.route = { points: ends.map(col => ({ row, col })), at: 0, loop: true };
+}
+
+// Whether the book is back in the push stage: the bookcase fell on nothing,
+// so the stick man is shot as in the fight.
+function bookBack(tut) {
+  return tut.stage === 'push' && tut.spots.some(s => s.kind === 'takedown' && s.used);
 }
 
 // The kind voice on the reach (one stick plan step G: the reach is the
@@ -290,17 +383,26 @@ export function breakRing() {
   const tut = f.tutorial;
   if (!tut || tut.stage !== 'ring' || !lightOn()) return [];
   if (state.run.energy < ENERGY_MAX) addRounds(ENERGY_MAX - state.run.energy);
-  const grate = f.vents[0];
-  const m = spawnMinion({ row: grate.row, col: grate.col }, TUTORIAL_MINION_KIND);
-  // No guard here (kill or maim plan call 7): a maim drops it, a kill ends it.
-  m.guard = false;
-  m.hunts = true;
-  crawlInto(m, 0);
-  f.minions.splice(f.minions.indexOf(m), 1);
-  f.crawling.push(m);
+  const m = sendFromGrate();
   tut.minion = m;
   tut.minionAt = { row: m.row, col: m.col };
   tut.stage = 'fight';
   computeVisibility();
   return [{ type: 'ringBroken' }, { type: 'whispered', line: 'tut.ready', tone: 'kind' }];
+}
+
+// A slow stick man in the grate's duct (vents.js crawlInto, quietly: no
+// line for it going in), hunting: next turn the grate shudders, the turn
+// after it climbs out (crawlTurn). No guard here (kill or maim plan call
+// 7): a maim drops it, a kill ends it. Returns it.
+function sendFromGrate() {
+  const f = state.floor;
+  const grate = f.vents[0];
+  const m = spawnMinion({ row: grate.row, col: grate.col }, TUTORIAL_MINION_KIND);
+  m.guard = false;
+  m.hunts = true;
+  crawlInto(m, 0);
+  f.minions.splice(f.minions.indexOf(m), 1);
+  f.crawling.push(m);
+  return m;
 }

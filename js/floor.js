@@ -456,7 +456,8 @@ export function buildRestFloor(kind) {
 }
 
 // The tutorial room as data (tutorial.js): the hand-drawn room, never
-// generated, with its pillars and empty boxes, the locked door at the top
+// generated, with its pillars, empty boxes and furniture (its stall and
+// bookcase are plain until the hide stage), the locked door at the top
 // and no stairs. Nothing dangerous yet: the stick man comes only once the
 // barrel's question is answered. The player wakes in the dark facing the
 // door, and their light won't come on. No page access.
@@ -491,7 +492,7 @@ export function buildTutorialFloor() {
   f.props = room.boxes.map(b => ({
     row: b.row, col: b.col, kind: 'box', theme, loot: 'junk', gold: 0, trapped: false,
     identified: false, searched: true, sprung: false,
-  }));
+  })).concat(room.props);
   f.stairs = null;
   f.exchange = null;
   f.exchangeBought = new Set();

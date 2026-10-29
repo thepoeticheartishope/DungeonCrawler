@@ -347,11 +347,16 @@ export const TEXT = {
   'tut.charger': 'It still holds a charge.', // draft (charger plan step C). The kind voice, the first time in a run the player makes out a charger
   'tut.static': 'Static means one is close.', // draft (static). The kind voice, the first time the static shows in the tutorial's fight (the stick man is out of the grate), so the player learns the grain means one is near
   'tut.finish': 'Finish it.', // draft (downed plan step C). The kind voice, when the tutorial's stick man goes down: a bump finishes it
+  'tut.hide': 'Not this one. Hide.', // draft (room spots tutorial beat, Timothy 2026-10-29). The kind voice, as the second stick man drops out of the grate after the key: the book is empty, the stall stands ajar
+  'tut.push': 'Now. Push.', // draft. The kind voice, the first time the player stands behind the bookcase with that stick man under it
+  'tut.missed': 'Too soon. The book, then.', // draft. The kind voice, once the tutorial's bookcase fell on nothing: the book is filled again
   'tut.name.q': 'What is your name?', // Timothy: the barrel asks the player's name; any name is right
   // The plain hints show only for a player stuck on a stage (TUTORIAL_STUCK_MS).
   'tut.hint.move': 'Up walks ahead. Left and right sweep your light.', // draft. Stuck in the dark
   'tut.hint.barrel': 'Walk into the barrel to open it.', // draft. Stuck at the barrel
   'tut.hint.fire': 'Look at it and press SELECT to shoot.', // draft. Stuck in the fight
+  'tut.hint.hide': 'Something here stands open. Walk into it.', // draft. Stuck in the hide stage
+  'tut.hint.push': 'Get behind the bookcase. Push it as it passes.', // draft. Stuck in the push stage
   'tut.key.dropped': 'It falls. Something is left where it stood.', // draft. The stick man is gone and left the key
   'tut.door.open': 'The locked door opens.', // draft. Key taken
   'tut.light.none': 'Your light will not come on.', // draft. V in the tutorial's dark
