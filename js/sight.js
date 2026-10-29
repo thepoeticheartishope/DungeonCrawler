@@ -250,6 +250,8 @@ export function seesEnemy(m) {
 // (PLAYER_CONE_RANGE), so "out of range" only shows when looking toward it
 // wouldn't help.
 export function shootBlock(thing) {
+  // Hidden in a room spot (spots.js), the book stays down.
+  if (state.floor.hidden) return 'hidden';
   const dr = thing.row - state.floor.playerRow;
   const dc = thing.col - state.floor.playerCol;
   if (Math.abs(dr) + Math.abs(dc) > PLAYER_CONE_RANGE) return 'outOfRange';

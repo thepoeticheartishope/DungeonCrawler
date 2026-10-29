@@ -116,7 +116,7 @@ Rules and data (no page/DOM access):
 | `noise.js` | Mistakes make noise; stick men in range hear it. |
 | `windows.js` | Windows on outside walls and their pools of light. |
 | `lamps.js` | Fixed-plan lamps and their pools (seen from afar, not shootable by). |
-| `spots.js` | Room spots: each plan room's places that may hold a hide, takedown, lure or scout, rolled each run (`rollSpots`). |
+| `spots.js` | Room spots: each plan room's places that may hold a hide, takedown, lure or scout, rolled each run (`rollSpots`); hiding in a live hide spot (`hideIn`, `leaveHiding`, `state.floor.hidden`). |
 | `shadows.js` | Stick men's shadows thrown away from lamps and windows. |
 | `warning.js` | DEV warning timer: how long before a reach the player had a sign. |
 | `static.js` | `staticLevel()`: 0..1 from the closest stick man. |

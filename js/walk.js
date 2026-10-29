@@ -12,6 +12,7 @@ import { whatBlocks } from './passage.js';
 import { swingLook } from './look.js';
 import { besideCover } from './sight.js';
 import { enterTile, bumpInto } from './moves.js';
+import { leaveHiding } from './spots.js';
 import { ONE_STICK } from './config.js';
 
 // The last bump while the player keeps pushing: what it hit (a tile key)
@@ -21,6 +22,9 @@ import { ONE_STICK } from './config.js';
 let bumpedAt = null;
 let bumpWait = 0;
 let pushedMs = 0;
+// The push that hid the player (spots.js hideIn) is still held: it
+// doesn't bring them straight out again. Letting go ends it.
+let hidPush = false;
 // Whether the player was crouched in cover last frame (coverChanged).
 let inCover = false;
 
@@ -90,7 +94,8 @@ function slide(spot, axis, delta) {
 // (moves.js bumpInto) once, then again every bumpRepeatMs while it goes
 // on; letting go (no push) ends it. A creep stays crouched once let go
 // (`creeping`), until the player walks at full pace, so they can hide in
-// cover from the stick too. Events: swingLook's, enterTile's
+// cover from the stick too. Hidden in a room spot, a fresh push comes out
+// (spots.js leaveHiding). Events: swingLook's, enterTile's
 // (stepped { free: true } and what the tile holds) and bumpInto's, or
 // heldFast { minion } while a downed one holds the ankle; then
 // coverTaken (coverChanged).
@@ -105,9 +110,12 @@ export function walkFree(dirX, dirY, { push = 1, dtMs = 0, keys = false, still =
     pushedMs = 0;
     bumpedAt = null;
     bumpWait = 0;
+    hidPush = false;
   }
   const events = swingLook(ms, still);
   if (!len || (keys && pushedMs <= ONE_STICK.tapMs) || push < ONE_STICK.deadZone) return [...events, ...coverChanged()];
+  // Hidden (spots.js), a new push comes out of hiding; a tap only looks.
+  if (f.hidden) return hidPush ? events : [...events, ...leaveHiding()];
   const spot = freeSpot();
   bumpWait = Math.max(0, bumpWait - ms);
   f.creeping = f.sneaking || push < ONE_STICK.creep;
@@ -160,11 +168,14 @@ function bump(hit) {
   bumpedAt = at;
   bumpWait = ONE_STICK.bumpRepeatMs;
   if (hit.block.kind === 'held') return [{ type: 'heldFast', minion: hit.block.thing }];
-  return bumpInto(hit.block);
+  const events = bumpInto(hit.block);
+  if (events.some(e => e.type === 'hid')) hidPush = true;
+  return events;
 }
 
 // Forgets the bump in progress (a new floor, or the walk paused).
 export function resetWalk() {
+  hidPush = false;
   bumpedAt = null;
   bumpWait = 0;
   pushedMs = 0;

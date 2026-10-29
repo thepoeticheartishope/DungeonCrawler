@@ -9,6 +9,7 @@
 // (drawThingsWith). Reads state and never changes it.
 
 import { state, key, parseKey } from './state.js';
+import { liveSpotAt } from './spots.js';
 import { ROOM_VIEW, LAMP_LIGHT, MAP_ANIMATION_MS, SAFE_ROOM, ENEMY_LIGHT } from './config.js';
 import {
   searched, isWall, grain, DESK_GLOW, DESK_GLOW_RADIUS, DRUM_BREATH, DRUM_BREATH_REACH, GRATE_RATTLE_SWAYS,
@@ -541,13 +542,52 @@ const STALL = { door: '#5b6b73', edge: '#6f8089', gap: '#1c2124' };
 const SOFA = { back: '#5a3b3e', seat: '#6b474a', arm: '#4a3033' };
 const EASEL = { leg: '#5a3f29', board: '#b9ab8e', frame: '#8a7a5e' };
 
-// Draws furniture prop `thing` on its tile at (x, y).
+// Draws furniture prop `thing` on its tile at (x, y), with its tell over
+// it when it is a live hide spot (room spots plan step B, spots.js).
 function drawFurniture(thing, x, y) {
   const { piece, part } = thing.at;
   const left = part === 'single' || part === 'left';
   const right = part === 'single' || part === 'right';
   (PIECES[piece] || PIECES.table)(x, y, left, right, thing.at);
+  const spot = liveSpotAt(thing.at.row, thing.at.col, 'hide');
+  if (spot && spot.row === thing.at.row && spot.col === thing.at.col && HIDE_TELLS[piece]) HIDE_TELLS[piece](x, y);
 }
+
+// A live hide spot's tell (Timothy 2026-10-28: a live spot can be told
+// from an empty one, so the player can plan): a little something left
+// open, drawn over the piece on the spot's own tile.
+const HIDE_TELLS = {
+  // The stall's door left ajar: the dark of the inside down its edge.
+  stall(x, y) {
+    bctx.fillStyle = STALL.gap;
+    bctx.fillRect(x + 12, y - 9, 3, 22);
+    bctx.fillStyle = STALL.edge;
+    bctx.fillRect(x + 11, y - 9, 1, 22);
+  },
+  // The teacher's desk's knee-hole open and dark, its chair pushed away.
+  teacher(x, y) {
+    bctx.fillStyle = CRATE.inside;
+    bctx.fillRect(x + 5, y + 10, 8, 6);
+  },
+  // The sofa pulled out from the wall: a dark gap behind its back, a
+  // cushion on the floor.
+  sofa(x, y) {
+    bctx.fillStyle = CRATE.inside;
+    bctx.fillRect(x + 1, y - 1, T - 2, 2);
+    bctx.fillStyle = SOFA.seat;
+    bctx.fillRect(x + 4, y + 14, 8, 2);
+  },
+  // A cloth over the table, hanging to the floor.
+  table(x, y) {
+    bctx.fillStyle = SHEET.read;
+    bctx.fillRect(x, y + 3, T, 13);
+    bctx.fillStyle = SHEET.fresh;
+    bctx.fillRect(x, y + 3, T, 1);
+    bctx.fillStyle = SHEET.ink;
+    bctx.fillRect(x + 5, y + 6, 1, 10);
+    bctx.fillRect(x + 11, y + 7, 1, 9);
+  },
+};
 
 // A pupil's desk with its chair behind it.
 function drawSchoolDesk(x, y) {

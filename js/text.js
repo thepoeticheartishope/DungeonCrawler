@@ -365,6 +365,14 @@ export const TEXT = {
   'dpad.walkStick': 'Move stick: drag to walk, push a little to creep, hold still to look up', // draft. The round stick's label (one stick plan step B)
   'room.sneak.on': 'You crouch low and creep.', // draft. X switched sneaking on (one stick plan step B)
   'room.sneak.off': 'You stand and walk.', // draft. X switched it off
+  // Room spots (room spots plan step B, spots.js): hiding in a live hide
+  // spot, and coming out. One line per piece that can be one.
+  'room.hide.in.stall': 'You slip into the stall and pull the door to.', // draft
+  'room.hide.in.teacher': 'You crawl under the desk.', // draft
+  'room.hide.in.sofa': 'You squeeze in behind the sofa.', // draft
+  'room.hide.in.table': 'You crawl under the cloth.', // draft
+  'room.hide.out': 'You come out.', // draft
+  'room.blocked.hideBlocked': 'Something is right outside. You stay where you are.', // draft. Hidden, a step with every way out taken
   'room.cover': 'In cover. Keep low.', // draft (Timothy 2026-10-26). Crouched beside something solid: quieter, and unseen from its far side
   'room.dev.warning': 'DEV: warned {s} s before, by {kind}.', // DEV -> Warning timer (warning.js, presence cues plan step D): how long before a stick man's reach he first gave himself away
   'room.dev.warning.none': 'DEV: no warning.', // DEV -> Warning timer: he reached for the player with no sign before
@@ -650,6 +658,7 @@ export const TEXT = {
   'gun.block.noEnergy': 'No energy. Find a cell.', // draft
   'gun.block.energyFull': 'Energy is full.', // draft
   'gun.block.notShootable': 'The book does nothing to that.', // draft
+  'gun.block.hidden': 'Not while you hide. Come out first.', // draft. Hidden in a room spot (spots.js)
   'gun.block.noTarget': 'Nothing in reach.', // draft. FIRE or T with nothing the gun can reach
   'gun.miss': 'MISS', // floats up over a minion when a shot backfires
   // The gun's panels over the map (gunpanels.js).

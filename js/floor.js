@@ -134,6 +134,7 @@ export function buildFloor() {
   state.floor.exchange = null; // THE UNFOLDING lives on rest floors only
   state.floor.darkTurns = 0;
   state.floor.props = [];
+  state.floor.hidden = null;
   state.floor.lastChoiceType = null;
 
   // A fixed plan (plans.js) is the same building every run; without one
@@ -314,6 +315,7 @@ function clearDanger() {
   f.keysHeld = 0;
   f.keySpots = [];
   f.roomSpots = [];
+  f.hidden = null;
   f.keyRoute = 0;
   f.gateSealed = false;
   f.bossLitSet = new Set();

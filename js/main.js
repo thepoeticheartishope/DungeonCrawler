@@ -590,7 +590,7 @@ setInterval(gazeTick, GAZE_POLL_MS);
 // and targeting once. Returns the room note the events add up to
 // ({ cls, text }, text in event order); the caller decides whether to show it.
 // The events that mean the player moved: they put the answer (line or ring) away.
-const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched', 'minionFinished', 'heldFast']);
+const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched', 'minionFinished', 'heldFast', 'hid', 'hideLeft']);
 
 function drawEvents(events) {
   const parts = [];
@@ -842,6 +842,12 @@ function drawEvents(events) {
         break;
       case 'coverTaken':
         parts.push(t('room.cover'));
+        break;
+      case 'hid':
+        parts.push(t('room.hide.in.' + e.piece));
+        break;
+      case 'hideLeft':
+        parts.push(t('room.hide.out'));
         break;
       case 'reachMissed':
         parts.push(t('room.reach.missed'));
