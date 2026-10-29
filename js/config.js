@@ -714,6 +714,10 @@ export const TUTORIAL_MINION_KIND = 'HUSK';
 // The DEV test rooms' stick man (testroom.js): slow, as the tutorial's, so
 // there is time to watch what a mechanic does.
 export const TEST_ROOM_MINION_KIND = 'HUSK';
+// The advanced tutorial's sneak station (advanced.js): how many of the
+// stick man's steps the player must stay crouched in cover, in his sight
+// but unseen, for the door to open.
+export const ADVANCED_COVER_STEPS = 3;
 // How long a tutorial line stays on the map before it fades (slowly: render.js showWhisper).
 export const TUTORIAL_WHISPER_MS = 5000;
 // After "Die in darkness.", how long until the kind voice: "Don't let them dim your light."

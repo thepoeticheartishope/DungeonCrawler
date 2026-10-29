@@ -357,6 +357,8 @@ export const TEXT = {
   'tut.hint.fire': 'Look at it and press SELECT to shoot.', // draft. Stuck in the fight
   'tut.hint.hide': 'Something here stands open. Walk into it.', // draft. Stuck in the hide station
   'tut.hint.push': 'Get behind the bookcase. Push it as it passes.', // draft. Stuck in the takedown station
+  'tut.hint.lure': 'Light out (V). Then walk into the sink, and wait behind the bookcase.', // draft. Stuck in the lure station
+  'tut.hint.sneak': 'Crouch behind the table: push the stick only a little, or press X.', // draft. Stuck in the sneak station (One stick)
   'tut.key.dropped': 'It falls. Something is left where it stood.', // draft. The stick man is gone and left the key
   'tut.door.open': 'Both doors open. The left goes on. The right teaches more.', // draft (tutorial split plan, Timothy 2026-10-29). Key taken: the left door into the run, the right into the advanced tutorial (optional)
   // The advanced tutorial (advanced.js): one station per mechanic.
@@ -364,6 +366,13 @@ export const TEXT = {
   'adv.station.takedown': 'Takedowns.', // draft. As the takedown station starts
   'adv.hide.done': 'It lost you. Come out when you are ready.', // draft. The kind voice, once the player hides in the hide station
   'adv.door.open': 'The door opens.', // draft. A station's mechanic done
+  'adv.station.lure': 'Lures.', // draft. As the lure station starts
+  'adv.station.sneak': 'Sneaking.', // draft. As the sneak station starts (One stick only)
+  'adv.lure.heard': 'He heard it. Behind the bookcase, now.', // draft. The kind voice, the tap on and the stick man drawn to it
+  'adv.lure.light': 'He saw your light, not the sound. Put it out and try again.', // draft. The kind voice, the tap on but the stick man saw the player instead: the sink works again
+  'adv.sneak.intro': 'You are low behind the table. Stay down and let it pass.', // draft. The kind voice as the sneak station starts: the player starts crouched behind the table
+  'adv.sneak.seen': 'It saw you. Crouch behind something solid.', // draft. The kind voice, the sneak station's stick man noticed the player
+  'adv.sneak.done': 'It walked right past you.', // draft. The kind voice, the player stayed crouched in cover while it passed
   'tut.light.none': 'Your light will not come on.', // draft. V in the tutorial's dark
   'tut.light.held': 'Keep your light on.', // draft. V in the tutorial's fight: the light stays on there
   'tut.name.kept': 'Your name is {name}.', // draft. After the barrel's answer
