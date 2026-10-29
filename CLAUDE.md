@@ -139,7 +139,7 @@ Drawing and page code:
 | `mapview.js` | The map canvas, its animations and taps; `requestMapDraw()`, `glyphOf()`, `mapThings()`. |
 | `roomview.js` | The room view, the only map view: camera, walls and floors, light map, stick men, shadows (~1,000 lines). |
 | `roomthings.js` | The room view's things on the floor and the furniture as pixel art (`FLAT` / `STAND`). |
-| `roomgun.js` | The gun on the room view: held gun, reach, brackets, steady mark, laser, shot, answer ring. |
+| `roomgun.js` | The gun on the room view, drawn as a book: held book, reach, brackets, steady mark, laser, shot, answer ring. |
 | `roomsky.js` | Windows and their light, and the eye in the sky (`lookUp`). |
 | `mapshared.js` | Sizes and view-independent helpers the map view uses (`floorLevelOf`, `minionOn`, `isWall`, `grain`, `ENEMY_KINDS`, `POSE_SCALE`, last shot …). |
 | `stickforms.js` | Minions as stick men: poses, tells, tendrils of letters, downed and dying. |

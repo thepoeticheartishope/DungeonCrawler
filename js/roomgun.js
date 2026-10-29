@@ -1,5 +1,6 @@
 // The gun on the room view (room view plan step D, moved out of
-// roomview.js): where the player's stick man holds it (holdGun), the
+// roomview.js), drawn as a book (book plan, 2026-10-28): how the player's
+// stick man holds it (holdBook, drawn by drawBook), the
 // tiles it reaches lit faintly, corner brackets on what can be shot and
 // the breathing target with its guard, the steady aim's mark, a dashed
 // laser from the muzzle to the target's chest, the shot's flash and ring
@@ -11,7 +12,7 @@
 import { state } from './state.js';
 import { ROOM_VIEW, ANSWER_RING, ENEMY_LIGHT, MAP_ANIMATION_MS, MINION_KINDS } from './config.js';
 import {
-  inReach, liveTarget, lastShot, recoilAt, darkRingAt, answerRingLetters, ENEMY_KINDS, POSE_SCALE, REACH_FILL,
+  inReach, liveTarget, lastShot, darkRingAt, answerRingLetters, ENEMY_KINDS, POSE_SCALE, REACH_FILL,
   BRACKET_ARM, BRACKET_HALF, BRACKET_LEVEL, BRACKET_PULSE, BRACKET_TEXT_SIZE, BRACKET_HP_GAP, LASER_LEVEL,
   SHOT_RING, MISS_TEXT_SIZE, MISS_RISE, ISO_STICK_HEIGHT, STEADY_OPEN, STEADY_MARK, STEADY_SHAKE,
   STEADY_TEXT_SIZE,
@@ -21,10 +22,34 @@ import { canShoot } from './sight.js';
 import { t } from './text.js';
 
 const T = ROOM_VIEW.tilePx;
-// The gun in the player's hand (step D), as shares of his height: how far
-// ahead and to his right his hand holds it, how high, its length, its
-// grip, how far it lifts while a shot waits and kicks back on a shot.
-export const GUN = { ahead: 0.2, side: 0.08, height: 0.5, length: 0.3, grip: 0.08, raise: 0.06, kick: 0.08 };
+// The book in the player's hands (book plan, Timothy 2026-10-28: the gun
+// drawn as a book, "weaponizing their knowledge"), as shares of his
+// height: how far ahead of him he reads it and points it, how high he
+// holds it and how far it lifts while a shot waits, and how far it leans
+// back (degrees from upright) read and pointed. He reads it close while he
+// aims and pushes it out at the enemy when he shoots.
+export const BOOK = { read: 0.3, point: 0.5, height: 0.4, raise: 0.05, lift: 0.3, readLean: 45, pointLean: 70 };
+// The open book flat, before it leans: a left page and a right page, the
+// fold at column OPEN_MID, page edges and the cover along the bottom.
+// P page, L line of words, S fold, E page edges, C cover.
+const OPEN_BOOK = [
+  '...PPPP.PPPP...',
+  '.PPPPPPSPPPPPP.',
+  'PLLLLPPSPLLLLLP',
+  'PPPPPPPSPPPPPPP',
+  'PLLLPPPSPLLLLPP',
+  'PPPPPPPSPPPPPPP',
+  'EEEEEEEEEEEEEEE',
+  'CCCCCCCCCCCCCCC',
+];
+const OPEN_MID = 7;
+const OPEN_DIP = 2;        // the pages bow into a V: the outer edges this many pixels above the fold
+const OPEN_NARROW = 0.25;  // the top edge's narrowing at full lean, a share of its width (it is farther away)
+const OPEN_FROM = 0.4;     // how wide it is as it starts to open, a share of open
+// The shut book hanging from his hand: K spine, C cover, P page edges.
+const SHUT_BOOK = ['KCCCC', 'KCCCP', 'KCCCP', 'KCCCP', 'KCCCP', 'KCCCP', 'KCCCP', 'KCCCC'];
+const BOOK_COLOURS = { P: '#dde8ea', L: '#7f9396', S: '#4a5759', E: '#a3aeb0', C: '#8a6440', K: '#5a3e26' };
+const BOOK_GLOW = { size: 8, level: 0.2 }; // the pages' glow while a shot waits: its reach in picture pixels and its level
 const SHOT_AT = 0.55;            // a shot goes to this share of a stick man's height
 const LASER_DASH = [5, 4];      // its dash and gap, in line widths
 const DARK_RING = { lift: 0.5, size: 0.3 }; // the tutorial's ring of words: how high it floats and its letters' size, in tiles
@@ -35,10 +60,11 @@ let frame = { ox: 0, oy: 0 }; // the camera's top-left this frame, in picture pi
 let scale = 1;            // canvas pixels per picture pixel
 let pageScale = 1;        // canvas pixels per CSS pixel
 let tapBoxes = [];        // this frame's enemies: [{ box: [left, top, right, bottom], tile }]
-let muzzle = null;        // the gun's muzzle this frame in picture pixels, or null with no gun drawn
+let muzzle = null;        // the top of the open book's fold this frame in picture pixels (where the laser and the shot start), or null while it is shut
+let bookOpenedAt = null;  // when the book last opened (frame time), or null while it is shut
 
 // roomview.js starts each frame here, before the player's stick man is
-// drawn: no gun is held yet, so no muzzle.
+// drawn: no book is held open yet, so no muzzle.
 export function startGunFrame(picture, shared, camera, pixelScale, cssScale) {
   bctx = picture;
   look = shared;
@@ -53,24 +79,110 @@ export function gunTargets(boxes) {
   tapBoxes = boxes;
 }
 
-// Where the player's stick man (feet at (fx, fy), `h` tall, picture
-// pixels) holds the gun: ahead of him the way the light points (ax, ay),
-// to his right, at hand height, `rise` higher as his body breathes, lifted
-// while a shot waits, kicked back by a shot. Notes its muzzle for the
-// laser and the shot.
-export function holdGun(fx, fy, ax, ay, h, rise) {
-  const ahead = (GUN.ahead - recoilAt(look.now, look.still) * GUN.kick) * h;
-  const up = (GUN.height + (state.battle.aim ? GUN.raise : 0)) * h + rise;
-  const at = (along, side) => [fx + ax * along - ay * side, fy + ay * along + ax * side - up];
-  const side = GUN.side * h;
-  const gun = {
-    grip: at(ahead, side),
-    backHand: at(ahead - 0.06 * h, side - 0.08 * h),
-    butt: at(ahead - 0.06 * h, side),
-    muzzle: at(ahead + GUN.length * h, side),
+// What the player's stick man (feet at (fx, fy), `h` tall, picture
+// pixels, looking the way (ax, ay)) does with the book this frame. While
+// nothing can be shot it is shut and hangs from `hand`. Once something can
+// be shot (or a shot waits or has just gone) he lifts it and opens it
+// over BOOK_OPEN_MS: read close, `rise` higher as his body breathes,
+// lifted while a shot waits, pushed out at the enemy by a shot
+// (pointedAt). Notes the top of its fold for the laser and the shot.
+// Gives back { open: false, hand } or { open: true, spine, lean, spread,
+// turn, behind, hands }: behind when he faces away, so the body is drawn
+// over it.
+export function holdBook(fx, fy, ax, ay, h, rise, hand) {
+  const target = liveTarget();
+  const shot = lastShot();
+  const age = shot ? look.now - shot.start : Infinity;
+  const pointing = age < MAP_ANIMATION_MS.bookPoint + MAP_ANIMATION_MS.bookBack;
+  muzzle = null;
+  if (!state.battle.aim && !(target && canShoot(target)) && !pointing) {
+    bookOpenedAt = null;
+    return { open: false, hand };
+  }
+  if (bookOpenedAt === null) bookOpenedAt = look.now;
+  const opened = look.still ? 1 : ease((look.now - bookOpenedAt) / MAP_ANIMATION_MS.bookOpen);
+  if (!look.still && (opened < 1 || pointing)) look.keepMoving();
+  if (opened < 0.5) return { open: false, hand: [hand[0], hand[1] - opened * BOOK.lift * h] };
+  const out = pointedAt(age, look.still);
+  const ahead = (BOOK.read + (BOOK.point - BOOK.read) * out) * h;
+  const up = (BOOK.height + (state.battle.aim ? BOOK.raise : 0) - (1 - opened) * BOOK.lift) * h + rise;
+  const spine = [Math.round(fx + ax * ahead), Math.round(fy + ay * ahead - up)];
+  const lean = BOOK.readLean + (BOOK.pointLean - BOOK.readLean) * out;
+  const spread = OPEN_FROM + (1 - OPEN_FROM) * opened;
+  const tall = openHeight(lean);
+  muzzle = [spine[0] + 0.5, spine[1] - tall + 0.5];
+  return {
+    open: true, spine, lean, spread,
+    turn: look.still ? 0 : age / MAP_ANIMATION_MS.bookTurn,
+    behind: ay < 0,
+    hands: [[spine[0] + OPEN_MID * spread, spine[1] - OPEN_DIP], [spine[0] - OPEN_MID * spread, spine[1] - OPEN_DIP]],
   };
-  muzzle = gun.muzzle;
-  return gun;
+}
+
+// How far out the book is `age` ms after the last shot: 0 read close, 1
+// pointed at the enemy. It goes out fast, stays while the shot plays and
+// comes back slowly; under reduced motion (`still`) it is simply out
+// while the shot plays.
+function pointedAt(age, still) {
+  const { bookPush, bookPoint, bookBack } = MAP_ANIMATION_MS;
+  if (age < 0 || age >= bookPoint + bookBack) return 0;
+  if (still) return age < bookPoint ? 1 : 0;
+  return age < bookPoint ? ease(age / bookPush) : 1 - ease((age - bookPoint) / bookBack);
+}
+
+// A gentle start and stop for 0..1 (clamped).
+function ease(p) {
+  const q = Math.min(1, Math.max(0, p));
+  return q * q * (3 - 2 * q);
+}
+
+// How many pixels tall the open book looks leaning `lean` degrees back.
+function openHeight(lean) {
+  return Math.max(5, Math.round(OPEN_BOOK.length * (0.6 + 0.4 * Math.cos(lean * Math.PI / 180))));
+}
+
+// Draws the book holdBook gave back into the picture: shut from its hand,
+// or open with its left and right pages level so it reads left to right,
+// leaning back (shorter, its top edge narrower), the pages bowed into a V,
+// glowing while a shot waits, and a page turning from right to left after
+// a shot. Each pixel takes the nearest pixel of the flat book, so it stays
+// pixel art.
+export function drawBook(book) {
+  const dot = (x, y, ch) => {
+    bctx.fillStyle = BOOK_COLOURS[ch];
+    bctx.fillRect(Math.round(x), Math.round(y), 1, 1);
+  };
+  if (!book.open) {
+    SHUT_BOOK.forEach((row, r) => [...row].forEach((ch, c) => dot(book.hand[0] - 1 + c, book.hand[1] + r, ch)));
+    return;
+  }
+  const [cx, cy] = book.spine;
+  const tall = openHeight(book.lean);
+  const narrow = Math.sin(book.lean * Math.PI / 180) * OPEN_NARROW;
+  const reach = OPEN_MID * book.spread;
+  const lift = x => Math.round(OPEN_DIP * Math.min(1, Math.abs(x) / reach));
+  if (state.battle.aim) {
+    const [gx, gy] = [cx, cy - tall + 2];
+    const glow = bctx.createRadialGradient(gx, gy, 0, gx, gy, BOOK_GLOW.size);
+    glow.addColorStop(0, 'rgba(' + look.colours.glowRgb + ', ' + BOOK_GLOW.level + ')');
+    glow.addColorStop(1, 'rgba(' + look.colours.glowRgb + ', 0)');
+    bctx.fillStyle = glow;
+    bctx.fillRect(gx - BOOK_GLOW.size, gy - BOOK_GLOW.size, BOOK_GLOW.size * 2, BOOK_GLOW.size * 2);
+  }
+  for (let r = 0; r < tall; r++) {
+    const row = OPEN_BOOK[Math.min(OPEN_BOOK.length - 1, Math.floor((r + 0.5) / tall * OPEN_BOOK.length))];
+    const across = book.spread * (1 - narrow * (1 - r / (tall - 1)));
+    for (let x = -OPEN_MID - 1; x <= OPEN_MID + 1; x++) {
+      const ch = row[Math.round(x / across) + OPEN_MID];
+      if (ch && ch !== '.') dot(cx + x, cy - tall + 1 + r - lift(x), ch);
+    }
+  }
+  if (book.turn <= 0 || book.turn >= 1) return;
+  // A page lifts off the right side and lays itself down on the left.
+  const s = Math.PI * book.turn;
+  const x = Math.round(cx + (OPEN_MID - 1) * book.spread * Math.cos(s));
+  const top = cy - tall + 1 - lift(x - cx) - Math.round(OPEN_DIP * Math.sin(s));
+  for (let y = top; y <= cy - 2 - lift(x - cx); y++) dot(x, y, 'P');
 }
 
 // A point in picture pixels on the canvas.

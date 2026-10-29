@@ -1221,7 +1221,11 @@ export const MAP_ANIMATION_MS = {
   ventRattle: 900,  // a grate shuddering, slowly, the turn before something drops out (vents.js); still under reduced motion and Comfort mode
   ventDrop: 260,    // a stick man climbing out of a grate onto the tile beside it
   darkFlash: 700,   // a stick man hit in the dark, shown in the shot's flash (light battery plan step C)
-  gunRecoil: 120,   // the gun kicking back toward the player as it fires
+  bookOpen: 350,    // the book lifted from his side and opened once something can be shot (roomgun.js holdBook); at once under reduced motion
+  bookPush: 150,    // a shot pushing the book out from reading close to pointing at the enemy
+  bookPoint: 600,   // the book held out at the enemy after a shot
+  bookBack: 350,    // the book coming back to read close
+  bookTurn: 700,    // a page turning from right to left as a shot goes; not under reduced motion
   // Minions as stick men (stick enemies plan, js/stickforms.js). Slow on
   // purpose: the calm rule for motion- and flicker-sensitive players.
   stickTell: 900,    // a stick enemy eases into its tell pose, or back out (stickforms.js)
