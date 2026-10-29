@@ -227,16 +227,6 @@ export function lastShot() {
   return shot;
 }
 
-// How far through its kick the gun is at `now`, 1 just fired to 0
-// settled; 0 under reduced motion (`still`). The view keeps frames going
-// while it is above 0.
-export function recoilAt(now, still) {
-  if (!shot || still) return 0;
-  const age = now - shot.start;
-  if (age >= MAP_ANIMATION_MS.gunRecoil) return 0;
-  return 1 - age / MAP_ANIMATION_MS.gunRecoil;
-}
-
 // The tutorial's ring of dark (tutorial.js stage 'ring') at `now`: words
 // in the stick men's cold light circling at the edge of the player's
 // small light, slowly; when the light breaks the ring they scatter

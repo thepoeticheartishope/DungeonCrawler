@@ -65,7 +65,7 @@ import {
   drawSounds, lampLevel, shadeAt,
 } from './roomthings.js';
 import {
-  GUN, startGunFrame, gunTargets, holdGun, drawReach, drawBrackets, drawLaser, drawShot, drawAnswerRing, drawDarkRing,
+  startGunFrame, gunTargets, holdBook, drawBook, drawReach, drawBrackets, drawLaser, drawShot, drawAnswerRing, drawDarkRing,
 } from './roomgun.js';
 import { startSkyFrame, drawWindow, drawPool, drawSky } from './roomsky.js';
 
@@ -107,7 +107,6 @@ const LAMP_TINT = [255, 214, 170];
 // The player's stick man, drawn in the picture's pixels.
 const STICK_LINE = 1;
 const HEAD_SHARE = 0.12;         // the head's radius, a share of his height
-const GUN_COLOUR = '#c8d2d6';    // the gun in his hand (its shape is roomgun.js GUN)
 
 // How each kind of thing is drawn (step B; tests/roomview.test.mjs checks
 // every kind the game puts on the map has one): 'flat' lies on the floor
@@ -735,31 +734,24 @@ function drawStickMan(at, ox, oy) {
   const pxPerM = h / FIGURE3D.heightM;
   const joints = figurePose(PLAYER_FIGURE, { at: [at.col, at.row], metres: FIGURE3D.heightM / ROOM_VIEW.stickHeight, crouch }, look.now, look.still);
   const J = projectFigure(joints, phiOfAngle(angle), fx, fy, pxPerM);
-  // A crouch lowers the gun with his shoulders.
+  // A crouch lowers the book with his shoulders.
   const drop = (STANDING_NECK - joints[NECK_Y]) * pxPerM;
-  const gun = holdGun(fx, fy, ax, ay, h, pose.gunRise * h - drop);
-  const hands = gun ? [gun.grip, gun.backHand] : [J.haL, J.haR];
+  const book = holdBook(fx, fy, ax, ay, h, pose.gunRise * h - drop, J.elR, J.haR);
   const px = v => Math.round(v) + 0.5;
   const path = (points) => points.forEach(([x, y], i) => (i ? bctx.lineTo(px(x), px(y)) : bctx.moveTo(px(x), px(y))));
   bctx.save();
+  // The shut book is under his arm, so the arm is drawn over it; facing
+  // away, the open book is beyond him, so his body is drawn over it.
+  if (!book.open || book.behind) drawBook(book);
   bctx.strokeStyle = look.colours.text;
   bctx.lineWidth = STICK_LINE;
   bctx.lineCap = 'square';
   bctx.beginPath();
   path([J.ftL, J.knL, J.pelvis, J.knR, J.ftR]);
   path([J.pelvis, J.chest, J.neck]);
-  path(gun ? [hands[0], J.neck, hands[1]] : [J.haL, J.elL, J.neck, J.elR, J.haR]);
+  path(book.open ? [book.hands[0], J.neck, book.hands[1]] : [J.haL, J.elL, J.neck, J.elR, book.hand]);
   bctx.stroke();
-  if (gun) {
-    bctx.strokeStyle = GUN_COLOUR;
-    bctx.beginPath();
-    bctx.moveTo(px(gun.butt[0]), px(gun.butt[1]));
-    bctx.lineTo(px(gun.muzzle[0]), px(gun.muzzle[1]));
-    bctx.moveTo(px(gun.grip[0]), px(gun.grip[1]));
-    bctx.lineTo(px(gun.grip[0]), px(gun.grip[1] + GUN.grip * h));
-    bctx.stroke();
-    bctx.strokeStyle = look.colours.text;
-  }
+  if (book.open && !book.behind) drawBook(book);
   // The ember head: dark inside, a glow in the middle that breathes and
   // leans the way he looks, and the ring round it.
   const headR = Math.max(2.5, h * HEAD_SHARE);
