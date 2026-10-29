@@ -106,6 +106,7 @@ const DIM_TINT = [244, 236, 255];
 const LAMP_TINT = [255, 214, 170];
 // The player's stick man, drawn in the picture's pixels.
 const STICK_LINE = 1;
+const SPOT_MARK_COLOUR = '#ffd36b'; // DEV -> Spots' letters (drawSpotMarks)
 const HEAD_SHARE = 0.12;         // the head's radius, a share of his height
 
 // How each kind of thing is drawn (step B; tests/roomview.test.mjs checks
@@ -322,6 +323,7 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   drawShot(ctx);
   drawDarkRing(ctx);
   drawEdgeMarks(ctx, ox, oy);
+  if (state.settings.showSpots) drawSpotMarks(ctx, ox, oy);
   drawSky(ctx, viewW, viewH, at, ox, oy);
 }
 
@@ -768,6 +770,24 @@ function drawStickMan(at, ox, oy) {
   bctx.fill();
   bctx.stroke();
   bctx.restore();
+}
+
+// DEV -> Spots (room spots plan step A): each room spot's letter in its
+// tile's top-left corner, over everything: H hide, T takedown, L lure,
+// S scout, - nothing this run.
+function drawSpotMarks(ctx, ox, oy) {
+  const tile = T * scale;
+  ctx.save();
+  ctx.font = Math.round(tile * 0.45) + 'px VT323, monospace';
+  ctx.textBaseline = 'top';
+  state.floor.roomSpots.forEach(s => {
+    const x = (s.col * T - ox) * scale + 2, y = (s.row * T - oy) * scale + 1;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(x - 1, y, tile * 0.32, tile * 0.45);
+    ctx.fillStyle = SPOT_MARK_COLOUR;
+    ctx.fillText(s.kind ? s.kind[0].toUpperCase() : '-', x, y);
+  });
+  ctx.restore();
 }
 
 // Every thing but the player as its glyph on its tile, over the lit

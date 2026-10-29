@@ -8,7 +8,7 @@
 //   floor    — one floor, rebuilt by buildFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, STATIC_NOISE, WARNING_TIMER, ONE_STICK, BOOK, STEADY_AIM } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, SHOW_SPOTS, STATIC_NOISE, WARNING_TIMER, ONE_STICK, BOOK, STEADY_AIM } from './config.js';
 import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
@@ -37,6 +37,7 @@ export const state = {
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
     bookPaper: BOOK.paper,  // the record book's page (bookview.js): one of BOOK.papers; DEV -> Book paper cycles it
     lightBattery: LIGHT_BATTERY, // the light goes on and off and runs on a battery (battery.js); DEV -> Light battery flips it (off: always on)
+    showSpots: SHOW_SPOTS,  // DEV -> Spots: each room spot marked on the map with what it rolled (H hide, T takedown, L lure, S scout, - nothing)
     showDucts: SHOW_DUCTS,  // DEV -> Show ducts: stick men in a duct drawn dimly at the grate they will come out of, and every pair of grates known
     noise: NOISE,           // mistakes make a sound stick men hear (noise.js); DEV -> Noise flips it (off: mistakes are quiet)
     oneStick: ONE_STICK.on, // walk freely in real time with one stick (walk.js), not tile to tile; turns Real time on; DEV -> One stick flips it
@@ -140,6 +141,7 @@ export const state = {
     keys: [],              // the floor's keys still lying where dungeon.js put them: [{ row, col }] (CORE_KEYS on a depth, none on a rest)
     keysHeld: 0,           // keys the player has taken on this floor
     gateSealed: false,     // a wrong answer at the gate (the boss) since the last key: it won't fight until another key is taken (gate.js)
+    roomSpots: [],         // the plan's room spots this floor (spots.js rollSpots): [{ row, col, kind, used }], kind one of SPOT_KINDS or null (nothing this run). Empty on a random floor or a rest
     keySpots: [],          // on a fixed plan (plans.js), every spot a key could be in: [{ row, col }]; the light's walk sweeps them all. Empty on a random floor or a rest
     keyRoute: 0,           // steps of the shortest walk from the start through every key (every key spot on a fixed plan) to the boss (light.js); the light's budget is this plus slack
     beats: [],             // [{ kind, row, col, at }] the recipe's beats and where they landed, `at` = step of the walk out to the farthest key (beats.js)

@@ -33,10 +33,16 @@
 // doorway, the start, a key spot, the gate or the stairs, is left out.
 // The pieces are the ones roomview.js draws (FURNITURE_PIECES in
 // config.js). Only the School is furnished so far.
+// A room's `spots` (room spots plan, ideas/room-spots-plan.md outside the
+// repo; Timothy 2026-10-28) are places that may hold something to help the
+// player: [row, col, kinds], each on one of the room's furniture tiles,
+// `kinds` what it may hold (SPOT_KINDS in config.js). Each run spots.js
+// rolls each one: one of its kinds, or nothing a third of the time.
 // No DOM access here.
 
 import { key } from './state.js';
 import { FOUR_STEPS } from './grid.js';
+import { SPOT_KINDS } from './config.js';
 
 export const FLOOR_PLANS = {
   school: {
@@ -86,25 +92,25 @@ export const FLOOR_PLANS = {
       ] },
       { name: 'plan.school.lab', r0: 2, c0: 2, r1: 6, c1: 8, furniture: [
         ['bench', 4, 3, 2], ['bench', 4, 6, 2], ['sink', 2, 8],
-      ] },
+      ], spots: [[2, 8, ['lure']]] },
       { name: 'plan.school.library', r0: 2, c0: 12, r1: 5, c1: 20, furniture: [
         ['shelf', 3, 13, 3], ['shelf', 3, 17, 3], ['table', 5, 12, 2],
-      ] },
+      ], spots: [[3, 14, ['takedown']], [3, 18, ['takedown']]] },
       { name: 'plan.school.artRoom', r0: 2, c0: 24, r1: 6, c1: 30, furniture: [
         ['easel', 3, 25], ['easel', 3, 29], ['table', 4, 26, 3],
-      ] },
+      ], spots: [[4, 27, ['hide']]] },
       { name: 'plan.school.class1', r0: 12, c0: 2, r1: 18, c1: 6, furniture: [
         ['teacher', 12, 3, 2], ['desk', 14, 3], ['desk', 14, 5], ['desk', 16, 3], ['desk', 16, 5],
-      ] },
+      ], spots: [[12, 3, ['hide']]] },
       { name: 'plan.school.class2', r0: 12, c0: 26, r1: 18, c1: 30, furniture: [
         ['teacher', 12, 27, 2], ['desk', 14, 27], ['desk', 14, 29], ['desk', 16, 27], ['desk', 16, 29],
-      ] },
+      ], spots: [[12, 27, ['hide']]] },
       { name: 'plan.school.toilets', r0: 24, c0: 2, r1: 29, c1: 8, furniture: [
         ['sink', 24, 2], ['sink', 24, 3], ['stall', 25, 8], ['stall', 27, 8],
-      ] },
+      ], spots: [[25, 8, ['hide']], [27, 8, ['hide']], [24, 2, ['lure']]] },
       { name: 'plan.school.staffRoom', r0: 24, c0: 24, r1: 29, c1: 30, furniture: [
         ['table', 26, 26, 3], ['sofa', 29, 25, 2],
-      ] },
+      ], spots: [[29, 25, ['hide']]] },
     ],
   },
   archive: {
@@ -243,6 +249,16 @@ function pickKeySpots(spots, chamberAt, count) {
   return picked;
 }
 
+// Throws when one of `room`'s spots is not on one of its furniture tiles or
+// names a kind spots.js doesn't know: a mistake in this file.
+function checkSpots(planName, room) {
+  (room.spots || []).forEach(([row, col, kinds]) => {
+    const onPiece = (room.furniture || []).some(([, r, c, width = 1]) => r === row && col >= c && col < c + width);
+    if (!onPiece) throw new Error(planName + ': spot ' + row + ',' + col + ' is not on furniture in ' + room.name);
+    if (!kinds.length || kinds.some(k => !SPOT_KINDS.includes(k))) throw new Error(planName + ': spot ' + row + ',' + col + ' has an unknown kind');
+  });
+}
+
 // A floor layout built from a fixed plan, in the same shape as dungeon.js
 // generateDungeonLayout returns (walls, roomTiles, chambers, chamberAt,
 // start, spawn = the gate, stairs, keys), plus `version`, `keySpots` and
@@ -281,7 +297,11 @@ export function buildPlanLayout(plan, keyCount, version = null) {
         chamberAt.set(key(r, c), i);
       }
     }
-    return { floorCells, doorKeys: new Set(), slots: [], name: room.name, isBoss: !!room.core, furniture: room.furniture || [] };
+    checkSpots(plan.name, room);
+    return {
+      floorCells, doorKeys: new Set(), slots: [], name: room.name, isBoss: !!room.core,
+      furniture: room.furniture || [], spots: room.spots || [],
+    };
   });
   chambers.forEach((ch, i) => {
     ch.floorCells.slice().forEach(p => FOUR_STEPS.forEach(([dr, dc]) => {
