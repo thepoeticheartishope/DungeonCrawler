@@ -127,6 +127,15 @@
 //      in; the kind voice says "Pull the shutter. They won't follow you
 //      in." (step C); a bump on the switch rolls the shutter up again. Saved as
 //      noesis-safe-room*.png.
+//  17. Test rooms run (DEV test rooms, testroom.js): Start in (dev) picks
+//      each room from the start screen, straight in with no intro, in
+//      turns. Hide: walk into the stall before the stick man arrives,
+//      wait while he finishes his route and hunts, and he never gets the
+//      player (tally "hid 1", "hit 0"); stepping out, he does. DEV ->
+//      Restart test room starts it over (the tally back to 0). Takedown:
+//      round behind the bookcase by the free side, wait for the pacing
+//      stick man to pass under it, push: it falls and kills him for
+//      twice his gold (tally "fell 1", "kills 1").
 //
 // Every run plays the room view, the game's only map view since room view
 // plan step G (the shoulder view before it is kept outside the repo, at
@@ -2712,6 +2721,130 @@ async function checkRecordBook(page, url) {
   return null;
 }
 
+// ---- Run 17: the DEV test rooms ----
+
+// Starts the test room `room` from the start screen (Start in (dev)), in
+// turns, and waits for the room: a test room has no intro.
+async function startTestRoom(page, url, room) {
+  await loadPageAndSet(page, url);
+  await page.selectOption('#devStartIn', room);
+  await page.click('#startBtn');
+  const quizBowl = '#pickScreen .set-option[data-set="builtin:bible-quiz-bowl"]';
+  await page.waitForSelector(quizBowl, { timeout: 10000 });
+  await page.click(quizBowl);
+  await page.waitForSelector('#roomScreen.show', { timeout: 10000 });
+  await roomIdle(page);
+}
+
+// The test room's state in the page: { room, player, hidden, minion
+// (with whether it still walks its route), hearts, tally (its line) }.
+function testRoomState(page) {
+  return page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const f = state.floor;
+    const m = f.minions[0];
+    return {
+      room: f.testRoom, player: { row: f.playerRow, col: f.playerCol }, hidden: !!f.hidden,
+      minion: m ? { row: m.row, col: m.col, routed: !!m.route } : null,
+      hearts: state.run.hearts, tally: document.getElementById('devTallyOut').textContent,
+    };
+  });
+}
+
+// Walks toward `goal` (arrow keys, or a wait with no way) until
+// `done(testRoomState)` is true or `steps` run out. Returns the last state.
+async function walkTestRoom(page, goal, done, steps = 30) {
+  let st = await testRoomState(page);
+  for (let i = 0; i < steps && !done(st); i++) {
+    const dir = await stepTo(page, goal);
+    await page.keyboard.press(dir === null ? '.' : ARROW_KEYS[dir]);
+    await page.waitForTimeout(60);
+    st = await testRoomState(page);
+  }
+  return st;
+}
+
+// The tally's count for `label` ("hid", "fell", ...), or NaN.
+function tallyOf(st, label) {
+  const found = st.tally.match(new RegExp('\\b' + label + ' (\\d+)'));
+  return found ? Number(found[1]) : NaN;
+}
+
+// The checks listed in the header. Returns what failed ('' when all held).
+async function checkTestRooms(page, url) {
+  await startTestRoom(page, url, 'hide');
+  let st = await testRoomState(page);
+  if (st.room !== 'hide') return 'Start in (dev) did not open the hide room';
+  if (tallyOf(st, 'hid') !== 0) return 'no tally at the start: ' + st.tally;
+  const stall = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const s = state.floor.roomSpots[0];
+    return { row: s.row, col: s.col };
+  });
+  st = await walkTestRoom(page, stall, s => s.hidden);
+  if (!st.hidden) return 'the player could not hide in the stall';
+  const hearts = st.hearts;
+  for (let i = 0; i < 40; i++) {
+    await page.keyboard.press('.');
+    await page.waitForTimeout(40);
+  }
+  st = await testRoomState(page);
+  if (st.minion.routed) return 'the stick man never finished his route';
+  if (st.hearts !== hearts || tallyOf(st, 'hit') !== 0) return 'the stick man got the hidden player: ' + st.tally;
+  if (tallyOf(st, 'hid') !== 1) return 'the tally did not count the hide: ' + st.tally;
+  await page.keyboard.press(ARROW_KEYS[2]);
+  st = await walkTestRoom(page, { row: 8, col: 4 }, s => tallyOf(s, 'hit') + tallyOf(s, 'struggles') > 0, 30);
+  if (tallyOf(st, 'hit') + tallyOf(st, 'struggles') === 0) return 'out of hiding, the stick man never got the player: ' + st.tally;
+  await page.click('#devToggleBtn');
+  await page.waitForSelector('#devPanel.show', { timeout: 5000 });
+  await page.click('#devRestartTestBtn');
+  await page.click('#devToggleBtn');
+  await roomIdle(page);
+  st = await testRoomState(page);
+  if (st.room !== 'hide' || st.hidden || !st.minion.routed || tallyOf(st, 'hid') !== 0) return 'Restart test room did not start the hide room over: ' + st.tally;
+
+  await startTestRoom(page, url, 'takedown');
+  const shelf = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const { MINION_KINDS, TAKEDOWN_GOLD_TIMES, TEST_ROOM_MINION_KIND } = await import('/js/config.js');
+    const s = state.floor.roomSpots[0];
+    return { tiles: s.tiles, gold: MINION_KINDS[TEST_ROOM_MINION_KIND].gold * TAKEDOWN_GOLD_TIMES };
+  });
+  const behind = { row: shelf.tiles[1].row - 1, col: shelf.tiles[1].col };
+  // Up the free side (his row is paced from column 2), then along the back.
+  for (const goal of [{ row: 8, col: 1 }, { row: 1, col: 1 }, behind]) {
+    st = await walkTestRoom(page, goal, s => s.player.row === goal.row && s.player.col === goal.col);
+    if (st.player.row !== goal.row || st.player.col !== goal.col) return 'could not walk to ' + goal.row + ',' + goal.col + ': ' + st.tally;
+  }
+  const under = s => s.minion && s.minion.row === shelf.tiles[0].row + 1 && shelf.tiles.some(t => t.col === s.minion.col);
+  for (let i = 0; i < 40 && !under(st); i++) {
+    await page.keyboard.press('.');
+    await page.waitForTimeout(40);
+    st = await testRoomState(page);
+  }
+  if (!under(st)) return 'the stick man never passed under the bookcase';
+  await page.keyboard.press(ARROW_KEYS[2]);
+  await page.waitForTimeout(100);
+  st = await testRoomState(page);
+  if (tallyOf(st, 'fell') !== 1 || tallyOf(st, 'kills') !== 1) return 'the bookcase did not fall on him: ' + st.tally;
+  if (tallyOf(st, 'gold') !== shelf.gold) return 'the takedown did not pay ' + shelf.gold + ' gold: ' + st.tally;
+  return '';
+}
+
+async function runTestRooms(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkTestRooms(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: 'hid in the stall and the stick man never got in, stepped out and he did, Restart started it over, and a bookcase pushed as he passed under killed him for double gold', consoleErrors, pageErrors };
+}
+
 async function main() {
   const port = await findFreePort();
   const server = spawn(process.execPath, [
@@ -2741,6 +2874,7 @@ async function main() {
         ['room view', runRoomView, url], ['charger', runCharger, url],
         ['one stick', runOneStick, url], ['tutorial stick', runTutorialStick, url],
         ['record book', runRecordBook, url], ['safe room', runSafeRoom, url],
+        ['test rooms', runTestRooms, url],
       ];
       // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
       // of those words, SMOKE_REPEAT=20 runs each that many times: for

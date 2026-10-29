@@ -1,7 +1,8 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
 // panel over the screen): Skip room, Restart test room, Auto-win, Fog, Turn, Free look, Minigame, Look, Tendrils and Combat
 // toggles, a test shot and a test reload, and the map's frame meter, for testing.
-// Also the start screen's "Start in" (a test room, testroom.js). main.js passes in the game actions and elements it needs.
+// Also the start screen's "Start in" (a test room, testroom.js) and, in a
+// test room, its tally over the DEV tag. main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw, mapDrawTimes } from './mapview.js';
 import { renderHud } from './render.js';
@@ -21,6 +22,7 @@ const devSkipBtn = document.getElementById('devSkipBtn');
 const devRestartTestBtn = document.getElementById('devRestartTestBtn');
 const devStartRow = document.getElementById('devStartRow');
 const devStartIn = document.getElementById('devStartIn');
+const devTallyOut = document.getElementById('devTallyOut');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
@@ -288,7 +290,40 @@ devInspectBtn.addEventListener('click', () => {
 export function recordEvents(events) {
   for (const event of events) eventRing.push({ turn: state.run.turnCount, event });
   eventRing.splice(0, eventRing.length - EVENT_RING_SIZE);
+  countTally(events);
   refreshInspector();
+}
+
+// Dev tool (test rooms, testroom.js): in a test room, a running count of
+// what happened since it started, so a mechanic's tries can be tracked:
+// times hidden, pieces fallen, kills, gold, reaches (and how many missed),
+// hits taken and Struggles. View-only (not in state), counted from
+// drawEvents' events like the event ring. Each counts one event type, by
+// one or by its `amount`.
+const TALLY_COUNTS = {
+  hid: 'hid', toppled: 'fell', minionKilled: 'kills', goldGained: 'gold',
+  reachStarted: 'reaches', reachMissed: 'missed', minionStruck: 'hit', struggleStarted: 'struggles',
+};
+let tally = null; // { [event type]: count } in a test room, else null
+
+// Starts the tally over for the floor just built (main.js loadRoom): from
+// nothing in a test room, gone anywhere else.
+export function startTally() {
+  tally = state.floor.testRoom ? Object.fromEntries(Object.keys(TALLY_COUNTS).map(type => [type, 0])) : null;
+  showTally();
+}
+
+function countTally(events) {
+  if (!tally) return;
+  events.forEach(e => { if (e.type in tally) tally[e.type] += e.type === 'goldGained' ? e.amount : 1; });
+  showTally();
+}
+
+function showTally() {
+  devTallyOut.hidden = !tally;
+  if (!tally) return;
+  devTallyOut.textContent = state.floor.testRoom + ': ' +
+    Object.entries(TALLY_COUNTS).map(([type, label]) => label + ' ' + tally[type]).join(' · ');
 }
 
 // Floor objects (boss, minions, props, chest...) print as "kind @ row,col"
