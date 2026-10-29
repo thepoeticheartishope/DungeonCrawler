@@ -575,6 +575,14 @@
     text-shadow: none;
   }
   .dev-skip[hidden] { display: none; }
+  /* DEV test room tally (devpanel.js): one line over the DEV tag. */
+  .dev-tally {
+    padding: 0 4px;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--stone-dark);
+  }
+  .dev-tally[hidden] { display: none; }
   #devToggleBtn { opacity: 0.7; }
   .dev-panel {
     display: none;
@@ -1769,6 +1777,7 @@
      down. Outside <main>, so position: fixed is the screen's. -->
 <div class="dev-dock" id="devDock" hidden>
     <button type="button" class="dev-skip" id="devToggleBtn" title="Testing tools" aria-expanded="false">DEV</button>
+    <output class="dev-tally" id="devTallyOut" title="Testing only: what this test room's mechanic has done since it started" hidden></output>
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devBookPaperBtn" type="button" title="Testing only: the record book's page (the ask screen): dark, as the game has it, or cold paper or cream, to compare">Book paper: dark (dev)</button>

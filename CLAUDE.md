@@ -166,7 +166,7 @@ Drawing and page code:
 | `setpicker.js` | The set screen; `fetchSet()` shared with practice.js. |
 | `practice.js` | Hidden minigame practice screen. |
 | `dpad.js` | The on-screen pad, the walk stick and look stick, `padWay()`. |
-| `devpanel.js` | The DEV panel (`?dev`) and the Inspect view. |
+| `devpanel.js` | The DEV panel (`?dev`), the Inspect view and a test room's tally. |
 
 ## How the game moves
 

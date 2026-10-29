@@ -35,7 +35,7 @@ import { playIntro } from './introview.js';
 import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
-import { initDevPanel, recordEvents, refreshInspector, syncDevOneStick } from './devpanel.js';
+import { initDevPanel, recordEvents, refreshInspector, startTally, syncDevOneStick } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap, freeStepOnMap, playerHitOnMap } from './mapview.js';
 import { turnWire, chargerLine } from './charger.js';
 import { shutterLine } from './saferoom.js';
@@ -351,6 +351,7 @@ function loadRoom(restKind, testRoom) {
   else buildFloor();
   drawFloor();
   watchTutorial();
+  startTally();
   refreshInspector();
 }
 
