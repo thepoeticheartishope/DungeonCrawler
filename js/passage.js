@@ -9,7 +9,7 @@ import { state, key } from './state.js';
 // shutter that is up (saferoom.js: rolled up in the lintel, it is open
 // floor). The one rule for the player, the stick men, sight and cover.
 export function solidProp(p) {
-  return p.kind !== 'paper' && !(p.kind === 'shutter' && p.up);
+  return p.kind !== 'paper' && !(p.kind === 'shutter' && p.up) && !p.fallen;
 }
 
 // True if a step from (row, col) by (dRow, dCol) doesn't cut a corner: a

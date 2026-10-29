@@ -13,7 +13,7 @@ import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
 import { followBody, waysInUse } from './look.js';
 import { finishDowned } from './gun.js';
-import { liveSpotAt, hideIn, leaveHiding } from './spots.js';
+import { liveSpotAt, hideIn, leaveHiding, topple } from './spots.js';
 import { DARK_GOLD_MULTIPLIER, BOX_GOLD } from './config.js';
 
 // Gold pays DARK_GOLD_MULTIPLIER times as much in the darkness after the boss.
@@ -72,7 +72,7 @@ function takeKey(index) {
 // bodyTurned { bumped: true } if the press turned the body, as a bump).
 // Hidden in a room spot, a step comes out instead (spots.js leaveHiding:
 // hideLeft, or blocked { kind: 'hideBlocked' }).
-// A turn is spent only by `stepped`, `propSearched`, `bodyTurned`, `minionFinished`, `hid` or `hideLeft`.
+// A turn is spent only by `stepped`, `propSearched`, `bodyTurned`, `minionFinished`, `hid`, `hideLeft` or `toppled`.
 export function stepPlayer(dRow, dCol) {
   const events = [];
   const facing = facingOf(dRow, dCol);
@@ -95,10 +95,12 @@ export function stepPlayer(dRow, dCol) {
   const cornered = !canPassCorner(state.floor.playerRow, state.floor.playerCol, dRow, dCol);
   const block = cornered ? { kind: 'corner' } : whatBlocks(newRow, newCol);
   if (block) {
+    // Asked before the bump: a takedown that falls is no longer a live spot.
+    const plain = plainBump(block);
     events.push(...bumpInto(block));
     // With free look, turning costs a turn, so a bump that turned the body
     // isn't a free turn: it's spent like one (free look plan, call 1).
-    if (turned && plainBump(block)) events.push({ type: 'bodyTurned', facing, bumped: true });
+    if (turned && plain) events.push({ type: 'bodyTurned', facing, bumped: true });
     return events;
   }
   // A downed one has the player's ankle: they can turn, shoot, wait or
@@ -119,7 +121,8 @@ export function stepPlayer(dRow, dCol) {
 
 // What a bump into `block` (passage.js whatBlocks) does: a box or another
 // prop is examined (examineProp), a piece of furniture that is a live hide
-// spot is hidden in (spots.js hideIn: hid), THE UNFOLDING opens (no turn: a rest
+// spot is hidden in (spots.js hideIn: hid), one that is a live takedown is
+// pushed over (spots.js topple: toppled, kills), THE UNFOLDING opens (no turn: a rest
 // floor has no light to feed), the gate asks, the chest is selected, a
 // downed stick man is finished, and anything else just stops the player.
 // Shared by the step (stepPlayer) and free walking (walk.js). Events:
@@ -131,6 +134,8 @@ export function bumpInto(block) {
   if (block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'hide')) {
     return hideIn(block.thing.row, block.thing.col, block.thing.piece);
   }
+  const takedown = block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'takedown');
+  if (takedown) return topple(takedown, block.thing.row, block.thing.col, block.thing.piece);
   if (block.kind === 'exchange') return [{ type: 'exchangeOpened' }];
   if (block.kind === 'boss') return [reachGate()];
   if (block.kind === 'chest') return [reachItem(block)];
@@ -143,6 +148,7 @@ export function bumpInto(block) {
 function plainBump(block) {
   if (['prop', 'exchange', 'boss', 'chest'].includes(block.kind)) return false;
   if (block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'hide')) return false;
+  if (block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'takedown')) return false;
   return !(block.kind === 'minion' && block.thing.downed);
 }
 

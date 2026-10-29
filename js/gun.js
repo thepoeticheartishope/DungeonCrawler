@@ -602,16 +602,17 @@ export function finishDowned(m) {
 }
 
 // Takes a dead minion off the floor, drops it as a target, and pays its
-// kind's gold (goldReward, so it doubles in the darkness). A shot's kill
-// and a finish both end here.
-// Events: minionKilled { minion }, goldGained { amount, from: 'kill' }.
-function killMinion(m) {
+// kind's gold `times` over (goldReward, so it doubles in the darkness). A
+// shot's kill and a finish both end here, and a room spot's takedown
+// (spots.js, `from` 'takedown', x2: the clever way pays better).
+// Events: minionKilled { minion }, goldGained { amount, from }.
+export function killMinion(m, from = 'kill', times = 1) {
   state.floor.minions = state.floor.minions.filter(x => x !== m);
   if (state.battle.selectedTarget === m) state.battle.selectedTarget = null;
   if (state.floor.gunTarget === m) state.floor.gunTarget = null;
-  const gold = goldReward(MINION_KINDS[m.minionKind].gold);
+  const gold = goldReward(MINION_KINDS[m.minionKind].gold * times);
   state.run.coinsTotal += gold;
-  return [{ type: 'minionKilled', minion: m }, { type: 'goldGained', amount: gold, from: 'kill' }];
+  return [{ type: 'minionKilled', minion: m }, { type: 'goldGained', amount: gold, from }];
 }
 
 // A minion that reached the player strikes: MINION_STRIKE_COST stability,

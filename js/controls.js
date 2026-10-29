@@ -268,8 +268,8 @@ function holdWay(way, down) {
 // box spends a turn; a step onto the stairs only asks (goDown takes them); a trapped box or the
 // chest opens the battle screen; an energy cell opens the
 // reload panel (its answer is the turn); walking into a downed stick man
-// finishes it, a turn like a step; hiding in a room spot and coming out
-// are turns too; a turn to a new direction or a
+// finishes it, a turn like a step; hiding in a room spot, coming out and
+// pushing over a takedown are turns too; a turn to a new direction or a
 // bump only draws, except that with free look a bump that turned the body
 // is a turn (bodyTurned). With Real time
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
@@ -291,7 +291,7 @@ function movePlayer(dRow, dCol) {
 // screen it asks for opens.
 function settleMove(events) {
   const has = (type) => events.some(e => e.type === type);
-  if (has('stepped') || has('propSearched') || has('bodyTurned') || has('minionFinished') || has('hid') || has('hideLeft')) {
+  if (has('stepped') || has('propSearched') || has('bodyTurned') || has('minionFinished') || has('hid') || has('hideLeft') || has('toppled')) {
     applyTurnOutcome(events);
   } else {
     const note = drawEvents(events);

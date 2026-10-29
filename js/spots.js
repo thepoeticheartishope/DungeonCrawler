@@ -7,14 +7,16 @@
 // rollSpots() once the furniture is down. Step B: a live hide spot is
 // somewhere to hide (hideIn, leaveHiding): moves.js calls them on a bump
 // and a step, walk.js on a push; combat.js, gaze.js and sight.js ask
-// `state.floor.hidden`. No DOM access here.
+// `state.floor.hidden`. Step C: a live takedown is pushed over (topple),
+// from moves.js's bump. No DOM access here.
 
 import { state, key } from './state.js';
-import { SPOT_EMPTY_CHANCE } from './config.js';
+import { SPOT_EMPTY_CHANCE, TAKEDOWN_GOLD_TIMES } from './config.js';
 import { computeVisibility } from './sight.js';
 import { followBody } from './look.js';
 import { whatBlocks } from './passage.js';
 import { FOUR_STEPS } from './grid.js';
+import { killMinion } from './gun.js';
 
 // This floor's spots from the plan's rooms (`layout.chambers[i].spots`):
 // each holds nothing SPOT_EMPTY_CHANCE of the time, else one of its kinds
@@ -77,4 +79,41 @@ export function leaveHiding() {
   followBody();
   computeVisibility();
   return [{ type: 'hideLeft' }];
+}
+
+// The player pushes over the piece at (row, col), a live takedown spot,
+// from where they stand: it falls away from them, one tile the way they
+// push, the whole piece at once. Every stick man under it dies and pays
+// its gold TAKEDOWN_GOLD_TIMES over (gun.js killMinion), for no energy and
+// no dial; the hunter can't be killed, so it stands. It falls even with
+// nobody under it (Timothy 2026-10-28: timing is the skill), and is spent:
+// it lies on the floor where it fell and no longer blocks walking. A
+// bookcase only tips forward or back: pushed from the side, or with
+// nowhere to fall (a wall, a pillar, the chest, other furniture), nothing
+// happens.
+// Events: toppled { piece }, then minionKilled { minion } and goldGained
+// { amount, from: 'takedown' } for each one under it; or blocked { kind:
+// 'wontTip' } or { kind: 'noRoom' }.
+export function topple(spot, row, col, piece) {
+  const f = state.floor;
+  const dr = Math.sign(row - f.playerRow);
+  if (!dr) return [{ type: 'blocked', kind: 'wontTip' }];
+  const lands = spot.tiles.map(p => ({ row: p.row + dr, col: p.col }));
+  const at = (thing, p) => !!thing && thing.row === p.row && thing.col === p.col;
+  const clear = p => !f.wallSet.has(key(p.row, p.col)) && !f.pillarSet.has(key(p.row, p.col)) &&
+    !at(f.chest, p) && !at(f.boss, p) && !at(f.exchange, p) &&
+    !f.props.some(q => at(q, p) && q.kind !== 'paper' && !q.fallen);
+  if (!lands.every(clear)) return [{ type: 'blocked', kind: 'noRoom' }];
+  spot.used = true;
+  const own = new Set(spot.tiles.map(p => key(p.row, p.col)));
+  f.props.forEach(p => {
+    if (p.kind !== 'furniture' || !own.has(key(p.row, p.col))) return;
+    p.row += dr;
+    p.fallen = dr;
+  });
+  const events = [{ type: 'toppled', piece }];
+  const under = f.minions.filter(m => lands.some(p => p.row === m.row && p.col === m.col));
+  under.forEach(m => events.push(...killMinion(m, 'takedown', TAKEDOWN_GOLD_TIMES)));
+  computeVisibility();
+  return events;
 }

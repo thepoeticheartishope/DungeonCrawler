@@ -548,9 +548,53 @@ function drawFurniture(thing, x, y) {
   const { piece, part } = thing.at;
   const left = part === 'single' || part === 'left';
   const right = part === 'single' || part === 'right';
+  if (thing.at.fallen) {
+    drawFallenShelf(x, y, left, right, thing.at);
+    return;
+  }
   (PIECES[piece] || PIECES.table)(x, y, left, right, thing.at);
-  const spot = liveSpotAt(thing.at.row, thing.at.col, 'hide');
-  if (spot && spot.row === thing.at.row && spot.col === thing.at.col && HIDE_TELLS[piece]) HIDE_TELLS[piece](x, y);
+  const here = s => s && s.row === thing.at.row && s.col === thing.at.col;
+  const hide = liveSpotAt(thing.at.row, thing.at.col, 'hide');
+  if (here(hide) && HIDE_TELLS[piece]) HIDE_TELLS[piece](x, y);
+  const takedown = liveSpotAt(thing.at.row, thing.at.col, 'takedown');
+  if (here(takedown) && piece === 'shelf') drawShelfLeaning(x, y);
+}
+
+// A live takedown's tell (room spots plan step C): the bookcase leans a
+// little off the wall, its top showing a dark gap, and books slide off its
+// shelves.
+function drawShelfLeaning(x, y) {
+  const top = y - 12;
+  bctx.fillStyle = CRATE.inside;
+  bctx.fillRect(x, top - 2, T, 2);
+  bctx.fillStyle = BOOKS[0];
+  bctx.fillRect(x + 4, top + 8, 5, 2);
+  bctx.fillStyle = BOOKS[2];
+  bctx.fillRect(x + 10, top + 14, 2, 5);
+  bctx.fillRect(x + 11, top + 13, 2, 1);
+}
+
+// A bookcase that was pushed over (spots.js topple), lying on its face
+// across the tile it fell onto, books spilled round it. `at.fallen` is
+// the way it fell (1 toward the camera, -1 away).
+function drawFallenShelf(x, y, left, right, at) {
+  const x0 = x + (left ? 1 : 0), x1 = x + (right ? T - 1 : T);
+  bctx.fillStyle = WOODWORK.dark;
+  bctx.fillRect(x0, y + 4, x1 - x0, 9);
+  bctx.fillStyle = WOODWORK.front;
+  bctx.fillRect(x0, y + 4, x1 - x0, 1);
+  bctx.fillRect(x0, y + 8, x1 - x0, 1);
+  bctx.fillStyle = WOODWORK.leg;
+  bctx.fillRect(x0, y + 12, x1 - x0, 1);
+  if (left) bctx.fillRect(x0, y + 4, 1, 9);
+  if (right) bctx.fillRect(x1 - 1, y + 4, 1, 9);
+  // Spilled books, the same every time for the same tile.
+  for (let k = 0; k < 3; k++) {
+    const bx = x + 1 + Math.floor(grain(at.row, at.col, k + 200) * 12);
+    const by = y + (grain(at.row, at.col, k + 210) > 0.5 ? 13 : 1) + Math.floor(grain(at.row, at.col, k + 220) * 2);
+    bctx.fillStyle = BOOKS[Math.floor(grain(at.row, at.col, k + 230) * BOOKS.length)];
+    bctx.fillRect(bx, by, 3, 2);
+  }
 }
 
 // A live hide spot's tell (Timothy 2026-10-28: a live spot can be told
