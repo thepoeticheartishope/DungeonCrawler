@@ -222,7 +222,7 @@ function whisperSoon(e) {
 // TUTORIAL_STUCK_MS. Stages with no hint teach themselves. With One stick
 // a hint with a `.stick` wording says it for the stick (one stick plan
 // step G).
-const STUCK_HINTS = { dark: 'tut.hint.move', name: 'tut.hint.barrel', ring: 'tut.hint.light', fight: 'tut.hint.fire' };
+const STUCK_HINTS = { dark: 'tut.hint.move', name: 'tut.hint.barrel', ring: 'tut.hint.light', fight: 'tut.hint.fire', hide: 'tut.hint.hide', push: 'tut.hint.push' };
 let watchedStage = null;
 let stuckTimer = null;
 

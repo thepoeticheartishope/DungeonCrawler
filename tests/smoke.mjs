@@ -68,7 +68,10 @@
 //      be listening. Be ready.", the grate shudders a turn
 //      later and a stick man drops out of it; one shot (Auto-win stops the
 //      bar on a plain hit) drops it ("Finish it.", downed plan) and a bump
-//      finishes it; its key opens the door, and through it the opening rest starts
+//      finishes it; taking its key brings a second stick man ("Not this
+//      one. Hide."): into the stall, out and round behind the bookcase by
+//      the free side, and pushed as it passes under ("Now. Push.") it
+//      falls on it; then the door opens, and through it the opening rest starts
 //      with the run's numbers fresh (2 energy), the name kept and the toggle off.
 //   9. Answer line run (answer swirl plan steps A and B): Reveal on, Auto-win off,
 //      minigames off, the first depth's stick men cleared; a reload from an energy cell answered wrong puts the
@@ -1510,7 +1513,7 @@ async function stepTo(page, goal) {
 }
 
 // The tutorial's state in the page: { stage, spot, door, barrel, key,
-// minion, light, name, toggle, hearts, sense }.
+// minion, player, light, name, toggle, hearts, sense }.
 async function tutorialState(page) {
   return page.evaluate(async () => {
     const { state } = await import('/js/state.js');
@@ -1523,6 +1526,7 @@ async function tutorialState(page) {
       barrel: barrel ? { row: barrel.row, col: barrel.col } : null,
       key: f.keys[0] || null,
       minion: f.minions[0] ? { row: f.minions[0].row, col: f.minions[0].col } : null,
+      player: { row: f.playerRow, col: f.playerCol },
       light: f.light.on,
       name: state.settings.playerName,
       toggle: document.getElementById('tutorialToggle').checked,
@@ -1666,8 +1670,32 @@ async function checkTutorial(page, url) {
   st = await walkUntil(page, s => s.minion, s => s.stage !== 'fight' || s.hearts <= 0);
   if (!st || st.stage !== 'key') return 'a bump did not finish the downed stick man, or it left no key (stage ' + (st && st.stage) + ')';
 
-  st = await walkUntil(page, st.key, s => s.stage === 'open');
-  if (!st) return 'taking the key did not open the door';
+  st = await walkUntil(page, st.key, s => s.stage === 'hide');
+  if (!st) return 'taking the key did not bring the hide stage';
+  const spots = await page.evaluate(async () => {
+    const { state } = await import('/js/state.js');
+    const all = state.floor.tutorial.spots;
+    return { stall: all.find(s => s.kind === 'hide'), shelf: all.find(s => s.kind === 'takedown') };
+  });
+  st = await walkUntil(page, spots.stall, s => s.stage === 'push' || s.hearts <= 0);
+  if (!st || st.stage !== 'push') return 'hiding in the stall did not bring the push stage (stage ' + (st && st.stage) + ')';
+  if (!st.sense.includes('Not this one. Hide.')) return 'no "Not this one. Hide." as the second stick man came: ' + st.sense;
+  const shelf = spots.shelf;
+  const behind = { row: shelf.row - 1, col: shelf.tiles[1].col };
+  st = await walkUntil(page, behind, s => s.player && s.player.row === behind.row && s.player.col === behind.col);
+  if (!st) return 'could not get behind the bookcase';
+  const under = s => s.minion && s.minion.row === shelf.row + 1 && shelf.tiles.some(t => t.col === s.minion.col);
+  for (let i = 0; i < 40 && !under(st); i++) {
+    await page.keyboard.press('.');
+    await page.waitForTimeout(40);
+    st = await tutorialState(page);
+  }
+  if (!under(st)) return 'the second stick man never passed under the bookcase';
+  if (!st.sense.includes('Now. Push.')) return 'no "Now. Push." with it under the bookcase: ' + st.sense;
+  await page.keyboard.press(ARROW_KEYS[2]);
+  await page.waitForTimeout(100);
+  st = await tutorialState(page);
+  if (st.stage !== 'open') return 'the bookcase pushed onto it did not open the door (stage ' + st.stage + ')';
   st = await walkUntil(page, st.door, s => s.stage === null);
   if (!st) return 'the open door did not lead out of the tutorial';
   if (!st.rest) return 'leaving the tutorial did not start the opening rest';
@@ -1745,7 +1773,7 @@ async function runTutorial(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, grate shudders, stick man drops out, the first shot at READY ("Breathe.", BACK spent nothing, the dial ran with its key line), one shot drops it ("Finish it."), a bump finishes it, key, door, out to the opening rest', consoleErrors, pageErrors };
+  return { ok: true, detail: 'dark, light from above, barrel name, ring broken by the light, grate shudders, stick man drops out, the first shot at READY ("Breathe.", BACK spent nothing, the dial ran with its key line), one shot drops it ("Finish it."), a bump finishes it, key, a second stick man ("Not this one. Hide."), hid in the stall, pushed the bookcase onto it ("Now. Push."), door, out to the opening rest', consoleErrors, pageErrors };
 }
 
 // ---- Run 14: the tutorial with One stick ----

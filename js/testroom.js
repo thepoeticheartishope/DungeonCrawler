@@ -8,14 +8,15 @@
 // combat.js walks the route (m.route). No DOM access here.
 
 import { key } from './state.js';
+import { drawnFurniture } from './spots.js';
 
 // The rooms: '#' wall, '.' floor, 'S' where the player starts, '1' to '9'
-// the stick man's route in order (it starts on '1'). Any other letter is
-// furniture, `pieces` saying which (FURNITURE_PIECES in config.js): the
-// same letter side by side along a row is one wide piece. `spots` makes
-// every piece of a letter a live room spot of that kind (spots.js), never
-// empty. `loop`: the stick man walks its route back and forth for ever;
-// otherwise once the route ends it hunts the player as usual.
+// the stick man's route in order (it starts on '1'). A letter of `pieces` is
+// furniture, `pieces` saying which (spots.js drawnFurniture: the same
+// letter side by side along a row is one wide piece). `spots` makes every
+// piece of a letter a live room spot of that kind, never empty. `loop`:
+// the stick man walks its route back and forth for ever; otherwise once
+// the route ends it hunts the player as usual.
 export const TEST_ROOMS = {
   // A stall two steps from the start; the stick man comes from the far
   // corner to the player's side, then hunts. Get in before it arrives.
@@ -63,33 +64,15 @@ export const TEST_ROOMS = {
 // live room spots as spots.js rollSpots gives them.
 export function parseTestRoom(name) {
   const def = TEST_ROOMS[name];
-  const room = { size: def.rows.length, walls: new Set(), roomTiles: new Set(), route: [], loop: def.loop, props: [], spots: [] };
+  const room = { size: def.rows.length, walls: new Set(), roomTiles: new Set(), route: [], loop: def.loop };
   def.rows.forEach((line, row) => [...line].forEach((ch, col) => {
     if (ch === '#') { room.walls.add(key(row, col)); return; }
     room.roomTiles.add(key(row, col));
     if (ch === 'S') room.start = { row, col };
     if (ch >= '1' && ch <= '9') room.route[Number(ch) - 1] = { row, col };
   }));
-  def.rows.forEach((line, row) => pieceRuns(line).forEach(({ ch, col, width }) => {
-    const tiles = Array.from({ length: width }, (_, i) => ({ row, col: col + i }));
-    tiles.forEach((p, i) => {
-      const part = width === 1 ? 'single' : i === 0 ? 'left' : i === width - 1 ? 'right' : 'mid';
-      room.props.push({ row: p.row, col: p.col, kind: 'furniture', piece: def.pieces[ch], part, identified: true, searched: false, sprung: false });
-    });
-    if (def.spots[ch]) room.spots.push({ row, col, kind: def.spots[ch], used: false, tiles });
-  }));
+  const furniture = drawnFurniture(def.rows, def.pieces, def.spots);
+  room.props = furniture.props;
+  room.spots = furniture.spots;
   return room;
-}
-
-// The furniture along one row of a room's drawing: [{ ch, col, width }],
-// one for each run of the same piece letter.
-function pieceRuns(line) {
-  const runs = [];
-  [...line].forEach((ch, col) => {
-    if (!/[A-Z]/.test(ch) || ch === 'S') return;
-    const last = runs[runs.length - 1];
-    if (last && last.ch === ch && last.col + last.width === col) last.width++;
-    else runs.push({ ch, col, width: 1 });
-  });
-  return runs;
 }
