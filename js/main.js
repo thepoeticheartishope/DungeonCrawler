@@ -1,5 +1,5 @@
 import { state, key } from './state.js';
-import { buildFloor, buildRestFloor, buildTutorialFloor } from './floor.js';
+import { buildFloor, buildRestFloor, buildTutorialFloor, buildTestFloor } from './floor.js';
 import { tutorialTurn, breakRing } from './tutorial.js';
 import { nextFloor } from './run.js';
 import {
@@ -68,6 +68,7 @@ const realTimeToggle = document.getElementById('realTimeToggle');
 const turnsToggle = document.getElementById('turnsToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
+const devStartIn = document.getElementById('devStartIn');
 const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
 const battleScreen = document.getElementById('battleScreen');
@@ -153,7 +154,7 @@ initSetLoader({ showSets: showSetPicker });
 initSetPicker({ startGame, openWorkshop: showWorkshop });
 initPractice({ letterPoolQuestion, sumLockQuestion, mountBattleQuestion });
 initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
+  advanceRoom, restartTestRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
   autoWinGun, battleScreen, wagerRow,
 });
 
@@ -317,6 +318,14 @@ function startGame() {
   // no added real loading time, only the intro itself. The elapsed-time
   // clock starts once the intro ends or is skipped, so it isn't charged
   // against the player.
+  // DEV (only with ?dev): the start screen's "Start in" can pick a test
+  // room (testroom.js) instead: straight in, no intro and no tutorial.
+  if (devStartIn.value) {
+    loadRoom('test', devStartIn.value);
+    showScreen(roomScreen);
+    startTimer();
+    return;
+  }
   // A player who has never finished the tutorial room wakes in it first
   // (the start screen's toggle; tutorial.js).
   const tutorial = tutorialToggle.checked;
@@ -333,10 +342,11 @@ function startGame() {
 
 // A new floor: make the new floor's data, then put it on the page.
 // `restKind` ('opening' / 'between' / 'epilogue') builds a rest floor,
-// 'tutorial' the tutorial room; none builds the danger floor at the
-// current depth.
-function loadRoom(restKind) {
-  if (restKind === 'tutorial') buildTutorialFloor();
+// 'tutorial' the tutorial room, 'test' the DEV test room `testRoom`
+// (testroom.js); none builds the danger floor at the current depth.
+function loadRoom(restKind, testRoom) {
+  if (restKind === 'test') buildTestFloor(testRoom);
+  else if (restKind === 'tutorial') buildTutorialFloor();
   else if (restKind) buildRestFloor(restKind);
   else buildFloor();
   drawFloor();
@@ -391,9 +401,22 @@ function drawFloor() {
 // run.js decides what comes next: a depth, a rest floor, or the win.
 function advanceRoom() {
   if (state.floor.tutorial) { leaveTutorial(); return; }
+  // A test room has no way on: DEV -> Skip room starts the run proper.
+  if (state.floor.testRoom) {
+    resetRun();
+    loadRoom('opening');
+    return;
+  }
   const next = nextFloor();
   if (next.kind === 'win') endWin();
   else loadRoom(next.kind === 'rest' ? next.rest : null);
+}
+
+// DEV -> Restart test room: the test room picked on the start screen
+// starts over as new (startGame, as Retry does), even after a lost run.
+function restartTestRoom() {
+  if (!devStartIn.value) return;
+  startGame();
 }
 
 // Out through the tutorial room's door (or DEV -> Skip room): the

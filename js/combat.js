@@ -464,6 +464,19 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
     m.shutWait = null;
     m.lifting = null;
   }
+  // A DEV test room's stick man (testroom.js) walks its set route, so a
+  // test plays out the same every time: it reaches the player only if
+  // they stand in its way, and never one who is hidden. A looping route
+  // walks at the wander pace, a route to the player at the chase pace.
+  if (m.route) {
+    const looping = m.route.loop;
+    const next = routeStep(m);
+    const f = state.floor;
+    const onPlayer = !!next && next.row === f.playerRow && next.col === f.playerCol;
+    if (onPlayer && !f.hidden) events.push(...(reach ? reach(m) : reachPlayer(m, { canStruggle })));
+    else if (next && !onPlayer) events.push(stepTo(m, next));
+    return { events, chasing: !looping };
+  }
   // A player inside a room held by a relay can't be reached from outside
   // it, not even from the doorway (bfsPath would let the last step in).
   // Hidden in a room spot (spots.js), nobody can get to them, the hunter
@@ -510,6 +523,27 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
   // If next is null, this minion has no route around current
   // obstacles this turn — it waits rather than overlapping anything.
   return { events, chasing: !!chasing };
+}
+
+// The next tile on a test room stick man's route (`m.route`: { points,
+// at, loop }, testroom.js): toward points[at], on to the point after once
+// it stands there. At the end a looping route starts over; any other ends
+// (m.route null) and from then it hunts the player (m.hunts). Null when
+// the route just ended or nothing gets it through this time.
+function routeStep(m) {
+  const route = m.route;
+  const point = route.points[route.at];
+  if (m.row === point.row && m.col === point.col) {
+    route.at++;
+    if (route.at === route.points.length && !route.loop) {
+      m.route = null;
+      m.hunts = true;
+      return null;
+    }
+    route.at %= route.points.length;
+  }
+  const path = bfsPath({ row: m.row, col: m.col }, route.points[route.at], blockedTilesFor(m));
+  return path && path.length > 1 ? path[1] : null;
 }
 
 // `m` steps onto `next`, its last tiles kept for the map's trail.

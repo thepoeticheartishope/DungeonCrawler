@@ -94,6 +94,7 @@ Rules and data (no page/DOM access):
 | `beats.js` | `placeBeats()`: the recipe's beats along the walk to the farthest key. |
 | `run.js` | `nextFloor()`: the run's shape, rests between depths. |
 | `tutorial.js` | The tutorial room and its stages; the kind voice's lines for each core mechanic. |
+| `testroom.js` | DEV test rooms: one hand-drawn room per mechanic, a stick man on a set route (start screen's DEV "Start in"). |
 | `passage.js` | `whatBlocks()` (can I step here?), `canPassCorner()`, `stepsAway()`. |
 | `sight.js` | The player's light (`computeVisibility`), the look cone, `canMakeOut`, `shootBlock`, cover. |
 | `look.js` | Free look: body facing vs. aim, `aimLook`, `turnBody`, `sweepLook`, `swingLook`. |

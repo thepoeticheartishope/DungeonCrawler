@@ -1,6 +1,7 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
-// panel over the screen): Skip room, Auto-win, Fog, Turn, Free look, Minigame, Look, Tendrils and Combat
-// toggles, a test shot and a test reload, and the map's frame meter, for testing. main.js passes in the game actions and elements it needs.
+// panel over the screen): Skip room, Restart test room, Auto-win, Fog, Turn, Free look, Minigame, Look, Tendrils and Combat
+// toggles, a test shot and a test reload, and the map's frame meter, for testing.
+// Also the start screen's "Start in" (a test room, testroom.js). main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw, mapDrawTimes } from './mapview.js';
 import { renderHud } from './render.js';
@@ -11,11 +12,15 @@ import { computeVisibility } from './sight.js';
 import { refreshGunTarget } from './gun.js';
 import { refreshBook } from './bookview.js';
 import { BOOK } from './config.js';
+import { TEST_ROOMS } from './testroom.js';
 
 const devDock = document.getElementById('devDock');
 const devToggleBtn = document.getElementById('devToggleBtn');
 const devPanel = document.getElementById('devPanel');
 const devSkipBtn = document.getElementById('devSkipBtn');
+const devRestartTestBtn = document.getElementById('devRestartTestBtn');
+const devStartRow = document.getElementById('devStartRow');
+const devStartIn = document.getElementById('devStartIn');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
@@ -45,7 +50,7 @@ export function syncDevOneStick() {
 }
 
 export function initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
+  advanceRoom, restartTestRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
   autoWinGun,
   battleScreen, wagerRow,
 }) {
@@ -53,6 +58,8 @@ export function initDevPanel({
   // (index.html?dev), for testing.
   const params = new URLSearchParams(location.search);
   devDock.hidden = !params.has('dev');
+  devStartRow.hidden = !params.has('dev');
+  Object.keys(TEST_ROOMS).forEach(name => devStartIn.add(new Option('Test room: ' + name, name)));
   devToggleBtn.addEventListener('click', () => {
     const open = devPanel.classList.toggle('show');
     devToggleBtn.setAttribute('aria-expanded', String(open));
@@ -78,6 +85,10 @@ export function initDevPanel({
     if (state.run.hearts <= 0) return;
     advanceRoom();
   });
+
+  // Dev tool (test rooms, testroom.js): the test room picked on the start
+  // screen, from the start again, so a mechanic can be tried over and over.
+  devRestartTestBtn.addEventListener('click', restartTestRoom);
 
   // Dev tool: while on, every encounter plays itself out — the first query
   // category is picked, the correct answer given (a minigame is played out

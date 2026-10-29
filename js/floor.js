@@ -1,7 +1,8 @@
 // Building a floor as data: layout, furniture, boss, stairs, the recipe's
 // beats (beats.js), coin, the one special item and minions, plus the
 // light, sight and camera that follow from them; and a rest floor's one
-// quiet room (buildRestFloor). No page access — main.js loadRoom() calls
+// quiet room (buildRestFloor), the tutorial room and a DEV test room
+// (buildTestFloor). No page access — main.js loadRoom() calls
 // one of them, then drawFloor() puts the result on the page.
 
 import { state, key, parseKey } from './state.js';
@@ -10,7 +11,8 @@ import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { FLOOR_PLANS, buildPlanLayout } from './plans.js';
 import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
 import {
-  CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES
+  CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES,
+  TEST_ROOM_MINION_KIND,
 } from './config.js';
 import { floorRecipe, pickPaths, REST_RECIPES, restLore } from './floors.js';
 import { shuffle } from './random.js';
@@ -31,6 +33,7 @@ import { rollSpots } from './spots.js';
 import { placeSafeRoom, inSafeRoom } from './saferoom.js';
 import { solidProp } from './passage.js';
 import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
+import { parseTestRoom } from './testroom.js';
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
 function pickCoinTile(walls, avoidList, allowedTiles) {
@@ -114,6 +117,7 @@ export function buildFloor() {
   state.run.nextPath = null;
   state.floor.stairsAlt = null;
   state.floor.tutorial = null;
+  state.floor.testRoom = null;
   state.floor.spotSet = new Set();
   const recipe = floorRecipe(state.run.roomIndex, state.floor.path);
   const plan = recipe.plan ? FLOOR_PLANS[recipe.plan] : null;
@@ -325,6 +329,7 @@ function clearDanger() {
   f.lamps = [];
   f.lampPoolSet = new Set();
   f.tutorial = null;
+  f.testRoom = null;
   f.bossDist = new Map();
   f.floorCount = 0;
   f.lightTurns = 0;
@@ -497,6 +502,56 @@ export function buildTutorialFloor() {
 
   f.visibleSet = new Set();
   f.exploredSet = new Set();
+  computeVisibility();
+  state.battle.selectedTarget = null;
+}
+
+// A DEV test room as data (testroom.js TEST_ROOMS[name]): the hand-drawn
+// room with its furniture down and every spot live, and one stick man on
+// its route, the same every time. No stairs, papers, boss or grates: the
+// room is for trying one mechanic, again and again (DEV -> Restart test
+// room). The light is the run's usual one. No page access.
+export function buildTestFloor(name) {
+  const room = parseTestRoom(name);
+  const f = state.floor;
+  clearDanger();
+  f.light = freshLight();
+  f.testRoom = name;
+  f.GRID_SIZE = room.size;
+  f.CHAMBER_TARGET = 1;
+  f.plan = null;
+  f.wallSet = room.walls;
+  f.PLAYER_START = { row: room.start.row, col: room.start.col };
+  f.playerRow = f.PLAYER_START.row;
+  f.playerCol = f.PLAYER_START.col;
+  f.playerAt = null;
+  f.lookWant = null;
+  f.sneaking = false;
+  f.creeping = false;
+  f.facing = facingToward(room.start, room.route[0]);
+  f.look = BODY_ANGLES[f.facing];
+
+  const themeKeys = Object.keys(ROOM_THEMES);
+  f.pillarSet = new Set();
+  f.chamberAt = new Map([...room.roomTiles].map(k => [k, 0]));
+  f.doorSet = new Set();
+  f.chamberThemes = [themeKeys[0]];
+  f.chamberNames = [];
+  f.visitedChambers = new Set([0]);
+  f.props = room.props;
+  f.roomSpots = room.spots;
+  f.stairs = null;
+  f.exchange = null;
+  f.exchangeBought = new Set();
+  f.coin = null;
+
+  const m = spawnMinion(room.route[0], TEST_ROOM_MINION_KIND);
+  m.route = { points: room.route, at: 0, loop: room.loop };
+
+  f.visibleSet = new Set();
+  // The whole room starts remembered, so its furniture shows (dim out of
+  // the light) and a test starts with the layout in view.
+  f.exploredSet = new Set(room.roomTiles);
   computeVisibility();
   state.battle.selectedTarget = null;
 }
