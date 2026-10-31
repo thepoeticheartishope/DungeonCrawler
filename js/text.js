@@ -865,8 +865,8 @@ export const TEXT = {
   'console.left': 'You step back from the console.', // draft. LEAVE or Escape on COMMAND.SYS
   'learn.started': 'The captain’s lesson for the {role}. Mistakes are free here.', // draft
   'learn.missed': 'Not that. Round {round} of {of}: look at the answer and try again.', // draft. A learning miss: free
-  'learn.done': 'You’ve got it. Go and teach the {role}.', // draft. A right learning round
-  'learn.shaky': 'You know enough to try. Go and teach the {role}.', // draft. Learned after the last round, without a right one
+  'learn.done': 'You’ve got it. Go and teach the {role}: the MAP shows where.', // draft. A right learning round
+  'learn.shaky': 'You know enough to try. Go and teach the {role}: the MAP shows where.', // draft. Learned after the last round, without a right one
   'book.paused': 'CLOCK PAUSED', // draft. The record book's top strip, right: nothing moves while it is open
   'book.light': 'LIGHT', // draft. Under the book's light tube
   'book.empty': 'EMPTY', // draft. Under the book's light tube when the battery ran empty (locked until full)
@@ -882,6 +882,7 @@ export const TEXT = {
   'book.log.head': 'Newest first.', // draft. Top of the LOG page
   'book.log.empty': 'Nothing yet.', // draft. The LOG page before any note
   'book.map.dashed': 'Dashed rooms: not been in yet.', // draft. Foot of the MAP page on a fixed plan
+  'book.map.teach': 'Rings: crew you can teach now.', // draft. Foot of the MAP page on the ship, once a role is learned and not yet taught
   'book.read.close': 'Tap the page or press Esc to close.', // draft. Foot of the book's page opened from the map
   'log.btn': 'LOG', // draft. The room log button (L on a keyboard): opens the record book at LOG
   'hud.more': 'Status: tap for more', // draft. The HUD's tooltip: a tap shows myelin, cycle and the goals' names
