@@ -2514,6 +2514,97 @@ async function checkCharger(page, url) {
   return '';
 }
 
+// ---- The ship (ship plan steps A and B) ----
+
+async function runShip(browser, url) {
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true });
+  const page = await context.newPage();
+  const { consoleErrors, pageErrors } = collectErrors(page);
+  const failure = await checkShip(page, url);
+  await context.close();
+
+  if (failure) return { ok: false, reason: failure, consoleErrors, pageErrors };
+  if (consoleErrors.length || pageErrors.length) {
+    return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
+  }
+  return { ok: true, detail: '"Ship (test)" started in Command, lit, no stick men; the console opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach', consoleErrors, pageErrors };
+}
+
+// Stands the player at (row, col) facing up and presses ArrowUp: a bump
+// into what is above (turns, so one press is one bump).
+async function bumpUpFrom(page, row, col) {
+  await page.evaluate(async ([r, c]) => {
+    const { state } = await import('./js/state.js');
+    const { computeVisibility } = await import('./js/sight.js');
+    const f = state.floor;
+    f.playerRow = r; f.playerCol = c; f.facing = 'N'; f.look = 0;
+    computeVisibility();
+  }, [row, col]);
+  await page.waitForTimeout(150);
+  await page.keyboard.press('ArrowUp');
+  await page.waitForTimeout(250);
+}
+
+async function checkShip(page, url) {
+  await loadPageAndSet(page, url);
+  await page.check('#shipToggle');
+  await startGameAndWaitForRoom(page).catch(() => {});
+  await page.waitForSelector('#roomScreen.show', { timeout: 10000 });
+  const start = await page.evaluate(async () => {
+    const { state, key } = await import('./js/state.js');
+    const f = state.floor;
+    const room = f.chamberNames[f.chamberAt.get(key(f.playerRow, f.playerCol))];
+    const dark = [...f.chamberAt.keys()].filter(k => !f.visibleSet.has(k)).length;
+    const console = f.props.find(p => p.kind === 'console');
+    const board = f.props.find(p => p.kind === 'powerBoard');
+    return { ship: f.ship, room, dark, minions: f.minions.length, console, board };
+  });
+  if (!start.ship) return 'the ship option did not start on the ship';
+  if (start.room !== 'plan.ship.command') return 'did not start in Command: ' + start.room;
+  if (start.dark) return start.dark + ' room tiles not seen: the ship should have no dark areas';
+  if (start.minions) return 'stick men on the ship';
+  if (!start.console || !start.board) return 'no console or power board';
+
+  // The console: training wires with an open breaker.
+  await bumpUpFrom(page, start.console.row + 1, start.console.col);
+  await waitUntil(page, () => !document.getElementById('chargerPanel').hidden);
+  const title = await page.textContent('#chargerTitle');
+  if (title !== 'POWER.SYS') return 'the console opened "' + title + '", not POWER.SYS';
+  if (!await page.$('.charger-wire.breaker.open')) return 'no open breaker on the training wires';
+
+  // A breaker asks; the right answer closes it and the wires come back.
+  // DEV Auto-win's way of answering right (a minigame too), then again to
+  // close the held book.
+  await page.click('.charger-wire.breaker.open');
+  await waitUntil(page, () => document.getElementById('askTitle').textContent === 'BREAKER' && document.getElementById('askTitle').offsetParent);
+  await page.waitForTimeout(300);
+  await page.evaluate(async () => (await import('./js/gunactions.js')).autoWinGun());
+  await page.waitForTimeout(300);
+  await page.evaluate(async () => (await import('./js/gunactions.js')).autoWinGun());
+  await waitUntil(page, () => !document.getElementById('chargerPanel').hidden);
+  const closed = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const p = state.floor.props.find(q => q.kind === 'console');
+    return p.puzzle ? p.puzzle.closed.length : -1;
+  });
+  if (closed !== 1) return 'a right answer did not close the breaker (closed: ' + closed + ')';
+  await page.keyboard.press('Escape');
+  await waitUntil(page, () => document.getElementById('chargerPanel').hidden);
+
+  // The Engineer's board: shut until trained, then open to teach.
+  await bumpUpFrom(page, start.board.row + 1, start.board.col);
+  if (await page.evaluate(() => !document.getElementById('chargerPanel').hidden)) return 'the power board opened before training';
+  await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    state.run.trained = ['engineer'];
+  });
+  await bumpUpFrom(page, start.board.row + 1, start.board.col);
+  await waitUntil(page, () => !document.getElementById('chargerPanel').hidden);
+  const sub = await page.textContent('#chargerSub');
+  if (!sub.includes('TEACHING')) return 'the trained board did not open to teach: ' + sub;
+  return null;
+}
+
 // ---- The safe room ----
 
 async function runSafeRoom(browser, url) {
@@ -3068,6 +3159,7 @@ async function main() {
         ['one stick', runOneStick, url], ['tutorial stick', runTutorialStick, url],
         ['record book', runRecordBook, url], ['safe room', runSafeRoom, url],
         ['test rooms', runTestRooms, url], ['advanced tutorial', runAdvanced, url],
+        ['ship', runShip, url],
       ];
       // SMOKE_ONLY=tutorial,answer runs only the runs whose names hold one
       // of those words, SMOKE_REPEAT=20 runs each that many times: for

@@ -119,9 +119,17 @@ export const FLOOR_PLANS = {
   // room is Command, where the player starts and learns. `ship: true`: no
   // gate, stairs or keys, so only 'S' is needed. Furniture is the School's
   // pieces for now; ship pieces come later. Names are drafts.
+  // `stations` (ship plan step B, stations.js): [kind, row, col, role]
+  // for each role's training console in Command, its board and its crew
+  // member in its own room.
   ship: {
     name: 'plan.ship',
     ship: true,
+    stations: [
+      ['console', 12, 14, 'engineer'],
+      ['powerBoard', 12, 4, 'engineer'],
+      ['crew', 12, 5, 'engineer'],
+    ],
     rows: [
       '#################################',
       '#################################',
@@ -174,7 +182,7 @@ export const FLOOR_PLANS = {
         ['table', 4, 26, 3],
       ] },
       { name: 'plan.ship.engineRoom', r0: 12, c0: 2, r1: 18, c1: 6, furniture: [
-        ['teacher', 12, 3, 2], ['desk', 16, 3], ['desk', 16, 5],
+        ['desk', 16, 3], ['desk', 16, 5],
       ] },
       { name: 'plan.ship.quarters', r0: 12, c0: 26, r1: 18, c1: 30, furniture: [
         ['sofa', 18, 27, 2], ['desk', 14, 27], ['desk', 14, 29],

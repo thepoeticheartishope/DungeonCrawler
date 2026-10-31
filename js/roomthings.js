@@ -33,6 +33,10 @@ const GRATE = { frame: '#2a2e32', edge: '#5d656c', bar: '#50575d', seal: '#8b939
 const DESK = { top: '#6e4d33', front: '#523a27', frame: '#4a3a30', glass: '#8fa3ad', shine: '#c9d6dc', dull: '#3a4448' };
 const CHARGER_ART = { body: '#3e4650', edge: '#56606b', shade: '#2b3138', window: '#1c2126', lit: '#e9c48a', cable: '#22272c', plug: '#6a737c' };
 const RELAY = { body: '#4a5058', seam: '#33383e', dead: '#2a2e32', leg: '#2e3236' };
+// The ship's stations (ship plan step B): grey metal like the hull, a dark
+// screen, its light cool once a role is trained or warm while it waits,
+// and the crew's plain white figure, a touch dimmer than the player's.
+const STATION_ART = { body: '#46505b', edge: '#5e6874', shade: '#323941', screen: '#141a1f', cool: '#8fd8e4', warm: '#e9c48a', crew: '#b9c4c8' };
 // The safe room (saferoom.js): its shutters' slats, posts and lintel box,
 // the pull switch, and the lamp's warm light over the room.
 const SHUTTER = { slat: '#5b6068', shade: '#454950', bar: '#8a9098', post: '#2f3338', box: '#3a3e44', rise: 1.5, slat_px: 2 };
@@ -261,6 +265,75 @@ function drawRelay(thing, x, y, glows) {
     bctx.fillStyle = 'rgb(' + look.colours.glowRgb + ')';
     bctx.fillRect(x + 10, y + 5, 2, 2);
   });
+}
+
+// ---- the ship's stations (ship plan step B, stations.js) ----
+// The training console in Command: a low desk with a screen tilted up, its
+// screen lit cool once its role is trained, warm while there is still
+// something to learn.
+function drawConsole(thing, x, y, glows) {
+  bctx.fillStyle = STATION_ART.body;
+  bctx.fillRect(x + 2, y + 6, 12, 9);
+  bctx.fillStyle = STATION_ART.edge;
+  bctx.fillRect(x + 2, y + 6, 12, 1);
+  bctx.fillStyle = STATION_ART.shade;
+  bctx.fillRect(x + 3, y + 12, 10, 1);
+  bctx.fillStyle = STATION_ART.body;
+  bctx.fillRect(x + 3, y - 2, 10, 8);
+  bctx.fillStyle = STATION_ART.screen;
+  bctx.fillRect(x + 4, y - 1, 8, 5);
+  const learned = state.run.trained.includes(thing.at.role);
+  glows.push(() => {
+    bctx.fillStyle = learned ? STATION_ART.cool : STATION_ART.warm;
+    bctx.fillRect(x + 5, y, 6, 1);
+    bctx.fillRect(x + 5, y + 2, 4, 1);
+  });
+}
+
+// A crew member's board (the Engineer's power board): a wide cabinet
+// against the wall with a row of small lights, lit while the role is
+// trained and waiting to be taught.
+function drawPowerBoard(thing, x, y, glows) {
+  bctx.fillStyle = STATION_ART.body;
+  bctx.fillRect(x + 1, y - 5, 14, 20);
+  bctx.fillStyle = STATION_ART.edge;
+  bctx.fillRect(x + 1, y - 5, 14, 1);
+  bctx.fillRect(x + 1, y - 5, 1, 20);
+  bctx.fillStyle = STATION_ART.shade;
+  bctx.fillRect(x + 14, y - 4, 1, 19);
+  bctx.fillRect(x + 3, y + 8, 10, 1);
+  bctx.fillStyle = STATION_ART.screen;
+  for (let i = 0; i < 4; i++) bctx.fillRect(x + 3 + i * 3, y - 2, 2, 2);
+  bctx.fillRect(x + 3, y + 2, 10, 3);
+  if (!state.run.trained.includes(thing.at.role)) return;
+  glows.push(() => {
+    bctx.fillStyle = STATION_ART.cool;
+    for (let i = 0; i < 4; i++) bctx.fillRect(x + 3 + i * 3, y - 2, 2, 2);
+  });
+}
+
+// A crew member (the Engineer): a plain stick man standing at their
+// station, drawn on the room's own pixels like the player but with an
+// open ring for a head, not the ember (Timothy: simple figures). Not an
+// enemy: no tendrils, no tells.
+function drawCrew(thing, x, y) {
+  const h = Math.round(ROOM_VIEW.stickHeight * T);
+  const fx = x + T / 2, fy = y + Math.round(ROOM_VIEW.footAt * T);
+  const hip = fy - Math.round(h * 0.42), neck = fy - Math.round(h * 0.72), head = fy - Math.round(h * 0.86);
+  bctx.fillStyle = STATION_ART.crew;
+  const line = (x0, y0, x1, y1) => {
+    const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+    for (let s = 0; s <= steps; s++) bctx.fillRect(Math.round(x0 + (x1 - x0) * s / steps), Math.round(y0 + (y1 - y0) * s / steps), 1, 1);
+  };
+  line(fx, hip, fx - 2, fy);
+  line(fx, hip, fx + 2, fy);
+  line(fx, hip, fx, neck);
+  line(fx, neck + 1, fx - 3, hip - 1);
+  line(fx, neck + 1, fx + 3, hip - 1);
+  bctx.fillRect(fx - 1, head - 2, 3, 1);
+  bctx.fillRect(fx - 1, head + 2, 3, 1);
+  bctx.fillRect(fx - 2, head - 1, 1, 3);
+  bctx.fillRect(fx + 2, head - 1, 1, 3);
 }
 
 // When each shutter last went up or down (saferoom.js), by tile, so its
@@ -526,7 +599,10 @@ function halo(x, y, r, rgb, a) {
 }
 
 export const FLAT = { paper: drawPaper, vent: drawGrate, stairs: drawStairs };
-export const STAND = { box: drawBox, furniture: drawFurniture, cell: drawCell, desk: drawDesk, charger: drawCharger, relay: drawRelay, chest: drawChest, coin: drawCoin, key: drawKey, shutter: drawShutter, switch: drawSwitch };
+export const STAND = {
+  box: drawBox, furniture: drawFurniture, cell: drawCell, desk: drawDesk, charger: drawCharger, relay: drawRelay, chest: drawChest, coin: drawCoin, key: drawKey,
+  shutter: drawShutter, switch: drawSwitch, console: drawConsole, powerBoard: drawPowerBoard, crew: drawCrew,
+};
 
 // ---- furniture (step E) ----
 // A fixed plan's furniture (plans.js `furniture`), one tile at a time:
