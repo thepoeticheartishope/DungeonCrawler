@@ -864,6 +864,8 @@ export const TEXT = {
   'console.opened': 'The training console wakes.', // draft
   'console.left': 'You step back from the console.', // draft. LEAVE or Escape on COMMAND.SYS
   'learn.started': 'The captain’s lesson for the {role}. Mistakes are free here.', // draft
+  'learn.back': 'BACK', // draft. On a learning round: drop this lesson and pick another on COMMAND.SYS
+  'learn.stopped': 'You step back to pick another lesson.', // draft. After BACK on a learning round
   'learn.missed': 'Not that. Round {round} of {of}: look at the answer and try again.', // draft. A learning miss: free
   'learn.done': 'You’ve got it. Go and teach the {role}: the MAP shows where.', // draft. A right learning round
   'learn.shaky': 'You know enough to try. Go and teach the {role}: the MAP shows where.', // draft. Learned after the last round, without a right one

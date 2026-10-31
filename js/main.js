@@ -908,6 +908,9 @@ function drawEvents(events) {
       case 'learningStarted':
         parts.push(t('learn.started', { role: t('role.' + e.role) }));
         break;
+      case 'learningStopped':
+        parts.push(t('learn.stopped'));
+        break;
       case 'learnMissed':
         parts.push(t('learn.missed', { round: e.round, of: e.of }));
         break;
@@ -1404,7 +1407,7 @@ function pickRole(role) {
   const note = drawEvents(events);
   if (note.text) showRoomNote(note.cls, note.text);
   if (events.some(e => e.type === 'stationOpened')) openCharger(station);
-  if (events.some(e => e.type === 'learningStarted')) openLearning(role);
+  if (events.some(e => e.type === 'learningStarted')) openLearning(role, () => openConsole(station));
 }
 
 function closeCharger(cls, text) {

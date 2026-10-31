@@ -17,7 +17,7 @@ import { onStairs } from './moves.js';
 import { settleRelay } from './relays.js';
 import { settleBreaker } from './stations.js';
 import { breakerModifiers } from './ship.js';
-import { roleOf, settleRound, jobOn, settleLearning, learningOn } from './roles.js';
+import { roleOf, settleRound, jobOn, settleLearning, learningOn, stopLearning } from './roles.js';
 import { requestMapDraw } from './mapview.js';
 import {
   cycleTarget, fire, readyShot, cancelShot, settleShot, startSteady, steadying, releaseSteady, cancelSteady,
@@ -303,11 +303,19 @@ export function openJob(role) {
 // roles plan step B): rounds of its minigame, the same way as a job, but
 // misses cost nothing and always show the right answer, and the first
 // right one (or the last round) learns it (roles.js settleLearning). No
-// Timer: learning is for learning.
-export function openLearning(role) {
+// Timer: learning is for learning. BACK (or Escape) before an answer is
+// in drops the lesson (roles.js stopLearning) with no turn spent, and
+// `onBack` (main.js: COMMAND.SYS again) lets the player pick another.
+export function openLearning(role, onBack = () => {}) {
+  const back = () => {
+    endReload();
+    const note = drawEvents(stopLearning());
+    if (note.text) showRoomNote(note.cls, note.text);
+    onBack();
+  };
   openRounds(role, {
     settle: settleLearning, going: learningOn, title: 'ask.title.learn', of: SHIP_JOB.learnRounds,
-    round: () => state.run.ship.learning.round + 1, modifiers: () => [], reveal: true,
+    round: () => state.run.ship.learning.round + 1, modifiers: () => [], reveal: true, back,
   });
 }
 
@@ -345,7 +353,7 @@ function openRounds(role, how) {
 function askRound(role, how) {
   const { minigame } = roleOf(role);
   clearModifier();
-  showQuestionScreen(askAnswers, 'job', t(how.title, { role: t('role.' + role).toUpperCase(), round: how.round(), of: how.of }));
+  showQuestionScreen(askAnswers, 'job', t(how.title, { role: t('role.' + role).toUpperCase(), round: how.round(), of: how.of }), how.back);
   setQuestion(jobQuestion(minigame));
   state.battle.minigame = minigame;
   state.run.lastMinigame = minigame;

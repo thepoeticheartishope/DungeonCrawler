@@ -47,6 +47,8 @@ export function initGunPanels({ pickReload, cancelReload, readyBar, backBar, sto
   els.askTitle = document.getElementById('askTitle');
   els.question = document.getElementById('askQuestionPanel');
   els.questionSlot = document.getElementById('askQuestionSlot');
+  els.askBack = document.getElementById('askBack');
+  els.askBack.addEventListener('click', () => { if (backAction && !askHeld()) backAction(); });
   els.page = document.getElementById('bookPage');
   els.close = document.getElementById('bookClose');
   els.aim = document.getElementById('aimPanel');
@@ -71,6 +73,9 @@ export function initGunPanels({ pickReload, cancelReload, readyBar, backBar, sto
     } else if (shown === 'aim' && !dialRunning() && e.key === 'Escape') {
       e.preventDefault();
       actions.backBar();
+    } else if (shown === 'question' && backAction && !askHeld() && e.key === 'Escape') {
+      e.preventDefault();
+      backAction();
     } else if (shown === 'reload' && e.key === 'Escape') {
       e.preventDefault();
       actions.cancelReload();
@@ -142,9 +147,12 @@ export function showReloadPanel({ category, offers }) {
 // `kind` ('reload' or 'relay'), or `title` when given (a crew member's
 // job: their role and the round). `answers` are the question panel's
 // handlers (questionview.js mountQuestionPanel): what a right or wrong
-// answer does here.
-export function showQuestionScreen(answers, kind, title = null) {
+// answer does here. With `back` a BACK button shows under the question
+// (and Escape does the same) until an answer is in: learning (crew roles).
+export function showQuestionScreen(answers, kind, title = null, back = null) {
   els.askTitle.textContent = title || t('ask.title.' + kind);
+  backAction = back;
+  els.askBack.hidden = !back;
   mountQuestionPanel(els.questionSlot, answers);
   showOnly(els.question);
 }
@@ -158,6 +166,8 @@ export function turnAskPage(change, dir = 1) {
 
 // What closes the book once an answer is in (holdAskScreen), or null.
 let heldClose = null;
+// What BACK on the question does (showQuestionScreen's `back`), or null.
+let backAction = null;
 
 // Holds the ask screen open once an answer is in (record book plan step
 // C), so the struck pick and the written answer can be read: a tap on the
@@ -169,6 +179,7 @@ export function holdAskScreen(onClose) {
   showAskTab();
   heldClose = onClose;
   els.close.hidden = false;
+  els.askBack.hidden = true;
   setTimeout(() => {
     if (heldClose !== onClose) return;
     els.ask.addEventListener('click', closeHeldAsk);

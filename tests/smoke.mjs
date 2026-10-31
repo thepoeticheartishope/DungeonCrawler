@@ -2527,7 +2527,7 @@ async function runShip(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: '"Ship (test)" told the tragedy, a tap put every line up and a second took command, putting the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console\'s Engineer opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; COMMAND.SYS listed the roles, a right round learned the Navigator, and its three rounds of Close Enough taught it (TAUGHT 1 on the HUD)', consoleErrors, pageErrors };
+  return { ok: true, detail: '"Ship (test)" told the tragedy, a tap put every line up and a second took command, putting the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console\'s Engineer opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; COMMAND.SYS listed the roles, BACK left a lesson for the list again, a right round learned the Navigator, and its three rounds of Close Enough taught it (TAUGHT 1 on the HUD)', consoleErrors, pageErrors };
 }
 
 // Stands the player at (row, col) facing up and presses ArrowUp: a bump
@@ -2631,6 +2631,17 @@ async function checkShip(page, url) {
   // Enough learns it.
   await bumpUpFrom(page, start.console.row + 1, start.console.col);
   await waitUntil(page, () => !document.getElementById('consolePanel').hidden);
+  // BACK (Timothy 2026-10-31): a lesson picked can be left before an
+  // answer, back to COMMAND.SYS with nothing learned.
+  await page.click('.console-role[data-role="pilot"]');
+  await waitUntil(page, () => !document.getElementById('askBack').hidden && document.getElementById('askBack').offsetParent);
+  await page.click('#askBack');
+  await waitUntil(page, () => !document.getElementById('consolePanel').hidden);
+  const backed = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    return { learning: state.run.ship.learning, trained: state.run.trained.includes('pilot') };
+  });
+  if (backed.learning || backed.trained) return 'BACK on a lesson did not drop it: ' + JSON.stringify(backed);
   await page.click('.console-role[data-role="navigator"]');
   await waitUntil(page, () => /LEARNING NAVIGATOR/.test(document.getElementById('askTitle').textContent) && document.getElementById('askTitle').offsetParent);
   await page.evaluate(async () => (await import('./js/gunactions.js')).autoWinGun());
