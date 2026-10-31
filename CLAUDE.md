@@ -130,6 +130,7 @@ Rules and data (no page/DOM access):
 | `charger.js` | The charger (CHARGE.SYS wires): energy and battery to full. |
 | `stations.js` | The ship's stations: training console, a crew member's board, the crew member; breakers that close on a right answer. |
 | `ship.js` | The ship's run: arrival clock, crew panic and its effects, training period, burn window, the tragedy roll, arrive / lose. |
+| `roles.js` | The ship's crew roles, one per minigame: who sits out, a 3-round job, the benefit a taught role gives the run. |
 | `gate.js` | The locked core's gate: questions by keys held, sealing, `breakGate()`. |
 | `answers.js` | `settleAnswer()`: hearts, haunts, wager, boss damage, gold. |
 | `quiz.js` | Picking questions, building options, fight choice labels, answer types. |

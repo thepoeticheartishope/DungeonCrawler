@@ -17,8 +17,15 @@ import { rotated, powered } from './charger.js';
 
 // A new ship run: the clock full, the crew calm, nothing trained, and a
 // tragedy rolled (rollTragedy).
+// What the crew roles have given the run (roles.js; crew roles plan) starts
+// at the plain numbers: the burns needed, the right answers that calm, how
+// much rarer slips are, extra burn window, and shields against panic.
 export function freshShipRun(rand = Math.random) {
-  state.run.ship = { clockMs: SHIP_RUN.missionMs, panic: 0, streak: 0, training: null, tragedy: rollTragedy(rand) };
+  state.run.ship = {
+    clockMs: SHIP_RUN.missionMs, panic: 0, streak: 0, training: null, tragedy: rollTragedy(rand),
+    burnsNeeded: SHIP_RUN.burnsNeeded, calmStreak: SHIP_RUN.calmStreak, slipFactor: 1, burnBonusMs: 0,
+    shields: 0, windowShields: 0, taught: [], job: null,
+  };
   state.run.trained = [];
   state.run.burns = 0;
   state.run.crewFailures = 0;
@@ -42,51 +49,80 @@ export function panicLevel() {
 }
 
 // A failure while teaching: panic up a step and the run of right answers
-// broken. At Broken the run is lost.
-// Events: panicRose { level }, then shipEnded { how: 'panic' } at Broken.
+// broken. At Broken the run is lost. A shield (the Comms officer's)
+// takes the step instead, once.
+// Events: panicShielded, or panicRose { level }, then
+// shipEnded { how: 'panic' } at Broken.
 export function crewMissed() {
   const ship = state.run.ship;
   if (!ship) return [];
   ship.streak = 0;
+  if (ship.shields > 0) {
+    ship.shields--;
+    return [{ type: 'panicShielded' }];
+  }
   ship.panic = Math.min(ship.panic + 1, SHIP_RUN.brokenAt);
   const events = [{ type: 'panicRose', level: ship.panic }];
   if (ship.panic >= SHIP_RUN.brokenAt) events.push({ type: 'shipEnded', how: 'panic' });
   return events;
 }
 
-// A right answer while teaching: SHIP_RUN.calmStreak in a row bring the
-// panic down a step and start the count again.
+// A right answer while teaching: the run's calmStreak in a row
+// (SHIP_RUN.calmStreak, fewer once the Cook is taught) bring the panic
+// down a step and start the count again.
 // Events: panicEased { level }, or nothing.
 export function crewRight() {
   const ship = state.run.ship;
   if (!ship) return [];
   ship.streak++;
-  if (ship.panic === 0 || ship.streak < SHIP_RUN.calmStreak) return [];
+  if (ship.panic === 0 || ship.streak < ship.calmStreak) return [];
   ship.panic--;
   ship.streak = 0;
   return [{ type: 'panicEased', level: ship.panic }];
 }
 
-// A full burn: with SHIP_RUN.burnsNeeded of them the ship arrives.
+// The burns this run needs: SHIP_RUN.burnsNeeded, fewer once the Pilot is
+// taught.
+export function burnsNeeded() {
+  return state.run.ship ? state.run.ship.burnsNeeded : SHIP_RUN.burnsNeeded;
+}
+
+// A full burn: with burnsNeeded() of them the ship arrives.
 // Events: shipEnded { how: 'arrived' }, or nothing.
 export function burnMade() {
-  return state.run.burns >= SHIP_RUN.burnsNeeded ? [{ type: 'shipEnded', how: 'arrived' }] : [];
+  return state.run.burns >= burnsNeeded() ? [{ type: 'shipEnded', how: 'arrived' }] : [];
 }
 
-// How long a new burn may take, by the panic now: Uneasy or worse cuts it.
+// How long a new burn may take, by the panic now (Uneasy or worse cuts
+// it), plus what the Science officer added.
 export function burnMs() {
-  return SHIP_RUN.burnMs - (panicLevel() >= 1 ? SHIP_RUN.uneasyCutMs : 0);
+  const bonus = state.run.ship ? state.run.ship.burnBonusMs : 0;
+  return SHIP_RUN.burnMs - (panicLevel() >= 1 ? SHIP_RUN.uneasyCutMs : 0) + bonus;
 }
 
-// How often a wire slips while teaching, by the panic now (0: never).
+// How often a wire slips while teaching, by the panic now (0: never),
+// rarer once the Systems tech is taught.
 export function slipEveryMs() {
-  return SHIP_RUN.slipEveryMs[Math.min(panicLevel(), SHIP_RUN.slipEveryMs.length - 1)] || 0;
+  const every = SHIP_RUN.slipEveryMs[Math.min(panicLevel(), SHIP_RUN.slipEveryMs.length - 1)] || 0;
+  return every * (state.run.ship ? state.run.ship.slipFactor : 1);
 }
 
 // The modifiers a breaker's question carries: the Timer once the crew is
 // Panicking (SHIP_RUN.timerAt), none before.
 export function breakerModifiers() {
   return panicLevel() >= SHIP_RUN.timerAt ? ['timer'] : [];
+}
+
+// A missed burn window is a failure, unless Life support's shield takes it
+// (once). Events: panicShielded, or crewMissed's.
+function missedWindow() {
+  const ship = state.run.ship;
+  if (ship.windowShields > 0) {
+    ship.windowShields--;
+    ship.streak = 0;
+    return [{ type: 'panicShielded' }];
+  }
+  return crewMissed();
 }
 
 // Starts the training period for `role` at the console (SHIP_RUN.trainMs),
@@ -125,7 +161,7 @@ export function shipFrame(dtMs, rand = Math.random) {
     if (prop.burnLeftMs <= 0) {
       prop.puzzle = null;
       prop.burnLeftMs = null;
-      events.push({ type: 'burnMissed', prop }, ...crewMissed());
+      events.push({ type: 'burnMissed', prop }, ...missedWindow());
       return;
     }
     const every = slipEveryMs();

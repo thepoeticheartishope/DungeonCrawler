@@ -14,6 +14,7 @@ import { state } from './state.js';
 import { makeWires, powered } from './charger.js';
 import { SHIP_STATIONS } from './config.js';
 import { startTraining, crewMissed, crewRight, burnMade, burnMs } from './ship.js';
+import { useCrew } from './roles.js';
 
 // The plan's stations ([kind, row, col, role], plans.js `stations`) as
 // solid props on the furniture's rules (placer.tryBlock), never on a
@@ -47,6 +48,8 @@ export function isStation(prop) {
 // stationOpened { station, mode, kept }.
 export function useStation(prop, rand = Math.random) {
   const trained = state.run.trained.includes(prop.role);
+  // Any crew member but the Engineer has a minigame job (roles.js).
+  if (prop.kind === 'crew' && prop.role !== 'engineer') return useCrew(prop.role);
   if (prop.kind === 'crew') return [{ type: 'crewSpoke', role: prop.role, trained }];
   const mode = stationMode(prop);
   if (mode === 'teach' && !trained) return [{ type: 'stationLocked', role: prop.role }];

@@ -2527,7 +2527,7 @@ async function runShip(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: '"Ship (test)" told the tragedy, TAKE COMMAND put the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach', consoleErrors, pageErrors };
+  return { ok: true, detail: '"Ship (test)" told the tragedy, TAKE COMMAND put the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; the Navigator\'s three rounds of Close Enough taught the role', consoleErrors, pageErrors };
 }
 
 // Stands the player at (row, col) facing up and presses ArrowUp: a bump
@@ -2614,6 +2614,29 @@ async function checkShip(page, url) {
   await waitUntil(page, () => !document.getElementById('chargerPanel').hidden);
   const sub = await page.textContent('#chargerSub');
   if (!sub.includes('TEACHING')) return 'the trained board did not open to teach: ' + sub;
+  await page.keyboard.press('Escape');
+  await waitUntil(page, () => document.getElementById('chargerPanel').hidden);
+
+  // A crew role (crew roles plan): the Navigator, learned, runs three
+  // rounds of Close Enough; answered right (Auto-win's way), it is taught.
+  const navigator = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const { SHIP_ROLES } = await import('./js/config.js');
+    state.run.trained = ['engineer', ...SHIP_ROLES.map(r => r.id)];
+    return state.floor.props.find(p => p.kind === 'crew' && p.role === 'navigator');
+  });
+  await bumpUpFrom(page, navigator.row + 1, navigator.col);
+  await waitUntil(page, () => /NAVIGATOR/.test(document.getElementById('askTitle').textContent) && document.getElementById('askTitle').offsetParent);
+  for (let round = 0; round < 3; round++) {
+    await page.evaluate(async () => (await import('./js/gunactions.js')).autoWinGun());
+    await page.waitForTimeout(400);
+    await page.evaluate(async () => {
+      if ((await import('./js/gunpanels.js')).askHeld()) (await import('./js/gunactions.js')).autoWinGun();
+    });
+    await page.waitForTimeout(400);
+  }
+  const taught = await page.evaluate(async () => (await import('./js/state.js')).state.run.ship.taught);
+  if (!taught.includes('navigator')) return 'three right rounds did not teach the Navigator: ' + JSON.stringify(taught);
   return null;
 }
 

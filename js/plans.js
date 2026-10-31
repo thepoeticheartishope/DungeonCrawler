@@ -129,6 +129,17 @@ export const FLOOR_PLANS = {
       ['console', 12, 14, 'engineer'],
       ['powerBoard', 12, 4, 'engineer'],
       ['crew', 12, 5, 'engineer'],
+      // The other crew roles (crew roles plan, roles.js), one or two to a room.
+      ['crew', 2, 13, 'navigator'],
+      ['crew', 2, 19, 'pilot'],
+      ['crew', 12, 28, 'comms'],
+      ['crew', 2, 4, 'medic'],
+      ['crew', 24, 30, 'cook'],
+      ['crew', 12, 2, 'systems'],
+      ['crew', 2, 27, 'science'],
+      ['crew', 26, 14, 'quartermaster'],
+      ['crew', 26, 18, 'sensors'],
+      ['crew', 28, 3, 'lifeSupport'],
     ],
     rows: [
       '#################################',

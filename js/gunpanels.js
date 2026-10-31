@@ -137,11 +137,12 @@ export function showReloadPanel({ category, offers }) {
 }
 
 // Moves the question panel to the ask screen and shows it, titled for
-// `kind` ('reload' or 'relay'). `answers` are the question panel's
+// `kind` ('reload' or 'relay'), or `title` when given (a crew member's
+// job: their role and the round). `answers` are the question panel's
 // handlers (questionview.js mountQuestionPanel): what a right or wrong
 // answer does here.
-export function showQuestionScreen(answers, kind) {
-  els.askTitle.textContent = t('ask.title.' + kind);
+export function showQuestionScreen(answers, kind, title = null) {
+  els.askTitle.textContent = title || t('ask.title.' + kind);
   mountQuestionPanel(els.questionSlot, answers);
   showOnly(els.question);
 }
