@@ -1631,6 +1631,29 @@
   @media (prefers-reduced-motion: reduce) { .mg-fog-tiles span { transition: none; } }
   /* Sum Lock: its two questions, numbered, over the total's box. */
   .mg-sum-list { text-align: left; margin: 6px 0; padding-left: 1.6em; color: var(--torch-bright); display: flex; flex-direction: column; gap: 6px; }
+  /* A phone (Timothy 2026-10-31: Cross Wire and others looked jumbled on
+     a phone, and scrolling should be rare): the question and its minigame
+     a size smaller, buttons kept on one line, the gaps and the crossword
+     cells tighter, and the book's title line too, so a minigame fits the book's page as a rule. Tap
+     targets stay 44px tall (the crossword's cells are 30). */
+  @media (max-width: 480px) {
+    #queryPanel, .book-page, .book-top { font-size: 20px; line-height: 1.2; }
+    #queryPanel button, .ask-cancel { white-space: nowrap; padding: 4px 6px; }
+    #queryPanel .minigame { margin-top: 2px; }
+    #queryPanel .enemy-name { font-size: 21px; margin-bottom: 8px; }
+    .mg-reading, .mg-blanks { font-size: 22px; }
+    .mg-built, .mg-code-cell { font-size: 20px; }
+    .mg-tile { min-width: 40px; font-size: 18px; }
+    .mg-tiles, .mg-tray { gap: 4px; }
+    .mg-pool-keys { gap: 4px; }
+    .mg-tf .mg-lock { min-width: 96px; }
+    .mg-clues { gap: 4px; margin: 4px 0; font-size: 18px; }
+    .mg-grid { gap: 2px; margin: 4px auto; }
+    .mg-grid > span, .mg-grid .mg-cell { width: 28px; height: 30px; }
+    .mg-grid .mg-cell { font-size: 18px; }
+    .mg-claim-q { margin: 4px 0 2px; }
+    .mg-fogbox { width: min(220px, 100%); }
+  }
   .mg-fog-opts { border: none; padding: 0; margin: 6px 0 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; text-align: left; }
   /* Timer: the countdown line; bright for the last few seconds. */
   .mod-timer[hidden] { display: none; }
