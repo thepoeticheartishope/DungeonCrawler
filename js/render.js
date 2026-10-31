@@ -7,7 +7,7 @@
 // of each one threading them through as parameters.
 
 import { state, key } from './state.js';
-import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, BOOK, SHIP_LOW_SECONDS } from './config.js';
+import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, BOOK } from './config.js';
 import { drawTube, TUBE_W, TUBE_H } from './tubeart.js';
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
@@ -200,18 +200,14 @@ export function renderHud() {
   renderShipHud();
 }
 
-// The ship's HUD (ship plan step C, ship.js): the arrival clock (bright in
-// its last minute), burns of the ones needed, crew taught of the roles on
+// The ship's HUD (ship plan step C, ship.js; no arrival clock since
+// Timothy 2026-10-31): burns of the ones needed, crew taught of the roles on
 // duty, and the crew's panic by name and as a meter. The rest of the HUD
-// hides there (CSS .ship-hud). main.js worldFrame calls it each frame, as
-// the clock runs.
+// hides there (CSS .ship-hud). main.js worldFrame calls it each frame.
 export function renderShipHud() {
   const ship = state.floor.ship ? state.run.ship : null;
   els.statsEl.classList.toggle('ship-hud', !!ship);
   if (!ship) return;
-  const seconds = Math.ceil(ship.clockMs / 1000);
-  els.shipClock.textContent = formatTime(seconds);
-  els.shipClock.classList.toggle('ship-low', seconds <= SHIP_LOW_SECONDS);
   els.shipBurns.textContent = state.run.burns + '/' + burnsNeeded();
   // Crew taught of the roles on duty (crew roles plan step C).
   const crew = taughtCount();

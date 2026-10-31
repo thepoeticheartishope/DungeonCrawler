@@ -360,23 +360,16 @@ export const SHIP_STATIONS = {
   teach: { size: 5, breakers: 2 },
 };
 // The ship's run (ship plan step C, ship.js; Timothy 2026-10-30; numbers
-// from the loop mockup, drafts to tune in play). The arrival clock runs
-// `missionMs`; `burnsNeeded` full burns reach the planet. A training period
-// lasts `trainMs`. A burn must be made within `burnMs` of the board
-// opening, `uneasyCutMs` less once the crew is Uneasy. Crew panic goes up a
-// step with each failure and down one after `calmStreak` right answers in a
-// row while teaching. At each step: 1 Uneasy (shorter burns), 2 Shaken (a
-// wire slips every `slipEveryMs[2]`), 3 Panicking (slips every
-// `slipEveryMs[3]`, breaker questions carry the Timer), `brokenAt` Broken:
-// the run is lost.
+// from the loop mockup, drafts to tune in play). No timers (Timothy
+// 2026-10-31: no arrival clock, training period, burn window or Timer on
+// questions). `burnsNeeded` full burns reach the planet. Crew panic goes up
+// a step with each failure and down one after `calmStreak` right answers in
+// a row while teaching. At each step: 1 Uneasy, 2 Shaken (a wire slips every
+// `slipEveryMs[2]` while a burn is under way), 3 Panicking (slips every
+// `slipEveryMs[3]`), `brokenAt` Broken: the run is lost.
 export const SHIP_RUN = {
-  missionMs: 300000,
   burnsNeeded: 3,
-  trainMs: 45000,
-  burnMs: 75000,
-  uneasyCutMs: 20000,
   slipEveryMs: [0, 0, 12000, 6000],
-  timerAt: 3,
   calmStreak: 3,
   brokenAt: 4,
   endDelayMs: 900,    // the room's last line shows this long before the end screen
@@ -385,33 +378,28 @@ export const SHIP_RUN = {
 // the repo; Timothy 2026-10-30: a role for each minigame; roles.js). Each
 // role's job is `SHIP_JOB.rounds` rounds of its minigame; `passAt` right
 // or more and its `benefit` helps the run once, for good:
-//   clock      +`ms` on the arrival clock
 //   burns      one burn fewer needed
 //   shield     the next failure raises no panic
 //   panicDown  panic down a step now
 //   calm       calming takes `streak` right answers in a row
 //   slips      wires slip `factor` times less often
-//   burnWindow burn windows `ms` longer
-//   windowShield the next missed burn window raises no panic
 // A role sits out a run whose set can't give its minigame
 // `SHIP_JOB.minFitting` questions (minigames.js roleCanRun). The Engineer
 // is the wires (stations.js), not one of these. Names, rooms and benefits
 // are drafts.
 export const SHIP_ROLES = [
-  { id: 'navigator', minigame: 'closeEnough', benefit: { kind: 'clock', ms: 45000 } },
+  { id: 'navigator', minigame: 'closeEnough', benefit: { kind: 'burns' } }, // was +45s clock (timers gone 2026-10-31)
   { id: 'pilot', minigame: 'higherLower', benefit: { kind: 'burns' } },
   { id: 'comms', minigame: 'slowSpell', benefit: { kind: 'shield' } },
   { id: 'medic', minigame: 'syllableSplit', benefit: { kind: 'panicDown' } },
   { id: 'cook', minigame: 'letterPool', benefit: { kind: 'calm', streak: 2 } },
   { id: 'systems', minigame: 'codeBreak', benefit: { kind: 'slips', factor: 2 } },
-  { id: 'science', minigame: 'verdict', benefit: { kind: 'burnWindow', ms: 15000 } },
-  { id: 'quartermaster', minigame: 'crosswire', benefit: { kind: 'clock', ms: 30000 } },
+  { id: 'science', minigame: 'verdict', benefit: { kind: 'shield' } }, // was longer burn windows
+  { id: 'quartermaster', minigame: 'crosswire', benefit: { kind: 'panicDown' } }, // was +30s clock
   { id: 'sensors', minigame: 'fogReveal', benefit: { kind: 'panicDown' } },
-  { id: 'lifeSupport', minigame: 'sumLock', benefit: { kind: 'windowShield' } },
+  { id: 'lifeSupport', minigame: 'sumLock', benefit: { kind: 'shield' } }, // was a missed-window shield
 ];
 export const SHIP_JOB = { rounds: 3, passAt: 2, minFitting: 3, learnRounds: 3 }; // learnRounds: at the console, at most this many rounds to learn a role (step B)
-// The arrival clock on the HUD turns bright this many seconds from the end.
-export const SHIP_LOW_SECONDS = 60;
 // The tragedy intro (shipview.js): seconds between one line fading in and
 // the next. Slow on purpose: text comes in slowly, never flickers.
 export const SHIP_INTRO_STEP_S = 1.4;

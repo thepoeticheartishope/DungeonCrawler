@@ -174,16 +174,14 @@ export function jobOn() {
   return Boolean(state.run.ship && state.run.ship.job);
 }
 
-// A taught role's benefit, for good (SHIP_ROLES `benefit`): more clock, a
-// burn fewer, a shield, panic down, quicker calming, rarer slips, longer
-// burn windows, or a shield for a missed window. The run's burns already
+// A taught role's benefit, for good (SHIP_ROLES `benefit`): a burn fewer,
+// a shield, panic down, quicker calming, or rarer slips. The run's burns already
 // made may now be enough: then the ship arrives.
 // Events: panicEased { level } for panicDown with any panic, or
 // shipEnded { how: 'arrived' } when a burn fewer is already reached.
 export function applyBenefit(benefit) {
   const ship = state.run.ship;
   switch (benefit.kind) {
-    case 'clock': ship.clockMs += benefit.ms; return [];
     case 'burns':
       ship.burnsNeeded = Math.max(1, ship.burnsNeeded - 1);
       return state.run.burns >= ship.burnsNeeded ? [{ type: 'shipEnded', how: 'arrived' }] : [];
@@ -194,8 +192,6 @@ export function applyBenefit(benefit) {
       return [{ type: 'panicEased', level: ship.panic }];
     case 'calm': ship.calmStreak = Math.min(ship.calmStreak, benefit.streak); return [];
     case 'slips': ship.slipFactor *= benefit.factor; return [];
-    case 'burnWindow': ship.burnBonusMs += benefit.ms; return [];
-    case 'windowShield': ship.windowShields++; return [];
     default: return [];
   }
 }

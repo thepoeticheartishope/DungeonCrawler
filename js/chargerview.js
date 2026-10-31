@@ -117,13 +117,6 @@ export function renderCharger(wires, charged) {
   if (!charged) focusWire();
 }
 
-// A ship station's countdown in the panel's top line (main.js
-// showStationClock, each frame): the training period or the burn window.
-export function setStationClock(text) {
-  if (!mode || !els.sub) return;
-  els.sub.textContent = text;
-}
-
 // Closes CHARGE.SYS (the wires stay on the charger as they were).
 export function hideCharger() {
   if (!els.panel) return;

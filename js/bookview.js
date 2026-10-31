@@ -171,6 +171,8 @@ export function showAskTab() {
 export function refreshBook() {
   els.book.dataset.paper = state.settings.bookPaper;
   els.clock.textContent = t(reading ? 'book.running' : 'book.paused');
+  // No clock on the ship (Timothy 2026-10-31: no timers there).
+  els.clock.hidden = Boolean(state.floor && state.floor.ship);
   const inPlay = batteryInPlay() && Boolean(state.floor.light);
   els.strip.hidden = !inPlay;
   if (!inPlay) return;

@@ -16,7 +16,6 @@ import { pickQuestion } from './quiz.js';
 import { onStairs } from './moves.js';
 import { settleRelay } from './relays.js';
 import { settleBreaker } from './stations.js';
-import { breakerModifiers } from './ship.js';
 import { roleOf, settleRound, jobOn, settleLearning, learningOn, stopLearning } from './roles.js';
 import { requestMapDraw } from './mapview.js';
 import {
@@ -290,12 +289,12 @@ export function openRelay(relay) {
 // SHIP_JOB.rounds rounds of their minigame on the ask screen, one after
 // another, each settled by roles.js settleRound (a miss is a crew failure).
 // Between rounds the next is asked in place; after the last, or if the
-// run ends, the ask screen closes and the turn's events play out. A
-// Panicking crew puts the Timer on a round when the minigame can carry it.
+// run ends, the ask screen closes and the turn's events play out. No Timer
+// on a round (Timothy 2026-10-31: no timers on the ship).
 export function openJob(role) {
   openRounds(role, {
     settle: settleRound, going: jobOn, title: 'ask.title.job', of: SHIP_JOB.rounds,
-    round: () => state.run.ship.job.round + 1, modifiers: breakerModifiers, reveal: state.settings.revealOnWrong,
+    round: () => state.run.ship.job.round + 1, modifiers: () => [], reveal: state.settings.revealOnWrong,
   });
 }
 
@@ -374,8 +373,8 @@ function jobQuestion(minigame) {
 
 // A breaker was tapped on a ship station's wires (charger.js breakerAsked;
 // ship plan step B): its question on the ask screen, like a relay's; it
-// may run as a minigame. A Panicking crew puts the Timer on it (ship.js
-// breakerModifiers; step C). The answer settles it
+// may run as a minigame, with no modifiers (no Timer on the ship). The
+// answer settles it
 // (stations.js settleBreaker: closed, or a spark), then the wires open
 // again where they were, unless that answer joined the power up.
 export function openBreaker(station, index) {
@@ -393,7 +392,7 @@ export function openBreaker(station, index) {
     log: text => showRoomNote('', text),
   };
   showQuestionScreen(askAnswers, 'breaker');
-  askQuestion(pickQuestion(state.battle.currentQuestion), breakerModifiers());
+  askQuestion(pickQuestion(state.battle.currentQuestion), []);
 }
 
 // The tutorial's barrel was bumped (moves.js nameAsked): it asks the
