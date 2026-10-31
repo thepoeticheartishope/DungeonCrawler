@@ -164,6 +164,8 @@
   .ship-intro p.small { font-size: 18px; color: var(--muted); }
   .ship-intro-line { opacity: 0; animation: ship-intro-in 1.6s ease forwards; animation-delay: var(--d, 0s); }
   @keyframes ship-intro-in { to { opacity: 1; } }
+  /* A tap or key puts every line up at once (shipview.js skipOrBegin). */
+  .ship-intro.all-in .ship-intro-line { opacity: 1; animation: none; }
   @media (prefers-reduced-motion: reduce) {
     .ship-intro-line { opacity: 1; animation: none; }
   }

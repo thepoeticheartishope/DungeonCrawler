@@ -2527,7 +2527,7 @@ async function runShip(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: '"Ship (test)" told the tragedy, TAKE COMMAND put the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console\'s Engineer opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; COMMAND.SYS listed the roles, a right round learned the Navigator, and its three rounds of Close Enough taught it (TAUGHT 1 on the HUD)', consoleErrors, pageErrors };
+  return { ok: true, detail: '"Ship (test)" told the tragedy, a tap put every line up and a second took command, putting the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console\'s Engineer opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; COMMAND.SYS listed the roles, a right round learned the Navigator, and its three rounds of Close Enough taught it (TAUGHT 1 on the HUD)', consoleErrors, pageErrors };
 }
 
 // Stands the player at (row, col) facing up and presses ArrowUp: a bump
@@ -2554,7 +2554,12 @@ async function checkShip(page, url) {
   await page.waitForSelector('#shipIntroScreen.show', { timeout: 10000 });
   const intro = await page.textContent('#shipIntroLines');
   if (!/Day \d+ of the crossing\./.test(intro) || !/Captain \w+ died/.test(intro)) return 'the tragedy was not told: ' + intro;
-  await page.click('#shipIntroGo');
+  // Clicked through (Timothy 2026-10-31): a tap puts every line up at once,
+  // a second one takes command.
+  await page.click('#shipIntroLines');
+  await waitUntil(page, () => document.getElementById('shipIntroScreen').classList.contains('all-in'));
+  if (!await page.isVisible('#shipIntroScreen.show')) return 'the first tap on the tragedy left it instead of showing every line';
+  await page.click('#shipIntroLines');
   await page.waitForSelector('#roomScreen.show', { timeout: 10000 });
   const hud = await page.evaluate(() => ({
     ship: document.getElementById('statsBar').classList.contains('ship-hud'),

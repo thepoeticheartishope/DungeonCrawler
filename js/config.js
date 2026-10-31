@@ -415,6 +415,9 @@ export const SHIP_LOW_SECONDS = 60;
 // The tragedy intro (shipview.js): seconds between one line fading in and
 // the next. Slow on purpose: text comes in slowly, never flickers.
 export const SHIP_INTRO_STEP_S = 1.4;
+// How long one intro line takes to fade in (index.html .ship-intro-line's
+// animation), so a tap after that takes command instead of showing the rest.
+export const SHIP_INTRO_FADE_S = 1.6;
 // How many of each part of the random tragedy text.js has (ship.js
 // rollTragedy: 'tragedy.captain.1' and on).
 export const TRAGEDY_PARTS = { captain: 6, cause: 5, ship: 5, planet: 5 };
