@@ -1466,6 +1466,11 @@
     border-bottom: 1px solid var(--line);
     caret-color: var(--torch-bright);
     padding: 6px 2px;
+    /* Take the row's free width and shrink on a phone: left at its own
+       width (about 20 characters) the input pushed the button beside it
+       (Code Break's [ Try ]) off the edge. */
+    flex: 1;
+    min-width: 0;
   }
   .term-input-row input[type="text"]:focus { border-bottom-color: var(--torch); }
   .term-input-row button { flex-shrink: 0; }
