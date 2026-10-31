@@ -381,6 +381,35 @@ export const SHIP_RUN = {
   brokenAt: 4,
   endDelayMs: 900,    // the room's last line shows this long before the end screen
 };
+// The ship's crew roles (crew roles plan, ideas/crew-roles-plan.md outside
+// the repo; Timothy 2026-10-30: a role for each minigame; roles.js). Each
+// role's job is `SHIP_JOB.rounds` rounds of its minigame; `passAt` right
+// or more and its `benefit` helps the run once, for good:
+//   clock      +`ms` on the arrival clock
+//   burns      one burn fewer needed
+//   shield     the next failure raises no panic
+//   panicDown  panic down a step now
+//   calm       calming takes `streak` right answers in a row
+//   slips      wires slip `factor` times less often
+//   burnWindow burn windows `ms` longer
+//   windowShield the next missed burn window raises no panic
+// A role sits out a run whose set can't give its minigame
+// `SHIP_JOB.minFitting` questions (minigames.js roleCanRun). The Engineer
+// is the wires (stations.js), not one of these. Names, rooms and benefits
+// are drafts.
+export const SHIP_ROLES = [
+  { id: 'navigator', minigame: 'closeEnough', benefit: { kind: 'clock', ms: 45000 } },
+  { id: 'pilot', minigame: 'higherLower', benefit: { kind: 'burns' } },
+  { id: 'comms', minigame: 'slowSpell', benefit: { kind: 'shield' } },
+  { id: 'medic', minigame: 'syllableSplit', benefit: { kind: 'panicDown' } },
+  { id: 'cook', minigame: 'letterPool', benefit: { kind: 'calm', streak: 2 } },
+  { id: 'systems', minigame: 'codeBreak', benefit: { kind: 'slips', factor: 2 } },
+  { id: 'science', minigame: 'verdict', benefit: { kind: 'burnWindow', ms: 15000 } },
+  { id: 'quartermaster', minigame: 'crosswire', benefit: { kind: 'clock', ms: 30000 } },
+  { id: 'sensors', minigame: 'fogReveal', benefit: { kind: 'panicDown' } },
+  { id: 'lifeSupport', minigame: 'sumLock', benefit: { kind: 'windowShield' } },
+];
+export const SHIP_JOB = { rounds: 3, passAt: 2, minFitting: 3 };
 // The arrival clock on the HUD turns bright this many seconds from the end.
 export const SHIP_LOW_SECONDS = 60;
 // The tragedy intro (shipview.js): seconds between one line fading in and

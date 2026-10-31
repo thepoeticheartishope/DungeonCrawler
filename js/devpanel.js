@@ -12,7 +12,7 @@ import { lookAngle, bodyAngle } from './look.js';
 import { computeVisibility } from './sight.js';
 import { refreshGunTarget } from './gun.js';
 import { refreshBook } from './bookview.js';
-import { BOOK } from './config.js';
+import { BOOK, SHIP_ROLES } from './config.js';
 import { TEST_ROOMS } from './testroom.js';
 
 const devDock = document.getElementById('devDock');
@@ -24,6 +24,7 @@ const devStartRow = document.getElementById('devStartRow');
 const devStartIn = document.getElementById('devStartIn');
 const devTallyOut = document.getElementById('devTallyOut');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
+const devLearnRolesBtn = document.getElementById('devLearnRolesBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
 const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
@@ -118,6 +119,13 @@ export function initDevPanel({
     else { clearInterval(autoWinTimer); autoWinTimer = null; }
     devAutoWinBtn.textContent = on ? 'Auto-win: ON (dev)' : 'Auto-win: OFF (dev)';
     devAutoWinBtn.setAttribute('aria-pressed', String(on));
+  });
+
+  // Dev tool (crew roles plan step A): every crew role learned at once, so
+  // their jobs can be tried before learning at the console exists.
+  devLearnRolesBtn.addEventListener('click', () => {
+    state.run.trained = ['engineer', ...SHIP_ROLES.map(r => r.id)];
+    devLearnRolesBtn.textContent = 'All roles learned (dev)';
   });
 
   // Dev tool: reveal the whole map instantly, to check that the layout,

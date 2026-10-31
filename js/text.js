@@ -540,6 +540,33 @@ export const TEXT = {
   'ship.trainingOver': 'Training time is up. You know enough to teach it.', // draft
   'ship.burnMissed': 'The burn window closed. The engine coughs and goes quiet.', // draft. A failure
   'ship.wireSlipped': 'Engineer: “Sorry. My hands.” A wire slips.', // draft. A Shaken crew's slip
+  'ship.panicShielded': 'It went wrong, but the crew holds steady.', // draft. A shield took the panic (Comms officer, Life support)
+  // The crew roles (crew roles plan, roles.js; config.js SHIP_ROLES). Names are drafts.
+  'role.navigator': 'Navigator', // draft. Close Enough
+  'role.pilot': 'Pilot', // draft. Higher/Lower
+  'role.comms': 'Comms officer', // draft. Slow Spell
+  'role.medic': 'Medic', // draft. Syllable Split
+  'role.cook': 'Cook', // draft. Letter Pool
+  'role.systems': 'Systems tech', // draft. Code Break
+  'role.science': 'Science officer', // draft. Verdict
+  'role.quartermaster': 'Quartermaster', // draft. Crosswire
+  'role.sensors': 'Sensor operator', // draft. Fog Reveal
+  'role.lifeSupport': 'Life support', // draft. Sum Lock
+  'crew.waiting': '{role}: “The captain always did this. I don’t know how.” Learn it in Command first.', // draft. A role not learned yet
+  'crew.sitsOut': '{role}: “Not needed this trip.”', // draft. A role whose game can't run on this set
+  'crew.taught': '{role}: “I’ve got it from here.”', // draft. A role already taught this run
+  'job.started': 'You walk the {role} through it.', // draft. A job's first round
+  'job.right': 'Round {round} of {of}: right.', // draft
+  'job.missed': 'Round {round} of {of}: wrong. The crew saw that.', // draft. A crew failure
+  'job.badly': 'It went badly. The {role} will manage, but it won’t help much.', // draft. Fewer than SHIP_JOB.passAt right
+  'job.helped.clock': 'The {role} has it. More time on the arrival clock.', // draft
+  'job.helped.burns': 'The {role} plots a shorter way in. One burn fewer.', // draft
+  'job.helped.shield': 'The {role} keeps everyone talking. The next mistake won’t shake them.', // draft
+  'job.helped.panicDown': 'The {role} settles the crew a little.', // draft
+  'job.helped.calm': 'The {role} keeps everyone fed. The crew steadies faster.', // draft
+  'job.helped.slips': 'The {role} braces the wiring. Fewer slips.', // draft
+  'job.helped.burnWindow': 'The {role} buys the engine time. Longer burn windows.', // draft
+  'job.helped.windowShield': 'The {role} keeps the air steady. A missed burn won’t shake them.', // draft
   // The tragedy (ship.js rollTragedy): random, told after the splash
   // screen, flavor only. Numbered lists, as many as TRAGEDY_PARTS says.
   'tragedy.title': 'THERE’S BEEN A TRAGEDY', // draft
@@ -820,6 +847,7 @@ export const TEXT = {
   'ask.title.relay': 'RELAY.SYS', // draft. The ask screen's title for a relay's question
   'ask.title.barrel': 'BARREL', // draft. The ask screen's title for the tutorial barrel's question
   'ask.title.breaker': 'BREAKER', // draft. The ask screen's title for a ship station's breaker question (ship plan step B)
+  'ask.title.job': '{role} · {round}/{of}', // draft. The ask screen's title for a round of a crew member's job (crew roles plan)
   'book.paused': 'CLOCK PAUSED', // draft. The record book's top strip, right: nothing moves while it is open
   'book.light': 'LIGHT', // draft. Under the book's light tube
   'book.empty': 'EMPTY', // draft. Under the book's light tube when the battery ran empty (locked until full)

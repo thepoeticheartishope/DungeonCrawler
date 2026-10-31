@@ -10,7 +10,7 @@ import { state } from './state.js';
 import { tutorialSteady } from './tutorial.js';
 import { syncBattleScreen } from './battlescreen.js';
 import {
-  gunReady, nextGunTarget, openNameBarrel, openRelay, openReload, pressSelect, releaseSelect, steadyOn,
+  gunReady, nextGunTarget, openNameBarrel, openRelay, openReload, pressSelect, releaseSelect, steadyOn, openJob,
 } from './gunactions.js';
 import {
   REALTIME_WALK_MS, LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, LOOK_UP_STICK, LOOK_SWEEP_SPEED, ONE_STICK,
@@ -308,6 +308,9 @@ function settleMove(events) {
   if (cell) openReload(false, cell.prop);
   const relay = events.find(e => e.type === 'relayFound');
   if (relay) openRelay(relay.prop);
+  // A crew member's job (roles.js; crew roles plan): its rounds on the ask screen.
+  const job = events.find(e => e.type === 'jobStarted');
+  if (job) openJob(job.role);
   if (has('nameAsked')) openNameBarrel();
   const left = events.find(e => e.type === 'tutorialLeft');
   if (left) leaveTutorial(left.advanced);

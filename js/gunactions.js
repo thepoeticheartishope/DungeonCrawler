@@ -11,12 +11,13 @@
 import { state } from './state.js';
 import { tutorialDial, tutorialSteady, settleName } from './tutorial.js';
 import { matchesAnswer, mountBattleQuestion } from './battlescreen.js';
-import { ENERGY_MAX, LETTER_POOL_FORM } from './config.js';
+import { ENERGY_MAX, LETTER_POOL_FORM, SHIP_JOB } from './config.js';
 import { pickQuestion } from './quiz.js';
 import { onStairs } from './moves.js';
 import { settleRelay } from './relays.js';
 import { settleBreaker } from './stations.js';
 import { breakerModifiers } from './ship.js';
+import { roleOf, settleRound, jobOn } from './roles.js';
 import { requestMapDraw } from './mapview.js';
 import {
   cycleTarget, fire, readyShot, cancelShot, settleShot, startSteady, steadying, releaseSteady, cancelSteady,
@@ -28,7 +29,9 @@ import {
 } from './gunpanels.js';
 import { t } from './text.js';
 import { setQuestion, setMinigame, clearModifier, applyModifier, markAnswer } from './questionview.js';
-import { rollMinigame, forcedQuestion, endMinigame, letterPoolSetup, sumLockSetup } from './minigames.js';
+import {
+  rollMinigame, forcedQuestion, endMinigame, letterPoolSetup, sumLockSetup, modifiersFor, roleQuestions, roleGroups,
+} from './minigames.js';
 import { playMinigameOut } from './minigameview.js';
 
 const roomScreen = document.getElementById('roomScreen');
@@ -280,6 +283,61 @@ export function openRelay(relay) {
   };
   showQuestionScreen(askAnswers, 'relay');
   askQuestion(pickQuestion(state.battle.currentQuestion), []);
+}
+
+// A crew member's job started (roles.js jobStarted; crew roles plan):
+// SHIP_JOB.rounds rounds of their minigame on the ask screen, one after
+// another, each settled by roles.js settleRound (a miss is a crew failure).
+// Between rounds the next is asked in place; after the last, or if the
+// run ends, the ask screen closes and the turn's events play out. A
+// Panicking crew puts the Timer on a round when the minigame can carry it.
+export function openJob(role) {
+  gunTest = false;
+  state.run.turnLocked = true;
+  const settle = (isCorrect, scored = []) => {
+    const events = [...scored, ...settleRound(isCorrect)];
+    if (!jobOn() || events.some(e => e.type === 'shipEnded')) {
+      endReload(() => events);
+      return;
+    }
+    const note = drawEvents(events);
+    if (note.text) showRoomNote(note.cls, note.text);
+    askJobRound(role);
+  };
+  askAnswers = {
+    onChoice: choice => holdAnswer(choice, () => settle(matchesAnswer(choice))),
+    onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
+    onTimeout: () => holdAnswer(null, () => settle(false)),
+    onResult: result => settle(result.right, endMinigame(result)),
+    log: text => showRoomNote('', text),
+  };
+  askJobRound(role);
+}
+
+// The job's next round: a question its minigame can run (or the Cook's
+// Letter Pool, Life support's Sum Lock), shown as that minigame, titled
+// with the role and the round.
+function askJobRound(role) {
+  const { minigame } = roleOf(role);
+  const round = state.run.ship.job.round + 1;
+  clearModifier();
+  showQuestionScreen(askAnswers, 'job', t('ask.title.job', { role: t('role.' + role).toUpperCase(), round, of: SHIP_JOB.rounds }));
+  setQuestion(jobQuestion(minigame));
+  state.battle.minigame = minigame;
+  state.run.lastMinigame = minigame;
+  setMinigame(minigame);
+  (modifiersFor(minigame, breakerModifiers()) || []).forEach(applyModifier);
+}
+
+// A question for a round of `minigame`: a Letter Pool over a category it
+// can run, a fresh Sum Lock, or a question of the set it fits.
+function jobQuestion(minigame) {
+  if (minigame === 'letterPool') {
+    const groups = roleGroups();
+    return letterPoolQuestion(groups[Math.floor(Math.random() * groups.length)]);
+  }
+  if (minigame === 'sumLock') return sumLockQuestion();
+  return pickQuestion(state.battle.currentQuestion, roleQuestions(minigame));
 }
 
 // A breaker was tapped on a ship station's wires (charger.js breakerAsked;

@@ -26,7 +26,7 @@ import {
   formatTime, startTimer, stopTimer, renderClock, showSensed, showWhisper, hideWhisper,
   showAnswerLine, fadeAnswerLine, renderShipHud
 } from './render.js';
-import { freshShipRun, shipFrame } from './ship.js';
+import { freshShipRun, shipFrame, burnsNeeded } from './ship.js';
 import { initShipIntro, fillShipIntro, tragedyLines } from './shipview.js';
 import {
   refreshTargetValidity, advanceMonsters, clockFrame,
@@ -871,7 +871,30 @@ function drawEvents(events) {
         break;
       // The ship's stations (stations.js; ship plan step B).
       case 'crewSpoke':
-        parts.push(t('crew.' + e.role + (e.trained ? '.ready' : '.waiting')));
+        if (e.role === 'engineer') parts.push(t('crew.' + e.role + (e.trained ? '.ready' : '.waiting')));
+        else parts.push(t(e.sitsOut ? 'crew.sitsOut' : e.taught ? 'crew.taught' : 'crew.waiting', { role: t('role.' + e.role) }));
+        break;
+      // The crew roles' jobs (roles.js; crew roles plan).
+      case 'jobStarted':
+        parts.push(t('job.started', { role: t('role.' + e.role) }));
+        break;
+      case 'roundRight':
+        parts.push(t('job.right', { round: e.round, of: e.of }));
+        break;
+      case 'roundMissed':
+        parts.push(t('job.missed', { round: e.round, of: e.of }));
+        cls = 'warn-msg';
+        break;
+      case 'roleHelped':
+        parts.push(t('job.helped.' + e.benefit, { role: t('role.' + e.role) }));
+        renderShipHud();
+        break;
+      case 'jobWentBadly':
+        parts.push(t('job.badly', { role: t('role.' + e.role) }));
+        cls = 'warn-msg';
+        break;
+      case 'panicShielded':
+        parts.push(t('ship.panicShielded'));
         break;
       case 'stationLocked':
         parts.push(t('station.locked'));
@@ -1419,7 +1442,7 @@ function endShip(how, note) {
   const ship = state.run.ship;
   const vars = {
     ship: t('tragedy.ship.' + ship.tragedy.ship), planet: t('tragedy.planet.' + ship.tragedy.planet),
-    burns: state.run.burns, needed: SHIP_RUN.burnsNeeded, failures: state.run.crewFailures,
+    burns: state.run.burns, needed: burnsNeeded(), failures: state.run.crewFailures,
     time: formatTime(Math.ceil(ship.clockMs / 1000)),
   };
   setTimeout(() => {

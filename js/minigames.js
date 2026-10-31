@@ -22,9 +22,9 @@ import {
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
   CROSSWIRE_MIN_LETTERS, CROSSWIRE_MAX_LETTERS, CROSSWIRE_TIERS, FOG_REVEAL_X_COVERED, FOG_REVEAL_2_COVERED,
   SUM_LOCK_MAX_ADDEND,
-  LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS,
+  LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS, SHIP_JOB, BATTLE_CHOICE_COUNT,
 } from './config.js';
-import { numberQuestion, pickQuestion, normalizeSpaces } from './quiz.js';
+import { numberQuestion, pickQuestion, normalizeSpaces, fightGroups } from './quiz.js';
 import { shuffle } from './random.js';
 import { recordHauntAnswer } from './haunts.js';
 
@@ -77,6 +77,28 @@ const FITS = {
 // Bartimaeus."): a minigame that spells the answer out would be free.
 function answerInStem(q) {
   return String(q.term || '').toLowerCase().includes(String(q.meaning || '').trim().toLowerCase());
+}
+
+// Whether `minigame` can be a ship crew role's job on the loaded set (crew
+// roles plan; roles.js): Letter Pool needs a category it can run, Sum Lock
+// two number answers to add, any other enough questions it fits
+// (SHIP_JOB.minFitting). One that can't, its role sits out the run.
+export function roleCanRun(minigame) {
+  const data = state.settings.activeData || [];
+  if (minigame === 'letterPool') return roleGroups().length > 0;
+  if (minigame === 'sumLock') return sumLockQuestions().length >= 2;
+  return data.filter(FITS[minigame]).length >= SHIP_JOB.minFitting;
+}
+
+// The questions of the loaded set `minigame` can run (a role's job asks
+// these), or for Letter Pool the categories it can run (roleGroups).
+export function roleQuestions(minigame) {
+  return (state.settings.activeData || []).filter(FITS[minigame]);
+}
+
+// The set's categories a Letter Pool can run, for the Cook's job.
+export function roleGroups() {
+  return fightGroups(state.settings.activeData || [], BATTLE_CHOICE_COUNT).filter(letterPoolFits);
 }
 
 // The minigames that can run question `q`.

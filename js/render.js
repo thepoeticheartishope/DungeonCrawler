@@ -7,7 +7,7 @@
 // of each one threading them through as parameters.
 
 import { state, key } from './state.js';
-import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, BOOK, SHIP_RUN, SHIP_LOW_SECONDS } from './config.js';
+import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, BOOK, SHIP_LOW_SECONDS } from './config.js';
 import { drawTube, TUBE_W, TUBE_H } from './tubeart.js';
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
@@ -17,6 +17,7 @@ import { FACING_VECTORS } from './sight.js';
 import { waysInUse } from './look.js';
 import { clockReading } from './realclock.js';
 import { goalMark } from './goals.js';
+import { burnsNeeded } from './ship.js';
 import { t } from './text.js';
 
 let els = {};
@@ -209,7 +210,7 @@ export function renderShipHud() {
   const seconds = Math.ceil(ship.clockMs / 1000);
   els.shipClock.textContent = formatTime(seconds);
   els.shipClock.classList.toggle('ship-low', seconds <= SHIP_LOW_SECONDS);
-  els.shipBurns.textContent = state.run.burns + '/' + SHIP_RUN.burnsNeeded;
+  els.shipBurns.textContent = state.run.burns + '/' + burnsNeeded();
   els.shipPanic.textContent = t('panic.' + ship.panic);
   [...els.shipPanicMeter.children].forEach((cell, i) => cell.classList.toggle('on', i < ship.panic));
 }
