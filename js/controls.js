@@ -230,6 +230,10 @@ function walkFrame(now) {
     heldWays.clear();
     stickPushed = null;
     resetWalk();
+    // On the ship its clocks keep running with POWER.SYS open: the burn
+    // window and the arrival clock are the pressure (ship plan step C).
+    // There are no stick men there for the world's frame to move.
+    if (state.floor.ship && clockMayRun() && !state.run.turnLocked) worldFrame(dt);
     return;
   }
   const spot = freeSpot();

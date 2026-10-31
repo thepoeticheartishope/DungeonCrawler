@@ -129,6 +129,7 @@ Rules and data (no page/DOM access):
 | `saferoom.js` | The safe room: shutters, switch, lamp; who waits outside. |
 | `charger.js` | The charger (CHARGE.SYS wires): energy and battery to full. |
 | `stations.js` | The ship's stations: training console, a crew member's board, the crew member; breakers that close on a right answer. |
+| `ship.js` | The ship's run: arrival clock, crew panic and its effects, training period, burn window, the tragedy roll, arrive / lose. |
 | `gate.js` | The locked core's gate: questions by keys held, sealing, `breakGate()`. |
 | `answers.js` | `settleAnswer()`: hearts, haunts, wager, boss damage, gold. |
 | `quiz.js` | Picking questions, building options, fight choice labels, answer types. |
@@ -166,6 +167,7 @@ Drawing and page code:
 | `tubeart.js` | The light tube as pixel art (book strip and LIGHT button). |
 | `minimapview.js` | The minimap on the book's MAP page. |
 | `exchangeview.js` | THE UNFOLDING's screen. |
+| `shipview.js` | The ship's opening: the run's tragedy a line at a time, then TAKE COMMAND. |
 | `dataview.js` | DATA.SYS question viewer and comment export. |
 | `setloader.js` | Start screen options and the workshop. |
 | `setpicker.js` | The set screen; `fetchSet()` shared with practice.js. |

@@ -137,6 +137,15 @@
   .stats .stat-more { display: none; }
   .stats.full .stat-more { display: flex; }
   .stat-full-line { flex-basis: 100%; }
+  /* On the ship (ship plan step C; render.js renderHud) the HUD shows the
+     arrival clock, the burns and the crew's panic, and nothing else. */
+  .stats .ship-stat { display: none; }
+  .stats.ship-hud .ship-stat { display: flex; }
+  .stats.ship-hud .stat:not(.ship-stat) { display: none; }
+  .panic-meter { display: inline-flex; gap: 2px; align-self: center; }
+  .panic-meter i { width: 8px; height: 8px; border: 1px solid var(--ink); }
+  .panic-meter i.on { background: var(--torch-bright); border-color: var(--torch-bright); }
+  .ship-low { color: var(--torch-bright); }
   .stats:focus-visible { outline: 2px solid var(--torch-bright); outline-offset: 2px; }
   /* No title while playing: the HUD says where you are. */
   body:has(#statsBar.show) header { display: none; }
@@ -149,6 +158,15 @@
   /* ---- Screens ---- */
   .screen { display: none; text-align: left; }
   .screen.show { display: block; }
+  /* The ship's opening (shipview.js): each line fades in after the last,
+     slowly; under reduced motion they are simply there. */
+  .ship-intro p { font-size: 22px; max-width: 36ch; margin: 0 0 14px; }
+  .ship-intro p.small { font-size: 18px; color: var(--muted); }
+  .ship-intro-line { opacity: 0; animation: ship-intro-in 1.6s ease forwards; animation-delay: var(--d, 0s); }
+  @keyframes ship-intro-in { to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .ship-intro-line { opacity: 1; animation: none; }
+  }
 
   /* ---- Intro (js/introview.js): the chosen set's questions print down a
      terminal, then the call. Full viewport, out of <main>'s column. The
@@ -1817,6 +1835,10 @@
        depth, goals as marks, the light's eye). A tap or Enter on it shows
        the rest: time, myelin, cycle and the goals' names (main.js toggleHud). -->
   <div class="stats" id="statsBar" role="button" tabindex="0" aria-expanded="false" data-t-title="hud.more">
+    <!-- The ship (ship plan step C; render.js renderHud): only these show there. -->
+    <div class="stat ship-stat"><span class="stat-label" data-t="stat.arrival"></span><strong id="shipClock">5:00</strong></div>
+    <div class="stat ship-stat"><span class="stat-label" data-t="stat.burns"></span><strong id="shipBurns">0/3</strong></div>
+    <div class="stat ship-stat"><span class="stat-label" data-t="stat.crew"></span><strong id="shipPanic"></strong><span class="panic-meter" id="shipPanicMeter" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
     <div class="stat"><span class="stat-label" data-t="stat.hp"></span><span class="hearts" id="hearts">3/3</span></div>
     <!-- The gun (gun plan step 6), only with DEV -> Combat on gun (render.js renderHud). -->
     <div class="stat" id="energyStat" hidden><span class="stat-label" data-t="stat.energy"></span><strong id="energyCount"></strong></div>
@@ -2246,9 +2268,17 @@
 
   <!-- Win screen -->
   <section class="screen win" id="winScreen">
-    <div class="big" data-t="end.win.title"></div>
+    <div class="big" id="winTitle" data-t="end.win.title"></div>
     <p id="winStats"></p>
     <button id="restartBtn" data-t="end.win.again"></button>
+  </section>
+
+  <!-- The ship's opening (ship plan step C, js/shipview.js): the run's
+       random tragedy, a line at a time, then TAKE COMMAND. -->
+  <section class="screen ship-intro" id="shipIntroScreen">
+    <div class="big" data-t="tragedy.title"></div>
+    <div id="shipIntroLines"></div>
+    <button type="button" id="shipIntroGo" class="ship-intro-line" data-t="tragedy.go"></button>
   </section>
 
   <!-- Lose screen -->

@@ -16,7 +16,7 @@ import { initControls, syncLookStick, tapMap, walkHeld } from './controls.js';
 import {
   MAX_HEARTS, ROOM_COUNT, ENERGY_START, TUTORIAL_EXIT_ENERGY, ROOM_LOG_LINES, ROOM_LOG_DIM_MS,
   REALTIME_POLL_MS, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS, TUTORIAL_KIND_DELAY_MS,
-  TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS, CHARGER, ONE_STICK,
+  TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS, CHARGER, ONE_STICK, SHIP_RUN,
 } from './config.js';
 import { resetHaunts } from './haunts.js';
 import { pickQuestion, escapeHtml, normalizeSpaces, buildChoices } from './quiz.js';
@@ -24,8 +24,10 @@ import { shuffle } from './random.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
   formatTime, startTimer, stopTimer, renderClock, showSensed, showWhisper, hideWhisper,
-  showAnswerLine, fadeAnswerLine
+  showAnswerLine, fadeAnswerLine, renderShipHud
 } from './render.js';
+import { freshShipRun, shipFrame } from './ship.js';
+import { initShipIntro, fillShipIntro, tragedyLines } from './shipview.js';
 import {
   refreshTargetValidity, advanceMonsters, clockFrame,
 } from './combat.js';
@@ -41,7 +43,7 @@ import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, s
 import { turnWire, chargerLine } from './charger.js';
 import { stationMode, stationDone } from './stations.js';
 import { shutterLine } from './saferoom.js';
-import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
+import { initChargerView, showCharger, renderCharger, chargerShown, setStationClock } from './chargerview.js';
 import { refreshGunTarget, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showStruggleBar, closeMapPanels, mapPanelShown, askHeld } from './gunpanels.js';
 import { t, TEXT, setTextArea, applyStaticText } from './text.js';
@@ -78,6 +80,7 @@ const battleScreen = document.getElementById('battleScreen');
 const exchangeScreen = document.getElementById('exchangeScreen');
 const winScreen = document.getElementById('winScreen');
 const loseScreen = document.getElementById('loseScreen');
+const shipIntroScreen = document.getElementById('shipIntroScreen');
 
 const roomNumEl = document.getElementById('roomNum');
 const roomTotalEl = document.getElementById('roomTotal');
@@ -102,6 +105,7 @@ const roomLogEl = document.getElementById('roomLog');
 const devPanel = document.getElementById('devPanel');
 
 const winStats = document.getElementById('winStats');
+const winTitle = document.getElementById('winTitle');
 const loseStats = document.getElementById('loseStats');
 const loseTitle = document.getElementById('loseTitle');
 const lightHintEls = {
@@ -120,11 +124,15 @@ const dpadButtons = {
 const btnSelect = document.getElementById('btnSelect');
 
 initRender({
-  startScreen, introGlitch, roomScreen, battleScreen, exchangeScreen, winScreen, loseScreen,
+  startScreen, introGlitch, shipIntroScreen, roomScreen, battleScreen, exchangeScreen, winScreen, loseScreen,
   heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightHintEls, dpadButtons,
   senseNote: document.getElementById('senseNote'),
   answerNote: document.getElementById('answerNote'),
+  shipClock: document.getElementById('shipClock'),
+  shipBurns: document.getElementById('shipBurns'),
+  shipPanic: document.getElementById('shipPanic'),
+  shipPanicMeter: document.getElementById('shipPanicMeter'),
   energyStat: document.getElementById('energyStat'),
   gunTargetStat: document.getElementById('gunTargetStat'),
   energyCount: document.getElementById('energyCount'),
@@ -146,6 +154,8 @@ onMapPointer({ tap: tapMap });
 
 initDataView({ backScreen: document.getElementById('workshopScreen') });
 initExchangeView({ buyItem, leaveExchange });
+// TAKE COMMAND (the ship's opening): onto the ship, and its clock starts.
+initShipIntro({ onBegin: () => { showScreen(roomScreen); startTimer(); } });
 initGunPanels({ pickReload, cancelReload: () => endReload(), readyBar: readyDial, backBar: lowerGun, stopBar: stopDamageBar, stopStruggle: stopStruggleBar });
 // LEAVE says what the player stepped back from: the charger, or a ship
 // station (its term: the console or the board).
@@ -303,6 +313,7 @@ function resetRun(energy = ENERGY_START) {
   state.run.trained = [];
   state.run.burns = 0;
   state.run.crewFailures = 0;
+  state.run.ship = null;
   state.run.lastMinigame = null;
   rollWeaknesses();
   state.run.loreQueue = [];
@@ -342,13 +353,14 @@ function startGame() {
     startTimer();
     return;
   }
-  // The ship (ship plan): the start screen's "Ship (test)" puts the player
-  // straight on the ship, no intro and no tutorial, until the ship has its
-  // own opening (plan step C).
+  // The ship (ship plan): the start screen's "Ship (test)" starts a ship
+  // run instead: its random tragedy told first (shipview.js; step C), then
+  // the ship once the player takes command. No tutorial.
   if (shipToggle.checked) {
+    freshShipRun();
     loadRoom('ship');
-    showScreen(roomScreen);
-    startTimer();
+    fillShipIntro(tragedyLines(state.run.ship.tragedy));
+    showScreen(shipIntroScreen);
     return;
   }
   // A player who has never finished the tutorial room wakes in it first
@@ -590,6 +602,12 @@ function applyTurnOutcome(events, worldMoves = !realTimeOn()) {
   const note = drawEvents(turn);
   if (lightConsumed()) {
     loseToLight();
+    return;
+  }
+  // The ship's run is over: arrived, the clock out, or the crew broken.
+  const shipEnd = turn.find(e => e.type === 'shipEnded');
+  if (shipEnd) {
+    endShip(shipEnd.how, note);
     return;
   }
   if (turn.some(e => e.type === 'signalLost')) {
@@ -873,6 +891,28 @@ function drawEvents(events) {
         break;
       case 'burnDone':
         parts.push(t('station.burn', { burns: e.burns }));
+        break;
+      // The ship's run (ship.js; ship plan step C).
+      case 'panicRose':
+        parts.push(t('ship.panicRose', { level: t('panic.' + e.level).toLowerCase() }));
+        cls = 'warn-msg';
+        renderShipHud();
+        break;
+      case 'panicEased':
+        parts.push(t('ship.panicEased', { level: t('panic.' + e.level).toLowerCase() }));
+        renderShipHud();
+        break;
+      case 'trainingOver':
+        parts.push(t('ship.trainingOver'));
+        break;
+      case 'burnMissed':
+        if (openChargerProp === e.prop) closeCharger();
+        parts.push(t('ship.burnMissed'));
+        cls = 'warn-msg';
+        break;
+      case 'wireSlipped':
+        if (openChargerProp === e.prop && chargerShown()) renderCharger(e.prop.puzzle, false);
+        parts.push(t('ship.wireSlipped'));
         break;
       case 'exchangeOpened':
         parts.push(t('room.exchange.opened'));
@@ -1206,7 +1246,14 @@ function warningNote(m) {
 function worldFrame(dt) {
   if (state.run.turnLocked || state.run.runEnded || !clockMayRun()) return;
   const cells = Math.ceil(state.floor.light.charge);
-  const events = clockFrame(Math.min(dt, ONE_STICK.frameMs), { canStruggle: worldRunsUnder() });
+  const frameMs = Math.min(dt, ONE_STICK.frameMs);
+  // On the ship its clocks run too (ship.js shipFrame; ship plan step C),
+  // and the HUD and an open station's countdown follow them.
+  const events = [...clockFrame(frameMs, { canStruggle: worldRunsUnder() }), ...shipFrame(frameMs)];
+  if (state.floor.ship) {
+    renderShipHud();
+    showStationClock();
+  }
   if (state.settings.warningTimer) noteSigns(performance.now());
   if (Math.ceil(state.floor.light.charge) !== cells) renderHud();
   if (!events.length) return;
@@ -1241,6 +1288,17 @@ function openCharger(charger) {
   showCharger(charger.puzzle, realTimeOn(), charger.kind === 'charger' ? null : stationMode(charger));
 }
 
+// An open ship station's countdown on its panel (ship plan step C): the
+// training period at the console, the burn window at a board, while one
+// is running.
+function showStationClock() {
+  const prop = openChargerProp;
+  if (!prop || prop.kind === 'charger' || !chargerShown()) return;
+  const training = state.run.ship && state.run.ship.training;
+  if (stationMode(prop) === 'train' && training) setStationClock(t('station.training', { time: formatTime(Math.ceil(training.leftMs / 1000)) }));
+  else if (prop.burnLeftMs != null) setStationClock(t('station.burnLeft', { time: formatTime(Math.ceil(prop.burnLeftMs / 1000)) }));
+}
+
 // A wire turned (a tap, or F / Enter / Space on it): charger.js turnWire.
 // Every second turn is a spent turn, the world's as for a step (with Real
 // time on, the clock is the cost instead). Once the power joins up, energy
@@ -1263,6 +1321,9 @@ function turnChargerWire(index) {
     state.run.turnLocked = true;
     applyTurnOutcome(events);
     state.run.turnLocked = false;
+  } else if (events.some(e => e.type === 'shipEnded')) {
+    // The last burn: applyTurnOutcome ends the ship's run.
+    applyTurnOutcome(events, false);
   } else {
     const note = drawEvents(events);
     if (note.text) showRoomNote(note.cls, note.text);
@@ -1314,6 +1375,7 @@ initControls({
 
 function endWin() {
   stopTimer();
+  winTitle.textContent = t('end.win.title');
   let msg = t('end.win.stats', {
     bosses: state.run.order.length, time: formatTime(state.run.seconds), turns: state.run.turnCount,
     attempts: state.run.attempts, hearts: state.run.hearts, coins: state.run.coinsTotal,
@@ -1341,6 +1403,31 @@ function endLose(reason) {
     turns: state.run.turnCount, coins: state.run.coinsTotal,
   }) + hauntStats();
   showScreen(loseScreen);
+}
+
+// The ship's run is over (ship.js shipEnded; ship plan step C): `how` is
+// 'arrived' (the win screen), 'clock' or 'panic' (the lose screen), each
+// with its own title and the run's burns and failures. Like a lost signal,
+// the room's last line shows a moment first.
+function endShip(how, note) {
+  state.run.runEnded = true;
+  closeReloadOnRunEnd();
+  closeCharger();
+  showRoomNote(how === 'arrived' ? note.cls : 'warn-msg', note.text);
+  setControlsEnabled(false);
+  stopTimer();
+  const ship = state.run.ship;
+  const vars = {
+    ship: t('tragedy.ship.' + ship.tragedy.ship), planet: t('tragedy.planet.' + ship.tragedy.planet),
+    burns: state.run.burns, needed: SHIP_RUN.burnsNeeded, failures: state.run.crewFailures,
+    time: formatTime(Math.ceil(ship.clockMs / 1000)),
+  };
+  setTimeout(() => {
+    const won = how === 'arrived';
+    (won ? winTitle : loseTitle).textContent = t('end.ship.' + how + '.title');
+    (won ? winStats : loseStats).textContent = t('end.ship.' + how + '.stats', vars);
+    showScreen(won ? winScreen : loseScreen);
+  }, SHIP_RUN.endDelayMs);
 }
 
 document.getElementById('restartBtn').addEventListener('click', startGame);

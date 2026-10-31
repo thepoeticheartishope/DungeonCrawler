@@ -16,6 +16,7 @@ import { pickQuestion } from './quiz.js';
 import { onStairs } from './moves.js';
 import { settleRelay } from './relays.js';
 import { settleBreaker } from './stations.js';
+import { breakerModifiers } from './ship.js';
 import { requestMapDraw } from './mapview.js';
 import {
   cycleTarget, fire, readyShot, cancelShot, settleShot, startSteady, steadying, releaseSteady, cancelSteady,
@@ -282,8 +283,9 @@ export function openRelay(relay) {
 }
 
 // A breaker was tapped on a ship station's wires (charger.js breakerAsked;
-// ship plan step B): its question on the ask screen, like a relay's, with
-// no modifiers; it may run as a minigame. The answer settles it
+// ship plan step B): its question on the ask screen, like a relay's; it
+// may run as a minigame. A Panicking crew puts the Timer on it (ship.js
+// breakerModifiers; step C). The answer settles it
 // (stations.js settleBreaker: closed, or a spark), then the wires open
 // again where they were, unless that answer joined the power up.
 export function openBreaker(station, index) {
@@ -291,7 +293,7 @@ export function openBreaker(station, index) {
   state.run.turnLocked = true;
   const settle = (isCorrect, scored = []) => {
     endReload(() => [...scored, ...settleBreaker(station, index, isCorrect)]);
-    if (station.puzzle) openCharger(station);
+    if (station.puzzle && !state.run.runEnded) openCharger(station);
   };
   askAnswers = {
     onChoice: choice => holdAnswer(choice, () => settle(matchesAnswer(choice))),
@@ -301,7 +303,7 @@ export function openBreaker(station, index) {
     log: text => showRoomNote('', text),
   };
   showQuestionScreen(askAnswers, 'breaker');
-  askQuestion(pickQuestion(state.battle.currentQuestion), []);
+  askQuestion(pickQuestion(state.battle.currentQuestion), breakerModifiers());
 }
 
 // The tutorial's barrel was bumped (moves.js nameAsked): it asks the

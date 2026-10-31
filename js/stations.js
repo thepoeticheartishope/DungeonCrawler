@@ -13,6 +13,7 @@
 import { state } from './state.js';
 import { makeWires, powered } from './charger.js';
 import { SHIP_STATIONS } from './config.js';
+import { startTraining, crewMissed, crewRight, burnMade, burnMs } from './ship.js';
 
 // The plan's stations ([kind, row, col, role], plans.js `stations`) as
 // solid props on the furniture's rules (placer.tryBlock), never on a
@@ -38,7 +39,10 @@ export function isStation(prop) {
 // Bumping a station's prop. The crew member speaks: what they need, or
 // that they are ready once the role is trained. A board for a role not yet
 // trained stays shut. Otherwise the wires open: the ones left half done
-// (`kept`), else new ones for the mode (SHIP_STATIONS).
+// (`kept`), else new ones for the mode (SHIP_STATIONS). The console's
+// first use starts the role's training period (ship.js startTraining); a
+// board's new wires start a burn window (`burnLeftMs`, ship.js burnMs),
+// which runs on even with the board left.
 // Events: crewSpoke { role, trained }, stationLocked { role }, or
 // stationOpened { station, mode, kept }.
 export function useStation(prop, rand = Math.random) {
@@ -46,41 +50,56 @@ export function useStation(prop, rand = Math.random) {
   if (prop.kind === 'crew') return [{ type: 'crewSpoke', role: prop.role, trained }];
   const mode = stationMode(prop);
   if (mode === 'teach' && !trained) return [{ type: 'stationLocked', role: prop.role }];
+  if (mode === 'train') startTraining(prop.role);
   const kept = !!prop.puzzle;
-  if (!kept) prop.puzzle = makeWires(SHIP_STATIONS[mode].size, rand, SHIP_STATIONS[mode].breakers);
+  if (!kept) {
+    prop.puzzle = makeWires(SHIP_STATIONS[mode].size, rand, SHIP_STATIONS[mode].breakers);
+    if (mode === 'teach') {
+      prop.burnLeftMs = burnMs();
+      prop.slipInMs = null;
+    }
+  }
   return [{ type: 'stationOpened', station: prop, mode, kept }];
 }
 
 // A breaker's question answered at `prop`'s wires. Right closes breaker
 // `index`; wrong leaves it open for another question. Wrong while teaching
-// is a crew failure (state.run.crewFailures); while training it is free.
+// is a crew failure (state.run.crewFailures) and raises the panic
+// (ship.js crewMissed); right while teaching counts toward calming it
+// (crewRight). While training both are free.
 // If the power then joins up, the station is done (stationDone).
-// Events: breakerClosed { index }, or breakerSparked { index, teach },
-// then stationDone's.
+// Events: breakerClosed { index } then crewRight's, or
+// breakerSparked { index, teach } then crewMissed's; then stationDone's.
 export function settleBreaker(prop, index, isCorrect) {
   const puzzle = prop.puzzle;
   if (!puzzle) return [];
   const teach = stationMode(prop) === 'teach';
   if (!isCorrect) {
-    if (teach) state.run.crewFailures++;
-    return [{ type: 'breakerSparked', index, teach }];
+    if (!teach) return [{ type: 'breakerSparked', index, teach }];
+    state.run.crewFailures++;
+    return [{ type: 'breakerSparked', index, teach }, ...crewMissed()];
   }
   if (!puzzle.closed.includes(index)) puzzle.closed.push(index);
-  const events = [{ type: 'breakerClosed', index }];
+  const events = [{ type: 'breakerClosed', index }, ...(teach ? crewRight() : [])];
   if (powered(puzzle).done) events.push(...stationDone(prop));
   return events;
 }
 
 // The power joined up at `prop` (charger.js turnWire's `finish`, or the last
 // breaker closing): at the console the role is learned; at the board the
-// crew member makes a full burn. The wires clear for next time.
-// Events: stationTrained { role }, or burnDone { role, burns }.
+// crew member makes a full burn, and with enough of them the ship arrives
+// (ship.js burnMade). The wires clear for next time, and the training
+// period or burn window ends.
+// Events: stationTrained { role }, or burnDone { role, burns } then
+// burnMade's.
 export function stationDone(prop) {
   prop.puzzle = null;
   if (stationMode(prop) === 'train') {
     if (!state.run.trained.includes(prop.role)) state.run.trained.push(prop.role);
+    if (state.run.ship) state.run.ship.training = null;
     return [{ type: 'stationTrained', role: prop.role }];
   }
+  prop.burnLeftMs = null;
   state.run.burns++;
-  return [{ type: 'burnDone', role: prop.role, burns: state.run.burns }];
+  return [{ type: 'burnDone', role: prop.role, burns: state.run.burns }, ...burnMade()];
 }
