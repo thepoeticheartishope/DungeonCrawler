@@ -10,6 +10,7 @@
 
 import { state, key, parseKey } from './state.js';
 import { liveSpotAt } from './spots.js';
+import { crewLook } from './roles.js';
 import { ROOM_VIEW, LAMP_LIGHT, MAP_ANIMATION_MS, SAFE_ROOM, ENEMY_LIGHT } from './config.js';
 import {
   searched, isWall, grain, DESK_GLOW, DESK_GLOW_RADIUS, DRUM_BREATH, DRUM_BREATH_REACH, GRATE_RATTLE_SWAYS,
@@ -35,8 +36,9 @@ const CHARGER_ART = { body: '#3e4650', edge: '#56606b', shade: '#2b3138', window
 const RELAY = { body: '#4a5058', seam: '#33383e', dead: '#2a2e32', leg: '#2e3236' };
 // The ship's stations (ship plan step B): grey metal like the hull, a dark
 // screen, its light cool once a role is trained or warm while it waits,
-// and the crew's plain white figure, a touch dimmer than the player's.
-const STATION_ART = { body: '#46505b', edge: '#5e6874', shade: '#323941', screen: '#141a1f', cool: '#8fd8e4', warm: '#e9c48a', crew: '#b9c4c8' };
+// and the crew's plain white figure, a touch dimmer than the player's (grey
+// when sitting out a trip, crew roles plan step C).
+const STATION_ART = { body: '#46505b', edge: '#5e6874', shade: '#323941', screen: '#141a1f', cool: '#8fd8e4', warm: '#e9c48a', crew: '#b9c4c8', crewOff: '#5c666b' };
 // The safe room (saferoom.js): its shutters' slats, posts and lintel box,
 // the pull switch, and the lamp's warm light over the room.
 const SHUTTER = { slat: '#5b6068', shade: '#454950', bar: '#8a9098', post: '#2f3338', box: '#3a3e44', rise: 1.5, slat_px: 2 };
@@ -312,15 +314,25 @@ function drawPowerBoard(thing, x, y, glows) {
   });
 }
 
-// A crew member (the Engineer): a plain stick man standing at their
-// station, drawn on the room's own pixels like the player but with an
-// open ring for a head, not the ember (Timothy: simple figures). Not an
-// enemy: no tendrils, no tells.
-function drawCrew(thing, x, y) {
+// A crew member: a plain stick man standing at their station, drawn on
+// the room's own pixels like the player but with an open ring for a head,
+// not the ember (Timothy: simple figures). Not an enemy: no tendrils, no
+// tells. How they look says where they stand (roles.js crewLook; crew
+// roles plan step C): dim when sitting out this trip, the cool lit colour
+// once taught, and a small steady warm mark over the head when learned and
+// waiting to be taught, so the player sees who to go to next.
+function drawCrew(thing, x, y, glows) {
   const h = Math.round(ROOM_VIEW.stickHeight * T);
   const fx = x + T / 2, fy = y + Math.round(ROOM_VIEW.footAt * T);
   const hip = fy - Math.round(h * 0.42), neck = fy - Math.round(h * 0.72), head = fy - Math.round(h * 0.86);
-  bctx.fillStyle = STATION_ART.crew;
+  const seen = crewLook(thing.at.role);
+  bctx.fillStyle = seen === 'sitsOut' ? STATION_ART.crewOff : seen === 'taught' ? STATION_ART.cool : STATION_ART.crew;
+  if (seen === 'ready') {
+    glows.push(() => {
+      bctx.fillStyle = STATION_ART.warm;
+      bctx.fillRect(fx - 1, head - 6, 2, 2);
+    });
+  }
   const line = (x0, y0, x1, y1) => {
     const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
     for (let s = 0; s <= steps; s++) bctx.fillRect(Math.round(x0 + (x1 - x0) * s / steps), Math.round(y0 + (y1 - y0) * s / steps), 1, 1);

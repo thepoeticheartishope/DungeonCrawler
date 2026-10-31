@@ -16,6 +16,7 @@ import { SHIP_ROLES, SHIP_JOB, SHIP_RUN } from '../js/config.js';
 import { TEXT } from '../js/text.js';
 import {
   roleOf, onDuty, rolesOnDuty, useCrew, settleRound, applyBenefit, consoleRoles, startLearning, settleLearning, learningOn,
+  noteOnDuty, crewLook, taughtCount,
 } from '../js/roles.js';
 import { roleCanRun } from '../js/minigames.js';
 import { freshShipRun, crewMissed, crewRight, burnMs, slipEveryMs, burnMade, shipFrame } from '../js/ship.js';
@@ -196,4 +197,43 @@ test('a role sitting out can\'t be learned', () => {
   crewRun(false);
   const out = SHIP_ROLES.find(r => !roleCanRun(r.minigame));
   assert.deepEqual(startLearning(out.id), []);
+});
+
+// ---- showing it (crew roles plan step C) ----
+
+test('the roles on duty are noted once a run and read from there', () => {
+  const ship = crewRun(false);
+  const live = rolesOnDuty();
+  noteOnDuty();
+  assert.deepEqual(ship.onDuty, live);
+  // The set changing under a run doesn't change who is on duty.
+  state.settings.activeData = [];
+  assert.deepEqual(rolesOnDuty(), live);
+  assert.equal(onDuty(live[0]), true);
+});
+
+test('each crew member looks as they stand: sitting out, new, ready, taught', () => {
+  crewRun(false);
+  noteOnDuty();
+  const out = SHIP_ROLES.find(r => !roleCanRun(r.minigame)).id;
+  assert.equal(crewLook(out), 'sitsOut');
+  assert.equal(crewLook('navigator'), 'new');
+  state.run.trained.push('navigator');
+  assert.equal(crewLook('navigator'), 'ready');
+  state.run.ship.taught.push('navigator');
+  assert.equal(crewLook('navigator'), 'taught');
+  assert.equal(crewLook('engineer'), 'new');
+  state.run.trained.push('engineer');
+  assert.equal(crewLook('engineer'), 'ready', 'the Engineer is never sitting out');
+});
+
+test('the count of crew taught is out of the roles on duty', () => {
+  const ship = crewRun();
+  noteOnDuty();
+  assert.deepEqual(taughtCount(), { taught: 0, of: ship.onDuty.length });
+  useCrew('navigator');
+  settleRound(true);
+  settleRound(true);
+  settleRound(true);
+  assert.deepEqual(taughtCount(), { taught: 1, of: ship.onDuty.length });
 });

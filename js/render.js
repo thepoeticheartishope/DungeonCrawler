@@ -18,6 +18,7 @@ import { waysInUse } from './look.js';
 import { clockReading } from './realclock.js';
 import { goalMark } from './goals.js';
 import { burnsNeeded } from './ship.js';
+import { taughtCount } from './roles.js';
 import { t } from './text.js';
 
 let els = {};
@@ -200,9 +201,10 @@ export function renderHud() {
 }
 
 // The ship's HUD (ship plan step C, ship.js): the arrival clock (bright in
-// its last minute), burns of the ones needed, and the crew's panic by name
-// and as a meter. The rest of the HUD hides there (CSS .ship-hud). main.js
-// worldFrame calls it each frame, as the clock runs.
+// its last minute), burns of the ones needed, crew taught of the roles on
+// duty, and the crew's panic by name and as a meter. The rest of the HUD
+// hides there (CSS .ship-hud). main.js worldFrame calls it each frame, as
+// the clock runs.
 export function renderShipHud() {
   const ship = state.floor.ship ? state.run.ship : null;
   els.statsEl.classList.toggle('ship-hud', !!ship);
@@ -211,6 +213,9 @@ export function renderShipHud() {
   els.shipClock.textContent = formatTime(seconds);
   els.shipClock.classList.toggle('ship-low', seconds <= SHIP_LOW_SECONDS);
   els.shipBurns.textContent = state.run.burns + '/' + burnsNeeded();
+  // Crew taught of the roles on duty (crew roles plan step C).
+  const crew = taughtCount();
+  els.shipTaught.textContent = crew.taught + '/' + crew.of;
   els.shipPanic.textContent = t('panic.' + ship.panic);
   [...els.shipPanicMeter.children].forEach((cell, i) => cell.classList.toggle('on', i < ship.panic));
 }
