@@ -1381,6 +1381,7 @@ export const FIGURE3D = {
 export const ONE_STICK = {
   on: true,
   walkMs: 450,
+  shipWalkMs: 280,    // on the ship (ship plan) the walk is quicker: it is for getting places, not feeling your way (Timothy 2026-10-30)
   sneakMs: 950,
   creep: 0.8,
   turnRate: 7,

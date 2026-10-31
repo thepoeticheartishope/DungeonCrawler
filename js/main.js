@@ -53,7 +53,7 @@ import { noteSigns, warningAtReach } from './warning.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
-import { resetWalk } from './walk.js';
+import { resetWalk, walkTileMs } from './walk.js';
 import { setQuestion, placeWager } from './questionview.js';
 import { playMinigameOut } from './minigameview.js';
 import { initMinimap, refreshMinimap } from './minimapview.js';
@@ -687,7 +687,7 @@ function drawEvents(events) {
         break;
       // A step says nothing: the map already shows where the player went.
       case 'stepped':
-        if (e.free) freeStepOnMap(state.floor.creeping ? ONE_STICK.sneakMs : ONE_STICK.walkMs);
+        if (e.free) freeStepOnMap(walkTileMs());
         else slidePlayerOnMap(e.facing);
         break;
       case 'waited':

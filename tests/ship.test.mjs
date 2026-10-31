@@ -12,6 +12,8 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import { buildShipFloor, buildTestFloor } from '../js/floor.js';
+import { walkTileMs } from '../js/walk.js';
+import { ONE_STICK } from '../js/config.js';
 import { emptyFloor } from './helpers.mjs';
 
 // A fresh run, then the ship.
@@ -51,6 +53,17 @@ test('every open tile on the ship is seen from the start: no dark areas', () => 
       if (!f.wallSet.has(key(r, c))) assert.ok(f.visibleSet.has(key(r, c)), r + ',' + c);
     }
   }
+});
+
+test('the ship walk is quicker than the walk elsewhere; a creep is a creep everywhere', () => {
+  const f = shipFloor();
+  assert.equal(walkTileMs(), ONE_STICK.shipWalkMs);
+  assert.ok(ONE_STICK.shipWalkMs < ONE_STICK.walkMs);
+  f.creeping = true;
+  assert.equal(walkTileMs(), ONE_STICK.sneakMs);
+  buildTestFloor('hide');
+  state.floor.creeping = false;
+  assert.equal(walkTileMs(), ONE_STICK.walkMs);
 });
 
 test('a floor built after the ship is not a ship', () => {
