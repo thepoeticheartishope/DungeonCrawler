@@ -73,6 +73,57 @@ export function settleRound(isCorrect) {
   return [...events, { type: 'roleHelped', role: job.role, benefit: benefit.kind }, ...applyBenefit(benefit)];
 }
 
+// The console's list (crew roles plan step B): the Engineer, then every
+// role, each with where it stands: 'sitsOut' (its game can't run on the
+// set), 'taught', 'learned', or 'new' (still to learn), and its minigame
+// (null for the Engineer's wires).
+export function consoleRoles() {
+  const ship = state.run.ship;
+  const status = (id, duty) => {
+    if (!duty) return 'sitsOut';
+    if (ship && ship.taught.includes(id)) return 'taught';
+    return state.run.trained.includes(id) ? 'learned' : 'new';
+  };
+  return [
+    { role: 'engineer', minigame: null, status: status('engineer', true) },
+    ...SHIP_ROLES.map(r => ({ role: r.id, minigame: r.minigame, status: status(r.id, roleCanRun(r.minigame)) })),
+  ];
+}
+
+// Learning role `role` at the console (not the Engineer, whose wires
+// stations.js trainWires opens): rounds of its minigame, misses free, until
+// one is right or SHIP_JOB.learnRounds have gone. A role sitting out or
+// already learned has nothing to learn.
+// Events: learningStarted { role, minigame }, or nothing.
+export function startLearning(role) {
+  const ship = state.run.ship;
+  const def = roleOf(role);
+  if (!ship || !def || !onDuty(role) || state.run.trained.includes(role)) return [];
+  ship.learning = { role, round: 0 };
+  return [{ type: 'learningStarted', role, minigame: def.minigame }];
+}
+
+// One learning round answered. Right, the role is learned. Wrong costs
+// nothing (the answer shows); after the last round it is learned anyway,
+// shakily, as a training period running out.
+// Events: roleLearned { role, shaky }, or learnMissed { round, of }.
+export function settleLearning(isCorrect) {
+  const ship = state.run.ship;
+  const learning = ship && ship.learning;
+  if (!learning) return [];
+  learning.round++;
+  const of = SHIP_JOB.learnRounds;
+  if (!isCorrect && learning.round < of) return [{ type: 'learnMissed', round: learning.round, of }];
+  ship.learning = null;
+  if (!state.run.trained.includes(learning.role)) state.run.trained.push(learning.role);
+  return [{ type: 'roleLearned', role: learning.role, shaky: !isCorrect }];
+}
+
+// Whether learning is under way at the console (its rounds still being asked).
+export function learningOn() {
+  return Boolean(state.run.ship && state.run.ship.learning);
+}
+
 // Whether a job is under way (its rounds still being asked).
 export function jobOn() {
   return Boolean(state.run.ship && state.run.ship.job);

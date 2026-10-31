@@ -17,7 +17,7 @@ import { onStairs } from './moves.js';
 import { settleRelay } from './relays.js';
 import { settleBreaker } from './stations.js';
 import { breakerModifiers } from './ship.js';
-import { roleOf, settleRound, jobOn } from './roles.js';
+import { roleOf, settleRound, jobOn, settleLearning, learningOn } from './roles.js';
 import { requestMapDraw } from './mapview.js';
 import {
   cycleTarget, fire, readyShot, cancelShot, settleShot, startSteady, steadying, releaseSteady, cancelSteady,
@@ -259,11 +259,12 @@ export function pickReload(offer, category) {
 // answer written beside it) and stays open until a tap or a key, then
 // `settle` runs as before (record book plan step C). Nothing moves
 // meanwhile: the clock is paused while the ask screen shows. A second
-// answer while it waits does nothing.
-function holdAnswer(picked, settle) {
+// answer while it waits does nothing. `reveal` writes the right answer
+// beside a wrong one: the Reveal option, or always while learning a role.
+function holdAnswer(picked, settle, reveal = state.settings.revealOnWrong) {
   if (askHeld()) return;
   clearModifier();
-  markAnswer(picked, matchesAnswer, state.settings.revealOnWrong);
+  markAnswer(picked, matchesAnswer, reveal);
   holdAskScreen(settle);
 }
 
@@ -292,41 +293,64 @@ export function openRelay(relay) {
 // run ends, the ask screen closes and the turn's events play out. A
 // Panicking crew puts the Timer on a round when the minigame can carry it.
 export function openJob(role) {
+  openRounds(role, {
+    settle: settleRound, going: jobOn, title: 'ask.title.job', of: SHIP_JOB.rounds,
+    round: () => state.run.ship.job.round + 1, modifiers: breakerModifiers, reveal: state.settings.revealOnWrong,
+  });
+}
+
+// Learning a role at the console started (roles.js learningStarted; crew
+// roles plan step B): rounds of its minigame, the same way as a job, but
+// misses cost nothing and always show the right answer, and the first
+// right one (or the last round) learns it (roles.js settleLearning). No
+// Timer: learning is for learning.
+export function openLearning(role) {
+  openRounds(role, {
+    settle: settleLearning, going: learningOn, title: 'ask.title.learn', of: SHIP_JOB.learnRounds,
+    round: () => state.run.ship.learning.round + 1, modifiers: () => [], reveal: true,
+  });
+}
+
+// Rounds of `role`'s minigame on the ask screen (a job or learning), each
+// settled by `how.settle`; between rounds the next is asked in place while
+// `how.going()` says there are more; after the last, or if the run ends,
+// the ask screen closes and the turn's events play out.
+function openRounds(role, how) {
   gunTest = false;
   state.run.turnLocked = true;
   const settle = (isCorrect, scored = []) => {
-    const events = [...scored, ...settleRound(isCorrect)];
-    if (!jobOn() || events.some(e => e.type === 'shipEnded')) {
+    const events = [...scored, ...how.settle(isCorrect)];
+    if (!how.going() || events.some(e => e.type === 'shipEnded')) {
       endReload(() => events);
       return;
     }
     const note = drawEvents(events);
     if (note.text) showRoomNote(note.cls, note.text);
-    askJobRound(role);
+    askRound(role, how);
   };
   askAnswers = {
-    onChoice: choice => holdAnswer(choice, () => settle(matchesAnswer(choice))),
+    onChoice: choice => holdAnswer(choice, () => settle(matchesAnswer(choice)), how.reveal),
     onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
-    onTimeout: () => holdAnswer(null, () => settle(false)),
+    onTimeout: () => holdAnswer(null, () => settle(false), how.reveal),
     onResult: result => settle(result.right, endMinigame(result)),
     log: text => showRoomNote('', text),
   };
-  askJobRound(role);
+  askRound(role, how);
 }
 
-// The job's next round: a question its minigame can run (or the Cook's
+// The next round: a question the role's minigame can run (or the Cook's
 // Letter Pool, Life support's Sum Lock), shown as that minigame, titled
-// with the role and the round.
-function askJobRound(role) {
+// with the role and the round, with the modifiers `how` gives that it can
+// carry.
+function askRound(role, how) {
   const { minigame } = roleOf(role);
-  const round = state.run.ship.job.round + 1;
   clearModifier();
-  showQuestionScreen(askAnswers, 'job', t('ask.title.job', { role: t('role.' + role).toUpperCase(), round, of: SHIP_JOB.rounds }));
+  showQuestionScreen(askAnswers, 'job', t(how.title, { role: t('role.' + role).toUpperCase(), round: how.round(), of: how.of }));
   setQuestion(jobQuestion(minigame));
   state.battle.minigame = minigame;
   state.run.lastMinigame = minigame;
   setMinigame(minigame);
-  (modifiersFor(minigame, breakerModifiers()) || []).forEach(applyModifier);
+  (modifiersFor(minigame, how.modifiers()) || []).forEach(applyModifier);
 }
 
 // A question for a round of `minigame`: a Letter Pool over a category it

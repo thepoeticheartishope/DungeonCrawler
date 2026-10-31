@@ -18,7 +18,7 @@ import { TEXT } from '../js/text.js';
 import {
   freshShipRun, rollTragedy, crewMissed, crewRight, burnMade, burnMs, slipEveryMs, breakerModifiers, shipFrame,
 } from '../js/ship.js';
-import { useStation, settleBreaker, stationDone } from '../js/stations.js';
+import { useStation, settleBreaker, stationDone, trainWires } from '../js/stations.js';
 import { buildShipFloor } from '../js/floor.js';
 import { powered, solveWires, rotated } from '../js/charger.js';
 import { emptyFloor } from './helpers.mjs';
@@ -93,9 +93,9 @@ test('the arrival clock running out ends the run', () => {
 
 test('the console starts a training period once; when it ends the role is learned', () => {
   const ship = shipRun();
-  useStation(prop('console'));
+  trainWires(prop('console'));
   assert.deepEqual(ship.training, { role: 'engineer', leftMs: SHIP_RUN.trainMs });
-  useStation(prop('console'));
+  trainWires(prop('console'));
   shipFrame(SHIP_RUN.trainMs - 10);
   assert.deepEqual(shipFrame(20), [{ type: 'trainingOver', role: 'engineer' }]);
   assert.deepEqual(state.run.trained, ['engineer']);
@@ -104,7 +104,7 @@ test('the console starts a training period once; when it ends the role is learne
 
 test('a teaching miss raises the panic; a training miss does not', () => {
   const ship = shipRun();
-  useStation(prop('console'));
+  trainWires(prop('console'));
   const [b] = prop('console').puzzle.breakers;
   settleBreaker(prop('console'), b, false);
   assert.equal(ship.panic, 0);

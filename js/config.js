@@ -409,7 +409,7 @@ export const SHIP_ROLES = [
   { id: 'sensors', minigame: 'fogReveal', benefit: { kind: 'panicDown' } },
   { id: 'lifeSupport', minigame: 'sumLock', benefit: { kind: 'windowShield' } },
 ];
-export const SHIP_JOB = { rounds: 3, passAt: 2, minFitting: 3 };
+export const SHIP_JOB = { rounds: 3, passAt: 2, minFitting: 3, learnRounds: 3 }; // learnRounds: at the console, at most this many rounds to learn a role (step B)
 // The arrival clock on the HUD turns bright this many seconds from the end.
 export const SHIP_LOW_SECONDS = 60;
 // The tragedy intro (shipview.js): seconds between one line fading in and

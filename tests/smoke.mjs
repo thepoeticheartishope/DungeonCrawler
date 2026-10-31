@@ -2527,7 +2527,7 @@ async function runShip(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: '"Ship (test)" told the tragedy, TAKE COMMAND put the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; the Navigator\'s three rounds of Close Enough taught the role', consoleErrors, pageErrors };
+  return { ok: true, detail: '"Ship (test)" told the tragedy, TAKE COMMAND put the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console\'s Engineer opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; COMMAND.SYS listed the roles, a right round learned the Navigator, and its three rounds of Close Enough taught it', consoleErrors, pageErrors };
 }
 
 // Stands the player at (row, col) facing up and presses ArrowUp: a bump
@@ -2577,8 +2577,13 @@ async function checkShip(page, url) {
   if (start.minions) return 'stick men on the ship';
   if (!start.console || !start.board) return 'no console or power board';
 
-  // The console: training wires with an open breaker.
+  // The console: COMMAND.SYS's roles (crew roles plan step B), the
+  // Engineer picked: training wires with an open breaker.
   await bumpUpFrom(page, start.console.row + 1, start.console.col);
+  await waitUntil(page, () => !document.getElementById('consolePanel').hidden);
+  const listed = await page.$$eval('.console-role', bs => bs.map(b => b.dataset.role));
+  if (listed.length !== 11 || listed[0] !== 'engineer') return 'COMMAND.SYS did not list the Engineer and ten roles: ' + listed.join(',');
+  await page.click('.console-role[data-role="engineer"]');
   await waitUntil(page, () => !document.getElementById('chargerPanel').hidden);
   const title = await page.textContent('#chargerTitle');
   if (title !== 'POWER.SYS') return 'the console opened "' + title + '", not POWER.SYS';
@@ -2617,12 +2622,25 @@ async function checkShip(page, url) {
   await page.keyboard.press('Escape');
   await waitUntil(page, () => document.getElementById('chargerPanel').hidden);
 
-  // A crew role (crew roles plan): the Navigator, learned, runs three
-  // rounds of Close Enough; answered right (Auto-win's way), it is taught.
+  // Learning the Navigator at the console (step B): a right round of Close
+  // Enough learns it.
+  await bumpUpFrom(page, start.console.row + 1, start.console.col);
+  await waitUntil(page, () => !document.getElementById('consolePanel').hidden);
+  await page.click('.console-role[data-role="navigator"]');
+  await waitUntil(page, () => /LEARNING NAVIGATOR/.test(document.getElementById('askTitle').textContent) && document.getElementById('askTitle').offsetParent);
+  await page.evaluate(async () => (await import('./js/gunactions.js')).autoWinGun());
+  await page.waitForTimeout(400);
+  await page.evaluate(async () => {
+    if ((await import('./js/gunpanels.js')).askHeld()) (await import('./js/gunactions.js')).autoWinGun();
+  });
+  await page.waitForTimeout(400);
+  const learned = await page.evaluate(async () => (await import('./js/state.js')).state.run.trained);
+  if (!learned.includes('navigator')) return 'a right learning round did not learn the Navigator: ' + JSON.stringify(learned);
+
+  // The Navigator, learned, runs three rounds of Close Enough; answered
+  // right (Auto-win's way), it is taught.
   const navigator = await page.evaluate(async () => {
     const { state } = await import('./js/state.js');
-    const { SHIP_ROLES } = await import('./js/config.js');
-    state.run.trained = ['engineer', ...SHIP_ROLES.map(r => r.id)];
     return state.floor.props.find(p => p.kind === 'crew' && p.role === 'navigator');
   });
   await bumpUpFrom(page, navigator.row + 1, navigator.col);

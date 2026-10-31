@@ -14,7 +14,9 @@ import assert from 'node:assert/strict';
 import { state } from '../js/state.js';
 import { SHIP_ROLES, SHIP_JOB, SHIP_RUN } from '../js/config.js';
 import { TEXT } from '../js/text.js';
-import { roleOf, onDuty, rolesOnDuty, useCrew, settleRound, applyBenefit } from '../js/roles.js';
+import {
+  roleOf, onDuty, rolesOnDuty, useCrew, settleRound, applyBenefit, consoleRoles, startLearning, settleLearning, learningOn,
+} from '../js/roles.js';
 import { roleCanRun } from '../js/minigames.js';
 import { freshShipRun, crewMissed, crewRight, burnMs, slipEveryMs, burnMade, shipFrame } from '../js/ship.js';
 import { useStation } from '../js/stations.js';
@@ -148,4 +150,50 @@ test('the Pilot\'s burn fewer arrives at once when the burns are already made', 
   crewRun();
   state.run.burns = SHIP_RUN.burnsNeeded - 1;
   assert.deepEqual(applyBenefit({ kind: 'burns' }), [{ type: 'shipEnded', how: 'arrived' }]);
+});
+
+// ---- learning at the console (crew roles plan step B) ----
+
+test('the console opens its list of roles; the list says where each stands', () => {
+  crewRun(false);
+  const console = state.floor.props.find(p => p.kind === 'console');
+  assert.deepEqual(useStation(console), [{ type: 'consoleOpened', station: console }]);
+  const list = consoleRoles();
+  assert.equal(list[0].role, 'engineer');
+  assert.equal(list.length, SHIP_ROLES.length + 1);
+  const out = list.find(r => r.status === 'sitsOut');
+  assert.ok(out && !roleCanRun(out.minigame), 'a role sitting out on this set');
+  assert.ok(list.filter(r => r.role !== 'engineer' && r.status !== 'sitsOut').every(r => r.status === 'new'));
+  state.run.trained.push('navigator');
+  state.run.ship.taught.push('pilot');
+  const after = consoleRoles();
+  assert.equal(after.find(r => r.role === 'navigator').status, 'learned');
+  assert.equal(after.find(r => r.role === 'pilot').status, 'taught');
+});
+
+test('learning a role: misses are free, a right round learns it', () => {
+  const ship = crewRun(false);
+  assert.deepEqual(startLearning('navigator'), [{ type: 'learningStarted', role: 'navigator', minigame: 'closeEnough' }]);
+  assert.deepEqual(settleLearning(false), [{ type: 'learnMissed', round: 1, of: SHIP_JOB.learnRounds }]);
+  assert.equal(ship.panic, 0);
+  assert.equal(state.run.crewFailures, 0);
+  assert.ok(learningOn());
+  assert.deepEqual(settleLearning(true), [{ type: 'roleLearned', role: 'navigator', shaky: false }]);
+  assert.ok(!learningOn());
+  assert.ok(state.run.trained.includes('navigator'));
+  assert.deepEqual(startLearning('navigator'), [], 'already learned');
+});
+
+test('after the last learning round the role is learned anyway, shakily', () => {
+  crewRun(false);
+  startLearning('navigator');
+  for (let i = 1; i < SHIP_JOB.learnRounds; i++) settleLearning(false);
+  assert.deepEqual(settleLearning(false), [{ type: 'roleLearned', role: 'navigator', shaky: true }]);
+  assert.ok(state.run.trained.includes('navigator'));
+});
+
+test('a role sitting out can\'t be learned', () => {
+  crewRun(false);
+  const out = SHIP_ROLES.find(r => !roleCanRun(r.minigame));
+  assert.deepEqual(startLearning(out.id), []);
 });

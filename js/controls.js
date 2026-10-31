@@ -39,7 +39,7 @@ const btnSelect = document.getElementById('btnSelect');
 const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // The main.js actions these call, passed in by initControls.
-let applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger,
+let applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger, openConsole,
   openExchange, realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame;
 
 // A tap on the map. It picks the gun's
@@ -319,14 +319,18 @@ function settleMove(events) {
   if (charger) openCharger(charger.charger);
   const station = events.find(e => e.type === 'stationOpened');
   if (station) openCharger(station.station);
+  // The ship's console: COMMAND.SYS's roles to learn (crew roles plan step B).
+  const console = events.find(e => e.type === 'consoleOpened');
+  if (console) openConsole(console.station);
 }
 
 // Whether walking and waiting are held: the Struggle dial is the
-// player's move, CHARGE.SYS's wires are (its turns are spent there), and
-// the record book read from the map has the map's place.
+// player's move, CHARGE.SYS's wires are (its turns are spent there),
+// COMMAND.SYS's pick is (the ship's console), and the record book read from
+// the map has the map's place.
 export function walkHeld() {
   const shown = mapPanelShown();
-  return shown === 'struggle' || shown === 'charger' || shown === 'book';
+  return shown === 'struggle' || shown === 'charger' || shown === 'console' || shown === 'book';
 }
 
 // Hands over the main.js actions, then wires SELECT, the d-pad, the look
@@ -334,7 +338,7 @@ export function walkHeld() {
 // it once at load, where these used to be set up.
 export function initControls(actions) {
   ({
-    applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger,
+    applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger, openConsole,
     openExchange, realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame,
   } = actions);
   window.addEventListener('blur', () => sweep.reset());

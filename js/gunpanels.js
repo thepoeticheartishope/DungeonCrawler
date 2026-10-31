@@ -18,6 +18,7 @@ import { escapeHtml } from './quiz.js';
 import { mountQuestionPanel } from './questionview.js';
 import { t } from './text.js';
 import { chargerShown, hideCharger } from './chargerview.js';
+import { consoleShown, hideConsole } from './consoleview.js';
 import { refreshBook, bookAsks, bookReading, bookTab, showAskTab } from './bookview.js';
 import { turnPage } from './pageturn.js';
 
@@ -92,6 +93,7 @@ export function mapPanelShown() {
   if (!els.question.hidden) return 'question';
   if (!els.aim.hidden) return barMode;
   if (chargerShown()) return 'charger';
+  if (consoleShown()) return 'console';
   if (bookReading()) return 'book';
   return null;
 }
@@ -330,6 +332,7 @@ function endFade() {
 // Hides every panel (CHARGE.SYS too) and stops the dial at once.
 export function closeMapPanels() {
   hideCharger();
+  hideConsole();
   endFade();
   clearDial();
   els.aim.classList.remove('on');

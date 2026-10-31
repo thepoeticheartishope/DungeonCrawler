@@ -10,7 +10,7 @@ import {
 import {
   initGunActions, askQuestion, autoWinGun, devTestReload, devTestShot, dressQuestion,  endReload,
   letterPoolQuestion, lowerGun, pickReload, readyDial, stopDamageBar, stopStruggleBar,
-  sumLockQuestion, openBreaker,
+  sumLockQuestion, openBreaker, openLearning,
 } from './gunactions.js';
 import { initControls, syncLookStick, tapMap, walkHeld } from './controls.js';
 import {
@@ -41,7 +41,9 @@ import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector, startTally, syncDevOneStick } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap, freeStepOnMap, playerHitOnMap } from './mapview.js';
 import { turnWire, chargerLine } from './charger.js';
-import { stationMode, stationDone } from './stations.js';
+import { stationMode, stationDone, trainWires } from './stations.js';
+import { consoleRoles, startLearning } from './roles.js';
+import { initConsoleView, showConsole } from './consoleview.js';
 import { shutterLine } from './saferoom.js';
 import { initChargerView, showCharger, renderCharger, chargerShown, setStationClock } from './chargerview.js';
 import { refreshGunTarget, rollWeaknesses, addRounds } from './gun.js';
@@ -156,6 +158,7 @@ initDataView({ backScreen: document.getElementById('workshopScreen') });
 initExchangeView({ buyItem, leaveExchange });
 // TAKE COMMAND (the ship's opening): onto the ship, and its clock starts.
 initShipIntro({ onBegin: () => { showScreen(roomScreen); startTimer(); } });
+initConsoleView({ pick: pickRole, leave: () => closeConsole(t('console.left')) });
 initGunPanels({ pickReload, cancelReload: () => endReload(), readyBar: readyDial, backBar: lowerGun, stopBar: stopDamageBar, stopStruggle: stopStruggleBar });
 // LEAVE says what the player stepped back from: the charger, or a ship
 // station (its term: the console or the board).
@@ -896,6 +899,19 @@ function drawEvents(events) {
       case 'panicShielded':
         parts.push(t('ship.panicShielded'));
         break;
+      // Learning a role at the console (roles.js; crew roles plan step B).
+      case 'consoleOpened':
+        parts.push(t('console.opened'));
+        break;
+      case 'learningStarted':
+        parts.push(t('learn.started', { role: t('role.' + e.role) }));
+        break;
+      case 'learnMissed':
+        parts.push(t('learn.missed', { round: e.round, of: e.of }));
+        break;
+      case 'roleLearned':
+        parts.push(t(e.shaky ? 'learn.shaky' : 'learn.done', { role: t('role.' + e.role) }));
+        break;
       case 'stationLocked':
         parts.push(t('station.locked'));
         break;
@@ -1287,12 +1303,13 @@ function worldFrame(dt) {
 
 // Whether the world may go on with a panel up: none, CHARGE.SYS (it sits
 // over the map, and Timothy 2026-10-26: with Real time on the running clock
-// is its cost), or the record book read from the map for LOG or MAP
+// is its cost), COMMAND.SYS (the ship's console: choosing costs time too),
+// or the record book read from the map for LOG or MAP
 // (record book plan open call 1: reading costs time, as it did over the
 // map).
 function worldRunsUnder() {
   const shown = mapPanelShown();
-  return !shown || shown === 'charger' || shown === 'book';
+  return !shown || shown === 'charger' || shown === 'console' || shown === 'book';
 }
 
 // The charger whose CHARGE.SYS is open, or null. View-side, like reloadBox.
@@ -1356,6 +1373,38 @@ function turnChargerWire(index) {
 
 // Closes CHARGE.SYS (the wires stay on the charger as they were), with a
 // room note if one is given.
+// The ship's console whose COMMAND.SYS is open, or null. View-side, like
+// openChargerProp.
+let openConsoleProp = null;
+
+// COMMAND.SYS opens over the map on the roles to learn (crew roles plan
+// step B; roles.js consoleRoles).
+function openConsole(station) {
+  openConsoleProp = station;
+  showConsole(consoleRoles());
+}
+
+// Closes COMMAND.SYS, with a room note if one is given.
+function closeConsole(text) {
+  openConsoleProp = null;
+  closeMapPanels();
+  if (text) showRoomNote('move-msg', text);
+}
+
+// A role picked on COMMAND.SYS: the Engineer's training wires open
+// (stations.js trainWires); any other role's learning rounds start on the
+// ask screen (roles.js startLearning, gunactions.js openLearning).
+function pickRole(role) {
+  const station = openConsoleProp;
+  if (!station || state.run.turnLocked || state.run.runEnded) return;
+  closeConsole();
+  const events = role === 'engineer' ? trainWires(station) : startLearning(role);
+  const note = drawEvents(events);
+  if (note.text) showRoomNote(note.cls, note.text);
+  if (events.some(e => e.type === 'stationOpened')) openCharger(station);
+  if (events.some(e => e.type === 'learningStarted')) openLearning(role);
+}
+
 function closeCharger(cls, text) {
   clearTimeout(chargerCloseTimer);
   openChargerProp = null;
@@ -1392,7 +1441,7 @@ function skipTurn() {
 
 initBattleScreen({ drawEvents, askQuestion, dressQuestion, endLose, loseToLight, setControlsEnabled });
 initControls({
-  applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger,
+  applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger, openConsole,
   openExchange, realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame,
 });
 
