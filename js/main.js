@@ -42,7 +42,7 @@ import { initDevPanel, recordEvents, refreshInspector, startTally, syncDevOneSti
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap, freeStepOnMap, playerHitOnMap } from './mapview.js';
 import { turnWire, chargerLine } from './charger.js';
 import { stationMode, stationDone, trainWires } from './stations.js';
-import { consoleRoles, startLearning } from './roles.js';
+import { consoleRoles, startLearning, noteOnDuty, taughtCount } from './roles.js';
 import { initConsoleView, showConsole } from './consoleview.js';
 import { shutterLine } from './saferoom.js';
 import { initChargerView, showCharger, renderCharger, chargerShown, setStationClock } from './chargerview.js';
@@ -133,6 +133,7 @@ initRender({
   answerNote: document.getElementById('answerNote'),
   shipClock: document.getElementById('shipClock'),
   shipBurns: document.getElementById('shipBurns'),
+  shipTaught: document.getElementById('shipTaught'),
   shipPanic: document.getElementById('shipPanic'),
   shipPanicMeter: document.getElementById('shipPanicMeter'),
   energyStat: document.getElementById('energyStat'),
@@ -361,6 +362,7 @@ function startGame() {
   // the ship once the player takes command. No tutorial.
   if (shipToggle.checked) {
     freshShipRun();
+    noteOnDuty();
     loadRoom('ship');
     fillShipIntro(tragedyLines(state.run.ship.tragedy));
     showScreen(shipIntroScreen);
@@ -1479,8 +1481,9 @@ function endLose(reason) {
 
 // The ship's run is over (ship.js shipEnded; ship plan step C): `how` is
 // 'arrived' (the win screen), 'clock' or 'panic' (the lose screen), each
-// with its own title and the run's burns and failures. Like a lost signal,
-// the room's last line shows a moment first.
+// with its own title and the run's burns and failures, then the crew the
+// player taught (crew roles plan step C). Like a lost signal, the room's
+// last line shows a moment first.
 function endShip(how, note) {
   state.run.runEnded = true;
   closeReloadOnRunEnd();
@@ -1494,10 +1497,13 @@ function endShip(how, note) {
     burns: state.run.burns, needed: burnsNeeded(), failures: state.run.crewFailures,
     time: formatTime(Math.ceil(ship.clockMs / 1000)),
   };
+  const crew = taughtCount();
+  const names = ship.taught.map(role => t('role.' + role)).join(', ');
+  const crewLine = crew.taught ? t('end.ship.crew', { names, taught: crew.taught, of: crew.of }) : t('end.ship.noCrew');
   setTimeout(() => {
     const won = how === 'arrived';
     (won ? winTitle : loseTitle).textContent = t('end.ship.' + how + '.title');
-    (won ? winStats : loseStats).textContent = t('end.ship.' + how + '.stats', vars);
+    (won ? winStats : loseStats).textContent = t('end.ship.' + how + '.stats', vars) + ' ' + crewLine;
     showScreen(won ? winScreen : loseScreen);
   }, SHIP_RUN.endDelayMs);
 }

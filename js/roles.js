@@ -21,14 +21,47 @@ export function roleOf(id) {
 }
 
 // Whether role `id` is on duty this run: its minigame can run on the set.
+// Read from the run's list once noteOnDuty has made it (the HUD and the
+// crew's looks ask every frame).
 export function onDuty(id) {
+  const ship = state.run.ship;
+  if (ship && ship.onDuty) return ship.onDuty.includes(id);
   const role = roleOf(id);
   return Boolean(role) && roleCanRun(role.minigame);
 }
 
 // The roles on duty this run, in SHIP_ROLES order.
 export function rolesOnDuty() {
+  const ship = state.run.ship;
+  if (ship && ship.onDuty) return ship.onDuty.slice();
   return SHIP_ROLES.filter(r => roleCanRun(r.minigame)).map(r => r.id);
+}
+
+// Works out once, at the start of a ship run, which roles are on duty
+// (the set is loaded and doesn't change in a run), so nothing has to scan
+// the set again (crew roles plan step C). main.js startGame calls it.
+export function noteOnDuty() {
+  const ship = state.run.ship;
+  if (!ship) return;
+  ship.onDuty = null;
+  ship.onDuty = rolesOnDuty();
+}
+
+// How crew member `role` looks on the ship (crew roles plan step C;
+// roomthings.js drawCrew): 'sitsOut' dim, 'taught' lit, 'ready' (learned,
+// waiting to be taught; the Engineer once learned) with a mark over their
+// head, or 'new' (still to learn) plain.
+export function crewLook(role) {
+  const ship = state.run.ship;
+  if (role !== 'engineer' && !onDuty(role)) return 'sitsOut';
+  if (ship && ship.taught.includes(role)) return 'taught';
+  return state.run.trained.includes(role) ? 'ready' : 'new';
+}
+
+// Crew members taught this run, and how many could be (the roles on duty).
+export function taughtCount() {
+  const ship = state.run.ship;
+  return { taught: ship ? ship.taught.length : 0, of: rolesOnDuty().length };
 }
 
 // Bumping crew member `role` (not the Engineer). Sitting out, already

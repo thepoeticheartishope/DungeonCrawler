@@ -97,6 +97,7 @@ export const TEXT = {
   // stability, energy, target and depth.
   'stat.arrival': 'ARRIVAL', // draft. The arrival clock
   'stat.burns': 'BURNS', // draft. Full burns of the ones needed
+  'stat.taught': 'TAUGHT', // draft. Crew taught of the roles on duty (crew roles plan step C)
   'stat.crew': 'CREW', // draft. The crew's panic, by name and as a meter
   'panic.0': 'CALM', // draft
   'panic.1': 'UNEASY', // draft
@@ -605,6 +606,8 @@ export const TEXT = {
   'end.ship.clock.stats': 'The {ship} missed its arrival window. {planet} drifts past. Burns {burns}/{needed}, failures {failures}.', // draft
   'end.ship.panic.title': 'The crew broke.', // draft
   'end.ship.panic.stats': 'Too many failures. No one is listening to orders now. Burns {burns}/{needed}, failures {failures}.', // draft
+  'end.ship.crew': 'Crew you taught ({taught}/{of}): {names}.', // draft. After the stats, crew roles plan step C
+  'end.ship.noCrew': 'You taught no one else.', // draft. No crew role was taught this run
   'room.desk.done': 'The {@term.desk} is dull now. It will shine on the next floor.', // draft. Bumping a used desk
 
   // Stairs and floor goals (strategy plan step A). Stepping onto the stairs

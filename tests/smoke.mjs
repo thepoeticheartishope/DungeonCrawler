@@ -2527,7 +2527,7 @@ async function runShip(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: '"Ship (test)" told the tragedy, TAKE COMMAND put the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console\'s Engineer opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; COMMAND.SYS listed the roles, a right round learned the Navigator, and its three rounds of Close Enough taught it', consoleErrors, pageErrors };
+  return { ok: true, detail: '"Ship (test)" told the tragedy, TAKE COMMAND put the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console\'s Engineer opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; COMMAND.SYS listed the roles, a right round learned the Navigator, and its three rounds of Close Enough taught it (TAUGHT 1 on the HUD)', consoleErrors, pageErrors };
 }
 
 // Stands the player at (row, col) facing up and presses ArrowUp: a bump
@@ -2655,6 +2655,10 @@ async function checkShip(page, url) {
   }
   const taught = await page.evaluate(async () => (await import('./js/state.js')).state.run.ship.taught);
   if (!taught.includes('navigator')) return 'three right rounds did not teach the Navigator: ' + JSON.stringify(taught);
+  // The HUD counts it (crew roles plan step C).
+  await page.waitForTimeout(300);
+  const counted = await page.textContent('#shipTaught');
+  if (!/^1\/\d+$/.test(counted)) return 'the HUD did not count the Navigator taught: ' + counted;
   return null;
 }
 
