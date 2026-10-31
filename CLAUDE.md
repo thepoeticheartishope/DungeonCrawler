@@ -128,6 +128,7 @@ Rules and data (no page/DOM access):
 | `desk.js` | The reflective desk in the start room: heals to full once a floor. |
 | `saferoom.js` | The safe room: shutters, switch, lamp; who waits outside. |
 | `charger.js` | The charger (CHARGE.SYS wires): energy and battery to full. |
+| `stations.js` | The ship's stations: training console, a crew member's board, the crew member; breakers that close on a right answer. |
 | `gate.js` | The locked core's gate: questions by keys held, sealing, `breakGate()`. |
 | `answers.js` | `settleAnswer()`: hearts, haunts, wager, boss damage, gold. |
 | `quiz.js` | Picking questions, building options, fight choice labels, answer types. |

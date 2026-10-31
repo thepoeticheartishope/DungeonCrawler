@@ -15,6 +15,7 @@ import { ENERGY_MAX, LETTER_POOL_FORM } from './config.js';
 import { pickQuestion } from './quiz.js';
 import { onStairs } from './moves.js';
 import { settleRelay } from './relays.js';
+import { settleBreaker } from './stations.js';
 import { requestMapDraw } from './mapview.js';
 import {
   cycleTarget, fire, readyShot, cancelShot, settleShot, startSteady, steadying, releaseSteady, cancelSteady,
@@ -35,11 +36,11 @@ const answerInput = document.getElementById('answerInput');
 const mcOptionsEl = document.getElementById('mcOptions');
 
 // The main.js actions these call, passed in by initGunActions.
-let applyTurnOutcome, drawEvents, goDown, showRoomNote;
+let applyTurnOutcome, drawEvents, goDown, openCharger, showRoomNote;
 
 // Hands over the main.js actions. main.js calls it once at load.
 export function initGunActions(actions) {
-  ({ applyTurnOutcome, drawEvents, goDown, showRoomNote } = actions);
+  ({ applyTurnOutcome, drawEvents, goDown, openCharger, showRoomNote } = actions);
 }
 
 // Whether the gun can be used right now: the room screen up with no gun
@@ -277,6 +278,29 @@ export function openRelay(relay) {
     log: text => showRoomNote('', text),
   };
   showQuestionScreen(askAnswers, 'relay');
+  askQuestion(pickQuestion(state.battle.currentQuestion), []);
+}
+
+// A breaker was tapped on a ship station's wires (charger.js breakerAsked;
+// ship plan step B): its question on the ask screen, like a relay's, with
+// no modifiers; it may run as a minigame. The answer settles it
+// (stations.js settleBreaker: closed, or a spark), then the wires open
+// again where they were, unless that answer joined the power up.
+export function openBreaker(station, index) {
+  gunTest = false;
+  state.run.turnLocked = true;
+  const settle = (isCorrect, scored = []) => {
+    endReload(() => [...scored, ...settleBreaker(station, index, isCorrect)]);
+    if (station.puzzle) openCharger(station);
+  };
+  askAnswers = {
+    onChoice: choice => holdAnswer(choice, () => settle(matchesAnswer(choice))),
+    onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
+    onTimeout: () => holdAnswer(null, () => settle(false)),
+    onResult: result => settle(result.right, endMinigame(result)),
+    log: text => showRoomNote('', text),
+  };
+  showQuestionScreen(askAnswers, 'breaker');
   askQuestion(pickQuestion(state.battle.currentQuestion), []);
 }
 

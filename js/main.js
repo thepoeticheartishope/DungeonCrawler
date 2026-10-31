@@ -10,7 +10,7 @@ import {
 import {
   initGunActions, askQuestion, autoWinGun, devTestReload, devTestShot, dressQuestion,  endReload,
   letterPoolQuestion, lowerGun, pickReload, readyDial, stopDamageBar, stopStruggleBar,
-  sumLockQuestion,
+  sumLockQuestion, openBreaker,
 } from './gunactions.js';
 import { initControls, syncLookStick, tapMap, walkHeld } from './controls.js';
 import {
@@ -39,6 +39,7 @@ import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector, startTally, syncDevOneStick } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap, freeStepOnMap, playerHitOnMap } from './mapview.js';
 import { turnWire, chargerLine } from './charger.js';
+import { stationMode, stationDone } from './stations.js';
 import { shutterLine } from './saferoom.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { refreshGunTarget, rollWeaknesses, addRounds } from './gun.js';
@@ -60,7 +61,7 @@ import { initMinimap, refreshMinimap } from './minimapview.js';
 import { initBook, bookReading, closeBook, refreshBook, refreshBookLog } from './bookview.js';
 
 // The gun's actions get the main.js actions they call before anything runs.
-initGunActions({ applyTurnOutcome, drawEvents, goDown, showRoomNote });
+initGunActions({ applyTurnOutcome, drawEvents, goDown, openCharger, showRoomNote });
 
 const startScreen = document.getElementById('startScreen');
 const introGlitch = document.getElementById('introGlitch');
@@ -146,7 +147,12 @@ onMapPointer({ tap: tapMap });
 initDataView({ backScreen: document.getElementById('workshopScreen') });
 initExchangeView({ buyItem, leaveExchange });
 initGunPanels({ pickReload, cancelReload: () => endReload(), readyBar: readyDial, backBar: lowerGun, stopBar: stopDamageBar, stopStruggle: stopStruggleBar });
-initChargerView({ turnWire: turnChargerWire, leave: () => closeCharger('move-msg', t('room.charger.left')) });
+// LEAVE says what the player stepped back from: the charger, or a ship
+// station (its term: the console or the board).
+initChargerView({
+  turnWire: turnChargerWire,
+  leave: () => closeCharger('move-msg', t('room.charger.left', { thing: t('term.' + (openChargerProp ? openChargerProp.kind : 'charger')) })),
+});
 initMinimap();
 initBook({ askHeld, mapPanelShown });
 
@@ -294,6 +300,9 @@ function resetRun(energy = ENERGY_START) {
   state.run.reloadIndex = 0;
   state.run.chargerTold = false;
   state.run.shutterTold = false;
+  state.run.trained = [];
+  state.run.burns = 0;
+  state.run.crewFailures = 0;
   state.run.lastMinigame = null;
   rollWeaknesses();
   state.run.loreQueue = [];
@@ -842,6 +851,29 @@ function drawEvents(events) {
         parts.push(t('room.charger.found'));
         cls = 'warn-msg';
         break;
+      // The ship's stations (stations.js; ship plan step B).
+      case 'crewSpoke':
+        parts.push(t('crew.' + e.role + (e.trained ? '.ready' : '.waiting')));
+        break;
+      case 'stationLocked':
+        parts.push(t('station.locked'));
+        break;
+      case 'stationOpened':
+        parts.push(t(e.kept ? 'room.charger.kept' : 'station.opened.' + e.mode));
+        break;
+      case 'breakerClosed':
+        parts.push(t('station.breaker.closed'));
+        break;
+      case 'breakerSparked':
+        parts.push(t(e.teach ? 'station.breaker.failed' : 'station.breaker.free'));
+        if (e.teach) cls = 'warn-msg';
+        break;
+      case 'stationTrained':
+        parts.push(t('station.trained.' + e.role));
+        break;
+      case 'burnDone':
+        parts.push(t('station.burn', { burns: e.burns }));
+        break;
       case 'exchangeOpened':
         parts.push(t('room.exchange.opened'));
         break;
@@ -1200,24 +1232,32 @@ let openChargerProp = null;
 let chargerCloseTimer = null;
 
 // CHARGE.SYS opens over the map on the charger's wires (charger.js
-// useCharger already made them, or kept them as they were left).
+// useCharger already made them, or kept them as they were left). A ship
+// station's wires (stations.js useStation) open the same panel, named for
+// its mode: training or teaching.
 function openCharger(charger) {
   clearTimeout(chargerCloseTimer);
   openChargerProp = charger;
-  showCharger(charger.puzzle, realTimeOn());
+  showCharger(charger.puzzle, realTimeOn(), charger.kind === 'charger' ? null : stationMode(charger));
 }
 
 // A wire turned (a tap, or F / Enter / Space on it): charger.js turnWire.
 // Every second turn is a spent turn, the world's as for a step (with Real
 // time on, the clock is the cost instead). Once the power joins up, energy
-// is full and CHARGE.SYS closes after CHARGER.closeMs.
+// is full and CHARGE.SYS closes after CHARGER.closeMs; on a ship station
+// the role is learned or the burn made (stations.js stationDone). A tap on
+// an open breaker asks its question instead (gunactions.js openBreaker).
 function turnChargerWire(index) {
   const charger = openChargerProp;
   if (!charger || state.run.turnLocked || state.run.runEnded || !chargerShown()) return;
   const wires = charger.puzzle;
-  const events = turnWire(charger, index);
+  const events = turnWire(charger, index, charger.kind === 'charger' ? undefined : stationDone);
   if (!events.length) return;
-  const charged = events.some(e => e.type === 'charged');
+  if (events.some(e => e.type === 'breakerAsked')) {
+    openBreaker(charger, index);
+    return;
+  }
+  const charged = events.some(e => ['charged', 'stationTrained', 'burnDone'].includes(e.type));
   renderCharger(wires, charged);
   if (events.some(e => e.type === 'turnSpent') && !realTimeOn()) {
     state.run.turnLocked = true;

@@ -138,7 +138,7 @@ const HIDDEN_HEAD = 0.45;        // hidden in a room spot, how high his head sho
 export const ROOM_DRAWINGS = {
   paper: 'flat', vent: 'flat', stairs: 'flat',
   box: 'stand', furniture: 'stand', cell: 'stand', desk: 'stand', charger: 'stand', relay: 'stand', chest: 'stand', coin: 'stand', key: 'stand',
-  shutter: 'stand', switch: 'stand',
+  shutter: 'stand', switch: 'stand', console: 'stand', powerBoard: 'stand', crew: 'stand',
   minion: 'form', exchange: 'glyph', boss: 'glyph', hunter: 'glyph', player: 'player',
 };
 // The '?' of a thing not made out yet, as rows of picture pixels.

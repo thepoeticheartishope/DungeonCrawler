@@ -78,6 +78,9 @@ export const state = {
     energy: ENERGY_START, // energy held (0 to ENERGY_MAX, js/gun.js): the gun spends 1 a shot; carried from floor to floor
     chargerTold: false,    // the kind voice has said the charger's line this run (charger.js chargerLine)
     shutterTold: false,    // the kind voice has said the safe room's line this run (saferoom.js shutterLine)
+    trained: [],           // the ship's crew roles the player has learned at the training console this run (stations.js), e.g. ['engineer']
+    burns: 0,              // full engine burns the Engineer has made this run (stations.js stationDone)
+    crewFailures: 0,       // wrong answers while teaching the crew this run (stations.js settleBreaker); crew panic feeds on these (ship plan step C)
     reloadIndex: 0,        // reloads settled this run; picks the next category in the reload rotation (gun.js)
     lastMinigame: null,    // the minigame the last question ran as, or null if it was a plain question (minigames.js: never the same twice in a row)
     turnLocked: false,

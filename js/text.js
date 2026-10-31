@@ -74,6 +74,12 @@ export const TEXT = {
   'term.desk.symbol': 'Π', // draft. A desk seen from the front
   'term.charger': 'CHARGER', // draft
   'term.charger.symbol': 'ϟ', // draft. A spark
+  'term.console': 'TRAINING CONSOLE', // draft. Ship plan step B: where you learn a crew role, in Command
+  'term.console.symbol': '▣', // draft. A screen
+  'term.powerBoard': 'POWER BOARD', // draft. The Engineer's board in the Engine room
+  'term.powerBoard.symbol': 'ϟ', // draft. A spark, like the charger
+  'term.crew': 'CREW', // draft. A crew member at their station
+  'term.crew.symbol': '☺', // draft. A face
   'term.cell.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
   'term.shutter.symbol': '≡', // draft. The safe room's shutter (saferoom.js); drawn as slats on the map, the glyph is a fallback
   'term.switch.symbol': '¡', // draft. The safe room's pull switch; drawn as a handle on the map, the glyph is a fallback
@@ -480,7 +486,7 @@ export const TEXT = {
   // The charger (charger.js): energy to full through CHARGE.SYS, in the start room.
   'room.charger.loose': 'CHARGE.SYS. Its wires are loose.', // draft. Opened on new wires
   'room.charger.kept': 'Your wires are as you left them.', // draft. Opened on half-done wires
-  'room.charger.left': 'You step back from the {@term.charger}.', // draft. LEAVE or Escape
+  'room.charger.left': 'You step back from the {thing}.', // draft. LEAVE or Escape: {thing} is the charger's or a ship station's term (main.js)
   'room.charger.found': 'It found you. CHARGE.SYS closed.', // draft. A stick man reached the player while it was open
   'room.charger.done': 'The {@term.charger} hums. Energy full.', // draft
   'room.charger.doneLight': 'The {@term.charger} hums. Energy and light full.', // draft. The same when it filled the light's battery too (Timothy 2026-10-26)
@@ -495,6 +501,27 @@ export const TEXT = {
   'charger.wire': 'Wire {row}, {col}', // draft. A wire button's label
   'charger.powered': 'powered', // draft. Added to a wire's label while power runs through it
   'charger.leave': 'LEAVE', // draft
+  // The ship's stations (ship plan step B, stations.js): the training
+  // console, the Engineer's power board, and the Engineer.
+  'station.title': 'POWER.SYS', // draft. The wire panel's title at a ship station
+  'station.sub.train': 'TRAINING · MISSES ARE FREE', // draft. At the training console
+  'station.sub.teach': 'TEACHING THE ENGINEER', // draft. At the power board
+  'station.hint.train': 'Turn wires so power reaches the cell. Tap a breaker to answer it.', // draft
+  'station.hint.teach': 'Tell the Engineer which wires to turn. Answer each breaker.', // draft
+  'station.done.train': 'Power through. You know how this works now.', // draft. The training wires joined up
+  'station.done.teach': 'Full burn.', // draft. The Engineer's wires joined up
+  'station.breaker': 'Breaker {row}, {col}: answer to close it', // draft. An open breaker button's label
+  'station.breakerClosed': 'Breaker {row}, {col}, closed', // draft. A closed breaker button's label
+  'station.opened.train': 'The training console wakes. The captain’s lessons are still on it.', // draft
+  'station.opened.teach': 'You stand beside the Engineer at the power board.', // draft
+  'station.locked': 'You don’t know this job yet. Learn it at the training console in Command.', // draft. Power board before training
+  'station.breaker.closed': 'The breaker closes.', // draft
+  'station.breaker.free': 'The breaker stays open. In training, that costs nothing.', // draft. Wrong answer at the console
+  'station.breaker.failed': 'The breaker sparks. The Engineer flinches.', // draft. Wrong answer while teaching: a crew failure
+  'station.trained.engineer': 'You can teach this now. The Engineer is in the Engine room.', // draft
+  'station.burn': 'Full burn. The ship moves. (Burns: {burns})', // draft
+  'crew.engineer.waiting': 'Engineer: “The captain always ran the board. I don’t know how.”', // draft. Bumping the Engineer before training
+  'crew.engineer.ready': 'Engineer: “Tell me what to do.”', // draft. Bumping the Engineer once trained
   'room.desk.done': 'The {@term.desk} is dull now. It will shine on the next floor.', // draft. Bumping a used desk
 
   // Stairs and floor goals (strategy plan step A). Stepping onto the stairs
@@ -737,6 +764,7 @@ export const TEXT = {
   'ask.title.reload': 'RELOAD.SYS', // draft. The ask screen's title for a reload (its offers, then its question)
   'ask.title.relay': 'RELAY.SYS', // draft. The ask screen's title for a relay's question
   'ask.title.barrel': 'BARREL', // draft. The ask screen's title for the tutorial barrel's question
+  'ask.title.breaker': 'BREAKER', // draft. The ask screen's title for a ship station's breaker question (ship plan step B)
   'book.paused': 'CLOCK PAUSED', // draft. The record book's top strip, right: nothing moves while it is open
   'book.light': 'LIGHT', // draft. Under the book's light tube
   'book.empty': 'EMPTY', // draft. Under the book's light tube when the battery ran empty (locked until full)

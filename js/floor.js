@@ -35,6 +35,7 @@ import { placeSafeRoom, inSafeRoom } from './saferoom.js';
 import { solidProp } from './passage.js';
 import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
 import { parseTestRoom } from './testroom.js';
+import { placeStations } from './stations.js';
 import { parseStation, freshStation, beginStation } from './advanced.js';
 
 // Picks a random open floor tile, avoiding walls and any tile in avoidList.
@@ -566,7 +567,8 @@ export function buildTestFloor(name) {
 // The ship as data (ship plan, ideas/ship-plan.md outside the repo;
 // Timothy 2026-10-30): plans.js `ship`, the School's rooms as a small
 // spaceship. The player starts in Command, the center room, which is the
-// safe room (shutters and switch). Only the plan's furniture goes down:
+// safe room (shutters and switch). Only the plan's furniture and its
+// stations (stations.js: consoles, boards, crew) go down:
 // nothing dangerous, no papers, boxes, cells, grates, stairs or boss, as
 // on a rest floor. Every floor tile is lit and seen from the start
 // (state.floor.ship: sight.js computeVisibility, roomview.js lightTiles),
@@ -600,6 +602,9 @@ export function buildShipFloor() {
   f.chamberThemes = layout.chambers.map(() => themeKeys[0]);
   f.chamberNames = layout.chambers.map(ch => ch.name);
   f.props = placeFurniture(layout, placer).map(p => ({ ...p, identified: true, searched: false, sprung: false }));
+  // Each role's console, board and crew member (stations.js), before the
+  // safe room's switch can take a console's spot.
+  placeStations(plan.stations, placer, [f.PLAYER_START]).forEach(p => f.props.push({ ...p, identified: true, searched: false, sprung: false }));
   const safe = placeSafeRoom(layout, placer, [f.PLAYER_START]);
   if (safe) {
     f.safeRoom = safe.safeRoom;

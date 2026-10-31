@@ -6,7 +6,7 @@
 // charger.js; main.js opens it and passes in what a turn and LEAVE do
 // (turnWire, leave). This only draws and listens.
 
-import { powered, N, E, S, W } from './charger.js';
+import { powered, openBreaker, N, E, S, W } from './charger.js';
 import { CHARGER } from './config.js';
 import { t } from './text.js';
 
@@ -18,11 +18,15 @@ let puzzle = null;
 let realTime = false;
 let focusIndex = 0;
 let done = false;
+// A ship station's mode ('train' / 'teach', stations.js), or null for the
+// charger: it names the panel POWER.SYS and says what the wires are for.
+let mode = null;
 
 // Looks up the panel and hooks up its wires, LEAVE and keys. Call once, from main.js.
 export function initChargerView({ turnWire, leave }) {
   actions = { turnWire, leave };
   els.panel = document.getElementById('chargerPanel');
+  els.title = document.getElementById('chargerTitle');
   els.sub = document.getElementById('chargerSub');
   els.hint = document.getElementById('chargerHint');
   els.wires = document.getElementById('chargerWires');
@@ -62,12 +66,15 @@ export function chargerShown() {
 
 // Opens CHARGE.SYS on `wires` (charger.js makeWires' shape), focus on the
 // wire PWR feeds. With Real time on the clock is the cost, so it says so in
-// place of the turns spent.
-export function showCharger(wires, isRealTime) {
+// place of the turns spent. `stationMode` ('train' / 'teach'): a ship
+// station's wires (ship plan step B), named for what they are for.
+export function showCharger(wires, isRealTime, stationMode = null) {
   puzzle = wires;
   realTime = isRealTime;
+  mode = stationMode;
   done = false;
   focusIndex = wires.from * wires.n;
+  els.title.textContent = t(mode ? 'station.title' : 'charger.title');
   els.panel.hidden = false;
   renderCharger(wires, false);
 }
@@ -86,15 +93,27 @@ export function renderCharger(wires, charged) {
     for (let col = 0; col < n; col++) {
       const i = row * n + col;
       const on = power.on.has(i);
-      const label = t('charger.wire', { row: row + 1, col: col + 1 }) + (on ? ', ' + t('charger.powered') : '');
-      html += '<button type="button" class="charger-wire' + (on ? ' on' : '') + '" data-i="' + i + '" aria-label="' + label + '"' +
-        (charged ? ' disabled' : '') + '>' + wireSvg(wires.wires[i]) + '</button>';
+      // A breaker (ship stations): a box on its wire, open until a right
+      // answer closes it.
+      const breaker = (wires.breakers || []).includes(i);
+      const open = breaker && openBreaker(wires, i);
+      const where = { row: row + 1, col: col + 1 };
+      const label = breaker ? t(open ? 'station.breaker' : 'station.breakerClosed', where)
+        : t('charger.wire', where) + (on ? ', ' + t('charger.powered') : '');
+      const cls = 'charger-wire' + (on ? ' on' : '') + (breaker ? ' breaker' : '') + (open ? ' open' : '');
+      html += '<button type="button" class="' + cls + '" data-i="' + i + '" aria-label="' + label + '"' +
+        (charged ? ' disabled' : '') + '>' + wireSvg(wires.wires[i], breaker) + '</button>';
     }
     html += '<span class="charger-end' + (power.done ? ' lit' : '') + '">' + (row === wires.to ? t('charger.cell') : '') + '</span>';
   }
   els.wires.innerHTML = html;
-  els.sub.textContent = realTime ? t('charger.clock') : t('charger.turns', { turns: Math.floor(wires.turns / CHARGER.wireTurnsPerTurn) });
-  els.hint.textContent = t(charged ? 'charger.charged' : 'charger.hint');
+  if (mode) {
+    els.sub.textContent = t('station.sub.' + mode);
+    els.hint.textContent = t(charged ? 'station.done.' + mode : 'station.hint.' + mode);
+  } else {
+    els.sub.textContent = realTime ? t('charger.clock') : t('charger.turns', { turns: Math.floor(wires.turns / CHARGER.wireTurnsPerTurn) });
+    els.hint.textContent = t(charged ? 'charger.charged' : 'charger.hint');
+  }
   if (!charged) focusWire();
 }
 
@@ -112,12 +131,14 @@ function focusWire() {
 }
 
 // One wire as a small square drawing: a line from the middle to each side
-// it reaches, a dot in the middle. Its colour is the button's (CSS).
-function wireSvg(wire) {
+// it reaches, a dot in the middle. Its colour is the button's (CSS). A
+// breaker's middle is a bigger box instead (`breaker`), hollow while open.
+function wireSvg(wire, breaker = false) {
   const ends = { [N]: [20, 0], [E]: [40, 20], [S]: [20, 40], [W]: [0, 20] };
   let lines = '';
   for (const side of [N, E, S, W]) {
     if (wire & side) lines += '<line x1="20" y1="20" x2="' + ends[side][0] + '" y2="' + ends[side][1] + '"/>';
   }
-  return '<svg viewBox="0 0 40 40" aria-hidden="true">' + lines + '<rect x="16" y="16" width="8" height="8"/></svg>';
+  const middle = breaker ? '<rect class="breaker-box" x="11" y="11" width="18" height="18"/>' : '<rect x="16" y="16" width="8" height="8"/>';
+  return '<svg viewBox="0 0 40 40" aria-hidden="true">' + lines + middle + '</svg>';
 }

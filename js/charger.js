@@ -30,8 +30,13 @@ export function rotated(wire) {
 // the CELL (row `to`, right edge) at least n + 2 long, spare wires
 // everywhere else, then every wire spun at random until power doesn't
 // already reach the cell. Turning the path's wires back always solves it.
-// Returns { n, from, to, wires, turns: 0 } (`turns` = wire turns so far).
-export function makeWires(n, rand = Math.random) {
+// `breakers` (the ship's stations, stations.js; ship plan step B): that
+// many of the path's wires, spread along it, are breakers instead: set the
+// right way, never spun or turned, and power stops at one until a right
+// answer closes it.
+// Returns { n, from, to, wires, turns: 0, breakers: [indexes], closed: [indexes] }
+// (`turns` = wire turns so far).
+export function makeWires(n, rand = Math.random, breakers = 0) {
   const pick = (count) => Math.floor(rand() * count);
   const from = pick(n), to = pick(n);
   const path = [];
@@ -58,19 +63,31 @@ export function makeWires(n, rand = Math.random) {
     const on = i === path.length - 1 ? E : sideTo(p, path[i + 1]);
     wires[p[0] * n + p[1]] = back | on;
   });
-  const puzzle = { n, from, to, wires, turns: 0 };
+  const inner = path.slice(1, -1).map(([r, c]) => r * n + c);
+  const step = inner.length / Math.max(breakers, 1);
+  const breakerAt = Array.from({ length: breakers }, (_, k) => inner[Math.floor(step * k + step / 2)]);
+  const puzzle = { n, from, to, wires, turns: 0, breakers: breakerAt, closed: [] };
   do {
-    puzzle.wires = puzzle.wires.map(wire => {
+    puzzle.wires = puzzle.wires.map((wire, i) => {
+      if (breakerAt.includes(i)) return wire;
       for (let t = pick(4); t > 0; t--) wire = rotated(wire);
       return wire;
     });
-  } while (powered(puzzle).done);
+  } while (powered({ ...puzzle, breakers: [] }).done);
   return puzzle;
 }
 
+// Whether wire `i` of `puzzle` is a breaker still open (makeWires).
+export function openBreaker(puzzle, i) {
+  return (puzzle.breakers || []).includes(i) && !puzzle.closed.includes(i);
+}
+
 // Where the power reaches: `on` = the set of wire indexes it runs through
-// from PWR, `done` = it leaves the CELL's wire through the right edge.
-export function powered({ n, from, to, wires }) {
+// from PWR, `done` = it leaves the CELL's wire through the right edge. An
+// open breaker takes the power but passes none on, and `done` waits for
+// every breaker to close, so wiring round one never skips its question.
+export function powered(puzzle) {
+  const { n, from, to, wires } = puzzle;
   const on = new Set();
   const first = from * n;
   if (wires[first] & W) {
@@ -84,12 +101,13 @@ export function powered({ n, from, to, wires }) {
         if (!(wires[i] & side) || r < 0 || r >= n || c < 0 || c >= n || on.has(j)) continue;
         if (!(wires[j] & OPPOSITE[side])) continue;
         on.add(j);
-        queue.push(j);
+        if (!openBreaker(puzzle, j)) queue.push(j);
       }
     }
   }
   const last = to * n + n - 1;
-  return { on, done: on.has(last) && !!(wires[last] & E) };
+  const allClosed = !(puzzle.breakers || []).some(i => openBreaker(puzzle, i));
+  return { on, done: on.has(last) && !!(wires[last] & E) && allClosed };
 }
 
 // The wires' size on this depth (CHARGER.sizes, the last for any deeper).
@@ -156,23 +174,34 @@ function chargeLight() {
 // world's turn; with Real time on the clock is the cost instead). Once the
 // power reaches the cell, energy fills to ENERGY_MAX with plain rounds, the
 // light's battery fills too (chargeLight), and the wires are cleared for
-// next time.
-// Events: wireTurned { index }, then turnSpent, then charged { gained, light }.
-export function turnWire(charger, i) {
+// next time. A ship station's wires (stations.js) pass `finish`, what
+// joined-up power does there instead. A breaker never turns: an open one
+// asks its question instead (the caller opens it), a closed one does
+// nothing.
+// Events: breakerAsked { index }, or wireTurned { index }, then turnSpent,
+// then charged { gained, light } (or `finish`'s).
+export function turnWire(charger, i, finish = chargeUp) {
   const puzzle = charger.puzzle;
   if (!puzzle || i < 0 || i >= puzzle.wires.length) return [];
+  if (openBreaker(puzzle, i)) return [{ type: 'breakerAsked', index: i }];
+  if ((puzzle.breakers || []).includes(i)) return [];
   puzzle.wires[i] = rotated(puzzle.wires[i]);
   puzzle.turns++;
   const events = [{ type: 'wireTurned', index: i }];
   if (puzzle.turns % CHARGER.wireTurnsPerTurn === 0) events.push({ type: 'turnSpent' });
-  if (powered(puzzle).done) {
-    const gained = Math.max(ENERGY_MAX - state.run.energy, 0);
-    addRounds(gained);
-    const light = chargeLight();
-    charger.puzzle = null;
-    events.push({ type: 'charged', gained, light });
-  }
+  if (powered(puzzle).done) events.push(...finish(charger));
   return events;
+}
+
+// The charger's power joined up: energy to full with plain rounds, the
+// light's battery too, and the wires cleared for next time.
+// Events: charged { gained, light }.
+function chargeUp(charger) {
+  const gained = Math.max(ENERGY_MAX - state.run.energy, 0);
+  addRounds(gained);
+  const light = chargeLight();
+  charger.puzzle = null;
+  return [{ type: 'charged', gained, light }];
 }
 
 // A way to solve `puzzle`: the wire indexes to turn, in order (an index

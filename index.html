@@ -968,6 +968,10 @@
   .charger-wire svg { width: 100%; height: 100%; display: block; }
   .charger-wire line { stroke: currentColor; stroke-width: 5; stroke-linecap: square; }
   .charger-wire rect { fill: currentColor; }
+  /* A ship station's breaker (stations.js): amber and hollow while open,
+     so it reads as "answer me"; filled once a right answer closes it. */
+  .charger-wire.breaker.open { color: var(--torch-bright); border-color: var(--torch-bright); }
+  .charger-wire.breaker.open .breaker-box { fill: rgba(5, 6, 6, 0.9); stroke: currentColor; stroke-width: 3; }
   /* The circle's room: what the prompt and the key leave. gunpanels.js
      sizes the canvas to DIAL_SIZE_SHARE of its shorter side. */
   .dial-stage {

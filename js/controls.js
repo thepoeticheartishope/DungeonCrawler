@@ -310,6 +310,8 @@ function settleMove(events) {
   if (has('stationLeft')) leaveStation();
   const charger = events.find(e => e.type === 'chargerOpened');
   if (charger) openCharger(charger.charger);
+  const station = events.find(e => e.type === 'stationOpened');
+  if (station) openCharger(station.station);
 }
 
 // Whether walking and waiting are held: the Struggle dial is the

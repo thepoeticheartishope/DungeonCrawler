@@ -31,7 +31,7 @@ test('the player starts in Command, the center room, and it is the safe room', (
   assert.equal(f.safeRoom.chamber, room);
 });
 
-test('the ship holds nothing dangerous and nothing to pick up, only furniture and the safe room', () => {
+test('the ship holds nothing dangerous and nothing to pick up, only furniture, the stations and the safe room', () => {
   const f = shipFloor();
   assert.equal(f.ship, true);
   assert.deepEqual(f.minions, []);
@@ -43,7 +43,7 @@ test('the ship holds nothing dangerous and nothing to pick up, only furniture an
   assert.deepEqual(f.vents, []);
   assert.deepEqual(f.keys, []);
   const kinds = new Set(f.props.map(p => p.kind));
-  assert.deepEqual([...kinds].sort(), ['furniture', 'shutter', 'switch']);
+  assert.deepEqual([...kinds].sort(), ['console', 'crew', 'furniture', 'powerBoard', 'shutter', 'switch']);
 });
 
 test('every open tile on the ship is seen from the start: no dark areas', () => {

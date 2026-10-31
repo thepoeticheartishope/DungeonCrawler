@@ -351,6 +351,14 @@ export const RELAYS_PER_FLOOR = [1, 2];
 // `sizes[depth]` square (the last for any deeper depth: Timothy 2026-10-26,
 // 4 x 4 on depth 1, 5 x 5 from depth 2), and every `wireTurnsPerTurn` wire
 // turns spend a turn.
+// The ship's stations (ship plan step B, stations.js; Timothy 2026-10-30):
+// the training console in Command (`train`) and a crew member's board
+// (`teach`) run the charger's wires, `size` square, with `breakers` of
+// them that close only on a right answer. Drafts; tune in play.
+export const SHIP_STATIONS = {
+  train: { size: 4, breakers: 1 },
+  teach: { size: 5, breakers: 2 },
+};
 // Once charged, CHARGE.SYS stays up `closeMs` with its line, then closes.
 export const CHARGER = {
   sizes: [4, 5],
