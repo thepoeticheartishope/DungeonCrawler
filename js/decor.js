@@ -57,8 +57,8 @@ export function makePlacer(layout, gridSize) {
     FOUR_STEPS.forEach(([dr, dc]) => reserved.add(key(row + dr, col + dc)));
   }));
   // Every key spot on a fixed plan, not only this run's, so its furniture
-  // stands the same every run.
-  [layout.start, layout.spawn, layout.stairs, ...(layout.keys || []), ...(layout.keySpots || [])].forEach(p => reserved.add(key(p.row, p.col)));
+  // stands the same every run. The ship has no boss's door or stairs.
+  [layout.start, layout.spawn, layout.stairs, ...(layout.keys || []), ...(layout.keySpots || [])].filter(Boolean).forEach(p => reserved.add(key(p.row, p.col)));
 
   const startKey = key(layout.start.row, layout.start.col);
 
@@ -207,7 +207,7 @@ export function rollProp(kind, theme, floorIndex) {
 // stays whole and none of them is reserved (placer.tryBlock); otherwise the
 // piece is left out. Furniture blocks walking but not the light, and a bump
 // only says what it is.
-function placeFurniture(layout, placer) {
+export function placeFurniture(layout, placer) {
   const pieces = [];
   layout.chambers.forEach(chamber => (chamber.furniture || []).forEach(([piece, row, col, width = 1]) => {
     const tiles = [];

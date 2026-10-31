@@ -583,6 +583,7 @@ export const TEXT = {
   'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
   'start.simpleEnemies': 'Comfort mode: plain enemies, light always on', // draft. A comfort option for players who don't want creepy enemies: every enemy a still letter e, and no light battery (was "Simple enemies")
   'start.tutorial': 'Tutorial room: runs once before your first run', // draft. On until a tutorial is finished
+  'start.ship': 'Ship (test): start on the ship instead', // draft. The "There's Been a Tragedy" test (ship plan)
   'start.turns': 'Turns: the world waits for you (step by step, no rush)', // draft. Start screen option (one stick plan step G): off, the default, the game is in real time with one stick
   'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft. Shown with Turns on only
 
@@ -770,6 +771,16 @@ export const TEXT = {
   'plan.school.class2': 'Class 2', // draft
   'plan.school.toilets': 'Toilets', // draft
   'plan.school.staffRoom': 'Staff room', // draft
+  'plan.ship': 'THE SHIP', // draft. The ship (ship plan): its name on the minimap
+  'plan.ship.command': 'Command', // draft. The center room: you start, learn and research here
+  'plan.ship.airlock': 'Airlock', // draft
+  'plan.ship.medBay': 'Med bay', // draft
+  'plan.ship.bridge': 'Bridge', // draft
+  'plan.ship.hydroponics': 'Hydroponics', // draft
+  'plan.ship.engineRoom': 'Engine room', // draft
+  'plan.ship.quarters': 'Crew quarters', // draft
+  'plan.ship.washroom': 'Washroom', // draft
+  'plan.ship.galley': 'Galley', // draft
   'plan.archive': 'THE ARCHIVE', // draft. The floor's name, on the minimap
   'plan.archive.core': 'Strongroom', // draft
   'plan.archive.wake': 'Front desk', // draft

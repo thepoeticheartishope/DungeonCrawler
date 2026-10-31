@@ -120,11 +120,12 @@ export function lampLightHere() {
 // safe room with its switch made out (sight.js marks it `identified`), so
 // they learn the room can be shut (Timothy's rule: every new mechanic gets
 // a tutorial beat). Once a run, and not on a turn the voice already speaks
-// (`turn`'s events), so the charger's line isn't talked over.
+// (`turn`'s events), so the charger's line isn't talked over. Never on the
+// ship: no one is out there to shut out (ship plan).
 // Returns whispered { line: 'tut.shutter', tone: 'kind' }, or nothing.
 export function shutterLine(turn = []) {
   const f = state.floor;
-  if (state.run.shutterTold || !f.safeRoom || !f.safeRoom.playerIn) return [];
+  if (f.ship || state.run.shutterTold || !f.safeRoom || !f.safeRoom.playerIn) return [];
   if (turn.some(e => e.type === 'whispered')) return [];
   if (!f.props.some(p => p.kind === 'switch' && p.identified)) return [];
   state.run.shutterTold = true;

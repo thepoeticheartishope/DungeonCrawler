@@ -67,7 +67,8 @@ function coneShape() {
 // lit themselves but cast a shadow behind. Everything the boss's light reaches is visible too
 // (state.floor.bossLitSet, from light.js) — the thing that ends the run is also
 // what shows the player the way — and so is the tutorial's light from above
-// (state.floor.spotSet, tutorial.js).
+// (state.floor.spotSet, tutorial.js). On the ship (state.floor.ship) every
+// open tile is seen as well: it has no dark areas (ship plan).
 export function computeVisibility() {
   state.floor.visibleSet = new Set([...state.floor.bossLitSet, ...state.floor.spotSet, ...windowLightHere(), ...lampLightHere(), ...lampPoolsSeen()]);
   const startKey = key(state.floor.playerRow, state.floor.playerCol);
@@ -109,6 +110,13 @@ export function computeVisibility() {
         state.floor.sightSet.add(nk);
       }
       queue.push({ row: nr, col: nc, dist });
+    }
+  }
+  if (state.floor.ship) {
+    for (let r = 0; r < state.floor.GRID_SIZE; r++) {
+      for (let c = 0; c < state.floor.GRID_SIZE; c++) {
+        if (!state.floor.wallSet.has(key(r, c))) state.floor.visibleSet.add(key(r, c));
+      }
     }
   }
   // In the darkness after the boss, nothing is remembered: only what the

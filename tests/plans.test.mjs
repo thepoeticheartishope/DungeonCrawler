@@ -32,11 +32,25 @@ function stepsFrom(layout, size, start, blocked = new Set()) {
   return dist;
 }
 
+// Every danger-floor plan in both versions. The ship has no core, gate or
+// keys, so it has its own checks below.
 function eachPlanVersion(check) {
-  Object.entries(FLOOR_PLANS).forEach(([id, plan]) => {
+  Object.entries(FLOOR_PLANS).filter(([, plan]) => !plan.ship).forEach(([id, plan]) => {
     PLAN_VERSIONS.forEach(v => check(buildPlanLayout(plan, CORE_KEYS, v), plan, id + ' ' + v));
   });
 }
+
+test('the ship reaches every open tile from the start, with no gate, stairs or keys', () => {
+  const plan = FLOOR_PLANS.ship;
+  const size = plan.rows.length;
+  PLAN_VERSIONS.forEach(v => {
+    const layout = buildPlanLayout(plan, CORE_KEYS, v);
+    assert.equal(stepsFrom(layout, size, layout.start).size, size * size - layout.walls.size, v + ': tiles cut off');
+    assert.equal(layout.spawn, undefined, v);
+    assert.equal(layout.stairs, undefined, v);
+    assert.deepEqual(layout.keys, [], v);
+  });
+});
 
 test('every recipe\'s plan exists', () => {
   FLOOR_RECIPES.forEach(r => { if (r.plan) assert.ok(FLOOR_PLANS[r.plan], r.plan); });

@@ -135,6 +135,7 @@ export const state = {
     lampPoolSet: new Set(), // tiles the lamps light (lamps.js); a stick man in them is seen from afar while they're on (sight.js canMakeOut)
     advanced: null,        // the advanced tutorial's station on this floor (advanced.js freshStation): { index, name, door, route, minion, told, done, open }; null on every other floor
     testRoom: null,        // the DEV test room this floor is (testroom.js TEST_ROOMS key, floor.js buildTestFloor); null on every other floor
+    ship: false,           // the "There's Been a Tragedy" ship (floor.js buildShipFloor, plans.js ship): lit everywhere, nothing dangerous; false on every other floor
     tutorial: null,        // the tutorial room's progress (tutorial.js freshTutorial): { stage, turns, door, spot, roomTiles, minion, minionAt }; null on every other floor
     lastChoiceType: null,  // choice type the player last picked in a fight (NO_REPEAT_CHOICE_TYPES)
     coin: null,            // { row, col } or null once collected

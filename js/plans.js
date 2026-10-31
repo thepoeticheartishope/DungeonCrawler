@@ -113,6 +113,80 @@ export const FLOOR_PLANS = {
       ], spots: [[29, 25, ['hide']]] },
     ],
   },
+  // The ship (ship plan, ideas/ship-plan.md outside the repo; Timothy
+  // 2026-10-30): the School's rooms as a small spaceship, for the
+  // "There's Been a Tragedy" test (floor.js buildShipFloor). The center
+  // room is Command, where the player starts and learns. `ship: true`: no
+  // gate, stairs or keys, so only 'S' is needed. Furniture is the School's
+  // pieces for now; ship pieces come later. Names are drafts.
+  ship: {
+    name: 'plan.ship',
+    ship: true,
+    rows: [
+      '#################################',
+      '#################################',
+      '##.......###.........###.......##',
+      '##.......###.........###.......##',
+      '##.......###.........###.......##',
+      '##.......###.........###.......##',
+      '##.......#######.#######.......##',
+      '#####.##########.##########.#####',
+      '#####.....######.######.....#####',
+      '#########...............#########',
+      '#########a#############b#########',
+      '#########a#############b#########',
+      '##.....##a##.........##b##.....##',
+      '##.....##a##....S....##b##.....##',
+      '##.....##.##.........##.##.....##',
+      '##........##.........##........##',
+      '##.....##.##.........##.##.....##',
+      '##.....##.##.........##.##.....##',
+      '##.....##.##.........##.##.....##',
+      '#########.######.######.#########',
+      '#########.######.######.#########',
+      '#########...............#########',
+      '#####.....######.######.....#####',
+      '#####.##########.##########.#####',
+      '##.......####.......####.......##',
+      '##.......####.......####.......##',
+      '##.......####.......####.......##',
+      '##.......####.......####.......##',
+      '##.......###############.......##',
+      '##.......###############.......##',
+      '#################################',
+      '#################################',
+      '#################################',
+    ],
+    rooms: [
+      { name: 'plan.ship.command', r0: 12, c0: 12, r1: 18, c1: 20, furniture: [
+        ['desk', 15, 13], ['desk', 15, 19], ['desk', 17, 13], ['desk', 17, 19],
+      ] },
+      { name: 'plan.ship.airlock', r0: 24, c0: 13, r1: 27, c1: 19, furniture: [
+        ['bench', 24, 13, 2], ['bench', 24, 18, 2],
+      ] },
+      { name: 'plan.ship.medBay', r0: 2, c0: 2, r1: 6, c1: 8, furniture: [
+        ['bench', 4, 3, 2], ['bench', 4, 6, 2], ['sink', 2, 8],
+      ] },
+      { name: 'plan.ship.bridge', r0: 2, c0: 12, r1: 5, c1: 20, furniture: [
+        ['table', 3, 14, 2], ['table', 3, 17, 2],
+      ] },
+      { name: 'plan.ship.hydroponics', r0: 2, c0: 24, r1: 6, c1: 30, furniture: [
+        ['table', 4, 26, 3],
+      ] },
+      { name: 'plan.ship.engineRoom', r0: 12, c0: 2, r1: 18, c1: 6, furniture: [
+        ['teacher', 12, 3, 2], ['desk', 16, 3], ['desk', 16, 5],
+      ] },
+      { name: 'plan.ship.quarters', r0: 12, c0: 26, r1: 18, c1: 30, furniture: [
+        ['sofa', 18, 27, 2], ['desk', 14, 27], ['desk', 14, 29],
+      ] },
+      { name: 'plan.ship.washroom', r0: 24, c0: 2, r1: 29, c1: 8, furniture: [
+        ['sink', 24, 2], ['sink', 24, 3], ['stall', 25, 8], ['stall', 27, 8],
+      ] },
+      { name: 'plan.ship.galley', r0: 24, c0: 24, r1: 29, c1: 30, furniture: [
+        ['table', 26, 26, 3], ['sofa', 29, 25, 2],
+      ] },
+    ],
+  },
   archive: {
     name: 'plan.archive',
     rows: [
@@ -280,7 +354,8 @@ export function buildPlanLayout(plan, keyCount, version = null) {
       if (found[ch]) found[ch].push({ row: r, col: c });
     });
   });
-  ['G', 'X', 'S'].forEach(ch => {
+  // A ship plan has no gate or stairs: only the start.
+  (plan.ship ? ['S'] : ['G', 'X', 'S']).forEach(ch => {
     if (found[ch].length !== 1) throw new Error(plan.name + ': needs exactly one ' + ch);
   });
 
@@ -315,8 +390,10 @@ export function buildPlanLayout(plan, keyCount, version = null) {
   const roomTiles = new Set(chamberAt.keys());
 
   const keySpots = found.K;
-  const keys = pickKeySpots(keySpots, chamberAt, keyCount);
-  if (keys.length < keyCount) throw new Error(plan.name + ': not enough key spots in different rooms');
+  // A ship has no core, so no keys.
+  const wanted = plan.ship ? 0 : keyCount;
+  const keys = pickKeySpots(keySpots, chamberAt, wanted);
+  if (keys.length < wanted) throw new Error(plan.name + ': not enough key spots in different rooms');
   return {
     walls, roomTiles, chambers, chamberAt, keys, keySpots, lamps: found.L, version: v,
     start: found.S[0], spawn: found.G[0], stairs: found.X[0],

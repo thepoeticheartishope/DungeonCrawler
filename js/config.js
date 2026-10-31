@@ -1131,6 +1131,7 @@ export const ROOM_VIEW = {
   litFar: 0.55,       // ...and one PLAYER_CONE_RANGE away
   room: 0.28,         // the rest of the room you're in: dim, so you see its shape
   remembered: 0.1,    // explored tiles elsewhere
+  shipLit: 0.7,       // the ship's steady light on every floor tile (ship plan: no dark areas)
   ember: { radius: 1.3, level: 0.45 }, // the warm glow round the player's head, radius in tiles
   glideMs: 180,       // the camera glides to a new room this fast (jumps under reduced motion)
   stickHeight: 1.25,  // the player's stick man, in tiles

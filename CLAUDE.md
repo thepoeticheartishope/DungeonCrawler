@@ -92,7 +92,7 @@ Rules and data (no page/DOM access):
 | `dungeon.js` | Random floor layouts from the templates; `buildRestLayout()`. |
 | `plans.js` | `FLOOR_PLANS`: fixed buildings per depth (School, Archive, Observatory), furniture, lamps; `buildPlanLayout()`. |
 | `floors.js` | `FLOOR_RECIPES` (what each floor holds) and `FLOOR_PATHS` (the ways down). Data only. |
-| `floor.js` | `buildFloor()` / `buildRestFloor()` / `buildTutorialFloor()`: a floor as data. |
+| `floor.js` | `buildFloor()` / `buildRestFloor()` / `buildTutorialFloor()` / `buildShipFloor()`: a floor as data. |
 | `decor.js` | Room themes, pillars, papers, boxes, energy cells, fixed-plan furniture (`makePlacer`). |
 | `beats.js` | `placeBeats()`: the recipe's beats along the walk to the farthest key. |
 | `run.js` | `nextFloor()`: the run's shape, rests between depths. |
