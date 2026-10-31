@@ -169,6 +169,7 @@ Drawing and page code:
 | `minimapview.js` | The minimap on the book's MAP page. |
 | `exchangeview.js` | THE UNFOLDING's screen. |
 | `shipview.js` | The ship's opening: the run's tragedy a line at a time, then TAKE COMMAND. |
+| `consoleview.js` | COMMAND.SYS, the ship's training console: the roles to learn and where each stands. |
 | `dataview.js` | DATA.SYS question viewer and comment export. |
 | `setloader.js` | Start screen options and the workshop. |
 | `setpicker.js` | The set screen; `fetchSet()` shared with practice.js. |

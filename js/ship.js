@@ -24,7 +24,7 @@ export function freshShipRun(rand = Math.random) {
   state.run.ship = {
     clockMs: SHIP_RUN.missionMs, panic: 0, streak: 0, training: null, tragedy: rollTragedy(rand),
     burnsNeeded: SHIP_RUN.burnsNeeded, calmStreak: SHIP_RUN.calmStreak, slipFactor: 1, burnBonusMs: 0,
-    shields: 0, windowShields: 0, taught: [], job: null,
+    shields: 0, windowShields: 0, taught: [], job: null, learning: null,
   };
   state.run.trained = [];
   state.run.burns = 0;
