@@ -7,7 +7,7 @@
 // of each one threading them through as parameters.
 
 import { state, key } from './state.js';
-import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, BOOK } from './config.js';
+import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, BOOK, SHIP_RUN, SHIP_LOW_SECONDS } from './config.js';
 import { drawTube, TUBE_W, TUBE_H } from './tubeart.js';
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
@@ -89,12 +89,14 @@ export function fadeAnswerLine(now = false) {
 }
 
 export function showScreen(el) {
-  [els.startScreen, els.introGlitch, els.roomScreen, els.battleScreen, els.exchangeScreen, els.winScreen, els.loseScreen].forEach(s => s.classList.remove('show'));
+  [els.startScreen, els.introGlitch, els.shipIntroScreen, els.roomScreen, els.battleScreen, els.exchangeScreen, els.winScreen, els.loseScreen]
+    .forEach(s => s.classList.remove('show'));
   el.classList.add('show');
   // Hearts/coins/turn/room/timer are meaningless before a run starts (and
-  // during the intro glitch, which plays before the timer even starts), so
-  // the header only shows them once the player has actually reached a room.
-  els.statsEl.classList.toggle('show', el !== els.startScreen && el !== els.introGlitch);
+  // during the intro glitch or the ship's opening, before the timer even
+  // starts), so the header only shows them once the player has actually
+  // reached a room.
+  els.statsEl.classList.toggle('show', ![els.startScreen, els.introGlitch, els.shipIntroScreen].includes(el));
 }
 
 // How far away (in steps, as the crow flies) the hunter's edge glow starts
@@ -193,6 +195,23 @@ export function renderHud() {
   renderGoals();
   renderGunHud();
   renderBattery();
+  renderShipHud();
+}
+
+// The ship's HUD (ship plan step C, ship.js): the arrival clock (bright in
+// its last minute), burns of the ones needed, and the crew's panic by name
+// and as a meter. The rest of the HUD hides there (CSS .ship-hud). main.js
+// worldFrame calls it each frame, as the clock runs.
+export function renderShipHud() {
+  const ship = state.floor.ship ? state.run.ship : null;
+  els.statsEl.classList.toggle('ship-hud', !!ship);
+  if (!ship) return;
+  const seconds = Math.ceil(ship.clockMs / 1000);
+  els.shipClock.textContent = formatTime(seconds);
+  els.shipClock.classList.toggle('ship-low', seconds <= SHIP_LOW_SECONDS);
+  els.shipBurns.textContent = state.run.burns + '/' + SHIP_RUN.burnsNeeded;
+  els.shipPanic.textContent = t('panic.' + ship.panic);
+  [...els.shipPanicMeter.children].forEach((cell, i) => cell.classList.toggle('on', i < ship.panic));
 }
 
 // The light's battery on the LIGHT button under the map (battery.js; light

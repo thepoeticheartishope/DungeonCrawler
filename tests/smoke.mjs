@@ -2527,7 +2527,7 @@ async function runShip(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: '"Ship (test)" started in Command, lit, no stick men; the console opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach', consoleErrors, pageErrors };
+  return { ok: true, detail: '"Ship (test)" told the tragedy, TAKE COMMAND put the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach', consoleErrors, pageErrors };
 }
 
 // Stands the player at (row, col) facing up and presses ArrowUp: a bump
@@ -2548,8 +2548,20 @@ async function bumpUpFrom(page, row, col) {
 async function checkShip(page, url) {
   await loadPageAndSet(page, url);
   await page.check('#shipToggle');
-  await startGameAndWaitForRoom(page).catch(() => {});
+  // The ship's opening (step C): the tragedy, then TAKE COMMAND.
+  await page.click('#startBtn');
+  await page.click('#pickScreen .set-option[data-set="builtin:bible-quiz-bowl"]');
+  await page.waitForSelector('#shipIntroScreen.show', { timeout: 10000 });
+  const intro = await page.textContent('#shipIntroLines');
+  if (!/Day \d+ of the crossing\./.test(intro) || !/Captain \w+ died/.test(intro)) return 'the tragedy was not told: ' + intro;
+  await page.click('#shipIntroGo');
   await page.waitForSelector('#roomScreen.show', { timeout: 10000 });
+  const hud = await page.evaluate(() => ({
+    ship: document.getElementById('statsBar').classList.contains('ship-hud'),
+    clock: document.getElementById('shipClock').textContent,
+    crew: document.getElementById('shipPanic').textContent,
+  }));
+  if (!hud.ship || !/^\d:\d\d$/.test(hud.clock) || hud.crew !== 'CALM') return 'the ship HUD did not show: ' + JSON.stringify(hud);
   const start = await page.evaluate(async () => {
     const { state, key } = await import('./js/state.js');
     const f = state.floor;

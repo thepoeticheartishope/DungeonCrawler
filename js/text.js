@@ -93,6 +93,16 @@ export const TEXT = {
   'stat.gold': '{@term.gold}',
   'stat.turn': 'CYCLE', // draft
   'stat.room': '{@term.room}',
+  // The ship's HUD (ship plan step C, render.js renderHud): in place of
+  // stability, energy, target and depth.
+  'stat.arrival': 'ARRIVAL', // draft. The arrival clock
+  'stat.burns': 'BURNS', // draft. Full burns of the ones needed
+  'stat.crew': 'CREW', // draft. The crew's panic, by name and as a meter
+  'panic.0': 'CALM', // draft
+  'panic.1': 'UNEASY', // draft
+  'panic.2': 'SHAKEN', // draft
+  'panic.3': 'PANICKING', // draft
+  'panic.4': 'BROKEN', // draft
   'stat.time': 'TIME',
   'stat.keys': '{@term.key}', // draft. HUD: keys held of the floor's
   'stat.keys.count': '{held}/{total}', // HUD: keys held of the floor's
@@ -522,6 +532,51 @@ export const TEXT = {
   'station.burn': 'Full burn. The ship moves. (Burns: {burns})', // draft
   'crew.engineer.waiting': 'Engineer: “The captain always ran the board. I don’t know how.”', // draft. Bumping the Engineer before training
   'crew.engineer.ready': 'Engineer: “Tell me what to do.”', // draft. Bumping the Engineer once trained
+  // The ship's run (ship plan step C, ship.js).
+  'station.training': 'TRAINING {time}', // draft. The panel's top line during the training period
+  'station.burnLeft': 'BURN WINDOW {time}', // draft. The panel's top line while a burn is on
+  'ship.panicRose': 'The crew is {level} now.', // draft. {level} is a panic.N line, lower case
+  'ship.panicEased': 'Three clean calls. The crew steadies: {level}.', // draft
+  'ship.trainingOver': 'Training time is up. You know enough to teach it.', // draft
+  'ship.burnMissed': 'The burn window closed. The engine coughs and goes quiet.', // draft. A failure
+  'ship.wireSlipped': 'Engineer: “Sorry. My hands.” A wire slips.', // draft. A Shaken crew's slip
+  // The tragedy (ship.js rollTragedy): random, told after the splash
+  // screen, flavor only. Numbered lists, as many as TRAGEDY_PARTS says.
+  'tragedy.title': 'THERE’S BEEN A TRAGEDY', // draft
+  'tragedy.day': 'Day {day} of the crossing.', // draft
+  'tragedy.died': '{captain} died {cause}.', // draft
+  'tragedy.alone': 'No one else aboard was trained to command.', // draft
+  'tragedy.mission': 'The {ship} must still reach {planet}. The crew is waiting for orders.', // draft
+  'tragedy.how': 'Learn each job at the console in Command. Then go and teach it.', // draft
+  'tragedy.go': 'TAKE COMMAND', // draft. The intro's button
+  'tragedy.captain.1': 'Captain Okafor', // draft
+  'tragedy.captain.2': 'Captain Lindqvist', // draft
+  'tragedy.captain.3': 'Captain Reyes', // draft
+  'tragedy.captain.4': 'Captain Halvorsen', // draft
+  'tragedy.captain.5': 'Captain Mbeki', // draft
+  'tragedy.captain.6': 'Captain Tanaka', // draft
+  'tragedy.cause.1': 'when a coolant line burst in the forward bay', // draft
+  'tragedy.cause.2': 'of a fever the med bay could not name', // draft
+  'tragedy.cause.3': 'sealing a hull breach by hand', // draft
+  'tragedy.cause.4': 'in a fall when the gravity failed for nine seconds', // draft
+  'tragedy.cause.5': 'in their sleep, and no one knows why', // draft
+  'tragedy.ship.1': 'Corvid', // draft
+  'tragedy.ship.2': 'Long Patience', // draft
+  'tragedy.ship.3': 'Small Hours', // draft
+  'tragedy.ship.4': 'Meridian', // draft
+  'tragedy.ship.5': 'Kestrel', // draft
+  'tragedy.planet.1': 'Thale', // draft
+  'tragedy.planet.2': 'Orrin b', // draft
+  'tragedy.planet.3': 'Vesta Minor', // draft
+  'tragedy.planet.4': 'Kesh', // draft
+  'tragedy.planet.5': 'Halcyon', // draft
+  // The ship's end screens (main.js endShip).
+  'end.ship.arrived.title': 'Orbit.', // draft
+  'end.ship.arrived.stats': 'The {ship} reached {planet}. The crew you taught brought it in. Burns {burns}/{needed}, failures {failures}, {time} to spare.', // draft
+  'end.ship.clock.title': 'The window closed.', // draft
+  'end.ship.clock.stats': 'The {ship} missed its arrival window. {planet} drifts past. Burns {burns}/{needed}, failures {failures}.', // draft
+  'end.ship.panic.title': 'The crew broke.', // draft
+  'end.ship.panic.stats': 'Too many failures. No one is listening to orders now. Burns {burns}/{needed}, failures {failures}.', // draft
   'room.desk.done': 'The {@term.desk} is dull now. It will shine on the next floor.', // draft. Bumping a used desk
 
   // Stairs and floor goals (strategy plan step A). Stepping onto the stairs

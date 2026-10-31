@@ -359,6 +359,36 @@ export const SHIP_STATIONS = {
   train: { size: 4, breakers: 1 },
   teach: { size: 5, breakers: 2 },
 };
+// The ship's run (ship plan step C, ship.js; Timothy 2026-10-30; numbers
+// from the loop mockup, drafts to tune in play). The arrival clock runs
+// `missionMs`; `burnsNeeded` full burns reach the planet. A training period
+// lasts `trainMs`. A burn must be made within `burnMs` of the board
+// opening, `uneasyCutMs` less once the crew is Uneasy. Crew panic goes up a
+// step with each failure and down one after `calmStreak` right answers in a
+// row while teaching. At each step: 1 Uneasy (shorter burns), 2 Shaken (a
+// wire slips every `slipEveryMs[2]`), 3 Panicking (slips every
+// `slipEveryMs[3]`, breaker questions carry the Timer), `brokenAt` Broken:
+// the run is lost.
+export const SHIP_RUN = {
+  missionMs: 300000,
+  burnsNeeded: 3,
+  trainMs: 45000,
+  burnMs: 75000,
+  uneasyCutMs: 20000,
+  slipEveryMs: [0, 0, 12000, 6000],
+  timerAt: 3,
+  calmStreak: 3,
+  brokenAt: 4,
+  endDelayMs: 900,    // the room's last line shows this long before the end screen
+};
+// The arrival clock on the HUD turns bright this many seconds from the end.
+export const SHIP_LOW_SECONDS = 60;
+// The tragedy intro (shipview.js): seconds between one line fading in and
+// the next. Slow on purpose: text comes in slowly, never flickers.
+export const SHIP_INTRO_STEP_S = 1.4;
+// How many of each part of the random tragedy text.js has (ship.js
+// rollTragedy: 'tragedy.captain.1' and on).
+export const TRAGEDY_PARTS = { captain: 6, cause: 5, ship: 5, planet: 5 };
 // Once charged, CHARGE.SYS stays up `closeMs` with its line, then closes.
 export const CHARGER = {
   sizes: [4, 5],
