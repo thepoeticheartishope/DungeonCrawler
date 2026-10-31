@@ -75,6 +75,7 @@ const APP_SHELL = [
   './js/stations.js',
   './js/ship.js',
   './js/roles.js',
+  './js/consoleview.js',
   './js/shipview.js',
   './js/chargerview.js',
   './js/vents.js',

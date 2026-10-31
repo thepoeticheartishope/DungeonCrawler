@@ -542,6 +542,7 @@ export const TEXT = {
   'ship.wireSlipped': 'Engineer: “Sorry. My hands.” A wire slips.', // draft. A Shaken crew's slip
   'ship.panicShielded': 'It went wrong, but the crew holds steady.', // draft. A shield took the panic (Comms officer, Life support)
   // The crew roles (crew roles plan, roles.js; config.js SHIP_ROLES). Names are drafts.
+  'role.engineer': 'Engineer', // draft. The power board's wires (stations.js)
   'role.navigator': 'Navigator', // draft. Close Enough
   'role.pilot': 'Pilot', // draft. Higher/Lower
   'role.comms': 'Comms officer', // draft. Slow Spell
@@ -848,6 +849,21 @@ export const TEXT = {
   'ask.title.barrel': 'BARREL', // draft. The ask screen's title for the tutorial barrel's question
   'ask.title.breaker': 'BREAKER', // draft. The ask screen's title for a ship station's breaker question (ship plan step B)
   'ask.title.job': '{role} · {round}/{of}', // draft. The ask screen's title for a round of a crew member's job (crew roles plan)
+  'ask.title.learn': 'LEARNING {role} · {round}/{of}', // draft. The ask screen's title for a learning round at the console (crew roles plan step B)
+  // COMMAND.SYS, the console's roles (crew roles plan step B, consoleview.js).
+  'console.title': 'COMMAND.SYS', // draft
+  'console.hint': 'The captain’s lessons. Pick a job to learn.', // draft
+  'console.wires': 'Power wires', // draft. The Engineer's game, in the list
+  'console.status.new': 'LEARN', // draft. A role still to learn
+  'console.status.learned': 'LEARNED', // draft
+  'console.status.taught': 'TAUGHT', // draft
+  'console.status.sitsOut': 'NOT NEEDED', // draft. Its game can't run on this set
+  'console.opened': 'The training console wakes.', // draft
+  'console.left': 'You step back from the console.', // draft. LEAVE or Escape on COMMAND.SYS
+  'learn.started': 'The captain’s lesson for the {role}. Mistakes are free here.', // draft
+  'learn.missed': 'Not that. Round {round} of {of}: look at the answer and try again.', // draft. A learning miss: free
+  'learn.done': 'You’ve got it. Go and teach the {role}.', // draft. A right learning round
+  'learn.shaky': 'You know enough to try. Go and teach the {role}.', // draft. Learned after the last round, without a right one
   'book.paused': 'CLOCK PAUSED', // draft. The record book's top strip, right: nothing moves while it is open
   'book.light': 'LIGHT', // draft. Under the book's light tube
   'book.empty': 'EMPTY', // draft. Under the book's light tube when the battery ran empty (locked until full)

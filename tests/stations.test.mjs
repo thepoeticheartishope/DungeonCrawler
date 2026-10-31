@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import { state, key } from '../js/state.js';
 import { SHIP_STATIONS } from '../js/config.js';
 import { makeWires, powered, rotated, solveWires, turnWire, openBreaker } from '../js/charger.js';
-import { useStation, settleBreaker, stationDone } from '../js/stations.js';
+import { useStation, settleBreaker, stationDone, trainWires } from '../js/stations.js';
 import { buildShipFloor } from '../js/floor.js';
 import { emptyFloor } from './helpers.mjs';
 
@@ -91,17 +91,17 @@ test('the power board stays shut until the role is trained; the Engineer says so
 
 test('the console opens training wires and keeps them as left', () => {
   ship();
-  const [first] = useStation(prop('console'));
+  const [first] = trainWires(prop('console'));
   assert.equal(first.mode, 'train');
   assert.equal(first.kept, false);
   assert.equal(prop('console').puzzle.n, SHIP_STATIONS.train.size);
-  const [again] = useStation(prop('console'));
+  const [again] = trainWires(prop('console'));
   assert.equal(again.kept, true);
 });
 
 test('a miss at the console is free; a miss at the board is a crew failure', () => {
   ship();
-  useStation(prop('console'));
+  trainWires(prop('console'));
   const [b] = prop('console').puzzle.breakers;
   assert.deepEqual(settleBreaker(prop('console'), b, false), [{ type: 'breakerSparked', index: b, teach: false }]);
   assert.equal(state.run.crewFailures, 0);
@@ -116,7 +116,7 @@ test('a miss at the console is free; a miss at the board is a crew failure', () 
 test('the last breaker closing on wired-up power trains the role at the console', () => {
   ship();
   const console = prop('console');
-  useStation(console);
+  trainWires(console);
   wireUp(console.puzzle);
   const [b] = console.puzzle.breakers;
   const events = settleBreaker(console, b, true);

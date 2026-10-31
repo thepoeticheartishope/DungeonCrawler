@@ -38,22 +38,36 @@ export function isStation(prop) {
 }
 
 // Bumping a station's prop. The crew member speaks: what they need, or
-// that they are ready once the role is trained. A board for a role not yet
-// trained stays shut. Otherwise the wires open: the ones left half done
-// (`kept`), else new ones for the mode (SHIP_STATIONS). The console's
-// first use starts the role's training period (ship.js startTraining); a
-// board's new wires start a burn window (`burnLeftMs`, ship.js burnMs),
-// which runs on even with the board left.
-// Events: crewSpoke { role, trained }, stationLocked { role }, or
-// stationOpened { station, mode, kept }.
+// that they are ready once the role is trained. The console opens its
+// list of roles to learn (crew roles plan step B; main.js openConsole):
+// the Engineer's wires come through trainWires. A board for a role not yet
+// trained stays shut. Otherwise its wires open (openWires).
+// Events: crewSpoke { role, trained }, consoleOpened { station },
+// stationLocked { role }, or openWires's.
 export function useStation(prop, rand = Math.random) {
   const trained = state.run.trained.includes(prop.role);
   // Any crew member but the Engineer has a minigame job (roles.js).
   if (prop.kind === 'crew' && prop.role !== 'engineer') return useCrew(prop.role);
   if (prop.kind === 'crew') return [{ type: 'crewSpoke', role: prop.role, trained }];
+  if (prop.kind === 'console') return [{ type: 'consoleOpened', station: prop }];
+  if (!trained) return [{ type: 'stationLocked', role: prop.role }];
+  return openWires(prop, rand);
+}
+
+// The Engineer picked from the console's list: its training wires open,
+// and its first use starts the role's training period (ship.js
+// startTraining). Events: openWires's.
+export function trainWires(prop, rand = Math.random) {
+  startTraining(prop.role);
+  return openWires(prop, rand);
+}
+
+// A station's wires open: the ones left half done (`kept`), else new ones
+// for its mode (SHIP_STATIONS). A board's new wires start a burn window
+// (`burnLeftMs`, ship.js burnMs), which runs on even with the board left.
+// Events: stationOpened { station, mode, kept }.
+function openWires(prop, rand) {
   const mode = stationMode(prop);
-  if (mode === 'teach' && !trained) return [{ type: 'stationLocked', role: prop.role }];
-  if (mode === 'train') startTraining(prop.role);
   const kept = !!prop.puzzle;
   if (!kept) {
     prop.puzzle = makeWires(SHIP_STATIONS[mode].size, rand, SHIP_STATIONS[mode].breakers);

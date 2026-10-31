@@ -743,7 +743,7 @@
     border-bottom: 2px solid var(--case-shadow);
     clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
   }
-  .book-top { display: flex; justify-content: space-between; gap: 12px; white-space: nowrap; }
+  .book-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 12px; white-space: nowrap; } /* a long title (a crew role's) pushes CLOCK PAUSED to a second line, never off the edge */
   .book-paused { color: var(--muted); }
   .book-body { position: relative; flex: 1 1 0; min-height: 0; display: flex; gap: 10px; }
   .book-strip {
@@ -986,6 +986,22 @@
   .charger-wire svg { width: 100%; height: 100%; display: block; }
   .charger-wire line { stroke: currentColor; stroke-width: 5; stroke-linecap: square; }
   .charger-wire rect { fill: currentColor; }
+  /* COMMAND.SYS (consoleview.js): one row per role, its name, its game and
+     where it stands; only roles still to learn can be picked. */
+  .console-roles { display: flex; flex-direction: column; gap: 3px; max-height: 52vh; overflow-y: auto; }
+  .console-role {
+    display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 8px; align-items: baseline;
+    width: 100%; min-height: 0; padding: 4px 8px; text-align: left; font-size: 16px;
+    border: 1px solid var(--line); background: none; color: var(--text); cursor: pointer;
+  }
+  .console-role::before, .console-role::after { content: none; }
+  .console-role .console-game, .console-role .console-status { color: var(--muted); font-size: 14px; }
+  .console-role.new { border-color: var(--torch-bright); }
+  .console-role.new .console-status { color: var(--torch-bright); }
+  .console-role:disabled { cursor: default; opacity: 0.55; }
+  .console-role.sitsOut { opacity: 0.35; }
+  .console-role:hover .console-game, .console-role:hover .console-status,
+  .console-role:focus .console-game, .console-role:focus .console-status { color: inherit; }
   /* A ship station's breaker (stations.js): amber and hollow while open,
      so it reads as "answer me"; filled once a right answer closes it. */
   .charger-wire.breaker.open { color: var(--torch-bright); border-color: var(--torch-bright); }
@@ -2108,6 +2124,16 @@
       </div>
       <!-- CHARGE.SYS (chargerview.js): the charger's wires, over the map so
            the room stays in view while the world keeps taking turns. -->
+      <!-- COMMAND.SYS, the training console's roles (crew roles plan step B,
+           js/consoleview.js): over the map like CHARGE.SYS. -->
+      <div class="charger-veil" id="consolePanel" role="dialog" aria-labelledby="consoleTitle" hidden>
+        <div class="charger-box">
+          <div class="charger-top"><span id="consoleTitle" data-t="console.title"></span></div>
+          <div class="charger-hint" data-t="console.hint"></div>
+          <div class="console-roles" id="consoleRoles"></div>
+          <button type="button" class="charger-leave" id="consoleLeave" data-t="charger.leave"></button>
+        </div>
+      </div>
       <div class="charger-veil" id="chargerPanel" role="dialog" aria-labelledby="chargerTitle" hidden>
         <div class="charger-box">
           <div class="charger-top"><span id="chargerTitle" data-t="charger.title"></span><span class="charger-sub" id="chargerSub"></span></div>
