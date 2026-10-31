@@ -16,7 +16,7 @@ import { SHIP_ROLES, SHIP_JOB, SHIP_RUN } from '../js/config.js';
 import { TEXT } from '../js/text.js';
 import {
   roleOf, onDuty, rolesOnDuty, useCrew, settleRound, applyBenefit, consoleRoles, startLearning, settleLearning, learningOn,
-  noteOnDuty, crewLook, taughtCount, teachTargets,
+  noteOnDuty, crewLook, taughtCount, teachTargets, stopLearning,
 } from '../js/roles.js';
 import { roleCanRun } from '../js/minigames.js';
 import { freshShipRun, crewMissed, crewRight, burnMs, slipEveryMs, burnMade, shipFrame } from '../js/ship.js';
@@ -251,4 +251,16 @@ test('teachTargets: a learned role not yet taught is marked on the map; taught o
   assert.equal(marks.length, 2);
   state.run.ship.taught.push('navigator');
   assert.deepEqual(teachTargets().map(m => m.role), ['engineer']);
+});
+
+test('stopLearning: BACK drops the lesson, nothing learned, and the role can be started again', () => {
+  crewRun(false);
+  startLearning('navigator');
+  settleLearning(false);
+  assert.deepEqual(stopLearning(), [{ type: 'learningStopped', role: 'navigator' }]);
+  assert.equal(learningOn(), false);
+  assert.ok(!state.run.trained.includes('navigator'));
+  assert.deepEqual(stopLearning(), []);
+  assert.equal(startLearning('pilot')[0].type, 'learningStarted');
+  assert.equal(state.run.ship.learning.round, 0);
 });

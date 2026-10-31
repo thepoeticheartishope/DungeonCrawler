@@ -152,6 +152,18 @@ export function settleLearning(isCorrect) {
   return [{ type: 'roleLearned', role: learning.role, shaky: !isCorrect }];
 }
 
+// BACK on a learning round (Timothy 2026-10-31: free to try a role and
+// pick another): the lesson is dropped, nothing learned and nothing lost,
+// and the player is back at the console's list.
+// Events: learningStopped { role }, or nothing if no lesson is on.
+export function stopLearning() {
+  const ship = state.run.ship;
+  const learning = ship && ship.learning;
+  if (!learning) return [];
+  ship.learning = null;
+  return [{ type: 'learningStopped', role: learning.role }];
+}
+
 // Whether learning is under way at the console (its rounds still being asked).
 export function learningOn() {
   return Boolean(state.run.ship && state.run.ship.learning);
