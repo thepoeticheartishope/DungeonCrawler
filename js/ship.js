@@ -1,11 +1,12 @@
 // The ship's run (ship plan step C, `ideas/ship-plan.md` outside the repo;
 // Timothy 2026-10-30): "There's Been a Tragedy". The captain is dead, the
-// player takes command, and the ship must reach the planet before the
-// arrival clock runs out. The tension is the clock and the crew's panic,
-// not monsters: each failure while teaching (a wrong breaker answer, a burn
-// window missed) raises the panic a step, a run of right answers calms it,
-// and the higher it is the harder the crew's game gets (shorter burns,
-// wires that slip, questions on a timer). Broken, the run is lost. The
+// player takes command, and the ship must reach the planet. No timers
+// (Timothy 2026-10-31: time pressure goes against teaching): the tension is
+// the crew's panic, not monsters or a clock. Each failure while teaching (a
+// wrong breaker answer, a failed round of a crew member's minigame) raises
+// the panic a step, a run of right answers calms it, and the higher it is
+// the harder the crew's work gets (wires that slip). Broken, the run is
+// lost. Learning at the console stays free. The
 // tragedy that starts it is random and only flavor. main.js startGame
 // calls freshShipRun(); worldFrame runs shipFrame() each frame; stations.js
 // reports misses and right answers (crewMissed, crewRight) and burns
@@ -22,9 +23,9 @@ import { rotated, powered } from './charger.js';
 // much rarer slips are, extra burn window, and shields against panic.
 export function freshShipRun(rand = Math.random) {
   state.run.ship = {
-    clockMs: SHIP_RUN.missionMs, panic: 0, streak: 0, training: null, tragedy: rollTragedy(rand),
-    burnsNeeded: SHIP_RUN.burnsNeeded, calmStreak: SHIP_RUN.calmStreak, slipFactor: 1, burnBonusMs: 0,
-    shields: 0, windowShields: 0, taught: [], job: null, learning: null, onDuty: null,
+    panic: 0, streak: 0, tragedy: rollTragedy(rand),
+    burnsNeeded: SHIP_RUN.burnsNeeded, calmStreak: SHIP_RUN.calmStreak, slipFactor: 1,
+    shields: 0, taught: [], job: null, learning: null, onDuty: null,
   };
   state.run.trained = [];
   state.run.burns = 0;
@@ -93,13 +94,6 @@ export function burnMade() {
   return state.run.burns >= burnsNeeded() ? [{ type: 'shipEnded', how: 'arrived' }] : [];
 }
 
-// How long a new burn may take, by the panic now (Uneasy or worse cuts
-// it), plus what the Science officer added.
-export function burnMs() {
-  const bonus = state.run.ship ? state.run.ship.burnBonusMs : 0;
-  return SHIP_RUN.burnMs - (panicLevel() >= 1 ? SHIP_RUN.uneasyCutMs : 0) + bonus;
-}
-
 // How often a wire slips while teaching, by the panic now (0: never),
 // rarer once the Systems tech is taught.
 export function slipEveryMs() {
@@ -107,63 +101,16 @@ export function slipEveryMs() {
   return every * (state.run.ship ? state.run.ship.slipFactor : 1);
 }
 
-// The modifiers a breaker's question carries: the Timer once the crew is
-// Panicking (SHIP_RUN.timerAt), none before.
-export function breakerModifiers() {
-  return panicLevel() >= SHIP_RUN.timerAt ? ['timer'] : [];
-}
-
-// A missed burn window is a failure, unless Life support's shield takes it
-// (once). Events: panicShielded, or crewMissed's.
-function missedWindow() {
-  const ship = state.run.ship;
-  if (ship.windowShields > 0) {
-    ship.windowShields--;
-    ship.streak = 0;
-    return [{ type: 'panicShielded' }];
-  }
-  return crewMissed();
-}
-
-// Starts the training period for `role` at the console (SHIP_RUN.trainMs),
-// once: a role already trained or in training is left alone.
-export function startTraining(role) {
-  const ship = state.run.ship;
-  if (!ship || ship.training || state.run.trained.includes(role)) return;
-  ship.training = { role, leftMs: SHIP_RUN.trainMs };
-}
-
-// The ship's clocks, `dtMs` on (main.js worldFrame, only while the world
-// runs: the ask screen pauses them). The arrival clock runs down; at 0 the
-// run is lost. A training period ends and the role is learned. A board's
-// burn window (stations.js `burnLeftMs`) runs down; missed, its wires clear
-// and it counts as a failure. While a burn is on, a Shaken or worse crew
-// slips a wire it has powered every slipEveryMs.
-// Events: shipEnded { how: 'clock' }, trainingOver { role },
-// burnMissed { prop } then crewMissed's, wireSlipped { prop, index }.
+// The ship's world, `dtMs` on (main.js worldFrame, only while the world
+// runs: the ask screen pauses it). No clocks run down (Timothy
+// 2026-10-31). While a burn is under way at a board, a Shaken or worse crew
+// slips a wire it has powered every slipEveryMs: panic makes the work
+// harder, not shorter. Events: wireSlipped { prop, index }.
 export function shipFrame(dtMs, rand = Math.random) {
   const ship = state.run.ship;
   if (!ship || !state.floor.ship || state.run.runEnded) return [];
-  ship.clockMs = Math.max(ship.clockMs - dtMs, 0);
-  if (ship.clockMs === 0) return [{ type: 'shipEnded', how: 'clock' }];
   const events = [];
-  if (ship.training) {
-    ship.training.leftMs -= dtMs;
-    if (ship.training.leftMs <= 0) {
-      const { role } = ship.training;
-      ship.training = null;
-      if (!state.run.trained.includes(role)) state.run.trained.push(role);
-      events.push({ type: 'trainingOver', role });
-    }
-  }
-  state.floor.props.filter(p => p.puzzle && p.burnLeftMs != null).forEach(prop => {
-    prop.burnLeftMs -= dtMs;
-    if (prop.burnLeftMs <= 0) {
-      prop.puzzle = null;
-      prop.burnLeftMs = null;
-      events.push({ type: 'burnMissed', prop }, ...missedWindow());
-      return;
-    }
+  state.floor.props.filter(p => p.puzzle && p.kind === 'powerBoard').forEach(prop => {
     const every = slipEveryMs();
     if (!every) return;
     prop.slipInMs = (prop.slipInMs ?? every) - dtMs;

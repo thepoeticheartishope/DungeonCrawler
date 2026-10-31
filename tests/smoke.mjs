@@ -2527,7 +2527,7 @@ async function runShip(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: '"Ship (test)" told the tragedy, a tap put every line up and a second took command, putting the player in Command with the ship HUD (arrival, burns, CALM), lit, no stick men; the console\'s Engineer opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; COMMAND.SYS listed the roles, BACK left a lesson for the list again, a right round learned the Navigator, and its three rounds of Close Enough taught it (TAUGHT 1 on the HUD)', consoleErrors, pageErrors };
+  return { ok: true, detail: '"Ship (test)" told the tragedy, a tap put every line up and a second took command, putting the player in Command with the ship HUD (burns, CALM, no clock), lit, no stick men; the console\'s Engineer opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; COMMAND.SYS listed the roles, BACK left a lesson for the list again, a right round learned the Navigator, and its three rounds of Close Enough taught it (TAUGHT 1 on the HUD)', consoleErrors, pageErrors };
 }
 
 // Stands the player at (row, col) facing up and presses ArrowUp: a bump
@@ -2563,10 +2563,12 @@ async function checkShip(page, url) {
   await page.waitForSelector('#roomScreen.show', { timeout: 10000 });
   const hud = await page.evaluate(() => ({
     ship: document.getElementById('statsBar').classList.contains('ship-hud'),
-    clock: document.getElementById('shipClock').textContent,
+    clock: Boolean(document.getElementById('shipClock')),
+    burns: document.getElementById('shipBurns').textContent,
     crew: document.getElementById('shipPanic').textContent,
   }));
-  if (!hud.ship || !/^\d:\d\d$/.test(hud.clock) || hud.crew !== 'CALM') return 'the ship HUD did not show: ' + JSON.stringify(hud);
+  // No arrival clock (Timothy 2026-10-31: no timers on the ship).
+  if (!hud.ship || hud.clock || !/^0\/\d$/.test(hud.burns) || hud.crew !== 'CALM') return 'the ship HUD did not show: ' + JSON.stringify(hud);
   const start = await page.evaluate(async () => {
     const { state, key } = await import('./js/state.js');
     const f = state.floor;

@@ -13,7 +13,7 @@
 import { state } from './state.js';
 import { makeWires, powered } from './charger.js';
 import { SHIP_STATIONS } from './config.js';
-import { startTraining, crewMissed, crewRight, burnMade, burnMs } from './ship.js';
+import { crewMissed, crewRight, burnMade } from './ship.js';
 import { useCrew } from './roles.js';
 
 // The plan's stations ([kind, row, col, role], plans.js `stations`) as
@@ -54,27 +54,22 @@ export function useStation(prop, rand = Math.random) {
   return openWires(prop, rand);
 }
 
-// The Engineer picked from the console's list: its training wires open,
-// and its first use starts the role's training period (ship.js
-// startTraining). Events: openWires's.
+// The Engineer picked from the console's list: its training wires open.
+// Events: openWires's.
 export function trainWires(prop, rand = Math.random) {
-  startTraining(prop.role);
   return openWires(prop, rand);
 }
 
 // A station's wires open: the ones left half done (`kept`), else new ones
-// for its mode (SHIP_STATIONS). A board's new wires start a burn window
-// (`burnLeftMs`, ship.js burnMs), which runs on even with the board left.
+// for its mode (SHIP_STATIONS). A board's wires wait, half done, while the
+// player is away: no burn window (Timothy 2026-10-31: no timers).
 // Events: stationOpened { station, mode, kept }.
 function openWires(prop, rand) {
   const mode = stationMode(prop);
   const kept = !!prop.puzzle;
   if (!kept) {
     prop.puzzle = makeWires(SHIP_STATIONS[mode].size, rand, SHIP_STATIONS[mode].breakers);
-    if (mode === 'teach') {
-      prop.burnLeftMs = burnMs();
-      prop.slipInMs = null;
-    }
+    if (mode === 'teach') prop.slipInMs = null;
   }
   return [{ type: 'stationOpened', station: prop, mode, kept }];
 }
@@ -105,18 +100,15 @@ export function settleBreaker(prop, index, isCorrect) {
 // The power joined up at `prop` (charger.js turnWire's `finish`, or the last
 // breaker closing): at the console the role is learned; at the board the
 // crew member makes a full burn, and with enough of them the ship arrives
-// (ship.js burnMade). The wires clear for next time, and the training
-// period or burn window ends.
+// (ship.js burnMade). The wires clear for next time.
 // Events: stationTrained { role }, or burnDone { role, burns } then
 // burnMade's.
 export function stationDone(prop) {
   prop.puzzle = null;
   if (stationMode(prop) === 'train') {
     if (!state.run.trained.includes(prop.role)) state.run.trained.push(prop.role);
-    if (state.run.ship) state.run.ship.training = null;
     return [{ type: 'stationTrained', role: prop.role }];
   }
-  prop.burnLeftMs = null;
   state.run.burns++;
   return [{ type: 'burnDone', role: prop.role, burns: state.run.burns }, ...burnMade()];
 }

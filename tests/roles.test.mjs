@@ -19,7 +19,7 @@ import {
   noteOnDuty, crewLook, taughtCount, teachTargets, stopLearning,
 } from '../js/roles.js';
 import { roleCanRun } from '../js/minigames.js';
-import { freshShipRun, crewMissed, crewRight, burnMs, slipEveryMs, burnMade, shipFrame } from '../js/ship.js';
+import { freshShipRun, crewMissed, crewRight, slipEveryMs, burnMade } from '../js/ship.js';
 import { useStation } from '../js/stations.js';
 import { buildShipFloor } from '../js/floor.js';
 import { emptyFloor } from './helpers.mjs';
@@ -77,7 +77,6 @@ test('a miss in a job is a crew failure; the job ends after its rounds with the 
   const ship = crewRun();
   const role = 'navigator';
   assert.ok(onDuty(role), 'Close Enough runs on number answers');
-  const clock = ship.clockMs;
   useCrew(role);
   const first = settleRound(false);
   assert.deepEqual(first.map(e => e.type), ['roundMissed', 'panicRose']);
@@ -86,7 +85,8 @@ test('a miss in a job is a crew failure; the job ends after its rounds with the 
   const last = settleRound(true);
   assert.equal(SHIP_JOB.rounds, 3);
   assert.deepEqual(last.map(e => e.type), ['roundRight', 'roleHelped']);
-  assert.equal(ship.clockMs, clock + roleOf(role).benefit.ms);
+  assert.equal(roleOf(role).benefit.kind, 'burns');
+  assert.equal(ship.burnsNeeded, SHIP_RUN.burnsNeeded - 1);
   assert.deepEqual(ship.taught, [role]);
   assert.equal(ship.job, null);
   assert.deepEqual(useCrew(role), [{ type: 'crewSpoke', role, taught: true }]);
@@ -94,14 +94,13 @@ test('a miss in a job is a crew failure; the job ends after its rounds with the 
 
 test('too few right and the job goes badly: taught, but no benefit', () => {
   const ship = crewRun();
-  const clock = ship.clockMs;
   useCrew('navigator');
   settleRound(true);
   settleRound(false);
   const last = settleRound(false);
   assert.ok(last.some(e => e.type === 'jobWentBadly'));
   assert.ok(!last.some(e => e.type === 'roleHelped'));
-  assert.equal(ship.clockMs, clock);
+  assert.equal(ship.burnsNeeded, SHIP_RUN.burnsNeeded);
   assert.deepEqual(ship.taught, ['navigator']);
 });
 
@@ -131,20 +130,12 @@ test('each benefit changes the run as it says', () => {
   applyBenefit({ kind: 'slips', factor: 2 });
   assert.equal(slipEveryMs(), every * 2);
   ship.panic = 0;
-
-  const window = burnMs();
-  applyBenefit({ kind: 'burnWindow', ms: 15000 });
-  assert.equal(burnMs(), window + 15000);
 });
 
-test('Life support\'s shield takes a missed burn window', () => {
-  const ship = crewRun();
-  applyBenefit({ kind: 'windowShield' });
-  const board = state.floor.props.find(p => p.kind === 'powerBoard');
-  useStation(board);
-  const events = shipFrame(board.burnLeftMs + 1);
-  assert.deepEqual(events.map(e => e.type), ['burnMissed', 'panicShielded']);
-  assert.equal(ship.panic, 0);
+test('no benefit is about time any more (timers gone 2026-10-31)', () => {
+  const kinds = ['burns', 'shield', 'panicDown', 'calm', 'slips'];
+  SHIP_ROLES.forEach(r => assert.ok(kinds.includes(r.benefit.kind), r.id + ' ' + r.benefit.kind));
+  SHIP_ROLES.forEach(r => assert.ok('job.helped.' + r.benefit.kind in TEXT, r.id));
 });
 
 test('the Pilot\'s burn fewer arrives at once when the burns are already made', () => {

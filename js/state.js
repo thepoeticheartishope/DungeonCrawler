@@ -81,7 +81,7 @@ export const state = {
     trained: [],           // the ship's crew roles the player has learned at the training console this run (stations.js), e.g. ['engineer']
     burns: 0,              // full engine burns the Engineer has made this run (stations.js stationDone)
     crewFailures: 0,       // wrong answers while teaching the crew this run (stations.js settleBreaker); crew panic feeds on these (ship plan step C)
-    ship: null,            // the ship's run (ship.js freshShipRun): { clockMs, panic, streak, training: { role, leftMs } | null, tragedy: { day, captain, cause, ship, planet }, and what the crew roles gave (roles.js): burnsNeeded, calmStreak, slipFactor, burnBonusMs, shields, windowShields, taught: [roles], job: { role, round, right } | null, learning: { role, round } | null, onDuty: [roles] | null (roles.js noteOnDuty) }; null off the ship
+    ship: null,            // the ship's run (ship.js freshShipRun): { panic, streak, tragedy: { day, captain, cause, ship, planet }, and what the crew roles gave (roles.js): burnsNeeded, calmStreak, slipFactor, shields, taught: [roles], job: { role, round, right } | null, learning: { role, round } | null, onDuty: [roles] | null (roles.js noteOnDuty) }; null off the ship
     reloadIndex: 0,        // reloads settled this run; picks the next category in the reload rotation (gun.js)
     lastMinigame: null,    // the minigame the last question ran as, or null if it was a plain question (minigames.js: never the same twice in a row)
     turnLocked: false,

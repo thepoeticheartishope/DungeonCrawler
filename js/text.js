@@ -95,7 +95,6 @@ export const TEXT = {
   'stat.room': '{@term.room}',
   // The ship's HUD (ship plan step C, render.js renderHud): in place of
   // stability, energy, target and depth.
-  'stat.arrival': 'ARRIVAL', // draft. The arrival clock
   'stat.burns': 'BURNS', // draft. Full burns of the ones needed
   'stat.taught': 'TAUGHT', // draft. Crew taught of the roles on duty (crew roles plan step C)
   'stat.crew': 'CREW', // draft. The crew's panic, by name and as a meter
@@ -534,12 +533,8 @@ export const TEXT = {
   'crew.engineer.waiting': 'Engineer: “The captain always ran the board. I don’t know how.”', // draft. Bumping the Engineer before training
   'crew.engineer.ready': 'Engineer: “Tell me what to do.”', // draft. Bumping the Engineer once trained
   // The ship's run (ship plan step C, ship.js).
-  'station.training': 'TRAINING {time}', // draft. The panel's top line during the training period
-  'station.burnLeft': 'BURN WINDOW {time}', // draft. The panel's top line while a burn is on
   'ship.panicRose': 'The crew is {level} now.', // draft. {level} is a panic.N line, lower case
   'ship.panicEased': 'Three clean calls. The crew steadies: {level}.', // draft
-  'ship.trainingOver': 'Training time is up. You know enough to teach it.', // draft
-  'ship.burnMissed': 'The burn window closed. The engine coughs and goes quiet.', // draft. A failure
   'ship.wireSlipped': 'Engineer: “Sorry. My hands.” A wire slips.', // draft. A Shaken crew's slip
   'ship.panicShielded': 'It went wrong, but the crew holds steady.', // draft. A shield took the panic (Comms officer, Life support)
   // The crew roles (crew roles plan, roles.js; config.js SHIP_ROLES). Names are drafts.
@@ -561,14 +556,11 @@ export const TEXT = {
   'job.right': 'Round {round} of {of}: right.', // draft
   'job.missed': 'Round {round} of {of}: wrong. The crew saw that.', // draft. A crew failure
   'job.badly': 'It went badly. The {role} will manage, but it won’t help much.', // draft. Fewer than SHIP_JOB.passAt right
-  'job.helped.clock': 'The {role} has it. More time on the arrival clock.', // draft
   'job.helped.burns': 'The {role} plots a shorter way in. One burn fewer.', // draft
   'job.helped.shield': 'The {role} keeps everyone talking. The next mistake won’t shake them.', // draft
   'job.helped.panicDown': 'The {role} settles the crew a little.', // draft
   'job.helped.calm': 'The {role} keeps everyone fed. The crew steadies faster.', // draft
   'job.helped.slips': 'The {role} braces the wiring. Fewer slips.', // draft
-  'job.helped.burnWindow': 'The {role} buys the engine time. Longer burn windows.', // draft
-  'job.helped.windowShield': 'The {role} keeps the air steady. A missed burn won’t shake them.', // draft
   // The tragedy (ship.js rollTragedy): random, told after the splash
   // screen, flavor only. Numbered lists, as many as TRAGEDY_PARTS says.
   'tragedy.title': 'THERE’S BEEN A TRAGEDY', // draft
@@ -601,9 +593,7 @@ export const TEXT = {
   'tragedy.planet.5': 'Halcyon', // draft
   // The ship's end screens (main.js endShip).
   'end.ship.arrived.title': 'Orbit.', // draft
-  'end.ship.arrived.stats': 'The {ship} reached {planet}. The crew you taught brought it in. Burns {burns}/{needed}, failures {failures}, {time} to spare.', // draft
-  'end.ship.clock.title': 'The window closed.', // draft
-  'end.ship.clock.stats': 'The {ship} missed its arrival window. {planet} drifts past. Burns {burns}/{needed}, failures {failures}.', // draft
+  'end.ship.arrived.stats': 'The {ship} reached {planet}. The crew you taught brought it in. Burns {burns}/{needed}, failures {failures}.', // draft
   'end.ship.panic.title': 'The crew broke.', // draft
   'end.ship.panic.stats': 'Too many failures. No one is listening to orders now. Burns {burns}/{needed}, failures {failures}.', // draft
   'end.ship.crew': 'Crew you taught ({taught}/{of}): {names}.', // draft. After the stats, crew roles plan step C

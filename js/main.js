@@ -45,7 +45,7 @@ import { stationMode, stationDone, trainWires } from './stations.js';
 import { consoleRoles, startLearning, noteOnDuty, taughtCount } from './roles.js';
 import { initConsoleView, showConsole } from './consoleview.js';
 import { shutterLine } from './saferoom.js';
-import { initChargerView, showCharger, renderCharger, chargerShown, setStationClock } from './chargerview.js';
+import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { refreshGunTarget, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showStruggleBar, closeMapPanels, mapPanelShown, askHeld } from './gunpanels.js';
 import { t, TEXT, setTextArea, applyStaticText } from './text.js';
@@ -131,7 +131,6 @@ initRender({
   lightHintEls, dpadButtons,
   senseNote: document.getElementById('senseNote'),
   answerNote: document.getElementById('answerNote'),
-  shipClock: document.getElementById('shipClock'),
   shipBurns: document.getElementById('shipBurns'),
   shipTaught: document.getElementById('shipTaught'),
   shipPanic: document.getElementById('shipPanic'),
@@ -946,14 +945,6 @@ function drawEvents(events) {
         parts.push(t('ship.panicEased', { level: t('panic.' + e.level).toLowerCase() }));
         renderShipHud();
         break;
-      case 'trainingOver':
-        parts.push(t('ship.trainingOver'));
-        break;
-      case 'burnMissed':
-        if (openChargerProp === e.prop) closeCharger();
-        parts.push(t('ship.burnMissed'));
-        cls = 'warn-msg';
-        break;
       case 'wireSlipped':
         if (openChargerProp === e.prop && chargerShown()) renderCharger(e.prop.puzzle, false);
         parts.push(t('ship.wireSlipped'));
@@ -1294,10 +1285,7 @@ function worldFrame(dt) {
   // On the ship its clocks run too (ship.js shipFrame; ship plan step C),
   // and the HUD and an open station's countdown follow them.
   const events = [...clockFrame(frameMs, { canStruggle: worldRunsUnder() }), ...shipFrame(frameMs)];
-  if (state.floor.ship) {
-    renderShipHud();
-    showStationClock();
-  }
+  if (state.floor.ship) renderShipHud();
   if (state.settings.warningTimer) noteSigns(performance.now());
   if (Math.ceil(state.floor.light.charge) !== cells) renderHud();
   if (!events.length) return;
@@ -1331,17 +1319,6 @@ function openCharger(charger) {
   clearTimeout(chargerCloseTimer);
   openChargerProp = charger;
   showCharger(charger.puzzle, realTimeOn(), charger.kind === 'charger' ? null : stationMode(charger));
-}
-
-// An open ship station's countdown on its panel (ship plan step C): the
-// training period at the console, the burn window at a board, while one
-// is running.
-function showStationClock() {
-  const prop = openChargerProp;
-  if (!prop || prop.kind === 'charger' || !chargerShown()) return;
-  const training = state.run.ship && state.run.ship.training;
-  if (stationMode(prop) === 'train' && training) setStationClock(t('station.training', { time: formatTime(Math.ceil(training.leftMs / 1000)) }));
-  else if (prop.burnLeftMs != null) setStationClock(t('station.burnLeft', { time: formatTime(Math.ceil(prop.burnLeftMs / 1000)) }));
 }
 
 // A wire turned (a tap, or F / Enter / Space on it): charger.js turnWire.
@@ -1483,7 +1460,7 @@ function endLose(reason) {
 }
 
 // The ship's run is over (ship.js shipEnded; ship plan step C): `how` is
-// 'arrived' (the win screen), 'clock' or 'panic' (the lose screen), each
+// 'arrived' (the win screen) or 'panic' (the lose screen), each
 // with its own title and the run's burns and failures, then the crew the
 // player taught (crew roles plan step C). Like a lost signal, the room's
 // last line shows a moment first.
@@ -1498,7 +1475,6 @@ function endShip(how, note) {
   const vars = {
     ship: t('tragedy.ship.' + ship.tragedy.ship), planet: t('tragedy.planet.' + ship.tragedy.planet),
     burns: state.run.burns, needed: burnsNeeded(), failures: state.run.crewFailures,
-    time: formatTime(Math.ceil(ship.clockMs / 1000)),
   };
   const crew = taughtCount();
   const names = ship.taught.map(role => t('role.' + role)).join(', ');
