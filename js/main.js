@@ -1,5 +1,5 @@
 import { state, key } from './state.js';
-import { buildFloor, buildRestFloor, buildTutorialFloor, buildTestFloor, buildAdvancedFloor } from './floor.js';
+import { buildFloor, buildRestFloor, buildTutorialFloor, buildTestFloor, buildAdvancedFloor, buildShipFloor } from './floor.js';
 import { advancedTurn, nextStation, ADVANCED_STATIONS } from './advanced.js';
 import { tutorialTurn, breakRing } from './tutorial.js';
 import { nextFloor } from './run.js';
@@ -53,7 +53,7 @@ import { noteSigns, warningAtReach } from './warning.js';
 import { buy } from './exchange.js';
 import { initExchangeView, renderExchange } from './exchangeview.js';
 import { pollClock, resetClock } from './realclock.js';
-import { resetWalk } from './walk.js';
+import { resetWalk, walkTileMs } from './walk.js';
 import { setQuestion, placeWager } from './questionview.js';
 import { playMinigameOut } from './minigameview.js';
 import { initMinimap, refreshMinimap } from './minimapview.js';
@@ -69,6 +69,7 @@ const realTimeToggle = document.getElementById('realTimeToggle');
 const turnsToggle = document.getElementById('turnsToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
+const shipToggle = document.getElementById('shipToggle');
 const devStartIn = document.getElementById('devStartIn');
 const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
@@ -332,6 +333,15 @@ function startGame() {
     startTimer();
     return;
   }
+  // The ship (ship plan): the start screen's "Ship (test)" puts the player
+  // straight on the ship, no intro and no tutorial, until the ship has its
+  // own opening (plan step C).
+  if (shipToggle.checked) {
+    loadRoom('ship');
+    showScreen(roomScreen);
+    startTimer();
+    return;
+  }
   // A player who has never finished the tutorial room wakes in it first
   // (the start screen's toggle; tutorial.js).
   const tutorial = tutorialToggle.checked;
@@ -350,9 +360,11 @@ function startGame() {
 // `restKind` ('opening' / 'between' / 'epilogue') builds a rest floor,
 // 'tutorial' the tutorial room, 'test' the DEV test room `which`
 // (testroom.js), 'advanced' the advanced tutorial's station `which`
-// (advanced.js); none builds the danger floor at the current depth.
+// (advanced.js), 'ship' the ship (ship plan); none builds the danger
+// floor at the current depth.
 function loadRoom(restKind, which) {
-  if (restKind === 'test') buildTestFloor(which);
+  if (restKind === 'ship') buildShipFloor();
+  else if (restKind === 'test') buildTestFloor(which);
   else if (restKind === 'advanced') buildAdvancedFloor(which);
   else if (restKind === 'tutorial') buildTutorialFloor();
   else if (restKind) buildRestFloor(restKind);
@@ -413,6 +425,8 @@ function drawFloor() {
 function advanceRoom() {
   if (state.floor.tutorial) { leaveTutorial(); return; }
   if (state.floor.advanced) { leaveStation(); return; }
+  // The ship has no way on yet: DEV -> Skip room lays it out again.
+  if (state.floor.ship) { loadRoom('ship'); return; }
   // A test room has no way on: DEV -> Skip room starts the run proper.
   if (state.floor.testRoom) {
     resetRun();
@@ -673,7 +687,7 @@ function drawEvents(events) {
         break;
       // A step says nothing: the map already shows where the player went.
       case 'stepped':
-        if (e.free) freeStepOnMap(state.floor.creeping ? ONE_STICK.sneakMs : ONE_STICK.walkMs);
+        if (e.free) freeStepOnMap(walkTileMs());
         else slidePlayerOnMap(e.facing);
         break;
       case 'waited':

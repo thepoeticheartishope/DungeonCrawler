@@ -93,7 +93,24 @@ const ROOM_LOOKS = {
   'plan.school.class2': { floor: 'wood', paper: ['#5f6656', '#68705e'] },
   'plan.school.toilets': { floor: 'tile', paper: ['#5a6a6e', '#637478'] },
   'plan.school.staffRoom': { floor: 'carpet', paper: ['#5e5040', '#685948'] },
+  // The ship (ship plan): deck plates and hull panels, each room a slightly
+  // different cool grey so the rooms still read apart.
+  'plan.ship.command': { floor: 'plate', panel: true, paper: ['#4e5763', '#5a6470'] },
+  'plan.ship.airlock': { floor: 'grate', panel: true, paper: ['#4a5056', '#555c63'] },
+  'plan.ship.medBay': { floor: 'plate', panel: true, paper: ['#5a6668', '#667374'] },
+  'plan.ship.bridge': { floor: 'plate', panel: true, paper: ['#4b5566', '#566173'] },
+  'plan.ship.hydroponics': { floor: 'plate', panel: true, paper: ['#4f5d55', '#5a695f'] },
+  'plan.ship.engineRoom': { floor: 'grate', panel: true, paper: ['#57534d', '#625d56'] },
+  'plan.ship.quarters': { floor: 'plate', panel: true, paper: ['#55525e', '#605c69'] },
+  'plan.ship.washroom': { floor: 'plate', panel: true, paper: ['#526064', '#5d6b70'] },
+  'plan.ship.galley': { floor: 'plate', panel: true, paper: ['#5a564f', '#655f57'] },
 };
+// The ship's corridors: grating between hull panels.
+const SHIP_HALL_LOOK = { floor: 'grate', panel: true, paper: ['#454c55', '#50575f'] };
+const PLATE = { base: '#4c535b', light: '#58606a', seam: '#353a41', rivet: '#666e78' };
+const GRATE = { base: '#3a4048', slot: '#262a30', seam: '#2f343a' };
+const HULL_TRIM = { crown: ['#2a3038', '#3b434d'], skirting: ['#2f353d', '#414952'], rim: ['#3a414b', '#4d5662'] };
+const SHIP_TINT = [226, 236, 246]; // the ship's steady light, a cool white
 const CROWN = ['#2b2230', '#3d3343'];          // the dark moulding along a wall's top, and its light edge
 const SKIRTING = ['#3a2c26', '#4c3b32'];       // the board along a wall's foot, and its light edge
 const RIM = ['#463c4f', '#5c516a'];            // the band round a room, and its light edge
@@ -388,7 +405,7 @@ function buildFloor(f) {
 // room's name on a fixed plan), any other room's, or a hallway's.
 function lookAt(row, col) {
   const room = state.floor.chamberAt.get(key(row, col));
-  if (room === undefined) return HALL_LOOK;
+  if (room === undefined) return state.floor.ship ? SHIP_HALL_LOOK : HALL_LOOK;
   return ROOM_LOOKS[state.floor.chamberNames[room]] || ROOM_LOOK;
 }
 
@@ -432,6 +449,29 @@ function drawFloorTile(ctx, row, col, look) {
     }
     return;
   }
+  if (floor === 'plate') {
+    ctx.fillStyle = PLATE.base;
+    ctx.fillRect(x, y, T, T);
+    ctx.fillStyle = PLATE.light;
+    ctx.fillRect(x + 1, y + 1, T - 2, 1);
+    ctx.fillStyle = PLATE.seam;
+    ctx.fillRect(x, y + T - 1, T, 1);
+    ctx.fillRect(x + T - 1, y, 1, T);
+    ctx.fillStyle = PLATE.rivet;
+    for (const [rx, ry] of [[2, 3], [T - 4, 3], [2, T - 4], [T - 4, T - 4]]) ctx.fillRect(x + rx, y + ry, 1, 1);
+    if (grain(row, col, 7) > 0.7) ctx.fillRect(x + 5 + Math.floor(grain(row, col, 8) * 5), y + 7, 2, 1);
+    return;
+  }
+  if (floor === 'grate') {
+    ctx.fillStyle = GRATE.base;
+    ctx.fillRect(x, y, T, T);
+    ctx.fillStyle = GRATE.slot;
+    for (let i = 0; i < 3; i++) ctx.fillRect(x + 3, y + 3 + i * 4, T - 6, 2);
+    ctx.fillStyle = GRATE.seam;
+    ctx.fillRect(x, y + T - 1, T, 1);
+    ctx.fillRect(x + T - 1, y, 1, T);
+    return;
+  }
   if (floor === 'stone') {
     ctx.fillStyle = STONE.base;
     ctx.fillRect(x, y, T, T);
@@ -461,34 +501,53 @@ function drawFloorTile(ctx, row, col, look) {
 function drawFace(ctx, row, col, face, look) {
   const x = col * T, y = row * T;
   const paper = look.paper;
+  const crown = look.panel ? HULL_TRIM.crown : CROWN;
+  const skirting = look.panel ? HULL_TRIM.skirting : SKIRTING;
   ctx.fillStyle = paper[0];
   ctx.fillRect(x, y, T, T);
   ctx.fillStyle = paper[1];
-  for (let i = 2; i < T; i += 6) {
-    for (let j = (i + (face === 'upper' ? 0 : 2)) % 12 < 6 ? 2 : 5; j < T; j += 6) {
-      ctx.fillRect(x + j, y + i, 1, 1);
-      ctx.fillRect(x + j - 1, y + i + 1, 3, 1);
-      ctx.fillRect(x + j, y + i + 2, 1, 1);
+  if (look.panel) drawPanel(ctx, x, y, row, col, face);
+  else {
+    for (let i = 2; i < T; i += 6) {
+      for (let j = (i + (face === 'upper' ? 0 : 2)) % 12 < 6 ? 2 : 5; j < T; j += 6) {
+        ctx.fillRect(x + j, y + i, 1, 1);
+        ctx.fillRect(x + j - 1, y + i + 1, 3, 1);
+        ctx.fillRect(x + j, y + i + 2, 1, 1);
+      }
     }
   }
   if (face === 'upper' || !isWall(row - 1, col)) {
-    ctx.fillStyle = CROWN[0];
+    ctx.fillStyle = crown[0];
     ctx.fillRect(x, y, T, 3);
-    ctx.fillStyle = CROWN[1];
+    ctx.fillStyle = crown[1];
     ctx.fillRect(x, y + 3, T, 1);
   }
   if (face === 'lower') {
-    ctx.fillStyle = SKIRTING[0];
+    ctx.fillStyle = skirting[0];
     ctx.fillRect(x, y + T - 3, T, 3);
-    ctx.fillStyle = SKIRTING[1];
+    ctx.fillStyle = skirting[1];
     ctx.fillRect(x, y + T - 3, T, 1);
   }
   for (const [dc, px] of [[-1, 0], [1, T - 2]]) {
     if (!isWall(row, col + dc)) {
-      ctx.fillStyle = SKIRTING[0];
+      ctx.fillStyle = skirting[0];
       ctx.fillRect(x + px, y, 2, T);
     }
   }
+}
+
+// A hull panel on a ship wall's face, in the face's light colour (already
+// the fill style): a seam every second tile, a light line across the
+// lower face, and now and then a small vent with slats. Low detail on
+// purpose: the panels should read as metal, not draw the eye.
+function drawPanel(ctx, x, y, row, col, face) {
+  ctx.fillRect(x, y + (face === 'upper' ? 9 : 5), T, 1);
+  if (col % 2) ctx.fillRect(x + T - 1, y, 1, T);
+  if (face !== 'lower' || grain(row, col, 11) < 0.8) return;
+  ctx.fillStyle = PLATE.seam;
+  ctx.fillRect(x + 4, y + 8, 8, 4);
+  ctx.fillStyle = PLATE.light;
+  for (let i = 0; i < 2; i++) ctx.fillRect(x + 5, y + 9 + i * 2, 6, 1);
 }
 
 // The dark band round a room, as in the picture: along each side of this
@@ -497,10 +556,11 @@ function drawFace(ctx, row, col, face, look) {
 function drawRim(ctx, row, col) {
   const x = col * T, y = row * T, B = RIM_WIDTH;
   const open = (r, c) => !isWall(r, c) || faceOf(r, c, isWall) !== null;
+  const rim = state.floor.ship ? HULL_TRIM.rim : RIM;
   const band = (bx, by, bw, bh, lx, ly, lw, lh) => {
-    ctx.fillStyle = RIM[0];
+    ctx.fillStyle = rim[0];
     ctx.fillRect(bx, by, bw, bh);
-    ctx.fillStyle = RIM[1];
+    ctx.fillStyle = rim[1];
     ctx.fillRect(lx, ly, lw, lh);
   };
   if (open(row - 1, col)) band(x, y, T, B, x, y, T, 1);
@@ -659,6 +719,13 @@ function lightTiles(space, at, c0, r0, w, h) {
   const floorLight = (row, col) => {
     if (isWall(row, col)) return null;
     const k = key(row, col);
+    // The ship has no dark areas: a steady light everywhere, a little
+    // brighter round the player (ship plan).
+    if (f.ship) {
+      const d = Math.hypot(row - at.row, col - at.col);
+      const near = ROOM_VIEW.litNear + (ROOM_VIEW.litFar - ROOM_VIEW.litNear) * Math.min(1, d / PLAYER_CONE_RANGE);
+      return [Math.max(near, ROOM_VIEW.shipLit), SHIP_TINT];
+    }
     if (fog && f.visibleSet.has(k) && !f.sightSet.has(k) && lampPoolLit(row, col)) {
       return [Math.max(lampLevel(row, col), space.tiles.has(k) ? ROOM_VIEW.room : 0), LAMP_TINT];
     }

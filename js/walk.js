@@ -107,6 +107,14 @@ function slide(spot, axis, delta) {
 // (stepped { free: true } and what the tile holds) and bumpInto's, or
 // heldFast { minion } while a downed one holds the ankle; then
 // coverTaken (coverChanged).
+// How long the player takes to cross a tile now: a creep's sneakMs, or the
+// walk's walkMs, quicker on the ship (shipWalkMs). One source for the
+// walk and its animation (main.js freeStepOnMap).
+export function walkTileMs() {
+  if (state.floor.creeping) return ONE_STICK.sneakMs;
+  return state.floor.ship ? ONE_STICK.shipWalkMs : ONE_STICK.walkMs;
+}
+
 export function walkFree(dirX, dirY, { push = 1, dtMs = 0, keys = false, still = false } = {}) {
   const f = state.floor;
   const ms = Math.min(dtMs, ONE_STICK.frameMs);
@@ -127,7 +135,7 @@ export function walkFree(dirX, dirY, { push = 1, dtMs = 0, keys = false, still =
   const spot = freeSpot();
   bumpWait = Math.max(0, bumpWait - ms);
   f.creeping = f.sneaking || push < ONE_STICK.creep;
-  const reach = ms / (f.creeping ? ONE_STICK.sneakMs : ONE_STICK.walkMs);
+  const reach = ms / walkTileMs();
   const [ux, uy] = [dirX / len, dirY / len];
 
   const [x0, y0] = [spot.x, spot.y];

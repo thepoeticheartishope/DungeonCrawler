@@ -2,15 +2,15 @@
 // beats (beats.js), coin, the one special item and minions, plus the
 // light, sight and camera that follow from them; and a rest floor's one
 // quiet room (buildRestFloor), the tutorial room and a DEV test room
-// (buildTestFloor), and the advanced tutorial's stations
-// (buildAdvancedFloor). No page access — main.js loadRoom() calls
+// (buildTestFloor), the advanced tutorial's stations
+// (buildAdvancedFloor), and the ship (buildShipFloor). No page access — main.js loadRoom() calls
 // one of them, then drawFloor() puts the result on the page.
 
 import { state, key, parseKey } from './state.js';
 import { stepsFrom } from './grid.js';
 import { generateDungeonLayout, buildRestLayout } from './dungeon.js';
 import { FLOOR_PLANS, buildPlanLayout } from './plans.js';
-import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells } from './decor.js';
+import { furnishFloor, rollProp, makePlacer, freeStanding, placeEnergyCells, placeFurniture } from './decor.js';
 import {
   CORE_KEYS, GATE_QUESTIONS, MINION_KIND_ORDER, MINION_MIN_START_DISTANCE, PAPERS_PER_ROOM, REST_GRID, REST_STAIRS_APART, ROOM_THEMES,
   TEST_ROOM_MINION_KIND,
@@ -121,6 +121,7 @@ export function buildFloor() {
   state.floor.tutorial = null;
   state.floor.testRoom = null;
   state.floor.advanced = null;
+  state.floor.ship = false;
   state.floor.spotSet = new Set();
   const recipe = floorRecipe(state.run.roomIndex, state.floor.path);
   const plan = recipe.plan ? FLOOR_PLANS[recipe.plan] : null;
@@ -334,6 +335,7 @@ function clearDanger() {
   f.tutorial = null;
   f.testRoom = null;
   f.advanced = null;
+  f.ship = false;
   f.bossDist = new Map();
   f.floorCount = 0;
   f.lightTurns = 0;
@@ -559,6 +561,60 @@ export function buildTestFloor(name) {
   f.exploredSet = new Set(room.roomTiles);
   computeVisibility();
   state.battle.selectedTarget = null;
+}
+
+// The ship as data (ship plan, ideas/ship-plan.md outside the repo;
+// Timothy 2026-10-30): plans.js `ship`, the School's rooms as a small
+// spaceship. The player starts in Command, the center room, which is the
+// safe room (shutters and switch). Only the plan's furniture goes down:
+// nothing dangerous, no papers, boxes, cells, grates, stairs or boss, as
+// on a rest floor. Every floor tile is lit and seen from the start
+// (state.floor.ship: sight.js computeVisibility, roomview.js lightTiles),
+// so there are no dark areas. No page access.
+export function buildShipFloor() {
+  const plan = FLOOR_PLANS.ship;
+  const f = state.floor;
+  clearDanger();
+  f.light = freshLight();
+  f.ship = true;
+  const layout = buildPlanLayout(plan, 0);
+  f.GRID_SIZE = plan.rows.length;
+  f.CHAMBER_TARGET = layout.chambers.length;
+  f.plan = { name: plan.name, version: layout.version };
+  f.wallSet = layout.walls;
+  f.PLAYER_START = { row: layout.start.row, col: layout.start.col };
+  f.playerRow = f.PLAYER_START.row;
+  f.playerCol = f.PLAYER_START.col;
+  f.playerAt = null;
+  f.lookWant = null;
+  f.sneaking = false;
+  f.creeping = false;
+  f.facing = 'S';
+  f.look = BODY_ANGLES[f.facing];
+
+  const themeKeys = Object.keys(ROOM_THEMES);
+  const placer = makePlacer(layout, f.GRID_SIZE);
+  f.pillarSet = new Set();
+  f.chamberAt = layout.chamberAt;
+  f.doorSet = doorTiles(layout);
+  f.chamberThemes = layout.chambers.map(() => themeKeys[0]);
+  f.chamberNames = layout.chambers.map(ch => ch.name);
+  f.props = placeFurniture(layout, placer).map(p => ({ ...p, identified: true, searched: false, sprung: false }));
+  const safe = placeSafeRoom(layout, placer, [f.PLAYER_START]);
+  if (safe) {
+    f.safeRoom = safe.safeRoom;
+    safe.props.forEach(p => f.props.push({ ...p, identified: false, searched: false, sprung: false }));
+  }
+  f.stairs = null;
+  f.exchange = null;
+  f.exchangeBought = new Set();
+  f.coin = null;
+
+  f.visibleSet = new Set();
+  f.exploredSet = new Set();
+  computeVisibility();
+  state.battle.selectedTarget = null;
+  f.visitedChambers = new Set([f.chamberAt.get(key(f.playerRow, f.playerCol))]);
 }
 
 // Station `index` of the advanced tutorial as data (advanced.js): its
