@@ -990,11 +990,17 @@
   /* COMMAND.SYS (consoleview.js): one row per role, its name, its game and
      where it stands; only roles still to learn can be picked. */
   .console-roles { display: flex; flex-direction: column; gap: 3px; max-height: 52vh; overflow-y: auto; }
+  /* Each row a whole number of pixels tall (one 20px line, centred, not
+     on the text's baseline: the name and the game are different sizes),
+     so on a phone every row's border lands on the screen's pixels and no
+     box looks nudged up or down (Timothy 2026-10-31). */
   .console-role {
-    display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 8px; align-items: baseline;
-    width: 100%; min-height: 0; padding: 4px 8px; text-align: left; font-size: 16px;
+    display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 8px; align-items: center;
+    width: 100%; min-height: 0; padding: 3px 8px; text-align: left; font-size: 16px; line-height: 20px;
     border: 1px solid var(--line); background: none; color: var(--text); cursor: pointer;
   }
+  .console-role > * { line-height: 20px; }
+  .console-roles > .console-role { flex-shrink: 0; } /* never squeezed to a fraction of a pixel: the list scrolls instead */
   .console-role::before, .console-role::after { content: none; }
   .console-role .console-game, .console-role .console-status { color: var(--muted); font-size: 14px; }
   .console-role.new { border-color: var(--torch-bright); }
