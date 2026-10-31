@@ -17,6 +17,7 @@ import { drawTube, TUBE_W, TUBE_H } from './tubeart.js';
 import { turnPage, pageTurning } from './pageturn.js';
 import { refreshMinimap } from './minimapview.js';
 import { t } from './text.js';
+import { teachTargets } from './roles.js';
 
 // The tabs, top to bottom: one further down turns the page forward.
 const TABS = ['ask', 'log', 'map'];
@@ -148,7 +149,10 @@ function showTab(which) {
   els.page.scrollTop = 0;
   if (which === 'log') refreshBookLog();
   if (which === 'map') {
-    els.mapFoot.hidden = !state.floor.plan || !state.settings.fogEnabled;
+    // On the ship, a line for the rings round crew waiting to be taught.
+    const teach = teachTargets().length > 0;
+    els.mapFoot.textContent = [state.settings.fogEnabled ? t('book.map.dashed') : '', teach ? t('book.map.teach') : ''].filter(Boolean).join(' ');
+    els.mapFoot.hidden = !state.floor.plan || (!state.settings.fogEnabled && !teach);
     refreshMinimap();
   }
 }

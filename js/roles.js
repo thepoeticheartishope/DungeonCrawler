@@ -187,3 +187,17 @@ export function applyBenefit(benefit) {
     default: return [];
   }
 }
+
+// Where to go to teach what has been learned (Timothy 2026-10-31: once a
+// role is learned the map shows where to go): the tile of each crew member
+// who is 'ready' (crewLook), or the Engineer's board, since the Engineer
+// is taught at the board. As [{ row, col, role }]; empty off the ship.
+// minimapview.js marks them; bookview.js adds a line under the map.
+export function teachTargets() {
+  const f = state.floor;
+  if (!state.run.ship || !f || !f.props) return [];
+  return f.props
+    .filter(p => (p.role === 'engineer' ? p.kind === 'powerBoard' : p.kind === 'crew'))
+    .filter(p => crewLook(p.role) === 'ready')
+    .map(({ row, col, role }) => ({ row, col, role }));
+}

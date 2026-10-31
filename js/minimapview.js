@@ -19,6 +19,7 @@ import { state, key, parseKey } from './state.js';
 import { t } from './text.js';
 import { MINIMAP_MAX_UNIT, MINIMAP_PAD, MINIMAP_LABEL_PX, MINIMAP_TITLE_PX, MINIMAP_ARROW } from './config.js';
 import { lookAngle } from './look.js';
+import { teachTargets } from './roles.js';
 
 const els = {};
 
@@ -51,13 +52,17 @@ export function refreshMinimap() {
   const f = state.floor;
   const tiles = [...seenTiles()];
   if (!tiles.length) return;
+  // Crew waiting to be taught (roles.js teachTargets) are shown even in
+  // rooms not seen yet, so the map always takes them in.
+  const targets = teachTargets();
+  const bounds = [...tiles, ...targets];
   // A tile's centre in tile units: east is right and north up, as on the map.
   const across = tile => tile.col;
   const down = tile => tile.row;
-  const minX = Math.min(...tiles.map(across)) - 0.5;
-  const maxX = Math.max(...tiles.map(across)) + 0.5;
-  const minY = Math.min(...tiles.map(down)) - 0.5;
-  const maxY = Math.max(...tiles.map(down)) + 0.5;
+  const minX = Math.min(...bounds.map(across)) - 0.5;
+  const maxX = Math.max(...bounds.map(across)) + 0.5;
+  const minY = Math.min(...bounds.map(down)) - 0.5;
+  const maxY = Math.max(...bounds.map(down)) + 0.5;
   const unit = Math.min(MINIMAP_MAX_UNIT, (width - MINIMAP_PAD * 2) / (maxX - minX), (height - MINIMAP_PAD * 2) / (maxY - minY));
   const left = (width - (maxX - minX) * unit) / 2 - minX * unit;
   const top = (height - (maxY - minY) * unit) / 2 - minY * unit;
@@ -104,7 +109,8 @@ export function refreshMinimap() {
   });
   ctx.restore();
   // Names first, so the player's dot is never hidden under one.
-  drawNames(ctx, colours, tile => ({ x: left + across(tile) * unit, y: top + down(tile) * unit }));
+  drawNames(ctx, colours, tile => ({ x: left + across(tile) * unit, y: top + down(tile) * unit }), targets);
+  drawTargets(ctx, colours, targets.map(at), unit);
   const player = { row: f.playerRow, col: f.playerCol };
   ctx.beginPath();
   ctx.arc(left + across(player) * unit, top + down(player) * unit, Math.max(3, unit * 0.45), 0, Math.PI * 2);
@@ -171,11 +177,31 @@ function drawFacing(ctx, colours, [x, y], unit) {
   ctx.fill();
 }
 
+// Each crew member waiting to be taught (roles.js teachTargets): two
+// rings round their tile in the player's colour, a target to walk to.
+// Still, never blinking (motion: text and marks stay calm).
+function drawTargets(ctx, colours, points, unit) {
+  ctx.save();
+  ctx.strokeStyle = colours.player;
+  ctx.fillStyle = colours.player;
+  ctx.lineWidth = 2;
+  points.forEach(([x, y]) => {
+    const r = Math.max(6, unit * 0.9);
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
 // On a fixed plan: the building's name in the corner, and each room's
 // name over its middle once the player has walked in (every room with
 // DEV -> Fog off). Each name sits on a dark band so the floor under it
 // doesn't make it hard to read. `at` turns a tile into canvas px.
-function drawNames(ctx, colours, at) {
+function drawNames(ctx, colours, at, targets = []) {
   const f = state.floor;
   if (!f.plan) return;
   ctx.textBaseline = 'middle';
@@ -186,8 +212,10 @@ function drawNames(ctx, colours, at) {
 
   ctx.font = MINIMAP_LABEL_PX + 'px ' + colours.font;
   ctx.textAlign = 'center';
+  // A room with crew waiting to be taught is named even before it is seen.
+  const wanted = new Set(targets.map(tile => f.chamberAt.get(key(tile.row, tile.col))));
   roomMiddles().forEach((middle, room) => {
-    if (state.settings.fogEnabled && !f.visitedChambers.has(room)) return;
+    if (state.settings.fogEnabled && !f.visitedChambers.has(room) && !wanted.has(room)) return;
     const name = t(f.chamberNames[room]);
     const { x, y } = at(middle);
     const w = ctx.measureText(name).width + 8;

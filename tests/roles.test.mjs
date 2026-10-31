@@ -16,7 +16,7 @@ import { SHIP_ROLES, SHIP_JOB, SHIP_RUN } from '../js/config.js';
 import { TEXT } from '../js/text.js';
 import {
   roleOf, onDuty, rolesOnDuty, useCrew, settleRound, applyBenefit, consoleRoles, startLearning, settleLearning, learningOn,
-  noteOnDuty, crewLook, taughtCount,
+  noteOnDuty, crewLook, taughtCount, teachTargets,
 } from '../js/roles.js';
 import { roleCanRun } from '../js/minigames.js';
 import { freshShipRun, crewMissed, crewRight, burnMs, slipEveryMs, burnMade, shipFrame } from '../js/ship.js';
@@ -236,4 +236,19 @@ test('the count of crew taught is out of the roles on duty', () => {
   settleRound(true);
   settleRound(true);
   assert.deepEqual(taughtCount(), { taught: 1, of: ship.onDuty.length });
+});
+
+test('teachTargets: a learned role not yet taught is marked on the map; taught or unlearned is not', () => {
+  crewRun(false);
+  assert.deepEqual(teachTargets(), []);
+  state.run.trained = ['navigator', 'engineer'];
+  const marks = teachTargets();
+  const nav = state.floor.props.find(p => p.kind === 'crew' && p.role === 'navigator');
+  const board = state.floor.props.find(p => p.kind === 'powerBoard');
+  assert.deepEqual(marks.find(m => m.role === 'navigator'), { row: nav.row, col: nav.col, role: 'navigator' });
+  // The Engineer is taught at the board, so the board is marked.
+  assert.deepEqual(marks.find(m => m.role === 'engineer'), { row: board.row, col: board.col, role: 'engineer' });
+  assert.equal(marks.length, 2);
+  state.run.ship.taught.push('navigator');
+  assert.deepEqual(teachTargets().map(m => m.role), ['engineer']);
 });
