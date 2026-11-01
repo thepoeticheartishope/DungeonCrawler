@@ -142,6 +142,8 @@
   .stats .ship-stat { display: none; }
   .stats.ship-hud .ship-stat { display: flex; }
   .stats.ship-hud .stat:not(.ship-stat) { display: none; }
+  .stats.ship-hud .stat.sound-stat { display: flex; }
+  .sound-btn { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
   .panic-meter { display: inline-flex; gap: 2px; align-self: center; }
   .panic-meter i { width: 8px; height: 8px; border: 1px solid var(--ink); }
   .panic-meter i.on { background: var(--torch-bright); border-color: var(--torch-bright); }
@@ -1891,6 +1893,9 @@
     <div class="stat ship-stat"><span class="stat-label" data-t="stat.burns"></span><strong id="shipBurns">0/3</strong></div>
     <div class="stat ship-stat"><span class="stat-label" data-t="stat.taught"></span><strong id="shipTaught">0/0</strong></div>
     <div class="stat ship-stat"><span class="stat-label" data-t="stat.crew"></span><strong id="shipPanic"></strong><span class="panic-meter" id="shipPanicMeter" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
+    <!-- The volume of all sound (sound.js): on the ship and in a run. A tap
+         steps it off, 1/3, 2/3, full, and doesn't open the bar's extra stats. -->
+    <div class="stat sound-stat"><button type="button" class="sound-btn" id="soundBtn" data-t-title="sound.title"><span class="stat-label" data-t="stat.sound"></span> <strong id="soundLevel"></strong></button></div>
     <div class="stat"><span class="stat-label" data-t="stat.hp"></span><span class="hearts" id="hearts">3/3</span></div>
     <!-- The gun (gun plan step 6), only with DEV -> Combat on gun (render.js renderHud). -->
     <div class="stat" id="energyStat" hidden><span class="stat-label" data-t="stat.energy"></span><strong id="energyCount"></strong></div>
@@ -1939,11 +1944,6 @@
     <label class="option-toggle">
       <input type="checkbox" id="simpleEnemiesToggle">
       <span data-t="start.simpleEnemies"></span>
-    </label>
-
-    <label class="option-toggle">
-      <input type="checkbox" id="soundToggle" checked>
-      <span data-t="start.sound"></span>
     </label>
 
     <label class="option-toggle">

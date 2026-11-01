@@ -17,7 +17,6 @@ const turnsToggle = document.getElementById('turnsToggle');
 const realTimeOption = document.getElementById('realTimeOption');
 const dpadRightToggle = document.getElementById('dpadRightToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
-const soundToggle = document.getElementById('soundToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
 const shipToggle = document.getElementById('shipToggle');
 const roomControls = document.querySelector('.room-controls');
@@ -59,7 +58,6 @@ export function initSetLoader({ showSets }) {
         turns: turnsToggle.checked,
         dpadRight: dpadRightToggle.checked,
         simpleEnemies: simpleEnemiesToggle.checked,
-        sound: soundToggle.checked,
         tutorial: tutorialToggle.checked,
         ship: shipToggle.checked,
         playerName: playerNameInput.value,
@@ -89,7 +87,6 @@ export function initSetLoader({ showSets }) {
   showRealTimeOption();
   if (typeof savedOptions.dpadRight === 'boolean') dpadRightToggle.checked = savedOptions.dpadRight;
   if (typeof savedOptions.simpleEnemies === 'boolean') simpleEnemiesToggle.checked = savedOptions.simpleEnemies;
-  if (typeof savedOptions.sound === 'boolean') soundToggle.checked = savedOptions.sound;
   // On until a tutorial is finished (main.js switches it off then), so a
   // player who has never played gets one.
   if (typeof savedOptions.tutorial === 'boolean') tutorialToggle.checked = savedOptions.tutorial;
@@ -102,7 +99,6 @@ export function initSetLoader({ showSets }) {
   realTimeToggle.addEventListener('change', saveOptions);
   turnsToggle.addEventListener('change', () => { showRealTimeOption(); saveOptions(); });
   simpleEnemiesToggle.addEventListener('change', saveOptions);
-  soundToggle.addEventListener('change', saveOptions);
   tutorialToggle.addEventListener('change', saveOptions);
   shipToggle.addEventListener('change', saveOptions);
   dpadRightToggle.addEventListener('change', () => { placeDpad(); saveOptions(); });

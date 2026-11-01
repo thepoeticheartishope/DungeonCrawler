@@ -96,6 +96,7 @@ const APP_SHELL = [
   './js/dialview.js',
   './js/minimapview.js',
   './js/music.js',
+  './js/sound.js',
   './js/dataview.js',
   './lists/manifest.json',
   './lists/comptia-aplus.json',

@@ -62,6 +62,7 @@ import { resetWalk, walkTileMs } from './walk.js';
 import { setQuestion, placeWager } from './questionview.js';
 import { playMinigameOut } from './minigameview.js';
 import { initMinimap, refreshMinimap } from './minimapview.js';
+import { initSound } from './sound.js';
 import { initMusic } from './music.js';
 import { initBook, bookReading, closeBook, refreshBook, refreshBookLog } from './bookview.js';
 
@@ -74,7 +75,6 @@ const revealToggle = document.getElementById('revealToggle');
 const realTimeToggle = document.getElementById('realTimeToggle');
 const turnsToggle = document.getElementById('turnsToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
-const soundToggle = document.getElementById('soundToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
 const shipToggle = document.getElementById('shipToggle');
 const devStartIn = document.getElementById('devStartIn');
@@ -169,6 +169,8 @@ initChargerView({
   leave: () => closeCharger('move-msg', t('room.charger.left', { thing: t('term.' + (openChargerProp ? openChargerProp.kind : 'charger')) })),
 });
 initMinimap();
+// The top bar's SOUND button sets the volume of every sound in the game.
+initSound(document.getElementById('soundBtn'));
 // The safe room's music follows the player in and out on these screens.
 initMusic(['roomScreen', 'battleScreen', 'exchangeScreen'].map(id => document.getElementById(id)));
 initBook({ askHeld, mapPanelShown });
@@ -336,7 +338,6 @@ function startGame() {
   state.settings.realTime = turnsToggle.checked && realTimeToggle.checked;
   syncDevOneStick();
   state.settings.simpleEnemies = simpleEnemiesToggle.checked;
-  state.settings.sound = soundToggle.checked;
   resetClock();
   resetWalk();
   // Read on every start, so a retry keeps the name without asking again.

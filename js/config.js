@@ -423,14 +423,27 @@ export const CHARGER = {
 // the hunter stands `hunterLiftMs` at a shut one before it rolls up. The
 // shutter drops over `dropMs` (roomview.js). With Real time off a turn
 // counts as `turnMs` for these waits. Drafts; tune after play.
-// The safe room's music (music.js): the file, how loud (0 to 1), how
-// long it takes to fade in on entering and out on leaving, and how often
+// The volume of all the game's sound (sound.js), one step per tap of the
+// top bar's SOUND button, as a share of full: off, 1/3, 2/3, full. The
+// game starts on `startAt` (1/3, Timothy 2026-11-01) and remembers the
+// player's pick under `storageKey`.
+export const SOUND_VOLUME = {
+  steps: [0, 1 / 3, 2 / 3, 1],
+  startAt: 1,
+  storageKey: 'noesisProtocol.soundVolume',
+  changeMs: 150,
+};
+
+// The safe room's music (music.js): the file, its own loudness under the
+// game's volume (0 to 1), how long it takes to fade in on entering and out
+// on leaving (an eased curve, so it starts and ends gently), and how often
 // music.js checks whether the player is in the room.
 export const SAFE_ROOM_MUSIC = {
   src: './audio/safe-room-mary.mp3',
-  volume: 0.5,
-  fadeInMs: 1500,
-  fadeOutMs: 2500,
+  volume: 1,
+  fadeInMs: 2000,
+  fadeOutMs: 4000,
+  fadeSteps: 64,
   checkMs: 250,
 };
 

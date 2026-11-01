@@ -1,78 +1,86 @@
 // Music: the safe room's tune (Jeremy Blake, "Safe Rooms" pack; Timothy
 // checked the licence, credits go in at the end). It fades in while the
 // player stands in the safe room and fades out when they leave it, or
-// when the run's screens go away. main.js calls initMusic once. A view:
-// it reads state and never changes it.
+// when the run's screens go away, under the game's volume (sound.js).
+// main.js calls initMusic once. A view: it reads state, never changes it.
 //
-// The tune plays through an <audio> element routed into a Web Audio gain,
-// because phones (iOS) ignore an element's own volume, so a fade has to
-// go through the gain. It is not in the service worker's cache: browsers
-// ask for audio in pieces (Range requests), which a cached whole file
-// can't answer on some of them, so offline the room is just quiet.
+// The tune is not in the service worker's cache: browsers ask for audio
+// in pieces (Range requests), which a cached whole file can't answer on
+// some of them (Safari), so offline the room is just quiet.
 
 import { state } from './state.js';
 import { SAFE_ROOM_MUSIC } from './config.js';
+import { soundOut, soundOff } from './sound.js';
 
-let audio = null;   // the <audio> element, made on first need
-let ctx = null;     // the AudioContext, made after the player's first tap or key
-let gain = null;    // the fade's gain node
+let audio = null;    // the <audio> element, made on first need
+let fade = null;     // the tune's own gain, which fades
 let playing = false; // whether the tune is (or is fading) up
+let pauseAt = null;  // the timer that pauses the element once a fade out ends
 
-// Starts listening for the player's first tap or key (browsers only let a
-// page make sound after one), then checks every SAFE_ROOM_MUSIC.checkMs
-// whether the tune should be up. A check on a clock, not on each event,
-// so every way in or out (a step, a new floor, the end screen, a hidden
-// tab) is caught by the same one rule.
+// Checks every SAFE_ROOM_MUSIC.checkMs whether the tune should be up, on
+// `screens` (the run's). A check on a clock, not on each event, so every
+// way in or out (a step, a new floor, the end screen, a hidden tab) goes
+// through the same one rule.
 export function initMusic(screens) {
-  const unlock = () => {
-    if (!ctx) makeSound();
-    if (ctx.state === 'suspended') ctx.resume();
-  };
-  window.addEventListener('pointerdown', unlock);
-  window.addEventListener('keydown', unlock);
   setInterval(() => follow(wanted(screens)), SAFE_ROOM_MUSIC.checkMs);
 }
 
-// Whether the tune should be up now: sound on, a run's screen showing
-// (the room, a question, the exchange), the page in view, and the player
-// inside the safe room.
+// Whether the tune should be up now: sound not off, a run's screen
+// showing (the room, a question, the exchange), the page in view, and the
+// player inside the safe room.
 function wanted(screens) {
-  if (!state.settings.sound || document.hidden) return false;
+  if (soundOff() || document.hidden) return false;
   if (!screens.some(s => s.classList.contains('show'))) return false;
   const sr = state.floor && state.floor.safeRoom;
   return Boolean(sr && sr.playerIn);
 }
 
-// Makes the element, the context and the gain, silent, looping.
-function makeSound() {
+// Makes the element, looping, into its own fade gain on the master.
+function makeTune(sound) {
   audio = new Audio(SAFE_ROOM_MUSIC.src);
   audio.loop = true;
   audio.preload = 'none';
-  ctx = new (window.AudioContext || window.webkitAudioContext)();
-  gain = ctx.createGain();
-  gain.gain.value = 0;
-  ctx.createMediaElementSource(audio).connect(gain).connect(ctx.destination);
+  fade = sound.ctx.createGain();
+  fade.gain.value = 0;
+  sound.ctx.createMediaElementSource(audio).connect(fade).connect(sound.out);
 }
 
-// Fades the tune up or down to match `on`. Fading down pauses the element
-// once it is silent, so a finished fade costs nothing.
+// Fades the tune up or down to match `on`, from wherever it is now. A
+// fade down pauses the element once silent, so a finished fade costs
+// nothing.
 function follow(on) {
-  if (!ctx || on === playing) return;
+  const sound = soundOut();
+  if (!sound || on === playing) return;
+  if (!audio) makeTune(sound);
   playing = on;
-  const now = ctx.currentTime;
-  gain.gain.cancelScheduledValues(now);
-  gain.gain.setValueAtTime(gain.gain.value, now);
-  if (on) {
-    audio.play().catch(() => { playing = false; });
-    gain.gain.linearRampToValueAtTime(SAFE_ROOM_MUSIC.volume, now + SAFE_ROOM_MUSIC.fadeInMs / 1000);
-    return;
-  }
-  gain.gain.linearRampToValueAtTime(0, now + SAFE_ROOM_MUSIC.fadeOutMs / 1000);
-  setTimeout(() => { if (!playing) audio.pause(); }, SAFE_ROOM_MUSIC.fadeOutMs + 50);
+  clearTimeout(pauseAt);
+  if (on) audio.play().catch(() => { playing = false; });
+  const ms = on ? SAFE_ROOM_MUSIC.fadeInMs : SAFE_ROOM_MUSIC.fadeOutMs;
+  easeTo(sound.ctx, on ? SAFE_ROOM_MUSIC.volume : 0, ms);
+  if (!on) pauseAt = setTimeout(() => audio.pause(), ms + 100);
 }
 
-// How loud the tune is right now, 0 (silent or not made yet) to
-// SAFE_ROOM_MUSIC.volume, and whether it is meant to be up. For tests.
+// Moves the fade gain to `to` over `ms` along a cosine curve, so it leaves
+// and arrives gently instead of at a straight line's sharp corners (the
+// fade out was too abrupt, Timothy 2026-11-01). Starts from the gain's
+// value now, held where an earlier fade got to.
+function easeTo(ctx, to, ms) {
+  const g = fade.gain;
+  const now = ctx.currentTime;
+  const from = g.value;
+  if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(now);
+  else {
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(from, now);
+  }
+  const n = SAFE_ROOM_MUSIC.fadeSteps;
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) curve[i] = from + (to - from) * (1 - Math.cos(Math.PI * i / (n - 1))) / 2;
+  g.setValueCurveAtTime(curve, now + 0.01, ms / 1000);
+}
+
+// How loud the tune is right now under the game's volume (0 silent or
+// not made yet), and whether it is meant to be up. For tests.
 export function musicLevel() {
-  return { level: gain ? gain.gain.value : 0, playing };
+  return { level: fade ? fade.gain.value : 0, playing };
 }

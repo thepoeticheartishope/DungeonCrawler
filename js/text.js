@@ -97,6 +97,10 @@ export const TEXT = {
   // stability, energy, target and depth.
   'stat.burns': 'BURNS', // draft. Full burns of the ones needed
   'stat.taught': 'TAUGHT', // draft. Crew taught of the roles on duty (crew roles plan step C)
+  'stat.sound': 'SOUND', // draft. The top bar's volume button
+  'sound.off': 'OFF', // draft
+  'sound.step': '{step}/3', // draft. The volume, in thirds
+  'sound.title': 'Tap to change the volume of all sound', // draft
   'stat.crew': 'CREW', // draft. The crew's panic, by name and as a meter
   'panic.0': 'CALM', // draft
   'panic.1': 'UNEASY', // draft
@@ -686,7 +690,6 @@ export const TEXT = {
   'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
   'start.simpleEnemies': 'Comfort mode: plain enemies, light always on', // draft. A comfort option for players who don't want creepy enemies: every enemy a still letter e, and no light battery (was "Simple enemies")
   'start.tutorial': 'Tutorial room: runs once before your first run', // draft. On until a tutorial is finished
-  'start.sound': 'Sound: music in the safe room', // draft
   'start.ship': 'Ship (test): start on the ship instead', // draft. The "There's Been a Tragedy" test (ship plan)
   'start.turns': 'Turns: the world waits for you (step by step, no rush)', // draft. Start screen option (one stick plan step G): off, the default, the game is in real time with one stick
   'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft. Shown with Turns on only
