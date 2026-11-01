@@ -394,7 +394,7 @@ export const SHIP_ROLES = [
   { id: 'medic', minigame: 'syllableSplit', benefit: { kind: 'panicDown' } },
   { id: 'cook', minigame: 'letterPool', benefit: { kind: 'calm', streak: 2 } },
   { id: 'systems', minigame: 'codeBreak', benefit: { kind: 'slips', factor: 2 } },
-  { id: 'science', minigame: 'verdict', benefit: { kind: 'shield' } }, // was longer burn windows
+  { id: 'science', minigame: 'inference', benefit: { kind: 'shield' } }, // was Verdict (ship minigames plan step E)
   { id: 'quartermaster', minigame: 'crosswire', benefit: { kind: 'panicDown' } }, // was +30s clock
   { id: 'sensors', minigame: 'scanner', benefit: { kind: 'panicDown' } }, // was Fog Reveal (ship minigames plan step B)
   { id: 'lifeSupport', minigame: 'hullPatch', benefit: { kind: 'shield' } }, // was Sum Lock (ship minigames plan step D)
@@ -1181,6 +1181,18 @@ export const STAR_CHART = { minLetters: 3, maxLetters: 10, decoys: 6, panicDecoy
 // breaches (a miss). From panic level `panicAt` (Shaken) the hull holds
 // only `panicMaxStrain`.
 export const HULL_PATCH = { minLetters: 3, maxLetters: 12, decoys: 7, strain2: 2, maxStrain: 5, panicMaxStrain: 3, panicAt: 2 };
+// Inference (ship minigames plan step E; the Science job, in place of
+// Verdict): a number question with a `label` (a short name for its fact,
+// "Days Moses spent on the mountain") is worked out from lines of other
+// labelled facts that add up; the player never needs to know the facts
+// first (Timothy: most of the problem is deduction, the data is given).
+// `weights`: how often each kind of puzzle comes up (two lines with + ;
+// three with + and - ; three with x). The x kind uses only facts of at
+// most `smallMax`. CHECK marks which lines don't hold with the player's
+// numbers; solved on CHECK 1 = X, 2 = 2, up to `maxChecks` = 1, a wrong
+// last CHECK is a miss. From panic level `panicAt` (Shaken) CHECK only
+// says something is off.
+export const INFERENCE = { weights: { pair: 0.5, chain: 0.35, times: 0.15 }, smallMax: 12, maxChecks: 4, panicAt: 2 };
 export const SCANNER = { cols: 5, rows: 4, panicCols: 10, panicRows: 8, panicAt: 2, xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
 // Sum Lock: a trapped box only. When a trapped box rolls a minigame it is
 // Sum Lock if it can be (not twice in a row): its question becomes two

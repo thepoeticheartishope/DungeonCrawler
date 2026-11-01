@@ -46,6 +46,12 @@ for set_info in manifest:
                 err(f'missing "{field}"')
         if e.get('answerType') not in TYPES:
             err(f'unknown answerType {e.get("answerType")!r}')
+        if 'label' in e:
+            # Inference's tiles (ship minigames plan step E): a short name for a number fact.
+            if e.get('answerType') != 'number':
+                err('label on a question that is not a number')
+            if not isinstance(e['label'], str) or not e['label'].strip() or len(e['label']) > 34:
+                err(f'label must be 1-34 characters: {e["label"]!r}')
         if 'difficulty' in e and e['difficulty'] not in DIFFICULTIES:
             err(f'unknown difficulty {e["difficulty"]!r}')
         image = e.get('image')
