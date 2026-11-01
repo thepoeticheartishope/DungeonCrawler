@@ -62,6 +62,8 @@ import { resetWalk, walkTileMs } from './walk.js';
 import { setQuestion, placeWager } from './questionview.js';
 import { playMinigameOut } from './minigameview.js';
 import { initMinimap, refreshMinimap } from './minimapview.js';
+import { initSound } from './sound.js';
+import { initMusic } from './music.js';
 import { initBook, bookReading, closeBook, refreshBook, refreshBookLog } from './bookview.js';
 
 // The gun's actions get the main.js actions they call before anything runs.
@@ -167,6 +169,10 @@ initChargerView({
   leave: () => closeCharger('move-msg', t('room.charger.left', { thing: t('term.' + (openChargerProp ? openChargerProp.kind : 'charger')) })),
 });
 initMinimap();
+// The top bar's SOUND button sets the volume of every sound in the game.
+initSound(document.getElementById('soundBtn'), document.getElementById('soundMenu'));
+// The safe room's music follows the player in and out on these screens.
+initMusic(['roomScreen', 'battleScreen', 'exchangeScreen'].map(id => document.getElementById(id)));
 initBook({ askHeld, mapPanelShown });
 
 applyStaticText();

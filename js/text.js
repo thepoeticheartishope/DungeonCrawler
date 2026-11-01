@@ -97,6 +97,10 @@ export const TEXT = {
   // stability, energy, target and depth.
   'stat.burns': 'BURNS', // draft. Full burns of the ones needed
   'stat.taught': 'TAUGHT', // draft. Crew taught of the roles on duty (crew roles plan step C)
+  'stat.sound': 'SOUND', // draft. The top bar's volume button
+  'sound.off': 'OFF', // draft
+  'sound.step': '{step}/3', // draft. The volume, in thirds
+  'sound.title': 'Tap to pick the volume of all sound', // draft
   'stat.crew': 'CREW', // draft. The crew's panic, by name and as a meter
   'panic.0': 'CALM', // draft
   'panic.1': 'UNEASY', // draft

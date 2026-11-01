@@ -32,6 +32,7 @@ export const state = {
     enemyTendrils: 'random', // DEV -> Tendrils: each stick enemy's own random tendril style, or one of stickforms.js TENDRIL_STYLES for all
     enemyPose: 'walker',    // DEV -> Look: the stickforms.js STICK_POSES id every stick enemy shows (the walker: the 3D moves)
     simpleEnemies: false,   // start screen option, Comfort mode: every minion on the map is a still 'e' (tell 'E'), no form, no motion, and the light is always on (no battery); remembered
+    soundStep: 1,           // the top bar's SOUND button: index into config.js SOUND_VOLUME.steps (0 = off); remembered (sound.js)
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
