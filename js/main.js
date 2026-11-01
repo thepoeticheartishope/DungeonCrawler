@@ -170,7 +170,7 @@ initChargerView({
 });
 initMinimap();
 // The top bar's SOUND button sets the volume of every sound in the game.
-initSound(document.getElementById('soundBtn'));
+initSound(document.getElementById('soundBtn'), document.getElementById('soundMenu'));
 // The safe room's music follows the player in and out on these screens.
 initMusic(['roomScreen', 'battleScreen', 'exchangeScreen'].map(id => document.getElementById(id)));
 initBook({ askHeld, mapPanelShown });

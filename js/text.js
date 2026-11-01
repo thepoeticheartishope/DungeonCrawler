@@ -100,7 +100,7 @@ export const TEXT = {
   'stat.sound': 'SOUND', // draft. The top bar's volume button
   'sound.off': 'OFF', // draft
   'sound.step': '{step}/3', // draft. The volume, in thirds
-  'sound.title': 'Tap to change the volume of all sound', // draft
+  'sound.title': 'Tap to pick the volume of all sound', // draft
   'stat.crew': 'CREW', // draft. The crew's panic, by name and as a meter
   'panic.0': 'CALM', // draft
   'panic.1': 'UNEASY', // draft
