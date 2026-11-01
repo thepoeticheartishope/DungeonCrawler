@@ -1557,6 +1557,16 @@
   /* Flip: the dial runs backwards, its top on the left. */
   .mg-flip .mg-dial { direction: rtl; }
   .mg-flip .mg-ends { flex-direction: row-reverse; }
+  /* Fuel Mix (the Pilot's job): a gauge beside the reading, tank buttons below. */
+  .mg-fuel-engine { display: flex; gap: 14px; align-items: center; justify-content: center; margin: 6px 0; }
+  .mg-fuel-gauge { position: relative; width: 44px; height: 110px; border: 2px solid var(--text); flex: none; }
+  .mg-fuel-level { position: absolute; left: 3px; right: 3px; bottom: 3px; height: 0; background: var(--torch-bright); transition: height .6s ease; }
+  .mg-fuel-level.over { background: var(--muted); }
+  .mg-fuel-read { text-align: left; min-width: 0; }
+  .mg-fuel-verdict { min-height: 1.3em; }
+  .mg-fuel-tanks { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+  .mg-fuel-tank { min-width: 72px; }
+  @media (prefers-reduced-motion: reduce) { .mg-fuel-level { transition: none; } }
   /* Higher / Lower: the hints so far. */
   .mg-hints { min-height: 1.2em; }
   .mg-said { color: var(--torch-bright); }

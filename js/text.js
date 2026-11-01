@@ -242,6 +242,21 @@ export const TEXT = {
   'mg.higherLower.scored.2': '{name|upper}: second guess.', // draft
   'mg.higherLower.scored.1': '{name|upper}: last guess.', // draft
   'mg.higherLower.scored.miss': '{name|upper}: out of guesses. It was {answer}.', // draft
+  'mg.fuelMix': 'Fuel Mix', // draft. The Pilot's job (ship minigames plan step A)
+  'mg.fuelMix.hint': 'Pour until the engine holds the answer.', // draft
+  'mg.fuelMix.tank': '+{n}', // draft. A tank button
+  'mg.fuelMix.count': 'Pours {pours} · par {par}', // draft
+  'mg.fuelMix.hidden': '???', // draft. The running total while the crew panics
+  'mg.fuelMix.empty': 'EMPTY', // draft
+  'mg.fuelMix.under': 'UNDER', // draft
+  'mg.fuelMix.over': 'OVER. Venting.', // draft
+  'mg.fuelMix.vented': 'VENTED. Empty again.', // draft
+  'mg.fuelMix.match': 'FULL.', // draft
+  'mg.fuelMix.dry': 'The engine runs dry.', // draft
+  'mg.fuelMix.scored.X': '{name|upper}: filled at par.', // draft
+  'mg.fuelMix.scored.2': '{name|upper}: filled. It was {answer}.', // draft
+  'mg.fuelMix.scored.1': '{name|upper}: filled, slowly. It was {answer}.', // draft
+  'mg.fuelMix.scored.miss': '{name|upper}: ran dry. It was {answer}.', // draft
   'mg.slowSpell': 'Slow Spell', // draft
   'mg.slowSpell.hint': 'Name it before the letters do. Fewer letters, bigger hit.', // draft
   'mg.slowSpell.know': 'I know it', // draft

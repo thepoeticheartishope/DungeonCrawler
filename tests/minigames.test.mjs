@@ -23,7 +23,7 @@ import {
   SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM, CODE_BREAK_TIERS, VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS,
 } from '../js/config.js';
 import {
-  MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, modifiersFor, rollMinigame, forcedQuestion, endMinigame,
+  MINIGAMES, MINIGAME_MODIFIERS, SHIP_ONLY, fuelMixSetup, fuelMixPour, fuelMixTier, fuelMixDry, minigamesFor, modifiersFor, rollMinigame, forcedQuestion, endMinigame,
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   splitSyllables, syllableSplitPieces, syllableSplitTray, syllableSplitTier,
   letterPoolSetup, letterPoolCheck, letterPoolTier, codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier,
@@ -59,17 +59,17 @@ function reset() {
   resetHaunts();
 }
 
-test('every minigame supports at least two modifiers, but Sum Lock (a box carries none)', () => {
+test('every minigame supports at least two modifiers, but Sum Lock (a box carries none) and the ship-only ones', () => {
   for (const id of MINIGAMES) {
-    if (id === 'sumLock') assert.deepEqual(MINIGAME_MODIFIERS[id], []);
+    if (id === 'sumLock' || SHIP_ONLY.includes(id)) assert.deepEqual(MINIGAME_MODIFIERS[id], []);
     else assert.ok(MINIGAME_MODIFIERS[id].length >= 2, id);
   }
 });
 
 test('Close Enough fits plain number answers only', () => {
-  assert.deepEqual(minigamesFor(NUMBER), ['closeEnough', 'higherLower']);
-  assert.deepEqual(minigamesFor({ meaning: '1,500%', answerType: 'number' }), ['closeEnough', 'higherLower']);
-  assert.deepEqual(minigamesFor({ meaning: '4 B.C.', answerType: 'number' }), ['closeEnough', 'higherLower']);
+  assert.deepEqual(minigamesFor(NUMBER), ['closeEnough', 'higherLower', 'fuelMix']);
+  assert.deepEqual(minigamesFor({ meaning: '1,500%', answerType: 'number' }), ['closeEnough', 'higherLower', 'fuelMix']);
+  assert.deepEqual(minigamesFor({ meaning: '4 B.C.', answerType: 'number' }), ['closeEnough', 'higherLower', 'fuelMix']);
   assert.deepEqual(minigamesFor(WORD), ['slowSpell', 'codeBreak'], 'a one-word name: no dial');
   assert.deepEqual(minigamesFor({ meaning: '7½', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '13 and 14', answerType: 'number' }), []);
@@ -615,4 +615,43 @@ test('a wrong total brings both questions back as haunts, never the lock itself'
   endMinigame({ right: false, tier: null, given: '40', missed: [lock.first, lock.second] });
   assert.ok(state.run.haunts.has(lock.first) && state.run.haunts.has(lock.second));
   assert.ok(!state.run.haunts.has(standIn));
+});
+
+// ---- Fuel Mix (ship minigames plan step A) ----
+
+test('Fuel Mix: tanks are powers of ten up to the answer, at least three; par is the digit sum', () => {
+  assert.deepEqual(fuelMixSetup({ meaning: '13', answerType: 'number' }).tanks, [100, 10, 1]);
+  assert.deepEqual(fuelMixSetup({ meaning: '950', answerType: 'number' }).tanks, [100, 10, 1]);
+  assert.deepEqual(fuelMixSetup({ meaning: '1260', answerType: 'number' }).tanks, [1000, 100, 10, 1]);
+  assert.equal(fuelMixSetup({ meaning: '950', answerType: 'number' }).par, 14);
+  assert.equal(fuelMixSetup({ meaning: '1,000', answerType: 'number' }).par, 1);
+  assert.ok(minigamesFor(BIG).includes('fuelMix'), '144000 fits (tanks up to 100000)');
+  assert.ok(!minigamesFor({ meaning: '7½', answerType: 'number' }).includes('fuelMix'));
+  assert.ok(!minigamesFor(WORD).includes('fuelMix'));
+});
+
+test('Fuel Mix: a pour says only under, over (vent to empty) or match', () => {
+  const e = fuelMixSetup({ meaning: '13', answerType: 'number' });
+  assert.equal(fuelMixPour(e, 10), 'under');
+  assert.equal(fuelMixPour(e, 10), 'over');
+  assert.equal(e.total, 0, 'over vents the engine');
+  assert.equal(e.vents, 1);
+  assert.equal(fuelMixPour(e, 10), 'under');
+  for (let i = 0; i < 2; i++) assert.equal(fuelMixPour(e, 1), 'under');
+  assert.equal(fuelMixPour(e, 1), 'match');
+});
+
+test('Fuel Mix: tier by pours over par, vents counted; past the slack it runs dry', () => {
+  const at = (pours, vents) => ({ ...fuelMixSetup({ meaning: '13', answerType: 'number' }), pours, vents });
+  assert.equal(fuelMixTier(at(4, 0)), 'X', 'par 4');
+  assert.equal(fuelMixTier(at(6, 1)), '2', '2 over + 1 vent = 3');
+  assert.equal(fuelMixTier(at(9, 0)), '1');
+  assert.ok(!fuelMixDry(at(12, 0)), '8 over is still 1');
+  assert.ok(fuelMixDry(at(13, 0)), '9 over runs dry');
+});
+
+test('Fuel Mix is ship-only: never rolled in place of a question', () => {
+  for (const r of [0, 0.3, 0.6, 0.99]) {
+    assert.notEqual(withRandom(r, () => rollMinigame(NUMBER, [])), 'fuelMix');
+  }
 });

@@ -389,7 +389,7 @@ export const SHIP_RUN = {
 // are drafts.
 export const SHIP_ROLES = [
   { id: 'navigator', minigame: 'closeEnough', benefit: { kind: 'burns' } }, // was +45s clock (timers gone 2026-10-31)
-  { id: 'pilot', minigame: 'higherLower', benefit: { kind: 'burns' } },
+  { id: 'pilot', minigame: 'fuelMix', benefit: { kind: 'burns' } }, // was Higher / Lower (ship minigames plan step A)
   { id: 'comms', minigame: 'slowSpell', benefit: { kind: 'shield' } },
   { id: 'medic', minigame: 'syllableSplit', benefit: { kind: 'panicDown' } },
   { id: 'cook', minigame: 'letterPool', benefit: { kind: 'calm', streak: 2 } },
@@ -1053,6 +1053,17 @@ export const HIGHER_LOWER_MIN_TOP = 10;
 export const HIGHER_LOWER_MIN_STEPS = 10;
 export const HIGHER_LOWER_MAX_AT = 40;
 export const HIGHER_LOWER_TIERS = ['X', '2', '1'];
+// Fuel Mix (ship minigames plan step A; the Pilot's job): pour tanks of
+// 1, 10, 100 ... into the engine until it holds the number answer. The
+// tanks are the powers of ten up to the answer's own (never fewer than
+// 1 / 10 / 100). Par = the answer's digits added up (950 = 14 pours).
+// Each vent (going over empties the engine) counts as `ventCost` extra
+// pours. Pours over par (plus vents) score: 0 = X, up to `slack2` = 2, up
+// to `slack1` = 1; beyond, the engine runs dry: a miss. Whole answers up
+// to `maxAnswer`. From panic level `hideTotalAt` (Shaken) the running
+// total hides: only UNDER / OVER is left. `ventMs`: how long OVER shows
+// before the engine reads empty again.
+export const FUEL_MIX = { minTanks: 3, ventCost: 1, slack2: 3, slack1: 8, maxAnswer: 999999, hideTotalAt: 2, ventMs: 900 };
 // Slow Spell: the answer's letters fill in, in a random order, one every
 // SLOW_SPELL_STEP_MS (a slow clock, not world turns), until one blank is
 // left; I KNOW IT stops them and the answer is typed (Timothy,

@@ -16,7 +16,7 @@ import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_REACH_MAX, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
-  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
+  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
@@ -48,7 +48,13 @@ export const MINIGAME_MODIFIERS = {
   fogReveal: ['flip', 'gambler'],
   // A trapped box carries no modifiers, so neither does its lock.
   sumLock: [],
+  // A ship role's game only (SHIP_ONLY): the ship asks with no modifiers.
+  fuelMix: [],
 };
+
+// Minigames only the ship's crew roles run (ship minigames plan): never
+// rolled in place of a question elsewhere.
+export const SHIP_ONLY = ['fuelMix'];
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 
@@ -71,6 +77,7 @@ const FITS = {
   // Sum Lock runs a trapped box, not a question: only its own stand-in
   // question (sumLockQuestion in main.js) fits it.
   sumLock: q => Boolean(q.sumLock),
+  fuelMix: q => fuelMixAnswer(q) !== null,
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -139,7 +146,8 @@ export function rollMinigame(q, offered, group = null) {
 function pickMinigame(q, offered, group) {
   const mode = state.settings.minigame;
   if (mode === 'off') return null;
-  const ids = minigamesFor(q);
+  // DEV -> Minigame may force a ship-only one; a roll never picks one.
+  const ids = minigamesFor(q).filter(id => mode !== 'roll' || !SHIP_ONLY.includes(id));
   if (letterPoolFits(group)) ids.push('letterPool');
   if (sumLockFits()) ids.push('sumLock');
   const fits = ids.filter(id => modifiersFor(id, offered));
@@ -231,6 +239,59 @@ export function closeEnoughTier(dial, at) {
   if (off <= dial.answer * CLOSE_ENOUGH_BANDS[2] + slack) return '2';
   if (off <= dial.answer * CLOSE_ENOUGH_BANDS[1] + slack) return '1';
   return null;
+}
+
+// ---- Fuel Mix: pour tanks until the engine holds the answer ----
+
+// The whole number Fuel Mix fills to (a number answer Close Enough could
+// dial, whole, at most FUEL_MIX.maxAnswer), or null.
+function fuelMixAnswer(q) {
+  const n = closeEnoughAnswer(q);
+  if (!n || !Number.isInteger(n.value) || n.value > FUEL_MIX.maxAnswer) return null;
+  return n.value;
+}
+
+// A new engine for question `q` (one Fuel Mix can run): `answer`, the
+// `tanks` largest first (powers of ten up to the answer's, at least
+// FUEL_MIX.minTanks of them), and `par` (the answer's digits added up:
+// the fewest pours that can fill it).
+export function fuelMixSetup(q) {
+  const answer = fuelMixAnswer(q);
+  const tanks = [];
+  for (let size = 1; size <= answer || tanks.length < FUEL_MIX.minTanks; size *= 10) tanks.unshift(size);
+  const par = String(answer).split('').reduce((sum, d) => sum + Number(d), 0);
+  return { answer, tanks, par, total: 0, pours: 0, vents: 0 };
+}
+
+// Pours a tank of `size` into `engine` (fuelMixSetup's): 'under', 'match',
+// or 'over' (the engine vents back to empty and counts a vent). The only
+// nudge a pour gives is under or over (the light-nudge rule).
+export function fuelMixPour(engine, size) {
+  engine.pours++;
+  engine.total += size;
+  if (engine.total === engine.answer) return 'match';
+  if (engine.total < engine.answer) return 'under';
+  engine.total = 0;
+  engine.vents++;
+  return 'over';
+}
+
+// How many pours over par `engine` has used, vents counted at
+// FUEL_MIX.ventCost each.
+export function fuelMixOver(engine) {
+  return engine.pours + engine.vents * FUEL_MIX.ventCost - engine.par;
+}
+
+// Whether `engine` has run dry: past the last tier's slack, a miss.
+export function fuelMixDry(engine) {
+  return fuelMixOver(engine) > FUEL_MIX.slack1;
+}
+
+// The tier of a filled engine: 'X' at par, '2' within FUEL_MIX.slack2
+// pours over, '1' within slack1.
+export function fuelMixTier(engine) {
+  const over = fuelMixOver(engine);
+  return over <= 0 ? 'X' : over <= FUEL_MIX.slack2 ? '2' : '1';
 }
 
 // ---- Higher / Lower: find a number answer in a few guesses ----

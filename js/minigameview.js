@@ -13,14 +13,16 @@ import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
   LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS, VERDICT_TIMER_SECONDS,
-  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER,
+  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   syllableSplitTray, syllableSplitTier, letterPoolCheck, letterPoolTier,
   codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier, verdictSetup, verdictTier,
   crosswireSetup, crosswireTier, fogRevealTier, sumLockMatches,
+  fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier,
 } from './minigames.js';
+import { panicLevel } from './ship.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
 import { normalizeSpaces, buildChoices, resolveImageSrc } from './quiz.js';
 import { shuffle } from './random.js';
@@ -58,6 +60,7 @@ const BUILDERS = {
   crosswire: buildCrosswire,
   fogReveal: buildFogReveal,
   sumLock: buildSumLock,
+  fuelMix: buildFuelMix,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -212,6 +215,79 @@ function buildCloseEnough() {
       settle();
     },
     flip: () => slot.classList.add('mg-flip'),
+  };
+}
+
+// ---- Fuel Mix: pour tanks until the engine holds the answer ----
+// The Pilot's job (ship minigames plan step A). Each tank button pours
+// into the engine; the gauge then says only UNDER or OVER (going over
+// vents it back to empty), and the running total shows unless the crew is
+// panicking (FUEL_MIX.hideTotalAt). Par is the fewest pours that can do
+// it. It carries no modifiers (the ship asks with none). Nothing moves on
+// its own; the gauge eases to its level (still under reduced motion).
+function buildFuelMix() {
+  slot.classList.add('mg-fuel');
+  const engine = fuelMixSetup(state.battle.currentQuestion);
+  const hideTotal = panicLevel() >= FUEL_MIX.hideTotalAt;
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.fuelMix.hint');
+  const body = add(slot, 'div', 'mg-fuel-engine');
+  const gauge = add(body, 'div', 'mg-fuel-gauge');
+  const level = add(gauge, 'div', 'mg-fuel-level');
+  const read = add(body, 'div', 'mg-fuel-read');
+  const total = add(read, 'div', 'mg-reading');
+  const verdict = add(read, 'div', 'term-line mg-fuel-verdict');
+  const count = add(read, 'div', 'term-line mg-hint');
+  const tanks = add(slot, 'div', 'mg-fuel-tanks');
+  verdict.setAttribute('aria-live', 'polite');
+  gauge.setAttribute('aria-hidden', 'true');
+
+  let ventTimer = null;
+  // Shows the engine holding `amount` (the gauge eases there) and the
+  // verdict word `said` ('empty', 'under', 'over', 'vented', 'match').
+  const draw = (amount, said) => {
+    total.textContent = hideTotal ? t('mg.fuelMix.hidden') : String(amount);
+    verdict.textContent = t('mg.fuelMix.' + said);
+    verdict.dataset.said = said;
+    level.style.height = Math.min(100, amount / (engine.answer * 1.25) * 100) + '%';
+    level.classList.toggle('over', said === 'over');
+    count.textContent = t('mg.fuelMix.count', { pours: engine.pours, par: engine.par });
+  };
+  const pour = (size) => {
+    if (shown.done) return;
+    clearTimeout(ventTimer);
+    const before = engine.total;
+    const said = fuelMixPour(engine, size);
+    if (said === 'match') {
+      draw(engine.total, 'match');
+      finish({ right: true, tier: fuelMixTier(engine), given: String(engine.total) });
+      return;
+    }
+    if (fuelMixDry(engine)) {
+      draw(said === 'over' ? before + size : engine.total, 'dry');
+      finish({ right: false, tier: null, given: String(said === 'over' ? before + size : engine.total) });
+      return;
+    }
+    if (said === 'over') {
+      draw(before + size, 'over');
+      ventTimer = setTimeout(() => { if (!shown || shown.done) return; draw(0, 'vented'); }, FUEL_MIX.ventMs);
+      return;
+    }
+    draw(engine.total, 'under');
+  };
+  const buttons = engine.tanks.map((size) => {
+    const b = add(tanks, 'button', 'mg-fuel-tank');
+    b.type = 'button';
+    b.textContent = t('mg.fuelMix.tank', { n: size });
+    b.addEventListener('click', () => pour(size));
+    return b;
+  });
+  draw(0, 'empty');
+  return {
+    lock: buttons[0],
+    focus: () => buttons[0].focus(),
+    // DEV -> Auto-win: fills it at par, tier X.
+    finish: () => finish({ right: true, tier: 'X', given: String(engine.answer) }),
+    flip: () => {},
   };
 }
 
