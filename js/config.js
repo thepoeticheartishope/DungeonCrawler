@@ -1218,11 +1218,14 @@ export const INFERENCE = { weights: { pair: 0.5, chain: 0.35, times: 0.15 }, sma
 // hits nothing is free; shots left 3 = X, 2 = 2, 1 = 1, none = a miss.
 export const ASTEROIDS = {
   rocks: 4, panicRocks: 6, panicAt: 2, maxChars: 12, shots: 3,
-  aimMax: 75, aimSpeed: 55, aimTap: 2, gapDeg: 2, driftPx: 5, arcMax: 68, arcMin: 24,
+  aimMax: 75, aimSpeed: 55, aimTap: 2, gapDeg: 2, driftPx: 5, arcMax: 68, arcMin: 8,
   // Rock width: `rockPxWide` from a field `wideAt` px wide, else `rockPx`;
-  // never smaller (Timothy: fewer rocks, not smaller ones). `reach`: how
-  // far out rocks sit, as a share of the room each angle has.
-  turretBottom: 8, turretLength: 18, fieldPx: 240, rockPx: 78, rockPxWide: 96, wideAt: 520, reach: [0.92, 0.7],
+  // smaller (to `rockPxMin`) only when not even 2 fit (Timothy: fewer
+  // rocks, not smaller ones). `reach`: how far out rocks sit, as a share
+  // of the room each angle has, every other rock (patterns tried in
+  // turn). `clearPx`: the gap kept between a rock and the ship's tip.
+  turretBottom: 8, turretLength: 18, fieldPx: 240, rockPx: 78, rockPxWide: 96, rockPxMin: 56, wideAt: 520,
+  reach: [[0.92, 0.7], [0.7, 0.92], [0.92, 0.92]], clearPx: 10,
 };
 // The final boss (ship minigames plan step G3): Match, once the player's
 // 3rd crew member is taught. A 5 x 5 board of short answers of the set's

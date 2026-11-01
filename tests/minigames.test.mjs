@@ -811,13 +811,27 @@ test('Asteroids: a wrong rock spends a shot, the last is a miss; tiers by shots 
   assert.equal(asteroidsTier(2), '2');
   assert.equal(asteroidsTier(1), '1');
   const wide = asteroidsLayout(600, 240, 96, 6);
-  const phone = asteroidsLayout(280, 240, 78, 6);
-  assert.ok(wide.n >= phone.n, 'a narrow field flies fewer rocks');
+  const phone = asteroidsLayout(234, 240, 78, 6); // a 390 px phone's field
+  const narrow = asteroidsLayout(204, 240, 78, 6); // 360 px
+  const tiny = asteroidsLayout(164, 240, 78, 6); // 320 px
+  assert.ok(wide.n >= phone.n && phone.n >= narrow.n, 'a narrow field flies fewer rocks');
   assert.ok(phone.n >= 3, 'a phone still gets a real choice');
-  for (const [lay, w] of [[wide, 96], [phone, 78]]) {
-    // Neighbours' angles, with each rock's half-width and drift, never meet.
-    const half = Math.atan((w / 2 + 5) / lay.d) * 180 / Math.PI;
-    assert.ok(lay.step > 2 * half - 0.01, JSON.stringify(lay));
+  assert.equal(narrow.rockW, 78, 'fewer rocks, not smaller ones, while 2 fit');
+  assert.ok(tiny && tiny.n === 2 && tiny.rockW < 78, 'only when 2 do not fit do the rocks get smaller');
+  for (const lay of [wide, phone, narrow, tiny]) {
+    const r = lay.rockW / 2 + 5;
+    lay.rocks.forEach((rock, i) => {
+      const a = rock.a * Math.PI / 180;
+      // Clear above the ship's tip (18 px), never level with it or on it
+      // (Timothy 2026-11-01: on a phone they sat on the ship).
+      assert.ok(rock.d * Math.cos(a) - lay.rockW * 0.4 - 5 >= 18 + 10, 'rock ' + i + ' above the ship: ' + JSON.stringify(lay));
+      // Neighbours' angles, with each rock's half-width and drift, never meet.
+      if (i) {
+        const prev = lay.rocks[i - 1];
+        const half = d => Math.atan(r / d) * 180 / Math.PI;
+        assert.ok(rock.a - prev.a >= half(prev.d) + half(rock.d), 'neighbours apart: ' + JSON.stringify(lay));
+      }
+    });
   }
 });
 
