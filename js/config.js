@@ -396,7 +396,7 @@ export const SHIP_ROLES = [
   { id: 'systems', minigame: 'codeBreak', benefit: { kind: 'slips', factor: 2 } },
   { id: 'science', minigame: 'verdict', benefit: { kind: 'shield' } }, // was longer burn windows
   { id: 'quartermaster', minigame: 'crosswire', benefit: { kind: 'panicDown' } }, // was +30s clock
-  { id: 'sensors', minigame: 'fogReveal', benefit: { kind: 'panicDown' } },
+  { id: 'sensors', minigame: 'scanner', benefit: { kind: 'panicDown' } }, // was Fog Reveal (ship minigames plan step B)
   { id: 'lifeSupport', minigame: 'sumLock', benefit: { kind: 'shield' } }, // was a missed-window shield
 ];
 export const SHIP_JOB = { rounds: 3, passAt: 2, minFitting: 3, learnRounds: 3 }; // learnRounds: at the console, at most this many rounds to learn a role (step B)
@@ -1155,6 +1155,14 @@ export const FOG_REVEAL_CLEAR = 2;
 export const FOG_REVEAL_STEP_MS = 2000;
 export const FOG_REVEAL_X_COVERED = 12;
 export const FOG_REVEAL_2_COVERED = 6;
+// Scanner (ship minigames plan step B; the Sensors' job, in place of Fog
+// Reveal): the picture under a fog of `cols` x `rows` patches, and the
+// player picks which to scan. The share of the picture scanned sets the
+// tier: up to `xShare` = X, up to `twoShare` = 2, more = 1. A wrong option
+// dims and steps the tier down one; more than `wrongsAllowed` wrong is a
+// miss. From panic level `panicAt` (Shaken) the fog is finer
+// (`panicCols` x `panicRows`): each scan shows less, the shares stay.
+export const SCANNER = { cols: 5, rows: 4, panicCols: 10, panicRows: 8, panicAt: 2, xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
 // Sum Lock: a trapped box only. When a trapped box rolls a minigame it is
 // Sum Lock if it can be (not twice in a row): its question becomes two
 // number questions, whole answers of 1 to SUM_LOCK_MAX_ADDEND, and the

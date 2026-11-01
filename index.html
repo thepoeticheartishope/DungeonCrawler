@@ -1650,7 +1650,14 @@
   .mg-fog-tiles { position: absolute; inset: 0; display: grid; }
   .mg-fog-tiles span { background: var(--stone-light); border: 1px solid var(--stone); transition: opacity 1.6s ease; }
   .mg-fog-tiles span.mg-gone { opacity: 0; }
-  @media (prefers-reduced-motion: reduce) { .mg-fog-tiles span { transition: none; } }
+  /* Scanner (the Sensors' job): the player taps the patches to scan. */
+  .mg-scan-tiles { position: absolute; inset: 0; display: grid; }
+  .mg-scan-patch { background: var(--stone-light); border: 1px solid var(--stone); padding: 0; min-width: 0; min-height: 0; margin: 0; cursor: pointer; border-radius: 0; box-shadow: none; transition: opacity .8s ease; }
+  .mg-scan-patch::before, .mg-scan-patch::after { content: none; }
+  .mg-scan-patch:hover, .mg-scan-patch:focus-visible { background: var(--stone); outline: none; }
+  .mg-scan-patch.mg-gone { opacity: 0; cursor: default; pointer-events: none; }
+  .mg-fog-opts .mc-option.mg-dim { opacity: 0.35; }
+  @media (prefers-reduced-motion: reduce) { .mg-fog-tiles span, .mg-scan-patch { transition: none; } }
   /* Sum Lock: its two questions, numbered, over the total's box. */
   .mg-sum-list { text-align: left; margin: 6px 0; padding-left: 1.6em; color: var(--torch-bright); display: flex; flex-direction: column; gap: 6px; }
   /* A phone (Timothy 2026-10-31: Cross Wire and others looked jumbled on
