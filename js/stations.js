@@ -14,7 +14,7 @@ import { state } from './state.js';
 import { makeWires, powered } from './charger.js';
 import { SHIP_STATIONS } from './config.js';
 import { crewMissed, crewRight } from './ship.js';
-import { useCrew, arrivedIfAllTaught } from './roles.js';
+import { useCrew, arrivedIfAllTaught, crewFull } from './roles.js';
 
 // The plan's stations ([kind, row, col, role], plans.js `stations`) as
 // solid props on the furniture's rules (placer.tryBlock), never on a
@@ -48,6 +48,8 @@ export function useStation(prop, rand = Math.random) {
   const trained = state.run.trained.includes(prop.role);
   // Any crew member but the Engineer has a minigame job (roles.js).
   if (prop.kind === 'crew' && prop.role !== 'engineer') return useCrew(prop.role);
+  if (prop.kind === 'crew' && state.run.ship && state.run.ship.taught.includes(prop.role)) return [{ type: 'crewSpoke', role: prop.role, taught: true }];
+  if (prop.kind === 'crew' && !trained && crewFull()) return [{ type: 'crewSpoke', role: prop.role, notCrew: true }];
   if (prop.kind === 'crew') return [{ type: 'crewSpoke', role: prop.role, trained }];
   if (prop.kind === 'console') return [{ type: 'consoleOpened', station: prop }];
   if (!trained) return [{ type: 'stationLocked', role: prop.role }];
@@ -56,9 +58,11 @@ export function useStation(prop, rand = Math.random) {
   return openWires(prop, rand);
 }
 
-// The Engineer picked from the console's list: its training wires open.
-// Events: openWires's.
+// The Engineer picked from the console's list: its training wires open,
+// unless the player's crew is full without them (ship minigames plan
+// step G2). Events: openWires's, or nothing.
 export function trainWires(prop, rand = Math.random) {
+  if (crewFull() && !state.run.trained.includes('engineer')) return [];
   return openWires(prop, rand);
 }
 

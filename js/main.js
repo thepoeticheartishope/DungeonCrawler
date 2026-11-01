@@ -886,8 +886,11 @@ function drawEvents(events) {
         break;
       // The ship's stations (stations.js; ship plan step B).
       case 'crewSpoke':
-        if (e.role === 'engineer') parts.push(t('crew.' + e.role + (e.trained ? '.ready' : '.waiting')));
-        else parts.push(t(e.sitsOut ? 'crew.sitsOut' : e.taught ? 'crew.taught' : 'crew.waiting', { role: t('role.' + e.role) }));
+        // Taught, or not on the player's crew (step G2), reads the same for
+        // the Engineer as for anyone.
+        if (e.taught || e.notCrew) parts.push(t(e.taught ? 'crew.taught' : 'crew.notCrew', { role: t('role.' + e.role) }));
+        else if (e.role === 'engineer') parts.push(t('crew.' + e.role + (e.trained ? '.ready' : '.waiting')));
+        else parts.push(t(e.sitsOut ? 'crew.sitsOut' : 'crew.waiting', { role: t('role.' + e.role) }));
         break;
       // The crew roles' jobs (roles.js; crew roles plan).
       case 'jobStarted':

@@ -55,18 +55,27 @@ export function crewLook(role) {
   const ship = state.run.ship;
   if (role !== 'engineer' && !onDuty(role)) return 'sitsOut';
   if (ship && ship.taught.includes(role)) return 'taught';
-  return state.run.trained.includes(role) ? 'ready' : 'new';
+  if (state.run.trained.includes(role)) return 'ready';
+  // Not on the player's crew this run, once it is full: dim, like sitting out.
+  return crewFull() ? 'sitsOut' : 'new';
 }
 
 // Crew members taught this run, and how many could be (the roles on duty).
 export function taughtCount() {
   const ship = state.run.ship;
-  return { taught: ship ? ship.taught.length : 0, of: rolesOnDuty().length + 1 };
+  return { taught: ship ? ship.taught.length : 0, of: Math.min(SHIP_JOB.crew, rolesOnDuty().length + 1) };
 }
 
-// Whether every crew member there is to teach this run is taught: the
-// Engineer and every role on duty. Until the final boss (ship minigames
-// plan step G3), that brings the ship in.
+// Whether the player's crew for this run is full: SHIP_JOB.crew roles
+// learned at the console (ship minigames plan step G2; the Engineer counts
+// as one). The others can't be learned once it is.
+export function crewFull() {
+  return state.run.trained.length >= SHIP_JOB.crew;
+}
+
+// Whether every crew member the player picked is taught (taughtCount).
+// Until the final boss (ship minigames plan step G3), that brings the ship
+// in.
 export function allTaught() {
   const crew = taughtCount();
   return crew.of > 0 && crew.taught >= crew.of;
@@ -88,6 +97,7 @@ export function useCrew(role) {
   const def = roleOf(role);
   if (!def || !ship) return [];
   if (!onDuty(role)) return [{ type: 'crewSpoke', role, sitsOut: true }];
+  if (crewFull() && !state.run.trained.includes(role)) return [{ type: 'crewSpoke', role, notCrew: true }];
   if (ship.taught.includes(role)) return [{ type: 'crewSpoke', role, taught: true }];
   if (!state.run.trained.includes(role)) return [{ type: 'crewSpoke', role, trained: false }];
   ship.job = { role, round: 0, right: 0 };
@@ -122,14 +132,16 @@ export function settleRound(isCorrect) {
 
 // The console's list (crew roles plan step B): the Engineer, then every
 // role, each with where it stands: 'sitsOut' (its game can't run on the
-// set), 'taught', 'learned', or 'new' (still to learn), and its minigame
-// (null for the Engineer's wires).
+// set), 'taught', 'learned', 'full' (not picked, and the player's crew of
+// SHIP_JOB.crew is full: ship minigames plan step G2), or 'new' (can be
+// picked to learn), and its minigame (null for the Engineer's wires).
 export function consoleRoles() {
   const ship = state.run.ship;
   const status = (id, duty) => {
     if (!duty) return 'sitsOut';
     if (ship && ship.taught.includes(id)) return 'taught';
-    return state.run.trained.includes(id) ? 'learned' : 'new';
+    if (state.run.trained.includes(id)) return 'learned';
+    return crewFull() ? 'full' : 'new';
   };
   return [
     { role: 'engineer', minigame: null, status: status('engineer', true) },
@@ -140,12 +152,12 @@ export function consoleRoles() {
 // Learning role `role` at the console (not the Engineer, whose wires
 // stations.js trainWires opens): rounds of its minigame, misses free, until
 // one is right or SHIP_JOB.learnRounds have gone. A role sitting out or
-// already learned has nothing to learn.
+// already learned has nothing to learn, nor any once the crew is full.
 // Events: learningStarted { role, minigame }, or nothing.
 export function startLearning(role) {
   const ship = state.run.ship;
   const def = roleOf(role);
-  if (!ship || !def || !onDuty(role) || state.run.trained.includes(role)) return [];
+  if (!ship || !def || !onDuty(role) || state.run.trained.includes(role) || crewFull()) return [];
   ship.learning = { role, round: 0 };
   return [{ type: 'learningStarted', role, minigame: def.minigame }];
 }

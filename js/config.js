@@ -400,7 +400,10 @@ export const SHIP_ROLES = [
   { id: 'lifeSupport', minigame: 'hullPatch', benefit: { kind: 'shield' } }, // was Sum Lock (ship minigames plan step D)
   { id: 'gunner', minigame: 'asteroids', benefit: { kind: 'shield' } }, // new on the Bridge (ship minigames plan step F)
 ];
-export const SHIP_JOB = { rounds: 3, passAt: 2, minFitting: 3, learnRounds: 3 }; // learnRounds: at the console, at most this many rounds to learn a role (step B)
+// `crew`: how many crew members the player picks to learn and teach in a
+// run (Timothy 2026-11-01, ship minigames plan step G2); the Engineer is
+// one of the choices.
+export const SHIP_JOB = { rounds: 3, passAt: 2, minFitting: 3, learnRounds: 3, crew: 3 }; // learnRounds: at the console, at most this many rounds to learn a role (step B)
 // The tragedy intro (shipview.js): seconds between one line fading in and
 // the next. Slow on purpose: text comes in slowly, never flickers.
 export const SHIP_INTRO_STEP_S = 1.4;

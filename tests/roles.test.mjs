@@ -16,11 +16,11 @@ import { SHIP_ROLES, SHIP_JOB, SHIP_RUN } from '../js/config.js';
 import { TEXT } from '../js/text.js';
 import {
   roleOf, onDuty, rolesOnDuty, useCrew, settleRound, applyBenefit, consoleRoles, startLearning, settleLearning, learningOn,
-  noteOnDuty, crewLook, taughtCount, teachTargets, stopLearning,
+  noteOnDuty, crewLook, taughtCount, teachTargets, stopLearning, crewFull,
 } from '../js/roles.js';
 import { roleCanRun } from '../js/minigames.js';
 import { freshShipRun, crewMissed, crewRight, slipEveryMs } from '../js/ship.js';
-import { useStation } from '../js/stations.js';
+import { useStation, trainWires } from '../js/stations.js';
 import { buildShipFloor } from '../js/floor.js';
 import { emptyFloor } from './helpers.mjs';
 
@@ -217,15 +217,15 @@ test('each crew member looks as they stand: sitting out, new, ready, taught', ()
   assert.equal(crewLook('engineer'), 'ready', 'the Engineer is never sitting out');
 });
 
-test('the count of crew taught is out of the roles on duty and the Engineer', () => {
+test('the count of crew taught is out of the player\'s crew of SHIP_JOB.crew', () => {
   const ship = crewRun();
   noteOnDuty();
-  assert.deepEqual(taughtCount(), { taught: 0, of: ship.onDuty.length + 1 });
+  assert.deepEqual(taughtCount(), { taught: 0, of: Math.min(SHIP_JOB.crew, ship.onDuty.length + 1) });
   useCrew('navigator');
   settleRound(true);
   settleRound(true);
   settleRound(true);
-  assert.deepEqual(taughtCount(), { taught: 1, of: ship.onDuty.length + 1 });
+  assert.deepEqual(taughtCount(), { taught: 1, of: Math.min(SHIP_JOB.crew, ship.onDuty.length + 1) });
 });
 
 test('teachTargets: a learned role not yet taught is marked on the map; taught or unlearned is not', () => {
@@ -253,4 +253,38 @@ test('stopLearning: BACK drops the lesson, nothing learned, and the role can be 
   assert.deepEqual(stopLearning(), []);
   assert.equal(startLearning('pilot')[0].type, 'learningStarted');
   assert.equal(state.run.ship.learning.round, 0);
+});
+
+// ---- the player's crew of 3 (ship minigames plan step G2) ----
+
+test('the player picks SHIP_JOB.crew crew: once that many are learned, the rest can\'t be', () => {
+  crewRun(false);
+  noteOnDuty();
+  const duty = rolesOnDuty();
+  assert.equal(SHIP_JOB.crew, 3);
+  state.run.trained = ['engineer', duty[0]];
+  assert.ok(!crewFull());
+  assert.equal(consoleRoles().find(r => r.role === duty[1]).status, 'new', 'room for one more');
+  state.run.trained.push(duty[1]);
+  assert.ok(crewFull());
+  const list = consoleRoles();
+  assert.equal(list.find(r => r.role === duty[2]).status, 'full', 'not picked, and the crew is full');
+  assert.equal(list.find(r => r.role === duty[0]).status, 'learned');
+  assert.deepEqual(startLearning(duty[2]), [], 'no fourth lesson');
+  assert.deepEqual(useCrew(duty[2]), [{ type: 'crewSpoke', role: duty[2], notCrew: true }]);
+  assert.equal(crewLook(duty[2]), 'sitsOut', 'dim, like sitting out');
+  assert.equal(crewLook(duty[0]), 'ready');
+  assert.deepEqual(taughtCount(), { taught: 0, of: 3 });
+});
+
+test('the Engineer is one of the choices: picked, it counts; not picked once full, its wires stay shut', () => {
+  crewRun(false);
+  noteOnDuty();
+  const duty = rolesOnDuty();
+  state.run.trained = duty.slice(0, 3);
+  const console = state.floor.props.find(p => p.kind === 'console');
+  assert.deepEqual(trainWires(console), [], 'the crew is full without the Engineer');
+  assert.equal(consoleRoles().find(r => r.role === 'engineer').status, 'full');
+  const engineer = state.floor.props.find(p => p.kind === 'crew' && p.role === 'engineer');
+  assert.deepEqual(useStation(engineer), [{ type: 'crewSpoke', role: 'engineer', notCrew: true }]);
 });
