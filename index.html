@@ -1650,6 +1650,32 @@
   .mg-fog-tiles { position: absolute; inset: 0; display: grid; }
   .mg-fog-tiles span { background: var(--stone-light); border: 1px solid var(--stone); transition: opacity 1.6s ease; }
   .mg-fog-tiles span.mg-gone { opacity: 0; }
+  /* Match, the final boss: a 5 x 5 board, the crew's charge meters, the clock. */
+  .mg-match-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .mg-match-clock { font-size: 26px; color: var(--torch-bright); }
+  .mg-match-board { display: grid; gap: 3px; margin: 6px 0; overflow: hidden; }
+  .mg-match-tile { aspect-ratio: 1; min-width: 0; padding: 1px; margin: 0; font-size: 15px; line-height: 1; border: 1px solid var(--line); background: var(--stone); color: var(--text); overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .mg-match-tile::before, .mg-match-tile::after { content: none; }
+  .mg-match-tile:hover:not(:disabled), .mg-match-tile:focus-visible:not(:disabled) { background: var(--stone-light); color: var(--text); box-shadow: none; }
+  .mg-match-board.tints .mg-match-tile[data-kind="0"] { background: #1d2333; }
+  .mg-match-board.tints .mg-match-tile[data-kind="1"] { background: #2a2216; }
+  .mg-match-board.tints .mg-match-tile[data-kind="2"] { background: #16261f; }
+  .mg-match-tile[data-kind="crisis"] { background: #3a1914; border-color: var(--text); color: var(--text); cursor: default; }
+  .mg-match-tile.sel { outline: 2px solid var(--torch-bright); outline-offset: -2px; }
+  .mg-match-kind { display: block; font-size: 11px; color: var(--torch-bright); margin-top: 2px; }
+  .mg-match-tile.pop { animation: mg-match-pop .3s ease-in forwards; }
+  .mg-match-tile.drop { animation: mg-match-drop .42s ease-out; }
+  .mg-match-tile.shake { animation: mg-match-shake .4s; }
+  @keyframes mg-match-pop { to { transform: scale(0.2); opacity: 0; } }
+  @keyframes mg-match-drop { from { transform: translateY(calc(var(--fall) * -100% - var(--fall) * 3px)); } }
+  @keyframes mg-match-shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+  .mg-match-meters { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+  .mg-match-meter { display: grid; grid-template-columns: minmax(0, 1fr) 60px auto; gap: 6px; align-items: center; font-size: 16px; }
+  .mg-match-meter.full .mg-match-who { color: var(--torch-bright); }
+  .mg-match-bar { position: relative; height: 10px; border: 1px solid var(--muted); }
+  .mg-match-bar i { position: absolute; left: 1px; top: 1px; bottom: 1px; background: var(--torch-bright); }
+  .mg-match-use { font-size: 15px; padding: 0 4px; }
+  @media (prefers-reduced-motion: reduce) { .mg-match-tile.pop, .mg-match-tile.drop, .mg-match-tile.shake { animation: none; } }
   /* Asteroids (the Gunner's job): rocks on an arc, a turret that turns, a bolt. */
   .mg-ast-field { position: relative; margin: 6px 0; border: 1px solid var(--line); background: var(--stone-dark); overflow: hidden; }
   .mg-ast-field:focus-visible { outline: 1px dashed var(--text); outline-offset: 2px; }

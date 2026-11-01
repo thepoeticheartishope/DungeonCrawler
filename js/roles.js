@@ -12,7 +12,7 @@
 
 import { state } from './state.js';
 import { SHIP_ROLES, SHIP_JOB } from './config.js';
-import { roleCanRun } from './minigames.js';
+import { roleCanRun, matchGroups } from './minigames.js';
 import { crewMissed, crewRight } from './ship.js';
 
 // The role `id` (SHIP_ROLES), or null for the Engineer or an unknown one.
@@ -73,18 +73,35 @@ export function crewFull() {
   return state.run.trained.length >= SHIP_JOB.crew;
 }
 
-// Whether every crew member the player picked is taught (taughtCount).
-// Until the final boss (ship minigames plan step G3), that brings the ship
-// in.
+// Whether every crew member the player picked is taught (taughtCount):
+// then the final boss comes (ship minigames plan step G3).
 export function allTaught() {
   const crew = taughtCount();
   return crew.of > 0 && crew.taught >= crew.of;
 }
 
-// Events for a crew member just taught: the ship arrives once it was the
-// last (allTaught). Events: shipEnded { how: 'arrived' }, or nothing.
+// Events for a crew member just taught: once it was the last of the
+// player's crew, the final boss is ready (main.js opens it; ship
+// minigames plan step G3), or, on a set whose answers can't make its
+// board, the ship simply arrives.
+// Events: bossReady, shipEnded { how: 'arrived' }, or nothing.
 export function arrivedIfAllTaught() {
-  return allTaught() ? [{ type: 'shipEnded', how: 'arrived' }] : [];
+  if (!allTaught()) return [];
+  return matchGroups() ? [{ type: 'bossReady' }] : [{ type: 'shipEnded', how: 'arrived' }];
+}
+
+// The final boss over (gunactions.js openBoss): the board `won`, the ship
+// arrives; lost (the crisis took the board, or the song ran out), the run
+// is lost. Events: shipEnded { how: 'arrived' | 'boss' }.
+export function settleBoss(won) {
+  if (state.run.ship) state.run.ship.boss = null;
+  return [{ type: 'shipEnded', how: won ? 'arrived' : 'boss' }];
+}
+
+// The final boss starting: the ship run notes it (music.js plays its song
+// while it is on). Events: none.
+export function startBoss() {
+  if (state.run.ship) state.run.ship.boss = { on: true };
 }
 
 // Bumping crew member `role` (not the Engineer). Sitting out, already

@@ -10,7 +10,7 @@ import {
 import {
   initGunActions, askQuestion, autoWinGun, devTestReload, devTestShot, dressQuestion,  endReload,
   letterPoolQuestion, lowerGun, pickReload, readyDial, stopDamageBar, stopStruggleBar,
-  sumLockQuestion, openBreaker, openLearning,
+  sumLockQuestion, openBreaker, openLearning, openBoss,
 } from './gunactions.js';
 import { initControls, syncLookStick, tapMap, walkHeld } from './controls.js';
 import {
@@ -945,6 +945,12 @@ function drawEvents(events) {
         break;
       case 'stationTrained':
         parts.push(t('station.trained.' + e.role));
+        break;
+      // The player's last crew member taught (step G3): the final boss
+      // opens once this turn's screens have closed.
+      case 'bossReady':
+        parts.push(t('boss.ready'));
+        setTimeout(() => openBoss(), SHIP_RUN.endDelayMs);
         break;
       case 'stationTaught':
         parts.push(t('station.taught', { role: t('role.' + e.role) }));

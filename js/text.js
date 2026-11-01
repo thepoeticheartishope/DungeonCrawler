@@ -299,6 +299,27 @@ export const TEXT = {
   'mg.asteroids.scored.2': '{name|upper}: hit.', // draft
   'mg.asteroids.scored.1': '{name|upper}: hit, at last. It was {answer}.', // draft
   'mg.asteroids.scored.miss': '{name|upper}: out of shots. It was {answer}.', // draft
+  'mg.match': 'Final challenge', // draft. The Match boss (ship minigames plan step G3)
+  'mg.match.scored.X': 'The crew pulled together.', // draft
+  'mg.match.scored.miss': 'The board slipped away.', // draft
+  'match.who': '{role} · {kind}', // draft. A charge meter: the crew member and the kind of tile that charges them
+  'match.crew': 'Crew', // draft. A meter with no crew member behind it
+  'match.ability.0': 'Clear a row', // draft. The 1st crew member's ability: clear the crisis in a row
+  'match.ability.1': 'Hold it back', // draft. The 2nd's: the crisis skips its next spread
+  'match.ability.2': 'Show kinds', // draft. The 3rd's: every tile's kind shows for 2 turns
+  'match.meta': 'Crisis {crisis}/{lose} · spreads in {spread}', // draft
+  'match.skipped': 'held back', // draft
+  'match.start': 'Tap a tile, then a neighbour, to swap. Three that belong together clear and charge your crew.', // draft
+  'match.line': 'A line! {gains}.', // draft
+  'match.chain': 'Chain x{n}! {gains}.', // draft
+  'match.freed': 'Crisis cleared: {n}.', // draft
+  'match.noLine': 'No line: {a} is {ak}, {b} is {bk}. Turn spent.', // draft. The light nudge: both kinds
+  'match.arm': 'Tap a tile in the row to clear.', // draft
+  'match.used.0': 'The crisis in that row is gone.', // draft
+  'match.used.1': 'The crisis will hold back its next spread.', // draft
+  'match.used.2': 'Every tile shows its kind for 2 turns.', // draft
+  'match.lost': 'The crisis has taken too much of the ship.', // draft
+  'match.time': 'Out of time.', // draft
   'mg.scanner': 'Scanner', // draft. The Sensors' job (ship minigames plan step B)
   'mg.scanner.hint': 'Tap the fog to scan a patch. Answer when you know.', // draft
   'mg.scanner.patch': 'Scan patch {n}', // draft. A fog patch's label for screen readers
@@ -666,6 +687,8 @@ export const TEXT = {
   'end.ship.arrived.title': 'Orbit.', // draft
   'end.ship.arrived.stats': 'The {ship} reached {planet}. The crew you taught brought it in. Failures: {failures}.', // draft
   'end.ship.panic.title': 'The crew broke.', // draft
+  'end.ship.boss.title': 'The crisis took the ship.', // draft. The final boss lost (step G3)
+  'end.ship.boss.stats': 'So close. The crew you taught could not hold it together in time. Failures: {failures}.', // draft
   'end.ship.panic.stats': 'Too many failures. No one is listening to orders now. Failures: {failures}.', // draft
   'end.ship.crew': 'Crew you taught ({taught}/{of}): {names}.', // draft. After the stats, crew roles plan step C
   'end.ship.noCrew': 'You taught no one else.', // draft. No crew role was taught this run
@@ -914,6 +937,9 @@ export const TEXT = {
   'ask.title.breaker': 'BREAKER', // draft. The ask screen's title for a ship station's breaker question (ship plan step B)
   'ask.title.job': '{role} · {round}/{of}', // draft. The ask screen's title for a round of a crew member's job (crew roles plan)
   'ask.title.learn': 'LEARNING {role} · {round}/{of}', // draft. The ask screen's title for a learning round at the console (crew roles plan step B)
+  'ask.title.boss': 'FINAL CHALLENGE', // draft. The Match boss (ship minigames plan step G3)
+  'boss.q': 'The crisis is spreading. Line up what belongs together, and get your crew ready.', // draft. The boss's stand-in question
+  'boss.ready': 'Your crew is ready. One last thing stands in the way.', // draft. The 3rd crew member taught: the boss comes
   // COMMAND.SYS, the console's roles (crew roles plan step B, consoleview.js).
   'console.title': 'COMMAND.SYS', // draft
   'console.hint': 'The captain’s lessons. Pick 3 crew to learn and teach this trip.', // draft (step G2)

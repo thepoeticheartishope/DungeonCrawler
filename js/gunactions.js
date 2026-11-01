@@ -16,7 +16,7 @@ import { pickQuestion } from './quiz.js';
 import { onStairs } from './moves.js';
 import { settleRelay } from './relays.js';
 import { settleBreaker } from './stations.js';
-import { roleOf, settleRound, jobOn, settleLearning, learningOn, stopLearning } from './roles.js';
+import { roleOf, settleRound, jobOn, settleLearning, learningOn, stopLearning, startBoss, settleBoss } from './roles.js';
 import { requestMapDraw } from './mapview.js';
 import {
   cycleTarget, fire, readyShot, cancelShot, settleShot, startSteady, steadying, releaseSteady, cancelSteady,
@@ -29,7 +29,7 @@ import {
 import { t } from './text.js';
 import { setQuestion, setMinigame, clearModifier, applyModifier, markAnswer } from './questionview.js';
 import {
-  rollMinigame, forcedQuestion, endMinigame, letterPoolSetup, sumLockSetup, modifiersFor, roleQuestions, roleGroups,
+  rollMinigame, forcedQuestion, endMinigame, letterPoolSetup, sumLockSetup, modifiersFor, roleQuestions, roleGroups, matchGroups, matchSetup,
 } from './minigames.js';
 import { playMinigameOut } from './minigameview.js';
 
@@ -316,6 +316,32 @@ export function openLearning(role, onBack = () => {}) {
     settle: settleLearning, going: learningOn, title: 'ask.title.learn', of: SHIP_JOB.learnRounds,
     round: () => state.run.ship.learning.round + 1, modifiers: () => [], reveal: true, back,
   });
+}
+
+// The final boss (ship minigames plan step G3; roles.js bossReady): Match
+// on the ask screen, titled as the final challenge, with no BACK. Its
+// stand-in question carries the board and the player's taught crew (one
+// per charge meter). The board's result ends the run: won, the ship
+// arrives; lost, the run is lost (roles.js settleBoss).
+export function openBoss() {
+  if (!state.run.ship || state.run.ship.boss || state.run.runEnded) return;
+  gunTest = false;
+  state.run.turnLocked = true;
+  startBoss();
+  askAnswers = {
+    onChoice: () => {},
+    onTyped: () => {},
+    onTimeout: () => {},
+    onResult: result => endReload(() => [...endMinigame(result), ...settleBoss(result.right)]),
+    log: text => showRoomNote('', text),
+  };
+  clearModifier();
+  showQuestionScreen(askAnswers, 'boss');
+  const crew = state.run.ship.taught.slice(0, 3);
+  setQuestion({ term: t('boss.q'), meaning: '', match: { board: matchSetup(matchGroups()), crew } });
+  state.battle.minigame = 'match';
+  state.run.lastMinigame = 'match';
+  setMinigame('match');
 }
 
 // Rounds of `role`'s minigame on the ask screen (a job or learning), each

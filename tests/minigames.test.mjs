@@ -820,3 +820,79 @@ test('Asteroids: a wrong rock spends a shot, the last is a miss; tiers by shots 
     assert.ok(lay.step > 2 * half - 0.01, JSON.stringify(lay));
   }
 });
+
+// ---- Match, the final boss (ship minigames plan step G3) ----
+
+const BOSS_SET = [
+  ...['Ruth', 'Acts', 'Jude', 'Amos', 'Joel', 'Ezra', 'Luke'].map(m => ({ term: 'Which book?', meaning: m, answerType: 'book' })),
+  ...['Rome', 'Eden', 'Moab', 'Edom', 'Joppa', 'Nebo', 'Egypt'].map(m => ({ term: 'Where?', meaning: m, answerType: 'location' })),
+  ...['Paul', 'Herod', 'Lot', 'Aaron', 'Silas', 'Jacob', 'Saul', 'Eli'].map(m => ({ term: 'Who?', meaning: m, answerType: 'name' })),
+  { term: 'Long?', meaning: 'Nebuchadnezzar', answerType: 'name' },
+];
+
+test('Match boss: three kinds of short answers, biggest first; a fresh board has no line and its crisis', async () => {
+  const { matchGroups, matchSetup, matchRuns, matchCrisis } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeData = BOSS_SET;
+  const groups = matchGroups();
+  assert.deepEqual(groups.map(g => g.key), ['name', 'book', 'location']);
+  assert.ok(!groups[0].words.includes('Nebuchadnezzar'), 'too long for a tile');
+  const board = matchSetup(groups);
+  assert.equal(board.cells.length, 25);
+  assert.equal(matchRuns(board).length, 0);
+  assert.equal(matchCrisis(board), 2);
+  state.settings.activeData = BOSS_SET.slice(0, 7);
+  assert.equal(matchGroups(), null, 'one kind is not a board');
+});
+
+test('Match boss: a swap with no line snaps back; a line clears, charges, and new tiles never line up alone', async () => {
+  const { matchGroups, matchSetup, matchSwap, matchRuns } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeData = BOSS_SET;
+  const board = matchSetup(matchGroups());
+  const kinds = (k0) => board.cells.map(t => t.kind);
+  // A row set up to line up by swapping tiles 3 and 4: 0 0 1 0 1 -> swap 2 and 3.
+  const T = k => ({ kind: k, word: 'w' + k });
+  // No line anywhere: row r, column c holds kind (c + 2r) % 3.
+  board.cells = Array.from({ length: 25 }, (_, i) => T(((i % 5) + 2 * Math.floor(i / 5)) % 3));
+  board.cells.splice(0, 5, T(0), T(0), T(1), T(0), T(2));
+  board.cells[7] = { kind: 'crisis', word: '!!' };
+  const before = kinds();
+  const no = matchSwap(board, 10, 11);
+  if (!no.lined) assert.deepEqual(kinds(), before, 'snapped back');
+  const yes = matchSwap(board, 2, 3);
+  assert.ok(yes.lined);
+  assert.ok(yes.waves[0].hit.includes(7), 'the crisis next to the line clears');
+  assert.ok(board.charge[0] >= 1, 'the kind-0 crew member is charged');
+  assert.equal(matchRuns(board).length, 0, 'it settles with no line left');
+  assert.ok(!matchSwap(board, 0, 12).lined, 'not neighbours');
+});
+
+test('Match boss: the crisis spreads every 2nd turn (unless held back); abilities spend charge; full charge wins', async () => {
+  const { matchGroups, matchSetup, matchEndTurn, matchUse, matchWon, matchCrisis } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeData = BOSS_SET;
+  const board = matchSetup(matchGroups());
+  assert.equal(matchEndTurn(board).spread, null);
+  assert.notEqual(matchEndTurn(board).spread, null, 'spreads on the 2nd turn');
+  assert.equal(matchCrisis(board), 3);
+  board.charge = [5, 5, 5];
+  assert.ok(matchWon(board));
+  assert.ok(matchUse(board, 1));
+  assert.equal(board.charge[1], 0, 'spent: set back from the win');
+  assert.ok(!matchWon(board));
+  matchEndTurn(board);
+  assert.equal(matchEndTurn(board).spread, null, 'held back');
+  assert.ok(matchUse(board, 0, 1), 'row 1 cleared');
+  assert.ok(!board.cells.slice(5, 10).some(t => t.kind === 'crisis'));
+  assert.ok(!matchUse(board, 0), 'needs a full meter');
+  for (let i = 0; i < 20; i++) matchEndTurn(board);
+  assert.ok(matchEndTurn(board).lost || matchCrisis(board) >= 8, 'the crisis takes it in the end');
+});
+
+test('Match boss: numbers never make a kind of tile (they give themselves away)', async () => {
+  const { matchGroups } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeData = [...BOSS_SET, ...['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(m => ({ term: 'How many?', meaning: m, answerType: 'number' }))];
+  assert.ok(!matchGroups().some(g => g.key === 'number'));
+});
