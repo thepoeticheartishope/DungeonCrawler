@@ -70,7 +70,7 @@ test('Close Enough fits plain number answers only', () => {
   assert.deepEqual(minigamesFor(NUMBER), ['closeEnough', 'higherLower', 'fuelMix']);
   assert.deepEqual(minigamesFor({ meaning: '1,500%', answerType: 'number' }), ['closeEnough', 'higherLower', 'fuelMix']);
   assert.deepEqual(minigamesFor({ meaning: '4 B.C.', answerType: 'number' }), ['closeEnough', 'higherLower', 'fuelMix']);
-  assert.deepEqual(minigamesFor(WORD), ['slowSpell', 'codeBreak', 'starChart'], 'a one-word name: no dial');
+  assert.deepEqual(minigamesFor(WORD), ['slowSpell', 'codeBreak', 'starChart', 'hullPatch'], 'a one-word name: no dial');
   assert.deepEqual(minigamesFor({ meaning: '7½', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '13 and 14', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '0', answerType: 'number' }), []);
@@ -207,7 +207,7 @@ const BOOK = { term: 'Which book?', meaning: 'Ruth', answerType: 'book' };
 test('Slow Spell fits one-word answers of 4 to 12 letters, no decoys needed (typed)', () => {
   reset();
   state.settings.activeData = [NAMES[0]];
-  assert.deepEqual(minigamesFor(NAMES[0]), ['slowSpell', 'codeBreak', 'starChart'], 'alone in the set: typed, so nothing to pick from');
+  assert.deepEqual(minigamesFor(NAMES[0]), ['slowSpell', 'codeBreak', 'starChart', 'hullPatch'], 'alone in the set: typed, so nothing to pick from');
   state.settings.activeData = [...NAMES, BOOK];
   assert.ok(!minigamesFor(NAMES[6]).includes('slowSpell'), 'Eve: too short');
   assert.ok(!minigamesFor({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }).includes('slowSpell'), 'two words');
@@ -255,7 +255,7 @@ test('names split on their vowels, keeping digraphs and starting pairs', () => {
 test('Syllable Split fits one-word names of 3+ pieces with enough decoys', () => {
   reset();
   state.settings.activeData = LONG;
-  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak', 'verdict', 'crosswire', 'starChart']);
+  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak', 'verdict', 'crosswire', 'starChart', 'hullPatch']);
   assert.equal(syllableSplitPieces(LONG[4]), null, 'Noah: two pieces');
   assert.equal(syllableSplitPieces({ ...LONG[0], answerType: 'book' }), null, 'names only');
   assert.equal(syllableSplitPieces({ ...LONG[0], meaning: 'King Solomon' }), null, 'one word');
@@ -704,4 +704,34 @@ test('Star Chart: picks join in order; a wrong star goes dark; tiers by wrong st
   assert.equal(starChartTier(2), '2');
   assert.equal(starChartTier(4), '1');
   assert.equal(starChartTier(5), null);
+});
+
+// ---- Hull Patch (ship minigames plan step D) ----
+
+test('Hull Patch: the tray holds the word\'s letters once each plus decoys; a panicking hull holds less', async () => {
+  const { hullPatchSetup } = await import('../js/minigames.js');
+  const q = { term: 'Which Caesar reigned?', meaning: 'Tiberius', answerType: 'name' };
+  const hull = hullPatchSetup(q, 0);
+  assert.equal(hull.word, 'TIBERIUS');
+  assert.equal(hull.tray.length, 7 + 7, 'T I B E R U S once each, and 7 decoys');
+  assert.equal(new Set(hull.tray).size, hull.tray.length, 'no plate twice');
+  assert.equal(hull.max, 5);
+  assert.equal(hullPatchSetup(q, 2).max, 3);
+});
+
+test('Hull Patch: a right plate fills every spot, a wrong one strains; breach at the max; tiers by strain', async () => {
+  const { hullPatchSetup, hullPatchPlate, hullPatchTier } = await import('../js/minigames.js');
+  const hull = hullPatchSetup({ term: 'Who?', meaning: 'Anna', answerType: 'name' }, 0);
+  assert.equal(hullPatchPlate(hull, 'A'), 'fits', 'both As at once');
+  assert.equal(hullPatchPlate(hull, 'A'), 'used');
+  assert.equal(hullPatchPlate(hull, 'Z'), 'off');
+  assert.equal(hull.strain, 1);
+  assert.equal(hullPatchPlate(hull, 'N'), 'sealed');
+  const weak = hullPatchSetup({ term: 'Who?', meaning: 'Anna', answerType: 'name' }, 2);
+  assert.equal(hullPatchPlate(weak, 'B'), 'off');
+  assert.equal(hullPatchPlate(weak, 'C'), 'off');
+  assert.equal(hullPatchPlate(weak, 'D'), 'breach', 'a panicking hull breaches at 3');
+  assert.equal(hullPatchTier(0), 'X');
+  assert.equal(hullPatchTier(2), '2');
+  assert.equal(hullPatchTier(4), '1');
 });

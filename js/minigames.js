@@ -16,7 +16,7 @@ import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_REACH_MAX, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
-  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, STAR_CHART, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
+  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, STAR_CHART, HULL_PATCH, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
@@ -52,11 +52,12 @@ export const MINIGAME_MODIFIERS = {
   fuelMix: [],
   scanner: [],
   starChart: [],
+  hullPatch: [],
 };
 
 // Minigames only the ship's crew roles run (ship minigames plan): never
 // rolled in place of a question elsewhere.
-export const SHIP_ONLY = ['fuelMix', 'scanner', 'starChart'];
+export const SHIP_ONLY = ['fuelMix', 'scanner', 'starChart', 'hullPatch'];
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 
@@ -82,6 +83,7 @@ const FITS = {
   fuelMix: q => fuelMixAnswer(q) !== null,
   scanner: q => Boolean(String(q.image || '').trim()),
   starChart: q => starChartWord(q) !== null && !answerInStem(q),
+  hullPatch: q => hullPatchWord(q) !== null && !answerInStem(q),
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -368,6 +370,49 @@ export function starChartPick(chart, i) {
 export function starChartTier(wrong) {
   if (wrong > STAR_CHART.maxWrong) return null;
   return wrong === 0 ? 'X' : wrong <= STAR_CHART.wrong2 ? '2' : '1';
+}
+
+// ---- Hull Patch: plate the hole the answer's letters make ----
+
+// The word Hull Patch's hole spells, in capitals: one word of plain
+// letters, HULL_PATCH.minLetters to maxLetters long, or null.
+function hullPatchWord(q) {
+  const word = String(q.meaning || '').trim().toUpperCase();
+  return /^[A-Z]+$/.test(word) && word.length >= HULL_PATCH.minLetters && word.length <= HULL_PATCH.maxLetters ? word : null;
+}
+
+// A new hull for question `q` (one Hull Patch can run), at the crew's
+// `panic` level: the `word`, the `tray` (its letters once each and
+// HULL_PATCH.decoys letters not in it, mixed), the letters `placed` and
+// fallen `off`, the `strain` so far and the `max` the hull holds.
+export function hullPatchSetup(q, panic = 0) {
+  const word = hullPatchWord(q);
+  const own = [...new Set(word)];
+  const spare = shuffle([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].filter(c => !word.includes(c))).slice(0, HULL_PATCH.decoys);
+  const max = panic >= HULL_PATCH.panicAt ? HULL_PATCH.panicMaxStrain : HULL_PATCH.maxStrain;
+  return { word, tray: shuffle([...own, ...spare]), placed: new Set(), off: new Set(), strain: 0, max };
+}
+
+// Plate `letter` tried on `hull`: 'fits' (in the word: fills every spot it
+// belongs in), 'sealed' (that was the last one), 'off' (not in the word:
+// it falls off and the hull strains; the only nudge is "not this
+// letter"), 'breach' (that strain was one too many) or 'used' (tried
+// already; nothing happens).
+export function hullPatchPlate(hull, letter) {
+  if (hull.placed.has(letter) || hull.off.has(letter)) return 'used';
+  if (!hull.word.includes(letter)) {
+    hull.off.add(letter);
+    hull.strain++;
+    return hull.strain >= hull.max ? 'breach' : 'off';
+  }
+  hull.placed.add(letter);
+  return [...hull.word].every(c => hull.placed.has(c)) ? 'sealed' : 'fits';
+}
+
+// The tier of a sealed hull by its `strain`: 0 = X, up to
+// HULL_PATCH.strain2 = 2, more = 1.
+export function hullPatchTier(strain) {
+  return strain === 0 ? 'X' : strain <= HULL_PATCH.strain2 ? '2' : '1';
 }
 
 // ---- Higher / Lower: find a number answer in a few guesses ----

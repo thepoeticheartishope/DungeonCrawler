@@ -21,7 +21,7 @@ import {
   codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier, verdictSetup, verdictTier,
   crosswireSetup, crosswireTier, fogRevealTier, sumLockMatches,
   fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier, scannerGrid, scannerTier,
-  starChartSetup, starChartPick, starChartTier,
+  starChartSetup, starChartPick, starChartTier, hullPatchSetup, hullPatchPlate, hullPatchTier,
 } from './minigames.js';
 import { panicLevel } from './ship.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
@@ -64,6 +64,7 @@ const BUILDERS = {
   fuelMix: buildFuelMix,
   scanner: buildScanner,
   starChart: buildStarChart,
+  hullPatch: buildHullPatch,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -1280,6 +1281,76 @@ function buildStarChart() {
     focus: () => sky.focus(),
     // DEV -> Auto-win: joins the word with no wrong stars (tier X).
     finish: () => finish({ right: true, tier: 'X', given: chart.word }),
+    flip: () => {},
+  };
+}
+
+// ---- Hull Patch: plate the hole the answer's letters make ----
+// Life Support's job (ship minigames plan step D), in place of Sum Lock.
+// The hole has one spot per letter; the tray holds the word's letters and
+// decoys. A right plate fills every spot it belongs in; a wrong one falls
+// off (the light nudge: not this letter) and the hull strains. Tap or type
+// a letter. A panicking crew's hull holds less strain. No modifiers (the
+// ship asks with none); nothing moves on its own but a plate falling.
+function buildHullPatch() {
+  slot.classList.add('mg-hull');
+  const hull = hullPatchSetup(state.battle.currentQuestion, panicLevel());
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.hullPatch.hint');
+  const hole = add(slot, 'div', 'mg-hull-hole');
+  const strainRow = add(slot, 'div', 'mg-hull-strain');
+  add(strainRow, 'span', 'mg-hint').textContent = t('mg.hullPatch.strain');
+  const marks = Array.from({ length: hull.max }, () => add(strainRow, 'i'));
+  const said = add(slot, 'div', 'term-line mg-said');
+  const tray = add(slot, 'div', 'mg-hull-tray');
+  said.setAttribute('aria-live', 'polite');
+  const spots = [...hull.word].map(() => add(hole, 'span', 'mg-hull-spot'));
+  const draw = () => {
+    spots.forEach((s, k) => {
+      const on = hull.placed.has(hull.word[k]);
+      s.textContent = on ? hull.word[k] : '';
+      s.classList.toggle('on', on);
+    });
+    marks.forEach((m, k) => m.classList.toggle('hit', k < hull.strain));
+  };
+  const plates = new Map();
+  const tryPlate = (letter) => {
+    if (shown.done) return;
+    const got = hullPatchPlate(hull, letter);
+    if (got === 'used') return;
+    const plate = plates.get(letter);
+    // A used plate can't keep the keyboard: it goes back to the tray.
+    if (document.activeElement === plate) tray.focus();
+    plate.disabled = true;
+    plate.classList.add(got === 'fits' || got === 'sealed' ? 'used' : 'off');
+    draw();
+    if (got === 'sealed') { finish({ right: true, tier: hullPatchTier(hull.strain), given: hull.word }); return; }
+    if (got === 'breach') { finish({ right: false, tier: null, given: [...hull.word].map(c => (hull.placed.has(c) ? c : '_')).join('') }); return; }
+    said.textContent = got === 'off' ? t('mg.hullPatch.off', { letter }) : t('mg.hullPatch.fits');
+  };
+  hull.tray.forEach((letter) => {
+    const b = add(tray, 'button', 'mg-hull-plate');
+    b.type = 'button';
+    b.textContent = letter;
+    b.addEventListener('click', () => tryPlate(letter));
+    plates.set(letter, b);
+  });
+  // A typed letter tries its plate, if the tray has one.
+  tray.addEventListener('keydown', (e) => {
+    if (e.key.length !== 1 || !/[a-z]/i.test(e.key)) return;
+    const letter = e.key.toUpperCase();
+    if (!plates.has(letter)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    tryPlate(letter);
+  });
+  draw();
+  tray.tabIndex = 0;
+  tray.setAttribute('aria-label', t('mg.hullPatch.tray'));
+  return {
+    lock: tray.querySelector('button'),
+    focus: () => tray.focus(),
+    // DEV -> Auto-win: seals it with no strain (tier X).
+    finish: () => finish({ right: true, tier: 'X', given: hull.word }),
     flip: () => {},
   };
 }
