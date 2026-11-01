@@ -287,6 +287,19 @@ export const TEXT = {
   'mg.inference.scored.2': '{name|upper}: worked out.', // draft
   'mg.inference.scored.1': '{name|upper}: worked out in the end. It was {answer}.', // draft
   'mg.inference.scored.miss': '{name|upper}: the numbers never added up. It was {answer}.', // draft
+  'mg.asteroids': 'Asteroids', // draft. The Gunner's job (ship minigames plan step F)
+  'mg.asteroids.hint': 'Aim at the rock with the answer, then fire.', // draft
+  'mg.asteroids.sky': 'Asteroid field: arrow keys aim, Space fires', // draft. For screen readers
+  'mg.asteroids.left': '< Left', // draft
+  'mg.asteroids.right': 'Right >', // draft
+  'mg.asteroids.fire': 'Fire', // draft
+  'mg.asteroids.shots': 'Shots left: {n}', // draft
+  'mg.asteroids.miss': 'Missed everything. That shot was free: aim again.', // draft
+  'mg.asteroids.wrong': '{text} answers: "{asks}"', // draft. A wrong rock says what it is the answer to
+  'mg.asteroids.scored.X': '{name|upper}: one clean shot.', // draft
+  'mg.asteroids.scored.2': '{name|upper}: hit.', // draft
+  'mg.asteroids.scored.1': '{name|upper}: hit, at last. It was {answer}.', // draft
+  'mg.asteroids.scored.miss': '{name|upper}: out of shots. It was {answer}.', // draft
   'mg.scanner': 'Scanner', // draft. The Sensors' job (ship minigames plan step B)
   'mg.scanner.hint': 'Tap the fog to scan a patch. Answer when you know.', // draft
   'mg.scanner.patch': 'Scan patch {n}', // draft. A fog patch's label for screen readers
@@ -597,13 +610,14 @@ export const TEXT = {
   'ship.panicShielded': 'It went wrong, but the crew holds steady.', // draft. A shield took the panic (Comms officer, Life support)
   // The crew roles (crew roles plan, roles.js; config.js SHIP_ROLES). Names are drafts.
   'role.engineer': 'Engineer', // draft. The power board's wires (stations.js)
-  'role.navigator': 'Navigator', // draft. Close Enough
-  'role.pilot': 'Pilot', // draft. Higher/Lower
+  'role.navigator': 'Navigator', // draft. Star Chart
+  'role.pilot': 'Pilot', // draft. Fuel Mix
   'role.comms': 'Comms officer', // draft. Slow Spell
   'role.medic': 'Medic', // draft. Syllable Split
   'role.cook': 'Cook', // draft. Letter Pool
   'role.systems': 'Systems tech', // draft. Code Break
-  'role.science': 'Science officer', // draft. Verdict
+  'role.science': 'Science officer', // draft. Inference
+  'role.gunner': 'Gunner', // draft. Asteroids (ship minigames plan step F)
   'role.quartermaster': 'Quartermaster', // draft. Crosswire
   'role.sensors': 'Sensor operator', // draft. Fog Reveal
   'role.lifeSupport': 'Life support', // draft. Sum Lock

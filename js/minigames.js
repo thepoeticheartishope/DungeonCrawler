@@ -16,7 +16,7 @@ import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_REACH_MAX, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
-  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, STAR_CHART, HULL_PATCH, INFERENCE, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
+  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, STAR_CHART, HULL_PATCH, INFERENCE, ASTEROIDS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
@@ -54,11 +54,12 @@ export const MINIGAME_MODIFIERS = {
   starChart: [],
   hullPatch: [],
   inference: [],
+  asteroids: [],
 };
 
 // Minigames only the ship's crew roles run (ship minigames plan): never
 // rolled in place of a question elsewhere.
-export const SHIP_ONLY = ['fuelMix', 'scanner', 'starChart', 'hullPatch', 'inference'];
+export const SHIP_ONLY = ['fuelMix', 'scanner', 'starChart', 'hullPatch', 'inference', 'asteroids'];
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 
@@ -86,6 +87,7 @@ const FITS = {
   starChart: q => starChartWord(q) !== null && !answerInStem(q),
   hullPatch: q => hullPatchWord(q) !== null && !answerInStem(q),
   inference: q => inferenceFact(q) !== null && inferenceHelpers(q).length >= 2,
+  asteroids: q => asteroidsFits(q),
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -504,6 +506,92 @@ export function inferenceCheck(puzzle, values) {
 // INFERENCE.maxChecks = 1.
 export function inferenceTier(checks) {
   return checks <= 1 ? 'X' : checks === 2 ? '2' : '1';
+}
+
+// ---- Asteroids: shoot the rock that carries the answer ----
+
+// Each answerType's answers short enough for a rock, with a question each
+// answers: { key, text, asks }. Worked out once per set.
+let asteroidsCache = { data: null, byType: new Map() };
+function asteroidsIndex() {
+  const data = state.settings.activeData || [];
+  if (asteroidsCache.data === data) return asteroidsCache.byType;
+  const byType = new Map();
+  data.forEach((q) => {
+    const text = normalizeSpaces(q.meaning || '');
+    if (!q.answerType || q.image || !text || text.length > ASTEROIDS.maxChars) return;
+    const answers = byType.get(q.answerType) || new Map();
+    const key = text.toLowerCase();
+    if (!answers.has(key)) answers.set(key, { key, text, asks: q.term });
+    byType.set(q.answerType, answers);
+  });
+  asteroidsCache = { data, byType };
+  return byType;
+}
+
+// The decoys question `q` can fly with: the other short answers of its
+// kind in the set, each with a question it answers.
+function asteroidsDecoys(q) {
+  const answers = asteroidsIndex().get(q.answerType);
+  if (!answers) return [];
+  const own = normalizeSpaces(q.meaning || '').toLowerCase();
+  return [...answers.values()].filter(a => a.key !== own);
+}
+
+// Whether Asteroids can run `q`: a short answer, no picture, the stem
+// not holding it, and enough decoys of its kind for a field of rocks.
+function asteroidsFits(q) {
+  const text = normalizeSpaces(q.meaning || '');
+  return Boolean(text) && text.length <= ASTEROIDS.maxChars && !q.image && !answerInStem(q) && asteroidsDecoys(q).length >= ASTEROIDS.rocks - 1;
+}
+
+// A new field for question `q` (one Asteroids can run), at the crew's
+// `panic` level: `rocks` ({ text, right, asks }: the right answer and
+// decoys, mixed; a decoy's `asks` is a question it is the answer to),
+// largest field first (the view may fly fewer, always keeping the right
+// one), and `shots` left.
+export function asteroidsSetup(q, panic = 0) {
+  const count = panic >= ASTEROIDS.panicAt ? ASTEROIDS.panicRocks : ASTEROIDS.rocks;
+  const decoys = shuffle(asteroidsDecoys(q)).slice(0, count - 1).map(d => ({ text: d.text, right: false, asks: d.asks }));
+  return { rocks: [{ text: normalizeSpaces(q.meaning), right: true, asks: q.term }, ...decoys], shots: ASTEROIDS.shots };
+}
+
+// Rock `rock` of `field` was hit: 'right', 'wrong' (spends a shot; the
+// view says what the rock is the answer to: the light nudge teaches a
+// second fact without pointing at the right rock) or 'out' (that was
+// the last shot: a miss).
+export function asteroidsHit(field, rock) {
+  if (rock.right) return 'right';
+  field.shots--;
+  return field.shots <= 0 ? 'out' : 'wrong';
+}
+
+// The tier of a hit with `shots` left: all = X, one spent = 2, two = 1.
+export function asteroidsTier(shots) {
+  return shots >= ASTEROIDS.shots ? 'X' : shots === ASTEROIDS.shots - 1 ? '2' : '1';
+}
+
+// The arc the rocks of a field `width` x `height` px fly on, for rocks
+// `rockW` wide and up to `most` of them: { n, arc, step, d } (how many,
+// degrees either side of straight up, degrees between them, their
+// distance from the turret's pivot), the most rocks that fit, then the
+// widest arc, so that no rock (plus its drift) reaches into a
+// neighbour's line of fire. Null if not even 2 fit.
+export function asteroidsLayout(width, height, rockW, most) {
+  const rad = Math.PI / 180;
+  const rockH = rockW * 0.8;
+  for (let n = most; n >= 2; n--) {
+    for (let arc = ASTEROIDS.arcMax; arc >= ASTEROIDS.arcMin; arc -= 2) {
+      const step = 2 * arc / (n - 1);
+      const half = step / 2 - ASTEROIDS.gapDeg / 2;
+      if (half <= 0) continue;
+      const d = (rockW / 2 + ASTEROIDS.driftPx) / Math.tan(half * rad);
+      const fitsSide = d * Math.sin(arc * rad) + rockW / 2 <= width / 2 - 6;
+      const fitsTop = d + rockH / 2 <= height - ASTEROIDS.turretBottom - 10;
+      if (fitsSide && fitsTop) return { n, arc, step, d };
+    }
+  }
+  return null;
 }
 
 // ---- Higher / Lower: find a number answer in a few guesses ----

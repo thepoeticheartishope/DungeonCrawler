@@ -1650,6 +1650,22 @@
   .mg-fog-tiles { position: absolute; inset: 0; display: grid; }
   .mg-fog-tiles span { background: var(--stone-light); border: 1px solid var(--stone); transition: opacity 1.6s ease; }
   .mg-fog-tiles span.mg-gone { opacity: 0; }
+  /* Asteroids (the Gunner's job): rocks on an arc, a turret that turns, a bolt. */
+  .mg-ast-field { position: relative; margin: 6px 0; border: 1px solid var(--line); background: var(--stone-dark); overflow: hidden; }
+  .mg-ast-field:focus-visible { outline: 1px dashed var(--text); outline-offset: 2px; }
+  .mg-ast-turret { position: absolute; left: 50%; bottom: 8px; width: 20px; height: 18px; margin-left: -10px; transform-origin: 50% 100%; }
+  .mg-ast-turret::before { content: ''; position: absolute; left: 0; bottom: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 18px solid var(--text); }
+  .mg-ast-aim { position: absolute; left: 50%; bottom: 18px; width: 0; height: 600px; margin-left: -0.5px; border-left: 1px dashed var(--muted); pointer-events: none; }
+  .mg-ast-rock { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4px; font-size: 17px; line-height: 1; overflow-wrap: anywhere; border: 1px solid var(--text); border-radius: 46% 54% 40% 60% / 55% 45% 55% 45%; background: var(--stone); color: var(--text); animation: mg-ast-drift var(--t, 9s) ease-in-out infinite alternate; }
+  .mg-ast-rock.aimed { border-color: var(--torch-bright); color: var(--torch-bright); }
+  .mg-ast-rock.broken { border-color: var(--line); color: var(--muted); border-style: dashed; animation: none; }
+  .mg-ast-rock.gone { visibility: hidden; }
+  @keyframes mg-ast-drift { from { transform: translate(0, 0); } to { transform: translate(var(--dx, 4px), var(--dy, 3px)); } }
+  .mg-ast-bolt { position: absolute; width: 4px; height: 12px; margin: -6px 0 0 -2px; background: var(--torch-bright); pointer-events: none; }
+  .mg-ast-bar { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+  .mg-ast-turn { min-width: 84px; }
+  .mg-ast-fire { min-width: 96px; }
+  @media (prefers-reduced-motion: reduce) { .mg-ast-rock { animation: none; } }
   /* Inference (the Science job): lines of labelled facts, a box per fact. */
   .mg-infer-lines { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; text-align: left; }
   .mg-infer-line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 4px 8px; border-left: 3px solid var(--line); }

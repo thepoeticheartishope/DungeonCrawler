@@ -255,7 +255,7 @@ test('names split on their vowels, keeping digraphs and starting pairs', () => {
 test('Syllable Split fits one-word names of 3+ pieces with enough decoys', () => {
   reset();
   state.settings.activeData = LONG;
-  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak', 'verdict', 'crosswire', 'starChart', 'hullPatch']);
+  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak', 'verdict', 'crosswire', 'starChart', 'hullPatch', 'asteroids']);
   assert.equal(syllableSplitPieces(LONG[4]), null, 'Noah: two pieces');
   assert.equal(syllableSplitPieces({ ...LONG[0], answerType: 'book' }), null, 'names only');
   assert.equal(syllableSplitPieces({ ...LONG[0], meaning: 'King Solomon' }), null, 'one word');
@@ -777,4 +777,46 @@ test('Inference: every kind of puzzle holds with the true facts and has one answ
   assert.equal(inferenceTier(1), 'X');
   assert.equal(inferenceTier(2), '2');
   assert.equal(inferenceTier(4), '1');
+});
+
+// ---- Asteroids (ship minigames plan step F) ----
+
+test('Asteroids: the right rock and decoys of its kind, each a real answer; more rocks when panicking', async () => {
+  const { asteroidsSetup } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeData = [...NAMES, BOOK];
+  const q = NAMES[0];
+  const calm = asteroidsSetup(q, 0);
+  assert.equal(calm.rocks.length, 4);
+  assert.equal(calm.rocks.filter(r => r.right).length, 1);
+  assert.equal(calm.rocks[0].text, q.meaning, 'the right rock comes first; the view mixes them');
+  calm.rocks.slice(1).forEach((r) => {
+    const from = NAMES.find(n => n.meaning === r.text);
+    assert.ok(from, 'a decoy is another answer in the set');
+    assert.equal(r.asks, from.term, 'and says what it is the answer to');
+  });
+  assert.equal(asteroidsSetup(q, 2).rocks.length, Math.min(6, NAMES.length));
+  assert.ok(!minigamesFor(BOOK).includes('asteroids'), 'a kind with no decoys in the set');
+});
+
+test('Asteroids: a wrong rock spends a shot, the last is a miss; tiers by shots left; the arc fits the field', async () => {
+  const { asteroidsHit, asteroidsTier, asteroidsLayout } = await import('../js/minigames.js');
+  const field = { shots: 3 };
+  assert.equal(asteroidsHit(field, { right: false }), 'wrong');
+  assert.equal(field.shots, 2);
+  assert.equal(asteroidsHit(field, { right: true }), 'right');
+  assert.equal(asteroidsHit(field, { right: false }), 'wrong');
+  assert.equal(asteroidsHit(field, { right: false }), 'out');
+  assert.equal(asteroidsTier(3), 'X');
+  assert.equal(asteroidsTier(2), '2');
+  assert.equal(asteroidsTier(1), '1');
+  const wide = asteroidsLayout(600, 240, 96, 6);
+  const phone = asteroidsLayout(280, 240, 78, 6);
+  assert.ok(wide.n >= phone.n, 'a narrow field flies fewer rocks');
+  assert.ok(phone.n >= 3, 'a phone still gets a real choice');
+  for (const [lay, w] of [[wide, 96], [phone, 78]]) {
+    // Neighbours' angles, with each rock's half-width and drift, never meet.
+    const half = Math.atan((w / 2 + 5) / lay.d) * 180 / Math.PI;
+    assert.ok(lay.step > 2 * half - 0.01, JSON.stringify(lay));
+  }
 });
