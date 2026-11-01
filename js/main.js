@@ -26,7 +26,7 @@ import {
   formatTime, startTimer, stopTimer, renderClock, showSensed, showWhisper, hideWhisper,
   showAnswerLine, fadeAnswerLine, renderShipHud
 } from './render.js';
-import { freshShipRun, shipFrame, burnsNeeded } from './ship.js';
+import { freshShipRun, shipFrame } from './ship.js';
 import { initShipIntro, fillShipIntro, tragedyLines } from './shipview.js';
 import {
   refreshTargetValidity, advanceMonsters, clockFrame,
@@ -133,7 +133,6 @@ initRender({
   lightHintEls, dpadButtons,
   senseNote: document.getElementById('senseNote'),
   answerNote: document.getElementById('answerNote'),
-  shipBurns: document.getElementById('shipBurns'),
   shipTaught: document.getElementById('shipTaught'),
   shipPanic: document.getElementById('shipPanic'),
   shipPanicMeter: document.getElementById('shipPanicMeter'),
@@ -324,7 +323,6 @@ function resetRun(energy = ENERGY_START) {
   state.run.chargerTold = false;
   state.run.shutterTold = false;
   state.run.trained = [];
-  state.run.burns = 0;
   state.run.crewFailures = 0;
   state.run.ship = null;
   state.run.lastMinigame = null;
@@ -945,8 +943,8 @@ function drawEvents(events) {
       case 'stationTrained':
         parts.push(t('station.trained.' + e.role));
         break;
-      case 'burnDone':
-        parts.push(t('station.burn', { burns: e.burns }));
+      case 'stationTaught':
+        parts.push(t('station.taught', { role: t('role.' + e.role) }));
         break;
       // The ship's run (ship.js; ship plan step C).
       case 'panicRose':
@@ -1338,7 +1336,7 @@ function openCharger(charger) {
 // Every second turn is a spent turn, the world's as for a step (with Real
 // time on, the clock is the cost instead). Once the power joins up, energy
 // is full and CHARGE.SYS closes after CHARGER.closeMs; on a ship station
-// the role is learned or the burn made (stations.js stationDone). A tap on
+// the role is learned or the Engineer taught (stations.js stationDone). A tap on
 // an open breaker asks its question instead (gunactions.js openBreaker).
 function turnChargerWire(index) {
   const charger = openChargerProp;
@@ -1350,14 +1348,14 @@ function turnChargerWire(index) {
     openBreaker(charger, index);
     return;
   }
-  const charged = events.some(e => ['charged', 'stationTrained', 'burnDone'].includes(e.type));
+  const charged = events.some(e => ['charged', 'stationTrained', 'stationTaught'].includes(e.type));
   renderCharger(wires, charged);
   if (events.some(e => e.type === 'turnSpent') && !realTimeOn()) {
     state.run.turnLocked = true;
     applyTurnOutcome(events);
     state.run.turnLocked = false;
   } else if (events.some(e => e.type === 'shipEnded')) {
-    // The last burn: applyTurnOutcome ends the ship's run.
+    // The last crew member taught: applyTurnOutcome ends the ship's run.
     applyTurnOutcome(events, false);
   } else {
     const note = drawEvents(events);
@@ -1474,7 +1472,7 @@ function endLose(reason) {
 
 // The ship's run is over (ship.js shipEnded; ship plan step C): `how` is
 // 'arrived' (the win screen) or 'panic' (the lose screen), each
-// with its own title and the run's burns and failures, then the crew the
+// with its own title and the run's failures, then the crew the
 // player taught (crew roles plan step C). Like a lost signal, the room's
 // last line shows a moment first.
 function endShip(how, note) {
@@ -1487,7 +1485,7 @@ function endShip(how, note) {
   const ship = state.run.ship;
   const vars = {
     ship: t('tragedy.ship.' + ship.tragedy.ship), planet: t('tragedy.planet.' + ship.tragedy.planet),
-    burns: state.run.burns, needed: burnsNeeded(), failures: state.run.crewFailures,
+    failures: state.run.crewFailures,
   };
   const crew = taughtCount();
   const names = ship.taught.map(role => t('role.' + role)).join(', ');

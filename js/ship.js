@@ -9,8 +9,8 @@
 // lost. Learning at the console stays free. The
 // tragedy that starts it is random and only flavor. main.js startGame
 // calls freshShipRun(); worldFrame runs shipFrame() each frame; stations.js
-// reports misses and right answers (crewMissed, crewRight) and burns
-// (burnMade). No DOM access here.
+// reports misses and right answers (crewMissed, crewRight). No burns
+// (ship minigames plan step G1). No DOM access here.
 
 import { state } from './state.js';
 import { SHIP_RUN, TRAGEDY_PARTS } from './config.js';
@@ -19,16 +19,15 @@ import { rotated, powered } from './charger.js';
 // A new ship run: the clock full, the crew calm, nothing trained, and a
 // tragedy rolled (rollTragedy).
 // What the crew roles have given the run (roles.js; crew roles plan) starts
-// at the plain numbers: the burns needed, the right answers that calm, how
-// much rarer slips are, extra burn window, and shields against panic.
+// at the plain numbers: the right answers that calm, how much rarer slips
+// are, and shields against panic.
 export function freshShipRun(rand = Math.random) {
   state.run.ship = {
     panic: 0, streak: 0, tragedy: rollTragedy(rand),
-    burnsNeeded: SHIP_RUN.burnsNeeded, calmStreak: SHIP_RUN.calmStreak, slipFactor: 1,
+    calmStreak: SHIP_RUN.calmStreak, slipFactor: 1,
     shields: 0, taught: [], job: null, learning: null, onDuty: null,
   };
   state.run.trained = [];
-  state.run.burns = 0;
   state.run.crewFailures = 0;
 }
 
@@ -82,18 +81,6 @@ export function crewRight() {
   return [{ type: 'panicEased', level: ship.panic }];
 }
 
-// The burns this run needs: SHIP_RUN.burnsNeeded, fewer once the Pilot is
-// taught.
-export function burnsNeeded() {
-  return state.run.ship ? state.run.ship.burnsNeeded : SHIP_RUN.burnsNeeded;
-}
-
-// A full burn: with burnsNeeded() of them the ship arrives.
-// Events: shipEnded { how: 'arrived' }, or nothing.
-export function burnMade() {
-  return state.run.burns >= burnsNeeded() ? [{ type: 'shipEnded', how: 'arrived' }] : [];
-}
-
 // How often a wire slips while teaching, by the panic now (0: never),
 // rarer once the Systems tech is taught.
 export function slipEveryMs() {
@@ -103,7 +90,7 @@ export function slipEveryMs() {
 
 // The ship's world, `dtMs` on (main.js worldFrame, only while the world
 // runs: the ask screen pauses it). No clocks run down (Timothy
-// 2026-10-31). While a burn is under way at a board, a Shaken or worse crew
+// 2026-10-31). While the Engineer is being taught at a board, a Shaken or worse crew
 // slips a wire it has powered every slipEveryMs: panic makes the work
 // harder, not shorter. Events: wireSlipped { prop, index }.
 export function shipFrame(dtMs, rand = Math.random) {

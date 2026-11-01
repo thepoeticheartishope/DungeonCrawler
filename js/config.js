@@ -361,14 +361,15 @@ export const SHIP_STATIONS = {
 };
 // The ship's run (ship plan step C, ship.js; Timothy 2026-10-30; numbers
 // from the loop mockup, drafts to tune in play). No timers (Timothy
-// 2026-10-31: no arrival clock, training period, burn window or Timer on
-// questions). `burnsNeeded` full burns reach the planet. Crew panic goes up
-// a step with each failure and down one after `calmStreak` right answers in
-// a row while teaching. At each step: 1 Uneasy, 2 Shaken (a wire slips every
-// `slipEveryMs[2]` while a burn is under way), 3 Panicking (slips every
+// 2026-10-31: no arrival clock, training period or Timer on questions).
+// No burns either (Timothy 2026-11-01, ship minigames plan step G1): the
+// run is won by teaching the crew (the final boss comes in step G3). Crew
+// panic goes up a step with each failure and down one after `calmStreak`
+// right answers in a row while teaching. At each step: 1 Uneasy, 2 Shaken
+// (a wire slips every `slipEveryMs[2]` while the Engineer is being taught
+// at the board), 3 Panicking (slips every
 // `slipEveryMs[3]`), `brokenAt` Broken: the run is lost.
 export const SHIP_RUN = {
-  burnsNeeded: 3,
   slipEveryMs: [0, 0, 12000, 6000],
   calmStreak: 3,
   brokenAt: 4,
@@ -378,7 +379,6 @@ export const SHIP_RUN = {
 // the repo; Timothy 2026-10-30: a role for each minigame; roles.js). Each
 // role's job is `SHIP_JOB.rounds` rounds of its minigame; `passAt` right
 // or more and its `benefit` helps the run once, for good:
-//   burns      one burn fewer needed
 //   shield     the next failure raises no panic
 //   panicDown  panic down a step now
 //   calm       calming takes `streak` right answers in a row
@@ -388,8 +388,8 @@ export const SHIP_RUN = {
 // is the wires (stations.js), not one of these. Names, rooms and benefits
 // are drafts.
 export const SHIP_ROLES = [
-  { id: 'navigator', minigame: 'starChart', benefit: { kind: 'burns' } }, // was Close Enough (ship minigames plan step C)
-  { id: 'pilot', minigame: 'fuelMix', benefit: { kind: 'burns' } }, // was Higher / Lower (ship minigames plan step A)
+  { id: 'navigator', minigame: 'starChart', benefit: { kind: 'panicDown' } }, // was Close Enough (step C); was a burn fewer (step G1)
+  { id: 'pilot', minigame: 'fuelMix', benefit: { kind: 'shield' } }, // was Higher / Lower (step A); was a burn fewer (step G1)
   { id: 'comms', minigame: 'slowSpell', benefit: { kind: 'shield' } },
   { id: 'medic', minigame: 'syllableSplit', benefit: { kind: 'panicDown' } },
   { id: 'cook', minigame: 'letterPool', benefit: { kind: 'calm', streak: 2 } },

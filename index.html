@@ -138,7 +138,7 @@
   .stats.full .stat-more { display: flex; }
   .stat-full-line { flex-basis: 100%; }
   /* On the ship (ship plan step C; render.js renderHud) the HUD shows the
-     arrival clock, the burns and the crew's panic, and nothing else. */
+     crew taught and the crew's panic, and nothing else (no burns since step G1). */
   .stats .ship-stat { display: none; }
   .stats.ship-hud .ship-stat { display: flex; }
   .stats.ship-hud .stat:not(.ship-stat) { display: none; }
@@ -1972,7 +1972,6 @@
        the rest: time, myelin, cycle and the goals' names (main.js toggleHud). -->
   <div class="stats" id="statsBar" role="button" tabindex="0" aria-expanded="false" data-t-title="hud.more">
     <!-- The ship (ship plan step C; render.js renderHud): only these show there. -->
-    <div class="stat ship-stat"><span class="stat-label" data-t="stat.burns"></span><strong id="shipBurns">0/3</strong></div>
     <div class="stat ship-stat"><span class="stat-label" data-t="stat.taught"></span><strong id="shipTaught">0/0</strong></div>
     <div class="stat ship-stat"><span class="stat-label" data-t="stat.crew"></span><strong id="shipPanic"></strong><span class="panic-meter" id="shipPanicMeter" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
     <!-- The volume of all sound (sound.js): on the ship and in a run. A tap

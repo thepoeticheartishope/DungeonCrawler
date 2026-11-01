@@ -13,8 +13,8 @@
 import { state } from './state.js';
 import { makeWires, powered } from './charger.js';
 import { SHIP_STATIONS } from './config.js';
-import { crewMissed, crewRight, burnMade } from './ship.js';
-import { useCrew } from './roles.js';
+import { crewMissed, crewRight } from './ship.js';
+import { useCrew, arrivedIfAllTaught } from './roles.js';
 
 // The plan's stations ([kind, row, col, role], plans.js `stations`) as
 // solid props on the furniture's rules (placer.tryBlock), never on a
@@ -51,6 +51,8 @@ export function useStation(prop, rand = Math.random) {
   if (prop.kind === 'crew') return [{ type: 'crewSpoke', role: prop.role, trained }];
   if (prop.kind === 'console') return [{ type: 'consoleOpened', station: prop }];
   if (!trained) return [{ type: 'stationLocked', role: prop.role }];
+  // Taught once, like any crew member (no burns to make: step G1).
+  if (state.run.ship && state.run.ship.taught.includes(prop.role)) return [{ type: 'crewSpoke', role: prop.role, taught: true }];
   return openWires(prop, rand);
 }
 
@@ -62,7 +64,7 @@ export function trainWires(prop, rand = Math.random) {
 
 // A station's wires open: the ones left half done (`kept`), else new ones
 // for its mode (SHIP_STATIONS). A board's wires wait, half done, while the
-// player is away: no burn window (Timothy 2026-10-31: no timers).
+// player is away (Timothy 2026-10-31: no timers).
 // Events: stationOpened { station, mode, kept }.
 function openWires(prop, rand) {
   const mode = stationMode(prop);
@@ -99,16 +101,17 @@ export function settleBreaker(prop, index, isCorrect) {
 
 // The power joined up at `prop` (charger.js turnWire's `finish`, or the last
 // breaker closing): at the console the role is learned; at the board the
-// crew member makes a full burn, and with enough of them the ship arrives
-// (ship.js burnMade). The wires clear for next time.
-// Events: stationTrained { role }, or burnDone { role, burns } then
-// burnMade's.
+// Engineer is taught (no burns: ship minigames plan step G1), and if that
+// was the last crew member the ship arrives. The wires clear.
+// Events: stationTrained { role }, or stationTaught { role } then
+// roles.js arrivedIfAllTaught's.
 export function stationDone(prop) {
   prop.puzzle = null;
   if (stationMode(prop) === 'train') {
     if (!state.run.trained.includes(prop.role)) state.run.trained.push(prop.role);
     return [{ type: 'stationTrained', role: prop.role }];
   }
-  state.run.burns++;
-  return [{ type: 'burnDone', role: prop.role, burns: state.run.burns }, ...burnMade()];
+  const ship = state.run.ship;
+  if (ship && !ship.taught.includes(prop.role)) ship.taught.push(prop.role);
+  return [{ type: 'stationTaught', role: prop.role }, ...arrivedIfAllTaught()];
 }

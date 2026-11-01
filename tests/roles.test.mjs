@@ -19,7 +19,7 @@ import {
   noteOnDuty, crewLook, taughtCount, teachTargets, stopLearning,
 } from '../js/roles.js';
 import { roleCanRun } from '../js/minigames.js';
-import { freshShipRun, crewMissed, crewRight, slipEveryMs, burnMade } from '../js/ship.js';
+import { freshShipRun, crewMissed, crewRight, slipEveryMs } from '../js/ship.js';
 import { useStation } from '../js/stations.js';
 import { buildShipFloor } from '../js/floor.js';
 import { emptyFloor } from './helpers.mjs';
@@ -84,9 +84,9 @@ test('a miss in a job is a crew failure; the job ends after its rounds with the 
   settleRound(true);
   const last = settleRound(true);
   assert.equal(SHIP_JOB.rounds, 3);
-  assert.deepEqual(last.map(e => e.type), ['roundRight', 'roleHelped']);
-  assert.equal(roleOf(role).benefit.kind, 'burns');
-  assert.equal(ship.burnsNeeded, SHIP_RUN.burnsNeeded - 1);
+  assert.deepEqual(last.map(e => e.type).slice(0, 2), ['roundRight', 'roleHelped']);
+  assert.equal(roleOf(role).benefit.kind, 'panicDown', 'the Navigator calms the crew (no burns: step G1)');
+  assert.equal(ship.panic, 0, 'the panic from the miss is eased');
   assert.deepEqual(ship.taught, [role]);
   assert.equal(ship.job, null);
   assert.deepEqual(useCrew(role), [{ type: 'crewSpoke', role, taught: true }]);
@@ -100,18 +100,12 @@ test('too few right and the job goes badly: taught, but no benefit', () => {
   const last = settleRound(false);
   assert.ok(last.some(e => e.type === 'jobWentBadly'));
   assert.ok(!last.some(e => e.type === 'roleHelped'));
-  assert.equal(ship.burnsNeeded, SHIP_RUN.burnsNeeded);
+  assert.equal(ship.panic, 2, 'two misses, and no calming from a job gone badly');
   assert.deepEqual(ship.taught, ['navigator']);
 });
 
 test('each benefit changes the run as it says', () => {
   const ship = crewRun();
-  applyBenefit({ kind: 'burns' });
-  assert.equal(ship.burnsNeeded, SHIP_RUN.burnsNeeded - 1);
-  state.run.burns = ship.burnsNeeded;
-  assert.deepEqual(burnMade(), [{ type: 'shipEnded', how: 'arrived' }]);
-  state.run.burns = 0;
-
   applyBenefit({ kind: 'shield' });
   assert.deepEqual(crewMissed(), [{ type: 'panicShielded' }]);
   assert.equal(ship.panic, 0);
@@ -132,16 +126,21 @@ test('each benefit changes the run as it says', () => {
   ship.panic = 0;
 });
 
-test('no benefit is about time any more (timers gone 2026-10-31)', () => {
-  const kinds = ['burns', 'shield', 'panicDown', 'calm', 'slips'];
+test('no benefit is about time or burns any more (timers gone 2026-10-31, burns 2026-11-01)', () => {
+  const kinds = ['shield', 'panicDown', 'calm', 'slips'];
   SHIP_ROLES.forEach(r => assert.ok(kinds.includes(r.benefit.kind), r.id + ' ' + r.benefit.kind));
   SHIP_ROLES.forEach(r => assert.ok('job.helped.' + r.benefit.kind in TEXT, r.id));
 });
 
-test('the Pilot\'s burn fewer arrives at once when the burns are already made', () => {
-  crewRun();
-  state.run.burns = SHIP_RUN.burnsNeeded - 1;
-  assert.deepEqual(applyBenefit({ kind: 'burns' }), [{ type: 'shipEnded', how: 'arrived' }]);
+test('the last crew member taught brings the ship in (until the final boss, step G3)', () => {
+  const ship = crewRun();
+  const others = rolesOnDuty();
+  ship.taught = ['engineer', ...others.slice(1)];
+  useCrew(others[0]);
+  settleRound(true);
+  settleRound(true);
+  const last = settleRound(true);
+  assert.deepEqual(last[last.length - 1], { type: 'shipEnded', how: 'arrived' });
 });
 
 // ---- learning at the console (crew roles plan step B) ----
@@ -218,15 +217,15 @@ test('each crew member looks as they stand: sitting out, new, ready, taught', ()
   assert.equal(crewLook('engineer'), 'ready', 'the Engineer is never sitting out');
 });
 
-test('the count of crew taught is out of the roles on duty', () => {
+test('the count of crew taught is out of the roles on duty and the Engineer', () => {
   const ship = crewRun();
   noteOnDuty();
-  assert.deepEqual(taughtCount(), { taught: 0, of: ship.onDuty.length });
+  assert.deepEqual(taughtCount(), { taught: 0, of: ship.onDuty.length + 1 });
   useCrew('navigator');
   settleRound(true);
   settleRound(true);
   settleRound(true);
-  assert.deepEqual(taughtCount(), { taught: 1, of: ship.onDuty.length });
+  assert.deepEqual(taughtCount(), { taught: 1, of: ship.onDuty.length + 1 });
 });
 
 test('teachTargets: a learned role not yet taught is marked on the map; taught or unlearned is not', () => {
