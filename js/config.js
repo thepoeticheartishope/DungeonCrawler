@@ -441,7 +441,12 @@ export const SOUND_VOLUME = {
 // The game's music (music.js), one entry per tune: the file, its own
 // loudness under the game's volume (0 to 1), how long it takes to fade in
 // and out (an eased curve, so it starts and ends gently), and whether it
-// loops or instead starts over from the top each time it comes up. Both
+// loops or instead starts over from the top each time it comes up. A
+// looping tune whose file ends with a fade-out (an ending) gives
+// `loopEndS`, where the ending starts, and `crossfadeS`: that long before
+// loopEndS a second copy starts from the top and crossfades in, so the
+// ending is never heard and the loop has no seam (Timothy 2026-11-01).
+// The ending points were measured from each file's loudness. Both
 // Jeremy Blake (Timothy checked the licences; credits go in at the end).
 // - shipIntro: "Recovery Mission" ("Helios's Dreams") on the ship's
 //   opening, from 1:20, "the best" part (Timothy 2026-11-01). The file is
@@ -450,14 +455,16 @@ export const SOUND_VOLUME = {
 //   takes command by itself when it ends (shipview.js).
 // - safeRoom: "Nightscape" ("Circular Reality") while the player is in
 //   the safe room; it melds with Recovery Mission better than "Mary" did
-//   (Timothy 2026-11-01). On the ship that is Command.
+//   (Timothy 2026-11-01). On the ship that is Command. 1:07 long; its
+//   ending fades out from about 1:01.
 // - shipWalk: "Exoplanet" ("Circular Reality") on the ship anywhere
 //   outside Command: the walking-around-the-ship music (Timothy
 //   2026-11-01). Off the ship there is no music outside the safe room.
+//   1:46 long; its ending drops away from about 1:41.
 export const MUSIC = {
   shipIntro: { src: './audio/ship-intro-recovery-mission.mp3', volume: 1, fadeInMs: 3000, fadeOutMs: 4000, loop: false },
-  safeRoom: { src: './audio/safe-room-nightscape.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: true },
-  shipWalk: { src: './audio/ship-walk-exoplanet.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: true },
+  safeRoom: { src: './audio/safe-room-nightscape.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: true, loopEndS: 60, crossfadeS: 5 },
+  shipWalk: { src: './audio/ship-walk-exoplanet.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: true, loopEndS: 100.5, crossfadeS: 4 },
 };
 // How finely music.js draws a fade's curve, and how often it checks which
 // tune should be up.
