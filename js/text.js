@@ -684,7 +684,7 @@ export const TEXT = {
   'intro.call': 'LEARN AND REWRITE FALSE BELIEFS.', // Timothy: ties to the bosses; shows after the fake player's miss fades
   'intro.rejected': 'REJECTED.', // the fake player's miss, in the word a miss shows in the game (log.rejected)
   'intro.skip': 'Any key or tap to skip', // draft
-  'start.enter': 'Enter the {@term.dungeon}', // draft
+  'start.enter': 'Begin', // Timothy 2026-11-01 (was "Enter the LABYRINTH")
   'start.name.label': 'Your name', // draft
   'start.name.placeholder': 'Leave blank to stay nameless', // draft
   'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
