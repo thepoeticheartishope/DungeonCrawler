@@ -1,6 +1,7 @@
 // Music: the game's tunes (config.js MUSIC), one at a time, crossfading
 // from one to the next under the game's volume (sound.js):
 // - shipIntro on the ship's opening, from the top each new run, once;
+// - boss through the final boss, its song the time limit, once;
 // - safeRoom while the player stands in the safe room (the room, a
 //   question or the exchange on screen), looping;
 // - shipWalk on the ship anywhere outside its safe room (Command),
@@ -39,13 +40,14 @@ export function initMusic(screens) {
   }, MUSIC_CHECK_MS);
 }
 
-// The tune that should be up now ('shipIntro', 'safeRoom', 'shipWalk'),
-// or null.
+// The tune that should be up now ('shipIntro', 'boss', 'safeRoom',
+// 'shipWalk'), or null.
 function wanted(screens) {
   if (soundOff() || document.hidden) return null;
   if (screens.intro.classList.contains('show')) return 'shipIntro';
   if (!screens.run.some(s => s.classList.contains('show'))) return null;
   const f = state.floor;
+  if (state.run.ship && state.run.ship.boss) return 'boss';
   if (f && f.safeRoom && f.safeRoom.playerIn) return 'safeRoom';
   return f && f.ship ? 'shipWalk' : null;
 }
@@ -64,7 +66,7 @@ function follow(name) {
     const music = MUSIC[id];
     const voice = tune.voices[tune.active];
     if (on) {
-      if (voice.audio.paused && !music.loop) voice.audio.currentTime = 0;
+      if (voice.audio.paused && !music.loop && !music.resume) voice.audio.currentTime = 0;
       voice.audio.play().catch(() => { tune.up = false; });
       easeTo(sound.ctx, tune.fade, music.volume, music.fadeInMs);
       return;

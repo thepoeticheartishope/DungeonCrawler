@@ -13,7 +13,7 @@ import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
   LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS, VERDICT_TIMER_SECONDS,
-  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX, SCANNER, STAR_CHART, INFERENCE, ASTEROIDS,
+  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX, SCANNER, STAR_CHART, INFERENCE, ASTEROIDS, MATCH_BOSS,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
@@ -23,6 +23,7 @@ import {
   fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier, scannerGrid, scannerTier,
   starChartSetup, starChartPick, starChartTier, hullPatchSetup, hullPatchPlate, hullPatchTier,
   inferenceSetup, inferenceCheck, inferenceTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout,
+  matchSwap, matchEndTurn, matchWon, matchUse, matchCrisis, matchNear,
 } from './minigames.js';
 import { panicLevel } from './ship.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
@@ -45,6 +46,8 @@ let letterClock = null;
 let fogClock = null;
 // Asteroids' clock, keeping the aimed rock marked as the rocks drift.
 let aimClock = null;
+// The final boss's clock, counting its time down while the page is seen.
+let bossClock = null;
 
 // Builders, one per minigame: each fills `slot` and returns the parts the
 // shared code needs: `lock` (its answer button), `finish()` (DEV ->
@@ -70,6 +73,7 @@ const BUILDERS = {
   hullPatch: buildHullPatch,
   inference: buildInference,
   asteroids: buildAsteroids,
+  match: buildMatch,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -94,6 +98,8 @@ export function hideMinigame() {
   fogClock = null;
   clearInterval(aimClock);
   aimClock = null;
+  clearInterval(bossClock);
+  bossClock = null;
   shown = null;
   slot.hidden = true;
   slot.innerHTML = '';
@@ -1622,6 +1628,147 @@ function buildAsteroids() {
     focus: () => sky.focus(),
     // DEV -> Auto-win: hits the right rock with every shot left (tier X).
     finish: () => finish({ right: true, tier: 'X', given: field.rocks[0].text }),
+    flip: () => {},
+  };
+}
+
+// ---- Match: the final boss (ship minigames plan step G3) ----
+// A 5 x 5 board of the set's three answer kinds; one charge meter per crew
+// member the player taught, each with their ability. Tap a tile, then a
+// neighbour, to swap: lines clear (a slow shrink), the rest fall and new
+// tiles drop in, wave by wave. A swap with no line snaps back, shows both
+// kinds and spends the turn. Win: all three meters full. Lose: the crisis
+// on MATCH_BOSS.loseAt tiles, or the time (its song's length) running out;
+// the clock only counts while the page is seen. A panicking crew loses the
+// colour tints. Under reduced motion the clear and fall are instant.
+function buildMatch() {
+  slot.classList.add('mg-match');
+  const { board, crew } = state.battle.currentQuestion.match;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = ms => new Promise(r => setTimeout(r, still ? 0 : ms));
+  const top = add(slot, 'div', 'mg-match-top');
+  const clock = add(top, 'span', 'mg-match-clock');
+  const meta = add(top, 'span', 'mg-hint');
+  const grid = add(slot, 'div', 'mg-match-board' + (panicLevel() >= MATCH_BOSS.panicAt ? '' : ' tints'));
+  const meters = add(slot, 'div', 'mg-match-meters');
+  const said = add(slot, 'div', 'term-line mg-said');
+  said.setAttribute('aria-live', 'polite');
+  grid.style.gridTemplateColumns = 'repeat(' + MATCH_BOSS.size + ', minmax(0, 1fr))';
+  let sel = null;
+  let busy = false;
+  let arming = false;
+  let left = MATCH_BOSS.seconds * 1000;
+  const kindName = k => board.groups[k].label && t('type.' + board.groups[k].label) !== 'type.' + board.groups[k].label ? t('type.' + board.groups[k].label) : board.groups[k].label;
+
+  // Draws `cells` (the board, or a snapshot mid-clear) with tiles `pop`
+  // shrinking away, tiles that fell `fall` rows easing in, and `shake`
+  // tiles shaken with their kinds shown.
+  const draw = (cells = board.cells, { pop = [], fall = {}, shake = [] } = {}) => {
+    grid.innerHTML = '';
+    cells.forEach((tile, k) => {
+      const b = add(grid, 'button', 'mg-match-tile');
+      b.type = 'button';
+      b.dataset.kind = String(tile.kind);
+      const show = (board.reveal > 0 || shake.includes(k)) && tile.kind !== 'crisis';
+      b.textContent = tile.word;
+      if (show) add(b, 'span', 'mg-match-kind').textContent = kindName(tile.kind);
+      if (sel === k) b.classList.add('sel');
+      if (pop.includes(k)) b.classList.add('pop');
+      if (fall[k]) { b.classList.add('drop'); b.style.setProperty('--fall', fall[k]); }
+      if (shake.includes(k)) b.classList.add('shake');
+      b.addEventListener('click', () => tap(k));
+    });
+    meters.innerHTML = '';
+    [0, 1, 2].forEach((i) => {
+      const row = add(meters, 'div', 'mg-match-meter' + (board.charge[i] >= MATCH_BOSS.full ? ' full' : ''));
+      add(row, 'span', 'mg-match-who').textContent = t('match.who', { role: crew[i] ? t('role.' + crew[i]) : t('match.crew'), kind: kindName(i) });
+      const bar = add(row, 'span', 'mg-match-bar');
+      add(bar, 'i').style.width = (Math.min(1, board.charge[i] / MATCH_BOSS.full) * 100) + '%';
+      const use = add(row, 'button', 'mg-match-use');
+      use.type = 'button';
+      use.textContent = t('match.ability.' + i);
+      // `shown` is set only once this builder returns: the first draw comes before.
+      use.disabled = busy || Boolean(shown && shown.done) || board.charge[i] < MATCH_BOSS.full;
+      use.addEventListener('click', () => useAbility(i));
+    });
+    meta.textContent = t('match.meta', { crisis: matchCrisis(board), lose: MATCH_BOSS.loseAt, spread: board.skip ? t('match.skipped') : board.toSpread });
+  };
+  const showClock = () => {
+    const s = Math.max(0, Math.ceil(left / 1000));
+    clock.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  };
+  const endTurn = (shake = []) => {
+    const turn = matchEndTurn(board);
+    draw(board.cells, { shake });
+    if (turn.lost) { said.textContent = t('match.lost'); finish({ right: false, tier: null, given: '' }); }
+  };
+  const tap = async (k) => {
+    if (busy || shown.done) return;
+    if (arming) {
+      arming = false;
+      matchUse(board, 0, Math.floor(k / MATCH_BOSS.size));
+      said.textContent = t('match.used.0');
+      draw();
+      return;
+    }
+    if (board.cells[k].kind === 'crisis') return;
+    if (sel === null) { sel = k; draw(); return; }
+    const a = sel;
+    sel = null;
+    if (a === k || !matchNear(a).includes(k)) { sel = a === k ? null : k; draw(); return; }
+    const got = matchSwap(board, a, k);
+    if (got.invalid) { draw(); return; }
+    if (!got.lined) {
+      said.textContent = t('match.noLine', { a: board.cells[a].word, ak: kindName(board.cells[a].kind), b: board.cells[k].word, bk: kindName(board.cells[k].kind) });
+      endTurn([a, k]);
+      return;
+    }
+    busy = true;
+    let prev = got.start;
+    const gained = [0, 0, 0];
+    let freed = 0;
+    for (const wave of got.waves) {
+      draw(prev, { pop: wave.hit });
+      await wait(MATCH_BOSS.popMs);
+      if (!shown || shown.done) return;
+      draw(wave.cells, { fall: wave.fall });
+      await wait(MATCH_BOSS.dropMs);
+      if (!shown || shown.done) return;
+      wave.gained.forEach((g, i) => { gained[i] += g; });
+      freed += wave.freed;
+      prev = wave.cells;
+    }
+    busy = false;
+    const parts = [0, 1, 2].filter(i => gained[i]).map(i => '+' + gained[i] + ' ' + (crew[i] ? t('role.' + crew[i]) : kindName(i)));
+    said.textContent = t(got.waves.length > 1 ? 'match.chain' : 'match.line', { n: got.waves.length, gains: parts.join(', ') }) + (freed ? ' ' + t('match.freed', { n: freed }) : '');
+    if (matchWon(board)) { draw(); finish({ right: true, tier: 'X', given: '' }); return; }
+    endTurn();
+  };
+  const useAbility = (i) => {
+    if (busy || shown.done || board.charge[i] < MATCH_BOSS.full) return;
+    if (i === 0) { arming = true; said.textContent = t('match.arm'); return; }
+    matchUse(board, i);
+    said.textContent = t('match.used.' + i);
+    draw();
+  };
+  // The time limit: counts only while the page is seen (its song pauses
+  // with a hidden tab too).
+  let last = performance.now();
+  bossClock = setInterval(() => {
+    const now = performance.now();
+    if (!document.hidden && shown && !shown.done) left -= now - last;
+    last = now;
+    showClock();
+    if (left <= 0 && shown && !shown.done) { said.textContent = t('match.time'); finish({ right: false, tier: null, given: '' }); }
+  }, 250);
+  draw();
+  showClock();
+  said.textContent = t('match.start');
+  return {
+    lock: grid,
+    focus: () => { const b = grid.querySelector('button'); if (b) b.focus(); },
+    // DEV -> Auto-win: the crew all charged (the ship arrives).
+    finish: () => { board.charge = [MATCH_BOSS.full, MATCH_BOSS.full, MATCH_BOSS.full]; finish({ right: true, tier: 'X', given: '' }); },
     flip: () => {},
   };
 }

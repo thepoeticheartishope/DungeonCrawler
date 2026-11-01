@@ -16,7 +16,7 @@ import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_REACH_MAX, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
-  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, STAR_CHART, HULL_PATCH, INFERENCE, ASTEROIDS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
+  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, STAR_CHART, HULL_PATCH, INFERENCE, ASTEROIDS, MATCH_BOSS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
@@ -55,11 +55,13 @@ export const MINIGAME_MODIFIERS = {
   hullPatch: [],
   inference: [],
   asteroids: [],
+  // The final boss: run by its own stand-in question only (bossQuestion).
+  match: [],
 };
 
 // Minigames only the ship's crew roles run (ship minigames plan): never
 // rolled in place of a question elsewhere.
-export const SHIP_ONLY = ['fuelMix', 'scanner', 'starChart', 'hullPatch', 'inference', 'asteroids'];
+export const SHIP_ONLY = ['fuelMix', 'scanner', 'starChart', 'hullPatch', 'inference', 'asteroids', 'match'];
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 
@@ -88,6 +90,7 @@ const FITS = {
   hullPatch: q => hullPatchWord(q) !== null && !answerInStem(q),
   inference: q => inferenceFact(q) !== null && inferenceHelpers(q).length >= 2,
   asteroids: q => asteroidsFits(q),
+  match: q => Boolean(q.match),
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -592,6 +595,188 @@ export function asteroidsLayout(width, height, rockW, most) {
     }
   }
   return null;
+}
+
+// ---- Match: the final boss (ship minigames plan step G3) ----
+
+// The board's three kinds of tile from the loaded set: [{ label, words }],
+// the three answer kinds (not numbers) with the most short answers (MATCH_BOSS.minWords
+// or more of at most maxChars letters each), or the three biggest
+// categories when the kinds can't give three; null when neither can. A
+// kind's `label` is its name (type.* in text.js, or the category).
+export function matchGroups() {
+  const data = state.settings.activeData || [];
+  const pick = (keyOf, labelOf) => {
+    const byKey = new Map();
+    data.forEach((q) => {
+      const word = normalizeSpaces(q.meaning || '');
+      const k = keyOf(q);
+      if (!k || !word || word.length > MATCH_BOSS.maxChars || q.image) return;
+      const words = byKey.get(k) || new Set();
+      words.add(word);
+      byKey.set(k, words);
+    });
+    const groups = [...byKey].filter(([, w]) => w.size >= MATCH_BOSS.minWords).sort((a, b) => b[1].size - a[1].size).slice(0, 3);
+    return groups.length === 3 ? groups.map(([k, w]) => ({ key: k, label: labelOf(k), words: [...w] })) : null;
+  };
+  // Numbers (and ports) give themselves away at a glance, so they never
+  // make a kind of tile.
+  const plain = q => q.answerType !== 'number' && !PORT_LIKE_TYPES.includes(q.answerType);
+  return pick(q => (plain(q) ? q.answerType : null), k => k) || pick(q => (plain(q) ? q.category : null), k => k);
+}
+
+// A tile of kind `kind` (0-2) from `board`'s groups: a random word of it.
+function matchTile(board, kind) {
+  const words = board.groups[kind].words;
+  return { kind, word: words[Math.floor(Math.random() * words.length)] };
+}
+
+// A crisis tile.
+const CRISIS = { kind: 'crisis', word: '!!' };
+
+// A new board on `groups` (matchGroups): `cells` (MATCH_BOSS.size squared
+// tiles, no line to start with, crisis on MATCH_BOSS.crisisStart), each
+// crew slot's `charge`, the `turn`, turns until the crisis next spreads
+// (`toSpread`), a spread to skip (`skip`) and turns of kinds shown
+// (`reveal`).
+export function matchSetup(groups) {
+  const board = { groups, cells: [], charge: [0, 0, 0], turn: 0, toSpread: MATCH_BOSS.spreadEvery, skip: 0, reveal: 0 };
+  const n = MATCH_BOSS.size * MATCH_BOSS.size;
+  do {
+    board.cells = Array.from({ length: n }, () => matchTile(board, Math.floor(Math.random() * 3)));
+  } while (matchRuns(board).length);
+  MATCH_BOSS.crisisStart.forEach((k) => { board.cells[k] = { ...CRISIS }; });
+  return board;
+}
+
+// Every run of 3 or more same-kind tiles in a row or column on `board`:
+// [{ kind, cells }]. Crisis tiles never make one.
+export function matchRuns(board) {
+  const size = MATCH_BOSS.size;
+  const runs = [];
+  const scan = (at) => {
+    let start = 0;
+    for (let k = 1; k <= size; k++) {
+      const a = board.cells[at(start)];
+      const b = k < size ? board.cells[at(k)] : null;
+      if (b && b.kind === a.kind) continue;
+      if (k - start >= 3 && a.kind !== 'crisis') runs.push({ kind: a.kind, cells: Array.from({ length: k - start }, (_, x) => at(start + x)) });
+      start = k;
+    }
+  };
+  for (let r = 0; r < size; r++) scan(c => r * size + c);
+  for (let c = 0; c < size; c++) scan(r => r * size + c);
+  return runs;
+}
+
+// The tiles next to tile `k` (up, down, left, right).
+export function matchNear(k) {
+  const size = MATCH_BOSS.size;
+  return [k - size, k + size, k % size ? k - 1 : -1, k % size < size - 1 ? k + 1 : -1].filter(x => x >= 0 && x < size * size);
+}
+
+// Swaps tiles `a` and `b` on `board` (neighbours, neither a crisis): if
+// that makes no line it snaps back and the result is { lined: false } (the
+// caller spends the turn: the light nudge shows the two kinds). Otherwise
+// every line clears, wave by wave: each wave's `hit` tiles go (lines and
+// the crisis tiles touching them), the rest fall and new tiles drop in
+// (`fall`: how many rows each tile fell; new tiles never make a line by
+// themselves; `cells` the board after it; `start` the board just after
+// the swap), and `gained` charge per crew slot (1 a line, MATCH_BOSS.bonus
+// more for 4 or more). Charge stops at MATCH_BOSS.full.
+export function matchSwap(board, a, b) {
+  const cells = board.cells;
+  if (!matchNear(a).includes(b) || cells[a].kind === 'crisis' || cells[b].kind === 'crisis') return { lined: false, invalid: true };
+  [cells[a], cells[b]] = [cells[b], cells[a]];
+  if (!matchRuns(board).length) {
+    [cells[a], cells[b]] = [cells[b], cells[a]];
+    return { lined: false };
+  }
+  const waves = [];
+  const start = cells.map(t => ({ ...t }));
+  const size = MATCH_BOSS.size;
+  for (let runs = matchRuns(board); runs.length; runs = matchRuns(board)) {
+    const hit = new Set();
+    const gained = [0, 0, 0];
+    runs.forEach((run) => {
+      gained[run.kind] += 1 + (run.cells.length >= 4 ? MATCH_BOSS.bonus : 0);
+      run.cells.forEach(k => hit.add(k));
+    });
+    let freed = 0;
+    [...hit].forEach(k => matchNear(k).forEach((n) => {
+      if (cells[n].kind === 'crisis' && !hit.has(n)) { hit.add(n); freed++; }
+    }));
+    const fall = {};
+    for (let c = 0; c < size; c++) {
+      const keep = [];
+      for (let r = size - 1; r >= 0; r--) if (!hit.has(r * size + c)) keep.push({ tile: cells[r * size + c], from: r });
+      for (let r = size - 1, i = 0; r >= 0; r--, i++) {
+        const k = r * size + c;
+        if (i < keep.length) { cells[k] = keep[i].tile; if (keep[i].from !== r) fall[k] = r - keep[i].from; }
+        else { cells[k] = matchTile(board, Math.floor(Math.random() * 3)); fall[k] = r + 1; }
+      }
+    }
+    // New tiles alone never make a line: chains come from tiles falling.
+    const fresh = Object.keys(fall).map(Number).filter(k => fall[k] > Math.floor(k / size));
+    for (let tries = 0; tries < 30; tries++) {
+      const bad = fresh.filter(k => matchRuns(board).some(run => run.cells.includes(k)));
+      if (!bad.length) break;
+      bad.forEach((k) => { cells[k] = matchTile(board, Math.floor(Math.random() * 3)); });
+    }
+    gained.forEach((g, i) => { board.charge[i] = Math.min(MATCH_BOSS.full, board.charge[i] + g); });
+    waves.push({ hit: [...hit], fall, gained, freed, cells: cells.map(t => ({ ...t })) });
+  }
+  return { lined: true, start, waves };
+}
+
+// Whether `board` is won: every crew slot charged full.
+export function matchWon(board) {
+  return board.charge.every(c => c >= MATCH_BOSS.full);
+}
+
+// A turn ends on `board`: kinds shown count down, and every
+// MATCH_BOSS.spreadEvery turns the crisis spreads one tile (next to a
+// crisis tile, or anywhere if none is left), unless a spread is skipped.
+// Returns { spread (the tile, or null), lost (MATCH_BOSS.loseAt reached) }.
+export function matchEndTurn(board) {
+  board.turn++;
+  if (board.reveal > 0) board.reveal--;
+  board.toSpread--;
+  let spread = null;
+  if (board.toSpread <= 0) {
+    board.toSpread = MATCH_BOSS.spreadEvery;
+    if (board.skip > 0) board.skip = 0;
+    else {
+      const cells = board.cells;
+      const crisis = cells.map((t, k) => (t.kind === 'crisis' ? k : -1)).filter(k => k >= 0);
+      const edge = shuffle(crisis.flatMap(matchNear).filter(n => cells[n].kind !== 'crisis'));
+      spread = edge.length ? edge[0] : shuffle(cells.map((t, k) => k).filter(k => cells[k].kind !== 'crisis'))[0];
+      cells[spread] = { ...CRISIS };
+    }
+  }
+  return { spread, lost: matchCrisis(board) >= MATCH_BOSS.loseAt };
+}
+
+// How many crisis tiles `board` has.
+export function matchCrisis(board) {
+  return board.cells.filter(t => t.kind === 'crisis').length;
+}
+
+// Crew slot `slot`'s ability on `board`, spending its charge (it must be
+// full): 0 clears every crisis tile in row `row`, 1 skips the crisis's
+// next spread, 2 shows every tile's kind for MATCH_BOSS.revealTurns turns.
+// Using one sets that slot back from the win: save or spend.
+export function matchUse(board, slot, row = 0) {
+  if (board.charge[slot] < MATCH_BOSS.full) return false;
+  if (slot === 0) {
+    for (let c = 0; c < MATCH_BOSS.size; c++) {
+      const k = row * MATCH_BOSS.size + c;
+      if (board.cells[k].kind === 'crisis') board.cells[k] = matchTile(board, Math.floor(Math.random() * 3));
+    }
+  } else if (slot === 1) board.skip = 1;
+  else board.reveal = MATCH_BOSS.revealTurns;
+  board.charge[slot] = 0;
+  return true;
 }
 
 // ---- Higher / Lower: find a number answer in a few guesses ----

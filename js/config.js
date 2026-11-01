@@ -461,6 +461,9 @@ export const SOUND_VOLUME = {
 //   the safe room; it melds with Recovery Mission better than "Mary" did
 //   (Timothy 2026-11-01). On the ship that is Command. 1:07 long; its
 //   ending fades out from about 1:01.
+// - boss: "Novum (Good Final Boss, long)" ("Infinity Zero") through the
+//   final boss, from the top; its 15:14 is the boss's time limit (Timothy
+//   2026-11-01).
 // - shipWalk: "Exoplanet" ("Circular Reality") on the ship anywhere
 //   outside Command: the walking-around-the-ship music (Timothy
 //   2026-11-01). Off the ship there is no music outside the safe room.
@@ -469,6 +472,9 @@ export const MUSIC = {
   shipIntro: { src: './audio/ship-intro-recovery-mission.mp3', volume: 1, fadeInMs: 3000, fadeOutMs: 4000, loop: false },
   safeRoom: { src: './audio/safe-room-nightscape.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: true, loopEndS: 60, crossfadeS: 5 },
   shipWalk: { src: './audio/ship-walk-exoplanet.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: true, loopEndS: 100.5, crossfadeS: 4 },
+  // The final boss's song: its length is the boss's time limit (MATCH_BOSS.seconds).
+  // `resume`: a pause (a hidden tab) picks up where it was, not from the top.
+  boss: { src: './audio/boss-novum-final.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: false, resume: true },
 };
 // How finely music.js draws a fade's curve, and how often it checks which
 // tune should be up.
@@ -1217,6 +1223,25 @@ export const ASTEROIDS = {
   // never smaller (Timothy: fewer rocks, not smaller ones). `reach`: how
   // far out rocks sit, as a share of the room each angle has.
   turretBottom: 8, turretLength: 18, fieldPx: 240, rockPx: 78, rockPxWide: 96, wideAt: 520, reach: [0.92, 0.7],
+};
+// The final boss (ship minigames plan step G3): Match, once the player's
+// 3rd crew member is taught. A 5 x 5 board of short answers of the set's
+// three biggest answer kinds (`minWords` each, at most `maxChars`; by
+// category when the kinds can't give three). Swap neighbours to line up 3
+// of a kind: matched tiles clear, the rest fall, new ones drop in (new
+// tiles never make a line by themselves). A line charges its crew member
+// 1 (4 or more: `bonus` more); all three at `full` wins: the ship
+// arrives. Each crew member's ability spends their charge. The crisis
+// starts on `crisisStart` tiles, spreads one every `spreadEvery` turns; a
+// line touching it clears it; `loseAt` crisis tiles loses the run. A
+// swap that makes no line snaps back, shows both kinds and spends the
+// turn. `seconds`: the time limit, the length of its song (MUSIC.boss,
+// "Novum-Good-Final-Boss-Long", 15:14; Timothy's one exception to "no
+// timers on the ship"). From panic level `panicAt` (Shaken) the kinds'
+// colour tints go. `popMs` / `dropMs`: the clear and fall, slow.
+export const MATCH_BOSS = {
+  size: 5, minWords: 6, maxChars: 7, full: 5, bonus: 1, crisisStart: [7, 17], spreadEvery: 2, loseAt: 8,
+  revealTurns: 2, seconds: 914, panicAt: 2, popMs: 300, dropMs: 420,
 };
 export const SCANNER = { cols: 5, rows: 4, panicCols: 10, panicRows: 8, panicAt: 2, xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
 // Sum Lock: a trapped box only. When a trapped box rolls a minigame it is

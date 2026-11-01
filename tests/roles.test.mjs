@@ -288,3 +288,20 @@ test('the Engineer is one of the choices: picked, it counts; not picked once ful
   const engineer = state.floor.props.find(p => p.kind === 'crew' && p.role === 'engineer');
   assert.deepEqual(useStation(engineer), [{ type: 'crewSpoke', role: 'engineer', notCrew: true }]);
 });
+
+test('the last of the player\'s crew taught brings the final boss when the set can make its board', async () => {
+  const { arrivedIfAllTaught, settleBoss, startBoss } = await import('../js/roles.js');
+  const ship = crewRun(false);
+  noteOnDuty();
+  const books = ['Ruth', 'Acts', 'Jude', 'Amos', 'Joel', 'Ezra'].map(m => ({ term: 'Which book?', meaning: m, answerType: 'book' }));
+  const places = ['Rome', 'Eden', 'Moab', 'Edom', 'Joppa', 'Nebo'].map(m => ({ term: 'Where?', meaning: m, answerType: 'location' }));
+  const names = ['Paul', 'Herod', 'Lot', 'Aaron', 'Silas', 'Jacob'].map(m => ({ term: 'Who?', meaning: m, answerType: 'name' }));
+  state.settings.activeData = [...SET, ...books, ...places, ...names];
+  ship.taught = ['engineer', 'a', 'b'];
+  assert.deepEqual(arrivedIfAllTaught(), [{ type: 'bossReady' }]);
+  startBoss();
+  assert.ok(ship.boss);
+  assert.deepEqual(settleBoss(true), [{ type: 'shipEnded', how: 'arrived' }]);
+  assert.equal(ship.boss, null);
+  assert.deepEqual(settleBoss(false), [{ type: 'shipEnded', how: 'boss' }]);
+});
