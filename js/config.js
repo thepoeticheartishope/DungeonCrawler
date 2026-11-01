@@ -397,7 +397,7 @@ export const SHIP_ROLES = [
   { id: 'science', minigame: 'verdict', benefit: { kind: 'shield' } }, // was longer burn windows
   { id: 'quartermaster', minigame: 'crosswire', benefit: { kind: 'panicDown' } }, // was +30s clock
   { id: 'sensors', minigame: 'scanner', benefit: { kind: 'panicDown' } }, // was Fog Reveal (ship minigames plan step B)
-  { id: 'lifeSupport', minigame: 'sumLock', benefit: { kind: 'shield' } }, // was a missed-window shield
+  { id: 'lifeSupport', minigame: 'hullPatch', benefit: { kind: 'shield' } }, // was Sum Lock (ship minigames plan step D)
 ];
 export const SHIP_JOB = { rounds: 3, passAt: 2, minFitting: 3, learnRounds: 3 }; // learnRounds: at the console, at most this many rounds to learn a role (step B)
 // The tragedy intro (shipview.js): seconds between one line fading in and
@@ -1172,6 +1172,15 @@ export const FOG_REVEAL_2_COVERED = 6;
 // A drag picks a star only when the finger comes within `dragPx` of its
 // middle, so a line that just brushes a star on its way doesn't count.
 export const STAR_CHART = { minLetters: 3, maxLetters: 10, decoys: 6, panicDecoys: 10, cols: 5, wrong2: 2, maxWrong: 4, panicAt: 2, dragPx: 14 };
+// Hull Patch (ship minigames plan step D; Life Support's job, in place of
+// Sum Lock): a one-word answer of `minLetters` to `maxLetters` plain
+// letters is a hole in the hull; a tray holds its letters once each plus
+// `decoys` letters not in it. A right plate fills every spot it belongs
+// in; a wrong one falls off and the hull takes a strain. Strain 0 = X, up
+// to `strain2` = 2, below `maxStrain` = 1; at `maxStrain` the hull
+// breaches (a miss). From panic level `panicAt` (Shaken) the hull holds
+// only `panicMaxStrain`.
+export const HULL_PATCH = { minLetters: 3, maxLetters: 12, decoys: 7, strain2: 2, maxStrain: 5, panicMaxStrain: 3, panicAt: 2 };
 export const SCANNER = { cols: 5, rows: 4, panicCols: 10, panicRows: 8, panicAt: 2, xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
 // Sum Lock: a trapped box only. When a trapped box rolls a minigame it is
 // Sum Lock if it can be (not twice in a row): its question becomes two

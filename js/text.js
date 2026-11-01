@@ -266,6 +266,16 @@ export const TEXT = {
   'mg.starChart.scored.2': '{name|upper}: course plotted.', // draft
   'mg.starChart.scored.1': '{name|upper}: plotted, roughly. It was {answer}.', // draft
   'mg.starChart.scored.miss': '{name|upper}: lost among the stars. It was {answer}.', // draft
+  'mg.hullPatch': 'Hull Patch', // draft. Life Support's job (ship minigames plan step D)
+  'mg.hullPatch.hint': 'Patch the hole: tap or type a letter plate.', // draft
+  'mg.hullPatch.strain': 'Strain', // draft
+  'mg.hullPatch.tray': 'Letter plates: type a letter or tap a plate', // draft. For screen readers
+  'mg.hullPatch.fits': 'It holds.', // draft
+  'mg.hullPatch.off': '{letter} falls off: not in the word. The hull strains.', // draft
+  'mg.hullPatch.scored.X': '{name|upper}: sealed without a strain.', // draft
+  'mg.hullPatch.scored.2': '{name|upper}: sealed.', // draft
+  'mg.hullPatch.scored.1': '{name|upper}: sealed, barely. It was {answer}.', // draft
+  'mg.hullPatch.scored.miss': '{name|upper}: the hull breached. It was {answer}.', // draft
   'mg.scanner': 'Scanner', // draft. The Sensors' job (ship minigames plan step B)
   'mg.scanner.hint': 'Tap the fog to scan a patch. Answer when you know.', // draft
   'mg.scanner.patch': 'Scan patch {n}', // draft. A fog patch's label for screen readers
