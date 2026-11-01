@@ -13,14 +13,14 @@ import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
   LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS, VERDICT_TIMER_SECONDS,
-  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX,
+  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX, SCANNER,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
   syllableSplitTray, syllableSplitTier, letterPoolCheck, letterPoolTier,
   codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier, verdictSetup, verdictTier,
   crosswireSetup, crosswireTier, fogRevealTier, sumLockMatches,
-  fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier,
+  fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier, scannerGrid, scannerTier,
 } from './minigames.js';
 import { panicLevel } from './ship.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
@@ -61,6 +61,7 @@ const BUILDERS = {
   fogReveal: buildFogReveal,
   sumLock: buildSumLock,
   fuelMix: buildFuelMix,
+  scanner: buildScanner,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -1085,6 +1086,88 @@ function buildFogReveal() {
       const { slots, mode } = rollFlip(buttons.length);
       buttons.forEach((btn, i) => { if (slots.has(i)) btn.querySelector('.opt-text').classList.add('flip-' + mode); });
     },
+  };
+}
+
+// ---- Scanner: pick where to look through the fog ----
+// The Sensors' job (ship minigames plan step B), in place of Fog Reveal:
+// nothing lifts on its own; each patch the player taps is scanned. The
+// options can be picked any time; a wrong one dims (the light nudge: not
+// that one) and costs a tier step, a second wrong is a miss. A panicking
+// crew gets a finer fog (scannerGrid). No modifiers (the ship asks with
+// none).
+function buildScanner() {
+  slot.classList.add('mg-scan');
+  const q = state.battle.currentQuestion;
+  const { cols, rows } = scannerGrid(panicLevel());
+  const total = cols * rows;
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.scanner.hint');
+  const box = add(slot, 'div', 'mg-fogbox');
+  const image = add(box, 'img', 'mg-fog-image');
+  const fog = add(box, 'div', 'mg-scan-tiles');
+  const count = add(slot, 'div', 'term-line mg-left');
+  const said = add(slot, 'div', 'term-line mg-said');
+  const lock = add(slot, 'fieldset', 'mg-fog-opts');
+  said.setAttribute('aria-live', 'polite');
+
+  image.src = resolveImageSrc(q.image);
+  image.alt = '';
+  fog.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+  let scanned = 0;
+  let wrongs = 0;
+  const showCount = () => { count.textContent = t('mg.scanner.count', { n: scanned }); };
+  const patches = Array.from({ length: total }, (_, i) => {
+    const patch = add(fog, 'button', 'mg-scan-patch');
+    patch.type = 'button';
+    patch.setAttribute('aria-label', t('mg.scanner.patch', { n: i + 1 }));
+    patch.addEventListener('click', () => {
+      if (shown.done || patch.classList.contains('mg-gone')) return;
+      patch.classList.add('mg-gone');
+      patch.tabIndex = -1;
+      scanned++;
+      showCount();
+    });
+    return patch;
+  });
+  const letters = ['A', 'B', 'C', 'D'];
+  const options = buildChoices(q);
+  const buttons = options.map((opt, i) => {
+    const btn = add(lock, 'button', 'mc-option');
+    btn.type = 'button';
+    add(btn, 'span', 'letter').textContent = letters[i];
+    add(btn, 'span', 'opt-text').textContent = opt;
+    btn.addEventListener('click', () => choose(opt, btn));
+    return btn;
+  });
+  const choose = (opt, btn) => {
+    if (shown.done || (btn && btn.disabled)) return;
+    const right = normalizeSpaces(opt).toLowerCase() === normalizeSpaces(q.meaning).toLowerCase();
+    if (!right) wrongs++;
+    if (right || wrongs > SCANNER.wrongsAllowed) {
+      patches.forEach(patch => patch.classList.add('mg-gone'));
+      finish({ right, tier: right ? scannerTier(scanned, total, wrongs) : null, given: opt });
+      return;
+    }
+    if (btn) { btn.disabled = true; btn.classList.add('mg-dim'); }
+    said.textContent = t('mg.scanner.wrong', { opt });
+  };
+  // 1-4 / A-D pick an option, as on a plain question.
+  lock.addEventListener('keydown', (e) => {
+    const at = '1234'.indexOf(e.key) >= 0 ? '1234'.indexOf(e.key) : 'abcd'.indexOf(e.key.toLowerCase());
+    if (at < 0 || !options[at] || e.key.length !== 1) return;
+    e.preventDefault();
+    e.stopPropagation();
+    choose(options[at], buttons[at]);
+  });
+  showCount();
+
+  return {
+    lock,
+    drawsImage: true,
+    focus: () => patches[Math.floor(total / 2)].focus(),
+    // DEV -> Auto-win: answers right with nothing scanned (tier X).
+    finish: () => choose(q.meaning, null),
+    flip: () => {},
   };
 }
 

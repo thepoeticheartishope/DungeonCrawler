@@ -16,7 +16,7 @@ import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_REACH_MAX, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
-  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
+  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
@@ -50,11 +50,12 @@ export const MINIGAME_MODIFIERS = {
   sumLock: [],
   // A ship role's game only (SHIP_ONLY): the ship asks with no modifiers.
   fuelMix: [],
+  scanner: [],
 };
 
 // Minigames only the ship's crew roles run (ship minigames plan): never
 // rolled in place of a question elsewhere.
-export const SHIP_ONLY = ['fuelMix'];
+export const SHIP_ONLY = ['fuelMix', 'scanner'];
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 
@@ -78,6 +79,7 @@ const FITS = {
   // question (sumLockQuestion in main.js) fits it.
   sumLock: q => Boolean(q.sumLock),
   fuelMix: q => fuelMixAnswer(q) !== null,
+  scanner: q => Boolean(String(q.image || '').trim()),
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -292,6 +294,27 @@ export function fuelMixDry(engine) {
 export function fuelMixTier(engine) {
   const over = fuelMixOver(engine);
   return over <= 0 ? 'X' : over <= FUEL_MIX.slack2 ? '2' : '1';
+}
+
+// ---- Scanner: pick where to look through the fog ----
+
+// The fog's size: SCANNER.cols x rows, or the finer panic fog from panic
+// level SCANNER.panicAt. `panic` is the crew's panic level.
+export function scannerGrid(panic) {
+  const fine = panic >= SCANNER.panicAt;
+  return fine ? { cols: SCANNER.panicCols, rows: SCANNER.panicRows } : { cols: SCANNER.cols, rows: SCANNER.rows };
+}
+
+// The tier of a right answer after scanning `scanned` of `total` patches
+// with `wrongs` wrong options first: by the share scanned (SCANNER.xShare,
+// twoShare), one step down per wrong option. Null (a miss) past
+// SCANNER.wrongsAllowed wrong.
+export function scannerTier(scanned, total, wrongs) {
+  if (wrongs > SCANNER.wrongsAllowed) return null;
+  const share = scanned / total;
+  const tiers = ['X', '2', '1'];
+  const base = share <= SCANNER.xShare ? 0 : share <= SCANNER.twoShare ? 1 : 2;
+  return tiers[Math.min(2, base + wrongs)];
 }
 
 // ---- Higher / Lower: find a number answer in a few guesses ----

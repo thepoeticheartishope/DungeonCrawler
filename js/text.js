@@ -257,6 +257,15 @@ export const TEXT = {
   'mg.fuelMix.scored.2': '{name|upper}: filled. It was {answer}.', // draft
   'mg.fuelMix.scored.1': '{name|upper}: filled, slowly. It was {answer}.', // draft
   'mg.fuelMix.scored.miss': '{name|upper}: ran dry. It was {answer}.', // draft
+  'mg.scanner': 'Scanner', // draft. The Sensors' job (ship minigames plan step B)
+  'mg.scanner.hint': 'Tap the fog to scan a patch. Answer when you know.', // draft
+  'mg.scanner.patch': 'Scan patch {n}', // draft. A fog patch's label for screen readers
+  'mg.scanner.count': 'Scans: {n}', // draft
+  'mg.scanner.wrong': 'Not {opt}. Scan somewhere new.', // draft
+  'mg.scanner.scored.X': '{name|upper}: knew it at a glance.', // draft
+  'mg.scanner.scored.2': '{name|upper}: found it.', // draft
+  'mg.scanner.scored.1': '{name|upper}: found it, slowly. It was {answer}.', // draft
+  'mg.scanner.scored.miss': '{name|upper}: lost the signal. It was {answer}.', // draft
   'mg.slowSpell': 'Slow Spell', // draft
   'mg.slowSpell.hint': 'Name it before the letters do. Fewer letters, bigger hit.', // draft
   'mg.slowSpell.know': 'I know it', // draft

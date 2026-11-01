@@ -655,3 +655,20 @@ test('Fuel Mix is ship-only: never rolled in place of a question', () => {
     assert.notEqual(withRandom(r, () => rollMinigame(NUMBER, [])), 'fuelMix');
   }
 });
+
+// ---- Scanner (ship minigames plan step B) ----
+
+test('Scanner: tier by share scanned, one step down per wrong option, a miss past the allowance', async () => {
+  const { scannerTier, scannerGrid, SHIP_ONLY: ship } = await import('../js/minigames.js');
+  assert.equal(scannerTier(4, 20, 0), 'X');
+  assert.equal(scannerTier(5, 20, 0), '2');
+  assert.equal(scannerTier(8, 20, 0), '2');
+  assert.equal(scannerTier(9, 20, 0), '1');
+  assert.equal(scannerTier(0, 20, 1), '2', 'a wrong option steps X down');
+  assert.equal(scannerTier(12, 20, 1), '1', 'never below 1');
+  assert.equal(scannerTier(0, 20, 2), null, 'a second wrong option is a miss');
+  assert.deepEqual(scannerGrid(0), { cols: 5, rows: 4 });
+  assert.deepEqual(scannerGrid(2), { cols: 10, rows: 8 }, 'a panicking crew gets a finer fog');
+  assert.ok(ship.includes('scanner'));
+  assert.ok(minigamesFor({ term: 'Which tool is shown?', meaning: 'Crimper', image: 'images/crimper.svg', answerType: 'term' }).includes('scanner'));
+});
