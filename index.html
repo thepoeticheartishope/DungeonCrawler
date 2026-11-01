@@ -1961,10 +1961,12 @@
       <span data-t="start.tutorial"></span>
     </label>
 
-    <!-- The ship (ship plan): start on the "There's Been a Tragedy" ship
-         instead of the run (main.js startGame, floor.js buildShipFloor). -->
-    <label class="option-toggle">
-      <input type="checkbox" id="shipToggle">
+    <!-- The ship is the game (Timothy 2026-11-01): always checked, and the
+         row shows only under ?dev (devpanel.js), where unchecking it starts
+         the old dungeon crawl instead. The dungeon is DEPRECATED: its code
+         stays, but nothing new is built for it (CLAUDE.md). -->
+    <label class="option-toggle" id="shipStartRow" hidden>
+      <input type="checkbox" id="shipToggle" checked>
       <span data-t="start.ship"></span>
     </label>
 

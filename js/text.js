@@ -690,7 +690,7 @@ export const TEXT = {
   'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
   'start.simpleEnemies': 'Comfort mode: plain enemies, light always on', // draft. A comfort option for players who don't want creepy enemies: every enemy a still letter e, and no light battery (was "Simple enemies")
   'start.tutorial': 'Tutorial room: runs once before your first run', // draft. On until a tutorial is finished
-  'start.ship': 'Ship (test): start on the ship instead', // draft. The "There's Been a Tragedy" test (ship plan)
+  'start.ship': 'Ship (dev: uncheck for the old dungeon, deprecated)', // dev only (?dev). The ship is the game; unchecked starts the deprecated dungeon crawl
   'start.turns': 'Turns: the world waits for you (step by step, no rush)', // draft. Start screen option (one stick plan step G): off, the default, the game is in real time with one stick
   'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft. Shown with Turns on only
 
