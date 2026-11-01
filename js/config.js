@@ -444,12 +444,13 @@ export const SOUND_VOLUME = {
 
 // All the game's text size (textsize.js), picked from the top bar's TEXT
 // button beside SOUND (Timothy 2026-11-01), as a share of the game's own
-// sizes. Starts on `startAt` (100%, the game as drawn) and remembers the
-// player's pick under `storageKey`.
+// sizes (two more smaller ones, Timothy 2026-11-01). Starts on `startAt`
+// (100%, the game as drawn) and remembers the player's pick, the scale
+// itself (so adding sizes never shifts it), under `storageKey`.
 export const TEXT_SIZE = {
-  steps: [0.85, 1, 1.15, 1.3, 1.5],
-  startAt: 1,
-  storageKey: 'noesisProtocol.textSize',
+  steps: [0.6, 0.7, 0.85, 1, 1.15, 1.3, 1.5],
+  startAt: 3,
+  storageKey: 'noesisProtocol.textScale',
 };
 
 // The game's music (music.js), one entry per tune: the file, its own

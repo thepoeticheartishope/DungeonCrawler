@@ -90,22 +90,22 @@ function stepText(step) {
   return t('textSize.step', { pct: Math.round(TEXT_SIZE.steps[step] * 100) });
 }
 
-// The remembered size step, or TEXT_SIZE.startAt if none (or storage is
-// unavailable).
+// The step of the remembered scale, or TEXT_SIZE.startAt if none, not a
+// size any more, or storage is unavailable.
 function rememberedStep() {
   try {
     const raw = localStorage.getItem(TEXT_SIZE.storageKey);
-    const step = Number(raw);
-    return raw !== null && Number.isInteger(step) && step >= 0 && step < TEXT_SIZE.steps.length ? step : TEXT_SIZE.startAt;
+    const step = raw === null ? -1 : TEXT_SIZE.steps.indexOf(Number(raw));
+    return step >= 0 ? step : TEXT_SIZE.startAt;
   } catch (e) {
     return TEXT_SIZE.startAt;
   }
 }
 
-// Saves the size step; without storage it lasts this session only.
+// Saves the scale (not the step: adding sizes never shifts a pick); without storage it lasts this session only.
 function remember() {
   try {
-    localStorage.setItem(TEXT_SIZE.storageKey, String(current));
+    localStorage.setItem(TEXT_SIZE.storageKey, String(TEXT_SIZE.steps[current]));
   } catch (e) {
     // Storage unavailable: the size still works until the page closes.
   }
