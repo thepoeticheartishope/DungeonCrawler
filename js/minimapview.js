@@ -218,7 +218,7 @@ function drawNames(ctx, colours, at, targets = []) {
   // A room with crew waiting to be taught is named even before it is seen.
   const wanted = new Set(targets.map(tile => f.chamberAt.get(key(tile.row, tile.col))));
   roomMiddles().forEach((middle, room) => {
-    if (state.settings.fogEnabled && !f.plan.ship && !f.visitedChambers.has(room) && !wanted.has(room)) return;
+    if (state.settings.fogEnabled && !f.ship && !f.visitedChambers.has(room) && !wanted.has(room)) return;
     const name = t(f.chamberNames[room]);
     const { x, y } = at(middle);
     const w = ctx.measureText(name).width + 8;
