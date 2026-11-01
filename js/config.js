@@ -398,6 +398,7 @@ export const SHIP_ROLES = [
   { id: 'quartermaster', minigame: 'crosswire', benefit: { kind: 'panicDown' } }, // was +30s clock
   { id: 'sensors', minigame: 'scanner', benefit: { kind: 'panicDown' } }, // was Fog Reveal (ship minigames plan step B)
   { id: 'lifeSupport', minigame: 'hullPatch', benefit: { kind: 'shield' } }, // was Sum Lock (ship minigames plan step D)
+  { id: 'gunner', minigame: 'asteroids', benefit: { kind: 'shield' } }, // new on the Bridge (ship minigames plan step F)
 ];
 export const SHIP_JOB = { rounds: 3, passAt: 2, minFitting: 3, learnRounds: 3 }; // learnRounds: at the console, at most this many rounds to learn a role (step B)
 // The tragedy intro (shipview.js): seconds between one line fading in and
@@ -1193,6 +1194,27 @@ export const HULL_PATCH = { minLetters: 3, maxLetters: 12, decoys: 7, strain2: 2
 // last CHECK is a miss. From panic level `panicAt` (Shaken) CHECK only
 // says something is off.
 export const INFERENCE = { weights: { pair: 0.5, chain: 0.35, times: 0.15 }, smallMax: 12, maxChecks: 4, panicAt: 2 };
+// Asteroids (ship minigames plan step F; the Gunner's job, a new role on
+// the Bridge, the recognition game in place of Verdict): rocks carry
+// whole answers, the question's and decoys (other answers of its kind in
+// the set, each the answer to another question). The player turns the
+// aim (`aimMax` degrees either way, `aimSpeed` degrees a second while
+// held, `aimTap` for a tap) and FIREs along it; the shot hits the first
+// rock on the line. `rocks` on the field (`panicRocks` from panic level
+// `panicAt`), answers of at most `maxChars`; a narrow field gets fewer
+// rocks, never smaller ones, and always the right one. Rocks sit on an
+// arc, one angle each with `gapDeg` of clear sky between neighbours, and
+// drift at most `driftPx`, so none can block another. `shots` shots: a
+// wrong rock spends one (and says what it is the answer to), a shot that
+// hits nothing is free; shots left 3 = X, 2 = 2, 1 = 1, none = a miss.
+export const ASTEROIDS = {
+  rocks: 4, panicRocks: 6, panicAt: 2, maxChars: 12, shots: 3,
+  aimMax: 75, aimSpeed: 55, aimTap: 2, gapDeg: 2, driftPx: 5, arcMax: 68, arcMin: 24,
+  // Rock width: `rockPxWide` from a field `wideAt` px wide, else `rockPx`;
+  // never smaller (Timothy: fewer rocks, not smaller ones). `reach`: how
+  // far out rocks sit, as a share of the room each angle has.
+  turretBottom: 8, turretLength: 18, fieldPx: 240, rockPx: 78, rockPxWide: 96, wideAt: 520, reach: [0.92, 0.7],
+};
 export const SCANNER = { cols: 5, rows: 4, panicCols: 10, panicRows: 8, panicAt: 2, xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
 // Sum Lock: a trapped box only. When a trapped box rolls a minigame it is
 // Sum Lock if it can be (not twice in a row): its question becomes two

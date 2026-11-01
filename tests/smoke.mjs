@@ -2592,7 +2592,7 @@ async function checkShip(page, url) {
   await bumpUpFrom(page, start.console.row + 1, start.console.col);
   await waitUntil(page, () => !document.getElementById('consolePanel').hidden);
   const listed = await page.$$eval('.console-role', bs => bs.map(b => b.dataset.role));
-  if (listed.length !== 11 || listed[0] !== 'engineer') return 'COMMAND.SYS did not list the Engineer and ten roles: ' + listed.join(',');
+  if (listed.length !== 12 || listed[0] !== 'engineer') return 'COMMAND.SYS did not list the Engineer and eleven roles: ' + listed.join(',');
   await page.click('.console-role[data-role="engineer"]');
   await waitUntil(page, () => !document.getElementById('chargerPanel').hidden);
   const title = await page.textContent('#chargerTitle');

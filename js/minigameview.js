@@ -13,7 +13,7 @@ import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
   LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS, VERDICT_TIMER_SECONDS,
-  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX, SCANNER, STAR_CHART, INFERENCE,
+  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX, SCANNER, STAR_CHART, INFERENCE, ASTEROIDS,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
@@ -22,7 +22,7 @@ import {
   crosswireSetup, crosswireTier, fogRevealTier, sumLockMatches,
   fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier, scannerGrid, scannerTier,
   starChartSetup, starChartPick, starChartTier, hullPatchSetup, hullPatchPlate, hullPatchTier,
-  inferenceSetup, inferenceCheck, inferenceTier,
+  inferenceSetup, inferenceCheck, inferenceTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout,
 } from './minigames.js';
 import { panicLevel } from './ship.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
@@ -43,6 +43,8 @@ let claimTimer = null;
 let letterClock = null;
 // Fog Reveal's clock, lifting its fog.
 let fogClock = null;
+// Asteroids' clock, keeping the aimed rock marked as the rocks drift.
+let aimClock = null;
 
 // Builders, one per minigame: each fills `slot` and returns the parts the
 // shared code needs: `lock` (its answer button), `finish()` (DEV ->
@@ -67,6 +69,7 @@ const BUILDERS = {
   starChart: buildStarChart,
   hullPatch: buildHullPatch,
   inference: buildInference,
+  asteroids: buildAsteroids,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -89,6 +92,8 @@ export function hideMinigame() {
   letterClock = null;
   clearInterval(fogClock);
   fogClock = null;
+  clearInterval(aimClock);
+  aimClock = null;
   shown = null;
   slot.hidden = true;
   slot.innerHTML = '';
@@ -1420,6 +1425,203 @@ function buildInference() {
     focus: () => inputs[Object.keys(inputs)[0]].focus(),
     // DEV -> Auto-win: solved on the first CHECK (tier X).
     finish: () => finish({ right: true, tier: 'X', given: String(puzzle.facts.T.value) }),
+    flip: () => {},
+  };
+}
+
+// ---- Asteroids: turn the aim, fire, hit the rock with the answer ----
+// The Gunner's job (ship minigames plan step F). Rocks carry whole
+// answers on an arc round the ship, one angle each, so none can block
+// another (asteroidsLayout); a narrow field flies fewer rocks, never
+// smaller ones, and always the right one. Hold LEFT / RIGHT (or the arrow
+// keys) to turn the aim, FIRE (or Space / Enter) to shoot: the bolt flies
+// from the ship's tip along the dotted line and hits the first rock on
+// it. A wrong rock breaks and says what it is the answer to (the light
+// nudge) and spends a shot; a shot that hits nothing is free. A panicking
+// crew faces more rocks, never faster ones. The rocks only drift a few
+// pixels; under reduced motion nothing moves but the aim.
+function buildAsteroids() {
+  slot.classList.add('mg-ast');
+  const field = asteroidsSetup(state.battle.currentQuestion, panicLevel());
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.asteroids.hint');
+  const sky = add(slot, 'div', 'mg-ast-field');
+  const turret = add(sky, 'div', 'mg-ast-turret');
+  add(turret, 'div', 'mg-ast-aim');
+  const bar = add(slot, 'div', 'mg-ast-bar');
+  const left = add(bar, 'button', 'mg-ast-turn');
+  const right = add(bar, 'button', 'mg-ast-turn');
+  const fire = add(bar, 'button', 'mg-ast-fire');
+  const shots = add(slot, 'div', 'term-line mg-left');
+  const said = add(slot, 'div', 'term-line mg-said');
+  [left, right, fire].forEach((b) => { b.type = 'button'; });
+  left.textContent = t('mg.asteroids.left');
+  right.textContent = t('mg.asteroids.right');
+  fire.textContent = t('mg.asteroids.fire');
+  sky.style.height = ASTEROIDS.fieldPx + 'px';
+  sky.tabIndex = 0;
+  sky.setAttribute('aria-label', t('mg.asteroids.sky'));
+  said.setAttribute('aria-live', 'polite');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const showShots = () => { shots.textContent = t('mg.asteroids.shots', { n: field.shots }); };
+
+  const aim = { deg: 0, dir: 0, last: 0, flying: false };
+  const rocks = [];
+  const rad = d => d * Math.PI / 180;
+  // The ship's tip, where the dotted line and every shot start, in field px.
+  const tip = () => {
+    const w = sky.clientWidth;
+    const h = sky.clientHeight;
+    const a = rad(aim.deg);
+    return { sx: w / 2 + Math.sin(a) * ASTEROIDS.turretLength, sy: h - ASTEROIDS.turretBottom - Math.cos(a) * ASTEROIDS.turretLength, dx: Math.sin(a), dy: -Math.cos(a), w, h };
+  };
+  // The first live rock along the aim, { rock, x, y, t } in field px, or
+  // { rock: null } and the point where the line leaves the field.
+  const trace = () => {
+    const { sx, sy, dx, dy, w } = tip();
+    const box = sky.getBoundingClientRect();
+    let best = null;
+    rocks.forEach((rock) => {
+      if (rock.broken || rock.gone) return;
+      const b = rock.el.getBoundingClientRect();
+      const cx = b.left - box.left + b.width / 2;
+      const cy = b.top - box.top + b.height / 2;
+      const rx = b.width / 2;
+      const k = rx / (b.height / 2);
+      // Ray against the rock's ellipse, squashed into a circle of radius rx.
+      const ox = sx - cx;
+      const oy = (sy - cy) * k;
+      const ddy = dy * k;
+      const A = dx * dx + ddy * ddy;
+      const B = 2 * (ox * dx + oy * ddy);
+      const C = ox * ox + oy * oy - rx * rx;
+      const D = B * B - 4 * A * C;
+      if (D < 0) return;
+      const tt = (-B - Math.sqrt(D)) / (2 * A);
+      if (tt > 0 && (!best || tt < best.t)) best = { t: tt, rock, x: sx + dx * tt, y: sy + dy * tt };
+    });
+    if (best) return best;
+    const tx = dx > 0 ? (w - sx) / dx : dx < 0 ? -sx / dx : Infinity;
+    const tt = Math.min(tx, -sy / dy);
+    return { t: tt, rock: null, x: sx + dx * tt, y: sy + dy * tt };
+  };
+  const showAim = () => {
+    turret.style.transform = 'rotate(' + aim.deg + 'deg)';
+    const hit = trace();
+    rocks.forEach(rock => rock.el.classList.toggle('aimed', hit.rock === rock));
+  };
+  const turnTick = (now) => {
+    if (!aim.dir || !shown || shown.done) return;
+    const dt = aim.last ? (now - aim.last) / 1000 : 0;
+    aim.last = now;
+    aim.deg = Math.max(-ASTEROIDS.aimMax, Math.min(ASTEROIDS.aimMax, aim.deg + aim.dir * ASTEROIDS.aimSpeed * dt));
+    showAim();
+    requestAnimationFrame(turnTick);
+  };
+  const hold = (dir) => {
+    if (aim.dir === dir || shown.done) return;
+    aim.deg = Math.max(-ASTEROIDS.aimMax, Math.min(ASTEROIDS.aimMax, aim.deg + dir * ASTEROIDS.aimTap));
+    aim.dir = dir;
+    aim.last = 0;
+    showAim();
+    requestAnimationFrame(turnTick);
+  };
+  const letGo = () => { aim.dir = 0; };
+  const struck = (rock) => {
+    const got = asteroidsHit(field, rock.data);
+    if (got === 'right') {
+      rock.gone = true;
+      rock.el.classList.add('gone');
+      finish({ right: true, tier: asteroidsTier(field.shots), given: rock.data.text });
+      return;
+    }
+    rock.broken = true;
+    rock.el.classList.add('broken');
+    showShots();
+    said.textContent = t('mg.asteroids.wrong', { text: rock.data.text, asks: rock.data.asks });
+    if (got === 'out') finish({ right: false, tier: null, given: rock.data.text });
+  };
+  const shoot = () => {
+    if (shown.done || aim.flying || !rocks.length) return;
+    const hit = trace();
+    const { sx, sy } = tip();
+    const bolt = add(sky, 'div', 'mg-ast-bolt');
+    bolt.style.transform = 'rotate(' + aim.deg + 'deg)';
+    const ms = still ? 0 : Math.max(180, hit.t * 1.4);
+    const start = performance.now();
+    aim.flying = true;
+    const step = (now) => {
+      const p = ms ? Math.min(1, (now - start) / ms) : 1;
+      bolt.style.left = (sx + (hit.x - sx) * p) + 'px';
+      bolt.style.top = (sy + (hit.y - sy) * p) + 'px';
+      if (p < 1 && shown && !shown.done) { requestAnimationFrame(step); return; }
+      bolt.remove();
+      aim.flying = false;
+      if (!shown || shown.done) return;
+      if (hit.rock) struck(hit.rock);
+      else said.textContent = t('mg.asteroids.miss');
+      showAim();
+    };
+    requestAnimationFrame(step);
+  };
+  // The rocks go up once the field is on screen (it is hidden while built).
+  const place = () => {
+    const w = sky.clientWidth;
+    const h = sky.clientHeight;
+    if (!w) { requestAnimationFrame(place); return; }
+    const rockW = w >= ASTEROIDS.wideAt ? ASTEROIDS.rockPxWide : ASTEROIDS.rockPx;
+    const lay = asteroidsLayout(w, h, rockW, field.rocks.length);
+    const flying = shuffle([field.rocks[0], ...shuffle(field.rocks.slice(1)).slice(0, lay.n - 1)]);
+    const px = w / 2;
+    const py = h - ASTEROIDS.turretBottom;
+    flying.forEach((data, i) => {
+      const a = rad(-lay.arc + lay.step * i);
+      // Farther out only narrows a rock's angle, so rocks sit well out in
+      // the room each angle has (never nearer than the layout's distance),
+      // every other one a little nearer, so the field isn't a neat line.
+      const room = Math.min((w / 2 - rockW / 2 - 6) / Math.max(0.01, Math.abs(Math.sin(a))), (h - ASTEROIDS.turretBottom - 10 - rockW * 0.4) / Math.max(0.01, Math.cos(a)));
+      const d = Math.max(lay.d, room * ASTEROIDS.reach[i % 2]);
+      const el = add(sky, 'div', 'mg-ast-rock');
+      el.textContent = data.text;
+      el.style.width = rockW + 'px';
+      el.style.height = (rockW * 0.8) + 'px';
+      el.style.left = (px + Math.sin(a) * d - rockW / 2) + 'px';
+      el.style.top = (py - Math.cos(a) * d - rockW * 0.4) + 'px';
+      el.style.setProperty('--dx', ((Math.random() * 2 - 1) * ASTEROIDS.driftPx) + 'px');
+      el.style.setProperty('--dy', ((Math.random() * 2 - 1) * ASTEROIDS.driftPx) + 'px');
+      el.style.setProperty('--t', (7 + Math.random() * 6) + 's');
+      rocks.push({ el, data, broken: false, gone: false });
+    });
+    showAim();
+    aimClock = setInterval(() => { if (shown && !shown.done) showAim(); }, 200);
+  };
+  [[left, -1], [right, 1]].forEach(([b, dir]) => {
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); hold(dir); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, letGo));
+  });
+  fire.addEventListener('click', shoot);
+  // Keys on the field and its buttons: arrows turn, Space / Enter fire.
+  const keys = (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.type === 'keydown' && !e.repeat) hold(e.key === 'ArrowLeft' ? -1 : 1);
+      if (e.type === 'keyup') letGo();
+      return;
+    }
+    if (e.type === 'keydown' && (e.key === ' ' || e.key === 'Enter') && e.currentTarget === sky) {
+      e.preventDefault();
+      e.stopPropagation();
+      shoot();
+    }
+  };
+  [sky, bar].forEach((el) => { el.addEventListener('keydown', keys); el.addEventListener('keyup', keys); });
+  showShots();
+  requestAnimationFrame(place);
+  return {
+    lock: fire,
+    focus: () => sky.focus(),
+    // DEV -> Auto-win: hits the right rock with every shot left (tier X).
+    finish: () => finish({ right: true, tier: 'X', given: field.rocks[0].text }),
     flip: () => {},
   };
 }
