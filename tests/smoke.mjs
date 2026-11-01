@@ -227,8 +227,11 @@ async function loadPageAndSet(page, url, { turns = true } = {}) {
 }
 
 // Enter, then pick the built-in "Bible Quiz Bowl" on the set screen, which
-// starts the run.
+// starts the run. The start screen always starts the ship now (Timothy
+// 2026-11-01); these runs check the deprecated dungeon crawl, so they
+// uncheck the ship's box first (shown only under ?dev, so set directly).
 async function startGameAndWaitForRoom(page) {
+  await page.evaluate(() => { document.getElementById('shipToggle').checked = false; });
   await page.click('#startBtn');
   const quizBowl = '#pickScreen .set-option[data-set="builtin:bible-quiz-bowl"]';
   await page.waitForSelector(quizBowl, { timeout: 10000 });
@@ -2547,7 +2550,7 @@ async function bumpUpFrom(page, row, col) {
 
 async function checkShip(page, url) {
   await loadPageAndSet(page, url);
-  await page.check('#shipToggle');
+  if (!await page.isChecked('#shipToggle')) return 'the start screen did not start the ship by default';
   // The ship's opening (step C): the tragedy, then TAKE COMMAND.
   await page.click('#startBtn');
   await page.click('#pickScreen .set-option[data-set="builtin:bible-quiz-bowl"]');

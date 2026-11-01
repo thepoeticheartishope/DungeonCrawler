@@ -341,7 +341,9 @@ function startGame() {
   state.settings.oneStick = !turnsToggle.checked;
   state.settings.realTime = turnsToggle.checked && realTimeToggle.checked;
   syncDevOneStick();
-  state.settings.simpleEnemies = simpleEnemiesToggle.checked;
+  // Comfort mode is a dungeon option, shown only under ?dev: a player's
+  // old saved pick, hidden now, must not change the ship.
+  state.settings.simpleEnemies = simpleEnemiesToggle.checked && !simpleEnemiesToggle.closest('label').hidden;
   resetClock();
   resetWalk();
   // Read on every start, so a retry keeps the name without asking again.
@@ -366,9 +368,10 @@ function startGame() {
     startTimer();
     return;
   }
-  // The ship (ship plan): the start screen's "Ship (test)" starts a ship
-  // run instead: its random tragedy told first (shipview.js; step C), then
-  // the ship once the player takes command. No tutorial.
+  // The ship, the game (Timothy 2026-11-01): its random tragedy told first
+  // (shipview.js; step C), then the ship once the player takes command. No
+  // tutorial. The box is always checked for players; only ?dev shows it,
+  // to reach the DEPRECATED dungeon crawl below (kept, not built on).
   if (shipToggle.checked) {
     freshShipRun();
     noteOnDuty();

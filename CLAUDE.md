@@ -5,6 +5,10 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 
 ## Rules every change must follow
 
+- **The ship is the game; the old dungeon crawl is DEPRECATED** (Timothy 2026-11-01). The start
+  screen always starts the ship. The dungeon's code and files stay, reachable only under `?dev`
+  (uncheck the start screen's dev-only "Ship" box). Don't build new features for the dungeon, and
+  don't delete its code unless Timothy asks. Ship work comes first.
 - `main` is protected: branch + PR, one PR per logical change.
 - Changed a file listed in `service-worker.js` `APP_SHELL`? Bump `CACHE_NAME` in the same commit.
 - Added a core mechanic (a new way to move, see, fight, answer or get out)? Give the tutorial room

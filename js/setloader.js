@@ -18,7 +18,6 @@ const realTimeOption = document.getElementById('realTimeOption');
 const dpadRightToggle = document.getElementById('dpadRightToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 const tutorialToggle = document.getElementById('tutorialToggle');
-const shipToggle = document.getElementById('shipToggle');
 const roomControls = document.querySelector('.room-controls');
 const playerNameInput = document.getElementById('playerName');
 const workshopScreen = document.getElementById('workshopScreen');
@@ -59,7 +58,6 @@ export function initSetLoader({ showSets }) {
         dpadRight: dpadRightToggle.checked,
         simpleEnemies: simpleEnemiesToggle.checked,
         tutorial: tutorialToggle.checked,
-        ship: shipToggle.checked,
         playerName: playerNameInput.value,
       }));
     } catch (e) {
@@ -90,7 +88,6 @@ export function initSetLoader({ showSets }) {
   // On until a tutorial is finished (main.js switches it off then), so a
   // player who has never played gets one.
   if (typeof savedOptions.tutorial === 'boolean') tutorialToggle.checked = savedOptions.tutorial;
-  if (typeof savedOptions.ship === 'boolean') shipToggle.checked = savedOptions.ship;
   placeDpad();
   playerNameInput.maxLength = PLAYER_NAME_MAX_LENGTH;
   if (typeof savedOptions.playerName === 'string') playerNameInput.value = savedOptions.playerName.slice(0, PLAYER_NAME_MAX_LENGTH);
@@ -100,7 +97,6 @@ export function initSetLoader({ showSets }) {
   turnsToggle.addEventListener('change', () => { showRealTimeOption(); saveOptions(); });
   simpleEnemiesToggle.addEventListener('change', saveOptions);
   tutorialToggle.addEventListener('change', saveOptions);
-  shipToggle.addEventListener('change', saveOptions);
   dpadRightToggle.addEventListener('change', () => { placeDpad(); saveOptions(); });
   playerNameInput.addEventListener('input', saveOptions);
 
