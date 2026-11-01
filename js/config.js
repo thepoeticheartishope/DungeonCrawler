@@ -448,10 +448,16 @@ export const SOUND_VOLUME = {
 //   cut to start there (a seek needs a server that sends files in pieces,
 //   which not every one does), 2:10 long. It plays out once; the opening
 //   takes command by itself when it ends (shipview.js).
-// - safeRoom: "Mary" ("Safe Rooms") while the player is in the safe room.
+// - safeRoom: "Nightscape" ("Circular Reality") while the player is in
+//   the safe room; it melds with Recovery Mission better than "Mary" did
+//   (Timothy 2026-11-01). On the ship that is Command.
+// - shipWalk: "Exoplanet" ("Circular Reality") on the ship anywhere
+//   outside Command: the walking-around-the-ship music (Timothy
+//   2026-11-01). Off the ship there is no music outside the safe room.
 export const MUSIC = {
   shipIntro: { src: './audio/ship-intro-recovery-mission.mp3', volume: 1, fadeInMs: 3000, fadeOutMs: 4000, loop: false },
-  safeRoom: { src: './audio/safe-room-mary.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: true },
+  safeRoom: { src: './audio/safe-room-nightscape.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: true },
+  shipWalk: { src: './audio/ship-walk-exoplanet.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: true },
 };
 // How finely music.js draws a fade's curve, and how often it checks which
 // tune should be up.

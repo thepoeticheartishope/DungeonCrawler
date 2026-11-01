@@ -2,7 +2,9 @@
 // from one to the next under the game's volume (sound.js):
 // - shipIntro on the ship's opening, from the top each new run, once;
 // - safeRoom while the player stands in the safe room (the room, a
-//   question or the exchange on screen), looping.
+//   question or the exchange on screen), looping;
+// - shipWalk on the ship anywhere outside its safe room (Command),
+//   looping, so crossing Command's doorway crossfades the two.
 // Taking command crosses straight from the opening's tune into the safe
 // room's, since the ship starts in Command, its safe room. Anything else
 // (start, win, lose, a hidden tab, sound off) fades the music out.
@@ -29,13 +31,15 @@ export function initMusic(screens) {
   setInterval(() => follow(wanted(screens)), MUSIC_CHECK_MS);
 }
 
-// The tune that should be up now ('shipIntro', 'safeRoom'), or null.
+// The tune that should be up now ('shipIntro', 'safeRoom', 'shipWalk'),
+// or null.
 function wanted(screens) {
   if (soundOff() || document.hidden) return null;
   if (screens.intro.classList.contains('show')) return 'shipIntro';
   if (!screens.run.some(s => s.classList.contains('show'))) return null;
-  const sr = state.floor && state.floor.safeRoom;
-  return sr && sr.playerIn ? 'safeRoom' : null;
+  const f = state.floor;
+  if (f && f.safeRoom && f.safeRoom.playerIn) return 'safeRoom';
+  return f && f.ship ? 'shipWalk' : null;
 }
 
 // Brings `name` up and every other tune down, each along its own fade, so
