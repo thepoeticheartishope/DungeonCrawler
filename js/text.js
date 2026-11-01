@@ -257,6 +257,15 @@ export const TEXT = {
   'mg.fuelMix.scored.2': '{name|upper}: filled. It was {answer}.', // draft
   'mg.fuelMix.scored.1': '{name|upper}: filled, slowly. It was {answer}.', // draft
   'mg.fuelMix.scored.miss': '{name|upper}: ran dry. It was {answer}.', // draft
+  'mg.starChart': 'Star Chart', // draft. The Navigator's job (ship minigames plan step C)
+  'mg.starChart.hint': 'Join the stars that spell the answer, in order. Drag, tap or type.', // draft
+  'mg.starChart.sky': 'Star chart: type or tap the letters in order', // draft. For screen readers
+  'mg.starChart.undo': 'Undo', // draft
+  'mg.starChart.wrong': 'That star goes dark. Wrong: {n}', // draft
+  'mg.starChart.scored.X': '{name|upper}: a clean course.', // draft
+  'mg.starChart.scored.2': '{name|upper}: course plotted.', // draft
+  'mg.starChart.scored.1': '{name|upper}: plotted, roughly. It was {answer}.', // draft
+  'mg.starChart.scored.miss': '{name|upper}: lost among the stars. It was {answer}.', // draft
   'mg.scanner': 'Scanner', // draft. The Sensors' job (ship minigames plan step B)
   'mg.scanner.hint': 'Tap the fog to scan a patch. Answer when you know.', // draft
   'mg.scanner.patch': 'Scan patch {n}', // draft. A fog patch's label for screen readers

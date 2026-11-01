@@ -70,7 +70,7 @@ test('Close Enough fits plain number answers only', () => {
   assert.deepEqual(minigamesFor(NUMBER), ['closeEnough', 'higherLower', 'fuelMix']);
   assert.deepEqual(minigamesFor({ meaning: '1,500%', answerType: 'number' }), ['closeEnough', 'higherLower', 'fuelMix']);
   assert.deepEqual(minigamesFor({ meaning: '4 B.C.', answerType: 'number' }), ['closeEnough', 'higherLower', 'fuelMix']);
-  assert.deepEqual(minigamesFor(WORD), ['slowSpell', 'codeBreak'], 'a one-word name: no dial');
+  assert.deepEqual(minigamesFor(WORD), ['slowSpell', 'codeBreak', 'starChart'], 'a one-word name: no dial');
   assert.deepEqual(minigamesFor({ meaning: '7½', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '13 and 14', answerType: 'number' }), []);
   assert.deepEqual(minigamesFor({ meaning: '0', answerType: 'number' }), []);
@@ -207,7 +207,7 @@ const BOOK = { term: 'Which book?', meaning: 'Ruth', answerType: 'book' };
 test('Slow Spell fits one-word answers of 4 to 12 letters, no decoys needed (typed)', () => {
   reset();
   state.settings.activeData = [NAMES[0]];
-  assert.deepEqual(minigamesFor(NAMES[0]), ['slowSpell', 'codeBreak'], 'alone in the set: typed, so nothing to pick from');
+  assert.deepEqual(minigamesFor(NAMES[0]), ['slowSpell', 'codeBreak', 'starChart'], 'alone in the set: typed, so nothing to pick from');
   state.settings.activeData = [...NAMES, BOOK];
   assert.ok(!minigamesFor(NAMES[6]).includes('slowSpell'), 'Eve: too short');
   assert.ok(!minigamesFor({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }).includes('slowSpell'), 'two words');
@@ -255,7 +255,7 @@ test('names split on their vowels, keeping digraphs and starting pairs', () => {
 test('Syllable Split fits one-word names of 3+ pieces with enough decoys', () => {
   reset();
   state.settings.activeData = LONG;
-  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak', 'verdict', 'crosswire']);
+  assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak', 'verdict', 'crosswire', 'starChart']);
   assert.equal(syllableSplitPieces(LONG[4]), null, 'Noah: two pieces');
   assert.equal(syllableSplitPieces({ ...LONG[0], answerType: 'book' }), null, 'names only');
   assert.equal(syllableSplitPieces({ ...LONG[0], meaning: 'King Solomon' }), null, 'one word');
@@ -671,4 +671,37 @@ test('Scanner: tier by share scanned, one step down per wrong option, a miss pas
   assert.deepEqual(scannerGrid(2), { cols: 10, rows: 8 }, 'a panicking crew gets a finer fog');
   assert.ok(ship.includes('scanner'));
   assert.ok(minigamesFor({ term: 'Which tool is shown?', meaning: 'Crimper', image: 'images/crimper.svg', answerType: 'term' }).includes('scanner'));
+});
+
+// ---- Star Chart (ship minigames plan step C) ----
+
+test('Star Chart: the word\'s letters plus decoys not in it; more decoys when panicking', async () => {
+  const { starChartSetup } = await import('../js/minigames.js');
+  const q = { term: 'What king wanted to kill baby Jesus?', meaning: 'Herod', answerType: 'name' };
+  const calm = starChartSetup(q, 0);
+  assert.equal(calm.word, 'HEROD');
+  assert.equal(calm.stars.length, 5 + 6);
+  const decoys = calm.stars.map(s => s.letter).filter(c => !'HEROD'.includes(c));
+  assert.equal(decoys.length, 6, 'decoys are letters not in the word');
+  assert.equal(starChartSetup(q, 2).stars.length, 5 + 10);
+  calm.stars.forEach(s => assert.ok(s.x > 0 && s.x < 100 && s.y > 0 && s.y < 100));
+  assert.ok(!minigamesFor({ meaning: 'Lot\'s wife', answerType: 'related' }).includes('starChart'), 'one word of plain letters only');
+  assert.ok(!minigamesFor({ term: 'Spell Noah.', meaning: 'Noah', answerType: 'name' }).includes('starChart'), 'not when the stem holds it');
+});
+
+test('Star Chart: picks join in order; a wrong star goes dark; tiers by wrong stars', async () => {
+  const { starChartSetup, starChartPick, starChartTier } = await import('../js/minigames.js');
+  const chart = starChartSetup({ term: 'Who?', meaning: 'Lot', answerType: 'name' }, 0);
+  const at = c => chart.stars.findIndex(s => s.letter === c);
+  const decoy = chart.stars.findIndex(s => !'LOT'.includes(s.letter));
+  assert.equal(starChartPick(chart, at('O')), 'wrong', 'O is not first');
+  assert.equal(starChartPick(chart, at('O')), 'used', 'a dark star does nothing');
+  assert.equal(starChartPick(chart, decoy), 'wrong');
+  assert.equal(starChartPick(chart, at('L')), 'next');
+  assert.equal(starChartPick(chart, at('L')), 'used', 'a joined star does nothing');
+  assert.equal(chart.wrong, 2);
+  assert.equal(starChartTier(0), 'X');
+  assert.equal(starChartTier(2), '2');
+  assert.equal(starChartTier(4), '1');
+  assert.equal(starChartTier(5), null);
 });
