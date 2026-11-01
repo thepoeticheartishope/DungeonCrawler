@@ -48,6 +48,16 @@ test('the light runs down a charge a turn, then dies and locks', () => {
   assert.ok(!lightOn());
 });
 
+test('on the ship the battery is out of play: always lit, V does nothing, it never runs down (Timothy 2026-11-01)', () => {
+  resetFloor();
+  state.floor.ship = true;
+  for (let i = 0; i < LIGHT_BATTERY_MAX + 2; i++) tickLight();
+  assert.equal(toggleLight(), null);
+  assert.equal(lightOn(), true);
+  assert.equal(state.floor.light.charge, LIGHT_BATTERY_MAX);
+  delete state.floor.ship; // the shared floor outlives this test
+});
+
 test('run empty, it stays locked off until full, then can come on', () => {
   resetFloor();
   state.floor.light = { on: false, charge: 0, locked: true };

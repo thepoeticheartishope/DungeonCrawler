@@ -5,8 +5,8 @@
 // and it goes off by itself and stays locked off until it is full again;
 // switched off by hand with charge left, it can come back on any time.
 // Off, the player sees only the small circle round them (sight.js).
-// Comfort mode (state.settings.simpleEnemies) and DEV -> Light battery off
-// leave the light always on, as it was. Rules only — no DOM access here.
+// Comfort mode (state.settings.simpleEnemies), DEV -> Light battery off and
+// the ship leave the light always on, as it was. Rules only — no DOM access here.
 
 import { state } from './state.js';
 import { LIGHT_BATTERY_MAX, LOW_BATTERY_CHARGE, ONE_STICK } from './config.js';
@@ -17,9 +17,10 @@ export function freshLight() {
   return { on: true, charge: LIGHT_BATTERY_MAX, locked: false };
 }
 
-// Whether the battery is in play at all.
+// Whether the battery is in play at all. Never on the ship (Timothy
+// 2026-11-01: the light button goes, to save room; the ship is lit).
 export function batteryInPlay() {
-  return state.settings.lightBattery && !state.settings.simpleEnemies;
+  return state.settings.lightBattery && !state.settings.simpleEnemies && !(state.floor && state.floor.ship);
 }
 
 // Whether the player's cone is lit right now. Always, with the battery
