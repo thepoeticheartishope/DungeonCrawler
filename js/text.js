@@ -100,6 +100,9 @@ export const TEXT = {
   'sound.off': 'OFF', // draft
   'sound.step': '{step}/3', // draft. The volume, in thirds
   'sound.title': 'Tap to pick the volume of all sound', // draft
+  'stat.textSize': 'TEXT', // draft. The top bar's text size button
+  'textSize.step': '{pct}%', // draft. A text size, as a percent of the game's own
+  'textSize.title': 'Tap to pick the size of all text', // draft
   'stat.crew': 'CREW', // draft. The crew's panic, by name and as a meter
   'panic.0': 'CALM', // draft
   'panic.1': 'UNEASY', // draft
