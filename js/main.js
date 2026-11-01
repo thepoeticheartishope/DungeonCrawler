@@ -171,8 +171,12 @@ initChargerView({
 initMinimap();
 // The top bar's SOUND button sets the volume of every sound in the game.
 initSound(document.getElementById('soundBtn'), document.getElementById('soundMenu'));
-// The safe room's music follows the player in and out on these screens.
-initMusic(['roomScreen', 'battleScreen', 'exchangeScreen'].map(id => document.getElementById(id)));
+// The music: the ship's opening tune on its screen, and the safe room's
+// tune while the player is in the safe room on the run's screens.
+initMusic({
+  intro: shipIntroScreen,
+  run: [roomScreen, battleScreen, exchangeScreen],
+});
 initBook({ askHeld, mapPanelShown });
 
 applyStaticText();
