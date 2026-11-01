@@ -13,7 +13,7 @@ import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
   LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS, VERDICT_TIMER_SECONDS,
-  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX, SCANNER, STAR_CHART,
+  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX, SCANNER, STAR_CHART, INFERENCE,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
@@ -22,6 +22,7 @@ import {
   crosswireSetup, crosswireTier, fogRevealTier, sumLockMatches,
   fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier, scannerGrid, scannerTier,
   starChartSetup, starChartPick, starChartTier, hullPatchSetup, hullPatchPlate, hullPatchTier,
+  inferenceSetup, inferenceCheck, inferenceTier,
 } from './minigames.js';
 import { panicLevel } from './ship.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
@@ -65,6 +66,7 @@ const BUILDERS = {
   scanner: buildScanner,
   starChart: buildStarChart,
   hullPatch: buildHullPatch,
+  inference: buildInference,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -1351,6 +1353,73 @@ function buildHullPatch() {
     focus: () => tray.focus(),
     // DEV -> Auto-win: seals it with no strain (tier X).
     finish: () => finish({ right: true, tier: 'X', given: hull.word }),
+    flip: () => {},
+  };
+}
+
+// ---- Inference: work a labelled fact out from lines that add up ----
+// The Science job (ship minigames plan step E), in place of Verdict. The
+// lines are labelled facts that add up; the player fills in each helping
+// fact, then the answer (the question's own fact), and CHECKs. CHECK
+// marks only which lines don't hold with those numbers (the light nudge),
+// never the right value; a panicking crew's CHECK only says something is
+// off. Enter checks too. No modifiers (the ship asks with none).
+function buildInference() {
+  slot.classList.add('mg-infer');
+  const puzzle = inferenceSetup(state.battle.currentQuestion);
+  const hidden = panicLevel() >= INFERENCE.panicAt;
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.inference.hint');
+  const lines = add(slot, 'div', 'mg-infer-lines');
+  const rows = puzzle.lines.map((line) => {
+    const row = add(lines, 'div', 'mg-infer-line');
+    line.terms.forEach((term) => {
+      if (puzzle.facts[term]) add(row, 'span', 'mg-infer-chip' + (term === 'T' ? ' ask' : '')).textContent = puzzle.facts[term].label;
+      else add(row, 'span', 'mg-infer-op').textContent = term;
+    });
+    add(row, 'span', 'mg-infer-op').textContent = '=';
+    add(row, 'span', 'mg-infer-total').textContent = String(line.total);
+    return row;
+  });
+  const form = add(slot, 'form', 'mg-infer-form');
+  const inputs = {};
+  // One box per fact: the helping facts first, the answer (the
+  // question's own fact) last.
+  [...Object.keys(puzzle.facts).filter(id => id !== 'T'), 'T'].forEach((id) => {
+    const field = add(form, 'label', 'mg-infer-field' + (id === 'T' ? ' ask' : ''));
+    add(field, 'span', 'mg-infer-name').textContent = id === 'T' ? t('mg.inference.answer', { label: puzzle.facts.T.label }) : puzzle.facts[id].label;
+    const input = add(field, 'input', 'mg-infer-num');
+    input.type = 'text';
+    input.inputMode = 'numeric';
+    input.autocomplete = 'off';
+    input.addEventListener('keydown', e => e.stopPropagation());
+    inputs[id] = input;
+  });
+  const check = add(form, 'button', 'mg-lock');
+  check.type = 'submit';
+  check.textContent = t('mg.inference.check');
+  const said = add(slot, 'div', 'term-line mg-said');
+  said.setAttribute('aria-live', 'polite');
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (shown.done) return;
+    const values = {};
+    for (const id of Object.keys(inputs)) {
+      const v = Number(inputs[id].value.trim());
+      if (inputs[id].value.trim() === '' || !Number.isFinite(v)) { said.textContent = t('mg.inference.fill'); return; }
+      values[id] = v;
+    }
+    const result = inferenceCheck(puzzle, values);
+    if (result.solved) { finish({ right: true, tier: inferenceTier(puzzle.checks), given: String(values.T) }); return; }
+    if (puzzle.checks >= INFERENCE.maxChecks) { finish({ right: false, tier: null, given: String(values.T) }); return; }
+    rows.forEach((row, k) => row.classList.toggle('off', !hidden && !result.holds[k]));
+    said.textContent = hidden ? t('mg.inference.offPanic') : t('mg.inference.off', { left: INFERENCE.maxChecks - puzzle.checks });
+  });
+  return {
+    lock: check,
+    focus: () => inputs[Object.keys(inputs)[0]].focus(),
+    // DEV -> Auto-win: solved on the first CHECK (tier X).
+    finish: () => finish({ right: true, tier: 'X', given: String(puzzle.facts.T.value) }),
     flip: () => {},
   };
 }

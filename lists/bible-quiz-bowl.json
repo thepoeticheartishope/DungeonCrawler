@@ -485,6 +485,7 @@
     "category": "LNS",
     "difficulty": "hard",
     "answerType": "number",
+    "label": "Books of the Pentateuch",
     "fact": true
   },
   {
@@ -1047,6 +1048,7 @@
     "difficulty": "hard",
     "source": "2 Chron 36:21",
     "answerType": "number",
+    "label": "Years of the captivity in Babylon",
     "fact": true
   },
   {
@@ -1384,6 +1386,7 @@
     "difficulty": "hard",
     "source": "Matt 5:1-12",
     "answerType": "number",
+    "label": "Beatitudes in Matthew",
     "fact": true
   },
   {
@@ -1494,6 +1497,7 @@
     "difficulty": "hard",
     "source": "Lev 25",
     "answerType": "number",
+    "label": "Years between Jubilees",
     "fact": true
   },
   {
@@ -3474,6 +3478,7 @@
     "difficulty": "medium",
     "source": "Gen 37:2",
     "answerType": "number",
+    "label": "Joseph's age when sold",
     "fact": true
   },
   {
@@ -3901,6 +3906,7 @@
     "difficulty": "hard",
     "source": "1 & 2 Kings",
     "answerType": "number",
+    "label": "Rulers of Judah",
     "fact": true
   },
   {
@@ -4067,6 +4073,7 @@
     "difficulty": "hard",
     "source": "Josh 6",
     "answerType": "number",
+    "label": "Marches around Jericho",
     "fact": true
   },
   {
@@ -4957,6 +4964,7 @@
     "difficulty": "easy",
     "source": "Matt 26:14-15",
     "answerType": "number",
+    "label": "Silver pieces paid to Judas",
     "fact": true
   },
   {
@@ -5411,6 +5419,7 @@
     "difficulty": "medium",
     "source": "1 Pet 3:20",
     "answerType": "number",
+    "label": "People saved in Noah's ark",
     "fact": true
   },
   {
@@ -5868,6 +5877,7 @@
     "difficulty": "medium",
     "source": "Matt 15:34",
     "answerType": "number",
+    "label": "Loaves that fed the 4,000",
     "fact": true
   },
   {
@@ -6654,6 +6664,7 @@
     "difficulty": "medium",
     "source": "Gen 17:17",
     "answerType": "number",
+    "label": "Sarah's age at the promise",
     "fact": true
   },
   {
@@ -7407,6 +7418,7 @@
     "difficulty": "easy",
     "source": "Gen 21:5",
     "answerType": "number",
+    "label": "Abraham's age when Isaac was born",
     "fact": true
   },
   {
@@ -7782,6 +7794,7 @@
     "difficulty": "medium",
     "source": "Jonah 3:3",
     "answerType": "number",
+    "label": "Days to walk across Nineveh",
     "fact": true
   },
   {
@@ -7967,6 +7980,7 @@
     "category": "LNS",
     "difficulty": "medium",
     "answerType": "number",
+    "label": "Epistles in the New Testament",
     "fact": true
   },
   {
@@ -8162,6 +8176,7 @@
     "difficulty": "medium",
     "source": "John 19:23",
     "answerType": "number",
+    "label": "Soldiers casting lots",
     "fact": true
   },
   {
@@ -9770,6 +9785,7 @@
     "difficulty": "easy",
     "source": "Rev 21:12",
     "answerType": "number",
+    "label": "Gates of the New Jerusalem",
     "fact": true
   },
   {
@@ -9970,6 +9986,7 @@
     "category": "LNS",
     "difficulty": "easy",
     "answerType": "number",
+    "label": "Books in the Old Testament",
     "fact": true
   },
   {
@@ -11146,6 +11163,7 @@
     "difficulty": "medium",
     "source": "Rev 4:4",
     "answerType": "number",
+    "label": "Elders around the throne",
     "fact": true
   },
   {
@@ -11357,6 +11375,7 @@
     "category": "LNS",
     "difficulty": "hard",
     "answerType": "number",
+    "label": "Kings of the Northern Kingdom",
     "fact": true
   },
   {
@@ -11420,6 +11439,7 @@
     "difficulty": "easy",
     "source": "Ex 24:18",
     "answerType": "number",
+    "label": "Days Moses spent on the mountain",
     "fact": true
   },
   {

@@ -276,6 +276,17 @@ export const TEXT = {
   'mg.hullPatch.scored.2': '{name|upper}: sealed.', // draft
   'mg.hullPatch.scored.1': '{name|upper}: sealed, barely. It was {answer}.', // draft
   'mg.hullPatch.scored.miss': '{name|upper}: the hull breached. It was {answer}.', // draft
+  'mg.inference': 'Inference', // draft. The Science job (ship minigames plan step E)
+  'mg.inference.hint': 'Work out each fact from the lines, then answer.', // draft
+  'mg.inference.answer': 'Your answer: {label}', // draft
+  'mg.inference.check': 'Check', // draft
+  'mg.inference.fill': 'Fill in every box first.', // draft
+  'mg.inference.off': 'The marked lines don\'t add up with your numbers. Checks left: {left}', // draft
+  'mg.inference.offPanic': 'Something is off.', // draft. A panicking crew's CHECK
+  'mg.inference.scored.X': '{name|upper}: worked out first time.', // draft
+  'mg.inference.scored.2': '{name|upper}: worked out.', // draft
+  'mg.inference.scored.1': '{name|upper}: worked out in the end. It was {answer}.', // draft
+  'mg.inference.scored.miss': '{name|upper}: the numbers never added up. It was {answer}.', // draft
   'mg.scanner': 'Scanner', // draft. The Sensors' job (ship minigames plan step B)
   'mg.scanner.hint': 'Tap the fog to scan a patch. Answer when you know.', // draft
   'mg.scanner.patch': 'Scan patch {n}', // draft. A fog patch's label for screen readers

@@ -16,7 +16,7 @@ import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_REACH_MAX, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
-  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, STAR_CHART, HULL_PATCH, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
+  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, STAR_CHART, HULL_PATCH, INFERENCE, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
@@ -53,11 +53,12 @@ export const MINIGAME_MODIFIERS = {
   scanner: [],
   starChart: [],
   hullPatch: [],
+  inference: [],
 };
 
 // Minigames only the ship's crew roles run (ship minigames plan): never
 // rolled in place of a question elsewhere.
-export const SHIP_ONLY = ['fuelMix', 'scanner', 'starChart', 'hullPatch'];
+export const SHIP_ONLY = ['fuelMix', 'scanner', 'starChart', 'hullPatch', 'inference'];
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 
@@ -84,6 +85,7 @@ const FITS = {
   scanner: q => Boolean(String(q.image || '').trim()),
   starChart: q => starChartWord(q) !== null && !answerInStem(q),
   hullPatch: q => hullPatchWord(q) !== null && !answerInStem(q),
+  inference: q => inferenceFact(q) !== null && inferenceHelpers(q).length >= 2,
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -413,6 +415,95 @@ export function hullPatchPlate(hull, letter) {
 // HULL_PATCH.strain2 = 2, more = 1.
 export function hullPatchTier(strain) {
   return strain === 0 ? 'X' : strain <= HULL_PATCH.strain2 ? '2' : '1';
+}
+
+// ---- Inference: work a labelled fact out from lines that add up ----
+
+// Question `q` as a fact Inference can use: { label, value, q } for a
+// labelled question with a whole-number answer of at least 1, or null.
+function inferenceFact(q) {
+  const label = String(q.label || '').trim();
+  const n = label && numberQuestion(q);
+  if (!n || !Number.isInteger(n.value) || n.value < 1 || n.unit) return null;
+  return { label, value: n.value, q };
+}
+
+// The set's other labelled facts that can help work out `q`: different
+// questions, with a different label and value from it.
+function inferenceHelpers(q) {
+  const own = inferenceFact(q);
+  if (!own) return [];
+  return (state.settings.activeData || []).map(inferenceFact).filter(f => f && f.q !== q && f.label !== own.label && f.value !== own.value);
+}
+
+// A new puzzle for question `q` (one Inference can run): `facts`, by id
+// ('T' is the question's own; 'A', 'B' help), each { label, value }, and
+// `lines`, each { terms (fact ids and '+', '-', 'x'), total }. Every kind
+// solves one fact at a time (A from the first line, then B, then T), so
+// there is always exactly one answer. The kind is drawn by
+// INFERENCE.weights; the x kind needs two small facts and falls back.
+export function inferenceSetup(q) {
+  const T = inferenceFact(q);
+  const pool = shuffle(inferenceHelpers(q));
+  const A = pool[0];
+  const B = pool.find(f => f.value !== A.value);
+  const small = pool.filter(f => f.value <= INFERENCE.smallMax);
+  const pair = small.length >= 2 ? [small[0], small.find(f => f.value !== small[0].value)] : null;
+  const w = INFERENCE.weights;
+  const roll = Math.random() * (w.pair + w.chain + w.times);
+  let kind = roll < w.pair ? 'pair' : roll < w.pair + w.chain ? 'chain' : 'times';
+  if (kind === 'times' && !(pair && pair[1])) kind = 'chain';
+  if (kind === 'chain' && !B) kind = 'pair';
+  const facts = { T: { label: T.label, value: T.value } };
+  const lines = [];
+  const fact = (id, f) => { facts[id] = { label: f.label, value: f.value }; };
+  if (kind === 'pair') {
+    fact('A', A);
+    lines.push({ terms: ['A', '+', 'A'], total: 2 * A.value });
+    lines.push({ terms: ['A', '+', 'T'], total: A.value + T.value });
+  } else if (kind === 'chain') {
+    fact('A', A);
+    fact('B', B);
+    lines.push({ terms: ['A', '+', 'A'], total: 2 * A.value });
+    lines.push(B.value > A.value ? { terms: ['B', '-', 'A'], total: B.value - A.value } : { terms: ['A', '-', 'B'], total: A.value - B.value });
+    lines.push({ terms: ['B', '+', 'T'], total: B.value + T.value });
+  } else {
+    fact('A', pair[0]);
+    fact('B', pair[1]);
+    lines.push({ terms: ['A', '+', 'A'], total: 2 * pair[0].value });
+    lines.push({ terms: ['A', 'x', 'B'], total: pair[0].value * pair[1].value });
+    lines.push({ terms: ['B', '+', 'T'], total: pair[1].value + T.value });
+  }
+  return { kind, facts, lines, checks: 0 };
+}
+
+// Line `line`'s value with `values` (fact id -> number): x before + and -.
+export function inferenceValue(line, values) {
+  const nums = [];
+  for (let k = 0; k < line.terms.length; k++) {
+    const term = line.terms[k];
+    if (term === 'x') nums.push(nums.pop() * values[line.terms[++k]]);
+    else nums.push(values[term] !== undefined ? values[term] : term);
+  }
+  let total = nums[0];
+  for (let k = 1; k < nums.length; k += 2) total = nums[k] === '+' ? total + nums[k + 1] : total - nums[k + 1];
+  return total;
+}
+
+// A CHECK of `puzzle` with the player's `values` (every fact id, 'T' the
+// answer): which lines hold (`holds`, one per line) and whether all do
+// (`solved`, which can only happen with the right answer). Counts the
+// CHECK.
+export function inferenceCheck(puzzle, values) {
+  puzzle.checks++;
+  const holds = puzzle.lines.map(line => inferenceValue(line, values) === line.total);
+  return { holds, solved: holds.every(Boolean) };
+}
+
+// The tier of a puzzle solved on CHECK `checks`: 1 = X, 2 = 2, up to
+// INFERENCE.maxChecks = 1.
+export function inferenceTier(checks) {
+  return checks <= 1 ? 'X' : checks === 2 ? '2' : '1';
 }
 
 // ---- Higher / Lower: find a number answer in a few guesses ----

@@ -735,3 +735,46 @@ test('Hull Patch: a right plate fills every spot, a wrong one strains; breach at
   assert.equal(hullPatchTier(2), '2');
   assert.equal(hullPatchTier(4), '1');
 });
+
+// ---- Inference (ship minigames plan step E) ----
+
+const LABELLED = [
+  { term: 'Pentateuch?', meaning: '5', answerType: 'number', label: 'Books of the Pentateuch' },
+  { term: 'Loaves?', meaning: '7', answerType: 'number', label: 'Loaves that fed the 4,000' },
+  { term: 'Moses?', meaning: '40', answerType: 'number', label: 'Days Moses spent on the mountain' },
+  { term: 'Elders?', meaning: '24', answerType: 'number', label: 'Elders around the throne' },
+  { term: 'Gates?', meaning: '12', answerType: 'number', label: 'Gates of the New Jerusalem' },
+];
+
+test('Inference fits a labelled number question with two other labelled facts to help', async () => {
+  reset();
+  state.settings.activeData = LABELLED.slice(0, 2);
+  assert.ok(!minigamesFor(LABELLED[0]).includes('inference'), 'one helper is not enough');
+  state.settings.activeData = LABELLED;
+  assert.ok(minigamesFor(LABELLED[2]).includes('inference'));
+  assert.ok(!minigamesFor(NUMBER).includes('inference'), 'no label, no tile');
+});
+
+test('Inference: every kind of puzzle holds with the true facts and has one answer', async () => {
+  const { inferenceSetup, inferenceCheck, inferenceValue, inferenceTier } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeData = LABELLED;
+  const kinds = new Set();
+  for (const r of [0.1, 0.6, 0.95]) {
+    for (let n = 0; n < 20; n++) {
+      const puzzle = withRandom(r, () => inferenceSetup(LABELLED[2]));
+      kinds.add(puzzle.kind);
+      const truth = Object.fromEntries(Object.entries(puzzle.facts).map(([id, f]) => [id, f.value]));
+      assert.equal(truth.T, 40);
+      puzzle.lines.forEach(line => assert.equal(inferenceValue(line, truth), line.total, puzzle.kind));
+      assert.ok(inferenceCheck(puzzle, truth).solved);
+      const wrong = inferenceCheck(puzzle, { ...truth, T: 41 });
+      assert.ok(!wrong.solved);
+      assert.ok(wrong.holds.includes(false), 'a wrong answer breaks a line');
+    }
+  }
+  assert.deepEqual([...kinds].sort(), ['chain', 'pair', 'times']);
+  assert.equal(inferenceTier(1), 'X');
+  assert.equal(inferenceTier(2), '2');
+  assert.equal(inferenceTier(4), '1');
+});
