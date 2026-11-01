@@ -199,8 +199,11 @@ function drawTargets(ctx, colours, points, unit) {
 
 // On a fixed plan: the building's name in the corner, and each room's
 // name over its middle once the player has walked in (every room with
-// DEV -> Fog off). Each name sits on a dark band so the floor under it
-// doesn't make it hard to read. `at` turns a tile into canvas px.
+// DEV -> Fog off). On the ship every room is named from the start, seen or
+// not, so the player can find their way (Timothy, 2026-11-01); the other
+// buildings keep theirs to explore. Each name sits on a dark band so the
+// floor under it doesn't make it hard to read. `at` turns a tile into
+// canvas px.
 function drawNames(ctx, colours, at, targets = []) {
   const f = state.floor;
   if (!f.plan) return;
@@ -215,7 +218,7 @@ function drawNames(ctx, colours, at, targets = []) {
   // A room with crew waiting to be taught is named even before it is seen.
   const wanted = new Set(targets.map(tile => f.chamberAt.get(key(tile.row, tile.col))));
   roomMiddles().forEach((middle, room) => {
-    if (state.settings.fogEnabled && !f.visitedChambers.has(room) && !wanted.has(room)) return;
+    if (state.settings.fogEnabled && !f.plan.ship && !f.visitedChambers.has(room) && !wanted.has(room)) return;
     const name = t(f.chamberNames[room]);
     const { x, y } = at(middle);
     const w = ctx.measureText(name).width + 8;
