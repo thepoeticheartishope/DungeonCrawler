@@ -574,24 +574,49 @@ export function asteroidsTier(shots) {
   return shots >= ASTEROIDS.shots ? 'X' : shots === ASTEROIDS.shots - 1 ? '2' : '1';
 }
 
-// The arc the rocks of a field `width` x `height` px fly on, for rocks
-// `rockW` wide and up to `most` of them: { n, arc, step, d } (how many,
-// degrees either side of straight up, degrees between them, their
-// distance from the turret's pivot), the most rocks that fit, then the
-// widest arc, so that no rock (plus its drift) reaches into a
-// neighbour's line of fire. Null if not even 2 fit.
+// Where the rocks of a field `width` x `height` px fly, for rocks `rockW`
+// wide and up to `most` of them: { n, rockW, rocks: [{ a, d }] } (how
+// many, their width, and each one's angle in degrees from straight up
+// and distance from the turret's pivot). The most rocks that fit, then
+// the widest arc: every rock sits well out in the room its angle has
+// (ASTEROIDS.reach, a share of it, alternating so the field isn't a
+// neat line), clear above the ship (on a narrow phone field a wide arc
+// set rocks level with it, or on it, and a shot starting inside a rock
+// missed: Timothy 2026-11-01), and no rock (plus its drift) reaches
+// into a neighbour's line of fire. Only when not even 2 fit do the
+// rocks get smaller (to ASTEROIDS.rockPxMin): fewer, not smaller, first.
+// Null if 2 don't fit at all.
 export function asteroidsLayout(width, height, rockW, most) {
+  for (let w = rockW; w >= ASTEROIDS.rockPxMin; w -= 2) {
+    const lay = asteroidsArc(width, height, w, w === rockW ? most : 2);
+    if (lay) return lay;
+  }
+  return null;
+}
+
+function asteroidsArc(width, height, rockW, most) {
   const rad = Math.PI / 180;
   const rockH = rockW * 0.8;
+  const r = rockW / 2 + ASTEROIDS.driftPx;
+  const halfAngle = d => Math.atan(r / d) / rad;
   for (let n = most; n >= 2; n--) {
     for (let arc = ASTEROIDS.arcMax; arc >= ASTEROIDS.arcMin; arc -= 2) {
       const step = 2 * arc / (n - 1);
-      const half = step / 2 - ASTEROIDS.gapDeg / 2;
-      if (half <= 0) continue;
-      const d = (rockW / 2 + ASTEROIDS.driftPx) / Math.tan(half * rad);
-      const fitsSide = d * Math.sin(arc * rad) + rockW / 2 <= width / 2 - 6;
-      const fitsTop = d + rockH / 2 <= height - ASTEROIDS.turretBottom - 10;
-      if (fitsSide && fitsTop) return { n, arc, step, d };
+      for (const reach of ASTEROIDS.reach) {
+        const rocks = [];
+        for (let i = 0; i < n; i++) {
+          const a = -arc + step * i;
+          const sin = Math.abs(Math.sin(a * rad));
+          const cos = Math.cos(a * rad);
+          const room = Math.min((width / 2 - rockW / 2 - 6) / Math.max(0.01, sin), (height - ASTEROIDS.turretBottom - 10 - rockH / 2) / Math.max(0.01, cos));
+          const d = room * reach[i % 2];
+          if (d * cos - rockH / 2 - ASTEROIDS.driftPx < ASTEROIDS.turretLength + ASTEROIDS.clearPx) break;
+          const prev = rocks[i - 1];
+          if (prev && halfAngle(prev.d) + halfAngle(d) + ASTEROIDS.gapDeg > step) break;
+          rocks.push({ a, d });
+        }
+        if (rocks.length === n) return { n, rockW, rocks };
+      }
     }
   }
   return null;

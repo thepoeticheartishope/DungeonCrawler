@@ -1502,7 +1502,8 @@ function buildAsteroids() {
       const C = ox * ox + oy * oy - rx * rx;
       const D = B * B - 4 * A * C;
       if (D < 0) return;
-      const tt = (-B - Math.sqrt(D)) / (2 * A);
+      // A shot starting inside a rock hits it (C < 0: the tip is inside).
+      const tt = C < 0 ? 0.01 : (-B - Math.sqrt(D)) / (2 * A);
       if (tt > 0 && (!best || tt < best.t)) best = { t: tt, rock, x: sx + dx * tt, y: sy + dy * tt };
     });
     if (best) return best;
@@ -1574,18 +1575,15 @@ function buildAsteroids() {
     const w = sky.clientWidth;
     const h = sky.clientHeight;
     if (!w) { requestAnimationFrame(place); return; }
-    const rockW = w >= ASTEROIDS.wideAt ? ASTEROIDS.rockPxWide : ASTEROIDS.rockPx;
-    const lay = asteroidsLayout(w, h, rockW, field.rocks.length);
+    const lay = asteroidsLayout(w, h, w >= ASTEROIDS.wideAt ? ASTEROIDS.rockPxWide : ASTEROIDS.rockPx, field.rocks.length);
+    if (!lay) return;
+    const rockW = lay.rockW;
     const flying = shuffle([field.rocks[0], ...shuffle(field.rocks.slice(1)).slice(0, lay.n - 1)]);
     const px = w / 2;
     const py = h - ASTEROIDS.turretBottom;
     flying.forEach((data, i) => {
-      const a = rad(-lay.arc + lay.step * i);
-      // Farther out only narrows a rock's angle, so rocks sit well out in
-      // the room each angle has (never nearer than the layout's distance),
-      // every other one a little nearer, so the field isn't a neat line.
-      const room = Math.min((w / 2 - rockW / 2 - 6) / Math.max(0.01, Math.abs(Math.sin(a))), (h - ASTEROIDS.turretBottom - 10 - rockW * 0.4) / Math.max(0.01, Math.cos(a)));
-      const d = Math.max(lay.d, room * ASTEROIDS.reach[i % 2]);
+      const a = rad(lay.rocks[i].a);
+      const d = lay.rocks[i].d;
       const el = add(sky, 'div', 'mg-ast-rock');
       el.textContent = data.text;
       el.style.width = rockW + 'px';
