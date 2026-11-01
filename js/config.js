@@ -423,6 +423,17 @@ export const CHARGER = {
 // the hunter stands `hunterLiftMs` at a shut one before it rolls up. The
 // shutter drops over `dropMs` (roomview.js). With Real time off a turn
 // counts as `turnMs` for these waits. Drafts; tune after play.
+// The safe room's music (music.js): the file, how loud (0 to 1), how
+// long it takes to fade in on entering and out on leaving, and how often
+// music.js checks whether the player is in the room.
+export const SAFE_ROOM_MUSIC = {
+  src: './audio/safe-room-mary.mp3',
+  volume: 0.5,
+  fadeInMs: 1500,
+  fadeOutMs: 2500,
+  checkMs: 250,
+};
+
 export const SAFE_ROOM = {
   hesitateMs: 1500,
   waitMs: 3000,
