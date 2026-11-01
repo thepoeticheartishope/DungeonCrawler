@@ -696,7 +696,7 @@ export const TEXT = {
 
   // ---- Set screen (after Enter: which questions this run asks) ----
   'pick.title': 'QUERY.SET', // draft
-  'pick.prompt': 'What will the {@term.dungeon} ask you?', // draft
+  'pick.prompt': 'What will you learn?', // Timothy 2026-11-01 (was "What will the LABYRINTH ask you?")
   'pick.builtinGroup': 'Built-in', // draft
   'pick.savedGroup': 'Your sets', // draft
   'pick.workshopList': 'Workshop list', // draft — the list last loaded in the workshop, not saved
