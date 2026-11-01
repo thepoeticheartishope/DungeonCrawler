@@ -388,7 +388,7 @@ export const SHIP_RUN = {
 // is the wires (stations.js), not one of these. Names, rooms and benefits
 // are drafts.
 export const SHIP_ROLES = [
-  { id: 'navigator', minigame: 'closeEnough', benefit: { kind: 'burns' } }, // was +45s clock (timers gone 2026-10-31)
+  { id: 'navigator', minigame: 'starChart', benefit: { kind: 'burns' } }, // was Close Enough (ship minigames plan step C)
   { id: 'pilot', minigame: 'fuelMix', benefit: { kind: 'burns' } }, // was Higher / Lower (ship minigames plan step A)
   { id: 'comms', minigame: 'slowSpell', benefit: { kind: 'shield' } },
   { id: 'medic', minigame: 'syllableSplit', benefit: { kind: 'panicDown' } },
@@ -1162,6 +1162,16 @@ export const FOG_REVEAL_2_COVERED = 6;
 // dims and steps the tier down one; more than `wrongsAllowed` wrong is a
 // miss. From panic level `panicAt` (Shaken) the fog is finer
 // (`panicCols` x `panicRows`): each scan shows less, the shares stay.
+// Star Chart (ship minigames plan step C; the Navigator's job, in place
+// of Close Enough): a one-word answer of `minLetters` to `maxLetters`
+// plain letters, its letters as stars among `decoys` decoy stars (letters
+// not in the word), `cols` stars across. The player joins them in order;
+// a wrong star goes dark for good. Wrong stars: 0 = X, up to `wrong2` = 2,
+// up to `maxWrong` = 1, more = a miss. From panic level `panicAt`
+// (Shaken) there are `panicDecoys` decoys.
+// A drag picks a star only when the finger comes within `dragPx` of its
+// middle, so a line that just brushes a star on its way doesn't count.
+export const STAR_CHART = { minLetters: 3, maxLetters: 10, decoys: 6, panicDecoys: 10, cols: 5, wrong2: 2, maxWrong: 4, panicAt: 2, dragPx: 14 };
 export const SCANNER = { cols: 5, rows: 4, panicCols: 10, panicRows: 8, panicAt: 2, xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
 // Sum Lock: a trapped box only. When a trapped box rolls a minigame it is
 // Sum Lock if it can be (not twice in a row): its question becomes two

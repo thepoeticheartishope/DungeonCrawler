@@ -13,7 +13,7 @@ import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
   LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, CODE_BREAK_TIERS, VERDICT_TIMER_SECONDS,
-  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX, SCANNER,
+  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX, SCANNER, STAR_CHART,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
@@ -21,6 +21,7 @@ import {
   codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier, verdictSetup, verdictTier,
   crosswireSetup, crosswireTier, fogRevealTier, sumLockMatches,
   fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier, scannerGrid, scannerTier,
+  starChartSetup, starChartPick, starChartTier,
 } from './minigames.js';
 import { panicLevel } from './ship.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
@@ -62,6 +63,7 @@ const BUILDERS = {
   sumLock: buildSumLock,
   fuelMix: buildFuelMix,
   scanner: buildScanner,
+  starChart: buildStarChart,
 };
 
 // Shows minigame `id` for the question showing, sending its result to
@@ -1167,6 +1169,117 @@ function buildScanner() {
     focus: () => patches[Math.floor(total / 2)].focus(),
     // DEV -> Auto-win: answers right with nothing scanned (tier X).
     finish: () => choose(q.meaning, null),
+    flip: () => {},
+  };
+}
+
+// ---- Star Chart: join the answer's letters, star to star ----
+// The Navigator's job (ship minigames plan step C), in place of Close
+// Enough. The answer's letters are stars among decoys; the player drags a
+// line through them in order, taps them one by one, or types the letters.
+// A wrong star goes dark for good (the light nudge: not this one); UNDO
+// takes back the last joined star. A panicking crew gets more decoys.
+// No modifiers (the ship asks with none); nothing moves on its own.
+function buildStarChart() {
+  slot.classList.add('mg-star');
+  const chart = starChartSetup(state.battle.currentQuestion, panicLevel());
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.starChart.hint');
+  const blanks = add(slot, 'div', 'mg-star-blanks');
+  const sky = add(slot, 'div', 'mg-star-sky');
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  line.setAttribute('viewBox', '0 0 100 100');
+  line.setAttribute('preserveAspectRatio', 'none');
+  line.setAttribute('aria-hidden', 'true');
+  line.classList.add('mg-star-line');
+  sky.appendChild(line);
+  const said = add(slot, 'div', 'term-line mg-said');
+  const undo = add(slot, 'button', 'mg-lock');
+  undo.type = 'button';
+  undo.textContent = t('mg.starChart.undo');
+  said.setAttribute('aria-live', 'polite');
+  sky.tabIndex = 0;
+  sky.setAttribute('aria-label', t('mg.starChart.sky'));
+
+  const slots = [...chart.word].map(() => add(blanks, 'span', 'mg-star-slot'));
+  const stars = chart.stars.map((star, i) => {
+    const b = add(sky, 'button', 'mg-star-dot');
+    b.type = 'button';
+    b.textContent = star.letter;
+    b.style.left = star.x + '%';
+    b.style.top = star.y + '%';
+    b.dataset.i = String(i);
+    b.addEventListener('click', () => { if (!dragged) pick(i); });
+    return b;
+  });
+  const draw = () => {
+    slots.forEach((s, k) => { s.textContent = chart.path[k] !== undefined ? chart.word[k] : ''; });
+    stars.forEach((b, i) => {
+      b.classList.toggle('on', chart.path.includes(i));
+      b.classList.toggle('out', chart.out.has(i));
+    });
+    const pts = chart.path.map(i => chart.stars[i].x.toFixed(1) + ',' + chart.stars[i].y.toFixed(1)).join(' ');
+    line.innerHTML = chart.path.length > 1 ? '<polyline points="' + pts + '" vector-effect="non-scaling-stroke" />' : '';
+  };
+  const pick = (i) => {
+    if (shown.done) return;
+    const got = starChartPick(chart, i);
+    if (got === 'used') return;
+    draw();
+    if (got === 'done') { finish({ right: true, tier: starChartTier(chart.wrong), given: chart.word }); return; }
+    if (got === 'wrong') {
+      if (starChartTier(chart.wrong) === null) { finish({ right: false, tier: null, given: chart.word.slice(0, chart.path.length) }); return; }
+      said.textContent = t('mg.starChart.wrong', { n: chart.wrong });
+      return;
+    }
+    said.textContent = '';
+  };
+  // Dragging across the sky picks each star the finger passes close to.
+  let down = false;
+  let dragged = false;
+  // The star under point (x, y) when it is within STAR_CHART.dragPx of
+  // its middle (or anywhere on it, `loose`, for the press that starts a
+  // drag), or -1.
+  const starAt = (x, y, loose) => {
+    const el = document.elementFromPoint(x, y);
+    if (!el || !el.classList || !el.classList.contains('mg-star-dot')) return -1;
+    const r = el.getBoundingClientRect();
+    if (!loose && Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)) > STAR_CHART.dragPx) return -1;
+    return Number(el.dataset.i);
+  };
+  const dragTo = (i) => {
+    if (i < 0 || chart.path[chart.path.length - 1] === i || chart.out.has(i)) return;
+    dragged = true;
+    pick(i);
+  };
+  // The press picks the star it lands on, so a drag starts from it (and
+  // its click is then skipped).
+  sky.addEventListener('pointerdown', (e) => { down = true; dragged = false; dragTo(starAt(e.clientX, e.clientY, true)); });
+  sky.addEventListener('pointermove', (e) => { if (down) dragTo(starAt(e.clientX, e.clientY, false)); });
+  const up = () => { down = false; setTimeout(() => { dragged = false; }, 0); };
+  sky.addEventListener('pointerup', up);
+  sky.addEventListener('pointercancel', up);
+  sky.addEventListener('pointerleave', () => { down = false; });
+  // A typed letter picks the first star of that letter still lit.
+  sky.addEventListener('keydown', (e) => {
+    if (e.key.length !== 1 || !/[a-z]/i.test(e.key)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const letter = e.key.toUpperCase();
+    const i = chart.stars.findIndex((s, k) => s.letter === letter && !chart.out.has(k) && !chart.path.includes(k));
+    if (i >= 0) pick(i);
+  });
+  undo.addEventListener('click', () => {
+    if (shown.done || !chart.path.length) return;
+    chart.path.pop();
+    said.textContent = '';
+    draw();
+  });
+  draw();
+  return {
+    lock: undo,
+    focus: () => sky.focus(),
+    // DEV -> Auto-win: joins the word with no wrong stars (tier X).
+    finish: () => finish({ right: true, tier: 'X', given: chart.word }),
     flip: () => {},
   };
 }

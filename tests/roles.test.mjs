@@ -165,7 +165,7 @@ test('the console opens its list of roles; the list says where each stands', () 
 
 test('learning a role: misses are free, a right round learns it', () => {
   const ship = crewRun(false);
-  assert.deepEqual(startLearning('navigator'), [{ type: 'learningStarted', role: 'navigator', minigame: 'closeEnough' }]);
+  assert.deepEqual(startLearning('navigator'), [{ type: 'learningStarted', role: 'navigator', minigame: 'starChart' }]);
   assert.deepEqual(settleLearning(false), [{ type: 'learnMissed', round: 1, of: SHIP_JOB.learnRounds }]);
   assert.equal(ship.panic, 0);
   assert.equal(state.run.crewFailures, 0);

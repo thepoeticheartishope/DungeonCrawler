@@ -16,7 +16,7 @@ import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_REACH_MAX, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
-  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
+  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, STAR_CHART, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
@@ -51,11 +51,12 @@ export const MINIGAME_MODIFIERS = {
   // A ship role's game only (SHIP_ONLY): the ship asks with no modifiers.
   fuelMix: [],
   scanner: [],
+  starChart: [],
 };
 
 // Minigames only the ship's crew roles run (ship minigames plan): never
 // rolled in place of a question elsewhere.
-export const SHIP_ONLY = ['fuelMix', 'scanner'];
+export const SHIP_ONLY = ['fuelMix', 'scanner', 'starChart'];
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 
@@ -80,6 +81,7 @@ const FITS = {
   sumLock: q => Boolean(q.sumLock),
   fuelMix: q => fuelMixAnswer(q) !== null,
   scanner: q => Boolean(String(q.image || '').trim()),
+  starChart: q => starChartWord(q) !== null && !answerInStem(q),
 };
 
 // Whether question `q`'s wording holds its own answer ("Spell
@@ -315,6 +317,57 @@ export function scannerTier(scanned, total, wrongs) {
   const tiers = ['X', '2', '1'];
   const base = share <= SCANNER.xShare ? 0 : share <= SCANNER.twoShare ? 1 : 2;
   return tiers[Math.min(2, base + wrongs)];
+}
+
+// ---- Star Chart: join the answer's letters, star to star ----
+
+// The word Star Chart spells, in capitals: one word of plain letters,
+// STAR_CHART.minLetters to maxLetters long, or null.
+function starChartWord(q) {
+  const word = String(q.meaning || '').trim().toUpperCase();
+  return /^[A-Z]+$/.test(word) && word.length >= STAR_CHART.minLetters && word.length <= STAR_CHART.maxLetters ? word : null;
+}
+
+// A new chart for question `q` (one Star Chart can run), at the crew's
+// `panic` level: the `word`, its `stars` ({ letter, x, y } in percent of
+// the sky, the word's letters and decoys that aren't in it, mixed and
+// spread on a loose grid so none overlap), the `path` so far (star
+// indexes) and the `out` stars (gone dark).
+export function starChartSetup(q, panic = 0) {
+  const word = starChartWord(q);
+  const count = panic >= STAR_CHART.panicAt ? STAR_CHART.panicDecoys : STAR_CHART.decoys;
+  const spare = shuffle([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].filter(c => !word.includes(c))).slice(0, count);
+  const letters = shuffle([...word, ...spare]);
+  const cols = STAR_CHART.cols;
+  const rows = Math.ceil(letters.length / cols);
+  const cells = shuffle([...Array(cols * rows).keys()]);
+  const stars = letters.map((letter, i) => ({
+    letter,
+    x: ((cells[i] % cols) + 0.5 + (Math.random() - 0.5) * 0.5) / cols * 100,
+    y: (Math.floor(cells[i] / cols) + 0.5 + (Math.random() - 0.5) * 0.4) / rows * 100,
+  }));
+  return { word, stars, path: [], out: new Set(), wrong: 0 };
+}
+
+// Star `i` picked on `chart`: 'next' (the word's next letter, joined),
+// 'done' (the last one), 'wrong' (goes dark for good: the only nudge is
+// "not this star") or 'used' (dark or joined already; nothing happens).
+export function starChartPick(chart, i) {
+  if (chart.out.has(i) || chart.path.includes(i)) return 'used';
+  if (chart.stars[i].letter !== chart.word[chart.path.length]) {
+    chart.out.add(i);
+    chart.wrong++;
+    return 'wrong';
+  }
+  chart.path.push(i);
+  return chart.path.length === chart.word.length ? 'done' : 'next';
+}
+
+// The tier for a chart finished with `wrong` wrong stars, or null (a miss)
+// past STAR_CHART.maxWrong.
+export function starChartTier(wrong) {
+  if (wrong > STAR_CHART.maxWrong) return null;
+  return wrong === 0 ? 'X' : wrong <= STAR_CHART.wrong2 ? '2' : '1';
 }
 
 // ---- Higher / Lower: find a number answer in a few guesses ----
