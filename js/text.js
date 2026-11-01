@@ -623,6 +623,7 @@ export const TEXT = {
   'crew.waiting': '{role}: “The captain always did this. I don’t know how.” Learn it in Command first.', // draft. A role not learned yet
   'crew.sitsOut': '{role}: “Not needed this trip.”', // draft. A role whose game can't run on this set
   'crew.taught': '{role}: “I’ve got it from here.”', // draft. A role already taught this run
+  'crew.notCrew': '{role}: “You’ve picked your crew for this trip. I’ll stay out of the way.”', // draft. Not one of the player's 3 (step G2)
   'job.started': 'You walk the {role} through it.', // draft. A job's first round
   'job.right': 'Round {round} of {of}: right.', // draft
   'job.missed': 'Round {round} of {of}: wrong. The crew saw that.', // draft. A crew failure
@@ -915,12 +916,13 @@ export const TEXT = {
   'ask.title.learn': 'LEARNING {role} · {round}/{of}', // draft. The ask screen's title for a learning round at the console (crew roles plan step B)
   // COMMAND.SYS, the console's roles (crew roles plan step B, consoleview.js).
   'console.title': 'COMMAND.SYS', // draft
-  'console.hint': 'The captain’s lessons. Pick a job to learn.', // draft
+  'console.hint': 'The captain’s lessons. Pick 3 crew to learn and teach this trip.', // draft (step G2)
   'console.wires': 'Power wires', // draft. The Engineer's game, in the list
   'console.status.new': 'LEARN', // draft. A role still to learn
   'console.status.learned': 'LEARNED', // draft
   'console.status.taught': 'TAUGHT', // draft
   'console.status.sitsOut': 'NOT NEEDED', // draft. Its game can't run on this set
+  'console.status.full': 'CREW FULL', // draft. Not picked, and 3 are already (step G2)
   'console.opened': 'The training console wakes.', // draft
   'console.left': 'You step back from the console.', // draft. LEAVE or Escape on COMMAND.SYS
   'learn.started': 'The captain’s lesson for the {role}. Mistakes are free here.', // draft
