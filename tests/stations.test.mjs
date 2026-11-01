@@ -5,7 +5,7 @@
 // instead of turning; the ship has the Engineer's console, board and crew
 // member; the board stays shut until the role is trained; training misses
 // are free, teaching misses are crew failures; joined-up power trains the
-// role at the console and makes a burn at the board.
+// role at the console and is taught at the board.
 //
 // Run: node --test tests/*.test.mjs
 
@@ -23,7 +23,6 @@ import { emptyFloor } from './helpers.mjs';
 function ship() {
   emptyFloor(10);
   state.run.trained = [];
-  state.run.burns = 0;
   state.run.crewFailures = 0;
   buildShipFloor();
   return state.floor;
@@ -125,12 +124,11 @@ test('the last breaker closing on wired-up power trains the role at the console'
   assert.equal(console.puzzle, null);
 });
 
-test('joined-up power at the board makes a burn and clears the wires', () => {
+test('joined-up power at the board teaches the Engineer and clears the wires', () => {
   ship();
   state.run.trained.push('engineer');
   const board = prop('powerBoard');
   useStation(board);
-  assert.deepEqual(stationDone(board), [{ type: 'burnDone', role: 'engineer', burns: 1 }]);
-  assert.equal(state.run.burns, 1);
+  assert.equal(stationDone(board)[0].type, 'stationTaught');
   assert.equal(board.puzzle, null);
 });

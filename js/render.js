@@ -17,7 +17,6 @@ import { FACING_VECTORS } from './sight.js';
 import { waysInUse } from './look.js';
 import { clockReading } from './realclock.js';
 import { goalMark } from './goals.js';
-import { burnsNeeded } from './ship.js';
 import { taughtCount } from './roles.js';
 import { t } from './text.js';
 
@@ -201,14 +200,13 @@ export function renderHud() {
 }
 
 // The ship's HUD (ship plan step C, ship.js; no arrival clock since
-// Timothy 2026-10-31): burns of the ones needed, crew taught of the roles on
+// Timothy 2026-10-31; no burns since step G1): crew taught of the roles on
 // duty, and the crew's panic by name and as a meter. The rest of the HUD
 // hides there (CSS .ship-hud). main.js worldFrame calls it each frame.
 export function renderShipHud() {
   const ship = state.floor.ship ? state.run.ship : null;
   els.statsEl.classList.toggle('ship-hud', !!ship);
   if (!ship) return;
-  els.shipBurns.textContent = state.run.burns + '/' + burnsNeeded();
   // Crew taught of the roles on duty (crew roles plan step C).
   const crew = taughtCount();
   els.shipTaught.textContent = crew.taught + '/' + crew.of;

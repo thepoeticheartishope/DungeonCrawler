@@ -95,7 +95,6 @@ export const TEXT = {
   'stat.room': '{@term.room}',
   // The ship's HUD (ship plan step C, render.js renderHud): in place of
   // stability, energy, target and depth.
-  'stat.burns': 'BURNS', // draft. Full burns of the ones needed
   'stat.taught': 'TAUGHT', // draft. Crew taught of the roles on duty (crew roles plan step C)
   'stat.sound': 'SOUND', // draft. The top bar's volume button
   'sound.off': 'OFF', // draft
@@ -590,7 +589,7 @@ export const TEXT = {
   'station.hint.train': 'Turn wires so power reaches the cell. Tap a breaker to answer it.', // draft
   'station.hint.teach': 'Tell the Engineer which wires to turn. Answer each breaker.', // draft
   'station.done.train': 'Power through. You know how this works now.', // draft. The training wires joined up
-  'station.done.teach': 'Full burn.', // draft. The Engineer's wires joined up
+  'station.done.teach': 'Power through. The Engineer has it.', // draft. The Engineer's wires joined up (no burns: step G1)
   'station.breaker': 'Breaker {row}, {col}: answer to close it', // draft. An open breaker button's label
   'station.breakerClosed': 'Breaker {row}, {col}, closed', // draft. A closed breaker button's label
   'station.opened.train': 'The training console wakes. The captain’s lessons are still on it.', // draft
@@ -600,7 +599,7 @@ export const TEXT = {
   'station.breaker.free': 'The breaker stays open. In training, that costs nothing.', // draft. Wrong answer at the console
   'station.breaker.failed': 'The breaker sparks. The Engineer flinches.', // draft. Wrong answer while teaching: a crew failure
   'station.trained.engineer': 'You can teach this now. The Engineer is in the Engine room.', // draft
-  'station.burn': 'Full burn. The ship moves. (Burns: {burns})', // draft
+  'station.taught': 'The {role} has it now.', // draft. The Engineer taught at the board (step G1)
   'crew.engineer.waiting': 'Engineer: “The captain always ran the board. I don’t know how.”', // draft. Bumping the Engineer before training
   'crew.engineer.ready': 'Engineer: “Tell me what to do.”', // draft. Bumping the Engineer once trained
   // The ship's run (ship plan step C, ship.js).
@@ -628,7 +627,6 @@ export const TEXT = {
   'job.right': 'Round {round} of {of}: right.', // draft
   'job.missed': 'Round {round} of {of}: wrong. The crew saw that.', // draft. A crew failure
   'job.badly': 'It went badly. The {role} will manage, but it won’t help much.', // draft. Fewer than SHIP_JOB.passAt right
-  'job.helped.burns': 'The {role} plots a shorter way in. One burn fewer.', // draft
   'job.helped.shield': 'The {role} keeps everyone talking. The next mistake won’t shake them.', // draft
   'job.helped.panicDown': 'The {role} settles the crew a little.', // draft
   'job.helped.calm': 'The {role} keeps everyone fed. The crew steadies faster.', // draft
@@ -665,9 +663,9 @@ export const TEXT = {
   'tragedy.planet.5': 'Halcyon', // draft
   // The ship's end screens (main.js endShip).
   'end.ship.arrived.title': 'Orbit.', // draft
-  'end.ship.arrived.stats': 'The {ship} reached {planet}. The crew you taught brought it in. Burns {burns}/{needed}, failures {failures}.', // draft
+  'end.ship.arrived.stats': 'The {ship} reached {planet}. The crew you taught brought it in. Failures: {failures}.', // draft
   'end.ship.panic.title': 'The crew broke.', // draft
-  'end.ship.panic.stats': 'Too many failures. No one is listening to orders now. Burns {burns}/{needed}, failures {failures}.', // draft
+  'end.ship.panic.stats': 'Too many failures. No one is listening to orders now. Failures: {failures}.', // draft
   'end.ship.crew': 'Crew you taught ({taught}/{of}): {names}.', // draft. After the stats, crew roles plan step C
   'end.ship.noCrew': 'You taught no one else.', // draft. No crew role was taught this run
   'room.desk.done': 'The {@term.desk} is dull now. It will shine on the next floor.', // draft. Bumping a used desk

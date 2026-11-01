@@ -3,7 +3,7 @@
 // which has wording; a failure raises the panic and Broken ends the run;
 // three right answers in a row calm it; the panic makes the crew's work
 // harder (slipping wires); no timers: time passing changes nothing; the
-// last burn arrives.
+// last crew member taught brings the ship in.
 //
 // Run: node --test tests/*.test.mjs
 
@@ -14,7 +14,7 @@ import { state } from '../js/state.js';
 import { SHIP_RUN, TRAGEDY_PARTS } from '../js/config.js';
 import { TEXT } from '../js/text.js';
 import {
-  freshShipRun, rollTragedy, crewMissed, crewRight, burnMade, slipEveryMs, shipFrame,
+  freshShipRun, rollTragedy, crewMissed, crewRight, slipEveryMs, shipFrame,
 } from '../js/ship.js';
 import { useStation, settleBreaker, stationDone, trainWires } from '../js/stations.js';
 import { buildShipFloor } from '../js/floor.js';
@@ -35,7 +35,6 @@ test('a fresh run is calm, nothing trained, and its tragedy all has wording', ()
   const ship = shipRun();
   assert.equal(ship.panic, 0);
   assert.deepEqual(state.run.trained, []);
-  assert.equal(state.run.burns, 0);
   for (let i = 0; i < 50; i++) {
     const tragedy = rollTragedy();
     for (const part of Object.keys(TRAGEDY_PARTS)) {
@@ -102,7 +101,7 @@ test('a teaching miss raises the panic; a training miss does not', () => {
   assert.equal(ship.panic, 1);
 });
 
-test('a Shaken crew slips a powered wire every so often while a burn is on', () => {
+test('a Shaken crew slips a powered wire every so often while the Engineer is being taught', () => {
   const ship = shipRun();
   state.run.trained.push('engineer');
   useStation(prop('powerBoard'));
@@ -120,15 +119,17 @@ test('a Shaken crew slips a powered wire every so often while a burn is on', () 
   assert.ok(!board.puzzle.breakers.includes(slip.index), 'never a breaker');
 });
 
-test('the last burn arrives', () => {
-  shipRun();
+test('the board teaches the Engineer once; if that was the last crew member, the ship arrives', () => {
+  const ship = shipRun();
+  ship.onDuty = ['navigator'];
   state.run.trained.push('engineer');
   const board = prop('powerBoard');
-  for (let i = 1; i < SHIP_RUN.burnsNeeded; i++) {
-    useStation(board);
-    assert.deepEqual(stationDone(board).map(e => e.type), ['burnDone']);
-  }
   useStation(board);
-  assert.deepEqual(stationDone(board).map(e => e.type), ['burnDone', 'shipEnded']);
-  assert.deepEqual(burnMade(), [{ type: 'shipEnded', how: 'arrived' }]);
+  assert.deepEqual(stationDone(board).map(e => e.type), ['stationTaught'], 'the Navigator is still to teach');
+  assert.ok(ship.taught.includes('engineer'));
+  assert.deepEqual(useStation(board), [{ type: 'crewSpoke', role: 'engineer', taught: true }], 'taught once');
+  ship.taught = [];
+  ship.onDuty = [];
+  useStation(board);
+  assert.deepEqual(stationDone(board).map(e => e.type), ['stationTaught', 'shipEnded'], 'the last one in brings the ship in');
 });

@@ -61,7 +61,21 @@ export function crewLook(role) {
 // Crew members taught this run, and how many could be (the roles on duty).
 export function taughtCount() {
   const ship = state.run.ship;
-  return { taught: ship ? ship.taught.length : 0, of: rolesOnDuty().length };
+  return { taught: ship ? ship.taught.length : 0, of: rolesOnDuty().length + 1 };
+}
+
+// Whether every crew member there is to teach this run is taught: the
+// Engineer and every role on duty. Until the final boss (ship minigames
+// plan step G3), that brings the ship in.
+export function allTaught() {
+  const crew = taughtCount();
+  return crew.of > 0 && crew.taught >= crew.of;
+}
+
+// Events for a crew member just taught: the ship arrives once it was the
+// last (allTaught). Events: shipEnded { how: 'arrived' }, or nothing.
+export function arrivedIfAllTaught() {
+  return allTaught() ? [{ type: 'shipEnded', how: 'arrived' }] : [];
 }
 
 // Bumping crew member `role` (not the Engineer). Sitting out, already
@@ -101,9 +115,9 @@ export function settleRound(isCorrect) {
   if (job.round < of) return events;
   ship.job = null;
   ship.taught.push(job.role);
-  if (job.right < SHIP_JOB.passAt) return [...events, { type: 'jobWentBadly', role: job.role, right: job.right }];
+  if (job.right < SHIP_JOB.passAt) return [...events, { type: 'jobWentBadly', role: job.role, right: job.right }, ...arrivedIfAllTaught()];
   const { benefit } = roleOf(job.role);
-  return [...events, { type: 'roleHelped', role: job.role, benefit: benefit.kind }, ...applyBenefit(benefit)];
+  return [...events, { type: 'roleHelped', role: job.role, benefit: benefit.kind }, ...applyBenefit(benefit), ...arrivedIfAllTaught()];
 }
 
 // The console's list (crew roles plan step B): the Engineer, then every
@@ -174,17 +188,12 @@ export function jobOn() {
   return Boolean(state.run.ship && state.run.ship.job);
 }
 
-// A taught role's benefit, for good (SHIP_ROLES `benefit`): a burn fewer,
-// a shield, panic down, quicker calming, or rarer slips. The run's burns already
-// made may now be enough: then the ship arrives.
-// Events: panicEased { level } for panicDown with any panic, or
-// shipEnded { how: 'arrived' } when a burn fewer is already reached.
+// A taught role's benefit, for good (SHIP_ROLES `benefit`): a shield,
+// panic down, quicker calming, or rarer slips.
+// Events: panicEased { level } for panicDown with any panic, or nothing.
 export function applyBenefit(benefit) {
   const ship = state.run.ship;
   switch (benefit.kind) {
-    case 'burns':
-      ship.burnsNeeded = Math.max(1, ship.burnsNeeded - 1);
-      return state.run.burns >= ship.burnsNeeded ? [{ type: 'shipEnded', how: 'arrived' }] : [];
     case 'shield': ship.shields++; return [];
     case 'panicDown':
       if (ship.panic === 0) return [];
