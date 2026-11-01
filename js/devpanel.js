@@ -22,6 +22,7 @@ const devSkipBtn = document.getElementById('devSkipBtn');
 const devRestartTestBtn = document.getElementById('devRestartTestBtn');
 const devStartRow = document.getElementById('devStartRow');
 const shipStartRow = document.getElementById('shipStartRow');
+const dungeonOptionRows = ['comfortStartRow', 'tutorialStartRow'].map(id => document.getElementById(id));
 const devStartIn = document.getElementById('devStartIn');
 const devTallyOut = document.getElementById('devTallyOut');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
@@ -63,8 +64,10 @@ export function initDevPanel({
   const params = new URLSearchParams(location.search);
   devDock.hidden = !params.has('dev');
   devStartRow.hidden = !params.has('dev');
-  // The ship's box: unchecking it starts the deprecated dungeon (dev only).
+  // The ship's box: unchecking it starts the deprecated dungeon (dev only),
+  // and that dungeon's own options, Comfort mode and the tutorial.
   shipStartRow.hidden = !params.has('dev');
+  dungeonOptionRows.forEach(row => { row.hidden = !params.has('dev'); });
   Object.keys(TEST_ROOMS).forEach(name => devStartIn.add(new Option('Test room: ' + name, name)));
   devToggleBtn.addEventListener('click', () => {
     const open = devPanel.classList.toggle('show');

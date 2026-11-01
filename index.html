@@ -1951,12 +1951,15 @@
       <span data-t="start.dpadRight"></span>
     </label>
 
-    <label class="option-toggle">
+    <!-- Comfort mode and the tutorial belong to the DEPRECATED dungeon crawl,
+         so like the Ship box they show only under ?dev (devpanel.js;
+         Timothy 2026-11-01). -->
+    <label class="option-toggle" id="comfortStartRow" hidden>
       <input type="checkbox" id="simpleEnemiesToggle">
       <span data-t="start.simpleEnemies"></span>
     </label>
 
-    <label class="option-toggle">
+    <label class="option-toggle" id="tutorialStartRow" hidden>
       <input type="checkbox" id="tutorialToggle" checked>
       <span data-t="start.tutorial"></span>
     </label>
