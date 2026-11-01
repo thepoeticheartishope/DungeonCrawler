@@ -1,70 +1,82 @@
-// Music: the safe room's tune (Jeremy Blake, "Safe Rooms" pack; Timothy
-// checked the licence, credits go in at the end). It fades in while the
-// player stands in the safe room and fades out when they leave it, or
-// when the run's screens go away, under the game's volume (sound.js).
+// Music: the game's tunes (config.js MUSIC), one at a time, crossfading
+// from one to the next under the game's volume (sound.js):
+// - shipIntro on the ship's opening, from the top each new run, once;
+// - safeRoom while the player stands in the safe room (the room, a
+//   question or the exchange on screen), looping.
+// Taking command crosses straight from the opening's tune into the safe
+// room's, since the ship starts in Command, its safe room. Anything else
+// (start, win, lose, a hidden tab, sound off) fades the music out.
 // main.js calls initMusic once. A view: it reads state, never changes it.
 //
-// The tune is not in the service worker's cache: browsers ask for audio
+// The tunes are not in the service worker's cache: browsers ask for audio
 // in pieces (Range requests), which a cached whole file can't answer on
-// some of them (Safari), so offline the room is just quiet.
+// some of them (Safari), so offline the game is just quiet.
 
 import { state } from './state.js';
-import { SAFE_ROOM_MUSIC } from './config.js';
+import { MUSIC, MUSIC_FADE_STEPS, MUSIC_CHECK_MS } from './config.js';
 import { soundOut, soundOff } from './sound.js';
 
-let audio = null;    // the <audio> element, made on first need
-let fade = null;     // the tune's own gain, which fades
-let playing = false; // whether the tune is (or is fading) up
-let pauseAt = null;  // the timer that pauses the element once a fade out ends
+// Each tune once made: { audio, fade (its own gain), up (whether it is
+// meant to be up), pauseAt (the timer that pauses it once faded out) }.
+const tunes = {};
 
-// Checks every SAFE_ROOM_MUSIC.checkMs whether the tune should be up, on
-// `screens` (the run's). A check on a clock, not on each event, so every
-// way in or out (a step, a new floor, the end screen, a hidden tab) goes
-// through the same one rule.
+// Checks every MUSIC_CHECK_MS which tune should be up, from `screens`:
+// { intro: the ship's opening, run: [the run's screens] }. A check on a
+// clock, not on each event, so every way in or out (a step, taking
+// command, a new floor, the end screen, a hidden tab) goes through the
+// same one rule.
 export function initMusic(screens) {
-  setInterval(() => follow(wanted(screens)), SAFE_ROOM_MUSIC.checkMs);
+  setInterval(() => follow(wanted(screens)), MUSIC_CHECK_MS);
 }
 
-// Whether the tune should be up now: sound not off, a run's screen
-// showing (the room, a question, the exchange), the page in view, and the
-// player inside the safe room.
+// The tune that should be up now ('shipIntro', 'safeRoom'), or null.
 function wanted(screens) {
-  if (soundOff() || document.hidden) return false;
-  if (!screens.some(s => s.classList.contains('show'))) return false;
+  if (soundOff() || document.hidden) return null;
+  if (screens.intro.classList.contains('show')) return 'shipIntro';
+  if (!screens.run.some(s => s.classList.contains('show'))) return null;
   const sr = state.floor && state.floor.safeRoom;
-  return Boolean(sr && sr.playerIn);
+  return sr && sr.playerIn ? 'safeRoom' : null;
 }
 
-// Makes the element, looping, into its own fade gain on the master.
-function makeTune(sound) {
-  audio = new Audio(SAFE_ROOM_MUSIC.src);
-  audio.loop = true;
+// Brings `name` up and every other tune down, each along its own fade, so
+// a change of tune is a crossfade.
+function follow(name) {
+  const sound = soundOut();
+  if (!sound) return;
+  if (name && !tunes[name]) tunes[name] = makeTune(sound, MUSIC[name]);
+  Object.entries(tunes).forEach(([id, tune]) => {
+    const on = id === name;
+    if (on === tune.up) return;
+    tune.up = on;
+    clearTimeout(tune.pauseAt);
+    const music = MUSIC[id];
+    if (on) {
+      if (tune.audio.paused && !music.loop) tune.audio.currentTime = 0;
+      tune.audio.play().catch(() => { tune.up = false; });
+      easeTo(sound.ctx, tune.fade, music.volume, music.fadeInMs);
+      return;
+    }
+    easeTo(sound.ctx, tune.fade, 0, music.fadeOutMs);
+    tune.pauseAt = setTimeout(() => tune.audio.pause(), music.fadeOutMs + 100);
+  });
+}
+
+// Makes a tune's element into its own fade gain on the master, silent.
+function makeTune(sound, music) {
+  const audio = new Audio(music.src);
+  audio.loop = music.loop;
   audio.preload = 'none';
-  fade = sound.ctx.createGain();
+  const fade = sound.ctx.createGain();
   fade.gain.value = 0;
   sound.ctx.createMediaElementSource(audio).connect(fade).connect(sound.out);
+  return { audio, fade, up: false, pauseAt: null };
 }
 
-// Fades the tune up or down to match `on`, from wherever it is now. A
-// fade down pauses the element once silent, so a finished fade costs
-// nothing.
-function follow(on) {
-  const sound = soundOut();
-  if (!sound || on === playing) return;
-  if (!audio) makeTune(sound);
-  playing = on;
-  clearTimeout(pauseAt);
-  if (on) audio.play().catch(() => { playing = false; });
-  const ms = on ? SAFE_ROOM_MUSIC.fadeInMs : SAFE_ROOM_MUSIC.fadeOutMs;
-  easeTo(sound.ctx, on ? SAFE_ROOM_MUSIC.volume : 0, ms);
-  if (!on) pauseAt = setTimeout(() => audio.pause(), ms + 100);
-}
-
-// Moves the fade gain to `to` over `ms` along a cosine curve, so it leaves
-// and arrives gently instead of at a straight line's sharp corners (the
-// fade out was too abrupt, Timothy 2026-11-01). Starts from the gain's
-// value now, held where an earlier fade got to.
-function easeTo(ctx, to, ms) {
+// Moves `fade` to `to` over `ms` along a cosine curve, so it leaves and
+// arrives gently instead of at a straight line's sharp corners (Timothy
+// 2026-11-01). Starts from the gain's value now, held where an earlier
+// fade got to.
+function easeTo(ctx, fade, to, ms) {
   const g = fade.gain;
   const now = ctx.currentTime;
   const from = g.value;
@@ -73,14 +85,15 @@ function easeTo(ctx, to, ms) {
     g.cancelScheduledValues(now);
     g.setValueAtTime(from, now);
   }
-  const n = SAFE_ROOM_MUSIC.fadeSteps;
-  const curve = new Float32Array(n);
-  for (let i = 0; i < n; i++) curve[i] = from + (to - from) * (1 - Math.cos(Math.PI * i / (n - 1))) / 2;
+  const curve = new Float32Array(MUSIC_FADE_STEPS);
+  for (let i = 0; i < MUSIC_FADE_STEPS; i++) curve[i] = from + (to - from) * (1 - Math.cos(Math.PI * i / (MUSIC_FADE_STEPS - 1))) / 2;
   g.setValueCurveAtTime(curve, now + 0.01, ms / 1000);
 }
 
-// How loud the tune is right now under the game's volume (0 silent or
-// not made yet), and whether it is meant to be up. For tests.
+// Each made tune's loudness now (0 silent) and whether it is meant to be
+// up, by name, and how far into its file it is (seconds). For tests.
 export function musicLevel() {
-  return { level: fade ? fade.gain.value : 0, playing };
+  const out = {};
+  Object.entries(tunes).forEach(([id, tune]) => { out[id] = { level: tune.fade.gain.value, up: tune.up, at: tune.audio.currentTime }; });
+  return out;
 }

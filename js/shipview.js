@@ -5,17 +5,21 @@
 // Like the normal intro it can be clicked through (Timothy 2026-10-31): a
 // tap or key while lines are still coming puts them all up at once, and
 // once all are up a tap anywhere or any key takes command.
+// Left alone, it takes command by itself after SHIP_INTRO_AUTO_S, as its
+// tune ends (music.js; Timothy 2026-11-01).
 // main.js startGame shows it and passes in what TAKE COMMAND does
 // (initShipIntro). This only draws and listens.
 
 import { t } from './text.js';
-import { SHIP_INTRO_STEP_S, SHIP_INTRO_FADE_S } from './config.js';
+import { SHIP_INTRO_STEP_S, SHIP_INTRO_FADE_S, SHIP_INTRO_AUTO_S } from './config.js';
 
 const els = {};
 let begin = () => {};
 // When the last line (TAKE COMMAND) has fully faded in, in
 // performance.now() ms; 0 once the player has put every line up.
 let allInAt = 0;
+// The timer that takes command by itself when the tune ends.
+let autoAt = null;
 
 // Looks up the intro's elements and hooks up TAKE COMMAND. Call once, from main.js.
 export function initShipIntro({ onBegin }) {
@@ -32,6 +36,7 @@ export function initShipIntro({ onBegin }) {
 // bubbles up or a held key can't start the ship twice.
 function takeCommand() {
   if (!els.screen.classList.contains('show')) return;
+  clearTimeout(autoAt);
   begin();
 }
 
@@ -78,4 +83,6 @@ export function fillShipIntro(lines) {
   els.screen.classList.remove('all-in');
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   allInAt = still ? 0 : performance.now() + (lines.length * SHIP_INTRO_STEP_S + SHIP_INTRO_FADE_S) * 1000;
+  clearTimeout(autoAt);
+  autoAt = setTimeout(takeCommand, SHIP_INTRO_AUTO_S * 1000);
 }

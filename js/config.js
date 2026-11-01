@@ -403,6 +403,10 @@ export const SHIP_JOB = { rounds: 3, passAt: 2, minFitting: 3, learnRounds: 3 };
 // The tragedy intro (shipview.js): seconds between one line fading in and
 // the next. Slow on purpose: text comes in slowly, never flickers.
 export const SHIP_INTRO_STEP_S = 1.4;
+// The opening takes command by itself after this many seconds: when its
+// tune (MUSIC.shipIntro: the song's last 2:10, from 1:20 of 3:30) ends,
+// so the music and the start line up. Counted whether sound is on or off.
+export const SHIP_INTRO_AUTO_S = 130;
 // How long one intro line takes to fade in (index.html .ship-intro-line's
 // animation), so a tap after that takes command instead of showing the rest.
 export const SHIP_INTRO_FADE_S = 1.6;
@@ -434,18 +438,25 @@ export const SOUND_VOLUME = {
   changeMs: 150,
 };
 
-// The safe room's music (music.js): the file, its own loudness under the
-// game's volume (0 to 1), how long it takes to fade in on entering and out
-// on leaving (an eased curve, so it starts and ends gently), and how often
-// music.js checks whether the player is in the room.
-export const SAFE_ROOM_MUSIC = {
-  src: './audio/safe-room-mary.mp3',
-  volume: 1,
-  fadeInMs: 2000,
-  fadeOutMs: 4000,
-  fadeSteps: 64,
-  checkMs: 250,
+// The game's music (music.js), one entry per tune: the file, its own
+// loudness under the game's volume (0 to 1), how long it takes to fade in
+// and out (an eased curve, so it starts and ends gently), and whether it
+// loops or instead starts over from the top each time it comes up. Both
+// Jeremy Blake (Timothy checked the licences; credits go in at the end).
+// - shipIntro: "Recovery Mission" ("Helios's Dreams") on the ship's
+//   opening, from 1:20, "the best" part (Timothy 2026-11-01). The file is
+//   cut to start there (a seek needs a server that sends files in pieces,
+//   which not every one does), 2:10 long. It plays out once; the opening
+//   takes command by itself when it ends (shipview.js).
+// - safeRoom: "Mary" ("Safe Rooms") while the player is in the safe room.
+export const MUSIC = {
+  shipIntro: { src: './audio/ship-intro-recovery-mission.mp3', volume: 1, fadeInMs: 3000, fadeOutMs: 4000, loop: false },
+  safeRoom: { src: './audio/safe-room-mary.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: true },
 };
+// How finely music.js draws a fade's curve, and how often it checks which
+// tune should be up.
+export const MUSIC_FADE_STEPS = 64;
+export const MUSIC_CHECK_MS = 250;
 
 export const SAFE_ROOM = {
   hesitateMs: 1500,
