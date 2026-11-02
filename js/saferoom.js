@@ -11,13 +11,16 @@
 // doesn't charge in it (battery.js) and the charger is still the only
 // top-up. floor.js buildFloor()
 // calls placeSafeRoom(); moves.js calls pullShutter() on a bump and
-// enterSafeRoom() on each step; combat.js asks where the room is. No DOM
-// access here.
+// enterSafeRoom() on each step; combat.js asks where the room is. On the
+// ship there is no switch and no bump: the shutters open and shut by
+// themselves as the player comes and goes (autoShutters, from moves.js
+// enterTile and floor.js buildShipFloor). No DOM access here.
 
-import { state, key } from './state.js';
+import { state, key, parseKey } from './state.js';
 import { FOUR_STEPS } from './grid.js';
 import { startRoom } from './desk.js';
 import { batteryInPlay } from './battery.js';
+import { SHIP_DOOR_REACH } from './config.js';
 
 // The start room's shutters and switch, or null if it has no doorway or no
 // spot for the switch. Its doorways are its own tiles with open floor
@@ -90,6 +93,24 @@ export function pullShutter() {
   sr.shut = !sr.shut;
   shutters().forEach(p => { p.up = !sr.shut; });
   return [{ type: sr.shut ? 'shutterDown' : 'shutterUp' }];
+}
+
+// On the ship (Timothy 2026-11-02): Command's shutters work like
+// automatic doors. They roll up while the player is within SHIP_DOOR_REACH
+// tiles of a doorway and drop once they walk away, so there is nothing to
+// bump. A shutter in the player's own doorway is always in reach, so it
+// never drops on them. Off the ship, nothing changes. No events: the
+// slats moving (roomthings.js) is all it shows.
+export function autoShutters() {
+  const f = state.floor;
+  const sr = f.safeRoom;
+  if (!f.ship || !sr) return;
+  const near = sr.doors.some(k => {
+    const { row, col } = parseKey(k);
+    return Math.max(Math.abs(row - f.playerRow), Math.abs(col - f.playerCol)) <= SHIP_DOOR_REACH;
+  });
+  sr.shut = !near;
+  shutters().forEach(p => { p.up = near; });
 }
 
 // The hunter has stood at a shut shutter long enough (combat.js): every

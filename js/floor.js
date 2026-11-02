@@ -31,7 +31,7 @@ import { placeVents } from './vents.js';
 import { placeWindows } from './windows.js';
 import { placeLamps } from './lamps.js';
 import { rollSpots } from './spots.js';
-import { placeSafeRoom, inSafeRoom } from './saferoom.js';
+import { placeSafeRoom, inSafeRoom, autoShutters } from './saferoom.js';
 import { solidProp } from './passage.js';
 import { parseTutorialRoom, freshTutorial, darkLight } from './tutorial.js';
 import { parseTestRoom } from './testroom.js';
@@ -567,7 +567,7 @@ export function buildTestFloor(name) {
 // The ship as data (ship plan, ideas/ship-plan.md outside the repo;
 // Timothy 2026-10-30): plans.js `ship`, the School's rooms as a small
 // spaceship. The player starts in Command, the center room, which is the
-// safe room (shutters and switch). Only the plan's furniture and its
+// safe room (automatic shutters, no switch). Only the plan's furniture and its
 // stations (stations.js: consoles, boards, crew) go down:
 // nothing dangerous, no papers, boxes, cells, grates, stairs or boss, as
 // on a rest floor. Every floor tile is lit and seen from the start
@@ -606,15 +606,18 @@ export function buildShipFloor() {
   // safe room's switch can take a console's spot.
   placeStations(plan.stations, placer, [f.PLAYER_START]).forEach(p => f.props.push({ ...p, identified: true, searched: false, sprung: false }));
   const safe = placeSafeRoom(layout, placer, [f.PLAYER_START]);
+  // No pull switch on the ship: its shutters open and shut by themselves
+  // as the player comes near (saferoom.js autoShutters; Timothy 2026-11-02).
   if (safe) {
-    f.safeRoom = safe.safeRoom;
-    safe.props.forEach(p => f.props.push({ ...p, identified: false, searched: false, sprung: false }));
+    f.safeRoom = { ...safe.safeRoom, switchAt: null };
+    safe.props.filter(p => p.kind !== 'switch').forEach(p => f.props.push({ ...p, identified: false, searched: false, sprung: false }));
   }
   f.stairs = null;
   f.exchange = null;
   f.exchangeBought = new Set();
   f.coin = null;
 
+  autoShutters();
   f.visibleSet = new Set();
   f.exploredSet = new Set();
   computeVisibility();
