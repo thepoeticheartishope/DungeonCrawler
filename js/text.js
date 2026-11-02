@@ -285,7 +285,6 @@ export const TEXT = {
   'mg.inference.fill': 'Fill in every box first.', // draft
   'mg.inference.whole': 'Each symbol is a whole number, 1 or more.', // draft
   'mg.inference.off': 'The marked lines don\'t add up with your numbers. Checks left: {left}', // draft
-  'mg.inference.offPanic': 'Something is off.', // draft. A panicking crew's CHECK
   'mg.inference.scored.X': '{name|upper}: worked out first time.', // draft
   'mg.inference.scored.2': '{name|upper}: worked out.', // draft
   'mg.inference.scored.1': '{name|upper}: worked out in the end. It was {answer}.', // draft

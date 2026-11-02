@@ -25,7 +25,6 @@ import {
   inferenceSetup, inferenceCheck, inferenceTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout, levelOf,
   matchSwap, matchEndTurn, matchWon, matchUse, matchCrisis, matchNear,
 } from './minigames.js';
-import { panicLevel } from './ship.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
 import { normalizeSpaces, buildChoices, resolveImageSrc } from './quiz.js';
 import { shuffle } from './random.js';
@@ -90,7 +89,7 @@ export function showMinigame(id, report, again = () => {}) {
   // A game the player is good at may draw some of its letters flipped
   // (its level's flip, MINIGAME_LEVELS).
   if (MINIGAME_LEVELS.games[id]) {
-    const { flip } = levelOf(id, panicLevel());
+    const { flip } = levelOf(id);
     if (flip) shown.flip(flip);
   }
   slot.hidden = false;
@@ -253,8 +252,8 @@ function buildCloseEnough() {
 // ---- Fuel Mix: pour tanks until the engine holds the answer ----
 // The Pilot's job (ship minigames plan step A). Each tank button pours
 // into the engine; the gauge then says only UNDER or OVER (going over
-// vents it back to empty), and the running total shows unless the crew is
-// panicking or the Pilot is good at it (its level's hideTotal). Par (the fewest pours that can do
+// vents it back to empty), and the running total shows until the Pilot
+// is good at it (its level's hideTotal). Par (the fewest pours that can do
 // it) scores the fill but never shows: it gave the answer away (Timothy
 // 2026-11-01). It carries no modifiers (the ship asks with none). Nothing
 // moves on its own; the gauge eases to its level (still under reduced
@@ -1132,13 +1131,13 @@ function buildFogReveal() {
 // The Sensors' job (ship minigames plan step B), in place of Fog Reveal:
 // nothing lifts on its own; each patch the player taps is scanned. The
 // options can be picked any time; a wrong one dims (the light nudge: not
-// that one) and costs a tier step, a second wrong is a miss. A panicking
-// crew gets a finer fog (scannerGrid). No modifiers (the ship asks with
+// that one) and costs a tier step, a second wrong is a miss. The fog gets
+// finer with its level (scannerGrid). No modifiers (the ship asks with
 // none).
 function buildScanner() {
   slot.classList.add('mg-scan');
   const q = state.battle.currentQuestion;
-  const { cols, rows } = scannerGrid(panicLevel());
+  const { cols, rows } = scannerGrid();
   const total = cols * rows;
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.scanner.hint');
   const box = add(slot, 'div', 'mg-fogbox');
@@ -1216,11 +1215,11 @@ function buildScanner() {
 // Enough. The answer's letters are stars among decoys; the player drags a
 // line through them in order, taps them one by one, or types the letters.
 // A wrong star goes dark for good (the light nudge: not this one); UNDO
-// takes back the last joined star. A panicking crew gets more decoys.
+// takes back the last joined star. More decoys with its level.
 // No modifiers (the ship asks with none); nothing moves on its own.
 function buildStarChart() {
   slot.classList.add('mg-star');
-  const chart = starChartSetup(state.battle.currentQuestion, panicLevel());
+  const chart = starChartSetup(state.battle.currentQuestion);
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.starChart.hint');
   const blanks = add(slot, 'div', 'mg-star-blanks');
   const sky = add(slot, 'div', 'mg-star-sky');
@@ -1328,11 +1327,11 @@ function buildStarChart() {
 // The hole has one spot per letter; the tray holds the word's letters and
 // decoys. A right plate fills every spot it belongs in; a wrong one falls
 // off (the light nudge: not this letter) and the hull strains. Tap or type
-// a letter. A panicking crew's hull holds less strain. No modifiers (the
+// a letter. With its level, more decoys and less strain held. No modifiers (the
 // ship asks with none); nothing moves on its own but a plate falling.
 function buildHullPatch() {
   slot.classList.add('mg-hull');
-  const hull = hullPatchSetup(state.battle.currentQuestion, panicLevel());
+  const hull = hullPatchSetup(state.battle.currentQuestion);
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.hullPatch.hint');
   const hole = add(slot, 'div', 'mg-hull-hole');
   const strainRow = add(slot, 'div', 'mg-hull-strain');
@@ -1399,15 +1398,13 @@ function buildHullPatch() {
 // lines are labelled facts that add up; the player fills in each helping
 // fact, then the answer (the question's own fact), and CHECKs. CHECK
 // marks only which lines don't hold with those numbers (the light nudge),
-// never the right value; a panicking crew's CHECK only says something is
-// off. Enter checks too. No modifiers (the ship asks with none).
+// never the right value. Enter checks too. No modifiers (the ship asks with none).
 // How Inference shows its operations (minigames.js inferenceSetup's terms).
 const INFER_OPS = { '+': '+', '-': '\u2212', 'x': '\u00d7', '/': '\u00f7' };
 
 function buildInference() {
   slot.classList.add('mg-infer');
   const puzzle = inferenceSetup(state.battle.currentQuestion);
-  const hidden = panicLevel() >= INFERENCE.panicAt;
   const ids = [...Object.keys(puzzle.facts).filter(id => id !== 'T'), 'T'];
   // A fact's symbol: its zodiac sign, named for a screen reader by the
   // fact it stands for.
@@ -1476,8 +1473,8 @@ function buildInference() {
     const result = inferenceCheck(puzzle, values);
     if (result.solved) { finish({ right: true, tier: inferenceTier(puzzle.checks), given: String(values.T) }); return; }
     if (puzzle.checks >= INFERENCE.maxChecks) { finish({ right: false, tier: null, given: String(values.T) }); return; }
-    rows.forEach((row, k) => row.classList.toggle('off', !hidden && !result.holds[k]));
-    said.textContent = hidden ? t('mg.inference.offPanic') : t('mg.inference.off', { left: INFERENCE.maxChecks - puzzle.checks });
+    rows.forEach((row, k) => row.classList.toggle('off', !result.holds[k]));
+    said.textContent = t('mg.inference.off', { left: INFERENCE.maxChecks - puzzle.checks });
   });
   return {
     lock: check,
@@ -1496,12 +1493,12 @@ function buildInference() {
 // keys) to turn the aim, FIRE (or Space / Enter) to shoot: the bolt flies
 // from the ship's tip along the dotted line and hits the first rock on
 // it. A wrong rock breaks and says what it is the answer to (the light
-// nudge) and spends a shot; a shot that hits nothing is free. A panicking
-// crew faces more rocks, never faster ones. The rocks only drift a few
+// nudge) and spends a shot; a shot that hits nothing is free. With its
+// level, more rocks (never faster ones), then fewer shots. The rocks only drift a few
 // pixels; under reduced motion nothing moves but the aim.
 function buildAsteroids() {
   slot.classList.add('mg-ast');
-  const field = asteroidsSetup(state.battle.currentQuestion, panicLevel());
+  const field = asteroidsSetup(state.battle.currentQuestion);
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.asteroids.hint');
   const sky = add(slot, 'div', 'mg-ast-field');
   const turret = add(sky, 'div', 'mg-ast-turret');
@@ -1691,8 +1688,7 @@ function buildAsteroids() {
 // tiles drop in, wave by wave. A swap with no line snaps back, shows both
 // kinds and spends the turn. Win: all three meters full. Lose: the crisis
 // on MATCH_BOSS.loseAt tiles, or the time (its song's length) running out;
-// the clock only counts while the page is seen. A panicking crew loses the
-// colour tints. Under reduced motion the clear and fall are instant.
+// the clock only counts while the page is seen. Under reduced motion the clear and fall are instant.
 function buildMatch() {
   slot.classList.add('mg-match');
   const { board, crew } = state.battle.currentQuestion.match;
@@ -1701,7 +1697,7 @@ function buildMatch() {
   const top = add(slot, 'div', 'mg-match-top');
   const clock = add(top, 'span', 'mg-match-clock');
   const meta = add(top, 'span', 'mg-hint');
-  const grid = add(slot, 'div', 'mg-match-board' + (panicLevel() >= MATCH_BOSS.panicAt ? '' : ' tints'));
+  const grid = add(slot, 'div', 'mg-match-board tints');
   const meters = add(slot, 'div', 'mg-match-meters');
   const said = add(slot, 'div', 'term-line mg-said');
   said.setAttribute('aria-live', 'polite');

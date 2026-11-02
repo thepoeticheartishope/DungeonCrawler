@@ -193,21 +193,19 @@ export function bestTier(id) {
   return id === 'syllableSplit' ? SYLLABLE_SPLIT_TIERS[0] : 'X';
 }
 
-// Minigame `id`'s level this run: its perfect solves on the ship, plus
-// MINIGAME_LEVELS.panic.bump while the crew is panicking (`panic` from
-// panic.at), up to its last level. 0 off the ship or for a game with no
-// levels.
-export function minigameLevel(id, panic = 0) {
+// Minigame `id`'s level this run: its perfect solves on the ship, up to
+// its last level. 0 off the ship or for a game with no levels. Panic
+// plays no part (Timothy 2026-11-01: panic only ends the run).
+export function minigameLevel(id) {
   const levels = MINIGAME_LEVELS.games[id];
   if (!levels) return 0;
   const perfect = (state.run.ship && state.run.ship.perfect && state.run.ship.perfect[id]) || 0;
-  const bump = panic >= MINIGAME_LEVELS.panic.at ? MINIGAME_LEVELS.panic.bump : 0;
-  return Math.min(levels.length - 1, perfect + bump);
+  return Math.min(levels.length - 1, perfect);
 }
 
 // Minigame `id`'s settings at its level now (minigameLevel).
-export function levelOf(id, panic = 0) {
-  return MINIGAME_LEVELS.games[id][minigameLevel(id, panic)];
+export function levelOf(id) {
+  return MINIGAME_LEVELS.games[id][minigameLevel(id)];
 }
 
 // The minigame showing has ended with `result`. Clears
@@ -309,7 +307,7 @@ export function fuelMixSetup(q) {
   let left = answer;
   let par = 0;
   tanks.forEach((size) => { par += Math.floor(left / size); left %= size; });
-  const { slack2, slack1, hideTotal } = levelOf('fuelMix', state.run.ship ? state.run.ship.panic : 0);
+  const { slack2, slack1, hideTotal } = levelOf('fuelMix');
   return { answer, tanks, par, total: 0, pours: 0, vents: 0, slack2, slack1, hideTotal };
 }
 
@@ -347,10 +345,9 @@ export function fuelMixTier(engine) {
 // ---- Scanner: pick where to look through the fog ----
 
 // The fog's size, { cols, rows }, at Scanner's level (finer as the
-// player gets good at it, or the crew panics). `panic` is the crew's
-// panic level.
-export function scannerGrid(panic = 0) {
-  const { cols, rows } = levelOf('scanner', panic);
+// player gets good at it).
+export function scannerGrid() {
+  const { cols, rows } = levelOf('scanner');
   return { cols, rows };
 }
 
@@ -375,14 +372,14 @@ function starChartWord(q) {
   return /^[A-Z]+$/.test(word) && word.length >= STAR_CHART.minLetters && word.length <= STAR_CHART.maxLetters ? word : null;
 }
 
-// A new chart for question `q` (one Star Chart can run), at the crew's
-// `panic` level: the `word`, its `stars` ({ letter, x, y } in percent of
+// A new chart for question `q` (one Star Chart can run), at its level:
+// the `word`, its `stars` ({ letter, x, y } in percent of
 // the sky, the word's letters and decoys that aren't in it, mixed and
 // spread on a loose grid so none overlap), the `path` so far (star
 // indexes) and the `out` stars (gone dark).
-export function starChartSetup(q, panic = 0) {
+export function starChartSetup(q) {
   const word = starChartWord(q);
-  const count = levelOf('starChart', panic).decoys;
+  const count = levelOf('starChart').decoys;
   const spare = shuffle([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].filter(c => !word.includes(c))).slice(0, count);
   const letters = shuffle([...word, ...spare]);
   const cols = STAR_CHART.cols;
@@ -426,14 +423,14 @@ function hullPatchWord(q) {
   return /^[A-Z]+$/.test(word) && word.length >= HULL_PATCH.minLetters && word.length <= HULL_PATCH.maxLetters ? word : null;
 }
 
-// A new hull for question `q` (one Hull Patch can run), at the crew's
-// `panic` level: the `word`, the `tray` (its letters once each and
+// A new hull for question `q` (one Hull Patch can run), at its level:
+// the `word`, the `tray` (its letters once each and
 // the level's decoy letters not in it, mixed), the letters `placed` and
 // fallen `off`, the `strain` so far and the `max` the hull holds.
-export function hullPatchSetup(q, panic = 0) {
+export function hullPatchSetup(q) {
   const word = hullPatchWord(q);
   const own = [...new Set(word)];
-  const { decoys, maxStrain: max } = levelOf('hullPatch', panic);
+  const { decoys, maxStrain: max } = levelOf('hullPatch');
   const spare = shuffle([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].filter(c => !word.includes(c))).slice(0, decoys);
   return { word, tray: shuffle([...own, ...spare]), placed: new Set(), off: new Set(), strain: 0, max };
 }
@@ -481,8 +478,7 @@ function inferenceHelpers(q) {
 
 // The puzzle level for this run: Inference's perfect solves on the ship
 // (solved on the first CHECK), a level every INFERENCE.solvesPerLevel, up
-// to the last of INFERENCE.levels; 0 off the ship. Panic doesn't raise
-// it: a panicking crew's CHECK says less instead.
+// to the last of INFERENCE.levels; 0 off the ship.
 export function inferenceLevel() {
   const perfect = (state.run.ship && state.run.ship.perfect && state.run.ship.perfect.inference) || 0;
   return Math.min(INFERENCE.levels.length - 1, Math.floor(perfect / INFERENCE.solvesPerLevel));
@@ -646,13 +642,13 @@ function asteroidsFits(q) {
   return Boolean(text) && text.length <= ASTEROIDS.maxChars && !q.image && !answerInStem(q) && asteroidsDecoys(q).length >= ASTEROIDS.rocks - 1;
 }
 
-// A new field for question `q` (one Asteroids can run), at the crew's
-// `panic` level: `rocks` ({ text, right, asks }: the right answer and
+// A new field for question `q` (one Asteroids can run), at its level:
+// `rocks` ({ text, right, asks }: the right answer and
 // decoys, mixed; a decoy's `asks` is a question it is the answer to),
 // largest field first (the view may fly fewer, always keeping the right
 // one), and `shots` left.
-export function asteroidsSetup(q, panic = 0) {
-  const { rocks: count, shots } = levelOf('asteroids', panic);
+export function asteroidsSetup(q) {
+  const { rocks: count, shots } = levelOf('asteroids');
   const decoys = shuffle(asteroidsDecoys(q)).slice(0, count - 1).map(d => ({ text: d.text, right: false, asks: d.asks }));
   return { rocks: [{ text: normalizeSpaces(q.meaning), right: true, asks: q.term }, ...decoys], shots, maxShots: shots };
 }
@@ -1090,7 +1086,7 @@ function pieceDecoys(pieces) {
 // (MINIGAME_LEVELS; as many as the set has) from other names, shuffled.
 export function syllableSplitTray(q) {
   const pieces = syllableSplitPieces(q);
-  const count = levelOf('syllableSplit', state.run.ship ? state.run.ship.panic : 0).decoys;
+  const count = levelOf('syllableSplit').decoys;
   const decoys = shuffle(pieceDecoys(pieces)).slice(0, count);
   return { pieces, tray: shuffle([...pieces, ...decoys]) };
 }
@@ -1182,7 +1178,7 @@ export function codeChars(text) {
 export function codeBreakSetup(q) {
   const code = codeBreakCode(q);
   // One guess per tier, fewer as the player gets good at it (its level).
-  const { tiers } = levelOf('codeBreak', state.run.ship ? state.run.ship.panic : 0);
+  const { tiers } = levelOf('codeBreak');
   return { code, digits: code.every(c => /\p{N}/u.test(c)), tiers };
 }
 
@@ -1333,7 +1329,7 @@ export function crosswireSetup(q) {
   });
   // Whether the shared letter starts filled in, and REVEAL is offered: by
   // level (MINIGAME_LEVELS).
-  const { free, reveal } = levelOf('crosswire', state.run.ship ? state.run.ship.panic : 0);
+  const { free, reveal } = levelOf('crosswire');
   return {
     across: { q, word },
     down: { q: partner.q, word: partner.word },

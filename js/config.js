@@ -1215,10 +1215,10 @@ export const HULL_PATCH = { minLetters: 3, maxLetters: 12, decoys: 7, strain2: 2
 // Each ship minigame gets harder as the player gets good at it (Timothy
 // 2026-11-01): every perfect solve (the game's best tier: X, or '2' for
 // Syllable Split, which has no X) moves that game up one of its levels
-// below, level 0 being the game as it was. A panicking crew (from panic
-// `panic.at`, Shaken) plays every game `panic.bump` levels up while it
-// lasts. Inference has its own levels (INFERENCE.levels). The perfect
-// solves are counted per run (state.run.ship.perfect).
+// below, level 0 being the game as it was. Panic plays no part: it only
+// ends the run (Timothy 2026-11-01). Inference has its own levels
+// (INFERENCE.levels). The perfect solves are counted per run
+// (state.run.ship.perfect).
 //   starChart     decoys: decoy stars
 //   fuelMix       slack2 / slack1: pours over par for tier 2 / 1;
 //                 hideTotal: only UNDER / OVER, no running total
@@ -1231,7 +1231,6 @@ export const HULL_PATCH = { minLetters: 3, maxLetters: 12, decoys: 7, strain2: 2
 //   codeBreak     tiers: one guess each; flip: older guesses flipped
 //   crosswire     free: the shared letter starts filled in; reveal: REVEAL offered
 export const MINIGAME_LEVELS = {
-  panic: { at: 2, bump: 2 },
   games: {
     starChart: [{ decoys: 6 }, { decoys: 8 }, { decoys: 10 }, { decoys: 12 }],
     fuelMix: [
@@ -1262,8 +1261,7 @@ export const MINIGAME_LEVELS = {
 // ops is picked `hardShare` of the time when one fits; no total over
 // `maxTotal`. CHECK marks which lines don't hold with the player's
 // numbers; solved on CHECK 1 = X, 2 = 2, up to `maxChecks` = 1, a wrong
-// last CHECK is a miss. From panic level `panicAt` (Shaken) CHECK only
-// says something is off.
+// last CHECK is a miss.
 export const INFERENCE = {
   levels: [
     { facts: 2, ops: [], three: false },
@@ -1272,7 +1270,7 @@ export const INFERENCE = {
     { facts: 4, ops: ['-', 'x', '/'], three: true },
     { facts: 4, ops: ['-', 'x', '/', '^'], three: true },
   ],
-  solvesPerLevel: 2, hardShare: 0.75, maxTotal: 2500, maxChecks: 4, panicAt: 2,
+  solvesPerLevel: 2, hardShare: 0.75, maxTotal: 2500, maxChecks: 4,
 };
 // Asteroids (ship minigames plan step F; the Gunner's job, a new role on
 // the Bridge, the recognition game in place of Verdict): rocks carry
@@ -1312,11 +1310,10 @@ export const ASTEROIDS = {
 // swap that makes no line snaps back, shows both kinds and spends the
 // turn. `seconds`: the time limit, the length of its song (MUSIC.boss,
 // "Novum-Good-Final-Boss-Long", 15:14; Timothy's one exception to "no
-// timers on the ship"). From panic level `panicAt` (Shaken) the kinds'
-// colour tints go. `popMs` / `dropMs`: the clear and fall, slow.
+// timers on the ship"). `popMs` / `dropMs`: the clear and fall, slow.
 export const MATCH_BOSS = {
   size: 5, minWords: 6, maxChars: 7, full: 5, bonus: 1, crisisStart: [7, 17], spreadEvery: 2, loseAt: 8,
-  revealTurns: 2, seconds: 914, panicAt: 2, popMs: 300, dropMs: 420,
+  revealTurns: 2, seconds: 914, popMs: 300, dropMs: 420,
 };
 export const SCANNER = { xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
 // Sum Lock: a trapped box only. When a trapped box rolls a minigame it is
