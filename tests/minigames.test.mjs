@@ -811,16 +811,17 @@ test('Inference: x and / before + and -, squares first', async () => {
   assert.equal(inferenceValue({ terms: ['A', 'x', 'B', '^2'] }, { A: 2, B: 3 }), 18);
 });
 
-test('Inference grows with the run: each puzzle solved on the ship is a level up, to the last', async () => {
+test('Inference grows with the run: every INFERENCE.solvesPerLevel puzzles solved on the ship is a level up, to the last', async () => {
   const { inferenceLevel, inferenceSetup, inferenceCheck, inferenceTier } = await import('../js/minigames.js');
   const { INFERENCE } = await import('../js/config.js');
   reset();
   state.settings.activeData = BIBLE_FACTS;
   state.run.ship = { inferenceSolved: 0 };
   assert.equal(inferenceLevel(), 0);
-  for (let k = 0; k < INFERENCE.levels.length + 2; k++) {
+  const per = INFERENCE.solvesPerLevel;
+  for (let k = 0; k < (INFERENCE.levels.length + 1) * per; k++) {
     const puzzle = inferenceSetup(BIBLE_FACTS[19]);
-    assert.equal(puzzle.level, Math.min(k, INFERENCE.levels.length - 1));
+    assert.equal(puzzle.level, Math.min(Math.floor(k / per), INFERENCE.levels.length - 1));
     inferenceCheck(puzzle, Object.fromEntries(Object.entries(puzzle.facts).map(([id, f]) => [id, f.value])));
   }
   assert.equal(inferenceLevel(), INFERENCE.levels.length - 1);

@@ -1221,7 +1221,7 @@ export const HULL_PATCH = { minLetters: 3, maxLetters: 12, decoys: 7, strain2: 2
 // (Timothy: most of the problem is deduction, the data is given). Each
 // fact is a zodiac symbol (zodiac.js). The puzzles grow with the run
 // (Timothy 2026-11-01: harder logic as the player learns more algebra):
-// every `solvesPerLevel` puzzles solved, the next of `levels`, each
+// every `solvesPerLevel` puzzles solved (2, Timothy 2026-11-01), the next of `levels`, each
 // { facts (with the answer), ops ('-', 'x', '/', '^': + is always in),
 // three (a line can hold a third symbol) }. A line using a level's harder
 // ops is picked `hardShare` of the time when one fits; no total over
@@ -1237,7 +1237,7 @@ export const INFERENCE = {
     { facts: 4, ops: ['-', 'x', '/'], three: true },
     { facts: 4, ops: ['-', 'x', '/', '^'], three: true },
   ],
-  solvesPerLevel: 1, hardShare: 0.75, maxTotal: 2500, maxChecks: 4, panicAt: 2,
+  solvesPerLevel: 2, hardShare: 0.75, maxTotal: 2500, maxChecks: 4, panicAt: 2,
 };
 // Asteroids (ship minigames plan step F; the Gunner's job, a new role on
 // the Bridge, the recognition game in place of Verdict): rocks carry
