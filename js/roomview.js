@@ -46,7 +46,7 @@ import { state, key, parseKey } from './state.js';
 import { FOUR_STEPS } from './grid.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
-  ISO_NARROW_MAP_WIDTH, PLAYER_EMBER, FIGURE3D, ENEMY_LIGHT, MINION_KINDS, SHADOW,
+  ISO_NARROW_MAP_WIDTH, FIGURE3D, ENEMY_LIGHT, MINION_KINDS, SHADOW,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
@@ -62,7 +62,7 @@ import { shadowsAt } from './shadows.js';
 import { answerRingNow } from './swirl.js';
 import {
   FLAT, STAND, HALL_LAMP, POOL, drawThingsWith, bulbAt, hallLampSpot, drawBeam, drawLamp, drawLampShade, drawMist,
-  drawSounds, lampLevel, shadeAt,
+  drawSounds, lampLevel, shadeAt, drawEmberHead, STICK_LINE,
 } from './roomthings.js';
 import {
   startGunFrame, gunTargets, holdBook, drawBook, drawReach, drawBrackets, drawLaser, drawShot, drawAnswerRing, drawDarkRing,
@@ -121,10 +121,7 @@ const PILLAR = { body: '#4a4652', light: '#5a5662', dark: '#38343f', top: '#625d
 const LIT_TINT = [228, 240, 244];
 const DIM_TINT = [244, 236, 255];
 const LAMP_TINT = [255, 214, 170];
-// The player's stick man, drawn in the picture's pixels.
-const STICK_LINE = 1;
 const SPOT_MARK_COLOUR = '#ffd36b'; // DEV -> Spots' letters (drawSpotMarks)
-const HEAD_SHARE = 0.12;         // the head's radius, a share of his height
 const HIDDEN_HEAD = 0.45;        // hidden in a room spot, how high his head shows, a share of his height
 
 // How each kind of thing is drawn (step B; tests/roomview.test.mjs checks
@@ -803,7 +800,7 @@ function drawStickMan(at, ox, oy) {
   // Hidden in a room spot (spots.js): only his ember head, low, peering
   // out from the piece; no body and no book.
   if (state.floor.hidden) {
-    drawEmberHead(fx, fy - h * HIDDEN_HEAD, h, ax, pose);
+    drawEmberHead(bctx, fx, fy - h * HIDDEN_HEAD, h, playerHead(ax, pose));
     return;
   }
   // The body is the 3D moves' (figure3d.js, one stick plan step F): it
@@ -831,30 +828,14 @@ function drawStickMan(at, ox, oy) {
   path(book.open ? [book.hands[0], J.neck, book.hands[1]] : [J.haL, J.elL, J.neck, J.elR, book.hand]);
   bctx.stroke();
   if (book.open && !book.behind) drawBook(book);
-  drawEmberHead(J.headMid[0], J.headMid[1], h, ax, pose);
+  drawEmberHead(bctx, J.headMid[0], J.headMid[1], h, playerHead(ax, pose));
   bctx.restore();
 }
 
-// The ember head at (hx, headY), for a stick man `h` tall looking along
-// `ax`: dark inside, a glow in the middle that breathes and leans the way
-// he looks, and the ring round it.
-function drawEmberHead(hx, headY, h, ax, pose) {
-  const headR = Math.max(2.5, h * HEAD_SHARE);
-  bctx.save();
-  bctx.strokeStyle = look.colours.text;
-  bctx.lineWidth = STICK_LINE;
-  bctx.beginPath();
-  bctx.arc(hx, headY, headR, 0, Math.PI * 2);
-  bctx.fillStyle = look.colours.hidden;
-  bctx.fill();
-  const gx = hx + ax * headR * PLAYER_EMBER.lean;
-  const ember = bctx.createRadialGradient(gx, headY, 0, gx, headY, headR * PLAYER_EMBER.reach);
-  ember.addColorStop(0, 'rgba(' + look.colours.glowRgb + ', ' + emberGlow(pose.breath, look.still) + ')');
-  ember.addColorStop(1, 'rgba(' + look.colours.glowRgb + ', 0)');
-  bctx.fillStyle = ember;
-  bctx.fill();
-  bctx.stroke();
-  bctx.restore();
+// The player's ember head (roomthings.js drawEmberHead) looking along
+// `ax`: his own white ring and light, glowing with his breath.
+function playerHead(ax, pose) {
+  return { lean: ax, ring: look.colours.text, rgb: look.colours.glowRgb, level: emberGlow(pose.breath, look.still) };
 }
 
 // DEV -> Spots (room spots plan step A): each room spot's letter in its
