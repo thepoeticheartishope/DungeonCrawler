@@ -64,6 +64,7 @@ import { playMinigameOut } from './minigameview.js';
 import { initMinimap, refreshMinimap } from './minimapview.js';
 import { initSound } from './sound.js';
 import { initTextSize } from './textsize.js';
+import { showVersion } from './version.js';
 import { initMusic } from './music.js';
 import { initBook, bookReading, closeBook, refreshBook, refreshBookLog } from './bookview.js';
 
@@ -172,6 +173,7 @@ initMinimap();
 // The top bar's SOUND button sets the volume of every sound in the game.
 initSound(document.getElementById('soundBtn'), document.getElementById('soundMenu'));
 initTextSize(document.getElementById('textSizeBtn'), document.getElementById('textSizeMenu'));
+showVersion(document.getElementById('gameVersion'));
 // The music: the ship's opening tune on its screen, and the safe room's
 // tune while the player is in the safe room on the run's screens.
 initMusic({

@@ -3,7 +3,7 @@
 // game loads instantly and still works with no connection. Bump
 // CACHE_NAME whenever the cached files change, so old caches get cleared.
 
-const CACHE_NAME = 'term-dungeon-v364';
+const CACHE_NAME = 'term-dungeon-v365';
 const APP_SHELL = [
   './',
   './index.html',
@@ -98,6 +98,7 @@ const APP_SHELL = [
   './js/music.js',
   './js/sound.js',
   './js/textsize.js',
+  './js/version.js',
   './js/dataview.js',
   './lists/manifest.json',
   './lists/comptia-aplus.json',
@@ -152,6 +153,12 @@ self.addEventListener('activate', (event) => {
     )
   );
   self.clients.claim();
+});
+
+// The page asks which cache this worker serves, to show the game's
+// version on the first screen (js/version.js).
+self.addEventListener('message', (event) => {
+  if (event.data === 'version' && event.ports[0]) event.ports[0].postMessage(CACHE_NAME);
 });
 
 self.addEventListener('fetch', (event) => {
