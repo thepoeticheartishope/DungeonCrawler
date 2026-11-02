@@ -49,8 +49,16 @@ test('the picture scales up by a whole number that still shows enough tiles', ()
   assert.ok(Number.isInteger(s) && s >= 1);
   assert.ok(1440 / (s * T) >= ROOM_VIEW.minAcross);
   assert.ok(900 / (s * T) >= ROOM_VIEW.minDown);
-  const phone = viewScale(1110, 1700);
-  assert.ok(1110 / (phone * T) >= ROOM_VIEW.minAcrossTall, 'a tall map shows fewer tiles across');
+  // A phone sees about 7 tiles each side, as desktop (Timothy 2026-11-01):
+  // the whole number nearest aimAcrossTall across.
+  for (const [w, h] of [[744, 1060], [684, 932], [820, 1200], [1110, 1700]]) {
+    const phone = viewScale(w, h);
+    const across = w / (phone * T);
+    assert.ok(Number.isInteger(phone) && across >= 12 && across <= 20, w + ' wide shows ' + across + ' across');
+    for (const other of [phone - 1, phone + 1]) {
+      if (other >= 1) assert.ok(Math.abs(w / (other * T) - ROOM_VIEW.aimAcrossTall) >= Math.abs(across - ROOM_VIEW.aimAcrossTall), 'the nearest whole number');
+    }
+  }
   assert.equal(viewScale(100, 100), 1, 'never below 1');
 });
 

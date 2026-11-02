@@ -180,13 +180,14 @@ export function faceOf(row, col, wall) {
   return null;
 }
 
-// How many canvas pixels each picture pixel takes on a canvas `w` by `h`:
-// the biggest whole number that still shows ROOM_VIEW.minAcross tiles
-// across (minAcrossTall on a map taller than wide) and minDown down, and
-// at least 1.
+// How many canvas pixels each picture pixel takes on a canvas `w` by `h`,
+// a whole number, at least 1: on a map wider than tall (desktop) the
+// biggest that still shows ROOM_VIEW.minAcross tiles across and minDown
+// down; on a taller one (a phone) the nearest to aimAcrossTall across, so
+// a phone sees about as far round the player as desktop does.
 export function viewScale(w, h) {
-  const across = h > w ? ROOM_VIEW.minAcrossTall : ROOM_VIEW.minAcross;
-  return Math.max(1, Math.floor(Math.min(w / (T * across), h / (T * ROOM_VIEW.minDown))));
+  if (h > w) return Math.max(1, Math.round(w / (T * ROOM_VIEW.aimAcrossTall)));
+  return Math.max(1, Math.floor(Math.min(w / (T * ROOM_VIEW.minAcross), h / (T * ROOM_VIEW.minDown))));
 }
 
 // Where the camera's top-left wants to be, in picture pixels, for a view
