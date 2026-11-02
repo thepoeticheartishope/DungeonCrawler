@@ -27,6 +27,7 @@ import {
 import { numberQuestion, pickQuestion, normalizeSpaces, fightGroups } from './quiz.js';
 import { shuffle } from './random.js';
 import { recordHauntAnswer } from './haunts.js';
+import { ZODIAC } from './zodiac.js';
 
 // The modifiers each minigame supports (the plan's compatibility table).
 // A minigame only ever carries modifiers from its own list, so none is
@@ -446,7 +447,8 @@ function inferenceHelpers(q) {
 }
 
 // A new puzzle for question `q` (one Inference can run): `facts`, by id
-// ('T' is the question's own; 'A', 'B' help), each { label, value }, and
+// ('T' is the question's own; 'A', 'B' help), each { label, value, sign
+// (its ZODIAC index, a different one each) }, and
 // `lines`, each { terms (fact ids and '+', '-', 'x'), total }. Every kind
 // solves one fact at a time (A from the first line, then B, then T), so
 // there is always exactly one answer. The kind is drawn by
@@ -483,6 +485,9 @@ export function inferenceSetup(q) {
     lines.push({ terms: ['A', 'x', 'B'], total: pair[0].value * pair[1].value });
     lines.push({ terms: ['B', '+', 'T'], total: pair[1].value + T.value });
   }
+  // Each fact gets its own zodiac sign (zodiac.js), drawn in its place.
+  const signs = shuffle([...Array(ZODIAC.length).keys()]);
+  Object.values(facts).forEach((f, k) => { f.sign = signs[k]; });
   return { kind, facts, lines, checks: 0 };
 }
 
