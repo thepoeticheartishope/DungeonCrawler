@@ -115,6 +115,9 @@
     text-transform: uppercase;
   }
 
+  /* The game's version, tiny and dim under the title (js/version.js). */
+  .game-version { min-height: 1em; margin-top: 2px; font-size: calc(14px * var(--text-scale, 1)); color: var(--muted); letter-spacing: 1px; }
+
   /* A single inverse-video status line, like a terminal's bottom status
      bar (vim, tmux), instead of a boxed stats card. */
   .stats {
@@ -1992,6 +1995,8 @@
 <main>
   <header>
     <h1>Noesis Protocol</h1>
+    <!-- The game's version (js/version.js): the service worker's cache number. -->
+    <div class="game-version" id="gameVersion" aria-label="Version"></div>
   </header>
 
   <!-- The HUD: two short lines while playing (stability, energy, target,
