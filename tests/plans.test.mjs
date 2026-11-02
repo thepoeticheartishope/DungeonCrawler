@@ -52,6 +52,14 @@ test('the ship reaches every open tile from the start, with no gate, stairs or k
   });
 });
 
+// Timothy 2026-11-02: no random wall in the ship's side halls, so the
+// ship is the same building in both versions.
+test('the ship has no version walls: both versions are the same', () => {
+  const plan = FLOOR_PLANS.ship;
+  const [a, b] = PLAN_VERSIONS.map(v => buildPlanLayout(plan, CORE_KEYS, v));
+  assert.deepEqual([...a.walls].sort(), [...b.walls].sort());
+});
+
 test('every recipe\'s plan exists', () => {
   FLOOR_RECIPES.forEach(r => { if (r.plan) assert.ok(FLOOR_PLANS[r.plan], r.plan); });
 });
