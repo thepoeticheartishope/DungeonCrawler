@@ -30,6 +30,7 @@ import { blindReadMs, rollFlip } from './modifiers.js';
 import { normalizeSpaces, buildChoices, resolveImageSrc } from './quiz.js';
 import { shuffle } from './random.js';
 import { t } from './text.js';
+import { playSfx } from './sfx.js';
 
 const slot = document.getElementById('minigameSlot');
 
@@ -155,6 +156,7 @@ function finish(result) {
   if (!shown || shown.done) return;
   shown.done = true;
   slot.querySelectorAll('button, input').forEach(el => { el.disabled = true; });
+  playSfx(result.right ? 'right' : 'wrong');
   shown.report(result);
 }
 

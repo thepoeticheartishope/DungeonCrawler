@@ -13,6 +13,7 @@ import { rollFlip, maxWager, blindReadMs } from './modifiers.js';
 import { escapeHtml, buildChoices, resolveImageSrc } from './quiz.js';
 import { t } from './text.js';
 import { showMinigame, hideMinigame, applyMinigameModifier, lockMinigame, minigameSeconds, minigameTimeUp, minigameAsks, minigameDrawsImage } from './minigameview.js';
+import { playSfx } from './sfx.js';
 
 const queryPanel = document.getElementById('queryPanel');
 const enemyName = document.getElementById('enemyName');
@@ -68,6 +69,7 @@ function renderChoices() {
 // page, which closes the book (gunpanels.js holdAskScreen).
 export function markAnswer(picked, isRight, reveal) {
   mcOptionsEl.classList.add('answered');
+  playSfx(picked !== null && isRight(picked) ? 'right' : 'wrong');
   const right = state.battle.currentChoices.find(isRight);
   [...mcOptionsEl.querySelectorAll('.mc-option')].forEach((btn, i) => {
     const opt = state.battle.currentChoices[i];
