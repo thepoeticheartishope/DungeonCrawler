@@ -501,6 +501,11 @@ export const SFX = {
 export const MUSIC_FADE_STEPS = 64;
 export const MUSIC_CHECK_MS = 250;
 
+// On the ship (Timothy 2026-11-02) Command's shutters are automatic doors,
+// with no switch: up while the player is within SHIP_DOOR_REACH tiles of a
+// doorway (counting diagonal steps), down otherwise (saferoom.js
+// autoShutters).
+export const SHIP_DOOR_REACH = 2;
 export const SAFE_ROOM = {
   hesitateMs: 1500,
   waitMs: 3000,

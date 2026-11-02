@@ -8,7 +8,7 @@ import { reachGate } from './gate.js';
 import { useDesk } from './desk.js';
 import { useCharger } from './charger.js';
 import { isStation, useStation } from './stations.js';
-import { pullShutter, enterSafeRoom } from './saferoom.js';
+import { pullShutter, enterSafeRoom, autoShutters } from './saferoom.js';
 import { ventUnderfoot } from './vents.js';
 import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
@@ -170,6 +170,9 @@ export function enterTile(facing, free = false) {
   const events = [];
   const newRow = state.floor.playerRow;
   const newCol = state.floor.playerCol;
+  // The ship's shutters open and shut by themselves (saferoom.js), before
+  // the light is worked out, so a shut one casts its shadow.
+  autoShutters();
   computeVisibility();
   events.push({ type: 'stepped', facing, free });
 
@@ -254,7 +257,7 @@ function reachItem(block) {
 // opens the ask screen, settleName settles it). The reflective desk heals
 // (desk.js useDesk), no turn spent. The safe room's switch, or a shutter
 // that is down, drops or lifts its shutters (saferoom.js pullShutter), no
-// turn spent either. A ship station's console, board or crew member opens
+// turn spent either; on the ship they are automatic and a bump does nothing. A ship station's console, board or crew member opens
 // its wires or speaks (stations.js useStation), no turn spent.
 // Events: blocked, boxSprung, cellFound { prop }, relayFound { prop }, nameAsked { prop },
 // deskUntouched, deskHealed { healed }, shutterDown, shutterUp, shutterBlocked,
@@ -269,6 +272,9 @@ function examineProp(prop) {
   if (prop.kind === 'desk') return useDesk(prop);
   if (prop.kind === 'charger') return useCharger(prop);
   if (isStation(prop)) return useStation(prop);
+  // The ship's shutters are automatic (saferoom.js autoShutters): a bump
+  // does nothing.
+  if (prop.kind === 'shutter' && state.floor.ship) return [{ type: 'blocked', kind: 'prop', thing: prop }];
   if (prop.kind === 'switch' || prop.kind === 'shutter') return pullShutter();
   if (prop.kind === 'box' && prop.trapped) {
     prop.sprung = true;

@@ -13,6 +13,10 @@ import assert from 'node:assert/strict';
 import { state, key } from '../js/state.js';
 import { buildShipFloor, buildTestFloor } from '../js/floor.js';
 import { walkTileMs } from '../js/walk.js';
+import { enterTile, bumpInto } from '../js/moves.js';
+import { whatBlocks } from '../js/passage.js';
+import { parseKey } from '../js/state.js';
+import { SHIP_DOOR_REACH } from '../js/config.js';
 import { ONE_STICK } from '../js/config.js';
 import { emptyFloor } from './helpers.mjs';
 
@@ -43,7 +47,7 @@ test('the ship holds nothing dangerous and nothing to pick up, only furniture, t
   assert.deepEqual(f.vents, []);
   assert.deepEqual(f.keys, []);
   const kinds = new Set(f.props.map(p => p.kind));
-  assert.deepEqual([...kinds].sort(), ['console', 'crew', 'furniture', 'powerBoard', 'shutter', 'switch']);
+  assert.deepEqual([...kinds].sort(), ['console', 'crew', 'furniture', 'powerBoard', 'shutter']);
 });
 
 test('every open tile on the ship is seen from the start: no dark areas', () => {
@@ -70,4 +74,47 @@ test('a floor built after the ship is not a ship', () => {
   shipFloor();
   buildTestFloor('hide');
   assert.equal(state.floor.ship, false);
+});
+
+// Timothy 2026-11-02: Command's shutters are automatic doors, with no switch
+// and nothing to bump (saferoom.js autoShutters).
+// Puts the player on (row, col) as a step there would.
+function standAt(row, col) {
+  state.floor.playerRow = row;
+  state.floor.playerCol = col;
+  return enterTile('S');
+}
+
+test('the ship has no switch, and its shutters start down with the player far from them', () => {
+  const f = shipFloor();
+  assert.equal(f.safeRoom.switchAt, null);
+  assert.ok(!f.props.some(p => p.kind === 'switch'));
+  assert.equal(f.safeRoom.shut, true);
+  assert.ok(f.props.filter(p => p.kind === 'shutter').every(p => !p.up));
+});
+
+test('a ship shutter rolls up as the player walks near it and drops as they walk away', () => {
+  const f = shipFloor();
+  const door = parseKey(f.safeRoom.doors[0]);
+  const shutter = f.props.find(p => p.kind === 'shutter' && p.row === door.row && p.col === door.col);
+  // Just in reach, inside the room, then in the doorway itself.
+  standAt(door.row - SHIP_DOOR_REACH, door.col);
+  assert.equal(f.safeRoom.shut, false);
+  assert.equal(shutter.up, true);
+  assert.equal(whatBlocks(door.row, door.col), null, 'an up shutter is open floor');
+  standAt(door.row, door.col);
+  assert.equal(shutter.up, true, 'never drops on the player');
+  // Out of reach again.
+  standAt(door.row - SHIP_DOOR_REACH - 1, door.col);
+  assert.equal(f.safeRoom.shut, true);
+  assert.equal(shutter.up, false);
+});
+
+test('bumping a ship shutter does nothing: it is automatic', () => {
+  const f = shipFloor();
+  const door = parseKey(f.safeRoom.doors[0]);
+  const shutter = f.props.find(p => p.kind === 'shutter' && p.row === door.row && p.col === door.col);
+  const events = bumpInto({ kind: 'prop', thing: shutter });
+  assert.ok(!events.some(e => e.type === 'shutterUp' || e.type === 'shutterDown'));
+  assert.equal(f.safeRoom.shut, true);
 });
