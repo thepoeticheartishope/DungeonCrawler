@@ -122,6 +122,8 @@ export const FLOOR_PLANS = {
   // `stations` (ship plan step B, stations.js): [kind, row, col, role]
   // for each role's training console in Command, its board and its crew
   // member in its own room.
+  // No 'a'/'b' tiles: both side halls by Command are always open, so the
+  // player can walk the whole ship every run (Timothy 2026-11-02).
   ship: {
     name: 'plan.ship',
     ship: true,
@@ -153,10 +155,10 @@ export const FLOOR_PLANS = {
       '#####.##########.##########.#####',
       '#####.....######.######.....#####',
       '#########...............#########',
-      '#########a#############b#########',
-      '#########a#############b#########',
-      '##.....##a##.........##b##.....##',
-      '##.....##a##....S....##b##.....##',
+      '#########.#############.#########',
+      '#########.#############.#########',
+      '##.....##.##.........##.##.....##',
+      '##.....##.##....S....##.##.....##',
       '##.....##.##.........##.##.....##',
       '##........##.........##........##',
       '##.....##.##.........##.##.....##',
