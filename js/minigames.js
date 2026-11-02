@@ -266,13 +266,17 @@ function fuelMixAnswer(q) {
 
 // A new engine for question `q` (one Fuel Mix can run): `answer`, the
 // `tanks` largest first (powers of ten up to the answer's, at least
-// FUEL_MIX.minTanks of them), and `par` (the answer's digits added up:
-// the fewest pours that can fill it).
+// FUEL_MIX.minTanks of them, and the FUEL_MIX.extraTanks between them),
+// and `par` (the fewest pours that can fill it: the biggest tank that
+// still fits, again and again).
 export function fuelMixSetup(q) {
   const answer = fuelMixAnswer(q);
-  const tanks = [];
-  for (let size = 1; size <= answer || tanks.length < FUEL_MIX.minTanks; size *= 10) tanks.unshift(size);
-  const par = String(answer).split('').reduce((sum, d) => sum + Number(d), 0);
+  const tens = [];
+  for (let size = 1; size <= answer || tens.length < FUEL_MIX.minTanks; size *= 10) tens.push(size);
+  const tanks = [...tens, ...FUEL_MIX.extraTanks].sort((a, b) => b - a);
+  let left = answer;
+  let par = 0;
+  tanks.forEach((size) => { par += Math.floor(left / size); left %= size; });
   return { answer, tanks, par, total: 0, pours: 0, vents: 0 };
 }
 

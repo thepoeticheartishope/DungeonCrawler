@@ -1086,16 +1086,17 @@ export const HIGHER_LOWER_MIN_STEPS = 10;
 export const HIGHER_LOWER_MAX_AT = 40;
 export const HIGHER_LOWER_TIERS = ['X', '2', '1'];
 // Fuel Mix (ship minigames plan step A; the Pilot's job): pour tanks of
-// 1, 10, 100 ... into the engine until it holds the number answer. The
+// 1, 5, 10, 100 ... into the engine until it holds the number answer. The
 // tanks are the powers of ten up to the answer's own (never fewer than
-// 1 / 10 / 100). Par = the answer's digits added up (950 = 14 pours).
+// 1 / 10 / 100) and `extraTanks` (a 5, Timothy 2026-11-01). Par = the
+// fewest pours (950 = 9 x 100 + 5 x 10 = 14; 7 = 5 + 1 + 1 = 3).
 // Each vent (going over empties the engine) counts as `ventCost` extra
 // pours. Pours over par (plus vents) score: 0 = X, up to `slack2` = 2, up
 // to `slack1` = 1; beyond, the engine runs dry: a miss. Whole answers up
 // to `maxAnswer`. From panic level `hideTotalAt` (Shaken) the running
 // total hides: only UNDER / OVER is left. `ventMs`: how long OVER shows
 // before the engine reads empty again.
-export const FUEL_MIX = { minTanks: 3, ventCost: 1, slack2: 3, slack1: 8, maxAnswer: 999999, hideTotalAt: 2, ventMs: 900 };
+export const FUEL_MIX = { minTanks: 3, extraTanks: [5], ventCost: 1, slack2: 3, slack1: 8, maxAnswer: 999999, hideTotalAt: 2, ventMs: 900 };
 // Slow Spell: the answer's letters fill in, in a random order, one every
 // SLOW_SPELL_STEP_MS (a slow clock, not world turns), until one blank is
 // left; I KNOW IT stops them and the answer is typed (Timothy,
