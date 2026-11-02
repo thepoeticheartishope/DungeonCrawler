@@ -380,7 +380,7 @@ function startGame() {
     freshShipRun();
     noteOnDuty();
     loadRoom('ship');
-    fillShipIntro(tragedyLines(state.run.ship.tragedy));
+    fillShipIntro(tragedyLines(state.run.ship.tragedy), state.settings.playerName);
     showScreen(shipIntroScreen);
     return;
   }
