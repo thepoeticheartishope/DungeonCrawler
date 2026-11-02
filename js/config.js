@@ -1093,10 +1093,10 @@ export const HIGHER_LOWER_TIERS = ['X', '2', '1'];
 // Each vent (going over empties the engine) counts as `ventCost` extra
 // pours. Pours over par (plus vents) score: 0 = X, up to `slack2` = 2, up
 // to `slack1` = 1; beyond, the engine runs dry: a miss. Whole answers up
-// to `maxAnswer`. From panic level `hideTotalAt` (Shaken) the running
-// total hides: only UNDER / OVER is left. `ventMs`: how long OVER shows
-// before the engine reads empty again.
-export const FUEL_MIX = { minTanks: 3, extraTanks: [5], ventCost: 1, slack2: 3, slack1: 8, maxAnswer: 999999, hideTotalAt: 2, ventMs: 900 };
+// to `maxAnswer`. The slack, and whether the running total hides (only
+// UNDER / OVER left), by level (MINIGAME_LEVELS). `ventMs`: how long OVER
+// shows before the engine reads empty again.
+export const FUEL_MIX = { minTanks: 3, extraTanks: [5], ventCost: 1, maxAnswer: 999999, ventMs: 900 };
 // Slow Spell: the answer's letters fill in, in a random order, one every
 // SLOW_SPELL_STEP_MS (a slow clock, not world turns), until one blank is
 // left; I KNOW IT stops them and the answer is typed (Timothy,
@@ -1193,27 +1193,61 @@ export const FOG_REVEAL_2_COVERED = 6;
 // player picks which to scan. The share of the picture scanned sets the
 // tier: up to `xShare` = X, up to `twoShare` = 2, more = 1. A wrong option
 // dims and steps the tier down one; more than `wrongsAllowed` wrong is a
-// miss. From panic level `panicAt` (Shaken) the fog is finer
-// (`panicCols` x `panicRows`): each scan shows less, the shares stay.
+// miss. The fog's patches by level (MINIGAME_LEVELS): finer, each scan
+// shows less; the shares stay.
 // Star Chart (ship minigames plan step C; the Navigator's job, in place
 // of Close Enough): a one-word answer of `minLetters` to `maxLetters`
 // plain letters, its letters as stars among `decoys` decoy stars (letters
 // not in the word), `cols` stars across. The player joins them in order;
 // a wrong star goes dark for good. Wrong stars: 0 = X, up to `wrong2` = 2,
-// up to `maxWrong` = 1, more = a miss. From panic level `panicAt`
-// (Shaken) there are `panicDecoys` decoys.
+// up to `maxWrong` = 1, more = a miss. Decoys by level (MINIGAME_LEVELS).
 // A drag picks a star only when the finger comes within `dragPx` of its
 // middle, so a line that just brushes a star on its way doesn't count.
-export const STAR_CHART = { minLetters: 3, maxLetters: 10, decoys: 6, panicDecoys: 10, cols: 5, wrong2: 2, maxWrong: 4, panicAt: 2, dragPx: 14 };
+export const STAR_CHART = { minLetters: 3, maxLetters: 10, cols: 5, wrong2: 2, maxWrong: 4, dragPx: 14 };
 // Hull Patch (ship minigames plan step D; Life Support's job, in place of
 // Sum Lock): a one-word answer of `minLetters` to `maxLetters` plain
 // letters is a hole in the hull; a tray holds its letters once each plus
-// `decoys` letters not in it. A right plate fills every spot it belongs
+// decoy letters not in it (by level, MINIGAME_LEVELS). A right plate fills every spot it belongs
 // in; a wrong one falls off and the hull takes a strain. Strain 0 = X, up
-// to `strain2` = 2, below `maxStrain` = 1; at `maxStrain` the hull
-// breaches (a miss). From panic level `panicAt` (Shaken) the hull holds
-// only `panicMaxStrain`.
-export const HULL_PATCH = { minLetters: 3, maxLetters: 12, decoys: 7, strain2: 2, maxStrain: 5, panicMaxStrain: 3, panicAt: 2 };
+// to `strain2` = 2, below the level's `maxStrain` = 1; at it the hull
+// breaches (a miss). Decoys and strain by level (MINIGAME_LEVELS).
+export const HULL_PATCH = { minLetters: 3, maxLetters: 12, decoys: 7, strain2: 2 };
+// Each ship minigame gets harder as the player gets good at it (Timothy
+// 2026-11-01): every perfect solve (the game's best tier: X, or '2' for
+// Syllable Split, which has no X) moves that game up one of its levels
+// below, level 0 being the game as it was. A panicking crew (from panic
+// `panic.at`, Shaken) plays every game `panic.bump` levels up while it
+// lasts. Inference has its own levels (INFERENCE.levels). The perfect
+// solves are counted per run (state.run.ship.perfect).
+//   starChart     decoys: decoy stars
+//   fuelMix       slack2 / slack1: pours over par for tier 2 / 1;
+//                 hideTotal: only UNDER / OVER, no running total
+//   scanner       cols x rows: the fog's patches (finer shows less a scan)
+//   hullPatch     decoys: decoy plates; maxStrain: the strain that breaches
+//   asteroids     rocks on the field (a narrow phone flies fewer); shots
+//   slowSpell     flip: share of letters drawn upside down or mirrored
+//   syllableSplit decoys: decoy pieces; flip: share of pieces flipped
+//   letterPool    flip: share of tiles flipped
+//   codeBreak     tiers: one guess each; flip: older guesses flipped
+//   crosswire     free: the shared letter starts filled in; reveal: REVEAL offered
+export const MINIGAME_LEVELS = {
+  panic: { at: 2, bump: 2 },
+  games: {
+    starChart: [{ decoys: 6 }, { decoys: 8 }, { decoys: 10 }, { decoys: 12 }],
+    fuelMix: [
+      { slack2: 3, slack1: 8, hideTotal: false }, { slack2: 2, slack1: 6, hideTotal: false },
+      { slack2: 1, slack1: 5, hideTotal: false }, { slack2: 1, slack1: 5, hideTotal: true },
+    ],
+    scanner: [{ cols: 5, rows: 4 }, { cols: 6, rows: 5 }, { cols: 8, rows: 6 }, { cols: 10, rows: 8 }],
+    hullPatch: [{ decoys: 7, maxStrain: 5 }, { decoys: 9, maxStrain: 4 }, { decoys: 11, maxStrain: 4 }, { decoys: 11, maxStrain: 3 }],
+    asteroids: [{ rocks: 4, shots: 3 }, { rocks: 5, shots: 3 }, { rocks: 6, shots: 3 }, { rocks: 6, shots: 2 }],
+    slowSpell: [{ flip: 0 }, { flip: 0.25 }, { flip: 0.5 }, { flip: 0.75 }],
+    syllableSplit: [{ decoys: 4, flip: 0 }, { decoys: 6, flip: 0 }, { decoys: 8, flip: 0 }, { decoys: 8, flip: 0.4 }],
+    letterPool: [{ flip: 0 }, { flip: 0.25 }, { flip: 0.4 }, { flip: 0.6 }],
+    codeBreak: [{ tiers: ['X', '2', '1'], flip: false }, { tiers: ['X', '2', '1'], flip: true }, { tiers: ['X', '2'], flip: true }],
+    crosswire: [{ free: true, reveal: true }, { free: false, reveal: true }, { free: false, reveal: false }],
+  },
+};
 // Inference (ship minigames plan step E; the Science job, in place of
 // Verdict): a number question with a `label` (a short name for its fact,
 // "Days Moses spent on the mountain") is worked out from lines of other
@@ -1221,7 +1255,8 @@ export const HULL_PATCH = { minLetters: 3, maxLetters: 12, decoys: 7, strain2: 2
 // (Timothy: most of the problem is deduction, the data is given). Each
 // fact is a zodiac symbol (zodiac.js). The puzzles grow with the run
 // (Timothy 2026-11-01: harder logic as the player learns more algebra):
-// every `solvesPerLevel` puzzles solved (2, Timothy 2026-11-01), the next of `levels`, each
+// every `solvesPerLevel` perfect solves (first CHECK; 2, Timothy
+// 2026-11-01), the next of `levels`, each
 // { facts (with the answer), ops ('-', 'x', '/', '^': + is always in),
 // three (a line can hold a third symbol) }. A line using a level's harder
 // ops is picked `hardShare` of the time when one fits; no total over
@@ -1245,15 +1280,16 @@ export const INFERENCE = {
 // the set, each the answer to another question). The player turns the
 // aim (`aimMax` degrees either way, `aimSpeed` degrees a second while
 // held, `aimTap` for a tap) and FIREs along it; the shot hits the first
-// rock on the line. `rocks` on the field (`panicRocks` from panic level
-// `panicAt`), answers of at most `maxChars`; a narrow field gets fewer
+// rock on the line. Rocks on the field by level (MINIGAME_LEVELS),
+// answers of at most `maxChars`; a narrow field gets fewer
 // rocks, never smaller ones, and always the right one. Rocks sit on an
 // arc, one angle each with `gapDeg` of clear sky between neighbours, and
 // drift at most `driftPx`, so none can block another. `shots` shots: a
 // wrong rock spends one (and says what it is the answer to), a shot that
-// hits nothing is free; shots left 3 = X, 2 = 2, 1 = 1, none = a miss.
+// hits nothing is free; shots by level: all left = X, one spent = 2, two
+// = 1, none = a miss.
 export const ASTEROIDS = {
-  rocks: 4, panicRocks: 6, panicAt: 2, maxChars: 12, shots: 3,
+  rocks: 4, maxChars: 12, // `rocks`: the fewest a field needs (its decoys + 1); on the field and shots by level (MINIGAME_LEVELS)
   aimMax: 75, aimSpeed: 55, aimTap: 2, gapDeg: 2, driftPx: 5, arcMax: 68, arcMin: 8,
   // Rock width: `rockPxWide` from a field `wideAt` px wide, else `rockPx`;
   // smaller (to `rockPxMin`) only when not even 2 fit (Timothy: fewer
@@ -1282,7 +1318,7 @@ export const MATCH_BOSS = {
   size: 5, minWords: 6, maxChars: 7, full: 5, bonus: 1, crisisStart: [7, 17], spreadEvery: 2, loseAt: 8,
   revealTurns: 2, seconds: 914, panicAt: 2, popMs: 300, dropMs: 420,
 };
-export const SCANNER = { cols: 5, rows: 4, panicCols: 10, panicRows: 8, panicAt: 2, xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
+export const SCANNER = { xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
 // Sum Lock: a trapped box only. When a trapped box rolls a minigame it is
 // Sum Lock if it can be (not twice in a row): its question becomes two
 // number questions, whole answers of 1 to SUM_LOCK_MAX_ADDEND, and the

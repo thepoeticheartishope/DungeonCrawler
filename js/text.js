@@ -392,6 +392,7 @@ export const TEXT = {
   'mg.verdict.scored.miss': '{name|upper}: {given}. Missed.', // draft
   'mg.crosswire': 'Crosswire', // draft
   'mg.crosswire.hint': 'Two answers cross. The shared letter is given.', // draft
+  'mg.crosswire.hintBlank': 'Two answers cross. Fill in the shared letter too.', // draft. A level up: the shared letter isn't given
   'mg.crosswire.across': 'ACROSS ({n})', // draft. Clue label, n = letters
   'mg.crosswire.down': 'DOWN ({n})', // draft
   'mg.crosswire.cellAcross': 'Across, letter {n}', // draft. A grid square, for screen readers

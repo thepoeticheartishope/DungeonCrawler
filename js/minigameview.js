@@ -22,7 +22,7 @@ import {
   crosswireSetup, crosswireTier, fogRevealTier, sumLockMatches,
   fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier, scannerGrid, scannerTier,
   starChartSetup, starChartPick, starChartTier, hullPatchSetup, hullPatchPlate, hullPatchTier,
-  inferenceSetup, inferenceCheck, inferenceTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout,
+  inferenceSetup, inferenceCheck, inferenceTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout, levelOf,
   matchSwap, matchEndTurn, matchWon, matchUse, matchCrisis, matchNear,
 } from './minigames.js';
 import { panicLevel } from './ship.js';
@@ -32,6 +32,7 @@ import { shuffle } from './random.js';
 import { t } from './text.js';
 import { playSfx } from './sfx.js';
 import { ZODIAC, zodiacSvg } from './zodiac.js';
+import { MINIGAME_LEVELS } from './config.js';
 
 const slot = document.getElementById('minigameSlot');
 
@@ -86,6 +87,12 @@ export function showMinigame(id, report, again = () => {}) {
   if (!id) return;
   slot.innerHTML = '';
   shown = { id, report, again, ...BUILDERS[id]() };
+  // A game the player is good at may draw some of its letters flipped
+  // (its level's flip, MINIGAME_LEVELS).
+  if (MINIGAME_LEVELS.games[id]) {
+    const { flip } = levelOf(id, panicLevel());
+    if (flip) shown.flip(flip);
+  }
   slot.hidden = false;
   shown.focus();
 }
@@ -247,7 +254,7 @@ function buildCloseEnough() {
 // The Pilot's job (ship minigames plan step A). Each tank button pours
 // into the engine; the gauge then says only UNDER or OVER (going over
 // vents it back to empty), and the running total shows unless the crew is
-// panicking (FUEL_MIX.hideTotalAt). Par (the fewest pours that can do
+// panicking or the Pilot is good at it (its level's hideTotal). Par (the fewest pours that can do
 // it) scores the fill but never shows: it gave the answer away (Timothy
 // 2026-11-01). It carries no modifiers (the ship asks with none). Nothing
 // moves on its own; the gauge eases to its level (still under reduced
@@ -255,7 +262,7 @@ function buildCloseEnough() {
 function buildFuelMix() {
   slot.classList.add('mg-fuel');
   const engine = fuelMixSetup(state.battle.currentQuestion);
-  const hideTotal = panicLevel() >= FUEL_MIX.hideTotalAt;
+  const hideTotal = engine.hideTotal;
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.fuelMix.hint');
   const body = add(slot, 'div', 'mg-fuel-engine');
   const gauge = add(body, 'div', 'mg-fuel-gauge');
@@ -459,6 +466,7 @@ function buildSlowSpell() {
   // I KNOW IT is pressed.
   let filled = 0;
   let flip = null;
+  let flipShare = SLOW_SPELL_FLIP_SHARE; // the share of letters flipped (a level's, or the Flip modifier's)
   let tier = null;
 
   const showCount = () => { count.textContent = t('mg.slowSpell.shown', { n: filled, total: word.total }); };
@@ -466,7 +474,7 @@ function buildSlowSpell() {
     if (lock.disabled) return;
     const cell = cells[word.order[filled]];
     cell.textContent = word.chars[word.order[filled]];
-    if (flip && Math.random() < SLOW_SPELL_FLIP_SHARE) cell.classList.add('flip-' + flip);
+    if (flip && Math.random() < flipShare) cell.classList.add('flip-' + flip);
     filled++;
     showCount();
     if (filled >= word.stopAt) know();
@@ -509,7 +517,7 @@ function buildSlowSpell() {
       know();
       answer(word.chars.join(''));
     },
-    flip: () => { flip = Math.random() < 0.5 ? 'upside' : 'mirror'; },
+    flip: (share) => { flip = Math.random() < 0.5 ? 'upside' : 'mirror'; flipShare = typeof share === 'number' ? share : SLOW_SPELL_FLIP_SHARE; },
   };
 }
 
@@ -571,9 +579,9 @@ function buildSyllableSplit() {
         pick(btn, pieces[next]);
       }
     },
-    flip: () => {
+    flip: (share) => {
       const mode = Math.random() < 0.5 ? 'upside' : 'mirror';
-      buttons.forEach(btn => { if (Math.random() < SYLLABLE_SPLIT_FLIP_SHARE) btn.firstChild.classList.add('flip-' + mode); });
+      buttons.forEach(btn => { if (Math.random() < (typeof share === 'number' ? share : SYLLABLE_SPLIT_FLIP_SHARE)) btn.firstChild.classList.add('flip-' + mode); });
     },
   };
 }
@@ -676,9 +684,9 @@ function buildLetterPool() {
         check();
       });
     },
-    flip: () => {
+    flip: (share) => {
       const mode = Math.random() < 0.5 ? 'upside' : 'mirror';
-      buttons.forEach(btn => { if (Math.random() < LETTER_POOL_FLIP_SHARE) btn.firstChild.classList.add('flip-' + mode); });
+      buttons.forEach(btn => { if (Math.random() < (typeof share === 'number' ? share : LETTER_POOL_FLIP_SHARE)) btn.firstChild.classList.add('flip-' + mode); });
     },
   };
 }
@@ -696,7 +704,7 @@ function buildCodeBreak() {
   slot.classList.add('mg-code');
   const setup = codeBreakSetup(state.battle.currentQuestion);
   const size = setup.code.length;
-  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.codeBreak.hint', { n: CODE_BREAK_TIERS.length });
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.codeBreak.hint', { n: setup.tiers.length });
   const legend = add(slot, 'div', 'mg-code-key');
   ['hit', 'near', 'miss'].forEach((mark) => {
     const item = add(legend, 'span');
@@ -704,7 +712,7 @@ function buildCodeBreak() {
     add(item, 'span').textContent = t('mg.codeBreak.mark.' + mark);
   });
   const board = add(slot, 'div', 'mg-code-rows');
-  const rows = CODE_BREAK_TIERS.map(() => {
+  const rows = setup.tiers.map(() => {
     const row = add(board, 'div', 'mg-code-row');
     for (let i = 0; i < size; i++) add(row, 'span', 'mg-code-cell').textContent = '_';
     return row;
@@ -732,7 +740,7 @@ function buildCodeBreak() {
   // Guesses made, and Flip's look (or null).
   let guesses = 0;
   let flip = null;
-  const showLeft = () => { left.textContent = t('mg.codeBreak.left', { n: CODE_BREAK_TIERS.length - guesses }); };
+  const showLeft = () => { left.textContent = t('mg.codeBreak.left', { n: setup.tiers.length - guesses }); };
   const guess = (typed) => {
     const marks = codeBreakMarks(setup, typed);
     if (!marks) {
@@ -751,10 +759,10 @@ function buildCodeBreak() {
     said.textContent = '';
     if (flip) rows.slice(0, guesses - 1).forEach(r => [...r.children].forEach(cell => cell.classList.add('flip-' + flip)));
     if (marks.every(m => m === 'hit')) {
-      finish({ right: true, tier: codeBreakTier(guesses), given: chars.join('') });
+      finish({ right: true, tier: codeBreakTier(guesses, setup.tiers), given: chars.join('') });
       return;
     }
-    if (guesses >= CODE_BREAK_TIERS.length) {
+    if (guesses >= setup.tiers.length) {
       finish({ right: false, tier: null, given: chars.join('') });
       return;
     }
@@ -898,8 +906,10 @@ function buildVerdict() {
 // No Flip.
 function buildCrosswire() {
   slot.classList.add('mg-cross');
-  const { across, down, at } = crosswireSetup(state.battle.currentQuestion);
-  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.crosswire.hint');
+  // `free`: the shared letter starts filled in; `reveal`: REVEAL is
+  // offered (both go as the player gets good at it, its level).
+  const { across, down, at, free = true, reveal: canReveal = true } = crosswireSetup(state.battle.currentQuestion);
+  add(slot, 'div', 'term-line mg-hint').textContent = t(free ? 'mg.crosswire.hint' : 'mg.crosswire.hintBlank');
   const clues = add(slot, 'div', 'mg-clues');
   const clueTexts = [['across', across], ['down', down]].map(([dir, entry]) => {
     const line = add(clues, 'div', 'mg-clue');
@@ -917,6 +927,7 @@ function buildCrosswire() {
 
   reveal.type = check.type = 'button';
   reveal.textContent = t('mg.crosswire.reveal');
+  reveal.hidden = !canReveal;
   check.textContent = t('mg.crosswire.check');
   grid.style.gridTemplateColumns = 'repeat(' + across.word.length + ', auto)';
 
@@ -940,10 +951,10 @@ function buildCrosswire() {
       input.maxLength = 1;
       input.setAttribute('autocapitalize', 'characters');
       input.setAttribute('autocorrect', 'off');
-      input.setAttribute('aria-label', inAcross && inDown
+      input.setAttribute('aria-label', inAcross && inDown && free
         ? t('mg.crosswire.cellShared', { letter: cell.want })
         : t(inAcross ? 'mg.crosswire.cellAcross' : 'mg.crosswire.cellDown', { n: (inAcross ? c : r) + 1 }));
-      if (inAcross && inDown) lockCell(cell, 'mg-cell-given');
+      if (inAcross && inDown && free) lockCell(cell, 'mg-cell-given');
       if (inAcross) acrossCells[c] = cell;
       if (inDown) downCells[r] = cell;
     }
@@ -1580,7 +1591,7 @@ function buildAsteroids() {
     if (got === 'right') {
       rock.gone = true;
       rock.el.classList.add('gone');
-      finish({ right: true, tier: asteroidsTier(field.shots), given: rock.data.text });
+      finish({ right: true, tier: asteroidsTier(field.shots, field.maxShots), given: rock.data.text });
       return;
     }
     rock.broken = true;
