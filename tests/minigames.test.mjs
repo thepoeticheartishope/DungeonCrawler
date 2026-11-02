@@ -757,25 +757,74 @@ test('Inference fits a labelled number question with two other labelled facts to
   assert.ok(!minigamesFor(NUMBER).includes('inference'), 'no label, no tile');
 });
 
-test('Inference: every kind of puzzle holds with the true facts and has one answer', async () => {
-  const { inferenceSetup, inferenceCheck, inferenceValue, inferenceTier } = await import('../js/minigames.js');
+const BIBLE_FACTS = [[5, 'Pentateuch'], [70, 'Babylon'], [9, 'Beatitudes'], [50, 'Jubilee'], [17, 'Joseph'], [20, 'Judah'],
+  [13, 'Jericho'], [30, 'Judas'], [8, 'Ark'], [7, 'Loaves'], [90, 'Sarah'], [100, 'Abraham'], [3, 'Nineveh'], [21, 'Epistles'],
+  [4, 'Soldiers'], [12, 'Gates'], [39, 'OT books'], [24, 'Elders'], [19, 'Kings'], [40, 'Moses']]
+  .map(([n, label]) => ({ term: label + '?', meaning: String(n), answerType: 'number', label }));
+
+test('Inference: at every level each line brings in one new symbol, the truth holds, a wrong answer breaks a line', async () => {
+  const { inferenceSetup, inferenceCheck, inferenceValue } = await import('../js/minigames.js');
+  const { INFERENCE } = await import('../js/config.js');
   reset();
-  state.settings.activeData = LABELLED;
-  const kinds = new Set();
-  for (const r of [0.1, 0.6, 0.95]) {
-    for (let n = 0; n < 20; n++) {
-      const puzzle = withRandom(r, () => inferenceSetup(LABELLED[2]));
-      kinds.add(puzzle.kind);
-      const truth = Object.fromEntries(Object.entries(puzzle.facts).map(([id, f]) => [id, f.value]));
-      assert.equal(truth.T, 40);
-      puzzle.lines.forEach(line => assert.equal(inferenceValue(line, truth), line.total, puzzle.kind));
-      assert.ok(inferenceCheck(puzzle, truth).solved);
-      const wrong = inferenceCheck(puzzle, { ...truth, T: 41 });
-      assert.ok(!wrong.solved);
-      assert.ok(wrong.holds.includes(false), 'a wrong answer breaks a line');
-    }
+  for (const data of [LABELLED, BIBLE_FACTS]) {
+    state.settings.activeData = data;
+    INFERENCE.levels.forEach((lv, level) => {
+      const used = new Set();
+      for (let n = 0; n < 60; n++) {
+        const q = data[n % data.length];
+        const puzzle = inferenceSetup(q, level);
+        const ids = Object.keys(puzzle.facts);
+        assert.ok(ids.length <= lv.facts && ids.includes('T'));
+        const truth = Object.fromEntries(ids.map(id => [id, puzzle.facts[id].value]));
+        assert.equal(truth.T, Number(q.meaning));
+        assert.equal(new Set(ids.map(id => puzzle.facts[id].sign)).size, ids.length, 'a sign each');
+        const order = [...ids.filter(id => id !== 'T'), 'T'];
+        puzzle.lines.forEach((line, k) => {
+          assert.equal(inferenceValue(line, truth), line.total);
+          assert.ok(line.total >= 0 && line.total <= INFERENCE.maxTotal, JSON.stringify(line));
+          // Only the line's own new fact and ones before it.
+          const facts = line.terms.filter(term => truth[term] !== undefined);
+          assert.ok(facts.includes(order[k]) && facts.every(f => order.indexOf(f) <= k), JSON.stringify(line));
+          line.terms.filter(term => truth[term] === undefined).forEach((op) => {
+            used.add(op);
+            assert.ok(op === '+' || lv.ops.includes(op === '^2' ? '^' : op), 'level ' + level + ' uses ' + op);
+          });
+        });
+        assert.ok(inferenceCheck(puzzle, truth).solved);
+        const negative = Object.fromEntries(ids.map(id => [id, -truth[id]]));
+        assert.ok(!inferenceCheck(puzzle, negative).solved, 'never with negatives (a square root)');
+        for (const off of [-1, 1]) {
+          const wrong = inferenceCheck(puzzle, { ...truth, T: truth.T + off });
+          assert.ok(!wrong.solved && wrong.holds.includes(false), 'a wrong answer breaks a line');
+        }
+      }
+      if (data === BIBLE_FACTS) lv.ops.forEach(op => assert.ok(used.has(op === '^' ? '^2' : op), 'level ' + level + ' shows ' + op));
+    });
   }
-  assert.deepEqual([...kinds].sort(), ['chain', 'pair', 'times']);
+});
+
+test('Inference: x and / before + and -, squares first', async () => {
+  const { inferenceValue } = await import('../js/minigames.js');
+  assert.equal(inferenceValue({ terms: ['A', '+', 'B', 'x', 'C'] }, { A: 1, B: 2, C: 3 }), 7);
+  assert.equal(inferenceValue({ terms: ['A', '/', 'B', '-', 'C'] }, { A: 70, B: 7, C: 3 }), 7);
+  assert.equal(inferenceValue({ terms: ['A', '^2', '+', 'B'] }, { A: 4, B: 5 }), 21);
+  assert.equal(inferenceValue({ terms: ['A', 'x', 'B', '^2'] }, { A: 2, B: 3 }), 18);
+});
+
+test('Inference grows with the run: each puzzle solved on the ship is a level up, to the last', async () => {
+  const { inferenceLevel, inferenceSetup, inferenceCheck, inferenceTier } = await import('../js/minigames.js');
+  const { INFERENCE } = await import('../js/config.js');
+  reset();
+  state.settings.activeData = BIBLE_FACTS;
+  state.run.ship = { inferenceSolved: 0 };
+  assert.equal(inferenceLevel(), 0);
+  for (let k = 0; k < INFERENCE.levels.length + 2; k++) {
+    const puzzle = inferenceSetup(BIBLE_FACTS[19]);
+    assert.equal(puzzle.level, Math.min(k, INFERENCE.levels.length - 1));
+    inferenceCheck(puzzle, Object.fromEntries(Object.entries(puzzle.facts).map(([id, f]) => [id, f.value])));
+  }
+  assert.equal(inferenceLevel(), INFERENCE.levels.length - 1);
+  state.run.ship = null;
   assert.equal(inferenceTier(1), 'X');
   assert.equal(inferenceTier(2), '2');
   assert.equal(inferenceTier(4), '1');

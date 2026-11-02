@@ -1390,6 +1390,9 @@ function buildHullPatch() {
 // marks only which lines don't hold with those numbers (the light nudge),
 // never the right value; a panicking crew's CHECK only says something is
 // off. Enter checks too. No modifiers (the ship asks with none).
+// How Inference shows its operations (minigames.js inferenceSetup's terms).
+const INFER_OPS = { '+': '+', '-': '\u2212', 'x': '\u00d7', '/': '\u00f7' };
+
 function buildInference() {
   slot.classList.add('mg-infer');
   const puzzle = inferenceSetup(state.battle.currentQuestion);
@@ -1419,7 +1422,8 @@ function buildInference() {
     const row = add(lines, 'div', 'mg-infer-line');
     line.terms.forEach((term) => {
       if (puzzle.facts[term]) symbol(row, term);
-      else add(row, 'span', 'mg-infer-op').textContent = term;
+      else if (term === '^2') add(row.lastElementChild, 'sup', 'mg-infer-pow').textContent = '2';
+      else add(row, 'span', 'mg-infer-op').textContent = INFER_OPS[term] || term;
     });
     add(row, 'span', 'mg-infer-op').textContent = '=';
     add(row, 'span', 'mg-infer-total').textContent = String(line.total);
@@ -1451,8 +1455,11 @@ function buildInference() {
     if (shown.done) return;
     const values = {};
     for (const id of Object.keys(inputs)) {
-      const v = Number(inputs[id].value.trim());
-      if (inputs[id].value.trim() === '' || !Number.isFinite(v)) { said.textContent = t('mg.inference.fill'); return; }
+      const raw = inputs[id].value.trim();
+      if (raw === '') { said.textContent = t('mg.inference.fill'); return; }
+      // Facts are whole counts: anything else isn't one (and isn't a check).
+      if (!/^\d+$/.test(raw) || Number(raw) < 1) { said.textContent = t('mg.inference.whole'); return; }
+      const v = Number(raw);
       values[id] = v;
     }
     const result = inferenceCheck(puzzle, values);
