@@ -151,7 +151,12 @@ export function playMinigameOut() {
 }
 
 // Sends the result once and freezes the minigame, so a second press
-// can't answer twice.
+// can't answer twice. Its sound plays here (sfx.js). Inside a game only a
+// wrong move the game already shows, by taking something away (a star
+// gone dark, a piece struck, an option dimmed, a plate fallen off, a rock
+// broken, the fuel vented), plays the wrong sound: nothing plays on
+// aiming, choosing or checking, so a sound never tells more than the
+// screen (Timothy 2026-11-01).
 function finish(result) {
   if (!shown || shown.done) return;
   shown.done = true;
@@ -288,6 +293,7 @@ function buildFuelMix() {
     }
     if (said === 'over') {
       draw(before + size, 'over');
+      playSfx('wrong'); // too much: the engine vents it all
       ventTimer = setTimeout(() => { if (!shown || shown.done) return; draw(0, 'vented'); }, FUEL_MIX.ventMs);
       return;
     }
@@ -543,6 +549,7 @@ function buildSyllableSplit() {
       wrong++;
       showLeft();
       if (!syllableSplitTier(wrong)) finish({ right: false, tier: null, given: given() || t('battle.noAnswer') });
+      else playSfx('wrong'); // the piece is struck out
       return;
     }
     btn.classList.add('mg-used');
@@ -1167,6 +1174,7 @@ function buildScanner() {
       return;
     }
     if (btn) { btn.disabled = true; btn.classList.add('mg-dim'); }
+    playSfx('wrong'); // the option dims
     said.textContent = t('mg.scanner.wrong', { opt });
   };
   // 1-4 / A-D pick an option, as on a plain question.
@@ -1244,6 +1252,7 @@ function buildStarChart() {
     if (got === 'done') { finish({ right: true, tier: starChartTier(chart.wrong), given: chart.word }); return; }
     if (got === 'wrong') {
       if (starChartTier(chart.wrong) === null) { finish({ right: false, tier: null, given: chart.word.slice(0, chart.path.length) }); return; }
+      playSfx('wrong'); // the star goes dark (a step it can't be undone)
       said.textContent = t('mg.starChart.wrong', { n: chart.wrong });
       return;
     }
@@ -1340,6 +1349,7 @@ function buildHullPatch() {
     draw();
     if (got === 'sealed') { finish({ right: true, tier: hullPatchTier(hull.strain), given: hull.word }); return; }
     if (got === 'breach') { finish({ right: false, tier: null, given: [...hull.word].map(c => (hull.placed.has(c) ? c : '_')).join('') }); return; }
+    if (got === 'off') playSfx('wrong'); // the plate falls off
     said.textContent = got === 'off' ? t('mg.hullPatch.off', { letter }) : t('mg.hullPatch.fits');
   };
   hull.tray.forEach((letter) => {
@@ -1548,6 +1558,7 @@ function buildAsteroids() {
     showShots();
     said.textContent = t('mg.asteroids.wrong', { text: rock.data.text, asks: rock.data.asks });
     if (got === 'out') finish({ right: false, tier: null, given: rock.data.text });
+    else playSfx('wrong'); // the rock breaks
   };
   const shoot = () => {
     if (shown.done || aim.flying || !rocks.length) return;
