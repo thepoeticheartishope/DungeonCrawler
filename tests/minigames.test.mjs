@@ -619,12 +619,14 @@ test('a wrong total brings both questions back as haunts, never the lock itself'
 
 // ---- Fuel Mix (ship minigames plan step A) ----
 
-test('Fuel Mix: tanks are powers of ten up to the answer, at least three; par is the digit sum', () => {
-  assert.deepEqual(fuelMixSetup({ meaning: '13', answerType: 'number' }).tanks, [100, 10, 1]);
-  assert.deepEqual(fuelMixSetup({ meaning: '950', answerType: 'number' }).tanks, [100, 10, 1]);
-  assert.deepEqual(fuelMixSetup({ meaning: '1260', answerType: 'number' }).tanks, [1000, 100, 10, 1]);
+test('Fuel Mix: tanks are powers of ten up to the answer, at least three, and a 5; par is the fewest pours', () => {
+  assert.deepEqual(fuelMixSetup({ meaning: '13', answerType: 'number' }).tanks, [100, 10, 5, 1]);
+  assert.deepEqual(fuelMixSetup({ meaning: '950', answerType: 'number' }).tanks, [100, 10, 5, 1]);
+  assert.deepEqual(fuelMixSetup({ meaning: '1260', answerType: 'number' }).tanks, [1000, 100, 10, 5, 1]);
   assert.equal(fuelMixSetup({ meaning: '950', answerType: 'number' }).par, 14);
   assert.equal(fuelMixSetup({ meaning: '1,000', answerType: 'number' }).par, 1);
+  assert.equal(fuelMixSetup({ meaning: '7', answerType: 'number' }).par, 3, '5 + 1 + 1');
+  assert.equal(fuelMixSetup({ meaning: '19', answerType: 'number' }).par, 6, '10 + 5 + 1 x 4');
   assert.ok(minigamesFor(BIG).includes('fuelMix'), '144000 fits (tanks up to 100000)');
   assert.ok(!minigamesFor({ meaning: '7½', answerType: 'number' }).includes('fuelMix'));
   assert.ok(!minigamesFor(WORD).includes('fuelMix'));
