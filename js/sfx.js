@@ -2,8 +2,9 @@
 // SFX), under the game's volume (sound.js), so SOUND OFF silences them
 // too. For now a right answer's soft "good" and a wrong one's "wrong"
 // (Timothy 2026-11-01: questions gave little feedback): an option marked
-// in the book (questionview.js markAnswer) and a minigame's result
-// (minigameview.js finish).
+// in the book (questionview.js markAnswer), a minigame's result
+// (minigameview.js finish) and, inside a minigame, a wrong move that
+// takes something away (see finish there).
 //
 // Each sound is fetched and decoded once, whole (so the service worker can
 // cache it, unlike the music), the first time the player taps or presses
@@ -28,10 +29,16 @@ export function initSfx() {
 }
 
 // Plays sound `name` (a key of SFX.sounds) once, unless the sound is off.
+const lastAt = {}; // name -> when it last played (performance.now)
+
 export function playSfx(name) {
   if (soundOff() || !SFX.sounds[name]) return;
   const sound = soundOut();
   if (!sound) return;
+  // One move can ask twice (a wrong pick that also ends the game): once.
+  const now = performance.now();
+  if (now - (lastAt[name] || -Infinity) < SFX.againMs) return;
+  lastAt[name] = now;
   load(name).then((buffer) => {
     if (!buffer || soundOff()) return;
     const source = sound.ctx.createBufferSource();

@@ -488,14 +488,15 @@ export const MUSIC = {
   boss: { src: './audio/boss-novum-final.mp3', volume: 1, fadeInMs: 2000, fadeOutMs: 4000, loop: false, resume: true },
 };
 // Sound effects (sfx.js), each `volume` a share of the game's volume.
-// right / wrong: an answer marked right or wrong, or a minigame won or
-// missed (Timothy 2026-11-01, his chosen sounds: "Retro Event Soft Good"
+// right / wrong: an answer marked right or wrong, a minigame won or
+// missed; wrong also for a wrong move inside a minigame (Timothy 2026-11-01, his chosen sounds: "Retro Event Soft Good"
 // and "Retro Event Wrong Simple 03").
 export const SFX = {
   sounds: {
     right: { src: './audio/answer-right-soft-good.wav', volume: 0.7 },
     wrong: { src: './audio/answer-wrong-simple-03.wav', volume: 0.7 },
   },
+  againMs: 250, // the same sound asked again this soon plays once
 };
 // How finely music.js draws a fade's curve, and how often it checks which
 // tune should be up.
