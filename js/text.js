@@ -279,10 +279,11 @@ export const TEXT = {
   'mg.hullPatch.scored.1': '{name|upper}: sealed, barely. It was {answer}.', // draft
   'mg.hullPatch.scored.miss': '{name|upper}: the hull breached. It was {answer}.', // draft
   'mg.inference': 'Inference', // draft. The Science job (ship minigames plan step E)
-  'mg.inference.hint': 'Work out each fact from the lines, then answer.', // draft
+  'mg.inference.hint': 'Each symbol is a number. Work them out from the sums, then answer.', // draft
   'mg.inference.answer': 'Your answer: {label}', // draft
   'mg.inference.check': 'Check', // draft
   'mg.inference.fill': 'Fill in every box first.', // draft
+  'mg.inference.whole': 'Each symbol is a whole number, 1 or more.', // draft
   'mg.inference.off': 'The marked lines don\'t add up with your numbers. Checks left: {left}', // draft
   'mg.inference.offPanic': 'Something is off.', // draft. A panicking crew's CHECK
   'mg.inference.scored.X': '{name|upper}: worked out first time.', // draft

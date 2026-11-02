@@ -27,6 +27,7 @@ import {
 import { numberQuestion, pickQuestion, normalizeSpaces, fightGroups } from './quiz.js';
 import { shuffle } from './random.js';
 import { recordHauntAnswer } from './haunts.js';
+import { ZODIAC } from './zodiac.js';
 
 // The modifiers each minigame supports (the plan's compatibility table).
 // A minigame only ever carries modifiers from its own list, so none is
@@ -445,68 +446,128 @@ function inferenceHelpers(q) {
   return (state.settings.activeData || []).map(inferenceFact).filter(f => f && f.q !== q && f.label !== own.label && f.value !== own.value);
 }
 
-// A new puzzle for question `q` (one Inference can run): `facts`, by id
-// ('T' is the question's own; 'A', 'B' help), each { label, value }, and
-// `lines`, each { terms (fact ids and '+', '-', 'x'), total }. Every kind
-// solves one fact at a time (A from the first line, then B, then T), so
-// there is always exactly one answer. The kind is drawn by
-// INFERENCE.weights; the x kind needs two small facts and falls back.
-export function inferenceSetup(q) {
-  const T = inferenceFact(q);
-  const pool = shuffle(inferenceHelpers(q));
-  const A = pool[0];
-  const B = pool.find(f => f.value !== A.value);
-  const small = pool.filter(f => f.value <= INFERENCE.smallMax);
-  const pair = small.length >= 2 ? [small[0], small.find(f => f.value !== small[0].value)] : null;
-  const w = INFERENCE.weights;
-  const roll = Math.random() * (w.pair + w.chain + w.times);
-  let kind = roll < w.pair ? 'pair' : roll < w.pair + w.chain ? 'chain' : 'times';
-  if (kind === 'times' && !(pair && pair[1])) kind = 'chain';
-  if (kind === 'chain' && !B) kind = 'pair';
-  const facts = { T: { label: T.label, value: T.value } };
-  const lines = [];
-  const fact = (id, f) => { facts[id] = { label: f.label, value: f.value }; };
-  if (kind === 'pair') {
-    fact('A', A);
-    lines.push({ terms: ['A', '+', 'A'], total: 2 * A.value });
-    lines.push({ terms: ['A', '+', 'T'], total: A.value + T.value });
-  } else if (kind === 'chain') {
-    fact('A', A);
-    fact('B', B);
-    lines.push({ terms: ['A', '+', 'A'], total: 2 * A.value });
-    lines.push(B.value > A.value ? { terms: ['B', '-', 'A'], total: B.value - A.value } : { terms: ['A', '-', 'B'], total: A.value - B.value });
-    lines.push({ terms: ['B', '+', 'T'], total: B.value + T.value });
-  } else {
-    fact('A', pair[0]);
-    fact('B', pair[1]);
-    lines.push({ terms: ['A', '+', 'A'], total: 2 * pair[0].value });
-    lines.push({ terms: ['A', 'x', 'B'], total: pair[0].value * pair[1].value });
-    lines.push({ terms: ['B', '+', 'T'], total: pair[1].value + T.value });
-  }
-  return { kind, facts, lines, checks: 0 };
+// The puzzle level for this run: how many Inference puzzles the player
+// has solved on the ship (each one brings the next level nearer, up to
+// the last of INFERENCE.levels), or 0 off the ship.
+export function inferenceLevel() {
+  const solved = (state.run.ship && state.run.ship.inferenceSolved) || 0;
+  return Math.min(INFERENCE.levels.length - 1, Math.floor(solved / INFERENCE.solvesPerLevel));
 }
 
-// Line `line`'s value with `values` (fact id -> number): x before + and -.
-export function inferenceValue(line, values) {
-  const nums = [];
-  for (let k = 0; k < line.terms.length; k++) {
-    const term = line.terms[k];
-    if (term === 'x') nums.push(nums.pop() * values[line.terms[++k]]);
-    else nums.push(values[term] !== undefined ? values[term] : term);
+// A new puzzle for question `q` (one Inference can run), at `level` (an
+// index into INFERENCE.levels: how many facts, which operations, whether
+// a line can hold three symbols): `facts`, by id ('A', 'B', 'C' help, 'T'
+// is the question's own), each { label, value, sign (its ZODIAC index, a
+// different one each) }, and `lines`, each { terms, total }. Terms are
+// fact ids and '+', '-', 'x', '/' and '^2' (the symbol before it squared).
+// Each line brings in one new fact beside ones already worked out (A on
+// its own first, T last), so working down the lines there is always
+// exactly one answer. A fact goes into a line only where the numbers
+// allow (a whole division, a total no bigger than INFERENCE.maxTotal), so
+// a level whose sums the set's numbers can't make falls back to + and -.
+export function inferenceSetup(q, level = inferenceLevel()) {
+  const lv = INFERENCE.levels[Math.max(0, Math.min(level, INFERENCE.levels.length - 1))];
+  const T = inferenceFact(q);
+  const pool = shuffle(inferenceHelpers(q));
+  const helpers = [];
+  pool.forEach((f) => { if (helpers.length < lv.facts - 1 && !helpers.some(h => h.value === f.value)) helpers.push(f); });
+  const ids = ['A', 'B', 'C'].slice(0, helpers.length);
+  const facts = {};
+  ids.forEach((id, k) => { facts[id] = { label: helpers[k].label, value: helpers[k].value }; });
+  facts.T = { label: T.label, value: T.value };
+  const can = op => lv.ops.includes(op);
+  const v = id => facts[id].value;
+  const lines = [];
+  [...ids, 'T'].forEach((id, k) => {
+    const known = [...ids, 'T'].slice(0, k);
+    const forms = inferenceForms(id, known, v, can, lv.three);
+    // The harder forms first when there are any: the level's newest ops.
+    const hard = forms.filter(f => f.hard);
+    const pick = (hard.length && Math.random() < INFERENCE.hardShare ? hard : forms);
+    const terms = pick[Math.floor(Math.random() * pick.length)].terms;
+    lines.push({ terms, total: inferenceValue({ terms }, Object.fromEntries(Object.keys(facts).map(f => [f, v(f)]))) });
+  });
+  // Each fact gets its own zodiac sign (zodiac.js), drawn in its place.
+  const signs = shuffle([...Array(ZODIAC.length).keys()]);
+  Object.values(facts).forEach((f, k) => { f.sign = signs[k]; });
+  return { level, facts, lines, checks: 0 };
+}
+
+// The lines that can bring in fact `id` (value by `v`) beside the facts
+// already `known`, with the ops `can` allows: [{ terms, hard }]. Every
+// form has `id` once (or twice on its own), so its value follows from the
+// line. `three`: a line may add or take away one more known fact.
+function inferenceForms(id, known, v, can, three) {
+  const x = v(id);
+  const max = INFERENCE.maxTotal;
+  const forms = [];
+  const add = (terms, hard = false) => forms.push({ terms, hard });
+  if (!known.length) {
+    add([id, '+', id]);
+    if (can('x') && x * x <= max && x > 1) add([id, 'x', id], true);
+    if (can('^') && x * x <= max && x > 1) add([id, '^2'], true);
+    return forms;
   }
-  let total = nums[0];
-  for (let k = 1; k < nums.length; k += 2) total = nums[k] === '+' ? total + nums[k + 1] : total - nums[k + 1];
+  known.forEach((k) => {
+    const y = v(k);
+    add([id, '+', k]);
+    if (can('-')) add(x > y ? [id, '-', k] : [k, '-', id]);
+    if (can('x') && y > 1 && x * y <= max) add([k, 'x', id], true);
+    if (can('/') && y > 1 && x % y === 0 && x > y) add([id, '/', k], true);
+    if (can('/') && x > 1 && y % x === 0 && y > x) add([k, '/', id], true);
+    if (can('^') && y > 1 && y * y + x <= max) add([k, '^2', '+', id], true);
+    if (can('^') && x > 1 && x * x + y <= max) add([id, '^2', '+', k], true);
+  });
+  if (three && known.length >= 2) {
+    // One more known fact added or taken away, keeping the total at 0 or more.
+    const base = forms.slice();
+    base.forEach((f) => {
+      known.forEach((k) => {
+        if (f.terms.includes(k)) return;
+        const with2 = [...f.terms, '+', k];
+        add(with2, true);
+        const without = [...f.terms, '-', k];
+        if (inferenceValue({ terms: without }, Object.fromEntries([id, ...known].map(n => [n, v(n)]))) >= 0) add(without, true);
+      });
+    });
+  }
+  return forms;
+}
+
+// Line `line`'s value with `values` (fact id -> number): squares first,
+// then x and /, then + and -, left to right.
+export function inferenceValue(line, values) {
+  const t = line.terms;
+  let i = 0;
+  const factor = () => {
+    const id = t[i++];
+    let n = values[id] !== undefined ? values[id] : Number(id);
+    if (t[i] === '^2') { n *= n; i++; }
+    return n;
+  };
+  const product = () => {
+    let n = factor();
+    while (t[i] === 'x' || t[i] === '/') n = t[i++] === 'x' ? n * factor() : n / factor();
+    return n;
+  };
+  let total = product();
+  while (t[i] === '+' || t[i] === '-') total = t[i++] === '+' ? total + product() : total - product();
   return total;
 }
 
 // A CHECK of `puzzle` with the player's `values` (every fact id, 'T' the
 // answer): which lines hold (`holds`, one per line) and whether all do
 // (`solved`, which can only happen with the right answer). Counts the
-// CHECK.
+// CHECK; a solve counts toward the run's Inference level.
 export function inferenceCheck(puzzle, values) {
   puzzle.checks++;
-  const holds = puzzle.lines.map(line => inferenceValue(line, values) === line.total);
-  return { holds, solved: holds.every(Boolean) };
+  const holds = puzzle.lines.map(line => Math.abs(inferenceValue(line, values) - line.total) < 1e-9);
+  // Every fact is a whole number of at least 1 (a square's root is never
+  // the negative one), so only the true facts solve it.
+  const whole = Object.values(values).every(n => Number.isInteger(n) && n >= 1);
+  const solved = whole && holds.every(Boolean);
+  if (solved && state.run.ship) state.run.ship.inferenceSolved = (state.run.ship.inferenceSolved || 0) + 1;
+  return { holds, solved };
 }
 
 // The tier of a puzzle solved on CHECK `checks`: 1 = X, 2 = 2, up to

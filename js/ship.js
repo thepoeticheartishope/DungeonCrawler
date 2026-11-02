@@ -26,6 +26,7 @@ export function freshShipRun(rand = Math.random) {
     panic: 0, streak: 0, tragedy: rollTragedy(rand),
     calmStreak: SHIP_RUN.calmStreak, slipFactor: 1,
     shields: 0, taught: [], job: null, learning: null, onDuty: null,
+    inferenceSolved: 0, // Inference puzzles solved: the puzzles grow with it (minigames.js inferenceLevel)
   };
   state.run.trained = [];
   state.run.crewFailures = 0;

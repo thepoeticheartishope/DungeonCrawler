@@ -31,6 +31,7 @@ import { normalizeSpaces, buildChoices, resolveImageSrc } from './quiz.js';
 import { shuffle } from './random.js';
 import { t } from './text.js';
 import { playSfx } from './sfx.js';
+import { ZODIAC, zodiacSvg } from './zodiac.js';
 
 const slot = document.getElementById('minigameSlot');
 
@@ -1389,33 +1390,57 @@ function buildHullPatch() {
 // marks only which lines don't hold with those numbers (the light nudge),
 // never the right value; a panicking crew's CHECK only says something is
 // off. Enter checks too. No modifiers (the ship asks with none).
+// How Inference shows its operations (minigames.js inferenceSetup's terms).
+const INFER_OPS = { '+': '+', '-': '\u2212', 'x': '\u00d7', '/': '\u00f7' };
+
 function buildInference() {
   slot.classList.add('mg-infer');
   const puzzle = inferenceSetup(state.battle.currentQuestion);
   const hidden = panicLevel() >= INFERENCE.panicAt;
+  const ids = [...Object.keys(puzzle.facts).filter(id => id !== 'T'), 'T'];
+  // A fact's symbol: its zodiac sign, named for a screen reader by the
+  // fact it stands for.
+  const symbol = (parent, id) => {
+    const el = add(parent, 'span', 'mg-infer-sym' + (id === 'T' ? ' ask' : ''));
+    el.innerHTML = zodiacSvg(ZODIAC[puzzle.facts[id].sign]);
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', puzzle.facts[id].label);
+    return el;
+  };
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.inference.hint');
+  // The key: each symbol and the fact it stands for, the answer's last.
+  const key = add(slot, 'div', 'mg-infer-key');
+  ids.forEach((id) => {
+    const row = add(key, 'div', 'mg-infer-keyrow' + (id === 'T' ? ' ask' : ''));
+    symbol(row, id);
+    add(row, 'span', 'mg-infer-op').textContent = '=';
+    add(row, 'span', 'mg-infer-label').textContent = puzzle.facts[id].label;
+  });
+  // The sums, in symbols only.
   const lines = add(slot, 'div', 'mg-infer-lines');
   const rows = puzzle.lines.map((line) => {
     const row = add(lines, 'div', 'mg-infer-line');
     line.terms.forEach((term) => {
-      if (puzzle.facts[term]) add(row, 'span', 'mg-infer-chip' + (term === 'T' ? ' ask' : '')).textContent = puzzle.facts[term].label;
-      else add(row, 'span', 'mg-infer-op').textContent = term;
+      if (puzzle.facts[term]) symbol(row, term);
+      else if (term === '^2') add(row.lastElementChild, 'sup', 'mg-infer-pow').textContent = '2';
+      else add(row, 'span', 'mg-infer-op').textContent = INFER_OPS[term] || term;
     });
     add(row, 'span', 'mg-infer-op').textContent = '=';
     add(row, 'span', 'mg-infer-total').textContent = String(line.total);
     return row;
   });
+  // One line per symbol to fill in: symbol = [ ], the answer's last.
   const form = add(slot, 'form', 'mg-infer-form');
   const inputs = {};
-  // One box per fact: the helping facts first, the answer (the
-  // question's own fact) last.
-  [...Object.keys(puzzle.facts).filter(id => id !== 'T'), 'T'].forEach((id) => {
+  ids.forEach((id) => {
     const field = add(form, 'label', 'mg-infer-field' + (id === 'T' ? ' ask' : ''));
-    add(field, 'span', 'mg-infer-name').textContent = id === 'T' ? t('mg.inference.answer', { label: puzzle.facts.T.label }) : puzzle.facts[id].label;
+    symbol(field, id);
+    add(field, 'span', 'mg-infer-op').textContent = '=';
     const input = add(field, 'input', 'mg-infer-num');
     input.type = 'text';
     input.inputMode = 'numeric';
     input.autocomplete = 'off';
+    input.setAttribute('aria-label', id === 'T' ? t('mg.inference.answer', { label: puzzle.facts.T.label }) : puzzle.facts[id].label);
     input.addEventListener('keydown', e => e.stopPropagation());
     inputs[id] = input;
   });
@@ -1430,8 +1455,11 @@ function buildInference() {
     if (shown.done) return;
     const values = {};
     for (const id of Object.keys(inputs)) {
-      const v = Number(inputs[id].value.trim());
-      if (inputs[id].value.trim() === '' || !Number.isFinite(v)) { said.textContent = t('mg.inference.fill'); return; }
+      const raw = inputs[id].value.trim();
+      if (raw === '') { said.textContent = t('mg.inference.fill'); return; }
+      // Facts are whole counts: anything else isn't one (and isn't a check).
+      if (!/^\d+$/.test(raw) || Number(raw) < 1) { said.textContent = t('mg.inference.whole'); return; }
+      const v = Number(raw);
       values[id] = v;
     }
     const result = inferenceCheck(puzzle, values);
@@ -1442,7 +1470,7 @@ function buildInference() {
   });
   return {
     lock: check,
-    focus: () => inputs[Object.keys(inputs)[0]].focus(),
+    focus: () => inputs[ids[0]].focus(),
     // DEV -> Auto-win: solved on the first CHECK (tier X).
     finish: () => finish({ right: true, tier: 'X', given: String(puzzle.facts.T.value) }),
     flip: () => {},

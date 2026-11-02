@@ -1217,15 +1217,28 @@ export const HULL_PATCH = { minLetters: 3, maxLetters: 12, decoys: 7, strain2: 2
 // Inference (ship minigames plan step E; the Science job, in place of
 // Verdict): a number question with a `label` (a short name for its fact,
 // "Days Moses spent on the mountain") is worked out from lines of other
-// labelled facts that add up; the player never needs to know the facts
-// first (Timothy: most of the problem is deduction, the data is given).
-// `weights`: how often each kind of puzzle comes up (two lines with + ;
-// three with + and - ; three with x). The x kind uses only facts of at
-// most `smallMax`. CHECK marks which lines don't hold with the player's
+// labelled facts; the player never needs to know the facts first
+// (Timothy: most of the problem is deduction, the data is given). Each
+// fact is a zodiac symbol (zodiac.js). The puzzles grow with the run
+// (Timothy 2026-11-01: harder logic as the player learns more algebra):
+// every `solvesPerLevel` puzzles solved (2, Timothy 2026-11-01), the next of `levels`, each
+// { facts (with the answer), ops ('-', 'x', '/', '^': + is always in),
+// three (a line can hold a third symbol) }. A line using a level's harder
+// ops is picked `hardShare` of the time when one fits; no total over
+// `maxTotal`. CHECK marks which lines don't hold with the player's
 // numbers; solved on CHECK 1 = X, 2 = 2, up to `maxChecks` = 1, a wrong
 // last CHECK is a miss. From panic level `panicAt` (Shaken) CHECK only
 // says something is off.
-export const INFERENCE = { weights: { pair: 0.5, chain: 0.35, times: 0.15 }, smallMax: 12, maxChecks: 4, panicAt: 2 };
+export const INFERENCE = {
+  levels: [
+    { facts: 2, ops: [], three: false },
+    { facts: 3, ops: ['-'], three: false },
+    { facts: 3, ops: ['-', 'x'], three: true },
+    { facts: 4, ops: ['-', 'x', '/'], three: true },
+    { facts: 4, ops: ['-', 'x', '/', '^'], three: true },
+  ],
+  solvesPerLevel: 2, hardShare: 0.75, maxTotal: 2500, maxChecks: 4, panicAt: 2,
+};
 // Asteroids (ship minigames plan step F; the Gunner's job, a new role on
 // the Bridge, the recognition game in place of Verdict): rocks carry
 // whole answers, the question's and decoys (other answers of its kind in

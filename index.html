@@ -1697,18 +1697,27 @@
   .mg-ast-fire { min-width: 96px; }
   @media (prefers-reduced-motion: reduce) { .mg-ast-rock { animation: none; } }
   /* Inference (the Science job): lines of labelled facts, a box per fact. */
-  .mg-infer-lines { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; text-align: left; }
-  .mg-infer-line { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 4px 8px; border-left: 3px solid var(--line); }
+  /* Inference (Timothy 2026-11-01): a key of zodiac symbols (zodiac.js),
+     the sums in symbols only, then one "symbol = [ ]" line per box. The
+     answer's symbol glows. */
+  .mg-infer-sym { display: inline-flex; color: var(--text); }
+  .mg-infer-sym.ask { color: var(--torch-bright); filter: drop-shadow(0 0 3px var(--torch-bright)); }
+  .mg-infer-sym .zodiac { display: block; }
+  .mg-infer-sym { position: relative; }
+  .mg-infer-pow { font-size: calc(18px * var(--text-scale, 1)); align-self: flex-start; margin-left: 1px; line-height: 1; }
+  .mg-infer-key { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; text-align: left; }
+  .mg-infer-keyrow { display: flex; gap: 8px; align-items: center; }
+  .mg-infer-label { font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); }
+  .mg-infer-keyrow.ask .mg-infer-label { color: var(--torch-bright); }
+  .mg-infer-lines { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; text-align: left; }
+  .mg-infer-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 4px 8px; border-left: 3px solid var(--line); font-size: calc(24px * var(--text-scale, 1)); }
   .mg-infer-line.off { border-left-color: var(--text); background: var(--stone-dark); }
-  .mg-infer-chip { border: 1px solid var(--muted); padding: 0 6px; font-size: calc(18px * var(--text-scale, 1)); line-height: 1.3; }
-  .mg-infer-chip.ask { border-color: var(--torch-bright); color: var(--torch-bright); }
   .mg-infer-op { color: var(--muted); }
   .mg-infer-total { color: var(--text); }
   .mg-infer-form { display: flex; flex-direction: column; gap: 8px; text-align: left; }
-  .mg-infer-field { display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: 8px; align-items: center; }
-  .mg-infer-name { font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); }
-  .mg-infer-field.ask .mg-infer-name { color: var(--torch-bright); }
-  .mg-infer-num { width: 100%; font: inherit; font-size: calc(22px * var(--text-scale, 1)); background: var(--stone-dark); color: var(--text); border: 1px solid var(--muted); padding: 0 6px; }
+  .mg-infer-field { display: flex; gap: 8px; align-items: center; font-size: calc(24px * var(--text-scale, 1)); }
+  .mg-infer-field .mg-infer-num { flex: 0 0 96px; max-width: 96px; padding: 2px 8px; line-height: 1.2; margin: 0; }
+  .mg-infer-num { width: 96px; font: inherit; font-size: calc(22px * var(--text-scale, 1)); background: var(--stone-dark); color: var(--text); border: 1px solid var(--muted); padding: 0 6px; }
   /* Hull Patch (Life Support's job): spots for the word, a strain meter, a tray of plates. */
   .mg-hull-hole { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; padding: 10px; margin: 6px 0; border: 1px solid var(--line); background: var(--stone-dark); }
   .mg-hull-spot { width: 34px; height: 42px; border: 1px dashed var(--muted); display: inline-flex; align-items: center; justify-content: center; font-size: calc(26px * var(--text-scale, 1)); color: var(--torch-bright); }
