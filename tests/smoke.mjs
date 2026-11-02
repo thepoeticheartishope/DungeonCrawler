@@ -2551,11 +2551,15 @@ async function bumpUpFrom(page, row, col) {
 async function checkShip(page, url) {
   await loadPageAndSet(page, url);
   if (!await page.isChecked('#shipToggle')) return 'the start screen did not start the ship by default';
-  // The ship's opening (step C): the tragedy, then TAKE COMMAND.
+  // The ship's opening (step C): the tragedy, then TAKE COMMAND. The title
+  // leads with the start screen's name (Timothy 2026-11-02).
+  await page.fill('#playerName', 'Tess');
   await page.click('#startBtn');
   await page.click('#pickScreen .set-option[data-set="builtin:bible-quiz-bowl"]');
   await page.waitForSelector('#shipIntroScreen.show', { timeout: 10000 });
   const intro = await page.textContent('#shipIntroLines');
+  const introTitle = await page.textContent('#shipIntroTitle');
+  if (!/^TESS, THERE.S BEEN A TRAGEDY$/.test(introTitle)) return 'the tragedy title did not lead with the name: ' + introTitle;
   if (!/Day \d+ of the crossing\./.test(intro) || !/Captain \w+ died/.test(intro)) return 'the tragedy was not told: ' + intro;
   // Clicked through (Timothy 2026-10-31): a tap puts every line up at once,
   // a second one takes command.

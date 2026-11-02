@@ -25,6 +25,7 @@ let autoAt = null;
 export function initShipIntro({ onBegin }) {
   begin = onBegin;
   els.screen = document.getElementById('shipIntroScreen');
+  els.title = document.getElementById('shipIntroTitle');
   els.lines = document.getElementById('shipIntroLines');
   els.go = document.getElementById('shipIntroGo');
   els.go.addEventListener('click', takeCommand);
@@ -69,8 +70,11 @@ export function tragedyLines(tragedy) {
 }
 
 // Fills the intro with `lines`, each fading in after the one before
-// (CSS --d), TAKE COMMAND last. The caller shows the screen.
-export function fillShipIntro(lines) {
+// (CSS --d), TAKE COMMAND last. The title leads with `name`, the one typed
+// on the start screen (Timothy 2026-11-02), or stays plain with none.
+// The caller shows the screen.
+export function fillShipIntro(lines, name = '') {
+  els.title.textContent = name ? t('tragedy.title.named', { name }) : t('tragedy.title');
   els.lines.innerHTML = '';
   lines.forEach((line, i) => {
     const p = document.createElement('p');

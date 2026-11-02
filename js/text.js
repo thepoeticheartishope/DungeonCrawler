@@ -656,7 +656,8 @@ export const TEXT = {
   'job.helped.calm': 'The {role} keeps everyone fed. The crew steadies faster.', // draft
   // The tragedy (ship.js rollTragedy): random, told after the splash
   // screen, flavor only. Numbered lists, as many as TRAGEDY_PARTS says.
-  'tragedy.title': 'THERE’S BEEN A TRAGEDY', // draft
+  'tragedy.title': 'THERE’S BEEN A TRAGEDY', // draft. No name typed on the start screen
+  'tragedy.title.named': '{name|upper}, THERE’S BEEN A TRAGEDY', // draft. Timothy 2026-11-02: the start screen's name leads
   'tragedy.day': 'Day {day} of the crossing.', // draft
   'tragedy.died': '{captain} died {cause}.', // draft
   'tragedy.alone': 'No one else aboard was trained to command.', // draft
