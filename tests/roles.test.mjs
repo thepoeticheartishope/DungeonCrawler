@@ -19,7 +19,7 @@ import {
   noteOnDuty, crewLook, taughtCount, teachTargets, stopLearning, crewFull,
 } from '../js/roles.js';
 import { roleCanRun } from '../js/minigames.js';
-import { freshShipRun, crewMissed, crewRight, slipEveryMs } from '../js/ship.js';
+import { freshShipRun, crewMissed, crewRight } from '../js/ship.js';
 import { useStation, trainWires } from '../js/stations.js';
 import { buildShipFloor } from '../js/floor.js';
 import { emptyFloor } from './helpers.mjs';
@@ -119,15 +119,10 @@ test('each benefit changes the run as it says', () => {
   crewRight();
   assert.deepEqual(crewRight(), [{ type: 'panicEased', level: 0 }]);
 
-  ship.panic = 2;
-  const every = slipEveryMs();
-  applyBenefit({ kind: 'slips', factor: 2 });
-  assert.equal(slipEveryMs(), every * 2);
-  ship.panic = 0;
 });
 
 test('no benefit is about time or burns any more (timers gone 2026-10-31, burns 2026-11-01)', () => {
-  const kinds = ['shield', 'panicDown', 'calm', 'slips'];
+  const kinds = ['shield', 'panicDown', 'calm'];
   SHIP_ROLES.forEach(r => assert.ok(kinds.includes(r.benefit.kind), r.id + ' ' + r.benefit.kind));
   SHIP_ROLES.forEach(r => assert.ok('job.helped.' + r.benefit.kind in TEXT, r.id));
 });

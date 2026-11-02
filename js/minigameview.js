@@ -22,16 +22,16 @@ import {
   crosswireSetup, crosswireTier, fogRevealTier, sumLockMatches,
   fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier, scannerGrid, scannerTier,
   starChartSetup, starChartPick, starChartTier, hullPatchSetup, hullPatchPlate, hullPatchTier,
-  inferenceSetup, inferenceCheck, inferenceTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout,
+  inferenceSetup, inferenceCheck, inferenceTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout, levelOf,
   matchSwap, matchEndTurn, matchWon, matchUse, matchCrisis, matchNear,
 } from './minigames.js';
-import { panicLevel } from './ship.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
 import { normalizeSpaces, buildChoices, resolveImageSrc } from './quiz.js';
 import { shuffle } from './random.js';
 import { t } from './text.js';
 import { playSfx } from './sfx.js';
 import { ZODIAC, zodiacSvg } from './zodiac.js';
+import { MINIGAME_LEVELS } from './config.js';
 
 const slot = document.getElementById('minigameSlot');
 
@@ -86,6 +86,12 @@ export function showMinigame(id, report, again = () => {}) {
   if (!id) return;
   slot.innerHTML = '';
   shown = { id, report, again, ...BUILDERS[id]() };
+  // A game the player is good at may draw some of its letters flipped
+  // (its level's flip, MINIGAME_LEVELS).
+  if (MINIGAME_LEVELS.games[id]) {
+    const { flip } = levelOf(id);
+    if (flip) shown.flip(flip);
+  }
   slot.hidden = false;
   shown.focus();
 }
@@ -246,8 +252,8 @@ function buildCloseEnough() {
 // ---- Fuel Mix: pour tanks until the engine holds the answer ----
 // The Pilot's job (ship minigames plan step A). Each tank button pours
 // into the engine; the gauge then says only UNDER or OVER (going over
-// vents it back to empty), and the running total shows unless the crew is
-// panicking (FUEL_MIX.hideTotalAt). Par (the fewest pours that can do
+// vents it back to empty), and the running total shows until the Pilot
+// is good at it (its level's hideTotal). Par (the fewest pours that can do
 // it) scores the fill but never shows: it gave the answer away (Timothy
 // 2026-11-01). It carries no modifiers (the ship asks with none). Nothing
 // moves on its own; the gauge eases to its level (still under reduced
@@ -255,7 +261,7 @@ function buildCloseEnough() {
 function buildFuelMix() {
   slot.classList.add('mg-fuel');
   const engine = fuelMixSetup(state.battle.currentQuestion);
-  const hideTotal = panicLevel() >= FUEL_MIX.hideTotalAt;
+  const hideTotal = engine.hideTotal;
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.fuelMix.hint');
   const body = add(slot, 'div', 'mg-fuel-engine');
   const gauge = add(body, 'div', 'mg-fuel-gauge');
@@ -459,6 +465,7 @@ function buildSlowSpell() {
   // I KNOW IT is pressed.
   let filled = 0;
   let flip = null;
+  let flipShare = SLOW_SPELL_FLIP_SHARE; // the share of letters flipped (a level's, or the Flip modifier's)
   let tier = null;
 
   const showCount = () => { count.textContent = t('mg.slowSpell.shown', { n: filled, total: word.total }); };
@@ -466,7 +473,7 @@ function buildSlowSpell() {
     if (lock.disabled) return;
     const cell = cells[word.order[filled]];
     cell.textContent = word.chars[word.order[filled]];
-    if (flip && Math.random() < SLOW_SPELL_FLIP_SHARE) cell.classList.add('flip-' + flip);
+    if (flip && Math.random() < flipShare) cell.classList.add('flip-' + flip);
     filled++;
     showCount();
     if (filled >= word.stopAt) know();
@@ -509,7 +516,7 @@ function buildSlowSpell() {
       know();
       answer(word.chars.join(''));
     },
-    flip: () => { flip = Math.random() < 0.5 ? 'upside' : 'mirror'; },
+    flip: (share) => { flip = Math.random() < 0.5 ? 'upside' : 'mirror'; flipShare = typeof share === 'number' ? share : SLOW_SPELL_FLIP_SHARE; },
   };
 }
 
@@ -571,9 +578,9 @@ function buildSyllableSplit() {
         pick(btn, pieces[next]);
       }
     },
-    flip: () => {
+    flip: (share) => {
       const mode = Math.random() < 0.5 ? 'upside' : 'mirror';
-      buttons.forEach(btn => { if (Math.random() < SYLLABLE_SPLIT_FLIP_SHARE) btn.firstChild.classList.add('flip-' + mode); });
+      buttons.forEach(btn => { if (Math.random() < (typeof share === 'number' ? share : SYLLABLE_SPLIT_FLIP_SHARE)) btn.firstChild.classList.add('flip-' + mode); });
     },
   };
 }
@@ -676,9 +683,9 @@ function buildLetterPool() {
         check();
       });
     },
-    flip: () => {
+    flip: (share) => {
       const mode = Math.random() < 0.5 ? 'upside' : 'mirror';
-      buttons.forEach(btn => { if (Math.random() < LETTER_POOL_FLIP_SHARE) btn.firstChild.classList.add('flip-' + mode); });
+      buttons.forEach(btn => { if (Math.random() < (typeof share === 'number' ? share : LETTER_POOL_FLIP_SHARE)) btn.firstChild.classList.add('flip-' + mode); });
     },
   };
 }
@@ -696,7 +703,7 @@ function buildCodeBreak() {
   slot.classList.add('mg-code');
   const setup = codeBreakSetup(state.battle.currentQuestion);
   const size = setup.code.length;
-  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.codeBreak.hint', { n: CODE_BREAK_TIERS.length });
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.codeBreak.hint', { n: setup.tiers.length });
   const legend = add(slot, 'div', 'mg-code-key');
   ['hit', 'near', 'miss'].forEach((mark) => {
     const item = add(legend, 'span');
@@ -704,7 +711,7 @@ function buildCodeBreak() {
     add(item, 'span').textContent = t('mg.codeBreak.mark.' + mark);
   });
   const board = add(slot, 'div', 'mg-code-rows');
-  const rows = CODE_BREAK_TIERS.map(() => {
+  const rows = setup.tiers.map(() => {
     const row = add(board, 'div', 'mg-code-row');
     for (let i = 0; i < size; i++) add(row, 'span', 'mg-code-cell').textContent = '_';
     return row;
@@ -732,7 +739,7 @@ function buildCodeBreak() {
   // Guesses made, and Flip's look (or null).
   let guesses = 0;
   let flip = null;
-  const showLeft = () => { left.textContent = t('mg.codeBreak.left', { n: CODE_BREAK_TIERS.length - guesses }); };
+  const showLeft = () => { left.textContent = t('mg.codeBreak.left', { n: setup.tiers.length - guesses }); };
   const guess = (typed) => {
     const marks = codeBreakMarks(setup, typed);
     if (!marks) {
@@ -751,10 +758,10 @@ function buildCodeBreak() {
     said.textContent = '';
     if (flip) rows.slice(0, guesses - 1).forEach(r => [...r.children].forEach(cell => cell.classList.add('flip-' + flip)));
     if (marks.every(m => m === 'hit')) {
-      finish({ right: true, tier: codeBreakTier(guesses), given: chars.join('') });
+      finish({ right: true, tier: codeBreakTier(guesses, setup.tiers), given: chars.join('') });
       return;
     }
-    if (guesses >= CODE_BREAK_TIERS.length) {
+    if (guesses >= setup.tiers.length) {
       finish({ right: false, tier: null, given: chars.join('') });
       return;
     }
@@ -898,8 +905,10 @@ function buildVerdict() {
 // No Flip.
 function buildCrosswire() {
   slot.classList.add('mg-cross');
-  const { across, down, at } = crosswireSetup(state.battle.currentQuestion);
-  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.crosswire.hint');
+  // `free`: the shared letter starts filled in; `reveal`: REVEAL is
+  // offered (both go as the player gets good at it, its level).
+  const { across, down, at, free = true, reveal: canReveal = true } = crosswireSetup(state.battle.currentQuestion);
+  add(slot, 'div', 'term-line mg-hint').textContent = t(free ? 'mg.crosswire.hint' : 'mg.crosswire.hintBlank');
   const clues = add(slot, 'div', 'mg-clues');
   const clueTexts = [['across', across], ['down', down]].map(([dir, entry]) => {
     const line = add(clues, 'div', 'mg-clue');
@@ -917,6 +926,7 @@ function buildCrosswire() {
 
   reveal.type = check.type = 'button';
   reveal.textContent = t('mg.crosswire.reveal');
+  reveal.hidden = !canReveal;
   check.textContent = t('mg.crosswire.check');
   grid.style.gridTemplateColumns = 'repeat(' + across.word.length + ', auto)';
 
@@ -940,10 +950,10 @@ function buildCrosswire() {
       input.maxLength = 1;
       input.setAttribute('autocapitalize', 'characters');
       input.setAttribute('autocorrect', 'off');
-      input.setAttribute('aria-label', inAcross && inDown
+      input.setAttribute('aria-label', inAcross && inDown && free
         ? t('mg.crosswire.cellShared', { letter: cell.want })
         : t(inAcross ? 'mg.crosswire.cellAcross' : 'mg.crosswire.cellDown', { n: (inAcross ? c : r) + 1 }));
-      if (inAcross && inDown) lockCell(cell, 'mg-cell-given');
+      if (inAcross && inDown && free) lockCell(cell, 'mg-cell-given');
       if (inAcross) acrossCells[c] = cell;
       if (inDown) downCells[r] = cell;
     }
@@ -1121,13 +1131,13 @@ function buildFogReveal() {
 // The Sensors' job (ship minigames plan step B), in place of Fog Reveal:
 // nothing lifts on its own; each patch the player taps is scanned. The
 // options can be picked any time; a wrong one dims (the light nudge: not
-// that one) and costs a tier step, a second wrong is a miss. A panicking
-// crew gets a finer fog (scannerGrid). No modifiers (the ship asks with
+// that one) and costs a tier step, a second wrong is a miss. The fog gets
+// finer with its level (scannerGrid). No modifiers (the ship asks with
 // none).
 function buildScanner() {
   slot.classList.add('mg-scan');
   const q = state.battle.currentQuestion;
-  const { cols, rows } = scannerGrid(panicLevel());
+  const { cols, rows } = scannerGrid();
   const total = cols * rows;
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.scanner.hint');
   const box = add(slot, 'div', 'mg-fogbox');
@@ -1205,11 +1215,11 @@ function buildScanner() {
 // Enough. The answer's letters are stars among decoys; the player drags a
 // line through them in order, taps them one by one, or types the letters.
 // A wrong star goes dark for good (the light nudge: not this one); UNDO
-// takes back the last joined star. A panicking crew gets more decoys.
+// takes back the last joined star. More decoys with its level.
 // No modifiers (the ship asks with none); nothing moves on its own.
 function buildStarChart() {
   slot.classList.add('mg-star');
-  const chart = starChartSetup(state.battle.currentQuestion, panicLevel());
+  const chart = starChartSetup(state.battle.currentQuestion);
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.starChart.hint');
   const blanks = add(slot, 'div', 'mg-star-blanks');
   const sky = add(slot, 'div', 'mg-star-sky');
@@ -1317,11 +1327,11 @@ function buildStarChart() {
 // The hole has one spot per letter; the tray holds the word's letters and
 // decoys. A right plate fills every spot it belongs in; a wrong one falls
 // off (the light nudge: not this letter) and the hull strains. Tap or type
-// a letter. A panicking crew's hull holds less strain. No modifiers (the
+// a letter. With its level, more decoys and less strain held. No modifiers (the
 // ship asks with none); nothing moves on its own but a plate falling.
 function buildHullPatch() {
   slot.classList.add('mg-hull');
-  const hull = hullPatchSetup(state.battle.currentQuestion, panicLevel());
+  const hull = hullPatchSetup(state.battle.currentQuestion);
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.hullPatch.hint');
   const hole = add(slot, 'div', 'mg-hull-hole');
   const strainRow = add(slot, 'div', 'mg-hull-strain');
@@ -1388,15 +1398,13 @@ function buildHullPatch() {
 // lines are labelled facts that add up; the player fills in each helping
 // fact, then the answer (the question's own fact), and CHECKs. CHECK
 // marks only which lines don't hold with those numbers (the light nudge),
-// never the right value; a panicking crew's CHECK only says something is
-// off. Enter checks too. No modifiers (the ship asks with none).
+// never the right value. Enter checks too. No modifiers (the ship asks with none).
 // How Inference shows its operations (minigames.js inferenceSetup's terms).
 const INFER_OPS = { '+': '+', '-': '\u2212', 'x': '\u00d7', '/': '\u00f7' };
 
 function buildInference() {
   slot.classList.add('mg-infer');
   const puzzle = inferenceSetup(state.battle.currentQuestion);
-  const hidden = panicLevel() >= INFERENCE.panicAt;
   const ids = [...Object.keys(puzzle.facts).filter(id => id !== 'T'), 'T'];
   // A fact's symbol: its zodiac sign, named for a screen reader by the
   // fact it stands for.
@@ -1465,8 +1473,8 @@ function buildInference() {
     const result = inferenceCheck(puzzle, values);
     if (result.solved) { finish({ right: true, tier: inferenceTier(puzzle.checks), given: String(values.T) }); return; }
     if (puzzle.checks >= INFERENCE.maxChecks) { finish({ right: false, tier: null, given: String(values.T) }); return; }
-    rows.forEach((row, k) => row.classList.toggle('off', !hidden && !result.holds[k]));
-    said.textContent = hidden ? t('mg.inference.offPanic') : t('mg.inference.off', { left: INFERENCE.maxChecks - puzzle.checks });
+    rows.forEach((row, k) => row.classList.toggle('off', !result.holds[k]));
+    said.textContent = t('mg.inference.off', { left: INFERENCE.maxChecks - puzzle.checks });
   });
   return {
     lock: check,
@@ -1485,12 +1493,12 @@ function buildInference() {
 // keys) to turn the aim, FIRE (or Space / Enter) to shoot: the bolt flies
 // from the ship's tip along the dotted line and hits the first rock on
 // it. A wrong rock breaks and says what it is the answer to (the light
-// nudge) and spends a shot; a shot that hits nothing is free. A panicking
-// crew faces more rocks, never faster ones. The rocks only drift a few
+// nudge) and spends a shot; a shot that hits nothing is free. With its
+// level, more rocks (never faster ones), then fewer shots. The rocks only drift a few
 // pixels; under reduced motion nothing moves but the aim.
 function buildAsteroids() {
   slot.classList.add('mg-ast');
-  const field = asteroidsSetup(state.battle.currentQuestion, panicLevel());
+  const field = asteroidsSetup(state.battle.currentQuestion);
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.asteroids.hint');
   const sky = add(slot, 'div', 'mg-ast-field');
   const turret = add(sky, 'div', 'mg-ast-turret');
@@ -1580,7 +1588,7 @@ function buildAsteroids() {
     if (got === 'right') {
       rock.gone = true;
       rock.el.classList.add('gone');
-      finish({ right: true, tier: asteroidsTier(field.shots), given: rock.data.text });
+      finish({ right: true, tier: asteroidsTier(field.shots, field.maxShots), given: rock.data.text });
       return;
     }
     rock.broken = true;
@@ -1680,8 +1688,7 @@ function buildAsteroids() {
 // tiles drop in, wave by wave. A swap with no line snaps back, shows both
 // kinds and spends the turn. Win: all three meters full. Lose: the crisis
 // on MATCH_BOSS.loseAt tiles, or the time (its song's length) running out;
-// the clock only counts while the page is seen. A panicking crew loses the
-// colour tints. Under reduced motion the clear and fall are instant.
+// the clock only counts while the page is seen. Under reduced motion the clear and fall are instant.
 function buildMatch() {
   slot.classList.add('mg-match');
   const { board, crew } = state.battle.currentQuestion.match;
@@ -1690,7 +1697,7 @@ function buildMatch() {
   const top = add(slot, 'div', 'mg-match-top');
   const clock = add(top, 'span', 'mg-match-clock');
   const meta = add(top, 'span', 'mg-hint');
-  const grid = add(slot, 'div', 'mg-match-board' + (panicLevel() >= MATCH_BOSS.panicAt ? '' : ' tints'));
+  const grid = add(slot, 'div', 'mg-match-board tints');
   const meters = add(slot, 'div', 'mg-match-meters');
   const said = add(slot, 'div', 'term-line mg-said');
   said.setAttribute('aria-live', 'polite');

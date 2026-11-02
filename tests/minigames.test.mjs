@@ -670,22 +670,23 @@ test('Scanner: tier by share scanned, one step down per wrong option, a miss pas
   assert.equal(scannerTier(12, 20, 1), '1', 'never below 1');
   assert.equal(scannerTier(0, 20, 2), null, 'a second wrong option is a miss');
   assert.deepEqual(scannerGrid(0), { cols: 5, rows: 4 });
-  assert.deepEqual(scannerGrid(2), { cols: 10, rows: 8 }, 'a panicking crew gets a finer fog');
   assert.ok(ship.includes('scanner'));
   assert.ok(minigamesFor({ term: 'Which tool is shown?', meaning: 'Crimper', image: 'images/crimper.svg', answerType: 'term' }).includes('scanner'));
 });
 
 // ---- Star Chart (ship minigames plan step C) ----
 
-test('Star Chart: the word\'s letters plus decoys not in it; more decoys when panicking', async () => {
+test('Star Chart: the word\'s letters plus decoys not in it; more decoys with its level', async () => {
   const { starChartSetup } = await import('../js/minigames.js');
   const q = { term: 'What king wanted to kill baby Jesus?', meaning: 'Herod', answerType: 'name' };
-  const calm = starChartSetup(q, 0);
+  const calm = starChartSetup(q);
   assert.equal(calm.word, 'HEROD');
   assert.equal(calm.stars.length, 5 + 6);
   const decoys = calm.stars.map(s => s.letter).filter(c => !'HEROD'.includes(c));
   assert.equal(decoys.length, 6, 'decoys are letters not in the word');
-  assert.equal(starChartSetup(q, 2).stars.length, 5 + 10);
+  state.run.ship = { panic: 0, perfect: { starChart: 2 } };
+  assert.equal(starChartSetup(q).stars.length, 5 + 10);
+  state.run.ship = null;
   calm.stars.forEach(s => assert.ok(s.x > 0 && s.x < 100 && s.y > 0 && s.y < 100));
   assert.ok(!minigamesFor({ meaning: 'Lot\'s wife', answerType: 'related' }).includes('starChart'), 'one word of plain letters only');
   assert.ok(!minigamesFor({ term: 'Spell Noah.', meaning: 'Noah', answerType: 'name' }).includes('starChart'), 'not when the stem holds it');
@@ -693,7 +694,7 @@ test('Star Chart: the word\'s letters plus decoys not in it; more decoys when pa
 
 test('Star Chart: picks join in order; a wrong star goes dark; tiers by wrong stars', async () => {
   const { starChartSetup, starChartPick, starChartTier } = await import('../js/minigames.js');
-  const chart = starChartSetup({ term: 'Who?', meaning: 'Lot', answerType: 'name' }, 0);
+  const chart = starChartSetup({ term: 'Who?', meaning: 'Lot', answerType: 'name' });
   const at = c => chart.stars.findIndex(s => s.letter === c);
   const decoy = chart.stars.findIndex(s => !'LOT'.includes(s.letter));
   assert.equal(starChartPick(chart, at('O')), 'wrong', 'O is not first');
@@ -710,29 +711,31 @@ test('Star Chart: picks join in order; a wrong star goes dark; tiers by wrong st
 
 // ---- Hull Patch (ship minigames plan step D) ----
 
-test('Hull Patch: the tray holds the word\'s letters once each plus decoys; a panicking hull holds less', async () => {
+test('Hull Patch: the tray holds the word\'s letters once each plus decoys', async () => {
   const { hullPatchSetup } = await import('../js/minigames.js');
   const q = { term: 'Which Caesar reigned?', meaning: 'Tiberius', answerType: 'name' };
-  const hull = hullPatchSetup(q, 0);
+  const hull = hullPatchSetup(q);
   assert.equal(hull.word, 'TIBERIUS');
   assert.equal(hull.tray.length, 7 + 7, 'T I B E R U S once each, and 7 decoys');
   assert.equal(new Set(hull.tray).size, hull.tray.length, 'no plate twice');
   assert.equal(hull.max, 5);
-  assert.equal(hullPatchSetup(q, 2).max, 3);
 });
 
 test('Hull Patch: a right plate fills every spot, a wrong one strains; breach at the max; tiers by strain', async () => {
   const { hullPatchSetup, hullPatchPlate, hullPatchTier } = await import('../js/minigames.js');
-  const hull = hullPatchSetup({ term: 'Who?', meaning: 'Anna', answerType: 'name' }, 0);
+  const hull = hullPatchSetup({ term: 'Who?', meaning: 'Anna', answerType: 'name' });
   assert.equal(hullPatchPlate(hull, 'A'), 'fits', 'both As at once');
   assert.equal(hullPatchPlate(hull, 'A'), 'used');
   assert.equal(hullPatchPlate(hull, 'Z'), 'off');
   assert.equal(hull.strain, 1);
   assert.equal(hullPatchPlate(hull, 'N'), 'sealed');
-  const weak = hullPatchSetup({ term: 'Who?', meaning: 'Anna', answerType: 'name' }, 2);
+  state.run.ship = { panic: 0, perfect: { hullPatch: 2 } };
+  const weak = hullPatchSetup({ term: 'Who?', meaning: 'Anna', answerType: 'name' });
+  state.run.ship = null;
   assert.equal(hullPatchPlate(weak, 'B'), 'off');
   assert.equal(hullPatchPlate(weak, 'C'), 'off');
-  assert.equal(hullPatchPlate(weak, 'D'), 'breach', 'a panicking hull breaches at 3');
+  assert.equal(hullPatchPlate(weak, 'D'), 'off');
+  assert.equal(hullPatchPlate(weak, 'E'), 'breach', 'a level-2 hull breaches at 4');
   assert.equal(hullPatchTier(0), 'X');
   assert.equal(hullPatchTier(2), '2');
   assert.equal(hullPatchTier(4), '1');
@@ -811,34 +814,90 @@ test('Inference: x and / before + and -, squares first', async () => {
   assert.equal(inferenceValue({ terms: ['A', 'x', 'B', '^2'] }, { A: 2, B: 3 }), 18);
 });
 
-test('Inference grows with the run: every INFERENCE.solvesPerLevel puzzles solved on the ship is a level up, to the last', async () => {
-  const { inferenceLevel, inferenceSetup, inferenceCheck, inferenceTier } = await import('../js/minigames.js');
+test('Inference grows with the run: every INFERENCE.solvesPerLevel perfect solves on the ship is a level up, to the last', async () => {
+  const { inferenceLevel, inferenceSetup, inferenceTier } = await import('../js/minigames.js');
   const { INFERENCE } = await import('../js/config.js');
   reset();
   state.settings.activeData = BIBLE_FACTS;
-  state.run.ship = { inferenceSolved: 0 };
+  state.run.ship = { panic: 0, perfect: {} };
   assert.equal(inferenceLevel(), 0);
   const per = INFERENCE.solvesPerLevel;
   for (let k = 0; k < (INFERENCE.levels.length + 1) * per; k++) {
-    const puzzle = inferenceSetup(BIBLE_FACTS[19]);
-    assert.equal(puzzle.level, Math.min(Math.floor(k / per), INFERENCE.levels.length - 1));
-    inferenceCheck(puzzle, Object.fromEntries(Object.entries(puzzle.facts).map(([id, f]) => [id, f.value])));
+    state.run.ship.perfect.inference = k;
+    assert.equal(inferenceSetup(BIBLE_FACTS[19]).level, Math.min(Math.floor(k / per), INFERENCE.levels.length - 1));
   }
-  assert.equal(inferenceLevel(), INFERENCE.levels.length - 1);
+  state.run.ship.panic = 3;
+  state.run.ship.perfect.inference = 0;
+  assert.equal(inferenceLevel(), 0, 'panic plays no part');
   state.run.ship = null;
   assert.equal(inferenceTier(1), 'X');
   assert.equal(inferenceTier(2), '2');
   assert.equal(inferenceTier(4), '1');
 });
 
+// ---- Levels: each game harder with every perfect solve ----
+
+test('a perfect solve on the ship raises that game\'s level; anything less, or off the ship, doesn\'t', async () => {
+  const { endMinigame, minigameLevel, bestTier } = await import('../js/minigames.js');
+  const { MINIGAME_LEVELS } = await import('../js/config.js');
+  reset();
+  state.run.ship = { panic: 0, perfect: {} };
+  state.battle.currentQuestion = { term: 'Who?', meaning: 'Lot' };
+  const play = (id, tier, right = true) => { state.battle.minigame = id; endMinigame({ right, tier, given: 'x' }); };
+  play('starChart', '2');
+  play('starChart', 'X', false);
+  assert.equal(minigameLevel('starChart'), 0, 'only the best tier counts');
+  play('starChart', 'X');
+  assert.equal(minigameLevel('starChart'), 1);
+  assert.equal(minigameLevel('hullPatch'), 0, 'per game');
+  assert.equal(bestTier('syllableSplit'), '2', 'Syllable Split has no X');
+  play('syllableSplit', '2');
+  assert.equal(minigameLevel('syllableSplit'), 1);
+  for (let k = 0; k < 10; k++) play('starChart', 'X');
+  assert.equal(minigameLevel('starChart'), MINIGAME_LEVELS.games.starChart.length - 1, 'up to its last level');
+  state.run.ship.panic = 3;
+  assert.equal(minigameLevel('hullPatch'), 0, 'panic plays no part');
+  state.run.ship.panic = 0;
+  assert.equal(minigameLevel('match'), 0, 'the boss has no levels');
+  state.run.ship = null;
+  play('hullPatch', 'X');
+  assert.equal(minigameLevel('hullPatch'), 0, 'off the ship: no levels');
+});
+
+test('each game\'s setup follows its level', async () => {
+  const m = await import('../js/minigames.js');
+  reset();
+  state.run.ship = { panic: 0, perfect: {} };
+  const at = (id, n) => { state.run.ship.perfect[id] = n; };
+  const word = { term: 'Who?', meaning: 'Tiberius', answerType: 'name' };
+  at('starChart', 0); const base = m.starChartSetup(word).stars.length;
+  at('starChart', 3); assert.equal(m.starChartSetup(word).stars.length, base + 6, 'more decoy stars');
+  at('hullPatch', 3); const hull = m.hullPatchSetup(word);
+  assert.equal(hull.max, 3); assert.equal(hull.tray.length, 7 + 11);
+  at('scanner', 1); assert.deepEqual(m.scannerGrid(0), { cols: 6, rows: 5 });
+  at('fuelMix', 3); const engine = m.fuelMixSetup({ meaning: '13', answerType: 'number' });
+  assert.ok(engine.hideTotal && engine.slack1 === 5 && engine.slack2 === 1);
+  at('codeBreak', 2); const code = m.codeBreakSetup({ meaning: 'Noah' });
+  assert.deepEqual(code.tiers, ['X', '2']);
+  assert.equal(m.codeBreakTier(2, code.tiers), '2');
+  assert.equal(m.codeBreakTier(3, code.tiers), null, 'out of guesses sooner');
+  at('asteroids', 3);
+  state.settings.activeData = NAMES;
+  const field = m.asteroidsSetup(NAMES[0]);
+  assert.equal(field.maxShots, 2);
+  assert.equal(m.asteroidsTier(2, field.maxShots), 'X');
+  assert.equal(m.asteroidsTier(1, field.maxShots), '2');
+  state.run.ship = null;
+});
+
 // ---- Asteroids (ship minigames plan step F) ----
 
-test('Asteroids: the right rock and decoys of its kind, each a real answer; more rocks when panicking', async () => {
+test('Asteroids: the right rock and decoys of its kind, each a real answer; more rocks with its level', async () => {
   const { asteroidsSetup } = await import('../js/minigames.js');
   reset();
   state.settings.activeData = [...NAMES, BOOK];
   const q = NAMES[0];
-  const calm = asteroidsSetup(q, 0);
+  const calm = asteroidsSetup(q);
   assert.equal(calm.rocks.length, 4);
   assert.equal(calm.rocks.filter(r => r.right).length, 1);
   assert.equal(calm.rocks[0].text, q.meaning, 'the right rock comes first; the view mixes them');
@@ -847,7 +906,9 @@ test('Asteroids: the right rock and decoys of its kind, each a real answer; more
     assert.ok(from, 'a decoy is another answer in the set');
     assert.equal(r.asks, from.term, 'and says what it is the answer to');
   });
-  assert.equal(asteroidsSetup(q, 2).rocks.length, Math.min(6, NAMES.length));
+  state.run.ship = { panic: 0, perfect: { asteroids: 2 } };
+  assert.equal(asteroidsSetup(q).rocks.length, Math.min(6, NAMES.length));
+  state.run.ship = null;
   assert.ok(!minigamesFor(BOOK).includes('asteroids'), 'a kind with no decoys in the set');
 });
 

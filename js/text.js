@@ -285,7 +285,6 @@ export const TEXT = {
   'mg.inference.fill': 'Fill in every box first.', // draft
   'mg.inference.whole': 'Each symbol is a whole number, 1 or more.', // draft
   'mg.inference.off': 'The marked lines don\'t add up with your numbers. Checks left: {left}', // draft
-  'mg.inference.offPanic': 'Something is off.', // draft. A panicking crew's CHECK
   'mg.inference.scored.X': '{name|upper}: worked out first time.', // draft
   'mg.inference.scored.2': '{name|upper}: worked out.', // draft
   'mg.inference.scored.1': '{name|upper}: worked out in the end. It was {answer}.', // draft
@@ -392,6 +391,7 @@ export const TEXT = {
   'mg.verdict.scored.miss': '{name|upper}: {given}. Missed.', // draft
   'mg.crosswire': 'Crosswire', // draft
   'mg.crosswire.hint': 'Two answers cross. The shared letter is given.', // draft
+  'mg.crosswire.hintBlank': 'Two answers cross. Fill in the shared letter too.', // draft. A level up: the shared letter isn't given
   'mg.crosswire.across': 'ACROSS ({n})', // draft. Clue label, n = letters
   'mg.crosswire.down': 'DOWN ({n})', // draft
   'mg.crosswire.cellAcross': 'Across, letter {n}', // draft. A grid square, for screen readers
@@ -629,7 +629,6 @@ export const TEXT = {
   // The ship's run (ship plan step C, ship.js).
   'ship.panicRose': 'The crew is {level} now.', // draft. {level} is a panic.N line, lower case
   'ship.panicEased': 'Three clean calls. The crew steadies: {level}.', // draft
-  'ship.wireSlipped': 'Engineer: “Sorry. My hands.” A wire slips.', // draft. A Shaken crew's slip
   'ship.panicShielded': 'It went wrong, but the crew holds steady.', // draft. A shield took the panic (Comms officer, Life support)
   // The crew roles (crew roles plan, roles.js; config.js SHIP_ROLES). Names are drafts.
   'role.engineer': 'Engineer', // draft. The power board's wires (stations.js)
@@ -655,7 +654,6 @@ export const TEXT = {
   'job.helped.shield': 'The {role} keeps everyone talking. The next mistake won’t shake them.', // draft
   'job.helped.panicDown': 'The {role} settles the crew a little.', // draft
   'job.helped.calm': 'The {role} keeps everyone fed. The crew steadies faster.', // draft
-  'job.helped.slips': 'The {role} braces the wiring. Fewer slips.', // draft
   // The tragedy (ship.js rollTragedy): random, told after the splash
   // screen, flavor only. Numbered lists, as many as TRAGEDY_PARTS says.
   'tragedy.title': 'THERE’S BEEN A TRAGEDY', // draft

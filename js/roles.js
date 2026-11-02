@@ -218,7 +218,7 @@ export function jobOn() {
 }
 
 // A taught role's benefit, for good (SHIP_ROLES `benefit`): a shield,
-// panic down, quicker calming, or rarer slips.
+// panic down, or quicker calming.
 // Events: panicEased { level } for panicDown with any panic, or nothing.
 export function applyBenefit(benefit) {
   const ship = state.run.ship;
@@ -229,7 +229,6 @@ export function applyBenefit(benefit) {
       ship.panic--;
       return [{ type: 'panicEased', level: ship.panic }];
     case 'calm': ship.calmStreak = Math.min(ship.calmStreak, benefit.streak); return [];
-    case 'slips': ship.slipFactor *= benefit.factor; return [];
     default: return [];
   }
 }

@@ -230,9 +230,8 @@ function walkFrame(now) {
     heldWays.clear();
     stickPushed = null;
     resetWalk();
-    // On the ship the world keeps running with POWER.SYS open: a Shaken
-    // crew's wires slip at the board (ship.js shipFrame).
-    // There are no stick men there for the world's frame to move.
+    // On the ship the world keeps running with POWER.SYS open (its HUD
+    // follows); there are no stick men there for the world's frame to move.
     if (state.floor.ship && clockMayRun() && !state.run.turnLocked) worldFrame(dt);
     return;
   }

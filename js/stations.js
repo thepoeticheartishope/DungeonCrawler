@@ -75,7 +75,6 @@ function openWires(prop, rand) {
   const kept = !!prop.puzzle;
   if (!kept) {
     prop.puzzle = makeWires(SHIP_STATIONS[mode].size, rand, SHIP_STATIONS[mode].breakers);
-    if (mode === 'teach') prop.slipInMs = null;
   }
   return [{ type: 'stationOpened', station: prop, mode, kept }];
 }
