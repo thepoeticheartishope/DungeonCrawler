@@ -728,6 +728,8 @@ function drawEvents(events) {
       case 'blocked':
         bumpOnMap(state.floor.facing);
         cls = 'block-msg';
+        // A wall says nothing (Timothy 2026-11-01): the bump shows it.
+        if (e.kind === 'wall') break;
         if (e.kind === 'furniture') parts.push(t('furniture.' + e.thing.piece));
         else parts.push(e.kind === 'prop' ? t('room.' + e.thing.kind + '.done') : t('room.blocked.' + e.kind));
         break;
