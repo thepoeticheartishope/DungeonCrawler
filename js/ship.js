@@ -4,27 +4,25 @@
 // (Timothy 2026-10-31: time pressure goes against teaching): the tension is
 // the crew's panic, not monsters or a clock. Each failure while teaching (a
 // wrong breaker answer, a failed round of a crew member's minigame) raises
-// the panic a step, a run of right answers calms it, and the higher it is
-// the harder the crew's work gets (wires that slip). Broken, the run is
-// lost. Learning at the console stays free. The
+// the panic a step, a run of right answers calms it. Panic is only the
+// crew's health: it makes nothing harder (Timothy 2026-11-01). Broken, the
+// run is lost. Learning at the console stays free. The
 // tragedy that starts it is random and only flavor. main.js startGame
-// calls freshShipRun(); worldFrame runs shipFrame() each frame; stations.js
-// reports misses and right answers (crewMissed, crewRight). No burns
+// calls freshShipRun(); stations.js reports misses and right answers (crewMissed, crewRight). No burns
 // (ship minigames plan step G1). No DOM access here.
 
 import { state } from './state.js';
 import { SHIP_RUN, TRAGEDY_PARTS } from './config.js';
-import { rotated, powered } from './charger.js';
 
 // A new ship run: the clock full, the crew calm, nothing trained, and a
 // tragedy rolled (rollTragedy).
 // What the crew roles have given the run (roles.js; crew roles plan) starts
-// at the plain numbers: the right answers that calm, how much rarer slips
-// are, and shields against panic.
+// at the plain numbers: the right answers that calm, and shields against
+// panic.
 export function freshShipRun(rand = Math.random) {
   state.run.ship = {
     panic: 0, streak: 0, tragedy: rollTragedy(rand),
-    calmStreak: SHIP_RUN.calmStreak, slipFactor: 1,
+    calmStreak: SHIP_RUN.calmStreak,
     shields: 0, taught: [], job: null, learning: null, onDuty: null,
     perfect: {}, // minigame -> perfect solves this run: each game gets harder with them (minigames.js minigameLevel, inferenceLevel)
   };
@@ -80,35 +78,4 @@ export function crewRight() {
   ship.panic--;
   ship.streak = 0;
   return [{ type: 'panicEased', level: ship.panic }];
-}
-
-// How often a wire slips while teaching, by the panic now (0: never),
-// rarer once the Systems tech is taught.
-export function slipEveryMs() {
-  const every = SHIP_RUN.slipEveryMs[Math.min(panicLevel(), SHIP_RUN.slipEveryMs.length - 1)] || 0;
-  return every * (state.run.ship ? state.run.ship.slipFactor : 1);
-}
-
-// The ship's world, `dtMs` on (main.js worldFrame, only while the world
-// runs: the ask screen pauses it). No clocks run down (Timothy
-// 2026-10-31). While the Engineer is being taught at a board, a Shaken or worse crew
-// slips a wire it has powered every slipEveryMs: panic makes the work
-// harder, not shorter. Events: wireSlipped { prop, index }.
-export function shipFrame(dtMs, rand = Math.random) {
-  const ship = state.run.ship;
-  if (!ship || !state.floor.ship || state.run.runEnded) return [];
-  const events = [];
-  state.floor.props.filter(p => p.puzzle && p.kind === 'powerBoard').forEach(prop => {
-    const every = slipEveryMs();
-    if (!every) return;
-    prop.slipInMs = (prop.slipInMs ?? every) - dtMs;
-    if (prop.slipInMs > 0) return;
-    prop.slipInMs = every;
-    const live = [...powered(prop.puzzle).on].filter(i => !(prop.puzzle.breakers || []).includes(i));
-    if (!live.length) return;
-    const index = live[Math.floor(rand() * live.length)];
-    prop.puzzle.wires[index] = rotated(prop.puzzle.wires[index]);
-    events.push({ type: 'wireSlipped', prop, index });
-  });
-  return events;
 }

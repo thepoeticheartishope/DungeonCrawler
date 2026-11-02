@@ -365,12 +365,11 @@ export const SHIP_STATIONS = {
 // No burns either (Timothy 2026-11-01, ship minigames plan step G1): the
 // run is won by teaching the crew (the final boss comes in step G3). Crew
 // panic goes up a step with each failure and down one after `calmStreak`
-// right answers in a row while teaching. At each step: 1 Uneasy, 2 Shaken
-// (a wire slips every `slipEveryMs[2]` while the Engineer is being taught
-// at the board), 3 Panicking (slips every
-// `slipEveryMs[3]`), `brokenAt` Broken: the run is lost.
+// right answers in a row while teaching. At each step: 1 Uneasy, 2 Shaken,
+// 3 Panicking, `brokenAt` Broken: the run is lost. Panic is only the
+// crew's health: it makes nothing harder (Timothy 2026-11-01: no wire
+// slips, no harder minigames).
 export const SHIP_RUN = {
-  slipEveryMs: [0, 0, 12000, 6000],
   calmStreak: 3,
   brokenAt: 4,
   endDelayMs: 900,    // the room's last line shows this long before the end screen
@@ -382,7 +381,6 @@ export const SHIP_RUN = {
 //   shield     the next failure raises no panic
 //   panicDown  panic down a step now
 //   calm       calming takes `streak` right answers in a row
-//   slips      wires slip `factor` times less often
 // A role sits out a run whose set can't give its minigame
 // `SHIP_JOB.minFitting` questions (minigames.js roleCanRun). The Engineer
 // is the wires (stations.js), not one of these. Names, rooms and benefits
@@ -393,7 +391,7 @@ export const SHIP_ROLES = [
   { id: 'comms', minigame: 'slowSpell', benefit: { kind: 'shield' } },
   { id: 'medic', minigame: 'syllableSplit', benefit: { kind: 'panicDown' } },
   { id: 'cook', minigame: 'letterPool', benefit: { kind: 'calm', streak: 2 } },
-  { id: 'systems', minigame: 'codeBreak', benefit: { kind: 'slips', factor: 2 } },
+  { id: 'systems', minigame: 'codeBreak', benefit: { kind: 'panicDown' } }, // was fewer wire slips (slips gone 2026-11-01)
   { id: 'science', minigame: 'inference', benefit: { kind: 'shield' } }, // was Verdict (ship minigames plan step E)
   { id: 'quartermaster', minigame: 'crosswire', benefit: { kind: 'panicDown' } }, // was +30s clock
   { id: 'sensors', minigame: 'scanner', benefit: { kind: 'panicDown' } }, // was Fog Reveal (ship minigames plan step B)

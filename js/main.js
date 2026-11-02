@@ -26,7 +26,7 @@ import {
   formatTime, startTimer, stopTimer, renderClock, showSensed, showWhisper, hideWhisper,
   showAnswerLine, fadeAnswerLine, renderShipHud
 } from './render.js';
-import { freshShipRun, shipFrame } from './ship.js';
+import { freshShipRun } from './ship.js';
 import { initShipIntro, fillShipIntro, tragedyLines } from './shipview.js';
 import {
   refreshTargetValidity, advanceMonsters, clockFrame,
@@ -973,10 +973,6 @@ function drawEvents(events) {
         parts.push(t('ship.panicEased', { level: t('panic.' + e.level).toLowerCase() }));
         renderShipHud();
         break;
-      case 'wireSlipped':
-        if (openChargerProp === e.prop && chargerShown()) renderCharger(e.prop.puzzle, false);
-        parts.push(t('ship.wireSlipped'));
-        break;
       case 'exchangeOpened':
         parts.push(t('room.exchange.opened'));
         break;
@@ -1310,9 +1306,7 @@ function worldFrame(dt) {
   if (state.run.turnLocked || state.run.runEnded || !clockMayRun()) return;
   const cells = Math.ceil(state.floor.light.charge);
   const frameMs = Math.min(dt, ONE_STICK.frameMs);
-  // On the ship its clocks run too (ship.js shipFrame; ship plan step C),
-  // and the HUD and an open station's countdown follow them.
-  const events = [...clockFrame(frameMs, { canStruggle: worldRunsUnder() }), ...shipFrame(frameMs)];
+  const events = clockFrame(frameMs, { canStruggle: worldRunsUnder() });
   if (state.floor.ship) renderShipHud();
   if (state.settings.warningTimer) noteSigns(performance.now());
   if (Math.ceil(state.floor.light.charge) !== cells) renderHud();

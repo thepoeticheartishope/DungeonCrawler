@@ -629,7 +629,6 @@ export const TEXT = {
   // The ship's run (ship plan step C, ship.js).
   'ship.panicRose': 'The crew is {level} now.', // draft. {level} is a panic.N line, lower case
   'ship.panicEased': 'Three clean calls. The crew steadies: {level}.', // draft
-  'ship.wireSlipped': 'Engineer: “Sorry. My hands.” A wire slips.', // draft. A Shaken crew's slip
   'ship.panicShielded': 'It went wrong, but the crew holds steady.', // draft. A shield took the panic (Comms officer, Life support)
   // The crew roles (crew roles plan, roles.js; config.js SHIP_ROLES). Names are drafts.
   'role.engineer': 'Engineer', // draft. The power board's wires (stations.js)
@@ -655,7 +654,6 @@ export const TEXT = {
   'job.helped.shield': 'The {role} keeps everyone talking. The next mistake won’t shake them.', // draft
   'job.helped.panicDown': 'The {role} settles the crew a little.', // draft
   'job.helped.calm': 'The {role} keeps everyone fed. The crew steadies faster.', // draft
-  'job.helped.slips': 'The {role} braces the wiring. Fewer slips.', // draft
   // The tragedy (ship.js rollTragedy): random, told after the splash
   // screen, flavor only. Numbered lists, as many as TRAGEDY_PARTS says.
   'tragedy.title': 'THERE’S BEEN A TRAGEDY', // draft
