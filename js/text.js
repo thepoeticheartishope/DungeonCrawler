@@ -247,7 +247,7 @@ export const TEXT = {
   'mg.fuelMix': 'Fuel Mix', // draft. The Pilot's job (ship minigames plan step A)
   'mg.fuelMix.hint': 'Pour until the engine holds the answer.', // draft
   'mg.fuelMix.tank': '+{n}', // draft. A tank button
-  'mg.fuelMix.count': 'Pours {pours} · par {par}', // draft
+  'mg.fuelMix.count': 'Pours {pours}', // draft. No par shown: it gave the answer away (Timothy 2026-11-01)
   'mg.fuelMix.hidden': '???', // draft. The running total while the crew panics
   'mg.fuelMix.empty': 'EMPTY', // draft
   'mg.fuelMix.under': 'UNDER', // draft

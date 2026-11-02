@@ -246,9 +246,11 @@ function buildCloseEnough() {
 // The Pilot's job (ship minigames plan step A). Each tank button pours
 // into the engine; the gauge then says only UNDER or OVER (going over
 // vents it back to empty), and the running total shows unless the crew is
-// panicking (FUEL_MIX.hideTotalAt). Par is the fewest pours that can do
-// it. It carries no modifiers (the ship asks with none). Nothing moves on
-// its own; the gauge eases to its level (still under reduced motion).
+// panicking (FUEL_MIX.hideTotalAt). Par (the fewest pours that can do
+// it) scores the fill but never shows: it gave the answer away (Timothy
+// 2026-11-01). It carries no modifiers (the ship asks with none). Nothing
+// moves on its own; the gauge eases to its level (still under reduced
+// motion).
 function buildFuelMix() {
   slot.classList.add('mg-fuel');
   const engine = fuelMixSetup(state.battle.currentQuestion);
@@ -274,7 +276,7 @@ function buildFuelMix() {
     verdict.dataset.said = said;
     level.style.height = Math.min(100, amount / (engine.answer * 1.25) * 100) + '%';
     level.classList.toggle('over', said === 'over');
-    count.textContent = t('mg.fuelMix.count', { pours: engine.pours, par: engine.par });
+    count.textContent = t('mg.fuelMix.count', { pours: engine.pours });
   };
   const pour = (size) => {
     if (shown.done) return;
