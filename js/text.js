@@ -535,7 +535,6 @@ export const TEXT = {
   'room.ownLight.locked.seconds': 'No light until it is full. {seconds} more seconds.', // draft. The same with One stick (one stick plan step D)
   'room.gaze.step': 'It comes closer while you look.', // draft. The eye (gaze.js) is full: the stick man steps one closer
   'room.gaze.stare': 'It stares at you.', // draft. The same, already beside the player
-  'room.blocked.wall': 'The membrane holds.', // draft
   'room.blocked.boss': 'The {@term.boss} will not move.', // draft
   'room.blocked.minion': 'A {@term.minion} is in the way.', // draft
   'room.blocked.hunter': 'The {@term.hunter} is right there.', // draft
@@ -1087,13 +1086,11 @@ export const TEXT = {
 export const AREAS = {
   2: {
     'room.wait': ['You hold still. The hum is louder here.', 'You wait. Something waits with you.'], // draft
-    'room.blocked.wall': 'The membrane holds. It is thicker here.', // draft
     'room.paper.junk': ['The page is blank, but warm.', 'The same line, written over and over until it means nothing.', 'A name. Yours? The ink has run.'], // draft
     'log.boss.holds': ['ITS {@term.boss} HOLDS.', 'IT HAS BEEN BELIEVED FOR A LONG TIME.'], // draft
   },
   3: {
     'room.wait': ['You hold still. The hum is inside you now.', 'You wait. The dark does not.'], // draft
-    'room.blocked.wall': ['The membrane holds.', 'The membrane gives a little, then holds.'], // draft
     'room.paper.junk': ['The page is blank. It was always blank.', 'Your own handwriting. You do not remember writing it.'], // draft
     'log.boss.holds': ['ITS {@term.boss} HOLDS.', 'IT IS CERTAIN. ARE YOU?'], // draft
   },
