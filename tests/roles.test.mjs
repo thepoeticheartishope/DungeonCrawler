@@ -16,7 +16,7 @@ import { SHIP_ROLES, SHIP_JOB, SHIP_RUN } from '../js/config.js';
 import { TEXT } from '../js/text.js';
 import {
   roleOf, onDuty, rolesOnDuty, useCrew, settleRound, applyBenefit, consoleRoles, startLearning, settleLearning, learningOn,
-  noteOnDuty, crewLook, taughtCount, teachTargets, stopLearning, crewFull,
+  noteOnDuty, crewLook, crewHeadLook, taughtCount, teachTargets, stopLearning, crewFull,
 } from '../js/roles.js';
 import { roleCanRun } from '../js/minigames.js';
 import { freshShipRun, crewMissed, crewRight } from '../js/ship.js';
@@ -299,4 +299,11 @@ test('the last of the player\'s crew taught brings the final boss when the set c
   assert.deepEqual(settleBoss(true), [{ type: 'shipEnded', how: 'arrived' }]);
   assert.equal(ship.boss, null);
   assert.deepEqual(settleBoss(false), [{ type: 'shipEnded', how: 'boss' }]);
+});
+
+test('crew look plan A: each crewLook shows in the head, the body only dims when sitting out', () => {
+  assert.deepEqual(crewHeadLook('new'), { body: 'crew', glow: 'plain', breathes: false, mark: false });
+  assert.deepEqual(crewHeadLook('ready'), { body: 'crew', glow: 'warm', breathes: true, mark: true });
+  assert.deepEqual(crewHeadLook('taught'), { body: 'crew', glow: 'cool', breathes: true, mark: false });
+  assert.deepEqual(crewHeadLook('sitsOut'), { body: 'crewOff', glow: null, breathes: false, mark: false });
 });

@@ -60,6 +60,18 @@ export function crewLook(role) {
   return crewFull() ? 'sitsOut' : 'new';
 }
 
+// How a crew member's figure shows `seen` (crewLook; crew look plan step
+// A): the body's colour ('crew', or 'crewOff' dimmed), the ember head's
+// glow ('plain' faint and steady, 'warm' or 'cool' breathing, or none),
+// and whether the warm mark shows over the head. The head carries the
+// status now, so a taught body stays the crew colour.
+export function crewHeadLook(seen) {
+  if (seen === 'sitsOut') return { body: 'crewOff', glow: null, breathes: false, mark: false };
+  if (seen === 'ready') return { body: 'crew', glow: 'warm', breathes: true, mark: true };
+  if (seen === 'taught') return { body: 'crew', glow: 'cool', breathes: true, mark: false };
+  return { body: 'crew', glow: 'plain', breathes: false, mark: false };
+}
+
 // Crew members taught this run, and how many could be (the roles on duty).
 export function taughtCount() {
   const ship = state.run.ship;

@@ -1463,6 +1463,16 @@ export const PLAYER_BREATH = { lift: 0.02, fastMs: 1700, calmMs: 5000 };
 // reduced motion), reaching `reach` head radii, and leaning `lean` of the
 // head's radius the way he looks.
 export const PLAYER_EMBER = { low: 0.4, high: 0.65, mid: 0.52, reach: 1, lean: 0.35 };
+// The crew standing at their stations (crew look plan step A, ideas/
+// crew-look-plan.md outside the repo): the player's 3D body with no book
+// and an ember head that shows where they stand (roles.js crewHeadLook).
+// A 'new' head glows `faint`, steady; a ready or taught head breathes like
+// the player's (PLAYER_EMBER low..high), one breath every `breathMs`, each
+// crew member `stagger` of a breath (and of their idle) after the one
+// before, so they don't breathe in step. They face the camera and turn
+// slowly to the player while the player is within `turnReach` tiles
+// (Timothy 2026-11-02, call 1b), back once the player leaves.
+export const CREW_LOOK = { faint: 0.2, breathMs: 4600, stagger: 0.37, turnReach: 2 };
 // The player's glances, standing still for MAP_ANIMATION_MS.playerIdle: at
 // odd times (gapMs apart), to a random side, of a random size (`size`, a
 // share of `turn`, the head's shift as a share of its radius), and a

@@ -10,8 +10,12 @@
 
 import { state, key, parseKey } from './state.js';
 import { liveSpotAt } from './spots.js';
-import { crewLook } from './roles.js';
-import { ROOM_VIEW, LAMP_LIGHT, MAP_ANIMATION_MS, SAFE_ROOM, ENEMY_LIGHT } from './config.js';
+import { crewLook, crewHeadLook } from './roles.js';
+import { figurePose, turnFigure, projectFigure, phiToward } from './figure3d.js';
+import { emberGlow } from './playerform.js';
+import {
+  ROOM_VIEW, LAMP_LIGHT, MAP_ANIMATION_MS, SAFE_ROOM, ENEMY_LIGHT, PLAYER_EMBER, FIGURE3D, CREW_LOOK, SHIP_ROLES,
+} from './config.js';
 import {
   searched, isWall, grain, DESK_GLOW, DESK_GLOW_RADIUS, DRUM_BREATH, DRUM_BREATH_REACH, GRATE_RATTLE_SWAYS,
   SOUND_INSET, SOUND_LEVEL, STAIR_BEAM_FADE, STAIR_BEAM_LAYERS,
@@ -37,8 +41,17 @@ const RELAY = { body: '#4a5058', seam: '#33383e', dead: '#2a2e32', leg: '#2e3236
 // The ship's stations (ship plan step B): grey metal like the hull, a dark
 // screen, its light cool once a role is trained or warm while it waits,
 // and the crew's plain white figure, a touch dimmer than the player's (grey
-// when sitting out a trip, crew roles plan step C).
-const STATION_ART = { body: '#46505b', edge: '#5e6874', shade: '#323941', screen: '#141a1f', cool: '#8fd8e4', warm: '#e9c48a', crew: '#b9c4c8', crewOff: '#5c666b' };
+// when sitting out a trip, crew roles plan step C). warmRgb / coolRgb: the
+// warm and cool lights as rgb lists, for a crew member's ember head.
+const STATION_ART = {
+  body: '#46505b', edge: '#5e6874', shade: '#323941', screen: '#141a1f', cool: '#8fd8e4', warm: '#e9c48a', crew: '#b9c4c8', crewOff: '#5c666b',
+  warmRgb: '233, 196, 138', coolRgb: '143, 216, 228',
+};
+// The stick men (the player's in roomview.js, the crew's here): lines one
+// picture pixel wide, and a head this share of the figure's height across
+// its radius.
+export const STICK_LINE = 1;
+export const HEAD_SHARE = 0.12;
 // The safe room (saferoom.js): its shutters' slats, posts and lintel box,
 // the pull switch, and the lamp's warm light over the room.
 const SHUTTER = { slat: '#5b6068', shade: '#454950', bar: '#8a9098', post: '#2f3338', box: '#3a3e44', rise: 1.5, slat_px: 2 };
@@ -314,38 +327,97 @@ function drawPowerBoard(thing, x, y, glows) {
   });
 }
 
-// A crew member: a plain stick man standing at their station, drawn on
-// the room's own pixels like the player but with an open ring for a head,
-// not the ember (Timothy: simple figures). Not an enemy: no tendrils, no
-// tells. How they look says where they stand (roles.js crewLook; crew
-// roles plan step C): dim when sitting out this trip, the cool lit colour
-// once taught, and a small steady warm mark over the head when learned and
-// waiting to be taught, so the player sees who to go to next.
-function drawCrew(thing, x, y, glows) {
-  const h = Math.round(ROOM_VIEW.stickHeight * T);
-  const fx = x + T / 2, fy = y + Math.round(ROOM_VIEW.footAt * T);
-  const hip = fy - Math.round(h * 0.42), neck = fy - Math.round(h * 0.72), head = fy - Math.round(h * 0.86);
-  const seen = crewLook(thing.at.role);
-  bctx.fillStyle = seen === 'sitsOut' ? STATION_ART.crewOff : seen === 'taught' ? STATION_ART.cool : STATION_ART.crew;
-  if (seen === 'ready') {
-    glows.push(() => {
-      bctx.fillStyle = STATION_ART.warm;
-      bctx.fillRect(fx - 1, head - 6, 2, 2);
-    });
+// An ember head (player figure plan step B) at (hx, hy) in `ctx`, for a
+// stick man `h` tall: dark inside, its ring in `ring`, and a glow in the
+// middle `level` strong (0: none) in the light `rgb`, leaning `lean` (-1..1,
+// the way the figure looks) across the head. The player's and the crew's
+// heads both draw here, so they stay alike. Gives back the head's radius.
+export function drawEmberHead(ctx, hx, hy, h, { lean, ring, rgb, level }) {
+  const headR = Math.max(2.5, h * HEAD_SHARE);
+  ctx.save();
+  ctx.strokeStyle = ring;
+  ctx.lineWidth = STICK_LINE;
+  ctx.beginPath();
+  ctx.arc(hx, hy, headR, 0, Math.PI * 2);
+  ctx.fillStyle = look.colours.hidden;
+  ctx.fill();
+  if (level > 0) {
+    const gx = hx + lean * headR * PLAYER_EMBER.lean;
+    const ember = ctx.createRadialGradient(gx, hy, 0, gx, hy, headR * PLAYER_EMBER.reach);
+    ember.addColorStop(0, 'rgba(' + rgb + ', ' + level + ')');
+    ember.addColorStop(1, 'rgba(' + rgb + ', 0)');
+    ctx.fillStyle = ember;
+    ctx.fill();
   }
-  const line = (x0, y0, x1, y1) => {
-    const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
-    for (let s = 0; s <= steps; s++) bctx.fillRect(Math.round(x0 + (x1 - x0) * s / steps), Math.round(y0 + (y1 - y0) * s / steps), 1, 1);
-  };
-  line(fx, hip, fx - 2, fy);
-  line(fx, hip, fx + 2, fy);
-  line(fx, hip, fx, neck);
-  line(fx, neck + 1, fx - 3, hip - 1);
-  line(fx, neck + 1, fx + 3, hip - 1);
-  bctx.fillRect(fx - 1, head - 2, 3, 1);
-  bctx.fillRect(fx - 1, head + 2, 3, 1);
-  bctx.fillRect(fx - 2, head - 1, 1, 3);
-  bctx.fillRect(fx + 2, head - 1, 1, 3);
+  ctx.stroke();
+  ctx.restore();
+  return headR;
+}
+
+// Each crew member's figure for figure3d.js, by role: it keeps figures by
+// object, so each role gets its own small one.
+const crewFigures = new Map();
+
+// The figure object for crew member `role`, made the first time it is asked for.
+function crewFigure(role) {
+  if (!crewFigures.has(role)) crewFigures.set(role, {});
+  return crewFigures.get(role);
+}
+
+// How far through their idle and their breath crew member `role` is
+// started, 0..1, from their place in SHIP_ROLES (the Engineer first), so
+// no two move in step.
+function crewOffset(role) {
+  const place = SHIP_ROLES.findIndex(r => r.id === role) + 1;
+  return (place * CREW_LOOK.stagger) % 1;
+}
+
+// A crew member (crew look plan step A): the player's 3D body standing in
+// its idle at their station, arms down and no book, in the crew colour.
+// Not an enemy: no tendrils, no tells. The ember head shows where they
+// stand (roles.js crewLook, crewHeadLook): a faint steady glow while new,
+// breathing warm with a small steady warm mark over the head when learned
+// and waiting to be taught (so the player sees who to go to next),
+// breathing cool once taught, and dark on a dim body when sitting out
+// this trip. They face the camera and turn slowly to the player when the
+// player comes within CREW_LOOK.turnReach tiles. Reduced motion: a still
+// pose, a steady glow and turns at once.
+function drawCrew(thing, x, y, glows) {
+  const { role } = thing.at;
+  const seen = crewHeadLook(crewLook(role));
+  const figure = crewFigure(role);
+  const offset = crewOffset(role);
+  if (!look.still) look.keepMoving();
+  const h = ROOM_VIEW.stickHeight * T;
+  const fx = x + T / 2, fy = y + ROOM_VIEW.footAt * T;
+  const dx = look.walkAt.col - thing.at.col, dy = look.walkAt.row - thing.at.row;
+  const near = Math.hypot(dx, dy) <= CREW_LOOK.turnReach;
+  const phi = turnFigure(figure, near ? phiToward(dx, dy) : 0, look.now, look.still);
+  const joints = figurePose(figure, { at: [thing.at.col, thing.at.row], metres: FIGURE3D.heightM / ROOM_VIEW.stickHeight, offset }, look.now, look.still);
+  const J = projectFigure(joints, phi, fx, fy, h / FIGURE3D.heightM);
+  const colour = STATION_ART[seen.body];
+  const px = v => Math.round(v) + 0.5;
+  const path = (points) => points.forEach(([px0, py0], i) => (i ? bctx.lineTo(px(px0), px(py0)) : bctx.moveTo(px(px0), px(py0))));
+  bctx.save();
+  bctx.strokeStyle = colour;
+  bctx.lineWidth = STICK_LINE;
+  bctx.lineCap = 'square';
+  bctx.beginPath();
+  path([J.ftL, J.knL, J.pelvis, J.knR, J.ftR]);
+  path([J.pelvis, J.chest, J.neck]);
+  path([J.haL, J.elL, J.neck, J.elR, J.haR]);
+  bctx.stroke();
+  bctx.restore();
+  const breath = Math.sin(2 * Math.PI * (look.now / CREW_LOOK.breathMs + offset));
+  const level = !seen.glow ? 0 : seen.breathes ? emberGlow(breath, look.still) : CREW_LOOK.faint;
+  const rgb = seen.glow === 'warm' ? STATION_ART.warmRgb : seen.glow === 'cool' ? STATION_ART.coolRgb : look.colours.glowRgb;
+  const [hx, hy] = J.headMid;
+  const headR = drawEmberHead(bctx, hx, hy, h, { lean: Math.sin(phi), ring: colour, rgb, level });
+  if (!seen.mark) return;
+  glows.push(() => {
+    bctx.fillStyle = STATION_ART.warm;
+    bctx.fillRect(Math.round(hx) - 1, Math.round(hy - headR) - 4, 2, 2);
+  });
 }
 
 // When each shutter last went up or down (saferoom.js), by tile, so its
