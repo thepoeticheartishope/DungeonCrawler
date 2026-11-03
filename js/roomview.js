@@ -67,7 +67,7 @@ import {
 import {
   startGunFrame, gunTargets, holdBook, drawBook, drawReach, drawBrackets, drawLaser, drawShot, drawAnswerRing, drawDarkRing,
 } from './roomgun.js';
-import { startSkyFrame, drawWindow, drawPool, drawSky, shipGlass } from './roomsky.js';
+import { startSkyFrame, drawWindow, drawPool, drawSky, drawShipView } from './roomsky.js';
 
 const T = ROOM_VIEW.tilePx;
 
@@ -318,11 +318,11 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   bctx.globalCompositeOperation = 'source-over';
   bctx.globalAlpha = POOL.glass;
   lit.filter(w => !w.view).forEach(w => bctx.drawImage(built.world, w.col * T, (w.row - 1) * T, 2 * T, 2 * T, w.col * T - ox, (w.row - 1) * T - oy, 2 * T, 2 * T));
-  // A ship window's view of space stays near its own brightness (only the
-  // glass, so its frame takes the ship's light like the wall).
-  bctx.globalAlpha = SHIP_WINDOWS.glass;
-  lit.filter(w => w.view).map(shipGlass).forEach(g => bctx.drawImage(built.world, g.x, g.y, g.w, g.h, g.x - ox, g.y - oy, g.w, g.h));
   bctx.globalAlpha = 1;
+  // A ship window's view of space stays near its own brightness (only the
+  // glass, so its frame takes the ship's light like the wall), shifting as
+  // the player walks (still under reduced motion).
+  lit.filter(w => w.view).forEach(w => drawShipView(bctx, w, ox, oy, look.still ? null : at, SHIP_WINDOWS.glass));
   // What gives off its own light, over the lit picture.
   bctx.globalCompositeOperation = 'lighter';
   glows.forEach(draw => draw());

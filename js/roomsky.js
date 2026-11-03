@@ -8,7 +8,7 @@
 // first (startSkyFrame). Reads state and never changes it.
 
 import { state } from './state.js';
-import { ROOM_VIEW, SKY_EYE, WINDOW_LIGHT } from './config.js';
+import { ROOM_VIEW, SKY_EYE, WINDOW_LIGHT, SHIP_WINDOWS } from './config.js';
 import { spacePicture } from './space.js';
 import { skyEyeOpen, skyTurnsLeft } from './mapshared.js';
 import { POOL } from './roomthings.js';
@@ -84,13 +84,41 @@ export function shipGlass(w) {
   return { x, y, w: 2 * T - 10, h: 2 * T - 13 };
 }
 
+// Where in the space picture a ship window's glass looks: `w.view`'s spot,
+// slid the other way from where the player stands (`at`, in tiles; none
+// for the still picture) by SHIP_WINDOWS.shift, so the view shifts as they
+// walk. Kept inside the picture, a margin of shiftMax round it.
+function viewCorner(w, g, sky, at) {
+  const m = SHIP_WINDOWS.shiftMax;
+  let sx = m + w.view.x * (sky.width - g.w - 2 * m), sy = m + w.view.y * (sky.height - g.h - 2 * m);
+  if (at) {
+    const clamp = v => Math.max(-m, Math.min(m, v));
+    sx -= clamp((at.col + 0.5 - (w.col + 1)) * SHIP_WINDOWS.shift);
+    sy -= clamp((at.row - w.row) * SHIP_WINDOWS.shift * SHIP_WINDOWS.shiftDown);
+  }
+  return [Math.round(sx), Math.round(sy)];
+}
+
+// A ship window's view of space drawn over the lit picture at `alpha`
+// (roomview.js, each frame, for the room the player is in), shifted for
+// where the player stands (`at`); null `at` (reduced motion) keeps the
+// still picture's view.
+export function drawShipView(c, w, ox, oy, at, alpha) {
+  const g = shipGlass(w);
+  const sky = spacePicture(state.floor.spaceSeed);
+  const [sx, sy] = viewCorner(w, g, sky, at);
+  c.globalAlpha = alpha;
+  c.drawImage(sky, sx, sy, g.w, g.h, g.x - ox, g.y - oy, g.w, g.h);
+  c.globalAlpha = 1;
+}
+
 // A ship window (Timothy 2026-11-02): a rounded hull frame two tiles wide
 // with its part of the run's space picture (space.js) as the glass, from
 // where `w.view` says it looks, and a short sill below.
 function drawShipWindow(ctx, w) {
   const g = shipGlass(w);
   const sky = spacePicture(state.floor.spaceSeed);
-  const sx = Math.round(w.view.x * (sky.width - g.w)), sy = Math.round(w.view.y * (sky.height - g.h));
+  const [sx, sy] = viewCorner(w, g, sky, null);
   ctx.fillStyle = SHIP_FRAME.frame;
   ctx.fillRect(g.x - 2, g.y - 3, g.w + 4, g.h + 6);
   ctx.fillRect(g.x - 3, g.y - 2, g.w + 6, g.h + 4);
