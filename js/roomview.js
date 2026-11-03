@@ -66,6 +66,7 @@ import {
 } from './roomthings.js';
 import {
   startGunFrame, gunTargets, holdBook, drawBook, drawReach, drawBrackets, drawLaser, drawShot, drawAnswerRing, drawDarkRing,
+  drawBookInto,
 } from './roomgun.js';
 import { startSkyFrame, drawWindow, drawPool, drawSky, drawShipView } from './roomsky.js';
 
@@ -163,6 +164,8 @@ let poseLook = null;      // the light's angle at the last frame, so a turn stop
 let tapBoxes = [];        // this frame's enemies, for taps: [{ box: [left, top, right, bottom], tile }]
 let mask = null;          // what stands in front of a stick man, redrawn over it (redrawInFront)
 let mctx = null;
+let glass = null;         // the windows' bright glass, with what stands in front cut out (glassBehind)
+let glctx = null;
 let view = { w: 0, h: 0 }; // the picture's size this frame
 let frame = { ox: 0, oy: 0 }; // the camera's top-left this frame, in picture pixels
 
@@ -319,15 +322,15 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   drawShadows(ox, oy, inView);
   bctx.globalCompositeOperation = 'multiply';
   bctx.drawImage(glow, 0, 0);
-  // The windows' glass glows from outside.
+  // The windows' glass glows from outside, behind whoever stands in front.
   bctx.globalCompositeOperation = 'source-over';
-  bctx.globalAlpha = POOL.glass;
-  lit.filter(w => !w.view).forEach(w => bctx.drawImage(built.world, w.col * T, (w.row - 1) * T, 2 * T, 2 * T, w.col * T - ox, (w.row - 1) * T - oy, 2 * T, 2 * T));
-  bctx.globalAlpha = 1;
+  const warm = lit.filter(w => !w.view);
+  glassBehind(warm, items, glows, POOL.glass, c => warm.forEach(w => c.drawImage(built.world, w.col * T, (w.row - 1) * T, 2 * T, 2 * T, w.col * T - ox, (w.row - 1) * T - oy, 2 * T, 2 * T)));
   // A ship window's view of space stays near its own brightness (only the
   // glass, so its frame takes the ship's light like the wall), scrolling
   // slowly as the ship flies (still under reduced motion).
-  lit.filter(w => w.view).forEach(w => drawShipView(bctx, w, ox, oy, look.still ? null : look.now, SHIP_WINDOWS.glass));
+  const ship = lit.filter(w => w.view);
+  glassBehind(ship, items, glows, SHIP_WINDOWS.glass, c => ship.forEach(w => drawShipView(c, w, ox, oy, look.still ? null : look.now, 1)));
   // What gives off its own light, over the lit picture.
   bctx.globalCompositeOperation = 'lighter';
   glows.forEach(draw => draw());
@@ -964,6 +967,56 @@ function drawForms(ctx, ox, oy, standing) {
     boxes.push({ box: stickBox(m, sx, sy, height), tile: thing.tile });
   });
   return boxes;
+}
+
+// Lays the bright glass of the windows `ws` (drawn by `drawGlass(c)` into
+// a layer) over the lit picture at `alpha`, with everything that stands in
+// front of their back wall (the player, the crew, furniture, lamps) cut out
+// of it, so no one in front of a window fades into it (Timothy 2026-11-03).
+// Redrawing the items pushes their glows again; those copies are dropped.
+function glassBehind(ws, items, glows, alpha, drawGlass) {
+  if (!ws.length) return;
+  const wall = Math.min(...ws.map(w => w.row)) + 0.5;
+  const front = items.filter(item => item.y > wall);
+  if (!glass) {
+    glass = document.createElement('canvas');
+    glctx = glass.getContext('2d');
+  }
+  if (glass.width !== view.w || glass.height !== view.h) {
+    glass.width = view.w;
+    glass.height = view.h;
+  }
+  glctx.globalCompositeOperation = 'source-over';
+  glctx.clearRect(0, 0, view.w, view.h);
+  drawGlass(glctx);
+  if (front.length) {
+    if (!mask) {
+      mask = document.createElement('canvas');
+      mctx = mask.getContext('2d');
+    }
+    if (mask.width !== view.w || mask.height !== view.h) {
+      mask.width = view.w;
+      mask.height = view.h;
+    }
+    mctx.globalCompositeOperation = 'source-over';
+    mctx.clearRect(0, 0, view.w, view.h);
+    const picture = bctx, glowCount = glows.length;
+    bctx = mctx;
+    drawThingsWith(mctx, gctx, look);
+    drawBookInto(mctx);
+    front.forEach(item => item.draw());
+    bctx = picture;
+    drawThingsWith(picture, gctx, look);
+    drawBookInto(picture);
+    glows.length = glowCount;
+    glctx.globalCompositeOperation = 'destination-out';
+    glctx.drawImage(mask, 0, 0);
+    glctx.globalCompositeOperation = 'source-over';
+  }
+  bctx.globalCompositeOperation = 'source-over';
+  bctx.globalAlpha = alpha;
+  bctx.drawImage(glass, 0, 0);
+  bctx.globalAlpha = 1;
 }
 
 // Redraws, over a stick man standing at `at`, the furniture and pillars in

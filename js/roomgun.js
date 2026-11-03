@@ -75,6 +75,12 @@ export function startGunFrame(picture, shared, camera, pixelScale, cssScale) {
   muzzle = null;
 }
 
+// Points the book's drawing at `picture` for a while (roomview.js redraws
+// the player into a mask), leaving the rest of the frame as it is.
+export function drawBookInto(picture) {
+  bctx = picture;
+}
+
 // This frame's enemies' tap boxes, for the brackets, once roomview has them.
 export function gunTargets(boxes) {
   tapBoxes = boxes;
