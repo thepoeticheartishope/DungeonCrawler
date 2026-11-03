@@ -1381,19 +1381,16 @@ export const WINDOW_LIGHT = { every: 3, length: 3.4, slant: 1.1, inset: 5 / 16 }
 // covers (0..1, with its pale edge `edge` wider), `stars` one small star
 // per this many pixels, `bigStars` and `planets` at most this many.
 // `glass`: how bright the view stays under the ship's light (space gives
-// its own light, so near full). `shift`: as the player walks, the view
-// slides the other way by this many picture pixels per tile they are from
-// the window's middle (across, and `shiftDown` of that up and down), never
-// more than `shiftMax`, like looking through real glass (Timothy
-// 2026-11-02). `drift`: the view scrolls this many picture pixels a second,
-// very slowly, to show the ship moving through space (Timothy 2026-11-02;
-// the picture wraps across, so `width` must be a whole number of
-// `height`s). Both still under reduced motion.
+// its own light, so near full). `drift`: the view scrolls this many
+// picture pixels a second, very slowly, to show the ship moving through
+// space (Timothy 2026-11-02; the picture wraps across, so `width` must be
+// a whole number of `height`s). Still under reduced motion. Walking
+// doesn't move the view (he found that disorienting).
 export const SHIP_WINDOWS = {
   twoChance: 0.5, gap: 1,
   width: 240, height: 120, dust: 10, nebula: 5, nebulaAt: 0.3, edge: 0.015,
   stars: 150, bigStars: 6, planets: 3, glass: 0.85,
-  shift: 1.5, shiftDown: 0.5, shiftMax: 8, drift: 0.5,
+  drift: 0.5,
 };
 // Lamps a fixed plan puts down (lamps.js, plans.js `L`; presence cues plan
 // step A, Timothy 2026-10-28): each lights the floor within `radius` tiles

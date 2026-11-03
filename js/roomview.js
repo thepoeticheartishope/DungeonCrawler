@@ -320,10 +320,9 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   lit.filter(w => !w.view).forEach(w => bctx.drawImage(built.world, w.col * T, (w.row - 1) * T, 2 * T, 2 * T, w.col * T - ox, (w.row - 1) * T - oy, 2 * T, 2 * T));
   bctx.globalAlpha = 1;
   // A ship window's view of space stays near its own brightness (only the
-  // glass, so its frame takes the ship's light like the wall), shifting as
-  // the player walks and scrolling slowly as the ship flies (still under
-  // reduced motion).
-  lit.filter(w => w.view).forEach(w => drawShipView(bctx, w, ox, oy, look.still ? null : at, look.still ? null : look.now, SHIP_WINDOWS.glass));
+  // glass, so its frame takes the ship's light like the wall), scrolling
+  // slowly as the ship flies (still under reduced motion).
+  lit.filter(w => w.view).forEach(w => drawShipView(bctx, w, ox, oy, look.still ? null : look.now, SHIP_WINDOWS.glass));
   // What gives off its own light, over the lit picture.
   bctx.globalCompositeOperation = 'lighter';
   glows.forEach(draw => draw());
