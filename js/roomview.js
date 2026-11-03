@@ -262,6 +262,11 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   const c0 = Math.floor(ox / T) - 1, c1 = Math.ceil((ox + viewW) / T) + 1;
   const r0 = Math.floor(oy / T) - 1, r1 = Math.ceil((oy + viewH) / T) + 2;
   const inView = (row, col) => row >= r0 && row <= r1 && col >= c0 && col <= c1;
+  // Every ship window on screen shows the same scrolling space, not just
+  // the ones in the player's room (Timothy 2026-11-03: a window in the next
+  // room showed the still picture, then jumped on walking in). Drawn under
+  // the light, so a window in another room is as dim as its room.
+  built.windows.filter(w => w.view && inView(w.row, w.col)).forEach(w => drawShipView(bctx, w, ox, oy, look.still ? null : look.now, 1));
   f.pillarSet.forEach(k => {
     const { row, col } = parseKey(k);
     if (inView(row, col)) items.push({ y: row + 1, row, col, draw: () => drawPillar(row, col, ox, oy) });
