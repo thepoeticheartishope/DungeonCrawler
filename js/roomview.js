@@ -46,7 +46,7 @@ import { state, key, parseKey } from './state.js';
 import { FOUR_STEPS } from './grid.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
-  ISO_NARROW_MAP_WIDTH, FIGURE3D, ENEMY_LIGHT, MINION_KINDS, SHADOW,
+  ISO_NARROW_MAP_WIDTH, FIGURE3D, ENEMY_LIGHT, MINION_KINDS, SHADOW, SHIP_WINDOWS,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
@@ -67,7 +67,7 @@ import {
 import {
   startGunFrame, gunTargets, holdBook, drawBook, drawReach, drawBrackets, drawLaser, drawShot, drawAnswerRing, drawDarkRing,
 } from './roomgun.js';
-import { startSkyFrame, drawWindow, drawPool, drawSky } from './roomsky.js';
+import { startSkyFrame, drawWindow, drawPool, drawSky, shipGlass } from './roomsky.js';
 
 const T = ROOM_VIEW.tilePx;
 
@@ -306,7 +306,8 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   gctx.fillStyle = g;
   gctx.fillRect(head.x - ROOM_VIEW.ember.radius * T, head.y - ROOM_VIEW.ember.radius * T, ROOM_VIEW.ember.radius * T * 2, ROOM_VIEW.ember.radius * T * 2);
   const lit = built.windows.filter(w => w.room === space.room);
-  lit.forEach(w => drawPool(w, ox, oy));
+  // Space throws no light in: only the old warm windows have a pool.
+  lit.filter(w => !w.view).forEach(w => drawPool(w, ox, oy));
   const safe = f.safeRoom;
   if (safe && safe.lamp && space.room === safe.chamber) drawLamp(ox, oy, glows);
   if (lampsOn()) lamps.filter(l => !state.settings.fogEnabled || f.visibleSet.has(key(l.row, l.col))).forEach(l => glows.push(() => bulbAt(...hallLampSpot(l, ox, oy), HALL_LAMP.bulb)));
@@ -316,7 +317,11 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   // The windows' glass glows from outside.
   bctx.globalCompositeOperation = 'source-over';
   bctx.globalAlpha = POOL.glass;
-  lit.forEach(w => bctx.drawImage(built.world, w.col * T, (w.row - 1) * T, 2 * T, 2 * T, w.col * T - ox, (w.row - 1) * T - oy, 2 * T, 2 * T));
+  lit.filter(w => !w.view).forEach(w => bctx.drawImage(built.world, w.col * T, (w.row - 1) * T, 2 * T, 2 * T, w.col * T - ox, (w.row - 1) * T - oy, 2 * T, 2 * T));
+  // A ship window's view of space stays near its own brightness (only the
+  // glass, so its frame takes the ship's light like the wall).
+  bctx.globalAlpha = SHIP_WINDOWS.glass;
+  lit.filter(w => w.view).map(shipGlass).forEach(g => bctx.drawImage(built.world, g.x, g.y, g.w, g.h, g.x - ox, g.y - oy, g.w, g.h));
   bctx.globalAlpha = 1;
   // What gives off its own light, over the lit picture.
   bctx.globalCompositeOperation = 'lighter';

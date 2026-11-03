@@ -28,7 +28,7 @@ import { placeRelays } from './relays.js';
 import { placeDesk } from './desk.js';
 import { placeCharger } from './charger.js';
 import { placeVents } from './vents.js';
-import { placeWindows } from './windows.js';
+import { placeWindows, placeShipWindows } from './windows.js';
 import { placeLamps } from './lamps.js';
 import { rollSpots } from './spots.js';
 import { placeSafeRoom, inSafeRoom, autoShutters } from './saferoom.js';
@@ -617,6 +617,7 @@ export function buildShipFloor() {
   f.exchangeBought = new Set();
   f.coin = null;
 
+  placeShipWindows();
   autoShutters();
   f.visibleSet = new Set();
   f.exploredSet = new Set();

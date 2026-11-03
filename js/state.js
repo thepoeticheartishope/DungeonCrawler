@@ -135,6 +135,7 @@ export const state = {
     spotSet: new Set(),    // tiles lit by the tutorial's light from above (tutorial.js); empty elsewhere
     windows: [],           // windows on back walls that face the outside (windows.js): [{ row, col, room }]
     windowLitSet: new Set(), // tiles the windows light (windows.js); a stick man in them is seen (sight.js canMakeOut)
+    spaceSeed: 0,          // the ship's space picture seen through its windows (windows.js placeShipWindows, space.js)
     lamps: [],             // a fixed plan's lamps (lamps.js, plans.js `L`): [{ row, col }]; none on a random floor or a rest
     lampPoolSet: new Set(), // tiles the lamps light (lamps.js); a stick man in them is seen from afar while they're on (sight.js canMakeOut)
     advanced: null,        // the advanced tutorial's station on this floor (advanced.js freshStation): { index, name, door, route, minion, told, done, open }; null on every other floor

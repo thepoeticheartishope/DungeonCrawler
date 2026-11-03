@@ -1371,6 +1371,22 @@ export const ISO_NARROW_MAP_WIDTH = 400;
 // tiles across as it goes, `inset` tiles in from the window's sides. Its
 // light shows stick men as the player's own does (sight.js canMakeOut).
 export const WINDOW_LIGHT = { every: 3, length: 3.4, slant: 1.1, inset: 5 / 16 };
+// The ship's windows into space (windows.js placeShipWindows, space.js;
+// Timothy 2026-11-02): each room gets one, or two with `twoChance` (never
+// more), at least `gap` tiles of wall between two. The space picture
+// (space.js, ported from Deep-Fold's PixelSpace) is `width` by `height`
+// picture pixels, one per run, and each window shows its own part of it.
+// `dust` and `nebula` are how many noise cells fit down the picture
+// (bigger = smaller clouds), `nebulaAt` how much of the sky the nebula
+// covers (0..1, with its pale edge `edge` wider), `stars` one small star
+// per this many pixels, `bigStars` and `planets` at most this many.
+// `glass`: how bright the view stays under the ship's light (space gives
+// its own light, so near full).
+export const SHIP_WINDOWS = {
+  twoChance: 0.5, gap: 1,
+  width: 240, height: 120, dust: 10, nebula: 5, nebulaAt: 0.3, edge: 0.015,
+  stars: 150, bigStars: 6, planets: 3, glass: 0.85,
+};
 // Lamps a fixed plan puts down (lamps.js, plans.js `L`; presence cues plan
 // step A, Timothy 2026-10-28): each lights the floor within `radius` tiles
 // of it, and a stick man in that light is seen from as far as `seeFrom`
