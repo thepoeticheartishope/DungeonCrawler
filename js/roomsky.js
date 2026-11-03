@@ -85,31 +85,48 @@ export function shipGlass(w) {
 }
 
 // Where in the space picture a ship window's glass looks: `w.view`'s spot,
-// slid the other way from where the player stands (`at`, in tiles; none
-// for the still picture) by SHIP_WINDOWS.shift, so the view shifts as they
-// walk. Kept inside the picture, a margin of shiftMax round it.
-function viewCorner(w, g, sky, at) {
+// slid the other way from where the player stands (`at`, in tiles) by
+// SHIP_WINDOWS.shift, so the view shifts as they walk, and scrolled
+// SHIP_WINDOWS.drift picture pixels a second since the run's first frame
+// (`now`, ms), the ship moving through space. Across, it wraps round the
+// picture (space.js makes it seamless); down, it stays inside, a margin of
+// shiftMax round it. No `at` or `now` (the still picture, reduced motion):
+// neither.
+function viewCorner(w, g, sky, at, now) {
   const m = SHIP_WINDOWS.shiftMax;
-  let sx = m + w.view.x * (sky.width - g.w - 2 * m), sy = m + w.view.y * (sky.height - g.h - 2 * m);
+  let sx = w.view.x * sky.width, sy = m + w.view.y * (sky.height - g.h - 2 * m);
   if (at) {
     const clamp = v => Math.max(-m, Math.min(m, v));
     sx -= clamp((at.col + 0.5 - (w.col + 1)) * SHIP_WINDOWS.shift);
     sy -= clamp((at.row - w.row) * SHIP_WINDOWS.shift * SHIP_WINDOWS.shiftDown);
   }
-  return [Math.round(sx), Math.round(sy)];
+  if (now) sx += now / 1000 * SHIP_WINDOWS.drift;
+  sx = Math.round(sx) % sky.width;
+  return [sx < 0 ? sx + sky.width : sx, Math.round(sy)];
+}
+
+// Draws the glass `g` from the space picture with its top-left at
+// (sx, sy), in two pieces where it runs off the picture's right edge and
+// wraps to its left.
+function drawView(c, sky, sx, sy, g, dx, dy) {
+  const first = Math.min(g.w, sky.width - sx);
+  c.drawImage(sky, sx, sy, first, g.h, dx, dy, first, g.h);
+  if (first < g.w) c.drawImage(sky, 0, sy, g.w - first, g.h, dx + first, dy, g.w - first, g.h);
 }
 
 // A ship window's view of space drawn over the lit picture at `alpha`
 // (roomview.js, each frame, for the room the player is in), shifted for
-// where the player stands (`at`); null `at` (reduced motion) keeps the
-// still picture's view.
-export function drawShipView(c, w, ox, oy, at, alpha) {
+// where the player stands (`at`) and scrolling with the time (`now`); both
+// null under reduced motion keep the still picture's view. While it
+// scrolls the view keeps drawing frames.
+export function drawShipView(c, w, ox, oy, at, now, alpha) {
   const g = shipGlass(w);
   const sky = spacePicture(state.floor.spaceSeed);
-  const [sx, sy] = viewCorner(w, g, sky, at);
+  const [sx, sy] = viewCorner(w, g, sky, at, now);
   c.globalAlpha = alpha;
-  c.drawImage(sky, sx, sy, g.w, g.h, g.x - ox, g.y - oy, g.w, g.h);
+  drawView(c, sky, sx, sy, g, g.x - ox, g.y - oy);
   c.globalAlpha = 1;
+  if (now) look.keepMoving();
 }
 
 // A ship window (Timothy 2026-11-02): a rounded hull frame two tiles wide
@@ -118,7 +135,7 @@ export function drawShipView(c, w, ox, oy, at, alpha) {
 function drawShipWindow(ctx, w) {
   const g = shipGlass(w);
   const sky = spacePicture(state.floor.spaceSeed);
-  const [sx, sy] = viewCorner(w, g, sky, null);
+  const [sx, sy] = viewCorner(w, g, sky, null, null);
   ctx.fillStyle = SHIP_FRAME.frame;
   ctx.fillRect(g.x - 2, g.y - 3, g.w + 4, g.h + 6);
   ctx.fillRect(g.x - 3, g.y - 2, g.w + 6, g.h + 4);
@@ -127,7 +144,7 @@ function drawShipWindow(ctx, w) {
   ctx.fillStyle = SHIP_FRAME.rim;
   ctx.fillRect(g.x, g.y - 1, g.w, g.h + 2);
   ctx.fillRect(g.x - 1, g.y, g.w + 2, g.h);
-  ctx.drawImage(sky, sx, sy, g.w, g.h, g.x, g.y, g.w, g.h);
+  drawView(ctx, sky, sx, sy, g, g.x, g.y);
   ctx.fillStyle = SHIP_FRAME.edge;
   ctx.fillRect(g.x - 4, g.y + g.h + 3, g.w + 8, 1);
 }

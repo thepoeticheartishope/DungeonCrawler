@@ -7,7 +7,10 @@
 // a pale edge, small stars, a few big ones and planets, each coloured from
 // one of its colour schemes. The shaders run here on the CPU, one picture
 // pixel at a time, so the picture is low-detail pixel art like the rooms.
-// It never moves (the calm rule), so reduced motion needs nothing more.
+// It wraps seamlessly from its right edge to its left (PixelSpace's tile
+// mode, across only), so the windows can scroll it slowly to show the
+// ship moving (roomsky.js drawShipView). The picture must be a whole
+// number of heights wide for that (SHIP_WINDOWS width and height).
 
 import { SHIP_WINDOWS } from './config.js';
 
@@ -53,7 +56,8 @@ export function paintSpace(px, w, h, seed) {
   const back = scheme[0], colours = scheme.slice(1);
   const pick = value => colours[Math.max(0, Math.min(7, Math.round(value * 7)))];
   const put = (x, y, rgb, alpha = 1) => {
-    if (x < 0 || y < 0 || x >= w || y >= h) return;
+    x = ((x % w) + w) % w;
+    if (y < 0 || y >= h) return;
     const i = (y * w + x) * 4;
     for (let c = 0; c < 3; c++) px[i + c] = Math.round(px[i + c] * (1 - alpha) + rgb[c] * alpha);
     px[i + 3] = 255;
@@ -63,7 +67,7 @@ export function paintSpace(px, w, h, seed) {
   const dustSeed = 1 + rand() * 9, nebulaSeed = 1 + rand() * 9;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const dust = dustAt(x / h, y / h, (x + y) % 2 === 0, dustSeed);
+      const dust = dustAt(x / h, y / h, w / h, (x + y) % 2 === 0, dustSeed);
       if (dust !== null) put(x, y, pick(dust));
     }
   }
@@ -74,7 +78,7 @@ export function paintSpace(px, w, h, seed) {
   }
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const cloud = nebulaAt(x / h, y / h, (x + y) % 2 === 0, nebulaSeed);
+      const cloud = nebulaAt(x / h, y / h, w / h, (x + y) % 2 === 0, nebulaSeed);
       if (cloud !== null) put(x, y, cloud < 0.1 ? back : pick(cloud));
     }
   }
@@ -101,60 +105,69 @@ function seeded(seed) {
 }
 
 // ---- PixelSpace's shader helpers, as plain functions ----
+// `p` is the noise grid's width across the whole picture (its tile mode):
+// grid points p apart across are the same point, so the picture wraps.
+// Null for a planet, which doesn't wrap.
 
 const fract = v => v - Math.floor(v);
 
 // The shaders' hash: a fixed-looking random 0..1 for a grid point.
-function hash(x, y, seed) {
+function hash(x, y, seed, p) {
+  if (p) x -= p * Math.floor(x / p);
   return fract(Math.sin(x * 12.9898 + y * 78.233) * (15.5453 + seed));
 }
 
 // Smooth value noise at (x, y).
-function noise(x, y, seed) {
+function noise(x, y, seed, p) {
   const ix = Math.floor(x), iy = Math.floor(y);
   const fx = x - ix, fy = y - iy;
-  const a = hash(ix, iy, seed), b = hash(ix + 1, iy, seed);
-  const c = hash(ix, iy + 1, seed), d = hash(ix + 1, iy + 1, seed);
+  const a = hash(ix, iy, seed, p), b = hash(ix + 1, iy, seed, p);
+  const c = hash(ix, iy + 1, seed, p), d = hash(ix + 1, iy + 1, seed, p);
   const cx = fx * fx * (3 - 2 * fx), cy = fy * fy * (3 - 2 * fy);
   return a + (b - a) * cx + (c - a) * cy * (1 - cx) + (d - b) * cx * cy;
 }
 
-// Layers of noise, each twice as fine and half as strong.
-function fbm(x, y, octaves, seed) {
+// Layers of noise, each twice as fine and half as strong (so its grid's
+// width across doubles too).
+function fbm(x, y, octaves, seed, p) {
   let value = 0, scale = 0.5;
   for (let i = 0; i < octaves; i++) {
-    value += noise(x, y, seed) * scale;
+    value += noise(x, y, seed, p) * scale;
     x *= 2;
     y *= 2;
+    if (p) p *= 2;
     scale *= 0.5;
   }
   return value;
 }
 
 // Round blobs on a staggered grid, which give the clouds their lumps.
-function circleNoise(x, y, seed) {
+function circleNoise(x, y, seed, p) {
   const row = Math.floor(y);
   x += row * 0.31;
-  const h = hash(Math.floor(x), row, seed);
+  const h = hash(Math.floor(x), row, seed, p);
   const m = Math.hypot(fract(x) - 0.25 - h * 0.5, fract(y) - 0.25 - h * 0.5);
   const r = h * 0.25;
   const t = r > 0 ? Math.max(0, Math.min(1, m * 0.75 / r)) : 1;
   return t * t * (3 - 2 * t);
 }
 
-// Lumpy cloud noise: noise pushed about by the blobs.
-function cloudAlpha(x, y, octaves, seed) {
+// Lumpy cloud noise: noise pushed about by the blobs (at half the scale,
+// so half the grid width).
+function cloudAlpha(x, y, octaves, seed, p) {
   let c = 0;
-  for (let i = 0; i < 2; i++) c += circleNoise(x * 0.5 + i + 1 - 0.3, y * 0.5 + i + 1, seed);
-  return fbm(x + c, y + c, octaves, seed);
+  for (let i = 0; i < 2; i++) c += circleNoise(x * 0.5 + i + 1 - 0.3, y * 0.5 + i + 1, seed, p / 2);
+  return fbm(x + c, y + c, octaves, seed, p);
 }
 
-// The star dust at (x, y) (in picture heights): a colour value 0..1, or
-// null where there is none. `dith` is the shaders' checkerboard.
-function dustAt(x, y, dith, seed) {
+// The star dust at (x, y) (in picture heights; `across` heights wide): a
+// colour value 0..1, or null where there is none. `dith` is the shaders'
+// checkerboard.
+function dustAt(x, y, across, dith, seed) {
   const size = SHIP_WINDOWS.dust, octaves = 8;
-  const alpha = fbm(x * Math.ceil(size * 0.5) + 2, y * Math.ceil(size * 0.5) + 2, octaves, seed);
-  let lerp = fbm(x * Math.ceil(size * 0.2) - 2, y * Math.ceil(size * 0.2) - 2, octaves, seed) * cloudAlpha(x * size, y * size, octaves, seed);
+  const half = Math.ceil(size * 0.5), fifth = Math.ceil(size * 0.2);
+  const alpha = fbm(x * half + 2, y * half + 2, octaves, seed, half * across);
+  let lerp = fbm(x * fifth - 2, y * fifth - 2, octaves, seed, fifth * across) * cloudAlpha(x * size, y * size, octaves, seed, size * across);
   if (dith) lerp *= 0.95;
   if (alpha > lerp * 1.8) return null;
   let value = Math.pow(lerp, 3.2) * 56;
@@ -162,13 +175,13 @@ function dustAt(x, y, dith, seed) {
   return Math.floor(value) / 7;
 }
 
-// The nebula at (x, y): a colour value 0..1 (under 0.1 shows the
+// The nebula at (x, y) (as dustAt): a colour value 0..1 (under 0.1 shows the
 // background colour), or null outside it. Its thin pale band is where the
 // edge (SHIP_WINDOWS.edge) widens it.
-function nebulaAt(x, y, dith, seed) {
+function nebulaAt(x, y, across, dith, seed) {
   const size = SHIP_WINDOWS.nebula, octaves = 3;
-  const n = cloudAlpha(x * size, y * size, octaves, seed);
-  const n2 = fbm(x * size + 1, y * size + 1, octaves, seed);
+  const n = cloudAlpha(x * size, y * size, octaves, seed, size * across);
+  const n2 = fbm(x * size + 1, y * size + 1, octaves, seed, size * across);
   let lerp = n * n2 * n;
   if (dith) lerp *= 0.95;
   const inside = n2 <= SHIP_WINDOWS.nebulaAt;

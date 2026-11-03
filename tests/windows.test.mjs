@@ -128,3 +128,24 @@ test('the space picture fills every pixel and is the same for the same seed', as
   paintSpace(c, w, h, 0.75);
   assert.notDeepEqual(a, c);
 });
+
+// The windows scroll the picture slowly (Timothy 2026-11-02: moving
+// through space), so it must wrap with no seam: its last column runs into
+// its first about as smoothly as any two columns side by side.
+test('the space picture wraps across with no seam', async () => {
+  const { paintSpace } = await import('../js/space.js');
+  const w = 240, h = 120;
+  for (const seed of [0.1, 0.4, 0.7]) {
+    const px = new Uint8ClampedArray(w * h * 4);
+    paintSpace(px, w, h, seed);
+    const step = (a, b) => {
+      let sum = 0;
+      for (let y = 0; y < h; y++) for (let c = 0; c < 3; c++) sum += Math.abs(px[(y * w + a) * 4 + c] - px[(y * w + b) * 4 + c]);
+      return sum;
+    };
+    let usual = 0;
+    for (let x = 0; x + 1 < w; x++) usual += step(x, x + 1);
+    usual /= w - 1;
+    assert.ok(step(w - 1, 0) <= usual * 2.5, 'seam ' + step(w - 1, 0) + ' vs usual ' + usual);
+  }
+});
