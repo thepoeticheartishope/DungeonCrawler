@@ -23,3 +23,5 @@ Every room is a text drawing in [`js/rooms.js`](js/rooms.js): `#` wall, `.` floo
 ## Credits
 
 Terminal font: [VT323](https://github.com/phoikoi/VT323) by Peter Hull, under the SIL Open Font License 1.1 (see `fonts/OFL.txt`).
+
+Space outside the ship's windows: drawn by a port of [PixelSpace](https://deep-fold.itch.io/) by Deep-Fold (`js/space.js`), under the MIT licence, copyright (c) 2021 Deep-Fold.

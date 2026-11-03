@@ -1,13 +1,15 @@
 // The windows and the eye in the sky on the room view (room view plan
 // step F, sky eye plan; moved out of roomview.js): windows on back walls
 // that face the outside, their warm pool of light with the frame's shadow,
+// the ship's windows into space (space.js),
 // and, while the player looks up (main.js holdLookUp -> lookUp), the room
 // fading into the night sky with the eye hanging in it as pixel art.
 // roomview.js hands over its glow canvas, this frame's look and its scale
 // first (startSkyFrame). Reads state and never changes it.
 
 import { state } from './state.js';
-import { ROOM_VIEW, SKY_EYE, WINDOW_LIGHT } from './config.js';
+import { ROOM_VIEW, SKY_EYE, WINDOW_LIGHT, SHIP_WINDOWS } from './config.js';
+import { spacePicture } from './space.js';
 import { skyEyeOpen, skyTurnsLeft } from './mapshared.js';
 import { POOL } from './roomthings.js';
 import { t } from './text.js';
@@ -17,6 +19,9 @@ const T = ROOM_VIEW.tilePx;
 // windows.js and WINDOW_LIGHT): the frame and glass, the warm pool's
 // strength and colour, the frame's shadow in it, and how bright the glass stays.
 const WINDOW = { frame: '#4a3a30', glassTop: '#f3dcae', glassFoot: '#ddb173' };
+// The ship's windows: a hull-grey frame with a lit top edge and a dark
+// inner rim round the view of space.
+const SHIP_FRAME = { frame: '#2b3138', edge: '#56606b', rim: '#14181c' };
 // The night sky while looking up: how dark the room goes under it, and the
 // line width of the eye, in picture pixels.
 const SKY = { dark: 0.92, line: 1, rise: 0.15, middle: 0.42 };
@@ -52,7 +57,9 @@ export function roomLookUp() {
 
 // A window in the still picture: an arched frame two tiles wide over both
 // faces of the wall, warm glass (light outside), its cross bars, a sill.
+// A ship window (one with a `view`) is drawn as drawShipWindow instead.
 export function drawWindow(ctx, w) {
+  if (w.view) return drawShipWindow(ctx, w);
   const x0 = w.col * T + 4, width = 2 * T - 8, top = (w.row - 1) * T + 5, bottom = w.row * T + T - 6;
   const rad = width / 2;
   for (let y = top; y <= bottom; y++) {
@@ -68,6 +75,70 @@ export function drawWindow(ctx, w) {
   ctx.fillRect(x0 + rad - 1, top, 2, bottom - top);
   ctx.fillRect(x0, top + Math.round((bottom - top) * 0.55), width, 2);
   ctx.fillRect(x0 - 3, bottom + 1, width + 6, 2);
+}
+
+// Where a ship window's glass is in the still picture, in picture pixels:
+// two tiles wide over both faces of its wall, inside the frame.
+export function shipGlass(w) {
+  const x = w.col * T + 5, y = (w.row - 1) * T + 6;
+  return { x, y, w: 2 * T - 10, h: 2 * T - 13 };
+}
+
+// Where in the space picture a ship window's glass looks: `w.view`'s spot,
+// scrolled SHIP_WINDOWS.drift picture pixels a second (`now`, ms), the
+// ship moving through space. Across, it wraps round the picture (space.js
+// makes it seamless). Where the player stands doesn't move it (Timothy
+// 2026-11-02: that was disorienting). No `now` (the still picture, reduced
+// motion): no scroll.
+function viewCorner(w, g, sky, now) {
+  let sx = w.view.x * sky.width;
+  const sy = w.view.y * (sky.height - g.h);
+  if (now) sx += now / 1000 * SHIP_WINDOWS.drift;
+  sx = Math.round(sx) % sky.width;
+  return [sx < 0 ? sx + sky.width : sx, Math.round(sy)];
+}
+
+// Draws the glass `g` from the space picture with its top-left at
+// (sx, sy), in two pieces where it runs off the picture's right edge and
+// wraps to its left.
+function drawView(c, sky, sx, sy, g, dx, dy) {
+  const first = Math.min(g.w, sky.width - sx);
+  c.drawImage(sky, sx, sy, first, g.h, dx, dy, first, g.h);
+  if (first < g.w) c.drawImage(sky, 0, sy, g.w - first, g.h, dx + first, dy, g.w - first, g.h);
+}
+
+// A ship window's view of space drawn over the lit picture at `alpha`
+// (roomview.js, each frame, for the room the player is in), scrolling with
+// the time (`now`); null under reduced motion keeps the still picture's
+// view. While it scrolls the view keeps drawing frames.
+export function drawShipView(c, w, ox, oy, now, alpha) {
+  const g = shipGlass(w);
+  const sky = spacePicture(state.floor.spaceSeed);
+  const [sx, sy] = viewCorner(w, g, sky, now);
+  c.globalAlpha = alpha;
+  drawView(c, sky, sx, sy, g, g.x - ox, g.y - oy);
+  c.globalAlpha = 1;
+  if (now) look.keepMoving();
+}
+
+// A ship window (Timothy 2026-11-02): a rounded hull frame two tiles wide
+// with its part of the run's space picture (space.js) as the glass, from
+// where `w.view` says it looks, and a short sill below.
+function drawShipWindow(ctx, w) {
+  const g = shipGlass(w);
+  const sky = spacePicture(state.floor.spaceSeed);
+  const [sx, sy] = viewCorner(w, g, sky, null);
+  ctx.fillStyle = SHIP_FRAME.frame;
+  ctx.fillRect(g.x - 2, g.y - 3, g.w + 4, g.h + 6);
+  ctx.fillRect(g.x - 3, g.y - 2, g.w + 6, g.h + 4);
+  ctx.fillStyle = SHIP_FRAME.edge;
+  ctx.fillRect(g.x - 1, g.y - 3, g.w + 2, 1);
+  ctx.fillStyle = SHIP_FRAME.rim;
+  ctx.fillRect(g.x, g.y - 1, g.w, g.h + 2);
+  ctx.fillRect(g.x - 1, g.y, g.w + 2, g.h);
+  drawView(ctx, sky, sx, sy, g, g.x, g.y);
+  ctx.fillStyle = SHIP_FRAME.edge;
+  ctx.fillRect(g.x - 4, g.y + g.h + 3, g.w + 8, 1);
 }
 
 // The warm light a window throws down and across the floor of its room
