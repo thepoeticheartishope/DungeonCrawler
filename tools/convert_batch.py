@@ -29,7 +29,7 @@ from bible_text import tokens
 
 BATCHES = os.path.join(HERE, 'batches.json')
 PHOTO_ROOT = os.path.expanduser('~/ForClaude/For Quiz Set')
-SETS = {'quiz-bowl': 'lists/bible-quiz-bowl.json', 'trivia': 'lists/bible-trivia.json'}
+SETS = {'quiz-bowl': 'lists/bible-quiz-bowl.json'}
 SW = 'service-worker.js'
 BASE = os.environ.get('CONVERT_BASE', 'origin/main')  # questions on this ref count as already there
 STOP = set('the a an of and or to in on for his her their its was were is be by with as at from that this who what '
