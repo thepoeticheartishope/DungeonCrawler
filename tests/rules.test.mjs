@@ -26,7 +26,7 @@ import { advanceMonsters, spawnMinion, refreshTargetValidity } from '../js/comba
 import { stepPlayer, goldReward } from '../js/moves.js';
 import { settleAnswer } from '../js/answers.js';
 import { resetHaunts } from '../js/haunts.js';
-import { openGateFree } from '../js/gate.js';
+import { openGateFree, gateModifierCount } from '../js/gate.js';
 import { rollCategoryModifiers } from '../js/modifiers.js';
 
 // These are the turn game's rules (the start screen's Turns option): One
@@ -604,7 +604,7 @@ test('bumping the gate asks GATE_QUESTIONS by keys held; standing beside it does
 test('the gate\'s questions carry GATE_MODIFIERS modifiers each, by keys held', () => {
   for (let keys = 0; keys < GATE_MODIFIERS.length; keys++) {
     resetGate(keys);
-    rollCategoryModifiers(state.floor.boss, 3).forEach(mods => {
+    rollCategoryModifiers(state.floor.boss, 3, gateModifierCount()).forEach(mods => {
       assert.equal([].concat(mods || []).length, GATE_MODIFIERS[keys], `${keys} keys`);
     });
   }
