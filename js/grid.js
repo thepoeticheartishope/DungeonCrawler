@@ -9,13 +9,13 @@ import { state, key } from './state.js';
 // four-way search has always used.
 export const FOUR_STEPS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
-// The four ways plus the four diagonals, as noise.js and vents.js spread.
+// The four ways plus the four diagonals.
 export const EIGHT_STEPS = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
 
 // Walkable steps (four ways) from `from` to every tile it reaches on the
 // floor's grid, as a Map of tile key -> steps. `blocked` holds the keys
 // that can't be walked onto. `stopAt`, if given, is a key that is reached
-// but never walked through (beats.js: the boss guards its room's only door).
+// but never walked through (the boss guards its room's only door).
 export function stepsFrom(from, blocked, stopAt = null) {
   const size = state.floor.GRID_SIZE;
   const steps = new Map([[key(from.row, from.col), 0]]);

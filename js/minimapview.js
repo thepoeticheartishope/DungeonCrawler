@@ -77,28 +77,11 @@ export function refreshMinimap() {
     ctx.fillRect(left + (across(tile) - 0.5) * unit, top + (down(tile) - 0.5) * unit, unit, unit);
   }
   ctx.globalAlpha = 1;
-  // Grates the player has seen, and a line between a pair they know.
   const at = tile => [left + across(tile) * unit, top + down(tile) * unit];
   const seen = v => !state.settings.fogEnabled || f.exploredSet.has(key(v.row, v.col));
   ctx.save();
   ctx.strokeStyle = colours.player;
   ctx.lineWidth = 1;
-  ctx.setLineDash([2, 4]);
-  f.vents.forEach((v, i) => {
-    if ((!v.known && !state.settings.showDucts) || i > v.pair) return;
-    ctx.beginPath();
-    ctx.moveTo(...at(v));
-    ctx.lineTo(...at(f.vents[v.pair]));
-    ctx.stroke();
-  });
-  ctx.setLineDash([]);
-  f.vents.filter(seen).forEach(v => {
-    const [x, y] = at(v);
-    const r = Math.max(2.5, unit * 0.35);
-    ctx.fillStyle = '#000';
-    ctx.fillRect(x - r, y - r / 2, r * 2, r);
-    ctx.strokeRect(x - r, y - r / 2, r * 2, r);
-  });
   // Lamps the player has seen (lamps.js): a small ring, so the lit places
   // to plan from are on the map.
   f.lamps.filter(seen).forEach(l => {

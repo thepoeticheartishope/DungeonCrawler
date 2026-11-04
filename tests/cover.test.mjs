@@ -7,15 +7,20 @@
 // Run: node --test tests/*.test.mjs
 
 import { test } from 'node:test';
+
 import assert from 'node:assert/strict';
 
 import { emptyFloor } from './helpers.mjs';
+
 import { state } from '../js/state.js';
-import { NOISE_RANGES, COVER, ONE_STICK } from '../js/config.js';
-import { computeVisibility, hiddenFrom, besideCover } from '../js/sight.js';
+
+import { ONE_STICK } from '../js/config.js';
+import { computeVisibility, hiddenFrom } from '../js/sight.js';
+
 import { spawnMinion, advanceMonsters } from '../js/combat.js';
-import { makeNoise } from '../js/noise.js';
+
 import { BODY_ANGLES } from '../js/look.js';
+
 import { walkFree, resetWalk, switchSneak } from '../js/walk.js';
 
 // An open floor, player in the middle facing north (light on), One stick.
@@ -57,19 +62,6 @@ test('standing, or with nothing on the line, it notices them', () => {
   const n = spawnMinion({ row: state.floor.playerRow - 5, col: state.floor.playerCol }, 'SHARD');
   state.floor.sneaking = true;
   assert.ok(!hiddenFrom(n.row, n.col), 'the desk is beside them, not between');
-});
-
-test("crouched beside cover, a mistake's sound carries COVER.noiseShare as far", () => {
-  resetFloor();
-  const loud = makeNoise('gate')[0].tiles;
-  const far = Math.max(...loud.map(t => t.d));
-  assert.equal(far, NOISE_RANGES.gate);
-  deskBetween();
-  state.floor.minions = [];
-  state.floor.sneaking = true;
-  assert.ok(besideCover());
-  const quiet = makeNoise('gate')[0].tiles;
-  assert.equal(Math.max(...quiet.map(t => t.d)), Math.round(NOISE_RANGES.gate * COVER.noiseShare));
 });
 
 test('a creep stays crouched once let go, until a full-pace walk or X', () => {

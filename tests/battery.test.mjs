@@ -12,16 +12,22 @@
 // reset before each test.
 
 import { test } from 'node:test';
+
 import assert from 'node:assert/strict';
 
 import { emptyFloor, withRandom } from './helpers.mjs';
+
 import { state, key, parseKey } from '../js/state.js';
-import { LIGHT_BATTERY_MAX, PLAYER_LIGHT_RADIUS, MINION_TRACK_TURNS, GAZE_MS, DIAL_DEPTHS, DIAL_LAP_MS, DIAL_LAP_LIMIT_MS, DARK_SWEEP_SCALE, LOW_BATTERY_CHARGE } from '../js/config.js';
-import { tickGaze } from '../js/gaze.js';
+
+import { LIGHT_BATTERY_MAX, PLAYER_LIGHT_RADIUS, MINION_TRACK_TURNS, DIAL_DEPTHS, DIAL_LAP_MS, DIAL_LAP_LIMIT_MS, DARK_SWEEP_SCALE, LOW_BATTERY_CHARGE } from '../js/config.js';
 import { fire, fireBlock, readyShot, settleShot, darkShotPath } from '../js/gun.js';
+
 import { freshLight, lightOn, tickLight, toggleLight, turnsToFull } from '../js/battery.js';
+
 import { computeVisibility, inLookCone, shootBlock } from '../js/sight.js';
+
 import { advanceMonsters, spawnMinion, lockOn } from '../js/combat.js';
+
 
 // These are the turn game's rules (the start screen's Turns option): One
 // stick, the default since one stick plan step G, has its own tests.
@@ -352,56 +358,6 @@ test('with the light on, a shot still needs a target in the cone', () => {
 
 // --- Step E: the eye (gaze.js) ---
 
-test('the eye adds up over every look, never runs down, and at 3 s the stick man steps closer', () => {
-  resetFloor();
-  const { playerRow: pr, playerCol: pc } = state.floor;
-  const m = spawnMinion({ row: pr - 3, col: pc });
-  const turns = state.run.turnCount;
-  const charge = state.floor.light.charge;
-  assert.deepEqual(tickGaze(GAZE_MS / 2), []);
-  assert.equal(m.gaze, GAZE_MS / 2);
-  state.floor.facing = 'S'; // turn away
-  state.floor.look = Math.PI;
-  computeVisibility();
-  tickGaze(GAZE_MS * 2);
-  assert.equal(m.gaze, GAZE_MS / 2, 'out of the light it holds, not runs down');
-  state.floor.facing = 'N';
-  state.floor.look = 0;
-  computeVisibility();
-  const events = tickGaze(GAZE_MS / 2);
-  assert.deepEqual(events.map(e => e.type), ['gazeStep']);
-  assert.deepEqual(at(m), { row: pr - 2, col: pc });
-  assert.deepEqual(events[0].from, { row: pr - 3, col: pc });
-  assert.equal(m.gaze, 0, 'the eye shuts again');
-  assert.equal(m.track, MINION_TRACK_TURNS);
-  assert.equal(state.run.turnCount, turns, 'not a turn');
-  assert.equal(state.floor.light.charge, charge, 'no battery spent');
-});
-
-test('only the cone counts, not the small circle; the light off counts nothing', () => {
-  resetFloor();
-  const { playerRow: pr, playerCol: pc } = state.floor;
-  const behind = spawnMinion({ row: pr + 1, col: pc });
-  const ahead = spawnMinion({ row: pr - 3, col: pc });
-  tickGaze(1000);
-  assert.equal(behind.gaze, 0);
-  assert.equal(ahead.gaze, 1000);
-  toggleLight();
-  computeVisibility();
-  tickGaze(1000);
-  assert.equal(ahead.gaze, 1000);
-});
-
-test('a full eye beside the player only stares, and never steps onto them', () => {
-  resetFloor();
-  const { playerRow: pr, playerCol: pc } = state.floor;
-  const m = spawnMinion({ row: pr - 1, col: pc });
-  const events = tickGaze(GAZE_MS);
-  assert.deepEqual(events.map(e => e.type), ['gazeStare']);
-  assert.deepEqual(at(m), { row: pr - 1, col: pc });
-  assert.equal(m.track, MINION_TRACK_TURNS);
-});
-
 test('firing at a stick man shuts its eye, in the light or the dark', () => {
   resetFloor();
   state.run.energy = 2;
@@ -419,20 +375,4 @@ test('firing at a stick man shuts its eye, in the light or the dark', () => {
   computeVisibility();
   fire(null);
   assert.equal(m.gaze, 0);
-});
-
-test('no eye in Comfort mode, with DEV -> Gaze off, or on the hunter', () => {
-  for (const flip of [() => { state.settings.simpleEnemies = true; }, () => { state.settings.gaze = false; }]) {
-    resetFloor();
-    const m = spawnMinion({ row: state.floor.playerRow - 3, col: state.floor.playerCol });
-    flip();
-    assert.deepEqual(tickGaze(GAZE_MS * 2), []);
-    assert.equal(m.gaze, 0);
-    state.settings.gaze = true;
-  }
-  resetFloor();
-  const hunter = spawnMinion({ row: state.floor.playerRow - 3, col: state.floor.playerCol }, null);
-  hunter.kind = 'hunter';
-  tickGaze(GAZE_MS * 2);
-  assert.equal(hunter.gaze, 0);
 });

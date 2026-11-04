@@ -6,8 +6,7 @@
 // with READY in its middle, then the circle (drawn by dialview.js), and
 // after a stop holds the result and fades out. One shows at a time.
 // main.js opens them and passes in the actions they call (pickReload,
-// cancelReload, readyBar, backBar, stopBar, stopStruggle), like
-// exchangeview.js. What a reload offers is gun.js reloadOffers(); what a
+// cancelReload, readyBar, backBar, stopBar, stopStruggle). What a reload offers is gun.js reloadOffers(); what a
 // stopped dial does is gun.js settleShot() (or settleStruggle()); this
 // only draws and listens.
 

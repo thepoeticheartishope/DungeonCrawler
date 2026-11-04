@@ -1,4 +1,4 @@
-// Unit tests for the rule modules (no DOM): sight.js, light.js, passage.js,
+// Unit tests for the rule modules (no DOM): sight.js, passage.js,
 // combat.js, moves.js, answers.js.
 //
 // Run: node --test tests/*.test.mjs
@@ -13,21 +13,14 @@ import assert from 'node:assert/strict';
 import { emptyFloor } from './helpers.mjs';
 import { state, key } from '../js/state.js';
 import {
-  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE,
-  LIGHT_TURNS_PER_STEP, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY, DARK_GOLD_MULTIPLIER,
-  MAX_HEARTS, DARK_MISS_COST, GATE_QUESTIONS, GATE_MODIFIERS, GATE_WRONG_TURNS, CORE_KEYS, MINION_KINDS, MINION_TRAIL_LENGTH,
+  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY,
+  DARK_GOLD_MULTIPLIER, MAX_HEARTS, DARK_MISS_COST, MINION_KINDS, MINION_TRAIL_LENGTH,
 } from '../js/config.js';
 import { computeVisibility, canMakeOut, shootBlock, canShoot } from '../js/sight.js';
-import {
-  initBossLight, advanceLight, extinguishLight, lightCoverage, lightProgress, lightConsumed,
-} from '../js/light.js';
 import { whatBlocks, canPassCorner, stepsAway } from '../js/passage.js';
 import { advanceMonsters, spawnMinion, refreshTargetValidity } from '../js/combat.js';
 import { stepPlayer, goldReward } from '../js/moves.js';
 import { settleAnswer } from '../js/answers.js';
-import { resetHaunts } from '../js/haunts.js';
-import { openGateFree, gateModifierCount } from '../js/gate.js';
-import { rollCategoryModifiers } from '../js/modifiers.js';
 
 // These are the turn game's rules (the start screen's Turns option): One
 // stick, the default since one stick plan step G, has its own tests.
@@ -224,59 +217,7 @@ test('a pillar in the line blocks the shot', () => {
   assert.ok(canShoot(at(-1, 0)), 'the pillar tile itself can be shot at');
 });
 
-
 // --- light.js ---
-
-function openFloorWithBoss(size = 11) {
-  resetFloor(size);
-  const mid = Math.floor(size / 2);
-  state.floor.boss = { row: mid, col: mid, hp: 1 };
-  initBossLight();
-  return mid;
-}
-
-test('the boss light starts at radius 1 and spreads one step every LIGHT_TURNS_PER_STEP turns', () => {
-  const mid = openFloorWithBoss();
-  assert.equal(state.floor.floorCount, 11 * 11);
-  assert.equal(state.floor.bossLitSet.size, 5); // the boss tile and its four neighbours
-  for (let i = 0; i < LIGHT_TURNS_PER_STEP * 2 - 1; i++) advanceLight();
-  assert.equal(state.floor.bossLitSet.size, 5);
-  advanceLight();
-  assert.equal(state.floor.bossLitSet.size, 13); // radius 2 diamond
-  assert.ok(state.floor.bossLitSet.has(key(mid - 2, mid)));
-  assert.ok(lightCoverage() > 0 && lightCoverage() < 1);
-});
-
-test('the run is lost exactly when the turn budget runs out', () => {
-  openFloorWithBoss();
-  assert.equal(lightProgress(), 0);
-  for (let i = 0; i < state.floor.lightTurnBudget - 1; i++) advanceLight();
-  assert.ok(!lightConsumed());
-  advanceLight();
-  assert.ok(lightConsumed());
-  assert.equal(lightProgress(), 1);
-});
-
-test('walls stop the light spreading', () => {
-  resetFloor(11);
-  for (let r = 0; r < 11; r++) state.floor.wallSet.add(key(r, 3));
-  state.floor.boss = { row: 5, col: 8, hp: 1 };
-  initBossLight();
-  assert.equal(state.floor.floorCount, 11 * 7); // columns 4..10 only
-  assert.ok(!state.floor.bossDist.has(key(5, 1)));
-});
-
-test('with no boss the light does nothing, and extinguishing clears it', () => {
-  openFloorWithBoss();
-  extinguishLight();
-  assert.equal(state.floor.bossLitSet.size, 0);
-  state.floor.boss = null;
-  const turns = state.floor.lightTurns;
-  advanceLight();
-  assert.equal(state.floor.lightTurns, turns);
-  assert.equal(lightProgress(), 0);
-  assert.ok(!lightConsumed());
-});
 
 // --- passage.js ---
 
@@ -524,7 +465,6 @@ test('papers give the story in order, then their own roll', () => {
 // A floor with one target selected and one question showing.
 function resetAnswer(target) {
   resetFloor();
-  resetHaunts();
   state.run.hearts = MAX_HEARTS;
   state.battle.wager = 0;
   state.run.attempts = 1;
@@ -576,71 +516,6 @@ test('a right answer adds to the run\'s correct total, a miss does not', () => {
 
 // --- gate.js: the boss is the gate ---
 
-// The boss one step north of the player, the light set up, `keys` held.
-function resetGate(keys) {
-  resetFloor();
-  resetHaunts();
-  state.run.hearts = MAX_HEARTS;
-  state.battle.wager = 0;
-  state.battle.currentQuestion = { term: 'Who built the ark?', meaning: 'Noah', difficulty: 'easy' };
-  state.floor.boss = { row: state.floor.playerRow - 1, col: state.floor.playerCol, kind: 'boss', hp: 3, max: 3 };
-  state.floor.keysHeld = keys;
-  initBossLight();
-}
-
-test('bumping the gate asks GATE_QUESTIONS by keys held; standing beside it does nothing', () => {
-  for (let keys = 0; keys < GATE_QUESTIONS.length; keys++) {
-    resetGate(keys);
-    refreshTargetValidity();
-    assert.equal(state.battle.selectedTarget, null, 'beside the gate is not a fight');
-    const reached = stepPlayer(-1, 0).find(e => e.type === 'gateReached');
-    assert.deepEqual(reached, { type: 'gateReached', questions: GATE_QUESTIONS[keys] });
-    assert.equal(state.battle.selectedTarget, state.floor.boss);
-    assert.equal(state.floor.boss.max, GATE_QUESTIONS[keys]);
-  }
-  assert.equal(GATE_QUESTIONS[CORE_KEYS], 0, 'every key opens it free');
-});
-
-test('the gate\'s questions carry GATE_MODIFIERS modifiers each, by keys held', () => {
-  for (let keys = 0; keys < GATE_MODIFIERS.length; keys++) {
-    resetGate(keys);
-    rollCategoryModifiers(state.floor.boss, 3, gateModifierCount()).forEach(mods => {
-      assert.equal([].concat(mods || []).length, GATE_MODIFIERS[keys], `${keys} keys`);
-    });
-  }
-});
-
-test('a wrong answer at the gate feeds the light and seals it until the next key', () => {
-  resetGate(1);
-  stepPlayer(-1, 0);
-  const before = state.floor.lightTurns;
-  const events = settleAnswer(false, false, 'Moses');
-  assert.deepEqual(types(events), ['answerGiven', 'rejected', 'bossHeld', 'gateSealed', 'noiseMade']);
-  assert.equal(state.floor.lightTurns, before + GATE_WRONG_TURNS);
-  assert.equal(state.floor.gateSealed, true);
-  assert.equal(events[1].cost, 0, 'a gate miss costs no heart');
-  assert.equal(state.run.hearts, MAX_HEARTS);
-  assert.ok(state.floor.boss, 'the boss stays in the doorway');
-  // Sealed: a bump is only a bump.
-  state.battle.selectedTarget = null;
-  assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['blocked']);
-  assert.equal(state.battle.selectedTarget, null);
-  // The next key unseals it, at the easier level.
-  state.floor.keys = [{ row: state.floor.playerRow + 1, col: state.floor.playerCol }];
-  const taken = stepPlayer(1, 0).find(e => e.type === 'keyTaken');
-  assert.equal(taken.unsealed, true);
-  assert.equal(state.floor.gateSealed, false);
-  stepPlayer(-1, 0);
-  assert.equal(stepPlayer(-1, 0).find(e => e.type === 'gateReached').questions, GATE_QUESTIONS[2]);
-});
-
-test('with every key the gate gives: the boss falls and the floor goes dark', () => {
-  resetGate(CORE_KEYS);
-  assert.deepEqual(types(openGateFree()), ['gateOpened', 'bossDefeated', 'darknessFell']);
-  assert.equal(state.floor.boss, null);
-  assert.equal(state.floor.darkness, true);
-});
-
 test('boss hits count down, and the last one fires bossDefeated then darknessFell', () => {
   const boss = { row: 0, col: 0, kind: 'boss', hp: 2, max: 2 };
   resetAnswer(boss);
@@ -683,17 +558,6 @@ test('a lost wager cannot take gold below 0; a won one pays it', () => {
   const won = settleAnswer(true, false, 'Noah');
   const gold = won.filter(e => e.type === 'goldGained').reduce((sum, e) => sum + e.amount, 0);
   assert.equal(state.run.coinsTotal, 2 + gold, 'the wager and the chest\'s gold');
-});
-
-test('a missed question lingers when missed again and is silenced when answered right', () => {
-  resetAnswer(null);
-  state.battle.selectedTarget = { row: 0, col: 0, kind: 'chest' };
-  assert.ok(!types(settleAnswer(false, false, 'Moses')).some(t => t.startsWith('haunt')));
-  state.battle.selectedTarget = { row: 0, col: 0, kind: 'chest' };
-  assert.ok(types(settleAnswer(false, false, 'Moses')).includes('hauntLingers'));
-  state.battle.selectedTarget = { row: 0, col: 0, kind: 'chest' };
-  assert.ok(types(settleAnswer(true, false, 'Noah')).includes('hauntSilenced'));
-  assert.equal(state.run.hauntsSilenced, 1);
 });
 
 // --- moves.js / combat.js: items open only when bumped ---
@@ -763,19 +627,6 @@ test('a one-wide door cannot be entered from the side', () => {
   assert.equal(stepPlayer(-1, 1).find(e => e.type === 'blocked').kind, 'corner');
   stepPlayer(0, 1);
   assert.equal(stepPlayer(-1, 0).at(-1).type, 'stepped', 'straight in works');
-});
-
-test('diagonal bumps open the gate and the chest', () => {
-  resetGate(0);
-  const r = state.floor.playerRow, c = state.floor.playerCol;
-  state.floor.boss.row = r - 1;
-  state.floor.boss.col = c + 1;
-  assert.deepEqual(stepPlayer(-1, 1).find(e => e.type === 'gateReached'), { type: 'gateReached', questions: GATE_QUESTIONS[0] });
-
-  resetFloor();
-  state.floor.chest = { kind: 'chest', row: state.floor.playerRow + 1, col: state.floor.playerCol - 1 };
-  assert.equal(stepPlayer(1, -1).at(-1).type, 'itemReached');
-  assert.equal(state.battle.selectedTarget, state.floor.chest);
 });
 
 test('a minion chases on a diagonal and reaches from a diagonal tile', () => {

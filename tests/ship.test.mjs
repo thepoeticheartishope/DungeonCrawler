@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
-import { buildShipFloor, buildTestFloor } from '../js/floor.js';
+import { buildShipFloor } from '../js/floor.js';
 import { walkTileMs } from '../js/walk.js';
 import { enterTile, bumpInto } from '../js/moves.js';
 import { whatBlocks } from '../js/passage.js';
@@ -59,21 +59,12 @@ test('every open tile on the ship is seen from the start: no dark areas', () => 
   }
 });
 
-test('the ship walk is quicker than the walk elsewhere; a creep is a creep everywhere', () => {
+test('the ship walk is quicker than the old walk; a creep is a creep on the ship too', () => {
   const f = shipFloor();
   assert.equal(walkTileMs(), ONE_STICK.shipWalkMs);
   assert.ok(ONE_STICK.shipWalkMs < ONE_STICK.walkMs);
   f.creeping = true;
   assert.equal(walkTileMs(), ONE_STICK.sneakMs);
-  buildTestFloor('hide');
-  state.floor.creeping = false;
-  assert.equal(walkTileMs(), ONE_STICK.walkMs);
-});
-
-test('a floor built after the ship is not a ship', () => {
-  shipFloor();
-  buildTestFloor('hide');
-  assert.equal(state.floor.ship, false);
 });
 
 // Timothy 2026-11-02: Command's shutters are automatic doors, with no switch

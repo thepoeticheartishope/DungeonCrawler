@@ -7,10 +7,10 @@
 // which also wires every button and key and starts the walking frame).
 
 import { state } from './state.js';
-import { tutorialSteady } from './tutorial.js';
+
 import { syncBattleScreen } from './battlescreen.js';
 import {
-  gunReady, nextGunTarget, openNameBarrel, openRelay, openReload, pressSelect, releaseSelect, steadyOn, openJob,
+  gunReady, nextGunTarget, openReload, pressSelect, releaseSelect, steadyOn, openJob,
 } from './gunactions.js';
 import {
   REALTIME_WALK_MS, LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, LOOK_UP_STICK, LOOK_SWEEP_SPEED, ONE_STICK,
@@ -39,8 +39,8 @@ const btnSelect = document.getElementById('btnSelect');
 const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // The main.js actions these call, passed in by initControls.
-let applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger, openConsole,
-  openExchange, realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame;
+let applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
+  realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame;
 
 // A tap on the map. It picks the gun's
 // target: the light swings to the minion on that tile and the target
@@ -214,7 +214,7 @@ function walkFrame(now) {
     resetWalk();
     if (!clockMayRun() || state.run.turnLocked) return;
     const ticked = tickSteady(Math.min(dt, ONE_STICK.frameMs));
-    const note = drawEvents(ticked.concat(tutorialSteady(ticked)));
+    const note = drawEvents(ticked);
     if (note.text) showRoomNote(note.cls, note.text);
     requestMapDraw();
     const hearts = state.run.hearts;
@@ -300,20 +300,16 @@ function settleMove(events) {
     const note = drawEvents(events);
     if (note.text) showRoomNote(note.cls, note.text);
     if (has('boxSprung') || has('itemReached') || has('gateReached')) syncBattleScreen();
-    if (has('exchangeOpened')) openExchange();
+
   }
   state.run.turnLocked = false;
   const cell = events.find(e => e.type === 'cellFound');
   if (cell) openReload(false, cell.prop);
-  const relay = events.find(e => e.type === 'relayFound');
-  if (relay) openRelay(relay.prop);
+
   // A crew member's job (roles.js; crew roles plan): its rounds on the ask screen.
   const job = events.find(e => e.type === 'jobStarted');
   if (job) openJob(job.role);
-  if (has('nameAsked')) openNameBarrel();
-  const left = events.find(e => e.type === 'tutorialLeft');
-  if (left) leaveTutorial(left.advanced);
-  if (has('stationLeft')) leaveStation();
+
   const charger = events.find(e => e.type === 'chargerOpened');
   if (charger) openCharger(charger.charger);
   const station = events.find(e => e.type === 'stationOpened');
@@ -337,8 +333,8 @@ export function walkHeld() {
 // it once at load, where these used to be set up.
 export function initControls(actions) {
   ({
-    applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger, openConsole,
-    openExchange, realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame,
+    applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
+    realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame,
   } = actions);
   window.addEventListener('blur', () => sweep.reset());
   requestAnimationFrame(walkFrame);

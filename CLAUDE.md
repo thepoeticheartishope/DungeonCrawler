@@ -5,18 +5,14 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 
 ## Rules every change must follow
 
-- **The ship is the game; the old dungeon crawl is DEPRECATED** (Timothy 2026-11-01). The start
-  screen always starts the ship. The dungeon's code and files stay, reachable only under `?dev`
-  (uncheck the start screen's dev-only "Ship" box). Don't build new features for the dungeon, and
-  don't delete its code unless Timothy asks. Ship work comes first.
+- **The ship is the game** (Timothy 2026-11-01). The start screen always starts the ship; there is
+  no other way in. The old dungeon crawl is being deleted in layers (dungeon removal plan,
+  `ideas/dungeon-removal-plan.md` outside the repo; step B removed its floors, tutorial and extras).
+  What is left of it (combat, the boss's light, fog) is unreachable and goes in steps C–D: don't
+  build on it.
 - `main` is protected: branch + PR, one PR per logical change.
 - Changed a file listed in `service-worker.js` `APP_SHELL`? Bump `CACHE_NAME` in the same commit.
-- Added a core mechanic (a new way to move, see, fight, answer or get out)? Give the tutorial room
-  (`tutorial.js`) a beat for it: the tutorial shows the game's central mechanics (Timothy).
-  The tutorial stays simple (Timothy 2026-10-29): a mechanic Timothy tags as one the player needs,
-  but not central, gets a station in the optional advanced tutorial (`advanced.js`
-  `ADVANCED_STATIONS`) instead. Ask him which when it isn't clear.
-  New JS file? Add it to `APP_SHELL` too.
+- New JS file? Add it to `APP_SHELL` too; a deleted one comes out of it.
 - All player-facing wording lives in `js/text.js` (`t(key, vars)`). Never write wording inline.
 - Tunables live in `js/config.js`. Game state lives in `js/state.js`.
 - "Still broken right after a fix" is usually a stale service worker: test in Incognito first.
@@ -24,7 +20,7 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
   bottom-left corner: Fog off, Skip room, Auto-win, Inspect (live state + last 20 events).
 - Automated tests: `node --test tests/*.test.mjs` (rule unit tests, no dependencies) and
   `node tests/smoke.mjs` (Playwright, see its header; 4 runs at once by default, `SMOKE_JOBS=1` one at a time;
-  `SMOKE_ONLY=tutorial,answer SMOKE_REPEAT=20` runs only those runs, that many times each, to chase one that
+  `SMOKE_ONLY=ship SMOKE_REPEAT=20` runs only those runs, that many times each, to chase one that
   fails now and then). In smoke checks wait for a condition (`waitUntil`), never a fixed sleep or
   `waitForFunction` with an async check (it never waits).
 
@@ -92,43 +88,25 @@ Rules and data (no page/DOM access):
 | `grid.js` | `FOUR_STEPS` / `EIGHT_STEPS` step tables and `stepsFrom()`, the one step-count walk over the floor. |
 | `random.js` | `shuffle(list)` and `randInt(lo, hi)`. |
 | `text.js` | All wording: `t()`, per-floor overrides, `data-t` labels. |
-| `rooms.js` | Hand-drawn room templates for random floors. |
-| `dungeon.js` | Random floor layouts from the templates; `buildRestLayout()`. |
 | `plans.js` | `FLOOR_PLANS`: fixed buildings per depth (School, Archive, Observatory), furniture, lamps; `buildPlanLayout()`. |
-| `floors.js` | `FLOOR_RECIPES` (what each floor holds) and `FLOOR_PATHS` (the ways down). Data only. |
-| `floor.js` | `buildFloor()` / `buildRestFloor()` / `buildTutorialFloor()` / `buildShipFloor()`: a floor as data. |
+| `floor.js` | `buildShipFloor()`: the ship as data. |
 | `decor.js` | Room themes, pillars, papers, boxes, energy cells, fixed-plan furniture (`makePlacer`). |
-| `beats.js` | `placeBeats()`: the recipe's beats along the walk to the farthest key. |
-| `run.js` | `nextFloor()`: the run's shape, rests between depths. |
-| `tutorial.js` | The tutorial room and its stages; the kind voice's lines for each core mechanic. |
-| `advanced.js` | The optional advanced tutorial: a chain of small stations, one per mechanic the player needs. |
-| `testroom.js` | DEV test rooms: one hand-drawn room per mechanic, a stick man on a set route (start screen's DEV "Start in"). |
 | `passage.js` | `whatBlocks()` (can I step here?), `canPassCorner()`, `stepsAway()`. |
 | `sight.js` | The player's light (`computeVisibility`), the look cone, `canMakeOut`, `shootBlock`, cover. |
 | `look.js` | Free look: body facing vs. aim, `aimLook`, `turnBody`, `sweepLook`, `swingLook`. |
 | `light.js` | The boss's light spreading over the floor; the run is lost at the threshold. |
 | `battery.js` | The player's light on a battery: switching, drain, lock-out. |
-| `gaze.js` | The eye over a stick man the light rests on; at full it steps closer. |
-| `haunts.js` | Missed questions that come back later in the run. |
-| `exchange.js` | THE UNFOLDING: `offers()` and `buy(id)` on rest floors. |
 | `modifiers.js` | Blind / Gambler / Flip / Timer rolls; `blindReadMs()`. |
 | `minigames.js` | Minigame rules: which fit a question, rolls, tiers (Close Enough … Sum Lock). |
 | `combat.js` | Stick men and the hunter: moving, chasing, last-seen tracking, reaching; `advanceMonsters()`, `clockFrame()`. |
 | `gun.js` | The gun: targets, reloads, firing, the dial, the Struggle, steady aim, energy and rounds. |
-| `realclock.js` | The real-time clock: `pollClock()` says when the world's beat is due. |
 | `moves.js` | The player's step (`stepPlayer`), `bumpInto`, `enterTile`, `goldReward`. |
 | `walk.js` | Free walking with One stick: `walkFree()`, sneak and creep. |
 | `walkpace.js` | Smooth walk: every way takes the same time per screen distance. |
-| `goals.js` | Floor goals: roll, mark, score on the way down. |
-| `relays.js` | Relays: hold a room, turn the light back; `keptOut()`. |
-| `vents.js` | Grates and ducts the stick men crawl through. |
-| `noise.js` | Mistakes make noise; stick men in range hear it. |
 | `windows.js` | Windows on outside walls and their pools of light. |
 | `lamps.js` | Fixed-plan lamps and their pools (seen from afar, not shootable by). |
-| `spots.js` | Room spots: each plan room's places that may hold a hide, takedown, lure or scout, rolled each run (`rollSpots`); hiding in a live hide spot (`hideIn`, `leaveHiding`, `state.floor.hidden`); pushing over a takedown (`topple`). |
 | `shadows.js` | Stick men's shadows thrown away from lamps and windows. |
 | `warning.js` | DEV warning timer: how long before a reach the player had a sign. |
-| `static.js` | `staticLevel()`: 0..1 from the closest stick man. |
 | `desk.js` | The reflective desk in the start room: heals to full once a floor. |
 | `saferoom.js` | The safe room: shutters, switch, lamp; who waits outside. |
 | `charger.js` | The charger (CHARGE.SYS wires): energy and battery to full. |
@@ -159,9 +137,7 @@ Drawing and page code:
 | `playerform.js` | The player's stick man: breath, ember head, glances. |
 | `figure3d.js` | Picks and blends the 3D moves into poses for the player and stick men. |
 | `moves3d.js` | Generated 3D move data (Quaternius, CC0). Don't edit by hand. |
-| `staticview.js` | Draws the static veil and the wrong letters. |
 | `swirl.js` | The answer ring after a miss with Reveal on. |
-| `introview.js` | The terminal intro before the first floor. |
 | `questionview.js` | The one question panel, its modifiers, mounted where it's needed. |
 | `minigameview.js` | Draws each minigame in the question panel. |
 | `gunpanels.js` | The ask screen (reloads, relays), the dial veil, `mapPanelShown()`. |
@@ -171,7 +147,6 @@ Drawing and page code:
 | `pageturn.js` | The record book's page turn. |
 | `tubeart.js` | The light tube as pixel art (book strip and LIGHT button). |
 | `minimapview.js` | The minimap on the book's MAP page. |
-| `exchangeview.js` | THE UNFOLDING's screen. |
 | `shipview.js` | The ship's opening: the run's tragedy a line at a time, then TAKE COMMAND. |
 | `consoleview.js` | COMMAND.SYS, the ship's training console: the roles to learn and where each stands. |
 | `dataview.js` | DATA.SYS question viewer and comment export. |
@@ -186,14 +161,13 @@ Drawing and page code:
 - **One stick (the default):** controls.js `walkFrame()` runs every animation frame: input →
   walk.js `walkFree()` → moves.js `enterTile()` / `bumpInto()` → events →
   main.js `applyTurnOutcome(events)`. Then `worldFrame()` → combat.js `clockFrame(dt)` (battery, each
-  stick man on its own clock). Every `REALTIME_STEP_MS` the beat (`clockTick`) runs what still
-  counts in turns: the boss's light, the hunter, the ducts.
-- **Turns (start screen option):** controls.js `movePlayer()` → `stepPlayer()` → events →
-  `applyTurnOutcome(events)` → `advanceMonsters()` → `drawEvents()`.
+  stick man on its own clock).
+- **Turns:** no start option reaches it any more (dungeon removal step B); controls.js
+  `movePlayer()` → `stepPlayer()` is still the DEV One stick OFF path, and goes in step D.
 - **Fights:** SELECT → gunactions.js `pressSelect()` → `fireGun()` → `fire()` → dial or steady aim →
-  `settleShot()`. Energy cells and relays ask on the ask screen; the boss and the chest use the
+  `settleShot()`. Energy cells ask on the ask screen; the boss and the chest use the
   battle screen → `settleAnswer()`.
-- The clock pauses for the ask screen, a dial, the Struggle, the battle screen, THE UNFOLDING,
+- The clock pauses for the ask screen, a dial, the Struggle, the battle screen,
   the DEV panel, end screens and a hidden tab; it keeps running under CHARGE.SYS and the book.
 
 The full walk-through of each flow is at the end of `docs/module-map.md`.

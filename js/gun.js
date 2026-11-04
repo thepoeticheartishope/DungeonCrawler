@@ -19,14 +19,14 @@ import {
 } from './config.js';
 import { fightGroups } from './quiz.js';
 import { shuffle } from './random.js';
-import { recordHauntAnswer } from './haunts.js';
+
 import { shootBlock, canShoot, seesEnemy, computeVisibility } from './sight.js';
 import { aimLook, angleTo, lookAngle, wantsTurn, wrapAngle } from './look.js';
 import { goldReward } from './moves.js';
 import { tileOccupied, lockOn, lungeAt } from './combat.js';
 import { canPassCorner } from './passage.js';
 import { batteryInPlay, lightOn, lowBattery } from './battery.js';
-import { makeNoise } from './noise.js';
+
 
 // The category the next reload asks from, as { label, category, pool }.
 // Categories come round in a fixed order (the same groups the battle
@@ -95,15 +95,13 @@ export function reloadOffers() {
 // with `offer`. Right gives the offer's energy (as much as fits) and counts
 // toward state.run.correctTotal; wrong jams: no energy, and no heart
 // is lost (the turn spent is the cost). A timed-out question is a wrong
-// answer. Either way the haunt is recorded and the rotation moves on.
+// answer. Either way the rotation moves on.
 // A reload from an energy cell (`box`) uses the cell up, right or wrong, so
 // every cell is one question. A minigame's `tier` changes the energy by
 // its MINIGAME_TIER_PAY `energy` (tier 1 one less, never below 1; X one
 // more), except an offer that fills the energy (two modifiers), which
 // fills it at any tier (Timothy); a plain question is '2'.
-// Events: reloaded { energy, total } or jammed { expected, source } and
-// its noise (noise.js makeNoise: a jam is loud), then hauntSilenced /
-// hauntLingers.
+// Events: reloaded { energy, total } or jammed { expected, source }.
 export function settleReload(isCorrect, offer, box = null, tier = '2') {
   if (box) box.searched = true;
   const q = state.battle.currentQuestion;
@@ -116,11 +114,8 @@ export function settleReload(isCorrect, offer, box = null, tier = '2') {
     events.push({ type: 'reloaded', energy, total: state.run.energy });
   } else {
     state.floor.misses++;
-    events.push({ type: 'jammed', expected: q.meaning, source: q.source }, ...makeNoise('reload'));
+    events.push({ type: 'jammed', expected: q.meaning, source: q.source });
   }
-  const haunt = recordHauntAnswer(q, isCorrect);
-  if (haunt === 'silenced') events.push({ type: 'hauntSilenced' });
-  else if (haunt === 'lingers') events.push({ type: 'hauntLingers' });
   state.run.reloadIndex++;
   return events;
 }
@@ -524,7 +519,7 @@ export function cancelSteady() {
 // Any hit stuns it for MINION_STUN_MOVES of its moves (m.rest), so a
 // minion one step away can't walk straight in.
 // Events: shotMissed { minion }; shotJammed { minion, energyLost },
-// shotLoud { minion } and its noise (noise.js makeNoise), or shotLunged
+// shotLoud { minion }, or shotLunged
 // { minion } and lungeAt's; or minionHit { minion, tier, matched } (with
 // One stick, reachBroken { minion } if it was reaching) then
 // guardBroken { minion, stun }, minionReels { minion }, minionDowned
@@ -572,8 +567,8 @@ function settleZone(aim, zone) {
 }
 
 // A dial stopped in a harmful zone of kind `harm` (HARM_KINDS) for `aim`.
-// Jam: 1 more energy lost, if there is any. Loud: a noise (noise.js
-// makeNoise), as loud as the old backfire. Lunge: the minion takes a step
+// Jam: 1 more energy lost, if there is any. Loud: as loud as
+// the old backfire. Lunge: the minion takes a step
 // toward the player at once (combat.js lungeAt), which can bring it onto
 // them; a lunge in the dark with nothing there is just a shot into the dark.
 // Events: shotJammed { minion, energyLost }, shotLoud { minion } then
@@ -587,7 +582,7 @@ function settleHarm(harm, aim) {
     if (energyLost) spendRound();
     return [{ type: 'shotJammed', minion: m, energyLost, ...at }];
   }
-  if (harm === 'loud') return [{ type: 'shotLoud', minion: m, ...at }, ...makeNoise('loud')];
+  if (harm === 'loud') return [{ type: 'shotLoud', minion: m, ...at }];
   if (!m) return [{ type: 'shotIntoDark', end: aim.end }];
   return [{ type: 'shotLunged', minion: m, ...(aim.dark ? { dark: true } : {}) }, ...lungeAt(m)];
 }
@@ -673,8 +668,8 @@ export function readyStruggle() {
 // shoves it away: STRUGGLE_PUSHBACK tiles, no damage to either. Anything
 // else and it strikes, as it would have with energy left.
 // Events: struggleWon { minion } then knockedBack { minion, from } if it
-// had room to go; or struggleLost { minion }, its noise (noise.js
-// makeNoise), then minionStrike's events.
+// had room to go; or struggleLost { minion },
+// then minionStrike's events.
 export function settleStruggle(position) {
   const struggle = state.battle.struggle;
   if (!struggle) return [];
@@ -682,7 +677,7 @@ export function settleStruggle(position) {
   const m = struggle.minion;
   if (!state.floor.minions.includes(m)) return [];
   const { from: start, to: end } = struggle.zone;
-  if (position < start || position > end) return [{ type: 'struggleLost', minion: m }, ...makeNoise('struggle'), ...minionStrike(m)];
+  if (position < start || position > end) return [{ type: 'struggleLost', minion: m }, ...minionStrike(m)];
   const events = [{ type: 'struggleWon', minion: m }];
   const from = { row: m.row, col: m.col };
   if (pushBack(m, STRUGGLE_PUSHBACK)) events.push({ type: 'knockedBack', minion: m, from });

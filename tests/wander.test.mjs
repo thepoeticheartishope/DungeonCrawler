@@ -48,15 +48,6 @@ test('an idle stick man walks to a spot in another room, then stands there', () 
   assert.equal(state.floor.chamberAt.get(key(m.goal.row, m.goal.col)), 0, 'then off to the next room');
 });
 
-test('a room held by a relay is never a goal; with no room left it steps at random', () => {
-  resetFloor();
-  state.floor.heldChambers.add(1);
-  const m = spawnMinion({ row: 2, col: 3 });
-  advanceMonsters();
-  assert.equal(m.goal, null);
-  assert.ok(Math.max(Math.abs(m.row - 2), Math.abs(m.col - 3)) === 1, 'a random step');
-});
-
 test('a chase drops the idle plan', () => {
   resetFloor();
   const m = spawnMinion({ row: 2, col: 3 });

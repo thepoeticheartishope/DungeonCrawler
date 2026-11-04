@@ -9,7 +9,7 @@
 import { state } from './state.js';
 import { BATTLE_CHOICE_COUNT, TIMER_SECONDS } from './config.js';
 import { rollCategoryModifiers, maxWager } from './modifiers.js';
-import { pickHaunt } from './haunts.js';
+
 import { pickQuestion, escapeHtml, normalizeSpaces, buildCategoryChoices } from './quiz.js';
 import { showScreen, renderCombatStatus, renderTargeting, stopTimer } from './render.js';
 import { isAdjacentToPlayer, refreshTargetValidity } from './combat.js';
@@ -238,14 +238,7 @@ function startBattleTurn() {
     renderCategoryChoices();
   } else {
     state.battle.battlePhase = 'answering';
-    // A fight may bring back a missed question (js/haunts.js).
-    const haunt = isFight ? pickHaunt(state.settings.activeData, state.battle.currentQuestion) : null;
-    if (haunt) {
-      logLine(t('log.haunt.returns'), 'alert');
-      setQuestion(haunt);
-    } else {
-      syncQuestionForTarget();
-    }
+    syncQuestionForTarget();
     const forced = forcedQuestion(state.battle.currentQuestion, state.settings.activeData);
     if (forced !== state.battle.currentQuestion) setQuestion(forced);
     // The question was very likely set well before this moment, off-screen
@@ -265,11 +258,8 @@ export function chooseCategory(i) {
   if (state.run.turnLocked || state.battle.battlePhase !== 'choosing') return;
   const choice = state.battle.categoryChoices[i];
   if (!choice) return;
-  // A missed question from this category may come back instead.
-  const haunt = pickHaunt(choice.pool, state.battle.currentQuestion);
-  const q = haunt || pickQuestion(state.battle.currentQuestion, choice.pool);
+  const q = pickQuestion(state.battle.currentQuestion, choice.pool);
   logLine(t('log.vector', { n: i + 1, label: choice.label }), 'sys');
-  if (haunt) logLine(t('log.haunt.returns'), 'alert');
   state.floor.lastChoiceType = choice.choiceType || null;
   state.battle.battlePhase = 'answering';
   askQuestion(q, choice.modifiers, choice.pool, choice);

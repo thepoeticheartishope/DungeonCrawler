@@ -46,26 +46,26 @@ import { state, key, parseKey } from './state.js';
 import { FOUR_STEPS } from './grid.js';
 import {
   ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
-  ISO_NARROW_MAP_WIDTH, FIGURE3D, ENEMY_LIGHT, MINION_KINDS, SHADOW, SHIP_WINDOWS,
+  ISO_NARROW_MAP_WIDTH, FIGURE3D, ENEMY_LIGHT, SHADOW, SHIP_WINDOWS,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
 import { figurePose, projectFigure, phiOfAngle, resetFigure, sampleMove } from './figure3d.js';
 import { MOVE_JOINTS } from './moves3d.js';
 import { drawDroppedLetters, drawStickForm, stickBox, dyingSticks } from './stickforms.js';
-import { isWall, grain, ENEMY_KINDS, POSE_SCALE } from './mapshared.js';
+import { isWall, grain, ENEMY_KINDS } from './mapshared.js';
 import {
-  minionOn, eyeOf, EYE_LIFT, EYE_WIDTH, HEARD_LIFT, WEAK_RING, WEAK_RING_LEVEL,
+  minionOn, WEAK_RING, WEAK_RING_LEVEL,
 } from './mapshared.js';
 import { lampsOn, lampPoolLit } from './lamps.js';
 import { shadowsAt } from './shadows.js';
 import { answerRingNow } from './swirl.js';
 import {
-  FLAT, STAND, HALL_LAMP, POOL, drawThingsWith, bulbAt, hallLampSpot, drawBeam, drawLamp, drawLampShade, drawMist,
-  drawSounds, lampLevel, shadeAt, drawEmberHead, STICK_LINE,
+  FLAT, STAND, HALL_LAMP, POOL, drawThingsWith, bulbAt, hallLampSpot, drawLamp, drawLampShade, drawMist,
+  lampLevel, shadeAt, drawEmberHead, STICK_LINE,
 } from './roomthings.js';
 import {
-  startGunFrame, gunTargets, holdBook, drawBook, drawReach, drawBrackets, drawLaser, drawShot, drawAnswerRing, drawDarkRing,
+  startGunFrame, gunTargets, holdBook, drawBook, drawReach, drawBrackets, drawLaser, drawShot, drawAnswerRing,
   drawBookInto,
 } from './roomgun.js';
 import { startSkyFrame, drawWindow, drawPool, drawSky, drawShipView } from './roomsky.js';
@@ -122,7 +122,6 @@ const PILLAR = { body: '#4a4652', light: '#5a5662', dark: '#38343f', top: '#625d
 const LIT_TINT = [228, 240, 244];
 const DIM_TINT = [244, 236, 255];
 const LAMP_TINT = [255, 214, 170];
-const SPOT_MARK_COLOUR = '#ffd36b'; // DEV -> Spots' letters (drawSpotMarks)
 const HIDDEN_HEAD = 0.45;        // hidden in a room spot, how high his head shows, a share of his height
 
 // How each kind of thing is drawn (step B; tests/roomview.test.mjs checks
@@ -134,10 +133,10 @@ const HIDDEN_HEAD = 0.45;        // hidden in a room spot, how high his head sho
 // made out yet is a pixel '?' that stands like a prop, except the stairs
 // and a grate (drawn as they are) and enemies (never shown as a '?').
 export const ROOM_DRAWINGS = {
-  paper: 'flat', vent: 'flat', stairs: 'flat',
-  box: 'stand', furniture: 'stand', cell: 'stand', desk: 'stand', charger: 'stand', relay: 'stand', chest: 'stand', coin: 'stand', key: 'stand',
+  paper: 'flat', stairs: 'flat',
+  box: 'stand', furniture: 'stand', cell: 'stand', desk: 'stand', charger: 'stand', chest: 'stand', coin: 'stand', key: 'stand',
   shutter: 'stand', switch: 'stand', console: 'stand', powerBoard: 'stand', crew: 'stand',
-  minion: 'form', exchange: 'glyph', boss: 'glyph', hunter: 'glyph', player: 'player',
+  minion: 'form', boss: 'glyph', hunter: 'glyph', player: 'player',
 };
 // The '?' of a thing not made out yet, as rows of picture pixels.
 const UNKNOWN = [' ### ', '#   #', '    #', '   # ', '  #  ', '     ', '  #  '];
@@ -285,9 +284,6 @@ export function drawRoomScene(ctx, canvasSize, shared) {
     if (drawing === 'stand') items.push({ y: thing.at.row + 1, row, col, draw: () => STAND[thing.kind](thing, x, y, glows) });
     if (drawing === 'unknown') items.push({ y: thing.at.row + 1, row, col, draw: () => drawUnknown(x, y, glows) });
   });
-  // The tutorial's light from above falls in a column like the stairs' light.
-  const tut = f.tutorial;
-  if (tut && f.spotSet.size && inView(tut.spot.row, tut.spot.col)) glows.push(() => drawBeam((tut.spot.col + 0.5) * T - ox, (tut.spot.row + 0.7) * T - oy));
   // Hidden in a room spot, the player is drawn after its piece (only his
   // ember head shows).
   items.push({ y: at.row + (f.hidden ? 1.01 : ROOM_VIEW.footAt + 0.01), draw: () => drawStickMan(at, ox, oy) });
@@ -335,7 +331,6 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   bctx.globalCompositeOperation = 'lighter';
   glows.forEach(draw => draw());
   drawMist(c0, r0, c1, r1, ox, oy);
-  drawSounds(ox, oy);
   drawReach(c0, r0, c1, r1, ox, oy);
   bctx.globalCompositeOperation = 'source-over';
 
@@ -352,9 +347,7 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   drawBrackets(ctx);
   drawLaser(ctx);
   drawShot(ctx);
-  drawDarkRing(ctx);
   drawEdgeMarks(ctx, ox, oy);
-  if (state.settings.showSpots) drawSpotMarks(ctx, ox, oy);
   drawSky(ctx, viewW, viewH, at, ox, oy);
 }
 
@@ -851,24 +844,6 @@ function playerHead(ax, pose) {
   return { lean: ax, ring: look.colours.text, rgb: look.colours.glowRgb, level: emberGlow(pose.breath, look.still) };
 }
 
-// DEV -> Spots (room spots plan step A): each room spot's letter in its
-// tile's top-left corner, over everything: H hide, T takedown, L lure,
-// S scout, - nothing this run, x used up.
-function drawSpotMarks(ctx, ox, oy) {
-  const tile = T * scale;
-  ctx.save();
-  ctx.font = Math.round(tile * 0.45) + 'px VT323, monospace';
-  ctx.textBaseline = 'top';
-  state.floor.roomSpots.forEach(s => {
-    const x = (s.col * T - ox) * scale + 2, y = (s.row * T - oy) * scale + 1;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(x - 1, y, tile * 0.32, tile * 0.45);
-    ctx.fillStyle = SPOT_MARK_COLOUR;
-    ctx.fillText(s.used ? 'x' : s.kind ? s.kind[0].toUpperCase() : '-', x, y);
-  });
-  ctx.restore();
-}
-
 // Every thing but the player as its glyph on its tile, over the lit
 // picture at the canvas's own size (steps B to D draw them as pictures),
 // never smaller than on the old isometric map. Enemies' boxes are kept for taps.
@@ -903,7 +878,7 @@ function drawGlyphs(ctx, ox, oy) {
 // as they are.
 function drawingOf(thing) {
   const drawing = ROOM_DRAWINGS[thing.kind] || 'glyph';
-  if (thing.glyph === null && !['stairs', 'vent', 'shutter'].includes(thing.kind)) return ENEMY_KINDS.includes(thing.kind) ? 'glyph' : 'unknown';
+  if (thing.glyph === null && !['stairs', 'shutter'].includes(thing.kind)) return ENEMY_KINDS.includes(thing.kind) ? 'glyph' : 'unknown';
   if (drawing === 'form' && (state.settings.simpleEnemies || !minionOn(thing.tile) || !minionOn(thing.tile).minionKind)) return 'glyph';
   return drawing;
 }
@@ -929,8 +904,8 @@ function drawUnknown(x, y, glows) {
 // Draws every stick man in sight (and the killed ones still fading) over
 // the scaled-up picture, back to front, each at the player's stick man's
 // size times its kind's, turned toward the player, with what stands in
-// front of it redrawn over it, its maim ring while a shot on it waits, its
-// eye and heard '!'. Returns their boxes for taps.
+// front of it redrawn over it, and its maim ring while a shot on it
+// waits. Returns their boxes for taps.
 function drawForms(ctx, ox, oy, standing) {
   const tw = T * scale;
   const height = ROOM_VIEW.stickHeight * T * scale;
@@ -958,12 +933,6 @@ function drawForms(ctx, ox, oy, standing) {
       ctx.stroke();
     }
     if (!thing || !state.floor.minions.includes(m)) return;
-    const top = sy - height * ((MINION_KINDS[m.minionKind] || {}).size || 1);
-    const eyeY = top - EYE_LIFT * POSE_SCALE * tw;
-    drawGazeEye(ctx, sx, eyeY, m, tw, lineWidth);
-    if (thing.look.heard) {
-      look.paintGlyph(ctx, tw, sx, eyeY - HEARD_LIFT * POSE_SCALE * tw, '!', { size: 'prop', colour: 'rgb(' + ENEMY_LIGHT.core + ')', alpha: thing.look.heard });
-    }
     boxes.push({ box: stickBox(m, sx, sy, height), tile: thing.tile });
   });
   return boxes;
@@ -1065,38 +1034,6 @@ function enemyLine(ctx, path, level, w) {
   ctx.lineWidth = w;
   ctx.stroke();
   ctx.restore();
-}
-
-// The eye over a stick man in the player's cone (gaze.js) at (x, y): shut,
-// a line; the lids part slowly with its gaze, the pupil showing from a
-// third open.
-function drawGazeEye(ctx, x, y, m, tw, lineWidth) {
-  const eye = eyeOf(m);
-  if (!eye) return;
-  const w = tw * EYE_WIDTH;
-  const open = tw * eye.open;
-  const lids = () => {
-    ctx.beginPath();
-    ctx.moveTo(x - w, y);
-    ctx.quadraticCurveTo(x, y - open * 2, x + w, y);
-    ctx.quadraticCurveTo(x, y + open * 2, x - w, y);
-  };
-  ctx.save();
-  if (open > 1) {
-    lids();
-    ctx.fillStyle = '#000';
-    ctx.fill();
-  }
-  if (eye.share > 1 / 3) {
-    lids();
-    ctx.clip();
-    ctx.beginPath();
-    ctx.arc(x, y, w * (0.18 + 0.24 * eye.share), 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(' + ENEMY_LIGHT.core + ', ' + eye.level + ')';
-    ctx.fill();
-  }
-  ctx.restore();
-  enemyLine(ctx, lids, eye.level, lineWidth);
 }
 
 // A cold mark at the edge of the map pointing at each enemy in sight that

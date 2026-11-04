@@ -1,20 +1,20 @@
 // The gun's actions on the map (gun combat plan; moved out of main.js,
 // tech-debt item 4d): SELECT and F (pressSelect, fireGun, the steady aim's
 // hold and release), the dial's READY, stop and BACK, the Struggle's stop,
-// reloads from energy cells and relays on the ask screen (the record book),
-// the tutorial's name barrel, dressing a question with its modifiers and
+// reloads from energy cells on the ask screen (the record book),
+// dressing a question with its modifiers and
 // maybe a minigame (askQuestion, dressQuestion), and the DEV gun tests and
 // Auto-win. Like devpanel.js it looks up its own elements and gets the
 // main.js actions it calls passed in (initGunActions); main.js imports the
 // rest from here.
 
 import { state } from './state.js';
-import { tutorialDial, tutorialSteady, settleName } from './tutorial.js';
+
 import { matchesAnswer, mountBattleQuestion } from './battlescreen.js';
 import { ENERGY_MAX, LETTER_POOL_FORM, SHIP_JOB } from './config.js';
 import { pickQuestion } from './quiz.js';
 import { onStairs } from './moves.js';
-import { settleRelay } from './relays.js';
+
 import { settleBreaker } from './stations.js';
 import { roleOf, settleRound, jobOn, settleLearning, learningOn, stopLearning, startBoss, settleBoss } from './roles.js';
 import { requestMapDraw } from './mapview.js';
@@ -97,14 +97,14 @@ function fireGun() {
   // shot while the world goes on, and letting go fires (releaseSelect).
   if (state.battle.aim && steadyOn()) {
     startSteady();
-    const note = drawEvents(events.concat(tutorialSteady(events)));
+    const note = drawEvents(events);
     if (note.text) showRoomNote(note.cls, note.text);
     requestMapDraw();
     return;
   }
   state.run.turnLocked = true;
   if (state.battle.aim) {
-    const note = drawEvents(events.concat(tutorialDial(events)));
+    const note = drawEvents(events);
     if (note.text) showRoomNote(note.cls, note.text);
     showDamageBar(state.battle.aim);
     return;
@@ -184,7 +184,7 @@ export function readyDial(mode) {
   }
   const events = readyShot();
   if (!events.length) return;
-  const note = drawEvents(events.concat(tutorialDial(events)));
+  const note = drawEvents(events);
   if (note.text) showRoomNote(note.cls, note.text);
   runDamageBar(state.battle.aim);
 }
@@ -230,7 +230,7 @@ export function devTestReload() {
 }
 
 // What the question panel's input means on the ask screen, for the
-// reload or relay that's open (set by pickReload; DEV -> Auto-win answers through it).
+// reload that's open (set by pickReload; DEV -> Auto-win answers through it).
 let askAnswers = null;
 
 // A reload offer was picked: its question (or a minigame), with its
@@ -265,24 +265,6 @@ function holdAnswer(picked, settle, reveal = state.settings.revealOnWrong) {
   clearModifier();
   markAnswer(picked, matchesAnswer, reveal);
   holdAskScreen(settle);
-}
-
-// A relay was bumped (moves.js relayFound): its question on the ask screen,
-// like a reload's, with no offers to pick and no modifiers. Any answer
-// (relays.js settleRelay) is the turn.
-export function openRelay(relay) {
-  gunTest = false;
-  state.run.turnLocked = true;
-  const settle = (isCorrect, scored = []) => endReload(() => [...scored, ...settleRelay(isCorrect, relay)]);
-  askAnswers = {
-    onChoice: choice => holdAnswer(choice, () => settle(matchesAnswer(choice))),
-    onTyped: raw => { if (raw.trim()) settle(matchesAnswer(raw)); },
-    onTimeout: () => holdAnswer(null, () => settle(false)),
-    onResult: result => settle(result.right, endMinigame(result)),
-    log: text => showRoomNote('', text),
-  };
-  showQuestionScreen(askAnswers, 'relay');
-  askQuestion(pickQuestion(state.battle.currentQuestion), []);
 }
 
 // A crew member's job started (roles.js jobStarted; crew roles plan):
@@ -398,7 +380,7 @@ function jobQuestion(minigame) {
 }
 
 // A breaker was tapped on a ship station's wires (charger.js breakerAsked;
-// ship plan step B): its question on the ask screen, like a relay's; it
+// ship plan step B): its question on the ask screen, like a reload's; it
 // may run as a minigame, with no modifiers (no Timer on the ship). The
 // answer settles it
 // (stations.js settleBreaker: closed, or a spark), then the wires open
@@ -419,30 +401,6 @@ export function openBreaker(station, index) {
   };
   showQuestionScreen(askAnswers, 'breaker');
   askQuestion(pickQuestion(state.battle.currentQuestion), []);
-}
-
-// The tutorial's barrel was bumped (moves.js nameAsked): it asks the
-// player's name on the ask screen, typed, with no options, no modifiers
-// and no minigame. Any name that isn't blank settles it (tutorial.js
-// settleName), and that is the turn.
-export function openNameBarrel() {
-  gunTest = false;
-  state.run.turnLocked = true;
-  const none = () => {};
-  askAnswers = {
-    onChoice: none,
-    onTyped: raw => {
-      if (!raw.trim()) return;
-      showTypedAnswer(false);
-      endReload(() => settleName(raw));
-    },
-    onTimeout: none,
-    onResult: none,
-    log: text => showRoomNote('', text),
-  };
-  showQuestionScreen(askAnswers, 'barrel');
-  setQuestion({ term: t('tut.name.q'), meaning: '' });
-  showTypedAnswer(true);
 }
 
 // Shows the typed answer box in place of the options (`on`), or puts the
@@ -492,8 +450,7 @@ export function sumLockQuestion() {
 
 // A Letter Pool's stand-in for a question (minigames.js letterPoolSetup):
 // it asks for the category's answers ("BOOKS: FORM 3"), and its answer is
-// the hidden ones, for the log on a miss. It never comes back as a haunt
-// (haunts.js).
+// the hidden ones, for the log on a miss.
 export function letterPoolQuestion(group) {
   const pool = letterPoolSetup(group);
   const meaning = pool.hidden.map(w => w[0] + w.slice(1).toLowerCase()).join(', ');

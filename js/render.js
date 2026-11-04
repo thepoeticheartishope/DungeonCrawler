@@ -15,8 +15,6 @@ import { whatBlocks, canPassCorner } from './passage.js';
 import { SCREEN_WAYS, padWay } from './dpad.js';
 import { FACING_VECTORS } from './sight.js';
 import { waysInUse } from './look.js';
-import { clockReading } from './realclock.js';
-import { goalMark } from './goals.js';
 import { taughtCount } from './roles.js';
 import { t } from './text.js';
 
@@ -90,14 +88,14 @@ export function fadeAnswerLine(now = false) {
 }
 
 export function showScreen(el) {
-  [els.startScreen, els.introGlitch, els.shipIntroScreen, els.roomScreen, els.battleScreen, els.exchangeScreen, els.winScreen, els.loseScreen]
+  [els.startScreen, els.shipIntroScreen, els.roomScreen, els.battleScreen, els.winScreen, els.loseScreen]
     .forEach(s => s.classList.remove('show'));
   el.classList.add('show');
   // Hearts/coins/turn/room/timer are meaningless before a run starts (and
-  // during the intro glitch or the ship's opening, before the timer even
+  // during the ship's opening, before the timer even
   // starts), so the header only shows them once the player has actually
   // reached a room.
-  els.statsEl.classList.toggle('show', ![els.startScreen, els.introGlitch, els.shipIntroScreen].includes(el));
+  els.statsEl.classList.toggle('show', ![els.startScreen, els.shipIntroScreen].includes(el));
 }
 
 // How far away (in steps, as the crow flies) the hunter's edge glow starts
@@ -193,7 +191,6 @@ export function renderHud() {
   const keysTotal = state.floor.keysHeld + state.floor.keys.length;
   els.keysStat.hidden = keysTotal === 0;
   els.keysText.textContent = t(state.floor.gateSealed ? 'stat.keys.sealed' : 'stat.keys.count', { held: state.floor.keysHeld, total: keysTotal });
-  renderGoals();
   renderGunHud();
   renderBattery();
   renderShipHud();
@@ -253,34 +250,6 @@ function drawHudTube() {
   drawTube(canvas.getContext('2d'), { charge: light.charge, max: LIGHT_BATTERY_MAX, lit: light.on, bright: warm, upright: false });
   if (warm >= 1) { tubeWarmFrom = null; return; }
   requestAnimationFrame(() => { if (light.on && tubeWarmFrom !== null) drawHudTube(); });
-}
-
-// The floor's goals (goals.js), each with a mark: [x] kept if the player
-// went down now, [-] lost, [ ] not there yet. Hidden on a floor with none.
-const GOAL_MARKS = { kept: '[x]', failed: '[-]', open: '[ ]' };
-function renderGoals() {
-  const goals = state.floor.goals;
-  els.goalsStat.hidden = !goals.length;
-  // Marks on the HUD's short line; names with the rest of it (a tap).
-  els.goalsText.textContent = goals.map(g => GOAL_MARKS[goalMark(g.id)]).join('');
-  els.goalNames.textContent = goals.map(g => GOAL_MARKS[goalMark(g.id)] + ' ' + t('goal.' + g.id)).join('  ');
-}
-
-// The NEXT meter (Real time or One stick only): how long until the world next moves.
-// Its edge runs slowly across and reaches the far end as the world moves,
-// filling the meter one step and emptying it the next, so it never jumps.
-// Dim while the clock is paused (`running` false). Under reduced motion it
-// moves in still quarter steps instead of gliding. Called on each clock
-// poll (main.js clockTick).
-export function renderClock(running) {
-  const on = state.settings.realTime || state.settings.oneStick;
-  els.clockStat.hidden = !on;
-  if (!on) return;
-  const { share, filling } = clockReading();
-  const edge = reducedMotion.matches ? Math.floor(share * 4) / 4 : share;
-  els.clockFill.style.left = (filling ? 0 : edge) * 100 + '%';
-  els.clockFill.style.width = (filling ? edge : 1 - edge) * 100 + '%';
-  els.clockStat.classList.toggle('clock-held', !running);
 }
 
 // The gun's part of the HUD (gun plan step 6): energy held, the target and

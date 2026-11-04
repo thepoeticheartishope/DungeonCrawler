@@ -6,15 +6,21 @@
 // Run: node --test tests/*.test.mjs
 
 import { test } from 'node:test';
+
 import assert from 'node:assert/strict';
 
 import { emptyFloor, gunRun, minionAt as placeMinion } from './helpers.mjs';
+
 import { state } from '../js/state.js';
+
 import { MAX_HEARTS, MINION_KINDS, DOWNED_SLOWDOWN } from '../js/config.js';
+
 import { advanceMonsters, movesEvery } from '../js/combat.js';
+
 import { stepPlayer } from '../js/moves.js';
-import { fitsVents } from '../js/vents.js';
+
 import { fire, readyShot, settleShot } from '../js/gun.js';
+
 
 // An open floor, player in the middle facing north, the gun on, Downed on,
 // one round of energy.
@@ -114,14 +120,6 @@ test('"I see you." waits for a downed one\'s real move', () => {
   state.run.turnCount = 1;
   minionAt(3, 0);
   assert.ok(advanceMonsters().some(e => e.type === 'presenceSensed'));
-});
-
-test('a downed one never takes a duct', () => {
-  resetFloor();
-  const m = minionAt(-3, 0);
-  assert.equal(fitsVents(m), true);
-  m.downed = true;
-  assert.equal(fitsVents(m), false);
 });
 
 test('reaching the player it grabs their ankle: no stability lost, no Struggle with no energy', () => {

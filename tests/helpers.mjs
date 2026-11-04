@@ -9,7 +9,6 @@ import { state, key } from '../js/state.js';
 import { MAX_HEARTS } from '../js/config.js';
 import { freshLight } from '../js/battery.js';
 import { computeVisibility } from '../js/sight.js';
-import { resetHaunts } from '../js/haunts.js';
 import { spawnMinion } from '../js/combat.js';
 
 // An open size × size floor with nothing on it and the player in the middle
@@ -33,7 +32,6 @@ export function emptyFloor(size = 21, { settings = {}, run = {}, floor = {}, bat
     roomIndex: 0, resting: false, turnCount: 0, hearts: MAX_HEARTS, coinsTotal: 0, correctTotal: 0, loreQueue: [],
   }, run);
   Object.assign(state.battle, { selectedTarget: null, aim: null, struggle: null }, battle);
-  resetHaunts();
   if (see) computeVisibility();
 }
 
