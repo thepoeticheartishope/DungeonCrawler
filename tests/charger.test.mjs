@@ -9,7 +9,11 @@ import assert from 'node:assert/strict';
 import { state, key } from '../js/state.js';
 import { CHARGER, ENERGY_MAX, LIGHT_BATTERY_MAX } from '../js/config.js';
 import { freshLight } from '../js/battery.js';
-import { makeWires, powered, rotated, solveWires, wireSize, placeCharger, useCharger, turnWire, chargerLine, N, E, S, W } from '../js/charger.js';
+import { wireSize, placeCharger, useCharger, chargerLine, chargeUp } from '../js/charger.js';
+import { makeWires, powered, rotated, solveWires, turnWire as turnAnyWire, N, E, S, W } from '../js/wires.js';
+
+// The dungeon charger's wire turn: joined-up power charges (chargeUp).
+const turnWire = (charger, i) => turnAnyWire(charger, i, chargeUp);
 
 // A small seeded random, so a failing case can be run again.
 function seeded(seed) {

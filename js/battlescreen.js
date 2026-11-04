@@ -14,7 +14,7 @@ import { pickQuestion, escapeHtml, normalizeSpaces, buildCategoryChoices } from 
 import { showScreen, renderCombatStatus, renderTargeting, stopTimer } from './render.js';
 import { isAdjacentToPlayer, refreshTargetValidity } from './combat.js';
 import { lightConsumed } from './light.js';
-import { openGateFree } from './gate.js';
+import { openGateFree, gateModifierCount } from './gate.js';
 import { settleAnswer } from './answers.js';
 import { requestMapDraw, glyphOf } from './mapview.js';
 import { t } from './text.js';
@@ -229,7 +229,7 @@ function startBattleTurn() {
   state.battle.categoryChoices = isFight
     ? buildCategoryChoices(state.settings.activeData, BATTLE_CHOICE_COUNT, state.floor.lastChoiceType)
     : [];
-  const modifiers = rollCategoryModifiers(target, state.battle.categoryChoices.length);
+  const modifiers = rollCategoryModifiers(target, state.battle.categoryChoices.length, gateModifierCount());
   // Each choice's modifiers as a list: none, one, or the hunter's pair.
   state.battle.categoryChoices.forEach((choice, i) => { choice.modifiers = [].concat(modifiers[i] || []); });
 
@@ -255,7 +255,7 @@ function startBattleTurn() {
     // A boss question always carries a modifier, even with no category
     // choice to show it on. Any question may run as a minigame.
     clearModifier();
-    dressQuestion(target.kind === 'boss' ? [].concat(rollCategoryModifiers(target, 1)[0] || []) : []);
+    dressQuestion(target.kind === 'boss' ? [].concat(rollCategoryModifiers(target, 1, gateModifierCount())[0] || []) : []);
     if (!state.settings.mcMode) answerInput.focus();
   }
   showBattlePhase();

@@ -2464,7 +2464,7 @@ async function checkCharger(page, url) {
 
   const steps = await run(async () => {
     const { state } = await import('./js/state.js');
-    const { solveWires } = await import('./js/charger.js');
+    const { solveWires } = await import('./js/wires.js');
     return solveWires(state.floor.props.find(p => p.kind === 'charger').puzzle);
   });
   if (!steps) return 'the wires had no way through';

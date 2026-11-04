@@ -460,9 +460,9 @@ export function initControls(actions) {
     if (numpad && !mapPanelShown()) { e.preventDefault(); padPush(...SCREEN_WAYS[numpad]); }
     else if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
     else if (e.key === ' ' && !mapPanelShown()) { e.preventDefault(); holdLookUp('key', true); }
-    else if (gunReady() && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); if (!(e.repeat && steadyOn())) pressSelect(); }
-    else if (gunReady() && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
-    else if (gunReady() && e.key === '.') { e.preventDefault(); skipTurn(); }
+    else if (gunReady() && !state.floor.ship && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); if (!(e.repeat && steadyOn())) pressSelect(); }
+    else if (gunReady() && !state.floor.ship && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
+    else if (gunReady() && !state.floor.ship && e.key === '.') { e.preventDefault(); skipTurn(); }
     else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); switchLight(); }
     else if (state.settings.oneStick && (e.key === 'x' || e.key === 'X')) { e.preventDefault(); toggleSneak(); }
     else if (state.settings.oneStick && (e.key === 'u' || e.key === 'U') && !mapPanelShown()) { e.preventDefault(); holdLookUp('u', true); }

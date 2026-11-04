@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 
 import { state, key } from '../js/state.js';
 import { SHIP_STATIONS } from '../js/config.js';
-import { makeWires, powered, rotated, solveWires, turnWire, openBreaker } from '../js/charger.js';
+import { makeWires, powered, rotated, solveWires, turnWire, openBreaker } from '../js/wires.js';
 import { useStation, settleBreaker, stationDone, trainWires } from '../js/stations.js';
 import { buildShipFloor } from '../js/floor.js';
 import { emptyFloor } from './helpers.mjs';

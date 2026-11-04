@@ -26,7 +26,6 @@ import {
 } from './config.js';
 import { numberQuestion, pickQuestion, normalizeSpaces, fightGroups } from './quiz.js';
 import { shuffle } from './random.js';
-import { recordHauntAnswer } from './haunts.js';
 import { ZODIAC } from './zodiac.js';
 import { MINIGAME_LEVELS } from './config.js';
 
@@ -210,11 +209,10 @@ export function levelOf(id) {
 
 // The minigame showing has ended with `result`. Clears
 // state.battle.minigame. A minigame that asked more questions than the
-// one showing (Verdict) lists the ones missed in `result.missed`: each
-// becomes a haunt like any missed question. The one showing is left to
-// the settle rule, which records it by the result as a whole.
-// Events: minigameScored { minigame, tier, given, answer }, then
-// hauntLingers for each missed one that was a haunt already.
+// one showing (Verdict) lists the ones missed in `result.missed`; they no
+// longer become haunts (haunts are dungeon-only, never asked on the ship;
+// dungeon removal plan step A).
+// Events: minigameScored { minigame, tier, given, answer }.
 export function endMinigame(result) {
   const minigame = state.battle.minigame;
   state.battle.minigame = null;
@@ -223,11 +221,7 @@ export function endMinigame(result) {
     state.run.ship.perfect = state.run.ship.perfect || {};
     state.run.ship.perfect[minigame] = (state.run.ship.perfect[minigame] || 0) + 1;
   }
-  const events = [{ type: 'minigameScored', minigame, tier: result.tier, given: result.given, answer: state.battle.currentQuestion.meaning }];
-  (result.missed || []).forEach((q) => {
-    if (q !== state.battle.currentQuestion && recordHauntAnswer(q, false) === 'lingers') events.push({ type: 'hauntLingers' });
-  });
-  return events;
+  return [{ type: 'minigameScored', minigame, tier: result.tier, given: result.given, answer: state.battle.currentQuestion.meaning }];
 }
 
 // ---- Close Enough: set a dial to a number answer ----

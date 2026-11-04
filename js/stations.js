@@ -11,7 +11,7 @@
 // wires and gunactions.js asks a breaker's question. No DOM access here.
 
 import { state } from './state.js';
-import { makeWires, powered } from './charger.js';
+import { makeWires, powered } from './wires.js';
 import { SHIP_STATIONS } from './config.js';
 import { crewMissed, crewRight } from './ship.js';
 import { useCrew, arrivedIfAllTaught, crewFull } from './roles.js';

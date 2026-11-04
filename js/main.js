@@ -40,7 +40,8 @@ import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector, startTally, syncDevOneStick } from './devpanel.js';
 import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap, freeStepOnMap, playerHitOnMap } from './mapview.js';
-import { turnWire, chargerLine } from './charger.js';
+import { chargerLine, chargeUp } from './charger.js';
+import { turnWire } from './wires.js';
 import { stationMode, stationDone, trainWires } from './stations.js';
 import { consoleRoles, startLearning, noteOnDuty, taughtCount } from './roles.js';
 import { initConsoleView, showConsole } from './consoleview.js';
@@ -1343,7 +1344,7 @@ function openCharger(charger) {
   showCharger(charger.puzzle, realTimeOn(), charger.kind === 'charger' ? null : stationMode(charger));
 }
 
-// A wire turned (a tap, or F / Enter / Space on it): charger.js turnWire.
+// A wire turned (a tap, or F / Enter / Space on it): wires.js turnWire.
 // Every second turn is a spent turn, the world's as for a step (with Real
 // time on, the clock is the cost instead). Once the power joins up, energy
 // is full and CHARGE.SYS closes after CHARGER.closeMs; on a ship station
@@ -1353,7 +1354,7 @@ function turnChargerWire(index) {
   const charger = openChargerProp;
   if (!charger || state.run.turnLocked || state.run.runEnded || !chargerShown()) return;
   const wires = charger.puzzle;
-  const events = turnWire(charger, index, charger.kind === 'charger' ? undefined : stationDone);
+  const events = turnWire(charger, index, charger.kind === 'charger' ? chargeUp : stationDone);
   if (!events.length) return;
   if (events.some(e => e.type === 'breakerAsked')) {
     openBreaker(charger, index);

@@ -6,7 +6,7 @@
 // charger.js; main.js opens it and passes in what a turn and LEAVE do
 // (turnWire, leave). This only draws and listens.
 
-import { powered, openBreaker, N, E, S, W } from './charger.js';
+import { powered, openBreaker, N, E, S, W } from './wires.js';
 import { CHARGER } from './config.js';
 import { t } from './text.js';
 

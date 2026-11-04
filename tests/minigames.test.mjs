@@ -498,14 +498,13 @@ test('Verdict tiers: 3 claims pay X or 1; the boss\'s 5 pay X, 2 or 1', () => {
   assert.equal(verdictTier(3, 5), null);
 });
 
-test('claims called wrong become haunts; the question showing is left to the settle rule', () => {
+test('claims called wrong are not haunts (haunts are dungeon-only); the minigame is cleared', () => {
   reset();
   state.settings.activeData = VERDICT_SET;
   state.battle.minigame = 'verdict';
   state.battle.currentQuestion = VERDICT_SET[0];
   endMinigame({ right: true, tier: '1', given: '2 of 3 right', missed: [VERDICT_SET[0], VERDICT_SET[2]] });
-  assert.ok(state.run.haunts.has(VERDICT_SET[2]), 'another claim called wrong');
-  assert.ok(!state.run.haunts.has(VERDICT_SET[0]), 'the settle rule records this one');
+  assert.equal(state.run.haunts.size, 0, 'no claim becomes a haunt');
   assert.equal(state.battle.minigame, null);
 });
 
@@ -604,7 +603,7 @@ test('a trapped box that rolls a minigame runs Sum Lock; nothing else can', () =
   state.battle.selectedTarget = null;
 });
 
-test('a wrong total brings both questions back as haunts, never the lock itself', () => {
+test('a wrong total makes no haunts: not the two questions, not the lock itself', () => {
   reset();
   state.settings.activeData = SUMS;
   const lock = sumLockSetup();
@@ -613,8 +612,7 @@ test('a wrong total brings both questions back as haunts, never the lock itself'
   state.battle.minigame = 'sumLock';
   state.battle.currentQuestion = standIn;
   endMinigame({ right: false, tier: null, given: '40', missed: [lock.first, lock.second] });
-  assert.ok(state.run.haunts.has(lock.first) && state.run.haunts.has(lock.second));
-  assert.ok(!state.run.haunts.has(standIn));
+  assert.equal(state.run.haunts.size, 0);
 });
 
 // ---- Fuel Mix (ship minigames plan step A) ----

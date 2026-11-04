@@ -9,7 +9,6 @@
 import { state } from './state.js';
 import { MODIFIER_CHANCE, MODIFIER_DARK_BONUS, FLIP_MAX_ANSWERS, HUNTER_MODIFIER_PAIRS, BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS } from './config.js';
 import { shuffle } from './random.js';
-import { gateModifierCount } from './gate.js';
 
 export const MODIFIERS = ['blind', 'gambler', 'flip', 'timer'];
 
@@ -40,16 +39,16 @@ export function rollModifier(target) {
 }
 
 // Modifiers for a fight's `count` categories. Against the boss (the gate)
-// each carries as many as the keys held say (gate.js gateModifierCount):
+// each carries `perQuestion`, as many as the keys held say (the caller
+// passes gate.js gateModifierCount(), so this file needs no dungeon code):
 // two is one of HUNTER_MODIFIER_PAIRS per category, one is spread so the
 // categories differ where possible (three categories get three different
 // ones; Gambler only with gold for a wager), so which category to pick is
 // still a real choice; none is none.
 // Anything else rolls each category on its own. Each entry is one
 // modifier, null, or a pair.
-export function rollCategoryModifiers(target, count) {
+export function rollCategoryModifiers(target, count, perQuestion = 0) {
   if (!target || target.kind !== 'boss') return Array.from({ length: count }, () => rollModifier(target));
-  const perQuestion = gateModifierCount();
   if (perQuestion === 0) return Array.from({ length: count }, () => null);
   if (perQuestion >= 2) {
     const pairs = shuffle(HUNTER_MODIFIER_PAIRS);

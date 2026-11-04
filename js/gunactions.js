@@ -83,9 +83,9 @@ export function pressSelect() {
 // (gun.js fire). A blocked shot only says why and costs nothing; a landed
 // shot on the hunter is the turn; one on a minion opens the dial at READY
 // first, and the turn is spent when it stops (BACK before READY spends
-// nothing: lowerGun).
+// nothing: lowerGun). Never on the ship: it has no gun.
 function fireGun() {
-  if (!gunReady()) return;
+  if (!gunReady() || state.floor.ship) return;
   const events = fire(state.floor.gunTarget);
   if (events.some(e => e.type === 'fireBlocked')) {
     const note = drawEvents(events);
