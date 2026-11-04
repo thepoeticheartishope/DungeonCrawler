@@ -44,7 +44,7 @@ cached so re-runs are quick.
 
 ## Adding a batch of questions by hand
 
-1. Add the questions to `lists/bible-quiz-bowl.json` (or `bible-trivia.json`).
+1. Add the questions to `lists/bible-quiz-bowl.json`.
 2. `python3 tools/kjv_check.py`: fix any wrong citations or misquoted verses it reports.
 3. `python3 tools/fact_check.py`: labels every question.
 4. Look at its **NEEDS REVIEW** list. For each one, decide whether the answer

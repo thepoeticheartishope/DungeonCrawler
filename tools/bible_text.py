@@ -44,7 +44,7 @@ ALIASES.update({
  '2 tim':'2 Timothy','philem':'Philemon','heb':'Hebrews','jas':'James','1 pet':'1 Peter','2 pet':'2 Peter','rev':'Revelation',
 })
 
-BIBLE_SETS = ['lists/bible-quiz-bowl.json', 'lists/bible-trivia.json']
+BIBLE_SETS = ['lists/bible-quiz-bowl.json']
 
 
 def book_of(s):
