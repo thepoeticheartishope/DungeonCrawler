@@ -200,6 +200,333 @@
     cursor: pointer;
   }
   .option-toggle[hidden] { display: none; }
+  /* A drawn phosphor box instead of the browser's own checkbox widget. */
+  .option-toggle input {
+    appearance: none;
+    -webkit-appearance: none;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 2px solid var(--text);
+    background: transparent;
+    box-shadow: 0 0 6px rgba(var(--glow-rgb), 0.35);
+    cursor: pointer;
+  }
+  .option-toggle input:checked {
+    background: var(--text);
+    box-shadow: inset 0 0 0 2px var(--stone-dark), 0 0 8px rgba(var(--glow-rgb), 0.5);
+  }
+  .option-toggle input:focus-visible { outline: 1px dashed var(--text); outline-offset: 3px; }
+
+  /* The player's name, asked once on the start screen. */
+  .name-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: calc(20px * var(--text-scale, 1));
+    color: var(--muted);
+    margin-bottom: 22px;
+  }
+
+  .loader { text-align: left; }
+  button.small {
+    display: block;
+    margin: 0;
+  }
+  /* The workshop's format notes: folded away until asked for. */
+  .loader-help { margin: 6px 0 10px; }
+  .loader-help summary {
+    cursor: pointer;
+    font-size: calc(18px * var(--text-scale, 1));
+    color: var(--muted);
+    min-height: 32px;
+  }
+  .loader-help summary:focus-visible { outline: 1px dashed var(--text); outline-offset: 3px; }
+
+  /* ---- Set screen: one row per set, picked to start the run ---- */
+  .set-list { display: flex; flex-direction: column; gap: 4px; margin: 10px 0 14px; }
+  .set-list .loader-section-label { margin: 10px 0 2px; }
+  .set-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    text-align: left;
+    color: var(--text);
+    padding: 6px 8px;
+  }
+  .set-option::before, .set-option::after { content: none; }
+  .set-option .set-name { color: var(--torch-bright); text-transform: uppercase; }
+  .set-option .set-name::before { content: '> '; color: var(--muted); }
+  .set-option .set-last { color: var(--muted); text-transform: none; font-size: calc(16px * var(--text-scale, 1)); }
+  /* Minigame practice (js/practice.js). The title takes taps without
+     zooming or selecting text; the chosen minigame shows in inverse. */
+  header h1 { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+  .practice-set { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin: 8px 0; }
+  .practice-set select { font: inherit; background: var(--stone-light); color: var(--torch-bright); border: 1px solid var(--line); padding: 2px 4px; }
+  .practice-games .set-option[aria-pressed="true"] { background: var(--torch-bright); }
+  .practice-games .set-option[aria-pressed="true"] .set-name,
+  .practice-games .set-option[aria-pressed="true"] .set-name::before { color: var(--ink); }
+  .practice-result { margin-top: 10px; min-height: 1.2em; }
+  .set-option .set-meta { color: var(--muted); font-size: calc(16px * var(--text-scale, 1)); line-height: 1.25; padding-left: 1.2em; }
+  .set-option:hover .set-name, .set-option:focus-visible .set-name,
+  .set-option:hover .set-name::before, .set-option:focus-visible .set-name::before,
+  .set-option:hover .set-meta, .set-option:focus-visible .set-meta,
+  .set-option:hover .set-last, .set-option:focus-visible .set-last { color: var(--ink); }
+  .pick-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-top: 10px; }
+  .pick-footer .pick-workshop { color: var(--muted); }
+  .loader-hint {
+    font-size: calc(18px * var(--text-scale, 1));
+    color: var(--muted);
+    line-height: 1.5;
+    margin: 0 0 10px;
+  }
+  .loader-hint code {
+    color: var(--torch-bright);
+    font-family: var(--font);
+  }
+  .loader input[type="file"] {
+    display: block;
+    width: 100%;
+    font-family: var(--font);
+    font-size: calc(18px * var(--text-scale, 1));
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  /* The browser's own "Choose File" widget, redrawn as a terminal button. */
+  .loader input[type="file"]::file-selector-button {
+    font: inherit;
+    font-size: calc(20px * var(--text-scale, 1));
+    color: var(--torch-bright);
+    text-shadow: var(--glow);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 0;
+    padding: 4px 10px;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+  .loader input[type="file"]::file-selector-button:hover {
+    background: var(--text);
+    color: var(--ink);
+    text-shadow: none;
+  }
+  .loader textarea {
+    width: 100%;
+    background: var(--stone-dark);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 0;
+    padding: 10px;
+    font-family: var(--font);
+    font-size: calc(18px * var(--text-scale, 1));
+    resize: vertical;
+    margin-bottom: 10px;
+  }
+  .loader textarea:focus { outline: none; border-color: var(--torch); }
+  .loader-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .loader-actions button { flex: 1; padding: 8px 10px; font-size: calc(18px * var(--text-scale, 1)); }
+  .loader-actions select,
+  .loader-actions input[type="text"] {
+    flex: 1;
+    background: var(--stone-dark);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 0;
+    padding: 8px 10px;
+    font-family: var(--font);
+    font-size: calc(18px * var(--text-scale, 1));
+    min-width: 0;
+  }
+  /* No native dropdown chrome: a plain phosphor field with a drawn "v"
+     caret (two gradient strokes) on the right. */
+  .loader-actions select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 28px;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--text) 50%),
+      linear-gradient(135deg, var(--text) 50%, transparent 50%);
+    background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+  .loader-actions select:focus,
+  .loader-actions input[type="text"]:focus { outline: none; border-color: var(--torch); }
+  .loader-status { font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); line-height: 1.5; }
+  .loader-status .loader-ok { color: var(--hit); }
+  .loader-status .loader-error { color: var(--block); }
+  .loader-status .loader-error::before { content: '! '; }
+
+  .loader-section { margin-bottom: 14px; }
+  .loader-section-label {
+    font-size: calc(18px * var(--text-scale, 1));
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .loader-divider {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 14px 0;
+  }
+  .saved-sets { display: flex; flex-direction: column; gap: 6px; }
+  .saved-set-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--stone-dark);
+    border: 1px solid var(--line);
+    border-radius: 0;
+    padding: 6px 8px;
+    font-size: calc(18px * var(--text-scale, 1));
+  }
+  .saved-set-name { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .saved-set-count { color: var(--muted); font-size: calc(18px * var(--text-scale, 1)); }
+  .saved-set-row button {
+    padding: 4px 8px;
+    font-size: calc(18px * var(--text-scale, 1));
+  }
+  .saved-sets-empty { font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); font-style: italic; }
+
+  /* ---- Question data viewer ---- */
+  /* A listing wants more width than the 480px play column on desktop;
+     phones still get the full-width column. */
+  body.data-open main { max-width: 960px; }
+  .data-controls { margin-top: 4px; }
+  .data-controls button { flex: 0 0 auto; }
+  .data-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 4px;
+    margin: 8px 0;
+  }
+  .data-filters button {
+    min-height: 0;
+    padding: 0 4px;
+    font-size: calc(18px * var(--text-scale, 1));
+    color: var(--muted);
+  }
+  .data-filters button[aria-pressed="true"] {
+    background: var(--text);
+    color: var(--ink);
+    text-shadow: none;
+    box-shadow: var(--inverse-glow);
+  }
+  .data-search { margin-bottom: 12px; }
+  .data-list { border-top: 1px solid var(--line); }
+  .data-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: calc(20px * var(--text-scale, 1));
+  }
+  .data-row[hidden] { display: none; }
+  .data-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 10px;
+    font-size: calc(18px * var(--text-scale, 1));
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .data-num { color: var(--muted); }
+  /* The answer type is the thing being reviewed, so it's the one inverse
+     block on the line. */
+  .data-type {
+    color: var(--ink);
+    background: var(--text);
+    text-shadow: none;
+    padding: 0 6px;
+  }
+  .data-type.untyped { background: transparent; color: var(--muted); text-shadow: inherit; outline: 1px dashed var(--line); }
+  .data-draft { color: var(--torch-bright); }
+  .data-draft::before { content: '* '; }
+  /* Answer depends on one translation's wording; hover for why. */
+  .data-notfact { color: var(--torch-bright); outline: 1px dashed var(--line); padding: 0 4px; cursor: help; }
+  .data-q { color: var(--text); margin: 4px 0 2px; }
+  .data-a { color: var(--torch-bright); text-shadow: var(--glow-strong); }
+  .data-a::before { content: '=> '; color: var(--muted); text-shadow: var(--glow); }
+  .data-opts, .data-src { font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); }
+  .data-comment {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: calc(18px * var(--text-scale, 1));
+    color: var(--muted);
+  }
+  .data-comment::before { content: '#'; color: var(--torch); }
+  .data-comment textarea {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    color: var(--torch-bright);
+    font-family: var(--font);
+    font-size: calc(18px * var(--text-scale, 1));
+    line-height: 1.25;
+    padding: 0 2px;
+    resize: none;
+    overflow: hidden;
+    text-shadow: inherit;
+  }
+  .data-comment textarea::placeholder { color: var(--muted); opacity: 0.6; }
+  .data-comment textarea:focus { outline: none; border-bottom-color: var(--torch); }
+  .data-row.has-comment .data-comment::before { color: var(--torch-bright); }
+  .data-empty { padding: 10px 0; font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); }
+  .data-export { margin-top: 14px; }
+
+  /* Terminal buttons are just bracketed text — [ ENTER ] — that flips to
+     inverse video when hovered or focused, not filled rounded pills. */
+  button {
+    font-family: var(--font);
+    font-weight: 400;
+    font-size: inherit;
+    line-height: inherit;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    color: var(--torch-bright);
+    text-shadow: inherit;
+    padding: 6px 8px;
+    min-height: 44px;
+    cursor: pointer;
+  }
+  button::before { content: '[ '; }
+  button::after { content: ' ]'; }
+  button:hover:not(:disabled), button:focus-visible:not(:disabled) {
+    background: var(--text);
+    color: var(--ink);
+    text-shadow: none;
+    box-shadow: var(--inverse-glow);
+    outline: none;
+  }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button.ghost { color: var(--text); }
+
+  /* ---- Room screen ---- */
+  /* DEV (only with ?dev): a small tag in the bottom corner, its panel over
+     the screen, so testing never pushes the game down. */
+  .dev-dock[hidden] { display: none; }
+  .dev-dock {
+    position: fixed;
+    bottom: 4px;
+    left: 4px;
+    z-index: 9000;
+    font-size: calc(16px * var(--text-scale, 1));
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
   .dev-skip[hidden] { display: none; }
   #devToggleBtn { opacity: 0.7; }
   .dev-panel {
