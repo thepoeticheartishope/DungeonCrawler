@@ -5,9 +5,7 @@
 // Syllable Split's splitter, fit, tray and tiers, Letter Pool's roll,
 // tray, checks, tiers and no haunts, Code Break's fit, marks and tiers,
 // Verdict's fit, claims, tiers and haunts, Crosswire's fit, grid and
-// tiers, Fog Reveal's fit and tiers, Sum Lock's roll, lock and haunts,
-// and what a
-// tier pays in the settle rules (gun.js, answers.js).
+// tiers, Fog Reveal's fit and tiers, and Sum Lock's roll, lock and haunts.
 //
 // Run: node --test tests/*.test.mjs
 
@@ -22,8 +20,8 @@ import { freshLight } from '../js/battery.js';
 import { state } from '../js/state.js';
 
 import {
-  MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS, ENERGY_MAX, RELOAD_ENERGY,
-  GATE_QUESTIONS, MINIGAME_TIER_PAY, HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
+  MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
+  HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
   SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM, CODE_BREAK_TIERS, VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS,
 } from '../js/config.js';
 
@@ -35,9 +33,6 @@ import {
   verdictSetup, verdictTier, verdictClaimCount, crosswireSetup, crosswireTier, fogRevealTier, sumLockQuestions, sumLockSetup, sumLockMatches,
 } from '../js/minigames.js';
 
-import { settleReload } from '../js/gun.js';
-
-import { settleAnswer } from '../js/answers.js';
 
 
 
@@ -340,58 +335,6 @@ test('Letter Pool tiers: every hidden one = X, the count = 2, LETTER_POOL_WEAK =
   assert.equal(letterPoolTier(pool, 3, 0), '2');
   assert.equal(letterPoolTier(pool, 2, 2), '1');
   assert.equal(letterPoolTier(pool, 1, 1), null);
-});
-
-test('a reload pays one less energy at tier 1 (at least 1) and one more at X, but two modifiers always fill it', () => {
-  const offer = (n) => ({ modifiers: [], energy: RELOAD_ENERGY[n] });
-  reset();
-  settleReload(true, offer(1), null, '1');
-  assert.equal(state.run.energy, RELOAD_ENERGY[1] + MINIGAME_TIER_PAY[1].energy);
-  reset();
-  settleReload(true, offer(0), null, '1');
-  assert.equal(state.run.energy, 1, 'never below 1');
-  reset();
-  settleReload(true, offer(1), null, 'X');
-  assert.equal(state.run.energy, RELOAD_ENERGY[1] + MINIGAME_TIER_PAY.X.energy);
-  reset();
-  state.run.energy = ENERGY_MAX - 1;
-  state.run.rounds = Array(ENERGY_MAX - 1).fill(null);
-  settleReload(true, offer(2), null, 'X');
-  assert.equal(state.run.energy, ENERGY_MAX, 'never past ENERGY_MAX');
-  reset();
-  settleReload(true, offer(1));
-  assert.equal(state.run.energy, RELOAD_ENERGY[1], 'a plain question is tier 2');
-  reset();
-  state.run.energy = 0;
-  state.run.rounds = [];
-  settleReload(true, offer(2), null, '1');
-  assert.equal(state.run.energy, ENERGY_MAX, 'two modifiers fill it even at tier 1');
-});
-
-test('X takes two HP off the boss; a plain answer one', () => {
-  reset();
-  // More HP than the gate's most, so neither answer clears it.
-  const hp = GATE_QUESTIONS[0] + 2;
-  state.floor.boss = { row: 1, col: 1, hp, max: hp, kind: 'boss' };
-  state.battle.selectedTarget = state.floor.boss;
-  const events = settleAnswer(true, false, '40', 'X');
-  assert.equal(state.floor.boss.hp, hp - MINIGAME_TIER_PAY.X.bossDamage);
-  assert.ok(events.some(e => e.type === 'bossHit'));
-  settleAnswer(true, false, '40');
-  assert.equal(state.floor.boss.hp, hp - MINIGAME_TIER_PAY.X.bossDamage - 1);
-});
-
-test('X doubles a chest\'s gold', () => {
-  reset();
-  state.floor.chest = { row: 1, col: 1, kind: 'chest' };
-  state.battle.selectedTarget = state.floor.chest;
-  settleAnswer(true, false, '40');
-  const plain = state.run.coinsTotal;
-  reset();
-  state.floor.chest = { row: 1, col: 1, kind: 'chest' };
-  state.battle.selectedTarget = state.floor.chest;
-  settleAnswer(true, false, '40', 'X');
-  assert.equal(state.run.coinsTotal, plain * MINIGAME_TIER_PAY.X.goldScale);
 });
 
 test('Code Break fits one-word answers of 2-9 letters or digits, not number answers', () => {

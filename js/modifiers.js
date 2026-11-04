@@ -1,5 +1,6 @@
-// Question modifiers: which one (if any) a fight's query category carries.
-// No DOM access here — main.js shows the tag and applies the effect.
+// Question modifiers: the Gambler's most, Blind's reading time and Flip's
+// roll. Which modifiers a question carries is minigames.js modifiersFor.
+// No DOM access here.
 //
 //   blind    the question vanishes after a few seconds
 //   gambler  a wager of gold must be placed before answering
@@ -7,55 +8,13 @@
 //   timer    a few seconds to answer, or it counts as a miss
 
 import { state } from './state.js';
-import { MODIFIER_CHANCE, MODIFIER_DARK_BONUS, FLIP_MAX_ANSWERS, HUNTER_MODIFIER_PAIRS, BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS } from './config.js';
+import { FLIP_MAX_ANSWERS, BLIND_BASE_MS, BLIND_MS_PER_WORD, BLIND_MAX_MS } from './config.js';
 import { shuffle } from './random.js';
-
-export const MODIFIERS = ['blind', 'gambler', 'flip', 'timer'];
-
-// The chance a single category offered against `target` carries a
-// modifier. Bosses always do.
-export function modifierChance(target) {
-  if (target && target.kind === 'boss') return 1;
-  let chance = MODIFIER_CHANCE[Math.min(state.run.roomIndex, MODIFIER_CHANCE.length - 1)];
-  if (state.floor.darkness) chance += MODIFIER_DARK_BONUS;
-  return Math.min(1, chance);
-}
-
-function eligibleModifiers() {
-  return MODIFIERS.filter(m => m !== 'gambler' || maxWager() >= 1);
-}
 
 // The most gold a Gambler wager can be right now: the floor number, but
 // never more than the player holds. 0 means Gambler can't be offered.
 export function maxWager() {
   return Math.min(state.run.roomIndex + 1, state.run.coinsTotal);
-}
-
-// Rolls one category's modifier: null (none) or one of MODIFIERS.
-export function rollModifier(target) {
-  if (Math.random() >= modifierChance(target)) return null;
-  const eligible = eligibleModifiers();
-  return eligible[Math.floor(Math.random() * eligible.length)];
-}
-
-// Modifiers for a fight's `count` categories. Against the boss (the gate)
-// each carries `perQuestion`, as many as the keys held say (the caller
-// passes gate.js gateModifierCount(), so this file needs no dungeon code):
-// two is one of HUNTER_MODIFIER_PAIRS per category, one is spread so the
-// categories differ where possible (three categories get three different
-// ones; Gambler only with gold for a wager), so which category to pick is
-// still a real choice; none is none.
-// Anything else rolls each category on its own. Each entry is one
-// modifier, null, or a pair.
-export function rollCategoryModifiers(target, count, perQuestion = 0) {
-  if (!target || target.kind !== 'boss') return Array.from({ length: count }, () => rollModifier(target));
-  if (perQuestion === 0) return Array.from({ length: count }, () => null);
-  if (perQuestion >= 2) {
-    const pairs = shuffle(HUNTER_MODIFIER_PAIRS);
-    return Array.from({ length: count }, (_, i) => pairs[i % pairs.length]);
-  }
-  const eligible = shuffle(eligibleModifiers());
-  return Array.from({ length: count }, (_, i) => eligible[i % eligible.length]);
 }
 
 // Blind: how long a question worded `text` shows before it goes blank,

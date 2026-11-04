@@ -6,13 +6,12 @@
 // No points: a result only shows its tier. Nothing pays out, nothing is
 // recorded as a haunt, and the run's "not the same minigame twice"
 // memory is left alone. Shares the one question panel (questionview.js)
-// with the battle screen and the ask screen; main.js passes in
-// letterPoolQuestion and sumLockQuestion (the stand-in questions) and
-// mountBattleQuestion (hands the panel back on the way out).
+// with the ask screen; main.js passes in letterPoolQuestion and
+// sumLockQuestion (the stand-in questions).
 import { state } from './state.js';
 import { BATTLE_CHOICE_COUNT, PRACTICE_TAPS, PRACTICE_TAP_MS, PRACTICE_MODIFIERS, PRACTICE_DEFAULT_SET } from './config.js';
 import { MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, letterPoolFits, sumLockQuestions } from './minigames.js';
-import { mountQuestionPanel, setQuestion, setMinigame, applyModifier, clearModifier } from './questionview.js';
+import { mountQuestionPanel, parkQuestionPanel, setQuestion, setMinigame, applyModifier, clearModifier } from './questionview.js';
 import { fightGroups, pickQuestion } from './quiz.js';
 import { lastSetValue, setChoices, fetchSet } from './setpicker.js';
 import { t } from './text.js';
@@ -45,8 +44,8 @@ let fitting = new Map();
 let settled = true;
 
 // Wires the title taps and the screen's buttons.
-export function initPractice({ letterPoolQuestion, sumLockQuestion, mountBattleQuestion }) {
-  actions = { letterPoolQuestion, sumLockQuestion, mountBattleQuestion };
+export function initPractice({ letterPoolQuestion, sumLockQuestion }) {
+  actions = { letterPoolQuestion, sumLockQuestion };
   title.addEventListener('click', countTap);
   setSelect.addEventListener('change', () => loadSet(setSelect.value));
   playBtn.addEventListener('click', play);
@@ -197,13 +196,13 @@ function showMenu() {
   menu.hidden = false;
 }
 
-// Stops whatever minigame is showing and hands the question panel back to
-// the battle screen, so a run starts clean.
+// Stops whatever minigame is showing and parks the question panel
+// (questionview.js parkQuestionPanel), so a run starts clean.
 function putAway() {
   settled = true;
   clearModifier();
   setMinigame(null);
-  actions.mountBattleQuestion();
+  parkQuestionPanel();
 }
 
 // Back to the start screen.

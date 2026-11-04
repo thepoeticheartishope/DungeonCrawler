@@ -135,15 +135,6 @@ test('a box in the way is examined, once', () => {
   assert.equal(state.floor.playerRow, row);
 });
 
-test("a downed stick man holding the ankle keeps the player on their tile", () => {
-  resetFloor();
-  const { playerRow: row, playerCol: col } = state.floor;
-  state.floor.minions.push({ row: row + 1, col, downed: true, grabbing: true, hp: 1 });
-  const events = walk(-1, 0, ONE_STICK.bumpRepeatMs);
-  assert.equal(state.floor.playerCol, col);
-  assert.equal(count(events, 'heldFast'), 1);
-});
-
 test('a spot off its tile goes back to the tile centre', () => {
   resetFloor();
   state.floor.playerAt = { x: 2.2, y: 3.7 };

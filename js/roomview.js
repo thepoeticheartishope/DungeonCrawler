@@ -10,18 +10,9 @@
 // as pictures (ROOM_DRAWINGS): boxes, energy cells, papers, grates, the
 // reflective desk and its warm pool, relays, the chest, the coin, keys, the
 // stairs and their column of light, the boss's mist, a mistake's sound and
-// the letters a downed stick man drops. The rest stay glyphs until steps C
-// and D. Step C draws the stick men (stickforms.js) at the canvas's own
-// size over the picture, so their lines glow crisp and their tendrils'
-// letters read, and redraws what stands in front of each over it, so they
-// walk behind desks and crates too; their eyes, heard '!', maim ring, and a
-// cold mark at the edge for one in sight but off screen. Step D, with the
-// gun on: the stick man holds it the way the light points (raised while a
-// shot waits, kicked back on a shot), the tiles it reaches lit faintly,
-// corner brackets on what can be shot and the breathing target, a dashed
-// laser to the target's chest, the shot's flash and ring or MISS (the last
-// shot from mapshared.js), the answer ring after a miss (swirl.js), and
-// the tutorial's ring of words. Step F: windows on back walls that face
+// the boss's mist. The rest stay glyphs. Combat's stick men, the gun's
+// brackets, laser and shot and the answer ring went in dungeon removal step C;
+// the player still carries his book, shut (roomgun.js). Step F:// Step F: windows on back walls that face
 // the outside (windows.js), the warm light they throw on the floor (real
 // light: a stick man in it is seen) with the frame's shadow across it, and the eye in the sky: while the player looks up (main.js
 // holdLookUp -> lookUp), the room fades into the night sky and the eye
@@ -45,29 +36,19 @@
 import { state, key, parseKey } from './state.js';
 import { FOUR_STEPS } from './grid.js';
 import {
-  ROOM_VIEW, PLAYER_CONE_RANGE, MAP_GLYPH_SIZES, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
-  ISO_NARROW_MAP_WIDTH, FIGURE3D, ENEMY_LIGHT, SHADOW, SHIP_WINDOWS,
+  ROOM_VIEW, PLAYER_CONE_RANGE, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
+  ISO_NARROW_MAP_WIDTH, FIGURE3D, SHIP_WINDOWS,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
-import { figurePose, projectFigure, phiOfAngle, resetFigure, sampleMove } from './figure3d.js';
-import { MOVE_JOINTS } from './moves3d.js';
-import { drawDroppedLetters, drawStickForm, stickBox, dyingSticks } from './stickforms.js';
-import { isWall, grain, ENEMY_KINDS } from './mapshared.js';
-import {
-  minionOn, WEAK_RING, WEAK_RING_LEVEL,
-} from './mapshared.js';
+import { figurePose, projectFigure, phiOfAngle, resetFigure } from './figure3d.js';
+import { isWall, grain } from './mapshared.js';
 import { lampsOn, lampPoolLit } from './lamps.js';
-import { shadowsAt } from './shadows.js';
-import { answerRingNow } from './swirl.js';
 import {
   FLAT, STAND, HALL_LAMP, POOL, drawThingsWith, bulbAt, hallLampSpot, drawLamp, drawLampShade, drawMist,
   lampLevel, shadeAt, drawEmberHead, STICK_LINE,
 } from './roomthings.js';
-import {
-  startGunFrame, gunTargets, holdBook, drawBook, drawReach, drawBrackets, drawLaser, drawShot, drawAnswerRing,
-  drawBookInto,
-} from './roomgun.js';
+import { startGunFrame, holdBook, drawBook, drawBookInto } from './roomgun.js';
 import { startSkyFrame, drawWindow, drawPool, drawSky, drawShipView } from './roomsky.js';
 
 const T = ROOM_VIEW.tilePx;
@@ -127,25 +108,19 @@ const HIDDEN_HEAD = 0.45;        // hidden in a room spot, how high his head sho
 // How each kind of thing is drawn (step B; tests/roomview.test.mjs checks
 // every kind the game puts on the map has one): 'flat' lies on the floor
 // under everything, 'stand' stands on its tile and is sorted with the
-// stick men, 'form' is a stick man (stickforms.js, step C), 'glyph' stays
-// its glyph over the picture (the hunter, the boss and THE UNFOLDING, as
-// in the shoulder view), 'player' is the player's stick man. A thing not
-// made out yet is a pixel '?' that stands like a prop, except the stairs
-// and a grate (drawn as they are) and enemies (never shown as a '?').
+// player, 'glyph' stays its glyph over the picture (the boss and THE
+// UNFOLDING, as in the shoulder view), 'player' is the player's stick man.
+// A thing not made out yet is a pixel '?' that stands like a prop, except
+// the stairs and a grate (drawn as they are).
 export const ROOM_DRAWINGS = {
   paper: 'flat', stairs: 'flat',
   box: 'stand', furniture: 'stand', cell: 'stand', desk: 'stand', charger: 'stand', chest: 'stand', coin: 'stand', key: 'stand',
   shutter: 'stand', switch: 'stand', console: 'stand', powerBoard: 'stand', crew: 'stand',
-  minion: 'form', boss: 'glyph', hunter: 'glyph', player: 'player',
+  boss: 'glyph', player: 'player',
 };
 // The '?' of a thing not made out yet, as rows of picture pixels.
 const UNKNOWN = [' ### ', '#   #', '    #', '   # ', '  #  ', '     ', '  #  '];
 const UNKNOWN_GLOW = 0.5;       // it shows this strongly over the dark, so a lit one reads
-// The stick men's glowing lines: halo layers (width a share of the line,
-// strength) under the core line, as in the shoulder view.
-const HALO_LAYERS = [{ width: 3.5, strength: 0.07 }, { width: 1.6, strength: 0.14 }];
-const EDGE_MARK = 0.22;         // the cold mark for a stick man off screen, as a share of a tile
-
 let look = null;          // what mapview.js hands each frame (see drawRoomScene)
 let built = null;         // this floor's still picture and what it was built from
 let buf = null;           // the picture at its own size, then lit
@@ -160,13 +135,11 @@ let shownCam = null;      // the camera's top-left in picture pixels, gliding to
 let shownFloor = null;    // the floor the camera was last on (a new one snaps it)
 let lastFrameAt = 0;
 let poseLook = null;      // the light's angle at the last frame, so a turn stops his glances
-let tapBoxes = [];        // this frame's enemies, for taps: [{ box: [left, top, right, bottom], tile }]
-let mask = null;          // what stands in front of a stick man, redrawn over it (redrawInFront)
+let mask = null;          // what stands in front of a window, cut out of its glass (glassBehind)
 let mctx = null;
 let glass = null;         // the windows' bright glass, with what stands in front cut out (glassBehind)
 let glctx = null;
 let view = { w: 0, h: 0 }; // the picture's size this frame
-let frame = { ox: 0, oy: 0 }; // the camera's top-left this frame, in picture pixels
 
 // What a wall tile at (row, col) shows, given `wall(row, col)`: 'lower'
 // for the face just above floor, 'upper' for the one above that (faces are
@@ -206,11 +179,8 @@ export function cameraGoal(bounds, at, viewW, viewH) {
   };
 }
 
-// The player's figure in figure3d.js (its owner key), and his neck's
-// height standing, so a crouch can lower the gun with it.
+// The player's figure in figure3d.js (its owner key).
 export const PLAYER_FIGURE = {};
-const NECK_Y = MOVE_JOINTS.indexOf('neck') * 3 + 1;
-const STANDING_NECK = sampleMove('Idle_Loop', 0, true)[NECK_Y];
 
 // Where the player was drawn last (one stick: their free spot), and
 // whether they have moved since. While they walk the scene shows plainly
@@ -233,7 +203,6 @@ export function drawRoomScene(ctx, canvasSize, shared) {
     resetPlayerForm();
     resetFigure(PLAYER_FIGURE);
     shownCam = null;
-    shadowFeet.clear();
     shownFloor = state.run.floorsEntered;
   }
   pageScale = canvasSize.pageWidth ? canvasSize.width / canvasSize.pageWidth : 1;
@@ -250,9 +219,8 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   if (moveCamera(goal) || sliding) look.showPlain();
   const ox = Math.round(shownCam.x);
   const oy = Math.round(shownCam.y);
-  frame = { ox, oy };
   drawThingsWith(bctx, gctx, look);
-  startGunFrame(bctx, look, frame, scale, pageScale);
+  startGunFrame(bctx);
   startSkyFrame(gctx, look, scale);
 
   // The picture: the still floor, then what stands on it, back to front.
@@ -293,7 +261,6 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   const lamps = f.lamps.filter(l => inView(l.row, l.col));
   lamps.forEach(l => items.push({ y: Infinity, draw: () => shadeAt(...hallLampSpot(l, ox, oy)) }));
   items.sort((a, b) => a.y - b.y).forEach(item => item.draw());
-  const standing = items.filter(item => item.row !== undefined);
 
   // The light, multiplied over it.
   lightTiles(space, at, c0, r0, c1 - c0 + 1, r1 - r0 + 1);
@@ -315,7 +282,6 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   const safe = f.safeRoom;
   if (safe && safe.lamp && space.room === safe.chamber) drawLamp(ox, oy, glows);
   if (lampsOn()) lamps.filter(l => !state.settings.fogEnabled || f.visibleSet.has(key(l.row, l.col))).forEach(l => glows.push(() => bulbAt(...hallLampSpot(l, ox, oy), HALL_LAMP.bulb)));
-  drawShadows(ox, oy, inView);
   bctx.globalCompositeOperation = 'multiply';
   bctx.drawImage(glow, 0, 0);
   // The windows' glass glows from outside, behind whoever stands in front.
@@ -331,35 +297,18 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   bctx.globalCompositeOperation = 'lighter';
   glows.forEach(draw => draw());
   drawMist(c0, r0, c1, r1, ox, oy);
-  drawReach(c0, r0, c1, r1, ox, oy);
   bctx.globalCompositeOperation = 'source-over';
 
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(buf, 0, 0, viewW, viewH, 0, 0, viewW * scale, viewH * scale);
   ctx.imageSmoothingEnabled = true;
-  const ring = answerRingNow(look.now);
-  if (ring) drawAnswerRing(ctx, ring, false);
-  const formBoxes = drawForms(ctx, ox, oy, standing);
   drawGlyphs(ctx, ox, oy);
-  tapBoxes = [...formBoxes, ...tapBoxes];
-  gunTargets(tapBoxes);
-  if (ring) drawAnswerRing(ctx, ring, true);
-  drawBrackets(ctx);
-  drawLaser(ctx);
-  drawShot(ctx);
-  drawEdgeMarks(ctx, ox, oy);
   drawSky(ctx, viewW, viewH, at, ox, oy);
 }
 
-// The tile under a tap at (px, py) CSS pixels from the map's top-left: an
-// enemy whose glyph is under it first, else the floor tile there; null
-// before the first frame.
+// The tile under a tap at (px, py) CSS pixels from the map's top-left;
+// null before the first frame.
 export function roomTileAt(px, py) {
-  if (!shownCam) return null;
-  const x = px * pageScale;
-  const y = py * pageScale;
-  const hit = tapBoxes.find(({ box }) => x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3]);
-  if (hit) return { row: hit.tile.row, col: hit.tile.col };
   const at = roomGridAt(px, py);
   return at && { row: Math.round(at.row), col: Math.round(at.col) };
 }
@@ -647,72 +596,6 @@ function moveCamera(goal) {
 // Fills the one-pixel-a-tile light canvas for the tiles from (c0, r0),
 // `w` by `h`: each floor tile's level and tint, a wall face the level of
 // the floor it stands over, a rim the brightest beside it, the dark 0.
-// Where each stick man's shadow is cast from (view-only): it glides
-// toward his tile, or the spot he is drawn at while seen, so a shadow seen
-// before he is never jumps a tile at a time. Keyed by the stick man.
-const shadowFeet = new Map();
-let shadowClock = null;
-
-// The stick men's shadows (shadows.js), darkening the light itself and
-// only on floor that is lit (visibleSet, not the dim room shape or memory:
-// Timothy, they showed where there was no light): a faint wedge from his
-// feet, widening to SHADOW.width at its tip and fading a little along it.
-function drawShadows(ox, oy, inView) {
-  const f = state.floor;
-  const dt = shadowClock === null ? 0 : look.now - shadowClock;
-  shadowClock = look.now;
-  const seenAt = new Map(look.things.filter(thing => drawingOf(thing) === 'form').map(thing => [minionOn(thing.tile), thing.at]));
-  [...shadowFeet.keys()].forEach(m => { if (!f.minions.includes(m)) shadowFeet.delete(m); });
-  gctx.globalCompositeOperation = 'source-over';
-  gctx.save();
-  gctx.beginPath();
-  f.visibleSet.forEach(k => {
-    const { row, col } = parseKey(k);
-    if (inView(row, col) && !isWall(row, col)) gctx.rect(col * T - ox, row * T - oy, T, T);
-  });
-  gctx.clip();
-  f.minions.forEach(m => {
-    const goal = seenAt.get(m) || { row: m.row, col: m.col };
-    const feet = glideFeet(m, goal, dt);
-    if (!inView(Math.round(feet.row), Math.round(feet.col))) return;
-    shadowsAt(feet).forEach(s => {
-      const fx = (feet.col + 0.5) * T - ox, fy = (feet.row + ROOM_VIEW.footAt) * T - oy;
-      const tx = fx + s.dir[1] * s.length * T, ty = fy + s.dir[0] * s.length * T;
-      const [nx, ny] = [-s.dir[0] * T, s.dir[1] * T];
-      const half = SHADOW.width / 2;
-      const g = gctx.createLinearGradient(fx, fy, tx, ty);
-      g.addColorStop(0, 'rgba(0, 0, 0, ' + SHADOW.dark + ')');
-      g.addColorStop(1, 'rgba(0, 0, 0, ' + SHADOW.tipDark + ')');
-      gctx.fillStyle = g;
-      gctx.beginPath();
-      gctx.moveTo(fx + nx * half * 0.4, fy + ny * half * 0.4);
-      gctx.lineTo(tx + nx * half, ty + ny * half);
-      gctx.lineTo(tx - nx * half, ty - ny * half);
-      gctx.lineTo(fx - nx * half * 0.4, fy - ny * half * 0.4);
-      gctx.closePath();
-      gctx.fill();
-    });
-  });
-  gctx.restore();
-}
-
-// Moves stick man m's shadow's feet toward `goal` by `dt` ms of gliding
-// (SHADOW.glideMs a tile), or at once under reduced motion or when far
-// off (a duct drop, a knockback); returns where they are.
-function glideFeet(m, goal, dt) {
-  const was = shadowFeet.get(m);
-  const gap = was ? Math.hypot(goal.row - was.row, goal.col - was.col) : Infinity;
-  if (look.still || gap > 2 || gap <= dt / SHADOW.glideMs) {
-    shadowFeet.set(m, { row: goal.row, col: goal.col });
-    return goal;
-  }
-  const share = dt / SHADOW.glideMs / gap;
-  const feet = { row: was.row + (goal.row - was.row) * share, col: was.col + (goal.col - was.col) * share };
-  shadowFeet.set(m, feet);
-  look.keepMoving();
-  return feet;
-}
-
 function lightTiles(space, at, c0, r0, w, h) {
   if (lights.width < w || lights.height < h) {
     lights.width = Math.max(lights.width, w);
@@ -798,7 +681,7 @@ function drawStickMan(at, ox, oy) {
   const angle = lookAngle();
   if (poseLook !== null && Math.abs(wrapAngle(angle - poseLook)) > 0.002) playerActive(look.now);
   poseLook = angle;
-  const pose = playerPose(look.now, look.still, !!(state.battle.aim || state.battle.struggle));
+  const pose = playerPose(look.now, look.still, false);
   const h = ROOM_VIEW.stickHeight * T;
   const fx = (at.col + 0.5) * T - ox;
   const fy = (at.row + ROOM_VIEW.footAt) * T - oy;
@@ -816,24 +699,20 @@ function drawStickMan(at, ox, oy) {
   const pxPerM = h / FIGURE3D.heightM;
   const joints = figurePose(PLAYER_FIGURE, { at: [at.col, at.row], metres: FIGURE3D.heightM / ROOM_VIEW.stickHeight, crouch }, look.now, look.still);
   const J = projectFigure(joints, phiOfAngle(angle), fx, fy, pxPerM);
-  // A crouch lowers the book with his shoulders.
-  const drop = (STANDING_NECK - joints[NECK_Y]) * pxPerM;
-  const book = holdBook(fx, fy, ax, ay, h, pose.gunRise * h - drop, J.elR, J.haR);
+  const book = holdBook(ax, J.elR, J.haR);
   const px = v => Math.round(v) + 0.5;
   const path = (points) => points.forEach(([x, y], i) => (i ? bctx.lineTo(px(x), px(y)) : bctx.moveTo(px(x), px(y))));
   bctx.save();
-  // The shut book is under his arm, so the arm is drawn over it; facing
-  // away, the open book is beyond him, so his body is drawn over it.
-  if (!book.open || book.behind) drawBook(book);
+  // The book is under his arm, so the arm is drawn over it.
+  drawBook(book);
   bctx.strokeStyle = look.colours.text;
   bctx.lineWidth = STICK_LINE;
   bctx.lineCap = 'square';
   bctx.beginPath();
   path([J.ftL, J.knL, J.pelvis, J.knR, J.ftR]);
   path([J.pelvis, J.chest, J.neck]);
-  path(book.open ? [book.hands[0], J.neck, book.hands[1]] : [J.haL, J.elL, J.neck, J.elR, book.hand]);
+  path([J.haL, J.elL, J.neck, J.elR, book.hand]);
   bctx.stroke();
-  if (book.open && !book.behind) drawBook(book);
   drawEmberHead(bctx, J.headMid[0], J.headMid[1], h, playerHead(ax, pose));
   bctx.restore();
 }
@@ -846,31 +725,19 @@ function playerHead(ax, pose) {
 
 // Every thing but the player as its glyph on its tile, over the lit
 // picture at the canvas's own size (steps B to D draw them as pictures),
-// never smaller than on the old isometric map. Enemies' boxes are kept for taps.
+// never smaller than on the old isometric map.
 function drawGlyphs(ctx, ox, oy) {
   const tile = T * scale;
   const narrow = look && ctx.canvas.width / pageScale < ISO_NARROW_MAP_WIDTH;
   const isoTile = ctx.canvas.width / (narrow ? ISO_TILES_ACROSS_NARROW : ISO_TILES_ACROSS);
   const cell = Math.max(tile, Math.min(isoTile, tile * 1.6));
-  const boxes = [];
   look.things.forEach(thing => {
     if (drawingOf(thing) !== 'glyph') return;
     const x = ((thing.at.col + 0.5) * T - ox) * scale;
     const y = ((thing.at.row + 0.5) * T - oy) * scale;
     if (x < -cell || y < -cell || x > ctx.canvas.width + cell || y > ctx.canvas.height + cell) return;
     look.paintGlyph(ctx, cell, x, y - (thing.look.lift || 0) * cell, thing.glyph, thing.look);
-    if (ENEMY_KINDS.includes(thing.kind)) {
-      const half = cell * (MAP_GLYPH_SIZES[thing.look.size] || 0.8) * 0.6;
-      boxes.push({ box: [x - half, y - half * 1.4, x + half, y + half], tile: thing.tile });
-    }
   });
-  tapBoxes = boxes;
-  // Letters a crawling stick man left (downed plan), only on lit floor, so
-  // they never give one away in the dark. Simple enemies have none.
-  if (state.settings.simpleEnemies) return;
-  const centre = (row, col) => [((col + 0.5) * T - ox) * scale, ((row + 0.5) * T - oy) * scale];
-  const lit = (row, col) => !state.settings.fogEnabled || state.floor.visibleSet.has(key(row, col));
-  drawDroppedLetters(ctx, cell, centre, lit);
 }
 
 // How a map thing is drawn (ROOM_DRAWINGS), allowing for what isn't made
@@ -878,8 +745,7 @@ function drawGlyphs(ctx, ox, oy) {
 // as they are.
 function drawingOf(thing) {
   const drawing = ROOM_DRAWINGS[thing.kind] || 'glyph';
-  if (thing.glyph === null && !['stairs', 'shutter'].includes(thing.kind)) return ENEMY_KINDS.includes(thing.kind) ? 'glyph' : 'unknown';
-  if (drawing === 'form' && (state.settings.simpleEnemies || !minionOn(thing.tile) || !minionOn(thing.tile).minionKind)) return 'glyph';
+  if (thing.glyph === null && !['stairs', 'shutter'].includes(thing.kind)) return 'unknown';
   return drawing;
 }
 
@@ -897,45 +763,6 @@ function drawUnknown(x, y, glows) {
     paint();
     bctx.globalAlpha = 1;
   });
-}
-
-// ---- stick men (step C) ----
-
-// Draws every stick man in sight (and the killed ones still fading) over
-// the scaled-up picture, back to front, each at the player's stick man's
-// size times its kind's, turned toward the player, with what stands in
-// front of it redrawn over it, and its maim ring while a shot on it
-// waits. Returns their boxes for taps.
-function drawForms(ctx, ox, oy, standing) {
-  const tw = T * scale;
-  const height = ROOM_VIEW.stickHeight * T * scale;
-  const lineWidth = STICK_LINE * scale;
-  const centre = (row, col) => [((col + 0.5) * T - ox) * scale, ((row + ROOM_VIEW.footAt) * T - oy) * scale];
-  const [px, py] = centre(look.walkAt.row, look.walkAt.col);
-  const toward = [px, py - height * 0.6];
-  const forms = look.things.filter(thing => drawingOf(thing) === 'form').map(thing => ({ m: minionOn(thing.tile), at: thing.at, thing }));
-  dyingSticks(look.now).forEach(m => forms.push({ m, at: { row: m.row, col: m.col }, thing: null }));
-  const boxes = [];
-  forms.sort((a, b) => a.at.row - b.at.row).forEach(({ m, at, thing }) => {
-    if (!look.still) look.keepMoving();
-    const [sx, sy] = centre(at.row, at.col);
-    const weak = drawStickForm(ctx, m, sx, sy, {
-      tw, height, lineWidth, toward, now: look.now, still: look.still, centre, player: [px, py], pixel: scale,
-      line: (path, level) => enemyLine(ctx, path, level, lineWidth),
-      aiming: state.battle.aim !== null && state.battle.aim.target === m,
-    });
-    redrawInFront(ctx, at, standing);
-    if (weak) {
-      ctx.beginPath();
-      ctx.arc(weak[0], weak[1], tw * WEAK_RING, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(' + look.colours.glowRgb + ', ' + WEAK_RING_LEVEL + ')';
-      ctx.lineWidth = lineWidth;
-      ctx.stroke();
-    }
-    if (!thing || !state.floor.minions.includes(m)) return;
-    boxes.push({ box: stickBox(m, sx, sy, height), tile: thing.tile });
-  });
-  return boxes;
 }
 
 // Lays the bright glass of the windows `ws` (drawn by `drawGlass(c)` into
@@ -986,75 +813,4 @@ function glassBehind(ws, items, glows, alpha, drawGlass) {
   bctx.globalAlpha = alpha;
   bctx.drawImage(glass, 0, 0);
   bctx.globalAlpha = 1;
-}
-
-// Redraws, over a stick man standing at `at`, the furniture and pillars in
-// front of it (lower on the screen and beside it), lit as in the picture:
-// they are drawn again into `mask`, which then keeps only the picture's
-// pixels under them.
-function redrawInFront(ctx, at, standing) {
-  const front = standing.filter(s => s.y > at.row + ROOM_VIEW.footAt + 0.01 && s.row - at.row <= 2 && Math.abs(s.col - at.col) <= 1);
-  if (!front.length) return;
-  if (!mask) {
-    mask = document.createElement('canvas');
-    mctx = mask.getContext('2d');
-  }
-  if (mask.width !== view.w || mask.height !== view.h) {
-    mask.width = view.w;
-    mask.height = view.h;
-  }
-  mctx.globalCompositeOperation = 'source-over';
-  mctx.clearRect(0, 0, view.w, view.h);
-  const picture = bctx;
-  bctx = mctx;
-  drawThingsWith(mctx, gctx, look);
-  front.forEach(s => s.draw());
-  bctx = picture;
-  drawThingsWith(picture, gctx, look);
-  mctx.globalCompositeOperation = 'source-in';
-  mctx.drawImage(buf, 0, 0);
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(mask, 0, 0, view.w, view.h, 0, 0, view.w * scale, view.h * scale);
-  ctx.imageSmoothingEnabled = true;
-}
-
-// Strokes the path `path()` makes as a stick enemy's line, `w` wide, at
-// strength `level`, in the enemies' cold blue (ENEMY_LIGHT) with its halo.
-function enemyLine(ctx, path, level, w) {
-  ctx.save();
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  path();
-  HALO_LAYERS.forEach(l => {
-    ctx.strokeStyle = 'rgba(' + ENEMY_LIGHT.halo + ', ' + Math.min(0.8, level) * l.strength + ')';
-    ctx.lineWidth = w * l.width;
-    ctx.stroke();
-  });
-  ctx.strokeStyle = 'rgba(' + ENEMY_LIGHT.core + ', ' + level + ')';
-  ctx.lineWidth = w;
-  ctx.stroke();
-  ctx.restore();
-}
-
-// A cold mark at the edge of the map pointing at each enemy in sight that
-// the camera doesn't show (a long room or hallway), so one coming is never
-// out of mind.
-function drawEdgeMarks(ctx, ox, oy) {
-  const W = ctx.canvas.width, H = ctx.canvas.height;
-  const r = EDGE_MARK * T * scale;
-  look.things.filter(thing => ENEMY_KINDS.includes(thing.kind)).forEach(thing => {
-    const x = ((thing.at.col + 0.5) * T - ox) * scale;
-    const y = ((thing.at.row + 0.2) * T - oy) * scale;
-    if (x >= 0 && x <= W && y >= 0 && y <= H) return;
-    const mx = Math.min(Math.max(x, r * 1.5), W - r * 1.5);
-    const my = Math.min(Math.max(y, r * 1.5), H - r * 1.5);
-    const a = Math.atan2(y - my, x - mx);
-    ctx.beginPath();
-    ctx.moveTo(mx + Math.cos(a) * r, my + Math.sin(a) * r);
-    ctx.lineTo(mx + Math.cos(a + 2.4) * r, my + Math.sin(a + 2.4) * r);
-    ctx.lineTo(mx + Math.cos(a - 2.4) * r, my + Math.sin(a - 2.4) * r);
-    ctx.closePath();
-    ctx.fillStyle = 'rgb(' + ENEMY_LIGHT.core + ')';
-    ctx.fill();
-  });
 }

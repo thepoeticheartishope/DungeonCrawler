@@ -38,13 +38,10 @@ export function freeSpot() {
 }
 
 // What stops the player's body at (row, col), or null: passage.js
-// whatBlocks, and while a downed stick man holds their ankle, any tile but
-// their own (downed plan, call 2).
+// whatBlocks, never on their own tile.
 function blockerAt(row, col) {
   const f = state.floor;
   if (row === f.playerRow && col === f.playerCol) return null;
-  const holder = f.minions.find(m => m.grabbing);
-  if (holder) return { kind: 'held', thing: holder };
   return whatBlocks(row, col);
 }
 
@@ -101,8 +98,7 @@ function slide(spot, axis, delta) {
 // on; letting go (no push) ends it. A creep stays crouched once let go
 // (`creeping`), until the player walks at full pace, so they can hide in
 // cover from the stick too. Events: swingLook's, enterTile's
-// (stepped { free: true } and what the tile holds) and bumpInto's, or
-// heldFast { minion } while a downed one holds the ankle; then
+// (stepped { free: true } and what the tile holds) and bumpInto's; then
 // coverTaken (coverChanged).
 // How long the player takes to cross a tile now: a creep's sneakMs, or the
 // walk's walkMs, quicker on the ship (shipWalkMs). One source for the
@@ -178,7 +174,6 @@ function bump(hit) {
   if (bumpedAt === at && (bumpWait > 0 || once)) return [];
   bumpedAt = at;
   bumpWait = ONE_STICK.bumpRepeatMs;
-  if (hit.block.kind === 'held') return [{ type: 'heldFast', minion: hit.block.thing }];
   return bumpInto(hit.block);
 }
 

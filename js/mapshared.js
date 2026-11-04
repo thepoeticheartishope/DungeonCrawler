@@ -1,20 +1,14 @@
 // What the map view (roomview.js) draws that
 // isn't about how it projects the floor: the light's levels, the sizes and
-// strengths of the things on the floor, the gun's marks, and the rules for
-// what a view shows that don't depend on how it projects the floor (how
-// bright a tile is, which walls show, what the gun reaches and aims at, a
-// shot's path, the answer ring over time). Kept apart from the view since the isometric view shared it
+// strengths of the things on the floor, and the rules for what a view
+// shows that don't depend on how it projects the floor (how bright a tile
+// is, which walls show). Kept apart from the view since the isometric view shared it
 // (removed 2026-10-18). Sizes are shares of a tile's width unless they say
 // otherwise; the room view reads a tile's width as one tile. Reads
 // state only.
 
 import { state, key } from './state.js';
-import {
-  MAP_ANIMATION_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS,
-  REALTIME_STEP_MS, ROOM_VIEW,
-} from './config.js';
-import { canShoot } from './sight.js';
-import { ringLetters } from './swirl.js';
+import { REALTIME_STEP_MS } from './config.js';
 import { lightProgress } from './light.js';
 
 // How bright a lit tile is, by its steps from the player (0 = their own
@@ -73,37 +67,6 @@ export const GRATE_RATTLE = 0.03;   // how far a shuddering grate sways, as a sh
 export const GRATE_SCALE = 0.19;     // a grate's frame: its corners sit this share of a tile in from the middle (it lies flat, inside its tile)
 export const GRATE_BARS = [-0.5, -0.17, 0.17, 0.5]; // where its bars cross it, from -1 to 1
 
-// The old isometric view's stick man height, feet to top of head (the
-// shoulder view measures the answer ring's lift against it).
-export const ISO_STICK_HEIGHT = 0.62;
-
-// The gun's marks on the map (gun plan): the tiles it reaches, the
-// brackets, the laser, a shot and its MISS, the maim point's ring.
-export const REACH_FILL = 0.15;         // a reached tile's fill strength
-export const BRACKET_ARM = 0.12;        // a corner bracket's arms, as a share of a tile's width
-export const BRACKET_HALF = 0.32;       // the narrowest a bracket box is, half its width as a share of a tile's
-export const BRACKET_LEVEL = [0.4, 0.95]; // a shootable thing's brackets, then the target's
-export const BRACKET_PULSE = 0.025;     // how far the target's brackets breathe out, as a share of a tile's width
-export const BRACKET_TEXT_SIZE = 0.26;  // the target's guard over its brackets, as a share of a tile's width
-export const BRACKET_HP_GAP = 0.1;      // the target's guard sits this far over its brackets, as a share of a tile's height
-// Steady aim (steady aim plan): the target's brackets start STEADY_OPEN tile
-// widths further out and close in as the aim steadies; a mark across the
-// body climbs from the feet to the head (STEADY_MARK of the box's width)
-// and shakes STEADY_SHAKE tile widths when the arm does; the chance to land
-// sits by the top right bracket, STEADY_TEXT_SIZE of a tile's width high.
-export const STEADY_OPEN = 0.35;
-export const STEADY_MARK = 0.7;
-export const STEADY_SHAKE = 0.03;
-export const STEADY_TEXT_SIZE = 0.26;
-export const LASER_LEVEL = [0.45, 0.8]; // the laser's strength, then while a landed shot waits
-export const SHOT_RING = [0.06, 0.25];  // the ring where it lands: its first radius, then how much it grows, in tile widths
-const MISS_PAST = 0.6;           // how far past the minion a missed shot goes, in tiles
-const MISS_SIDE = 0.5;           // and how far to one side
-export const MISS_TEXT_SIZE = 0.36;     // MISS's height, as a share of a tile's width
-export const MISS_RISE = [1.15, 0.25];  // where MISS starts above its tile, then how far it floats up, in tile widths (slow: the calm rule)
-export const WEAK_RING = 0.12;          // the ring on a stick enemy's maim point while a landed shot waits, its radius in tile widths
-export const WEAK_RING_LEVEL = 0.7;     // and its strength
-
 // How bright a floor tile is, from 0 to 1: fading over the player's own
 // light, a middle level where only the boss's light shows it, dim where
 // only remembered. `fogOf(row, col)` is mapview.js's ('lit' / 'dim' /
@@ -139,28 +102,6 @@ export function searched(at) {
   return Boolean(prop && prop.searched);
 }
 
-// The minion (or hunter) on a tile, if any.
-export function minionOn(tile) {
-  return state.floor.minions.find(m => m.row === tile.row && m.col === tile.col);
-}
-
-// The gun's target, if it is still on the floor (a fight on the battle
-// screen can clear a minion the gun was aimed at).
-export function liveTarget() {
-  const target = state.floor.gunTarget;
-  return target && state.floor.minions.includes(target) ? target : null;
-}
-
-// Whether the gun reaches a floor tile: one the player could shoot at
-// (sight.js canShoot: in their own light, in range, a clear line), not
-// their own tile and not a wall or pillar.
-export function inReach(row, col) {
-  const f = state.floor;
-  if (row === f.playerRow && col === f.playerCol) return false;
-  if (f.wallSet.has(key(row, col)) || f.pillarSet.has(key(row, col))) return false;
-  return canShoot({ row, col });
-}
-
 // Eases `x` (0..1, held there) in and out.
 export function smooth(x) {
   const k = Math.max(0, Math.min(1, x));
@@ -184,57 +125,6 @@ export function skyTurnsLeft() {
   return state.settings.oneStick ? Math.round(left * REALTIME_STEP_MS / 1000) : left;
 }
 
-// The last shot (mapview.js shotOnMap -> showShot): { start, at, to,
-// missed }, or null. One for both views, so switching view mid-shot keeps it.
-let shot = null;
-let shotsShown = 0;      // shots shown so far, so a miss goes to the left and right in turn
-
-// Plays a shot on the map: a flash from the gun to `target`, or past it
-// when it `missed`, with MISS floating up over it. A miss goes to one
-// side, then the other, so two misses in a row don't look the same (never
-// Math.random: the seeded tests own it).
-export function showShot(target, missed) {
-  const at = { row: target.row, col: target.col };
-  let to = at;
-  if (missed) {
-    const dr = Math.sign(target.row - state.floor.playerRow);
-    const dc = Math.sign(target.col - state.floor.playerCol);
-    const side = shotsShown % 2 ? MISS_SIDE : -MISS_SIDE;
-    to = { row: at.row + dr * MISS_PAST + (dc ? side : 0), col: at.col + dc * MISS_PAST + (dr ? side : 0) };
-  }
-  shotsShown++;
-  shot = { start: performance.now(), at, to, missed };
-}
-
-// The last shot, or null before any.
-export function lastShot() {
-  return shot;
-}
-
-// The answer ring (swirl.js answerRingNow `ring`) at `now`, the part both
-// views share: how far it has faded out after a move (0..1, `out`), and
-// each letter's place round it and look, in order: { ch, angle, front
-// (1 nearest the viewer, -1 the far side), level (0..1), size (a share of
-// the ring's letter size) }. Going down the angle reads left to right
-// across the front. Letters too faint to draw are left out.
-export function answerRingLetters(ring, now) {
-  const letters = ringLetters(ring.text);
-  const n = letters.length;
-  const out = ring.fading === null ? 0 : smooth(ring.fading / ANSWER_RING_OUT_MS);
-  const spin = (now % ANSWER_RING_TURN_MS) / ANSWER_RING_TURN_MS * Math.PI * 2;
-  const shown = [];
-  letters.forEach((ch, i) => {
-    const angle = Math.PI * 0.95 - i * (Math.PI * 2 / n) + spin;
-    const front = Math.sin(angle);
-    const k = (front + 1) / 2;
-    const comeIn = smooth((ring.since - (i / n) * ANSWER_RING_IN_MS * 0.6) / (ANSWER_RING_IN_MS * 0.4));
-    const level = comeIn * (1 - out) * (ANSWER_RING.backLevel + (1 - ANSWER_RING.backLevel) * Math.pow(k, 1.4));
-    if (level <= 0.01) return;
-    shown.push({ ch, angle, front, level, size: ANSWER_RING.backSize + (1 - ANSWER_RING.backSize) * k });
-  });
-  return { out, letters: shown };
-}
-
 // Whether (row, col) is wall or off the grid.
 export function isWall(row, col) {
   const f = state.floor;
@@ -248,9 +138,3 @@ export function grain(row, col, n) {
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
-
-// What a tap on its glyph picks (gun.js pickTarget).
-export const ENEMY_KINDS = ['minion', 'hunter'];
-
-// The room view's stick men are sized from the player figure's poses.
-export const POSE_SCALE = ROOM_VIEW.stickHeight / 0.75; // playerform's poses are sized for a 0.75-tile stick man

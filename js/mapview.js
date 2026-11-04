@@ -1,31 +1,26 @@
 // The map: draws the floor (tiles, fog, walls, pillars, the boss light's
 // mist, items and every actor's glyph) onto one <canvas> from `state`,
-// with a phosphor afterglow and the map's animations (a minion's step,
-// the player's bump, warps, pulses, glows, the mist's drift).
+// with a phosphor afterglow and the map's animations (the player's step
+// and bump, warps, pulses, glows, the mist's drift).
 //
 // main.js calls initMapView() once, requestMapDraw() after anything on
-// the map may have changed, slideOnMap() / bumpOnMap() / shotOnMap() and a
-// minion's hurtOnMap() / deathOnMap() from their drawEvents cases, and onMapPointer() to hear taps on the map. This file reads state and never changes it.
+// the map may have changed, slidePlayerOnMap() / bumpOnMap() from their
+// drawEvents cases, and onMapPointer() to hear taps on the map. This file
+// reads state and never changes it.
 //
 // Everything is drawn into one canvas (the "phosphor"), so a later CRT
 // pass (curved glass, bloom) can read that canvas and draw on top of it.
 
 import { state, key } from './state.js';
-import { stepsAway } from './passage.js';
 import {
   AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
-  MAP_ANIMATION_MS, FORM_TELL_STEPS, MAP_DRAG_PX, CRAWL_REACH, DOWNED_GLYPH_LEVEL, DOWNED_GLYPH_LIFT,
+  MAP_ANIMATION_MS, MAP_DRAG_PX,
 } from './config.js';
-import { canMakeOut, seesEnemy, FACING_VECTORS } from './sight.js';
+import { canMakeOut, FACING_VECTORS } from './sight.js';
 import { stepMs } from './walkpace.js';
 import { freeSpot } from './walk.js';
 import { t } from './text.js';
-import { drawRoomScene, roomTileAt, roomGridAt, PLAYER_FIGURE } from './roomview.js';
-import { playOnce } from './figure3d.js';
-import { chargerHasMore } from './charger.js';
-import { showShot } from './mapshared.js';
-import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
-import { startAnswerRing, endAnswerRing } from './swirl.js';
+import { drawRoomScene, roomTileAt, roomGridAt } from './roomview.js';
 
 import { playerStepped, playerBumped } from './playerform.js';
 
@@ -54,7 +49,6 @@ const WARP_KEYS = [
   [0, [1, 1, 0, 0]], [0.18, [1.06, 0.94, -4, 1]], [0.34, [0.95, 1.05, 2, -3]],
   [0.52, [1.03, 0.97, 3, 1]], [0.71, [0.97, 1.04, -2, -2]], [0.85, [1.02, 0.98, 1, 2]], [1, [1, 1, 0, 0]],
 ];
-const GLITCH_KEYS = [[0, 0], [0.84, 0], [0.87, 1], [0.9, 0], [0.93, 0.85], [0.95, 0], [1, 0]];
 const PULSE_KEYS = [[0, 0], [0.5, 1], [1, 0]];
 
 // The CSS timing curves the animations use (ease, ease-in-out, ease-out),
@@ -120,19 +114,8 @@ export function initMapView(canvasEl) {
 }
 
 // The glyph a map thing shows once it's made out, from its term.*.symbol
-// line in text.js (so a room's AREAS overrides can change it). The battle
-// screen shows the same.
-// With Simple enemies on, a minion is a still 'e', and an 'E' as its
-// strike tell, within FORM_TELL_STEPS of the player (as a form's tell);
-// the hunter is a still 'E', drawn bigger. A downed one is a small 'e'
-// low on its tile (mapThings), and an 'E' only while it holds the player.
+// line in text.js (so a room's AREAS overrides can change it).
 export function glyphOf(thing) {
-  if (thing.kind === 'hunter' && state.settings.simpleEnemies) return t('term.hunter.simpleSymbol');
-  if (thing.kind === 'minion' && thing.downed) return t(thing.grabbing ? 'term.minion.tellSymbol' : 'term.minion.downedSymbol');
-  if (thing.kind === 'minion' && state.settings.simpleEnemies) {
-    const steps = stepsAway(thing.row, thing.col);
-    return t(steps <= FORM_TELL_STEPS ? 'term.minion.tellSymbol' : 'term.minion.simpleSymbol');
-  }
   return t('term.' + thing.kind + '.symbol');
 }
 
@@ -142,19 +125,6 @@ export function requestMapDraw() {
   if (!canvas) return;
   dirty = true;
   queueFrame();
-}
-
-// Slides a minion that has just stepped from `from` to its new tile. A minion already sliding starts from
-// where it shows now, so quick turns don't make it jump.
-// `hold` is the share of `ms` it waits on its old tile before it moves (a
-// crawl: the hand reaches first).
-export function slideOnMap(thing, from, ms = MAP_ANIMATION_MS.slide, hold = 0) {
-  if (!canvas || reducedMotion.matches) return;
-  const now = performance.now();
-  const running = effects.get(thing);
-  const start = running && running.kind === 'slide' ? slidePlace(running, now) : from;
-  effects.set(thing, { kind: 'slide', start: now, ms, hold, from: start, to: { row: thing.row, col: thing.col } });
-  requestMapDraw();
 }
 
 // Slides the player onto the tile they just stepped to, from the one
@@ -183,15 +153,6 @@ export function freeStepOnMap(ms) {
   requestMapDraw();
 }
 
-// The player was struck (3D moves, one stick plan step F): his figure
-// takes the hit, or, with the run lost (`dead`), falls and stays down.
-// Nothing moves under reduced motion.
-export function playerHitOnMap(dead) {
-  if (!canvas || reducedMotion.matches) return;
-  playOnce(PLAYER_FIGURE, dead ? 'Death01' : 'Hit_Head', performance.now(), dead);
-  requestMapDraw();
-}
-
 // Nudges the player toward `facing` and back: the feel of walking into
 // something, alongside the d-pad's blocked look; the stick man takes a
 // half step (playerform.js).
@@ -203,98 +164,9 @@ export function bumpOnMap(facing) {
   requestMapDraw();
 }
 
-// Plays a gun shot at `target` on the map (mapshared.js showShot, which
-// both views draw): a flash
-// to it, or past it with MISS over it when it `missed`. One more frame is
-// asked for once MISS is done, so it clears even under reduced motion,
-// where nothing else keeps frames going.
-export function shotOnMap(target, missed) {
-  if (!canvas) return;
-  showShot(target, missed);
-  requestMapDraw();
-  setTimeout(requestMapDraw, MAP_ANIMATION_MS.gunMiss);
-}
-
-// A stick man hit in the dark (light battery plan step C): drawn for
-// MAP_ANIMATION_MS.darkFlash in the shot's flash, though no light is on
-// it, then gone into the dark again. Shown under reduced motion too: it
-// is seen, not moved.
-let flashSeen = null; // { minion, until }
-export function revealInFlash(minion) {
-  flashSeen = { minion, until: performance.now() + MAP_ANIMATION_MS.darkFlash };
-  requestMapDraw();
-  setTimeout(requestMapDraw, MAP_ANIMATION_MS.darkFlash + 20);
-}
-function inFlash(m) {
-  return !!flashSeen && flashSeen.minion === m && performance.now() < flashSeen.until;
-}
-
-// A minion's stick man (stickforms.js) reacts to a landed shot: a soft
-// brightening, one small push and a hit's tendrils (one stays out when it
-// was a hit, `stays`, not a miss).
-export function hurtOnMap(minion, stays) {
-  hurtStick(minion, stays);
-  requestMapDraw();
-}
-
-// A minion's stick man goes down (downed plan): it falls from its pose to
-// propped on its arms (at once under reduced motion). With Simple enemies
-// on its 'e' just becomes the small one.
-export function downOnMap(minion) {
-  fallStick(minion, reducedMotion.matches);
-  requestMapDraw();
-}
-
-// A downed minion crawled from `from`: its hand reaches and plants, then
-// its body drags after it (the slide holds back CRAWL_REACH of the crawl),
-// and it drops letters on the tile it left. Under reduced motion, or as
-// Simple enemies' small 'e', it moves tile to tile.
-export function crawlOnMap(minion, from) {
-  if (state.settings.simpleEnemies) return requestMapDraw();
-  crawlStick(minion, from, reducedMotion.matches);
-  slideOnMap(minion, from, MAP_ANIMATION_MS.crawl, CRAWL_REACH);
-  requestMapDraw();
-}
-
-// A downed minion grabbed the player's ankle: its front hand reaches for
-// their foot and stays there.
-export function grabOnMap(minion) {
-  grabStick(minion);
-  requestMapDraw();
-}
-
-// The player finished a downed minion: its death (deathOnMap, next) is
-// letters settling to the floor.
-export function finishOnMap(minion) {
-  finishStick(minion);
-}
-
-// A killed minion's stick man fades where it stood (gone at once under
-// reduced motion, or with Simple enemies on).
-export function deathOnMap(minion) {
-  killStick(minion, reducedMotion.matches || state.settings.simpleEnemies);
-  requestMapDraw();
-}
-
-// After a miss: puts the right answer `text` up as a ring over tile `at`
-// (round the boss when `boss`; answer swirl plan step B). Returns false
-// when it should be the line instead (too long, reduced motion, Simple
-// enemies, no tile): main.js then shows render.js showAnswerLine.
-export function answerRingOnMap(text, at, boss) {
-  if (!startAnswerRing(text, at, boss, reducedMotion.matches, performance.now())) return false;
-  requestMapDraw();
-  return true;
-}
-
-// The player moved: the answer ring fades.
-export function endAnswerRingOnMap() {
-  endAnswerRing(performance.now());
-  requestMapDraw();
-}
-
 // Hands main.js a tap on the map: `tap(tile, pointerType, point)` with the
 // tile under a press that didn't drag past MAP_DRAG_PX (roomview
-// roomTileAt: an enemy first) and the floor point under it (roomGridAt).
+// roomTileAt) and the floor point under it (roomGridAt).
 // There is no hover or drag aim (a holdover from the shoulder view, whose camera turned with
 // the light, so the point under the pointer would run away from it), and a
 // drag never taps, so a phone can't pick or clear a target by accident.
@@ -481,21 +353,17 @@ function mapThings() {
     const lit = isLit(p.row, p.col);
     const remembered = state.settings.fogEnabled && !lit && !f.darkness && f.exploredSet.has(key(p.row, p.col));
     if (!lit && !remembered) return;
-    // A paper under the player or a minion is hidden, so glyphs don't pile up.
-    const under = thing => thing.row === p.row && thing.col === p.col;
-    if (p.kind === 'paper' && (under({ row: f.playerRow, col: f.playerCol }) || f.minions.some(under))) return;
+    // A paper under the player is hidden, so glyphs don't pile up.
+    if (p.kind === 'paper' && p.row === f.playerRow && p.col === f.playerCol) return;
     const known = !state.settings.fogEnabled || p.identified || canMakeOut(p.row, p.col);
     // An unused energy cell breathes a faint glow (roomview.js drawCell).
     const breath = p.kind === 'cell' && !p.searched && !remembered ? pulse(MAP_ANIMATION_MS.cellBreath, phaseOf(p) * MAP_ANIMATION_MS.cellBreath) : null;
     // An unused reflective desk sits in a pool of the kind voice's warm
     // light (roomview.js drawDesk), remembered ones too: it says "safe"
     // and calls the player back. Spent, the pool is gone.
-    // The charger breathes the same warm light while energy isn't full
-    // (roomview.js drawCharger); at full it has nothing to give.
-    const deskGlow = p.kind === 'desk' && !p.searched ? pulse(MAP_ANIMATION_MS.deskGlow)
-      : p.kind === 'charger' && chargerHasMore() ? pulse(MAP_ANIMATION_MS.chargerGlow) : null;
+    const deskGlow = p.kind === 'desk' && !p.searched ? pulse(MAP_ANIMATION_MS.deskGlow) : null;
     add(p.kind, p, known ? glyphOf(p) : null, {
-      size: 'prop', colour: p.searched || (p.kind === 'charger' && deskGlow === null) ? colours.muted : deskGlow !== null ? 'rgb(' + colours.kindRgb + ')' : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1, breath, deskGlow,
+      size: 'prop', colour: p.searched ? colours.muted : deskGlow !== null ? 'rgb(' + colours.kindRgb + ')' : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1, breath, deskGlow,
     });
   });
   if (f.coin && isLit(f.coin.row, f.coin.col)) {
@@ -522,28 +390,6 @@ function mapThings() {
   });
   add('player', state.settings.oneStick ? freeAt() : shownAt(PLAYER, f.playerRow, f.playerCol), t('term.player.symbol'), { size: 'player' },
     { row: f.playerRow, col: f.playerCol });
-  f.minions.forEach(m => {
-    // An enemy shows only while made out (or lit by a dark shot), never
-    // as a '?' to follow round the dark.
-    if (state.settings.fogEnabled && !seesEnemy(m) && !inFlash(m)) return;
-    const hunter = m.kind === 'hunter';
-    // Simple enemies: a still white letter, like a key's k, with no warp,
-    // dropout or glow (the hunter's E is bigger, from its glyph size).
-    if (state.settings.simpleEnemies) {
-      // Downed: a smaller, dimmer e low on its tile; E while it holds them.
-      const down = m.downed ? { size: 'downed', alpha: m.grabbing ? 1 : DOWNED_GLYPH_LEVEL, lift: DOWNED_GLYPH_LIFT } : {};
-      add(m.kind, shownAt(m, m.row, m.col), glyphOf(m), { size: m.kind, colour: colours.bright, ...down }, m);
-      return;
-    }
-    const phase = phaseOf(m);
-    const warpMs = hunter ? MAP_ANIMATION_MS.hunterWarp : MAP_ANIMATION_MS.warp;
-    add(m.kind, shownAt(m, m.row, m.col), glyphOf(m), {
-      size: m.kind, colour: hunter ? colours.bright : colours.text, bloom: hunter ? 0.32 : 0.26,
-      warp: warpAt(warpMs, phase * warpMs),
-      // Only minions drop out; the hunter is always there.
-      dropout: hunter ? 0 : dropoutAt(((phase * 2) % 1) * MAP_ANIMATION_MS.glitchBar),
-    }, m);
-  });
   return things;
 }
 
@@ -664,14 +510,6 @@ function pulse(period, offsetMs = 0) {
 function warpAt(period, offsetMs) {
   if (reducedMotion.matches) return null;
   return sampleKeys(WARP_KEYS, ((frameNow + offsetMs) % period) / period, EASE_IN_OUT);
-}
-
-// The strength of a minion's signal dropout bar this frame. None under
-// reduced motion.
-function dropoutAt(offsetMs) {
-  if (reducedMotion.matches) return 0;
-  const period = MAP_ANIMATION_MS.glitchBar;
-  return sampleKeys(GLITCH_KEYS, ((frameNow + offsetMs) % period) / period, EASE_IN_OUT);
 }
 
 // A glyph's glow part way between its dim and bright ends.

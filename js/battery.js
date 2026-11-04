@@ -36,8 +36,8 @@ export function lowBattery() {
   return batteryInPlay() && state.floor.light.on && state.floor.light.charge <= LOW_BATTERY_CHARGE;
 }
 
-// One turn of the battery, from combat.js advanceMonsters before anything
-// moves. With One stick the battery runs by time instead (drainLight), so
+// One turn of the battery, for the old turns (no caller since dungeon
+// removal step C; it goes with the battery in step D). With One stick the battery runs by time instead (drainLight), so
 // the world's beat leaves it alone. Events: runLight's.
 export function tickLight() {
   if (state.settings.oneStick) return [];
@@ -46,7 +46,7 @@ export function tickLight() {
 
 // One stick (one stick plan step D): the battery runs for `dtMs` of real
 // time, a charge every ONE_STICK.batteryChargeMs, on or off. Called by
-// combat.js clockFrame every frame the world runs. Events: runLight's.
+// main.js worldFrame every frame the world runs. Events: runLight's.
 export function drainLight(dtMs) {
   return runLight(dtMs / ONE_STICK.batteryChargeMs);
 }

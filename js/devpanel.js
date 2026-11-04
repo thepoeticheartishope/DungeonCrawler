@@ -1,15 +1,13 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
-// panel over the screen): Skip room, Auto-win, Fog, Turn, Free look, Minigame, Look, Tendrils and Combat
-// toggles, a test shot and a test reload, and the map's frame meter, for testing.
+// panel over the screen): Skip room, Auto-win, Fog, Minigame and the other
+// toggles, Inspect, and the map's frame meter, for testing.
 // main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw, mapDrawTimes } from './mapview.js';
 import { renderHud } from './render.js';
 import { MINIGAMES } from './minigames.js';
-import { STICK_POSE_IDS, TENDRIL_STYLES } from './stickforms.js';
 import { lookAngle, bodyAngle } from './look.js';
 import { computeVisibility } from './sight.js';
-import { refreshGunTarget } from './gun.js';
 import { refreshBook } from './bookview.js';
 import { BOOK, SHIP_ROLES } from './config.js';
 
@@ -22,17 +20,11 @@ const devLearnRolesBtn = document.getElementById('devLearnRolesBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
 const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
-const devDownedBtn = document.getElementById('devDownedBtn');
-const devSteadyBtn = document.getElementById('devSteadyBtn');
 const devWarningBtn = document.getElementById('devWarningBtn');
 const devOneStickBtn = document.getElementById('devOneStickBtn');
 const dpadEl = document.getElementById('dpad');
 const devFrameOut = document.getElementById('devFrameOut');
-const devLookBtn = document.getElementById('devLookBtn');
-const devTendrilsBtn = document.getElementById('devTendrilsBtn');
 const devMinigameBtn = document.getElementById('devMinigameBtn');
-const devShotBtn = document.getElementById('devShotBtn');
-const devReloadBtn = document.getElementById('devReloadBtn');
 
 // DEV -> One stick's label from state.settings.oneStick (main.js
 // startGame sets it from the start screen's Turns option).
@@ -41,11 +33,7 @@ export function syncDevOneStick() {
   devOneStickBtn.setAttribute('aria-pressed', String(state.settings.oneStick));
 }
 
-export function initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
-  autoWinGun,
-  battleScreen, wagerRow,
-}) {
+export function initDevPanel({ advanceRoom, autoWinGun }) {
   // Players never see DEV: it shows only when the address has ?dev
   // (index.html?dev), for testing.
   const params = new URLSearchParams(location.search);
@@ -69,36 +57,22 @@ export function initDevPanel({
   }
   setInterval(showFrameTimes, FRAME_METER_MS);
 
-  // Dev tool: jump to the next room instantly, skipping combat, for
-  // faster testing of dungeon generation across levels.
+  // Dev tool: lays the ship out again at once.
   devSkipBtn.addEventListener('click', () => {
     if (state.run.hearts <= 0) return;
     advanceRoom();
   });
 
-  // Dev tool: while on, every encounter plays itself out — the first query
-  // category is picked, the correct answer given (a minigame is played out
-  // at X), and CONTINUE pressed — one
-  // step every AUTO_WIN_STEP_MS so the log stays readable. Walking stays
-  // manual, so the boss light, minions and darkness behave as usual. With
-  // the gun on, an open reload is answered right and a dial is started and
-  // stopped in its kill zone (a Struggle's in its zone; main.js autoWinGun); SELECT and the energy cells stay manual.
+  // Dev tool: while on, a question on the ask screen plays itself out: the
+  // right answer given (a minigame is played out at X) and the book held
+  // after it closed (gunactions.js autoWinGun), one step every
+  // AUTO_WIN_STEP_MS so the log stays readable. Walking stays manual.
   const AUTO_WIN_STEP_MS = 300;
   let autoWinTimer = null;
 
-  function autoWinStep() {
-    if (!battleScreen.classList.contains('show')) { autoWinGun(); return; }
-    if (!battleScreen.classList.contains('show') || state.run.turnLocked || state.run.runEnded) return;
-    if (state.battle.battlePhase === 'choosing') chooseCategory(0);
-    else if (!wagerRow.hidden) placeWager(1);
-    else if (state.battle.battlePhase === 'answering' && state.battle.selectedTarget && state.battle.minigame) playMinigameOut();
-    else if (state.battle.battlePhase === 'answering' && state.battle.selectedTarget) attemptAnswerMC(state.battle.currentQuestion.meaning);
-    else if (state.battle.battlePhase === 'ended') leaveEncounter();
-  }
-
   devAutoWinBtn.addEventListener('click', () => {
     const on = !autoWinTimer;
-    if (on) autoWinTimer = setInterval(autoWinStep, AUTO_WIN_STEP_MS);
+    if (on) autoWinTimer = setInterval(autoWinGun, AUTO_WIN_STEP_MS);
     else { clearInterval(autoWinTimer); autoWinTimer = null; }
     devAutoWinBtn.textContent = on ? 'Auto-win: ON (dev)' : 'Auto-win: OFF (dev)';
     devAutoWinBtn.setAttribute('aria-pressed', String(on));
@@ -120,8 +94,7 @@ export function initDevPanel({
   });
 
   // Dev tool (record book plan step A): the book's page, dark as the game
-  // has it, or cold paper or cream, to compare. Seen on the next ask screen
-  // (Test reload opens one).
+  // has it, or cold paper or cream, to compare. Seen on the next ask screen.
   devBookPaperBtn.addEventListener('click', () => {
     const papers = BOOK.papers;
     state.settings.bookPaper = papers[(papers.indexOf(state.settings.bookPaper) + 1) % papers.length];
@@ -137,7 +110,6 @@ export function initDevPanel({
     devLightBatteryBtn.setAttribute('aria-pressed', String(state.settings.lightBattery));
     if (state.floor.playerRow === undefined) return;
     computeVisibility();
-    refreshGunTarget();
     renderHud();
     requestMapDraw();
   });
@@ -158,29 +130,6 @@ export function initDevPanel({
     requestMapDraw();
   });
 
-  // Dev tool (steady aim plan step A): SELECT held steadies a shot, or the
-  // dial as before. ?aim=steady or ?aim=dial in the address sets it at load.
-  const showSteady = () => {
-    devSteadyBtn.textContent = state.settings.steadyAim ? 'Steady aim: ON (dev)' : 'Steady aim: OFF (dev)';
-    devSteadyBtn.setAttribute('aria-pressed', String(state.settings.steadyAim));
-  };
-  if (params.get('aim') === 'steady') state.settings.steadyAim = true;
-  if (params.get('aim') === 'dial') state.settings.steadyAim = false;
-  showSteady();
-  devSteadyBtn.addEventListener('click', () => {
-    state.settings.steadyAim = !state.settings.steadyAim;
-    showSteady();
-  });
-
-  // Dev tool (downed plan step A): a shot that leaves a stick man on 1 HP
-  // knocks it down, or it stays standing, as before. Only later shots
-  // change: one already down stays down.
-  devDownedBtn.addEventListener('click', () => {
-    state.settings.downed = !state.settings.downed;
-    devDownedBtn.textContent = state.settings.downed ? 'Downed: ON (dev)' : 'Downed: OFF (dev)';
-    devDownedBtn.setAttribute('aria-pressed', String(state.settings.downed));
-  });
-
   // Dev tool: minigames roll as usual, never, or (one minigame picked)
   // always when the question fits it; forcing one also swaps in a question
   // it fits (minigames.js forcedQuestion), so it can be tried anywhere.
@@ -190,31 +139,6 @@ export function initDevPanel({
     state.settings.minigame = next;
     devMinigameBtn.textContent = 'Minigame: ' + next + ' (dev)';
   });
-
-
-  // Dev tool (stick enemies plan): every stick enemy shows the one look
-  // picked here: the walker (3D moves, one stick plan step F, the default),
-  // or one of the seven odd poses from before, to compare.
-  const LOOK_MODES = STICK_POSE_IDS;
-  devLookBtn.addEventListener('click', () => {
-    const next = LOOK_MODES[(LOOK_MODES.indexOf(state.settings.enemyPose) + 1) % LOOK_MODES.length];
-    state.settings.enemyPose = next;
-    devLookBtn.textContent = 'Look: ' + next + ' (dev)';
-    requestMapDraw();
-  });
-
-  // Dev tool (stick enemies plan): every stick enemy uses its own random
-  // tendril style, or all use the one picked here (wound, head, unravel).
-  const TENDRIL_MODES = ['random', ...TENDRIL_STYLES];
-  devTendrilsBtn.addEventListener('click', () => {
-    const next = TENDRIL_MODES[(TENDRIL_MODES.indexOf(state.settings.enemyTendrils) + 1) % TENDRIL_MODES.length];
-    state.settings.enemyTendrils = next;
-    devTendrilsBtn.textContent = 'Tendrils: ' + next + ' (dev)';
-    requestMapDraw();
-  });
-
-  devShotBtn.addEventListener('click', devTestShot);
-  devReloadBtn.addEventListener('click', devTestReload);
 }
 
 // Dev tool: a live look at the game state and the last rule events, for
@@ -270,8 +194,6 @@ function floorSummary() {
     darkTurns: f.darkTurns,
     lightTurns: f.lightTurns + ' / ' + f.lightTurnBudget,
     lightSlack: f.lightSlack + ' (loss ' + Math.round(f.lightLossShare * 100) + '%)',
-    minions: f.minions.map(m => where(m) + (m.minionKind ? ' ' + m.minionKind + (m.guard ? ' guard' : '') + (m.downed ? ' downed' : '') : '')),
-    gunTarget: where(f.gunTarget),
     props: f.props.length,
     chest: where(f.chest),
     stairs: f.stairs && f.stairs.row + ',' + f.stairs.col,

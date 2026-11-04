@@ -4,8 +4,7 @@
 // dog-ear lifts at the bottom-right corner, then the sheet turns over
 // toward the spine in BOOK.frames stepped frames over BOOK.turnMs. Taps
 // and keys wait while a page is turning, so nothing lands on the page going
-// away. Reduced motion swaps the page with no turn. gunpanels.js
-// turnAskPage() calls it.
+// away. Reduced motion swaps the page with no turn. bookview.js calls it.
 
 import { BOOK } from './config.js';
 

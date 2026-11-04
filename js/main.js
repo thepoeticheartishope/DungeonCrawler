@@ -1,31 +1,22 @@
 import { state, key } from './state.js';
 import { buildShipFloor } from './floor.js';
 import {
-  initBattleScreen, attemptAnswerMC, chooseCategory, clearLog, flashHearts, leaveEncounter, logLine,
-  mountBattleQuestion, syncBattleScreen, syncQuestionForTarget,
-} from './battlescreen.js';
-import {
-  initGunActions, askQuestion, autoWinGun, devTestReload, devTestShot, dressQuestion,  endReload,
-  letterPoolQuestion, lowerGun, pickReload, readyDial, stopDamageBar, stopStruggleBar,
-  sumLockQuestion, openBreaker, openLearning, openBoss,
+  initGunActions, autoWinGun, endAsk, letterPoolQuestion, sumLockQuestion, openBreaker, openLearning, openBoss,
 } from './gunactions.js';
 import { initControls, syncLookStick, tapMap, walkHeld } from './controls.js';
 import {
-  MAX_HEARTS, ROOM_COUNT, ENERGY_START, ROOM_LOG_LINES, ROOM_LOG_DIM_MS,
+  MAX_HEARTS, ROOM_COUNT, ROOM_LOG_LINES, ROOM_LOG_DIM_MS,
   REALTIME_POLL_MS, TUTORIAL_WHISPER_MS, CHARGER, ONE_STICK, SHIP_RUN,
 } from './config.js';
 import { pickQuestion, escapeHtml } from './quiz.js';
 import { shuffle } from './random.js';
 import {
-  initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
+  initRender, showScreen, renderRoomHints, renderHud,
   formatTime, startTimer, stopTimer, showSensed, showWhisper, hideWhisper,
-  showAnswerLine, fadeAnswerLine, renderShipHud
+  fadeAnswerLine, renderShipHud
 } from './render.js';
 import { freshShipRun } from './ship.js';
 import { initShipIntro, fillShipIntro, tragedyLines } from './shipview.js';
-import {
-  refreshTargetValidity, advanceMonsters, clockFrame,
-} from './combat.js';
 import { lightConsumed } from './light.js';
 import { onStairs, stairsHere } from './moves.js';
 
@@ -33,36 +24,33 @@ import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector, syncDevOneStick } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, answerRingOnMap, endAnswerRingOnMap, freeStepOnMap, playerHitOnMap } from './mapview.js';
-import { chargerLine, chargeUp } from './charger.js';
+import { initMapView, requestMapDraw, slidePlayerOnMap, bumpOnMap, onMapPointer, freeStepOnMap } from './mapview.js';
 import { turnWire } from './wires.js';
 import { stationMode, stationDone, trainWires } from './stations.js';
 import { consoleRoles, startLearning, noteOnDuty, taughtCount } from './roles.js';
 import { initConsoleView, showConsole } from './consoleview.js';
 import { shutterLine } from './saferoom.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
-import { refreshGunTarget, rollWeaknesses, addRounds } from './gun.js';
-import { initGunPanels, showStruggleBar, closeMapPanels, mapPanelShown, askHeld } from './gunpanels.js';
+import { initGunPanels, closeMapPanels, mapPanelShown, askHeld } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { SCREEN_WAYS } from './dpad.js';
-import { toggleLight, turnsToFull, secondsToFull } from './battery.js';
+import { toggleLight, turnsToFull, secondsToFull, drainLight } from './battery.js';
 import { computeVisibility } from './sight.js';
-import { noteSigns, warningAtReach } from './warning.js';
+import { noteSigns } from './warning.js';
 
 import { resetWalk, walkTileMs } from './walk.js';
-import { setQuestion, placeWager } from './questionview.js';
-import { playMinigameOut } from './minigameview.js';
+import { setQuestion } from './questionview.js';
 import { initMinimap, refreshMinimap } from './minimapview.js';
 import { initSound } from './sound.js';
 import { initTextSize } from './textsize.js';
 import { showVersion } from './version.js';
 import { initSfx } from './sfx.js';
 import { initMusic } from './music.js';
-import { initBook, bookReading, closeBook, refreshBook, refreshBookLog } from './bookview.js';
+import { initBook, bookReading, refreshBook, refreshBookLog } from './bookview.js';
 
 // The gun's actions get the main.js actions they call before anything runs.
-initGunActions({ applyTurnOutcome, drawEvents, goDown, openCharger, showRoomNote });
+initGunActions({ applyTurnOutcome, drawEvents, openCharger, showRoomNote });
 
 const startScreen = document.getElementById('startScreen');
 
@@ -72,7 +60,6 @@ const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 
 const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
-const battleScreen = document.getElementById('battleScreen');
 
 const winScreen = document.getElementById('winScreen');
 const loseScreen = document.getElementById('loseScreen');
@@ -81,21 +68,16 @@ const shipIntroScreen = document.getElementById('shipIntroScreen');
 const roomNumEl = document.getElementById('roomNum');
 const roomTotalEl = document.getElementById('roomTotal');
 const roomOfEl = document.getElementById('roomOf');
-const combatStatusEl = document.getElementById('combatStatus');
 const timerEl = document.getElementById('timer');
 const heartsEl = document.getElementById('hearts');
 const statsEl = document.getElementById('statsBar');
 const turnCountEl = document.getElementById('turnCount');
 const coinsTotalEl = document.getElementById('coinsTotal');
 
-const choiceListEl = document.getElementById('choiceList');
-const targetLabelEl = document.getElementById('targetLabel');
 const answerForm = document.getElementById('answerForm');
 const answerInput = document.getElementById('answerInput');
 const attackBtn = document.getElementById('attackBtn');
 const mcOptionsEl = document.getElementById('mcOptions');
-const wagerRow = document.getElementById('wagerRow');
-const continueBtn = document.getElementById('continueBtn');
 const roomFeedback = document.getElementById('roomFeedback');
 const roomLogEl = document.getElementById('roomLog');
 const devPanel = document.getElementById('devPanel');
@@ -117,29 +99,22 @@ const dpadButtons = {
   ...Object.fromEntries(Object.keys(SCREEN_WAYS).map(way => [way, document.getElementById('btn' + way)])),
   Skip: document.getElementById('btnSkip'),
 };
-const btnSelect = document.getElementById('btnSelect');
 
 initRender({
-  startScreen, shipIntroScreen, roomScreen, battleScreen, winScreen, loseScreen,
-  heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
+  startScreen, shipIntroScreen, roomScreen, winScreen, loseScreen,
+  heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, statsEl,
   lightHintEls, dpadButtons,
   senseNote: document.getElementById('senseNote'),
   answerNote: document.getElementById('answerNote'),
   shipTaught: document.getElementById('shipTaught'),
   shipPanic: document.getElementById('shipPanic'),
   shipPanicMeter: document.getElementById('shipPanicMeter'),
-  energyStat: document.getElementById('energyStat'),
-  gunTargetStat: document.getElementById('gunTargetStat'),
-  energyCount: document.getElementById('energyCount'),
   lightBattery: document.getElementById('lightBattery'),
   hudTube: document.getElementById('hudTube'),
   hudTubeWord: document.getElementById('hudTubeWord'),
-  gunTarget: document.getElementById('gunTarget'),
 
   keysStat: document.getElementById('keysStat'),
   keysText: document.getElementById('keysText'),
-
-  btnSelect,
 });
 initMapView(document.getElementById('mapCanvas'));
 onMapPointer({ tap: tapMap });
@@ -149,7 +124,7 @@ initDataView({ backScreen: document.getElementById('workshopScreen') });
 // TAKE COMMAND (the ship's opening): onto the ship, and its clock starts.
 initShipIntro({ onBegin: () => { showScreen(roomScreen); startTimer(); } });
 initConsoleView({ pick: pickRole, leave: () => closeConsole(t('console.left')) });
-initGunPanels({ pickReload, cancelReload: () => endReload(), readyBar: readyDial, backBar: lowerGun, stopBar: stopDamageBar, stopStruggle: stopStruggleBar });
+initGunPanels();
 // LEAVE says what the player stepped back from: the charger, or a ship
 // station (its term: the console or the board).
 initChargerView({
@@ -166,7 +141,7 @@ initSfx();
 // tune while the player is in the safe room on the run's screens.
 initMusic({
   intro: shipIntroScreen,
-  run: [roomScreen, battleScreen],
+  run: [roomScreen],
 });
 initBook({ askHeld, mapPanelShown });
 
@@ -174,10 +149,9 @@ applyStaticText();
 
 initSetLoader({ showSets: showSetPicker });
 initSetPicker({ startGame, openWorkshop: showWorkshop });
-initPractice({ letterPoolQuestion, sumLockQuestion, mountBattleQuestion });
+initPractice({ letterPoolQuestion, sumLockQuestion });
 initDevPanel({
-  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
-  autoWinGun, battleScreen, wagerRow,
+  advanceRoom, autoWinGun,
 });
 
 // Switches the light on or off (battery.js toggleLight; V, the LIGHT
@@ -197,7 +171,7 @@ function switchLight() {
     return;
   }
   computeVisibility();
-  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }, ...refreshGunTarget()]);
+  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }]);
   showRoomNote(note.cls, note.text);
 }
 // The LIGHT button under the map (light button prototype, Timothy
@@ -205,9 +179,9 @@ function switchLight() {
 // moment).
 document.getElementById('lightBattery').addEventListener('click', () => switchLight());
 
-// A fresh run's numbers: the questions, hearts, energy (`energy` of it),
-// gold, turns and story. startGame() sets them.
-function resetRun(energy = ENERGY_START) {
+// A fresh run's numbers: the questions, hearts, gold, turns and story.
+// startGame() sets them.
+function resetRun() {
   state.run.order = shuffle(state.settings.activeData).slice(0, Math.min(ROOM_COUNT, state.settings.activeData.length));
   state.run.roomIndex = 0;
   state.run.resting = true; // every run opens on a rest floor
@@ -221,17 +195,11 @@ function resetRun(energy = ENERGY_START) {
   state.run.nextPath = null;
   state.run.turnCount = 0;
   state.run.coinsTotal = 0;
-  state.run.energy = 0;
-  state.run.rounds = [];
-  addRounds(energy);
-  state.run.reloadIndex = 0;
-  state.run.chargerTold = false;
   state.run.shutterTold = false;
   state.run.trained = [];
   state.run.crewFailures = 0;
   state.run.ship = null;
   state.run.lastMinigame = null;
-  rollWeaknesses();
   state.run.loreQueue = [];
 }
 
@@ -280,7 +248,6 @@ function loadRoom() {
 function drawFloor() {
   resetWalk();
   fadeAnswerLine(true);
-  refreshGunTarget();
   renderHud();
   // Per-room wording overrides (text.js AREAS) apply from here on.
   setTextArea(state.run.roomIndex + 1);
@@ -288,14 +255,10 @@ function drawFloor() {
 
   renderRoomHints();
   syncLookStick();
-  renderTargeting();
   requestMapDraw();
   refreshMinimap();
-  syncBattleScreen(); // nothing's adjacent at spawn — makes sure we're back on the room screen
 
   setQuestion(pickQuestion(null));
-  renderCombatStatus();
-  clearLog();
   roomFeedback.innerHTML = '';
   // The room the player wakes in announces itself like any other, after
   // the ship's name.
@@ -330,12 +293,8 @@ function setControlsEnabled(enabled) {
   answerInput.disabled = !enabled;
   attackBtn.disabled = !enabled;
   Object.values(dpadButtons).forEach(b => b.disabled = !enabled);
-  // SELECT also depends on the run, which renderHud knows.
   if (enabled) renderHud();
-  else btnSelect.disabled = true;
   mcOptionsEl.querySelectorAll('button').forEach(b => b.disabled = !enabled);
-  choiceListEl.querySelectorAll('button').forEach(b => b.disabled = !enabled);
-  continueBtn.disabled = !enabled;
 }
 
 // Adds a note to the room log beside the d-pad, newest at the bottom, and
@@ -383,29 +342,15 @@ statsEl.addEventListener('keydown', (e) => {
   toggleHud();
 });
 
-// What closes CHARGE.SYS, and the record book read from the map: a stick
-// man reaching the player.
-const CHARGER_BREAKERS = new Set(['minionStruck', 'struggleStarted', 'ankleGrabbed']);
-
-// A spent turn: the player's events plus the monsters' turn, drawn once,
-// then the room note from all of them (or the run ends in the light, or,
-// with the gun on, to a minion's strike). With the gun on, its target
-// catches up with where everything is now. With Real time on, the
-// player's own actions don't move the world (`worldMoves` false): the clock
-// does (clockTick), so here only the targets catch up with the player.
-function applyTurnOutcome(events, worldMoves = !realTimeOn()) {
-  const turn = worldMoves ? events.concat(advanceMonsters({ canStruggle: worldRunsUnder(), minions: !state.settings.oneStick })) : events;
-  if (!worldMoves) refreshTargetValidity();
-  // A stick man that reaches the player closes CHARGE.SYS before its
-  // strike (or Struggle) is drawn; the wires stay as they were.
-  if (chargerShown() && turn.some(e => CHARGER_BREAKERS.has(e.type))) {
-    closeCharger();
-    turn.push({ type: 'chargerBroken' });
-  }
-  if (bookReading() && turn.some(e => CHARGER_BREAKERS.has(e.type))) closeBook();
-  turn.push(...chargerLine());
+// A spent turn: the player's events, drawn once, then the room note from
+// all of them (or the run ends in the light, or the ship's run ends).
+// The world doesn't move on a turn: with One stick (always, on the ship)
+// it runs on the clock (worldFrame), and the stick men that once moved
+// here went with combat (dungeon removal step C). `worldMoves` is kept
+// for the callers that still pass it.
+function applyTurnOutcome(events) {
+  const turn = [...events];
   turn.push(...shutterLine(turn));
-  turn.push(...refreshGunTarget());
   const note = drawEvents(turn);
   if (lightConsumed()) {
     loseToLight();
@@ -417,25 +362,13 @@ function applyTurnOutcome(events, worldMoves = !realTimeOn()) {
     endShip(shipEnd.how, note);
     return;
   }
-  if (turn.some(e => e.type === 'signalLost')) {
-    state.run.runEnded = true;
-    closeReloadOnRunEnd();
-    showRoomNote('warn-msg', note.text);
-    setControlsEnabled(false);
-    stopTimer();
-    setTimeout(endLose, 900);
-    return;
-  }
-  // A reload or relay open on the ask screen keeps its question as it is.
-  if (!mapPanelShown()) syncQuestionForTarget();
-  syncBattleScreen();
   showRoomNote(note.cls, note.text);
 }
 
-// The run ended while a gun panel was open (a minion's strike after a
-// Struggle, say): the panels close so nothing is answered on a lost run.
-function closeReloadOnRunEnd() {
-  if (mapPanelShown()) endReload();
+// The run ended while the ask screen was open: it closes so nothing is
+// answered on a lost run.
+function closeAskOnRunEnd() {
+  if (mapPanelShown()) endAsk();
 }
 
 // Whether the world runs on the real-time clock: Real time on, or One
@@ -446,10 +379,8 @@ function realTimeOn() {
 
 // Whether the real-time clock may run: Real time on, a run going, the
 // room screen up with nothing paused over it. It stops for the ask screen
-// (a reload or a relay: Timothy chose a screen of its own over the
-// pressure of a clock running under the question), the dial (the
-// shot's timing is the player's), the battle screen, THE UNFOLDING, the
-// DEV panel, the end screens and a hidden tab. It keeps running under
+// (Timothy chose a screen of its own over the pressure of a clock running
+// under the question), THE UNFOLDING, the DEV panel, the end screens and a hidden tab. It keeps running under
 // CHARGE.SYS: the time is the charger's cost (Timothy 2026-10-26), and
 // under the record book read for LOG or MAP.
 function clockMayRun() {
@@ -465,18 +396,15 @@ setInterval(() => { if (bookReading()) refreshBook(); }, REALTIME_POLL_MS);
 // and targeting once. Returns the room note the events add up to
 // ({ cls, text }, text in event order); the caller decides whether to show it.
 // The events that mean the player moved: they put the answer (line or ring) away.
-const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched', 'minionFinished', 'heldFast']);
+const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched']);
 
 function drawEvents(events) {
   const parts = [];
   let cls = 'move-msg';
   // The player's own move (a step, a turn, a wait, a bump) puts away the
-  // answer a miss left on the map (answer swirl). The world's turn alone
-  // (Real time) and looking around with the light don't.
-  if (events.some(e => PLAYER_MOVES.has(e.type))) {
-    fadeAnswerLine();
-    endAnswerRingOnMap();
-  }
+  // answer line a miss left over the map. Looking around with the light
+  // doesn't.
+  if (events.some(e => PLAYER_MOVES.has(e.type))) fadeAnswerLine();
   for (const e of events) {
     switch (e.type) {
       case 'blocked':
@@ -528,9 +456,6 @@ function drawEvents(events) {
       case 'deskUntouched':
         parts.push(t('room.desk.full'));
         break;
-      case 'chargerFull':
-        parts.push(t('room.charger.full'));
-        break;
       // The safe room (saferoom.js): the shutters, the lamp, and what waits
       // outside. Several shut out at once are said once.
       case 'shutterDown':
@@ -559,19 +484,6 @@ function drawEvents(events) {
         break;
       case 'lightSwitchedForLamp':
         parts.push(t('room.lamp.ownOff'));
-        break;
-      case 'lampWentOut':
-        logLine(t('room.lamp.out'), 'alert');
-        break;
-      case 'chargerOpened':
-        parts.push(t(e.kept ? 'room.charger.kept' : 'room.charger.loose'));
-        break;
-      case 'charged':
-        parts.push(t(e.light ? 'room.charger.doneLight' : 'room.charger.done'));
-        break;
-      case 'chargerBroken':
-        parts.push(t('room.charger.found'));
-        cls = 'warn-msg';
         break;
       // The ship's stations (stations.js; ship plan step B).
       case 'crewSpoke':
@@ -656,7 +568,6 @@ function drawEvents(events) {
         break;
       case 'keyTaken':
         parts.push(t('room.key', { held: e.held, total: e.total }));
-        if (e.unsealed) parts.push(t('room.gate.unsealed'));
         break;
       case 'coinTaken':
         parts.push(t('room.coin'));
@@ -677,10 +588,6 @@ function drawEvents(events) {
       case 'boxOpened':
         parts.push(e.gold ? t('room.box.gold', { gold: e.gold }) : t('room.box.junk'));
         break;
-      case 'hunterWoke':
-        parts.push(t('room.hunter.wakes'));
-        cls = 'warn-msg';
-        break;
       // The player's light (battery.js).
       case 'lightSwitched':
         parts.push(t(e.on ? 'room.ownLight.on' : 'room.ownLight.off'));
@@ -692,222 +599,19 @@ function drawEvents(events) {
       case 'lightCharged':
         parts.push(t('room.ownLight.charged'));
         break;
-      // A downed one crawls (downed plan step B).
-      case 'minionMoved':
-        if (e.minion.downed) crawlOnMap(e.minion, e.from);
-        else slideOnMap(e.minion, e.from, e.ms);
-        break;
-      // One stick: the stick man's reach is its tell (it stands, near);
-      // only a miss is said.
-      case 'reachStarted':
-        if (state.settings.warningTimer) parts.push(warningNote(e.minion));
-        break;
-      case 'reachBroken':
-        break;
       case 'coverTaken':
         parts.push(t('room.cover'));
         break;
-      case 'reachMissed':
-        parts.push(t('room.reach.missed'));
-        break;
-      // Answer events (answers.js): one encounter log line each.
-      case 'answerGiven':
-        logLine(t('log.input', { answer: e.given }));
-        break;
-      case 'accepted':
-        logLine(t('log.accepted'), 'bright');
-        break;
-      case 'extraSpaces':
-        logLine(t('log.extraSpaces'), 'sys');
-        break;
-      case 'rejected':
-        logLine(t(e.cost ? 'log.rejected' : 'log.rejected.free', { cost: e.cost }), 'alert');
-        if (state.settings.revealOnWrong) {
-          // A short answer circles over what asked it; a long one (or the
-          // comfort version) is the line across the top of the map.
-          if (answerRingOnMap(e.expected, e.at, e.boss)) fadeAnswerLine(true);
-          else {
-            endAnswerRingOnMap();
-            showAnswerLine(e.expected);
-          }
-          logLine(t('log.expected', { answer: e.expected }), 'sys');
-          if (e.source) logLine(t('log.source', { source: e.source }), 'sys');
-        }
-        break;
-      case 'wagerSettled':
-        logLine(t(e.won ? 'log.wager.won' : 'log.wager.lost', { n: e.n }), e.won ? 'bright' : 'alert');
-        break;
-      case 'signalLost':
-        playerHitOnMap(true);
-        logLine(t('log.signalLost'), 'alert');
-        break;
-      case 'bossHit':
-        logLine(t('log.boss.integrity', { hp: e.hp, max: e.max }));
-        break;
-      case 'bossHeld':
-        logLine(t('log.boss.holds'));
-        break;
-      case 'gateSealed':
-        logLine(t('log.gate.sealed', { turns: e.turns }), 'alert');
-        break;
-      case 'gateOpened':
-        logLine(t('log.gate.opened'), 'bright');
-        break;
-      case 'gateReached':
-        break;
-      case 'bossDefeated':
-        logLine(t('log.boss.cleared'), 'bright');
-        break;
-      case 'darknessFell':
-        logLine(t('log.darkness'), 'alert');
-        break;
-      case 'targetSpent':
-        if (!e.right) {
-          logLine(t('log.' + e.target.kind + '.trapped'));
-        }
-        break;
-      case 'goldGained':
-        if (e.from === 'kill') { parts.push(t('gun.killed', { gold: e.amount })); break; }
-        if (e.from === 'takedown') { parts.push(t('room.takedown.killed', { gold: e.amount })); break; }
-        logLine(t(e.from === 'chest' ? 'log.chest.opened' : 'log.box.gold', { gold: e.amount }), 'bright');
-        break;
-      // The gun (gun plan): room notes, and the map's effects. A landed
-      // shot flies once the dial stops.
-      case 'fireBlocked':
-      case 'targetBlocked':
-        cls = 'block-msg';
-        parts.push(t('gun.block.' + e.reason));
-        break;
-      // The dial (kill or maim plan): BACK before READY, then what a
-      // stopped dial did.
-      case 'shotCancelled':
-        parts.push(t('gun.lowered'));
-        break;
-      // Steady aim: the stick man left the aim, or the arm tired.
-      case 'steadyLost':
-        parts.push(t('gun.steady.lost'));
-        break;
-      case 'steadyDropped':
-        cls = 'warn-msg';
-        parts.push(t('gun.steady.dropped'));
-        break;
-      case 'shotMissed':
-        shotOnMap(e.minion, false);
-        if (e.dark) revealInFlash(e.minion);
-        hurtOnMap(e.minion, false);
-        parts.push(t('gun.missed'));
-        break;
-      case 'shotJammed':
-        cls = 'warn-msg';
-        shotOnMap(e.minion || e.end, true);
-        parts.push(t(e.energyLost ? 'gun.shotJammed' : 'gun.shotJammedEmpty'));
-        break;
-      case 'shotLoud':
-        cls = 'warn-msg';
-        shotOnMap(e.minion || e.end, true);
-        parts.push(t('gun.shotLoud'));
-        break;
-      case 'shotLunged':
-        cls = 'warn-msg';
-        shotOnMap(e.minion, true);
-        if (e.dark) revealInFlash(e.minion);
-        parts.push(t('gun.shotLunged'));
-        break;
-      // A shot in the dark with nothing there (light battery plan step C).
-      case 'shotIntoDark':
-        shotOnMap(e.end, false);
-        parts.push(t('gun.dark.nothing'));
-        break;
-      case 'minionHit':
-        shotOnMap(e.minion, false);
-        // In the dark, the shot's flash shows it for a moment.
-        if (e.dark) revealInFlash(e.minion);
-        hurtOnMap(e.minion, true);
-        if (e.matched) parts.push(t('gun.matched'));
-        if (e.tier === 'kill' && !e.minion.downed && !state.floor.minions.includes(e.minion)) parts.push(t('gun.cleanKill'));
-        break;
-      case 'guardBroken':
-        parts.push(t('gun.guardBroken'));
-        break;
-      case 'minionReels':
-        parts.push(t('gun.stunned'));
-        break;
-      // Downed stick men (downed plan): it falls, crawls, grabs, and a bump
-      // finishes it (its death, minionKilled next, comes apart into letters).
-      case 'minionDowned':
-        downOnMap(e.minion);
-        parts.push(t('gun.downed'));
-        break;
-      case 'minionFinished':
-        finishOnMap(e.minion);
-        parts.push(t('gun.finished'));
-        break;
-      case 'ankleGrabbed':
-        grabOnMap(e.minion);
-        cls = 'warn-msg';
-        parts.push(t('gun.grabbed'));
-        break;
-      case 'heldFast':
-        bumpOnMap(state.floor.facing);
-        cls = 'block-msg';
-        parts.push(t('gun.heldFast'));
-        break;
-      case 'weaknessFound':
-        parts.push(t('gun.weakFound', { kind: t('minionKind.' + e.minionKind), group: e.label }));
-        break;
-      case 'minionKilled':
-        deathOnMap(e.minion);
-        break;
-      case 'hunterStaggered':
-        shotOnMap(e.hunter, false);
-        parts.push(t('gun.hunterStaggered'));
-        break;
-      case 'minionStruck':
-        playerHitOnMap(false);
-        flashHearts();
-        cls = 'warn-msg';
-        parts.push(t(e.minion.kind === 'hunter' ? 'gun.hunterStruck' : 'gun.struck', { cost: e.cost }));
-        break;
-      case 'knockedBack':
-        slideOnMap(e.minion, e.from);
-        break;
       // A minigame ended (minigames.js endMinigame): how close it came.
       case 'minigameScored': {
-        const line = t('mg.' + e.minigame + '.scored.' + (e.tier || 'miss'), { name: t('mg.' + e.minigame), answer: e.answer, given: e.given });
-        logLine(line, e.tier ? 'bright' : 'alert');
-        parts.push(line);
+        parts.push(t('mg.' + e.minigame + '.scored.' + (e.tier || 'miss'), { name: t('mg.' + e.minigame), answer: e.answer, given: e.given }));
         break;
       }
-      case 'reloaded':
-        parts.push(t('gun.reloaded', { energy: e.energy }));
-        break;
-      case 'jammed':
-        cls = 'block-msg';
-        if (state.settings.revealOnWrong) showAnswerLine(e.expected);
-        parts.push(t('gun.jammed'));
-        break;
-      // No energy and a minion on the player: the Struggle dial opens over
-      // the map at READY. Moving, waiting and the real-time clock all hold
-      // until SELECT starts it and stops it (readyDial, stopStruggleBar).
-      case 'struggleStarted':
-        cls = 'warn-msg';
-        parts.push(t('gun.struggle.start'));
-        showStruggleBar(e);
-        break;
-      case 'struggleWon':
-        parts.push(t('gun.struggle.won'));
-        break;
-      case 'struggleLost':
-        cls = 'warn-msg';
-        parts.push(t('gun.struggle.lost'));
-        break;
     }
   }
   renderHud();
-  renderCombatStatus();
   renderRoomHints();
   syncLookStick();
-  renderTargeting();
   requestMapDraw();
   refreshMinimap();
   recordEvents(events);
@@ -918,38 +622,30 @@ function drawEvents(events) {
 // ends where the player stands, after a beat to see it.
 function loseToLight() {
   state.run.runEnded = true;
-  closeReloadOnRunEnd();
+  closeAskOnRunEnd();
   showRoomNote('warn-msg', t('room.light.consumed'));
   setControlsEnabled(false);
   stopTimer();
   setTimeout(() => endLose('light'), 1400);
 }
 
-// DEV -> Warning timer's room log line for stick man m's reach: how long
-// before it he first gave himself away, and by what (warning.js).
-function warningNote(m) {
-  const { kind, ms } = warningAtReach(m, performance.now());
-  if (!kind) return t('room.dev.warning.none');
-  return t('room.dev.warning', { s: (ms / 1000).toFixed(1), kind: t('room.dev.warning.' + kind) });
-}
-
-// The world's frame with One stick on (combat.js clockFrame, one stick
-// plan steps C and D), after the player's frame of walking: the battery
-// runs by time and the stick men walk on their own clocks. What they did
-// is drawn like the world's turn in real time (applyTurnOutcome, the
-// world not moved again), so a strike can still end the run. The HUD's
-// battery is redrawn whenever a # of it is spent or back.
+// The world's frame with One stick on (one stick plan steps C and D),
+// after the player's frame of walking: the battery runs by time
+// (battery.js drainLight). What it did is drawn like a turn
+// (applyTurnOutcome). The HUD's battery is redrawn whenever a # of it is
+// spent or back.
 function worldFrame(dt) {
   if (state.run.turnLocked || state.run.runEnded || !clockMayRun()) return;
   const cells = Math.ceil(state.floor.light.charge);
   const frameMs = Math.min(dt, ONE_STICK.frameMs);
-  const events = clockFrame(frameMs, { canStruggle: worldRunsUnder() });
+  const events = drainLight(frameMs);
+  if (events.length) computeVisibility();
   if (state.floor.ship) renderShipHud();
   if (state.settings.warningTimer) noteSigns(performance.now());
   if (Math.ceil(state.floor.light.charge) !== cells) renderHud();
   if (!events.length) return;
   state.run.turnLocked = true;
-  applyTurnOutcome(events, false);
+  applyTurnOutcome(events);
   state.run.turnLocked = false;
 }
 
@@ -964,39 +660,37 @@ function worldRunsUnder() {
   return !shown || shown === 'charger' || shown === 'console' || shown === 'book';
 }
 
-// The charger whose CHARGE.SYS is open, or null. View-side, like reloadBox.
+// The ship station whose CHARGE.SYS is open, or null. View-side.
 let openChargerProp = null;
 // Closes CHARGE.SYS a moment after a charge (CHARGER.closeMs), so the
 // joined-up wires and their line are seen.
 let chargerCloseTimer = null;
 
-// CHARGE.SYS opens over the map on the charger's wires (charger.js
-// useCharger already made them, or kept them as they were left). A ship
-// station's wires (stations.js useStation) open the same panel, named for
-// its mode: training or teaching.
+// CHARGE.SYS opens over the map on a ship station's wires (stations.js
+// useStation), named for its mode: training or teaching.
 function openCharger(charger) {
   clearTimeout(chargerCloseTimer);
   openChargerProp = charger;
-  showCharger(charger.puzzle, realTimeOn(), charger.kind === 'charger' ? null : stationMode(charger));
+  showCharger(charger.puzzle, realTimeOn(), stationMode(charger));
 }
 
 // A wire turned (a tap, or F / Enter / Space on it): wires.js turnWire.
 // Every second turn is a spent turn, the world's as for a step (with Real
-// time on, the clock is the cost instead). Once the power joins up, energy
-// is full and CHARGE.SYS closes after CHARGER.closeMs; on a ship station
-// the role is learned or the Engineer taught (stations.js stationDone). A tap on
+// time on, the clock is the cost instead). Once the power joins up,
+// CHARGE.SYS closes after CHARGER.closeMs: the role is learned or the
+// Engineer taught (stations.js stationDone). A tap on
 // an open breaker asks its question instead (gunactions.js openBreaker).
 function turnChargerWire(index) {
   const charger = openChargerProp;
   if (!charger || state.run.turnLocked || state.run.runEnded || !chargerShown()) return;
   const wires = charger.puzzle;
-  const events = turnWire(charger, index, charger.kind === 'charger' ? chargeUp : stationDone);
+  const events = turnWire(charger, index, stationDone);
   if (!events.length) return;
   if (events.some(e => e.type === 'breakerAsked')) {
     openBreaker(charger, index);
     return;
   }
-  const charged = events.some(e => ['charged', 'stationTrained', 'stationTaught'].includes(e.type));
+  const charged = events.some(e => ['stationTrained', 'stationTaught'].includes(e.type));
   renderCharger(wires, charged);
   if (events.some(e => e.type === 'turnSpent') && !realTimeOn()) {
     state.run.turnLocked = true;
@@ -1004,7 +698,7 @@ function turnChargerWire(index) {
     state.run.turnLocked = false;
   } else if (events.some(e => e.type === 'shipEnded')) {
     // The last crew member taught: applyTurnOutcome ends the ship's run.
-    applyTurnOutcome(events, false);
+    applyTurnOutcome(events);
   } else {
     const note = drawEvents(events);
     if (note.text) showRoomNote(note.cls, note.text);
@@ -1060,7 +754,6 @@ function skipTurn() {
   state.run.turnLocked = false;
 }
 
-initBattleScreen({ drawEvents, askQuestion, dressQuestion, endLose, loseToLight, setControlsEnabled });
 initControls({
   applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
   realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame,
@@ -1084,7 +777,7 @@ function endLose(reason) {
 // last line shows a moment first.
 function endShip(how, note) {
   state.run.runEnded = true;
-  closeReloadOnRunEnd();
+  closeAskOnRunEnd();
   closeCharger();
   showRoomNote(how === 'arrived' ? note.cls : 'warn-msg', note.text);
   setControlsEnabled(false);

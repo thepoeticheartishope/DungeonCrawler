@@ -1,21 +1,22 @@
 // The question panel (gun plan step 5): one question with its answer
 // options, image, and the modifiers it carries (Blind, Flip, Timer, the
 // Gambler's wager). There is one panel, #queryPanel, and it is mounted
-// where it is needed: the battle screen (main.js) or the panel over the
-// map (gunpanels.js). Whoever mounts it passes the handlers that decide
-// what an answer means, so the battle screen and a reload share the same
-// drawing. A question may run as a minigame (setMinigame, minigameview.js)
+// where it is needed: the ask screen (gunpanels.js) or the practice
+// screen (practice.js), and parked out of sight between questions
+// (parkQuestionPanel). Whoever mounts it passes the handlers that decide
+// what an answer means, so every question shares the same drawing. A question may run as a minigame (setMinigame, minigameview.js)
 // in place of its options. Sets state.battle.currentQuestion /
 // currentChoices / wager.
 import { state } from './state.js';
 import { TIMER_SECONDS } from './config.js';
 import { rollFlip, maxWager, blindReadMs } from './modifiers.js';
-import { escapeHtml, buildChoices, resolveImageSrc } from './quiz.js';
+import { escapeHtml, buildChoices, resolveImageSrc, normalizeSpaces } from './quiz.js';
 import { t } from './text.js';
 import { showMinigame, hideMinigame, applyMinigameModifier, lockMinigame, minigameSeconds, minigameTimeUp, minigameAsks, minigameDrawsImage } from './minigameview.js';
 import { playSfx } from './sfx.js';
 
 const queryPanel = document.getElementById('queryPanel');
+const questionPark = document.getElementById('questionPark');
 const enemyName = document.getElementById('enemyName');
 const queryImage = document.getElementById('queryImage');
 const answerForm = document.getElementById('answerForm');
@@ -35,12 +36,23 @@ let handlers = { onChoice() {}, onTyped() {}, onTimeout() {}, onResult() {}, log
 
 // Moves the question panel into `host` and hands its input to `next`
 // (see `handlers`), shown. Mounting where it already is just swaps the
-// handlers. The battle screen hides it again between questions
-// (main.js showBattlePhase).
+// handlers.
 export function mountQuestionPanel(host, next) {
   handlers = next;
   if (queryPanel.parentElement !== host) host.appendChild(queryPanel);
   queryPanel.hidden = false;
+}
+
+// Puts the question panel back in its hidden home (#questionPark) with no
+// handlers, once the ask screen or the practice screen is done with it.
+export function parkQuestionPanel() {
+  mountQuestionPanel(questionPark, { onChoice() {}, onTyped() {}, onTimeout() {}, onResult() {}, log() {} });
+}
+
+// Whether `given` is the current question's answer, ignoring case and
+// extra spaces.
+export function matchesAnswer(given) {
+  return normalizeSpaces(given).toLowerCase() === normalizeSpaces(state.battle.currentQuestion.meaning).toLowerCase();
 }
 
 // Draws state.battle.currentChoices as lettered option buttons.
