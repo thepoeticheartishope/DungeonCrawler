@@ -9,7 +9,6 @@ import { state, key } from '../js/state.js';
 import { MAX_HEARTS } from '../js/config.js';
 import { freshLight } from '../js/battery.js';
 import { computeVisibility } from '../js/sight.js';
-import { spawnMinion } from '../js/combat.js';
 
 // An open size × size floor with nothing on it and the player in the middle
 // facing north, a fresh battery and no haunts. `settings`, `run`, `floor`
@@ -35,12 +34,6 @@ export function emptyFloor(size = 21, { settings = {}, run = {}, floor = {}, bat
   if (see) computeVisibility();
 }
 
-// The gun's run values for `energy` plain rounds and no weaknesses known,
-// to pass as emptyFloor's `run`.
-export function gunRun(energy) {
-  return { energy, rounds: Array(energy).fill(null), weakTo: {}, weakKnown: new Set() };
-}
-
 // Two tall rooms on a 21 × 21 floor, joined by one hallway along row 10:
 // room 0 is columns 1-6, room 1 columns 14-19, rows 1-19; everything else
 // is wall. The player stands at the bottom of room 0.
@@ -55,15 +48,6 @@ export function twoRooms() {
   }
   f.playerRow = 19;
   f.playerCol = 1;
-}
-
-// A minion of `kind` (dr, dc) from the player, the light recomputed so the
-// rules see it. `hunts` makes it chase whatever it notices.
-export function minionAt(dr, dc, kind = 'SHARD', { hunts = false } = {}) {
-  const m = spawnMinion({ row: state.floor.playerRow + dr, col: state.floor.playerCol + dc }, kind);
-  if (hunts) m.hunts = true;
-  computeVisibility();
-  return m;
 }
 
 // Runs fn with Math.random fixed at `value`, then puts it back.

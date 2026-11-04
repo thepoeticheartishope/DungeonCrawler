@@ -4,16 +4,13 @@
 // drawEvents() draws it and picks the wording. No DOM access here.
 
 import { state, key } from './state.js';
-import { reachGate } from './gate.js';
 import { useDesk } from './desk.js';
-import { useCharger } from './charger.js';
 import { isStation, useStation } from './stations.js';
 import { pullShutter, enterSafeRoom, autoShutters } from './saferoom.js';
 
 import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
 import { followBody, waysInUse } from './look.js';
-import { finishDowned } from './gun.js';
 
 import { DARK_GOLD_MULTIPLIER, BOX_GOLD } from './config.js';
 
@@ -43,10 +40,7 @@ export function onStairs() {
 function takeKey(index) {
   state.floor.keys.splice(index, 1);
   state.floor.keysHeld++;
-  // A new key unseals the gate (gate.js), at its new, easier level.
-  const unsealed = state.floor.gateSealed;
-  state.floor.gateSealed = false;
-  return { type: 'keyTaken', held: state.floor.keysHeld, total: state.floor.keysHeld + state.floor.keys.length, unsealed };
+  return { type: 'keyTaken', held: state.floor.keysHeld, total: state.floor.keysHeld + state.floor.keys.length };
 }
 
 // One arrow press, (dRow, dCol) one tile on the grid: one of the 8 ways
@@ -55,21 +49,12 @@ function takeKey(index) {
 // would cut a corner (passage.js canPassCorner) is a bump, kind 'corner',
 // before anything on the tile itself counts. A turn or a
 // step points the light straight ahead again (look.js followBody), even
-// with free look on. It never only turns: combat.js senseUnseen warns
-// ("I see you.") before anything unseen gets next to the player, which is
-// what looking first was for. Events: turned { facing } (before the rest),
+// with free look on. Events: turned { facing } (before the rest),
 // blocked { kind, thing } (kind 'corner' too; with free look, then bodyTurned { facing,
 // bumped: true } if the press turned the body: a spent turn), stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
-// keyTaken { held, total, unsealed }, gateReached { questions } (bumped the
-// boss; main.js opens the battle screen), blocked { kind: 'gate' } (it's sealed),
-// paperRead { paper, loot, story? }, roomEntered { theme, name }, itemReached { thing }
-// (bumped the chest; main.js opens the battle screen) and
-// the box events from examineProp. Walking into a downed stick man
-// finishes it (gun.js finishDowned: minionFinished, minionKilled,
-// goldGained). While one holds the player's ankle a step onto another tile
-// is refused, heldFast { minion }, no turn spent (with free look, then
-// bodyTurned { bumped: true } if the press turned the body, as a bump).
-// A turn is spent only by `stepped`, `propSearched`, `bodyTurned` or `minionFinished`.
+// keyTaken { held, total }, paperRead { paper, loot, story? },
+// roomEntered { theme, name } and the box events from examineProp.
+// A turn is spent only by `stepped`, `propSearched` or `bodyTurned`.
 export function stepPlayer(dRow, dCol) {
   const events = [];
   const facing = facingOf(dRow, dCol);
@@ -97,15 +82,6 @@ export function stepPlayer(dRow, dCol) {
     if (turned && plain) events.push({ type: 'bodyTurned', facing, bumped: true });
     return events;
   }
-  // A downed one has the player's ankle: they can turn, shoot, wait or
-  // finish it, but not walk away (downed plan, call 2).
-  const holder = state.floor.minions.find(m => m.grabbing);
-  if (holder) {
-    events.push({ type: 'heldFast', minion: holder });
-    if (turned) events.push({ type: 'bodyTurned', facing, bumped: true });
-    return events;
-  }
-
   state.floor.playerRow = newRow;
   state.floor.playerCol = newCol;
   followBody();
@@ -114,25 +90,18 @@ export function stepPlayer(dRow, dCol) {
 }
 
 // What a bump into `block` (passage.js whatBlocks) does: a box or another
-// prop is examined (examineProp), the gate asks, the chest is selected, a
-// downed stick man is finished, and anything else just stops the player.
+// prop is examined (examineProp), and anything else just stops the player.
 // Shared by the step (stepPlayer) and free walking (walk.js). Events:
-// blocked { kind, thing }, gateReached / blocked gate
-// (gate.js reachGate), itemReached, the box events from examineProp, and
-// gun.js finishDowned's.
+// blocked { kind, thing }, or the box events from examineProp.
 export function bumpInto(block) {
   if (block.kind === 'prop') return examineProp(block.thing);
-  if (block.kind === 'boss') return [reachGate()];
-  if (block.kind === 'chest') return [reachItem(block)];
-  if (block.kind === 'minion' && block.thing.downed) return finishDowned(block.thing);
   return [{ type: 'blocked', kind: block.kind, thing: block.thing }];
 }
 
-// Whether a bump into `block` only stops the player (a wall, a stick man
-// standing, furniture), with nothing to open, ask or finish.
+// Whether a bump into `block` only stops the player (a wall, furniture),
+// with nothing to open.
 function plainBump(block) {
-  if (['prop', 'boss', 'chest'].includes(block.kind)) return false;
-  return !(block.kind === 'minion' && block.thing.downed);
+  return block.kind !== 'prop';
 }
 
 // The player has just come onto the tile they now stand on
@@ -197,49 +166,26 @@ function readPaper(paper) {
   return { type: 'paperRead', paper, loot: paper.loot };
 }
 
-// Bumping the chest selects it for the battle screen.
-// Standing next to one doesn't (combat.js findAdjacentEnemies), so the
-// player chooses when to take it on. No turn is spent: the answer is the
-// turn. Event: itemReached { thing }.
-function reachItem(block) {
-  const thing = state.floor.chest;
-  state.battle.selectedTarget = thing;
-  return { type: 'itemReached', thing };
-}
-
 // Bumping a box examines it. The first look takes a turn (the light
 // spreads, minions move); after that there's nothing left in it, and a
-// bump is just `blocked`. A trapped box works like the chest instead:
-// bumping it selects it for the battle screen, with a question guarding
-// its loot (settled in answers.js settleAnswer). Bumping an energy cell
-// takes no turn here: main.js opens the reload panel for it, and the
-// answer is the turn (gun.js settleReload uses the cell up). The reflective desk heals
+// bump is just `blocked`. The reflective desk heals
 // (desk.js useDesk), no turn spent. The safe room's switch, or a shutter
 // that is down, drops or lifts its shutters (saferoom.js pullShutter), no
 // turn spent either; on the ship they are automatic and a bump does nothing. A ship station's console, board or crew member opens
 // its wires or speaks (stations.js useStation), no turn spent.
-// Events: blocked, boxSprung, cellFound { prop },
-// deskUntouched, deskHealed { healed }, shutterDown, shutterUp, shutterBlocked,
+// Events: blocked, deskUntouched, deskHealed { healed }, shutterDown, shutterUp, shutterBlocked,
 // crewSpoke, stationLocked, stationOpened (stations.js useStation),
 // or propSearched then boxOpened.
 function examineProp(prop) {
   if (prop.searched) return [{ type: 'blocked', kind: 'prop', thing: prop }];
   prop.identified = true;
 
-  if (prop.kind === 'cell') return [{ type: 'cellFound', prop }];
-
   if (prop.kind === 'desk') return useDesk(prop);
-  if (prop.kind === 'charger') return useCharger(prop);
   if (isStation(prop)) return useStation(prop);
   // The ship's shutters are automatic (saferoom.js autoShutters): a bump
   // does nothing.
   if (prop.kind === 'shutter' && state.floor.ship) return [{ type: 'blocked', kind: 'prop', thing: prop }];
   if (prop.kind === 'switch' || prop.kind === 'shutter') return pullShutter();
-  if (prop.kind === 'box' && prop.trapped) {
-    prop.sprung = true;
-    state.battle.selectedTarget = prop;
-    return [{ type: 'boxSprung', prop }];
-  }
   prop.searched = true;
   return [{ type: 'propSearched', prop }, { type: 'boxOpened', prop, gold: openBox(prop) }];
 }

@@ -1851,14 +1851,8 @@
       <button class="dev-skip" id="devLightBatteryBtn" type="button" aria-pressed="true" title="Testing only: your light goes on and off (V) and runs on a 4-turn battery, or is always on, as before">Light battery: ON (dev)</button>
       <button class="dev-skip" id="devWarningBtn" type="button" aria-pressed="false" title="Testing only: when a stick man reaches for you, the room log says how many seconds before he first showed (your light, a lamp, a window or his shadow); presence cues plan step D">Warning timer: OFF (dev)</button>
       <button class="dev-skip" id="devOneStickBtn" type="button" aria-pressed="true" title="Testing only: walk freely in real time (one stick plan, the default), or tile to tile in turns as with the start screen's Turns option">One stick: ON (dev)</button>
-      <button class="dev-skip" id="devSteadyBtn" type="button" aria-pressed="true" title="Testing only: hold SELECT to steady a shot and let go to fire (no dial; the world keeps going). Off: the dial, as before. One stick only">Steady aim: ON (dev)</button>
-      <button class="dev-skip" id="devDownedBtn" type="button" aria-pressed="true" title="Testing only: a shot that leaves a stick man on 1 HP knocks it down; it crawls at half speed, grabs your ankle if it reaches you, and walking into it finishes it. Off: it stays standing, as before">Downed: ON (dev)</button>
       <button class="dev-skip" id="devMinigameBtn" type="button" title="Testing only: minigames roll as usual, never, or always (one picked), swapping in a question it fits">Minigame: roll (dev)</button>
       <output class="dev-skip" id="devFrameOut" title="Testing only: how long the map takes to draw, median and slowest of the last 120 frames drawn">Draw: - (dev)</output>
-      <button class="dev-skip" id="devLookBtn" type="button" title="Testing only: every stick enemy shows the look picked here: the walker (3D moves), or one of the seven odd poses from before">Look: walker (dev)</button>
-      <button class="dev-skip" id="devTendrilsBtn" type="button" title="Testing only: each stick enemy picks its own tendril style at random, or every one uses the style picked here">Tendrils: random (dev)</button>
-      <button class="dev-skip" id="devShotBtn" type="button" title="Testing only: fire at the book&#39;s target; a landed shot opens the dial over the map (fills empty energy, spends no turn)">Test shot (dev)</button>
-      <button class="dev-skip" id="devReloadBtn" type="button" title="Testing only: the reload panel and its question over the map (spends no turn)">Test reload (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
       <button class="dev-skip" id="devAutoWinBtn" type="button" aria-pressed="false" title="Testing only: every encounter plays itself out with correct answers">Auto-win: OFF (dev)</button>
       <button class="dev-skip" id="devLearnRolesBtn" type="button" title="Testing only: learn every ship crew role at once (crew roles plan)">Learn all roles (dev)</button>
@@ -1896,8 +1890,6 @@
     </div>
     <div class="stat"><span class="stat-label" data-t="stat.hp"></span><span class="hearts" id="hearts">3/3</span></div>
     <!-- The gun (gun plan step 6), only with DEV -> Combat on gun (render.js renderHud). -->
-    <div class="stat" id="energyStat" hidden><span class="stat-label" data-t="stat.energy"></span><strong id="energyCount"></strong></div>
-    <div class="stat" id="gunTargetStat" hidden><span class="stat-label" data-t="stat.target"></span><strong id="gunTarget"></strong></div>
     <div class="stat"><span class="stat-label" data-t="stat.room"></span><strong id="roomNum">0</strong><span id="roomOf">/<strong id="roomTotal">0</strong></span></div>
     <!-- Keys held of the floor's (locked core plan; render.js renderHud), hidden on a rest floor. -->
     <div class="stat" id="keysStat" hidden><span class="stat-label" data-t="stat.keys"></span><strong id="keysText"></strong></div>
@@ -2100,23 +2092,8 @@
            in the record book (js/bookview.js). -->
       <div class="feedback" id="roomLog" role="log" aria-live="polite"><div id="roomFeedback"></div></div>
 
-      <!-- The dial and the Struggle dial (js/gunpanels.js, drawn by
-           js/dialview.js): a veil over the map with READY in its middle,
-           then the circle and its key. -->
-      <div class="dial-veil" id="aimPanel" hidden>
-        <div class="term-line dial-prompt" id="aimPrompt" data-t="gun.dial.prompt"></div>
-        <div class="dial-stage" id="dialStage">
-          <canvas class="dial-canvas" id="dialCanvas" role="img"></canvas>
-          <div class="dial-buttons" id="dialButtons">
-            <button type="button" class="dial-ready" id="dialReady" data-t="gun.dial.readyButton"></button>
-            <button type="button" class="dial-back" id="dialBack" data-t="gun.dial.back"></button>
-          </div>
-        </div>
-        <!-- What each zone does, filled in by gunpanels.js runDamageBar. -->
-        <div class="damage-legend" id="damageLegend"></div>
-      </div>
-      <!-- CHARGE.SYS (chargerview.js): the charger's wires, over the map so
-           the room stays in view while the world keeps taking turns. -->
+      <!-- CHARGE.SYS (chargerview.js): a ship station's wires, over the map so
+           the room stays in view while the world keeps going. -->
       <!-- COMMAND.SYS, the training console's roles (crew roles plan step B,
            js/consoleview.js): over the map like CHARGE.SYS. -->
       <div class="charger-veil" id="consolePanel" role="dialog" aria-labelledby="consoleTitle" hidden>
@@ -2138,8 +2115,8 @@
     </div>
     </div>
 
-    <!-- The ask screen (js/gunpanels.js): a reload's offers and then its
-         question, or a relay's question, in place of the map and the
+    <!-- The ask screen (js/gunpanels.js): a breaker's, a crew member's job's,
+         a lesson's or the final boss's question, in place of the map and the
          controls (the HUD stays). The real-time clock waits while it shows.
          Drawn as the record book (js/bookview.js): the screen's name over
          a dark page, and the light tube on its left edge. -->
@@ -2153,11 +2130,6 @@
         </div>
         <div class="book-page" id="bookPage">
           <div class="terminal-body" id="bookAsk">
-            <div id="reloadPanel" hidden>
-              <div class="term-line" id="reloadTitle"></div>
-              <div class="choice-list" id="reloadChoices"></div>
-              <button type="button" class="ask-cancel" id="reloadCancel" data-t="gun.reload.cancel"></button>
-            </div>
             <div id="askQuestionPanel" hidden>
               <div id="askQuestionSlot"></div>
               <!-- BACK out of a learning lesson (gunpanels.js showQuestionScreen's back). -->
@@ -2205,48 +2177,20 @@
     <!-- The round stick (one stick plan step B, js/dpad.js initWalkStick),
          in place of the d-pad with One stick on. -->
     <div class="walk-stick" id="walkStick" hidden><span class="walk-knob" aria-hidden="true"></span></div>
-    <!-- MAP and LOG (open the record book there, js/bookview.js) and the gun's one
-         button (main.js pressSelect: fire, or stop the dial; only with
-         the gun on), lowest, away from the dial over the map. -->
+    <!-- MAP and LOG (open the record book there, js/bookview.js), lowest. -->
     <div class="room-buttons">
       <!-- The light (render.js renderBattery draws its tube): a tap switches it, as V does. -->
       <button type="button" class="light-battery" id="lightBattery" hidden><canvas class="hud-tube" id="hudTube" aria-hidden="true"></canvas><span id="hudTubeWord" aria-hidden="true"></span></button>
       <button type="button" id="btnMinimap" data-t="map.btn"></button>
       <button type="button" id="btnLog" data-t="log.btn"></button>
-      <button type="button" id="btnSelect" data-t="gun.btn.select" hidden></button>
     </div>
     </div>
   </section>
 
-  <!-- Battle screen: shown whenever the player is adjacent to something
-       engageable (boss, chest, or a trapped box). The room
-       behind it is frozen — nothing moves until this is resolved. -->
-  <section class="screen" id="battleScreen">
-    <div class="terminal">
-      <div class="rule"><span data-t="battle.title"></span></div>
-      <div class="terminal-body">
-        <div class="term-status">
-          <div class="battle-glyph" id="battleGlyph">D</div>
-          <div class="term-status-lines">
-            <div class="term-line" id="targetLabel">Target: Boss</div>
-            <div class="term-line combat-status" id="combatStatus">HP: ###</div>
-          </div>
-        </div>
-
-        <!-- The encounter's transcript: one terminal stream, oldest lines
-             dimmest, with the current prompt (choice or question) printed
-             as the newest output underneath. All battle feedback goes here. -->
-        <div class="encounter-log" id="encounterLog" role="log" aria-live="polite"></div>
-
-        <!-- Fights open on a choice: which kind of query to face. -->
-        <div class="choice-panel" id="choicePanel" hidden>
-          <div class="battle-glitch" data-t="battle.selectVector" data-text=""></div>
-          <div class="choice-list" id="choiceList"></div>
-        </div>
-
-        <!-- The question panel (js/questionview.js). It lives here, and
-             moves to the ask screen (#askQuestionSlot) for a reload or a relay. -->
-        <div id="battleQuestionSlot">
+  <!-- The question panel (js/questionview.js) waits here, out of sight,
+       between questions; it moves to the ask screen (#askQuestionSlot)
+       for a question, or to the practice screen. -->
+  <div id="questionPark" hidden>
         <div id="queryPanel">
           <img class="query-image" id="queryImage" alt="" hidden>
           <div class="term-line term-label" data-t="battle.query"></div>
@@ -2268,14 +2212,7 @@
           <!-- A minigame in place of the options (js/minigameview.js). -->
           <div class="minigame" id="minigameSlot" hidden></div>
         </div>
-        </div>
-
-        <div class="end-panel" id="endPanel" hidden>
-          <button type="button" id="continueBtn" data-t="battle.continue"></button>
-        </div>
-      </div>
-    </div>
-  </section>
+  </div>
 
   <!-- Win screen -->
   <section class="screen win" id="winScreen">

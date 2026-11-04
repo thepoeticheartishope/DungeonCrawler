@@ -5,11 +5,11 @@
 // SMOKE_JOBS=1 one after another; see main). Each run's time is in the
 // report.
 //
-// Waiting: wait for what a check needs (waitUntil, roomIdle, a selector),
+// Waiting: wait for what a check needs (waitUntil, a selector),
 // not a fixed time, where you can: on a busy machine frames come slower.
 // Never Playwright's waitForFunction with an async check: it counts the
 // promise as true and doesn't wait. Keep no shared state between runs (they
-// go at once): per page, as lastBumps.
+// go at once): keep it per page.
 //
 // Starts a static server for this repo, then drives the game in a real
 // browser via Playwright (imported from ~/Repo/codecraft-classroom/node_modules
@@ -102,15 +102,6 @@ async function waitUntil(page, fn, arg = null, timeout = 5000) {
   }
 }
 
-// Waits until the room screen takes input again (no panel, no turn).
-async function roomIdle(page) {
-  await waitUntil(page, async () => {
-    const { state } = await import('./js/state.js');
-    return document.getElementById('roomScreen').classList.contains('show') && !state.run.turnLocked &&
-      ['reloadPanel', 'askQuestionPanel', 'aimPanel'].every(id => document.getElementById(id).hidden);
-  }, null, 10000);
-}
-
 async function guarded(run, browser, url) {
   try {
     return await run(browser, url);
@@ -118,55 +109,6 @@ async function guarded(run, browser, url) {
     const where = String(err.stack || '').split('\n').find(l => l.includes('smoke.mjs')) || '';
     return { ok: false, reason: `${err.message.split('\n')[0]} ${where.trim()}`, consoleErrors: [], pageErrors: [] };
   }
-}
-
-// ---- Run 11: room view ----
-
-// The arrow key bumpCharger last walked into the charger with, per page:
-// runs go at once (SMOKE_JOBS), so one shared key would be overwritten.
-const lastBumps = new WeakMap();
-// Stands the player on a free side of the charger, energy as given, no
-// stick men, and walks into it (the map saved to `shot` first, if given). Returns false if there is no charger or no
-// free tile beside it.
-async function bumpCharger(page, energy, shot = null) {
-  const stood = await page.evaluate(async (energy) => {
-    const { state, key } = await import('./js/state.js');
-    const { computeVisibility } = await import('./js/sight.js');
-    const f = state.floor;
-    const charger = f.props.find(p => p.kind === 'charger');
-    if (!charger) return false;
-    // A free side of it, and the key that walks into it from there.
-    const free = (r, c) => !f.wallSet.has(key(r, c)) && !f.pillarSet.has(key(r, c)) && !f.props.some(p => p.row === r && p.col === c);
-    const SIDES = [[1, 0, 'N', 0, 'ArrowUp'], [0, -1, 'E', Math.PI / 2, 'ArrowRight'], [0, 1, 'W', -Math.PI / 2, 'ArrowLeft'], [-1, 0, 'S', Math.PI, 'ArrowDown']];
-    const sideOf = (row, col) => SIDES.find(([dr, dc]) => free(row + dr, col + dc));
-    // Now and then it stands boxed in by walls and furniture: then it is
-    // moved to an open tile of the same room that has a free side.
-    if (!sideOf(charger.row, charger.col)) {
-      const room = f.chamberAt.get(key(charger.row, charger.col));
-      const spot = [...f.chamberAt].filter(([k, i]) => i === room).map(([k]) => k.split(',').map(Number))
-        .find(([r, c]) => free(r, c) && sideOf(r, c));
-      if (!spot) return false;
-      [charger.row, charger.col] = spot;
-    }
-    const side = sideOf(charger.row, charger.col);
-    const [dr, dc, facing, look, press] = side;
-    const r = charger.row + dr, c = charger.col + dc;
-    f.minions = [];
-    f.crawling = [];
-    f.hunter = null;
-    state.run.energy = energy;
-    state.run.rounds = Array(energy).fill(null);
-    f.playerRow = r; f.playerCol = c; f.facing = facing; f.look = look;
-    computeVisibility();
-    return press;
-  }, energy);
-  if (!stood) return false;
-  await page.waitForTimeout(250);
-  if (shot) await page.locator('#mapWrap').screenshot({ path: shot });
-  await page.keyboard.press(stood);
-  lastBumps.set(page, stood);
-  await page.waitForTimeout(250);
-  return true;
 }
 
 async function runShip(browser, url) {

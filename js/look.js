@@ -7,7 +7,6 @@
 import { state } from './state.js';
 import { LOOK_FREE_ARC, ONE_STICK } from './config.js';
 import { computeVisibility } from './sight.js';
-import { refreshGunTarget } from './gun.js';
 
 export const BODY_ANGLES = {
   N: 0, E: Math.PI / 2, S: Math.PI, W: -Math.PI / 2,
@@ -60,10 +59,9 @@ export function wantsTurn() {
   return Math.abs(aimOffset()) > LOOK_FREE_ARC + 1e-6;
 }
 
-// Aims at `angle`. The light follows as far as the arc allows, and the
-// gun's target follows the light. Costs no turn. With One stick the
-// light swings round to it instead (swingLook), so it never jumps.
-// Events: the gun's targetPicked, when the target changed.
+// Aims at `angle`. The light follows as far as the arc allows. Costs no
+// turn. With One stick the light swings round to it instead (swingLook),
+// so it never jumps. Events: none.
 export function aimLook(angle) {
   if (state.settings.oneStick) {
     state.floor.lookWant = wrapAngle(angle);
@@ -71,7 +69,7 @@ export function aimLook(angle) {
   }
   state.floor.look = wrapAngle(angle);
   computeVisibility();
-  return refreshGunTarget();
+  return [];
 }
 
 // Turns the body to whichever way in use is closest to the aim, so the
@@ -90,8 +88,7 @@ export function turnBody() {
 // Inside the free arc it costs nothing; once it passes the arc's edge the
 // body turns one way in the sweep's direction, and the light sweeps on
 // from there without a jump. The caller spends the turn. Events:
-// bodyTurned { facing } when the body turned, then the gun's
-// targetPicked when the target changed.
+// bodyTurned { facing } when the body turned.
 export function sweepLook(delta) {
   const events = [];
   state.floor.look = wrapAngle(lookAngle() + delta);
@@ -101,7 +98,6 @@ export function sweepLook(delta) {
     events.push({ type: 'bodyTurned', facing });
   }
   computeVisibility();
-  events.push(...refreshGunTarget());
   return events;
 }
 
@@ -128,7 +124,7 @@ export function followBody() {
 // state.floor.lookWant at ONE_STICK.turnRate over `dtMs`, with a little
 // weight rather than a snap; `still` (reduced motion) turns it at once.
 // The body faces the way in use nearest the light (the legs, a bump's
-// nudge). Events: the gun's targetPicked, when the target changed.
+// nudge). Events: none.
 export function swingLook(dtMs, still = false) {
   const f = state.floor;
   if (typeof f.lookWant !== 'number') return [];
@@ -139,5 +135,5 @@ export function swingLook(dtMs, still = false) {
   f.look = still ? f.lookWant : wrapAngle(from + Math.max(-most, Math.min(most, gap)));
   f.facing = nearestWay(f.look);
   computeVisibility();
-  return refreshGunTarget();
+  return [];
 }

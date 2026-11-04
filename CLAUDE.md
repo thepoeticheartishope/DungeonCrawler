@@ -7,9 +7,9 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 
 - **The ship is the game** (Timothy 2026-11-01). The start screen always starts the ship; there is
   no other way in. The old dungeon crawl is being deleted in layers (dungeon removal plan,
-  `ideas/dungeon-removal-plan.md` outside the repo; step B removed its floors, tutorial and extras).
-  What is left of it (combat, the boss's light, fog) is unreachable and goes in steps C–D: don't
-  build on it.
+  `ideas/dungeon-removal-plan.md` outside the repo; step B removed its floors, tutorial and extras,
+  step C combat and the charger). What is left of it (the boss's light, fog, the battery) is
+  unreachable and goes in step D: don't build on it.
 - `main` is protected: branch + PR, one PR per logical change.
 - Changed a file listed in `service-worker.js` `APP_SHELL`? Bump `CACHE_NAME` in the same commit.
 - New JS file? Add it to `APP_SHELL` too; a deleted one comes out of it.
@@ -26,7 +26,7 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 
 ## Code style (keep new code like the cleaned-up modules)
 
-Model files: `moves.js`, `answers.js`, `passage.js`, `floor.js`, `state.js`. Read one before
+Model files: `moves.js`, `passage.js`, `floor.js`, `state.js`. Read one before
 writing a new module or a big function.
 
 Layers:
@@ -66,8 +66,8 @@ Code:
 
 Tests and commits:
 - A new or changed rule gets a check in `tests/*.test.mjs` (Node's built-in runner). Set up the
-  floor with `tests/helpers.mjs` `emptyFloor(size, { settings, run, floor })` (also `gunRun`,
-  `twoRooms`, `minionAt`, `withRandom`), not a new copy of the setup. Run `node --test tests/*.test.mjs` before a PR.
+  floor with `tests/helpers.mjs` `emptyFloor(size, { settings, run, floor })` (also `twoRooms`,
+  `withRandom`), not a new copy of the setup. Run `node --test tests/*.test.mjs` before a PR.
   A change that could alter gameplay also gets `node tests/smoke.mjs`.
 - Commit subject: short and imperative ("Move floor setup out of main.js into floor.js",
   "Fix: <symptom>"). The body says what changed and why, and ends with the
@@ -96,10 +96,8 @@ Rules and data (no page/DOM access):
 | `look.js` | Free look: body facing vs. aim, `aimLook`, `turnBody`, `sweepLook`, `swingLook`. |
 | `light.js` | The boss's light spreading over the floor; the run is lost at the threshold. |
 | `battery.js` | The player's light on a battery: switching, drain, lock-out. |
-| `modifiers.js` | Blind / Gambler / Flip / Timer rolls; `blindReadMs()`. |
+| `modifiers.js` | The Gambler's most (`maxWager`), `blindReadMs()`, Flip's roll. |
 | `minigames.js` | Minigame rules: which fit a question, rolls, tiers (Close Enough … Sum Lock). |
-| `combat.js` | Stick men and the hunter: moving, chasing, last-seen tracking, reaching; `advanceMonsters()`, `clockFrame()`. |
-| `gun.js` | The gun: targets, reloads, firing, the dial, the Struggle, steady aim, energy and rounds. |
 | `moves.js` | The player's step (`stepPlayer`), `bumpInto`, `enterTile`, `goldReward`. |
 | `walk.js` | Free walking with One stick: `walkFree()`, sneak and creep. |
 | `walkpace.js` | Smooth walk: every way takes the same time per screen distance. |
@@ -109,12 +107,9 @@ Rules and data (no page/DOM access):
 | `warning.js` | DEV warning timer: how long before a reach the player had a sign. |
 | `desk.js` | The reflective desk in the start room: heals to full once a floor. |
 | `saferoom.js` | The safe room: shutters, switch, lamp; who waits outside. |
-| `charger.js` | The charger (CHARGE.SYS wires): energy and battery to full. |
 | `stations.js` | The ship's stations: training console, a crew member's board, the crew member; breakers that close on a right answer. |
 | `ship.js` | The ship's run: arrival clock, crew panic and its effects, training period, burn window, the tragedy roll, arrive / lose. |
 | `roles.js` | The ship's crew roles, one per minigame: who sits out, learning, a 3-round job, the benefit a taught role gives the run, how each crew member looks. |
-| `gate.js` | The locked core's gate: questions by keys held, sealing, `breakGate()`. |
-| `answers.js` | `settleAnswer()`: hearts, haunts, wager, boss damage, gold. |
 | `quiz.js` | Picking questions, building options, fight choice labels, answer types. |
 | `sets.js` | Bundled sets (`lists/`) and saved custom sets. |
 
@@ -122,27 +117,23 @@ Drawing and page code:
 
 | File | Job |
 |---|---|
-| `main.js` | Everything else: wiring, `drawEvents()`, the world's clock and turn outcome, room log, end screens (~1,260 lines). |
-| `controls.js` | The player's controls: taps, aiming, the sticks and keys, SELECT's hold, `walkFrame` and `movePlayer`. |
-| `battlescreen.js` | The battle screen: encounter log, category choices, a turn of questions, settling answers. |
-| `gunactions.js` | The gun's actions: SELECT / fire, steady aim, the dial, reloads, relays, dressing a question. |
+| `main.js` | Everything else: wiring, `drawEvents()`, the world's clock and turn outcome, room log, end screens (~830 lines). |
+| `controls.js` | The player's controls: taps, aiming, the sticks and keys, `walkFrame` and `movePlayer`. |
+| `gunactions.js` | The ship's questions on the ask screen: breakers, crew jobs, learning, the final boss, dressing a question, Auto-win. |
 | `render.js` | Screens, the HUD (`renderHud()` only writer of hearts / gold / turns), edge glow, d-pad hints. |
 | `mapview.js` | The map canvas, its animations and taps; `requestMapDraw()`, `glyphOf()`, `mapThings()`. |
-| `roomview.js` | The room view, the only map view: camera, walls and floors, light map, stick men, shadows (~1,000 lines). |
+| `roomview.js` | The room view, the only map view: camera, walls and floors, light map, the player (~800 lines). |
 | `roomthings.js` | The room view's things on the floor and the furniture as pixel art (`FLAT` / `STAND`). |
-| `roomgun.js` | The gun on the room view, drawn as a book: held book, reach, brackets, steady mark, laser, shot, answer ring. |
+| `roomgun.js` | The player's book on the room view, shut under his arm. |
 | `roomsky.js` | Windows and their light, and the eye in the sky (`lookUp`). |
-| `mapshared.js` | Sizes and view-independent helpers the map view uses (`floorLevelOf`, `minionOn`, `isWall`, `grain`, `ENEMY_KINDS`, `POSE_SCALE`, last shot …). |
-| `stickforms.js` | Minions as stick men: poses, tells, tendrils of letters, downed and dying. |
+| `mapshared.js` | Sizes and view-independent helpers the map view uses (`floorLevelOf`, `isWall`, `grain` …). |
 | `playerform.js` | The player's stick man: breath, ember head, glances. |
-| `figure3d.js` | Picks and blends the 3D moves into poses for the player and stick men. |
+| `figure3d.js` | Picks and blends the 3D moves into poses for the player and the crew. |
 | `moves3d.js` | Generated 3D move data (Quaternius, CC0). Don't edit by hand. |
-| `swirl.js` | The answer ring after a miss with Reveal on. |
-| `questionview.js` | The one question panel, its modifiers, mounted where it's needed. |
+| `questionview.js` | The one question panel, its modifiers, mounted where it's needed (`parkQuestionPanel`, `matchesAnswer`). |
 | `minigameview.js` | Draws each minigame in the question panel. |
-| `gunpanels.js` | The ask screen (reloads, relays), the dial veil, `mapPanelShown()`. |
-| `dialview.js` | Draws and runs the dial's marker. |
-| `chargerview.js` | CHARGE.SYS, the charger's panel. |
+| `gunpanels.js` | The ask screen, the book held after an answer, `mapPanelShown()`. |
+| `chargerview.js` | CHARGE.SYS, a ship station's wires panel. |
 | `bookview.js` | The record book: ASK / LOG / MAP tabs, held answers. |
 | `pageturn.js` | The record book's page turn. |
 | `tubeart.js` | The light tube as pixel art (book strip and LIGHT button). |
@@ -154,21 +145,21 @@ Drawing and page code:
 | `setpicker.js` | The set screen; `fetchSet()` shared with practice.js. |
 | `practice.js` | Hidden minigame practice screen. |
 | `dpad.js` | The on-screen pad, the walk stick and look stick, `padWay()`. |
-| `devpanel.js` | The DEV panel (`?dev`), the Inspect view and a test room's tally. |
+| `devpanel.js` | The DEV panel (`?dev`) and the Inspect view. |
 
 ## How the game moves
 
-- **One stick (the default):** controls.js `walkFrame()` runs every animation frame: input →
+- **One stick (always):** controls.js `walkFrame()` runs every animation frame: input →
   walk.js `walkFree()` → moves.js `enterTile()` / `bumpInto()` → events →
-  main.js `applyTurnOutcome(events)`. Then `worldFrame()` → combat.js `clockFrame(dt)` (battery, each
-  stick man on its own clock).
+  main.js `applyTurnOutcome(events)`. Then `worldFrame()` → battery.js `drainLight(dt)`.
 - **Turns:** no start option reaches it any more (dungeon removal step B); controls.js
   `movePlayer()` → `stepPlayer()` is still the DEV One stick OFF path, and goes in step D.
-- **Fights:** SELECT → gunactions.js `pressSelect()` → `fireGun()` → `fire()` → dial or steady aim →
-  `settleShot()`. Energy cells ask on the ask screen; the boss and the chest use the
-  battle screen → `settleAnswer()`.
-- The clock pauses for the ask screen, a dial, the Struggle, the battle screen,
-  the DEV panel, end screens and a hidden tab; it keeps running under CHARGE.SYS and the book.
+- **Questions:** a breaker, a crew member's job, a lesson or the final boss → gunactions.js
+  (`openBreaker`, `openJob`, `openLearning`, `openBoss`) → the ask screen (gunpanels.js) →
+  stations.js / roles.js settle the answer. Combat (the gun, the dial, stick men, the battle
+  screen) went in dungeon removal step C.
+- The clock pauses for the ask screen, the DEV panel, end screens and a hidden tab; it keeps
+  running under CHARGE.SYS, COMMAND.SYS and the book.
 
 The full walk-through of each flow is at the end of `docs/module-map.md`.
 

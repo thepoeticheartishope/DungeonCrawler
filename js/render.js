@@ -1,5 +1,5 @@
 // DOM rendering around the map: screens, the edge glow and d-pad hints,
-// and the HUD (hearts / combat status / targeting / timer). The map
+// and the HUD (hearts / the ship's crew and panic / timer). The map
 // itself is drawn on a canvas by mapview.js.
 //
 // Call initRender(elements) once, from main.js, before using anything else
@@ -7,7 +7,7 @@
 // of each one threading them through as parameters.
 
 import { state, key } from './state.js';
-import { ENERGY_MAX, SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, BOOK } from './config.js';
+import { SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, BOOK } from './config.js';
 import { drawTube, TUBE_W, TUBE_H } from './tubeart.js';
 import { batteryInPlay } from './battery.js';
 import { lightProgress } from './light.js';
@@ -88,7 +88,7 @@ export function fadeAnswerLine(now = false) {
 }
 
 export function showScreen(el) {
-  [els.startScreen, els.shipIntroScreen, els.roomScreen, els.battleScreen, els.winScreen, els.loseScreen]
+  [els.startScreen, els.shipIntroScreen, els.roomScreen, els.winScreen, els.loseScreen]
     .forEach(s => s.classList.remove('show'));
   el.classList.add('show');
   // Hearts/coins/turn/room/timer are meaningless before a run starts (and
@@ -191,7 +191,6 @@ export function renderHud() {
   const keysTotal = state.floor.keysHeld + state.floor.keys.length;
   els.keysStat.hidden = keysTotal === 0;
   els.keysText.textContent = t(state.floor.gateSealed ? 'stat.keys.sealed' : 'stat.keys.count', { held: state.floor.keysHeld, total: keysTotal });
-  renderGunHud();
   renderBattery();
   renderShipHud();
 }
@@ -250,70 +249,6 @@ function drawHudTube() {
   drawTube(canvas.getContext('2d'), { charge: light.charge, max: LIGHT_BATTERY_MAX, lit: light.on, bright: warm, upright: false });
   if (warm >= 1) { tubeWarmFrom = null; return; }
   requestAnimationFrame(() => { if (light.on && tubeWarmFrom !== null) drawHudTube(); });
-}
-
-// The gun's part of the HUD (gun plan step 6): energy held, the target and
-// its guard, and whether SELECT can be pressed. Part of renderHud, the one
-// writer of the HUD.
-function renderGunHud() {
-  [els.energyStat, els.gunTargetStat].forEach(el => { el.hidden = false; });
-  els.btnSelect.hidden = false;
-  const energy = state.run.energy;
-  const target = state.floor.gunTarget;
-  // A round that matches the target's known weakness shows as *.
-  const weak = target && state.run.weakKnown.has(target.minionKind) ? state.run.weakTo[target.minionKind] : null;
-  const held = Array.from({ length: energy }, (_, i) => (weak && state.run.rounds[i] === weak ? '*' : '#')).join('');
-  els.energyCount.textContent = held + '-'.repeat(Math.max(ENERGY_MAX - energy, 0));
-  els.gunTarget.textContent = target ? gunTargetName(target) : t('stat.noTarget');
-  // SELECT stays pressable with no energy: it says so, and it must
-  // still answer a dial opened by the last shot.
-  els.btnSelect.disabled = state.run.runEnded;
-}
-
-// The HUD's name for the gun's target: a minion's kind, its guard while it
-// has one (kill or maim plan: no health to count) and its weakness
-// (strategy plan step D: the reload group, or ? until a shot has landed on
-// that kind), or the hunter.
-function gunTargetName(target) {
-  if (target.kind === 'hunter') return t('term.hunter');
-  const name = t('minionKind.' + target.minionKind) + (target.guard ? ' ' + t('stat.guard') : '');
-  const weak = state.run.weakTo[target.minionKind];
-  if (!weak) return name;
-  return name + ' /' + (state.run.weakKnown.has(target.minionKind) ? weak : t('stat.weakUnknown'));
-}
-
-// HP pips for whichever target is currently engaged on the battle screen.
-// Only shown for a multi-hit fight — the boss, under the current constants
-// (a minion's fight still settles in one answer, and the chest and boxes
-// have no hp at all).
-// Gating on `target.kind === 'boss'` rather than `target.hp > 1` matters:
-// hp is exactly 1 right before the boss's final, most dramatic hit, and the
-// pips need to still show at that moment (and at hp 0, right after) rather
-// than vanishing early.
-export function renderCombatStatus() {
-  const target = state.battle.selectedTarget;
-  if (!target || target.kind !== 'boss') {
-    els.combatStatusEl.innerHTML = '';
-    return;
-  }
-  const full = Math.max(target.hp, 0);
-  const empty = Math.max((target.max || 0) - full, 0);
-  const pips = '<span class="pip-full">' + '#'.repeat(full) + '</span>' +
-    '<span class="pip-empty">' + '-'.repeat(empty) + '</span>';
-  els.combatStatusEl.innerHTML = 'HP: ' + pips;
-}
-
-// The battle screen's target line and the attack button's wording. The
-// box round the target on the map is drawn by mapview.js.
-export function renderTargeting() {
-  const target = state.battle.selectedTarget;
-  els.targetLabelEl.textContent = target
-    ? t('target.' + target.kind)
-    : t('target.none');
-
-  const isObject = state.battle.selectedTarget &&
-    ['chest', 'box'].includes(state.battle.selectedTarget.kind);
-  els.attackBtn.textContent = t(isObject ? 'battle.attempt' : 'battle.attack');
 }
 
 export function formatTime(s) {

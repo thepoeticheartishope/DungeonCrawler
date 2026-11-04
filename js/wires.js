@@ -109,7 +109,7 @@ export function powered(puzzle) {
 // CHARGER.wireTurnsPerTurn-th wire turn spends a turn (`turnSpent`: the
 // caller runs the world's turn). Once the power reaches the cell, `finish`
 // says what joined-up power does: a ship station's stationDone
-// (stations.js), or the old dungeon charger's chargeUp (charger.js). A
+// (stations.js). A
 // breaker never turns: an open one asks its question instead (the caller
 // opens it), a closed one does nothing.
 // Events: breakerAsked { index }, or wireTurned { index }, then turnSpent,

@@ -3,7 +3,7 @@
 // game loads instantly and still works with no connection. Bump
 // CACHE_NAME whenever the cached files change, so old caches get cleared.
 
-const CACHE_NAME = 'term-dungeon-v387';
+const CACHE_NAME = 'term-dungeon-v388';
 const APP_SHELL = [
   './',
   './index.html',
@@ -13,7 +13,6 @@ const APP_SHELL = [
   './js/state.js',
   './js/grid.js',
   './js/random.js',
-  './js/gate.js',
   './js/quiz.js',
   './js/render.js',
   './js/mapview.js',
@@ -23,8 +22,6 @@ const APP_SHELL = [
   './js/roomsky.js',
   './js/playerform.js',
   './js/mapshared.js',
-  './js/stickforms.js',
-  './js/swirl.js',
   './js/sight.js',
   './js/look.js',
   './js/walkpace.js',
@@ -35,9 +32,7 @@ const APP_SHELL = [
   './js/bookview.js',
   './js/pageturn.js',
   './js/tubeart.js',
-  './js/combat.js',
   './js/moves.js',
-  './js/answers.js',
   './js/plans.js',
   './js/floor.js',
   './js/decor.js',
@@ -48,16 +43,13 @@ const APP_SHELL = [
   './js/setpicker.js',
   './js/practice.js',
   './js/devpanel.js',
-  './js/battlescreen.js',
   './js/gunactions.js',
   './js/controls.js',
   './js/text.js',
   './js/light.js',
   './js/modifiers.js',
-  './js/gun.js',
   './js/saferoom.js',
   './js/desk.js',
-  './js/charger.js',
   './js/wires.js',
   './js/stations.js',
   './js/ship.js',
@@ -74,7 +66,6 @@ const APP_SHELL = [
   './js/minigames.js',
   './js/minigameview.js',
   './js/gunpanels.js',
-  './js/dialview.js',
   './js/minimapview.js',
   './js/music.js',
   './js/sound.js',

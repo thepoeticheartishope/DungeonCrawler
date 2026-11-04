@@ -1,23 +1,19 @@
 // The player's controls (moved out of main.js, tech-debt item 4e): a tap
 // on the map, aiming and sweeping the light, looking up, the d-pad and the
 // move keys, free walking every frame with One stick (walkFrame, settleMove),
-// a step in turns (movePlayer), sneaking, SELECT's press and hold, the look
-// and walk sticks, and the keyboard. Like devpanel.js it looks up its own
+// a step in turns (movePlayer), sneaking, the look and walk sticks, and the
+// keyboard. Like devpanel.js it looks up its own
 // elements and gets the main.js actions it calls passed in (initControls,
 // which also wires every button and key and starts the walking frame).
 
 import { state } from './state.js';
 
-import { syncBattleScreen } from './battlescreen.js';
+import { openJob } from './gunactions.js';
 import {
-  gunReady, nextGunTarget, openReload, pressSelect, releaseSelect, steadyOn, openJob,
-} from './gunactions.js';
-import {
-  REALTIME_WALK_MS, LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, LOOK_UP_STICK, LOOK_SWEEP_SPEED, ONE_STICK,
+  REALTIME_WALK_MS, LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, LOOK_UP_STICK, LOOK_SWEEP_SPEED,
 } from './config.js';
 import { stepPlayer, onStairs } from './moves.js';
 import { requestMapDraw } from './mapview.js';
-import { pickTarget, steadying, tickSteady, cancelSteady } from './gun.js';
 import { mapPanelShown } from './gunpanels.js';
 import { t } from './text.js';
 import { initDpad, initLookStick, initWalkStick, SCREEN_WAYS, padWay, sweepHold } from './dpad.js';
@@ -35,33 +31,19 @@ const dpadButtons = {
   Skip: document.getElementById('btnSkip'),
 };
 const lookStick = dpadButtons.Skip; // the d-pad's centre: the look stick (dpad.js initLookStick)
-const btnSelect = document.getElementById('btnSelect');
 const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // The main.js actions these call, passed in by initControls.
 let applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
   realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame;
 
-// A tap on the map. It picks the gun's
-// target: the light swings to the minion on that tile and the target
-// follows it, or a note says why it can't be shot. Costs no turn. Only SELECT
-// fires (Timothy: tap, then SELECT), so a tap can never shoot by accident.
-// A mouse click on anything else turns the body when the aim is past the
-// free arc (free look plan); a tap on a phone never turns, so a stray tap
-// can't spend a turn. A tap off a minion aims the light at the floor
-// `point` under it instead,
-// keeping the target (a mouse click past the arc then turns, as above).
+// A tap on the map aims the light at the floor `point` under it. A mouse
+// click turns the body when the aim is past the free arc (free look plan);
+// a tap on a phone never turns, so a stray tap can't spend a turn. Costs
+// no turn.
 export function tapMap(tile, pointerType, point) {
-  const minion = state.floor.minions.some(m => m.row === tile.row && m.col === tile.col);
-  if (!minion && point) {
-    aimAtPoint(point);
-    if (pointerType === 'mouse' && wantsTurn()) turnLook();
-    return;
-  }
-  if (!minion && pointerType === 'mouse' && wantsTurn()) { turnLook(); return; }
-  if (!gunReady()) return;
-  const note = drawEvents(pickTarget(tile));
-  if (note.text) showRoomNote(note.cls, note.text);
+  if (point) aimAtPoint(point);
+  if (pointerType === 'mouse' && wantsTurn()) turnLook();
 }
 
 // Whether the player can aim right now: the room screen up with no panel
@@ -88,7 +70,7 @@ function aimAtPoint(point) {
 }
 
 // Turns the body toward an aim past the free arc (look.js turnBody): a
-// spent turn, so the minions get a move.
+// spent turn.
 function turnLook() {
   if (!wantsTurn() || state.run.turnLocked || state.run.runEnded || mapPanelShown()) return;
   state.run.turnLocked = true;
@@ -111,7 +93,7 @@ function padPush(sx, sy) {
 }
 
 // Sweeps the light (look.js sweepLook): free inside the arc; a body turn
-// past it is a spent turn, so the minions get a move.
+// past it is a spent turn.
 function lightSweep(delta) {
   if (!lookReady()) return;
   const events = sweepLook(delta);
@@ -203,29 +185,6 @@ function walkFrame(now) {
     dpadClip.hidden = one;
   }
   if (!one) return;
-  // Steadying a shot (steady aim): the player stands still, the aim
-  // steadies and the world goes on.
-  // A panel over the map (a Struggle, CHARGE.SYS) or a hit takes the aim
-  // away: nothing is spent.
-  if (steadying() && mapPanelShown()) cancelSteady();
-  if (steadying()) {
-    heldWays.clear();
-    stickPushed = null;
-    resetWalk();
-    if (!clockMayRun() || state.run.turnLocked) return;
-    const ticked = tickSteady(Math.min(dt, ONE_STICK.frameMs));
-    const note = drawEvents(ticked);
-    if (note.text) showRoomNote(note.cls, note.text);
-    requestMapDraw();
-    const hearts = state.run.hearts;
-    worldFrame(dt);
-    if (state.run.hearts < hearts && steadying()) {
-      cancelSteady();
-      selectHold = null;
-      showRoomNote('warn-msg', t('gun.steady.knocked'));
-    }
-    return;
-  }
   if (!clockMayRun() || state.run.turnLocked || walkHeld()) {
     heldWays.clear();
     stickPushed = null;
@@ -268,12 +227,8 @@ function holdWay(way, down) {
 }
 
 // One arrow press (stepPlayer in moves.js). A step or a first look in a
-// box spends a turn; a step onto the stairs only asks (goDown takes them); a trapped box or the
-// chest opens the battle screen; an energy cell opens the
-// reload panel (its answer is the turn); walking into a downed stick man
-// finishes it, a turn like a step; hiding in a room spot, coming out and
-// pushing over a takedown and setting off a lure are turns too; a turn to a new direction or a
-// bump only draws, except that with free look a bump that turned the body
+// box spends a turn; a step onto the stairs only asks (goDown takes them);
+// a turn to a new direction or a bump only draws, except that with free look a bump that turned the body
 // is a turn (bodyTurned). With Real time
 // on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
 function movePlayer(dRow, dCol) {
@@ -294,24 +249,18 @@ function movePlayer(dRow, dCol) {
 // screen it asks for opens.
 function settleMove(events) {
   const has = (type) => events.some(e => e.type === type);
-  if (has('stepped') || has('propSearched') || has('bodyTurned') || has('minionFinished') || has('hid') || has('hideLeft') || has('toppled') || has('lureSounded')) {
+  if (has('stepped') || has('propSearched') || has('bodyTurned')) {
     applyTurnOutcome(events);
   } else {
     const note = drawEvents(events);
     if (note.text) showRoomNote(note.cls, note.text);
-    if (has('boxSprung') || has('itemReached') || has('gateReached')) syncBattleScreen();
-
   }
   state.run.turnLocked = false;
-  const cell = events.find(e => e.type === 'cellFound');
-  if (cell) openReload(false, cell.prop);
 
   // A crew member's job (roles.js; crew roles plan): its rounds on the ask screen.
   const job = events.find(e => e.type === 'jobStarted');
   if (job) openJob(job.role);
 
-  const charger = events.find(e => e.type === 'chargerOpened');
-  if (charger) openCharger(charger.charger);
   const station = events.find(e => e.type === 'stationOpened');
   if (station) openCharger(station.station);
   // The ship's console: COMMAND.SYS's roles to learn (crew roles plan step B).
@@ -319,16 +268,15 @@ function settleMove(events) {
   if (console) openConsole(console.station);
 }
 
-// Whether walking and waiting are held: the Struggle dial is the
-// player's move, CHARGE.SYS's wires are (its turns are spent there),
+// Whether walking and waiting are held: CHARGE.SYS's wires are (its turns are spent there),
 // COMMAND.SYS's pick is (the ship's console), and the record book read from
 // the map has the map's place.
 export function walkHeld() {
   const shown = mapPanelShown();
-  return shown === 'struggle' || shown === 'charger' || shown === 'console' || shown === 'book';
+  return shown === 'charger' || shown === 'console' || shown === 'book';
 }
 
-// Hands over the main.js actions, then wires SELECT, the d-pad, the look
+// Hands over the main.js actions, then wires the d-pad, the look
 // and walk sticks and the keys, and starts the walking frame. main.js calls
 // it once at load, where these used to be set up.
 export function initControls(actions) {
@@ -338,46 +286,6 @@ export function initControls(actions) {
   } = actions);
   window.addEventListener('blur', () => sweep.reset());
   requestAnimationFrame(walkFrame);
-
-  // SELECT acts the moment a finger or mouse goes down, not on the click
-  // that comes when it lifts: a tap is held for about a tenth of a second,
-  // and on release the dial's marker had already moved on (Timothy
-  // felt the lag). The click a press ends with is skipped; a click with no
-  // pointer behind it (Enter or Space on the focused button) still counts,
-  // the same way the d-pad does it.
-  let selectPressed = false;
-  // Steady aim: the press being held, and whether it has slid off SELECT
-  // (letting go there lowers the gun instead of firing).
-  let selectHold = null;
-  const SELECT_SLIDE_OFF_PX = 14;
-  btnSelect.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || btnSelect.disabled) return;
-    e.preventDefault();
-    selectPressed = true;
-    pressSelect();
-    if (!steadying()) return;
-    try { btnSelect.setPointerCapture(e.pointerId); } catch (_) { /* fine without */ }
-    selectHold = { off: false };
-  });
-  btnSelect.addEventListener('pointermove', (e) => {
-    if (!selectHold) return;
-    const r = btnSelect.getBoundingClientRect(), pad = SELECT_SLIDE_OFF_PX;
-    selectHold.off = e.clientX < r.left - pad || e.clientX > r.right + pad || e.clientY < r.top - pad || e.clientY > r.bottom + pad;
-  });
-  const letGoSelect = (e) => {
-    if (!selectHold) return;
-    const off = selectHold.off || e.type === 'pointercancel';
-    selectHold = null;
-    releaseSelect(off);
-  };
-  btnSelect.addEventListener('pointerup', letGoSelect);
-  btnSelect.addEventListener('pointercancel', letGoSelect);
-  btnSelect.addEventListener('click', () => {
-    if (selectPressed) { selectPressed = false; return; }
-    pressSelect();
-  });
-  btnSelect.addEventListener('keydown', () => { selectPressed = false; });
-  btnSelect.addEventListener('contextmenu', (e) => e.preventDefault());
 
   initDpad({
     buttons: dpadButtons,
@@ -416,7 +324,6 @@ export function initControls(actions) {
     Numpad6: 'R', Numpad1: 'DL', Numpad2: 'D', Numpad3: 'DR',
   };
   document.addEventListener('keyup', (e) => {
-    if ((e.key === 'f' || e.key === 'F') && !selectHold) releaseSelect();
     if (e.key === ' ') holdLookUp('key', false);
     if (e.key === 'u' || e.key === 'U') holdLookUp('u', false);
     const way = MOVE_KEYS[e.key] || NUMPAD_WAYS[e.code];
@@ -432,18 +339,14 @@ export function initControls(actions) {
   // Keys on desktop, ignored while typing in the answer box. The arrows,
   // W A S D, Q / E / Z / C and the number pad walk the way they point on
   // screen (moveKey, padPush), unless a question on the map is taking number keys. Space held looks up at the
-  // sky (sky eye plan step A). With the gun on: F is SELECT (fires), T picks
-  // the next target, . waits. V switches the light (light battery plan).
+  // sky (sky eye plan step A). V switches the light (light battery plan).
   // With One stick on, the move keys are held (walkFrame), X switches
   // sneaking and U held looks up as Space does.
-  // On the stairs, Enter goes down (so does SELECT).
-  // Letter and number keys answer a question on the ask screen, unless the
-  // gun panels already used the key (picking a reload with 1-3, or F / Space
-  // stopping the dial).
+  // On the stairs, Enter goes down.
+  // Letter and number keys answer a question on the ask screen.
   document.addEventListener('keydown', (e) => {
     if (document.activeElement === answerInput || e.defaultPrevented) return;
     if (!roomScreen.classList.contains('show')) return;
-    if (e.key === 'Escape' && steadying()) { e.preventDefault(); releaseSelect(true); return; }
     const numpad = NUMPAD_WAYS[e.code];
     // One stick: the move keys are held, not pressed (walkFrame).
     const held = state.settings.oneStick && !mapPanelShown() && (MOVE_KEYS[e.key] || numpad);
@@ -456,9 +359,6 @@ export function initControls(actions) {
     if (numpad && !mapPanelShown()) { e.preventDefault(); padPush(...SCREEN_WAYS[numpad]); }
     else if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
     else if (e.key === ' ' && !mapPanelShown()) { e.preventDefault(); holdLookUp('key', true); }
-    else if (gunReady() && !state.floor.ship && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); if (!(e.repeat && steadyOn())) pressSelect(); }
-    else if (gunReady() && !state.floor.ship && (e.key === 't' || e.key === 'T')) { e.preventDefault(); nextGunTarget(); }
-    else if (gunReady() && !state.floor.ship && e.key === '.') { e.preventDefault(); skipTurn(); }
     else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); switchLight(); }
     else if (state.settings.oneStick && (e.key === 'x' || e.key === 'X')) { e.preventDefault(); toggleSneak(); }
     else if (state.settings.oneStick && (e.key === 'u' || e.key === 'U') && !mapPanelShown()) { e.preventDefault(); holdLookUp('u', true); }

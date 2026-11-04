@@ -1,5 +1,5 @@
 // Unit tests for the rule modules (no DOM): sight.js, passage.js,
-// combat.js, moves.js, answers.js.
+// moves.js.
 //
 // Run: node --test tests/*.test.mjs
 //
@@ -12,22 +12,17 @@ import assert from 'node:assert/strict';
 
 import { emptyFloor } from './helpers.mjs';
 import { state, key } from '../js/state.js';
-import {
-  PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, MINION_CHASE_RANGE, HUNTER_SPAWN_DELAY,
-  DARK_GOLD_MULTIPLIER, MAX_HEARTS, DARK_MISS_COST, MINION_KINDS, MINION_TRAIL_LENGTH,
-} from '../js/config.js';
+import { PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, DARK_GOLD_MULTIPLIER } from '../js/config.js';
 import { computeVisibility, canMakeOut, shootBlock, canShoot } from '../js/sight.js';
 import { whatBlocks, canPassCorner, stepsAway } from '../js/passage.js';
-import { advanceMonsters, spawnMinion, refreshTargetValidity } from '../js/combat.js';
 import { stepPlayer, goldReward } from '../js/moves.js';
-import { settleAnswer } from '../js/answers.js';
 
 // These are the turn game's rules (the start screen's Turns option): One
 // stick, the default since one stick plan step G, has its own tests.
 state.settings.oneStick = false;
 
 // An open size x size floor, player in the middle facing north, fog on,
-// nothing else on it. The gun's own rules are tested in gun.test.mjs.
+// nothing else on it.
 function resetFloor(size = 21) {
   emptyFloor(size, {
     settings: { fogEnabled: true },
@@ -253,108 +248,6 @@ test('boxes block but papers lie flat', () => {
   assert.equal(whatBlocks(9, 9), null);
 });
 
-// --- combat.js: advanceMonsters ---
-
-// The things of one type in an advanceMonsters() events list.
-const ofType = (events, type, field) => events.filter(e => e.type === type).map(e => e[field]);
-
-test('a minion within chase range steps toward the player and is reported as moved', () => {
-  resetFloor(21);
-  const from = { row: state.floor.playerRow - MINION_CHASE_RANGE, col: state.floor.playerCol };
-  const m = spawnMinion(from);
-  const events = advanceMonsters();
-  assert.deepEqual({ row: m.row, col: m.col }, { row: state.floor.playerRow - MINION_CHASE_RANGE + 1, col: state.floor.playerCol });
-  assert.deepEqual(events, [{ type: 'minionMoved', minion: m, from }]);
-  assert.equal(state.run.turnCount, 1);
-});
-
-test('a minion starts with its kind\'s guard (no health) and an empty trail', () => {
-  resetFloor(21);
-  for (const [name, stats] of Object.entries(MINION_KINDS)) {
-    const m = spawnMinion({ row: 0, col: 0 }, name);
-    assert.equal(m.kind, 'minion');
-    assert.equal(m.minionKind, name);
-    assert.equal(m.guard, !!stats.guard);
-    assert.equal(m.hpLeft, undefined, 'no health');
-    assert.deepEqual(m.trail, []);
-  }
-});
-
-test('a moving minion remembers its last MINION_TRAIL_LENGTH tiles, newest last', () => {
-  resetFloor(21);
-  const m = spawnMinion({ row: state.floor.playerRow - MINION_CHASE_RANGE, col: state.floor.playerCol }, 'SHARD');
-  // The player backs away a tile each turn, so the minion keeps chasing
-  // for more steps than its trail holds.
-  const left = [];
-  for (let i = 0; i < MINION_TRAIL_LENGTH + 3; i++) {
-    state.floor.playerRow++;
-    advanceMonsters().filter(e => e.type === 'minionMoved' && e.minion === m).forEach(e => left.push(e.from));
-  }
-  assert.ok(left.length > MINION_TRAIL_LENGTH, 'moved ' + left.length + ' times');
-  assert.deepEqual(m.trail, left.slice(-MINION_TRAIL_LENGTH));
-});
-
-// What reaching the player looks like for `m` in `events`: a strike, or a
-// Struggle when the player has no energy (combat.js reachPlayer).
-const reached = (events, m) => events.some(e => (e.type === 'minionStruck' || e.type === 'struggleStarted') && e.minion === m);
-
-test('a minion next to the player reaches them from where it stands, never onto their tile', () => {
-  resetFloor(21);
-  const m = spawnMinion({ row: state.floor.playerRow - 1, col: state.floor.playerCol });
-  const events = advanceMonsters();
-  assert.ok(reached(events, m));
-  assert.deepEqual(ofType(events, 'minionMoved', 'minion'), []);
-  assert.notDeepEqual({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol });
-});
-
-test('a reaching minion is reported in turn order', () => {
-  resetFloor(21);
-  const near = spawnMinion({ row: state.floor.playerRow - 1, col: state.floor.playerCol });
-  const far = spawnMinion({ row: state.floor.playerRow + 2, col: state.floor.playerCol });
-  const events = advanceMonsters();
-  const first = events.findIndex(e => e.minion === near);
-  const moved = events.findIndex(e => e.type === 'minionMoved' && e.minion === far);
-  assert.ok(reached(events, near));
-  assert.ok(first !== -1 && moved > first, 'the near one first, then the far one moves');
-});
-
-test('a resting minion waits out its rest', () => {
-  resetFloor(21);
-  const m = spawnMinion({ row: state.floor.playerRow - 2, col: state.floor.playerCol });
-  m.rest = 1;
-  assert.deepEqual(advanceMonsters(), []);
-  assert.equal(m.rest, 0);
-  assert.deepEqual(ofType(advanceMonsters(), 'minionMoved', 'minion'), [m]);
-});
-
-test('the hunter wakes HUNTER_SPAWN_DELAY turns into the darkness, far from the player', () => {
-  resetFloor(21);
-  state.floor.darkness = true;
-  for (let i = 1; i < HUNTER_SPAWN_DELAY; i++) {
-    assert.deepEqual(ofType(advanceMonsters(), 'hunterWoke', 'hunter'), []);
-    assert.equal(state.floor.hunter, null);
-  }
-  const events = advanceMonsters();
-  const woke = ofType(events, 'hunterWoke', 'hunter');
-  assert.equal(woke.length, 1);
-  const hunter = woke[0];
-  // It wakes first, then takes its first step in the same turn.
-  // (The light's battery may speak before it.)
-  const moved = events.findIndex(e => e.type === 'minionMoved' && e.minion === hunter);
-  assert.ok(events.findIndex(e => e.type === 'hunterWoke') < moved);
-  assert.equal(state.floor.hunter, hunter);
-  assert.equal(hunter.kind, 'hunter');
-  assert.equal(hunter.minionKind, null, 'the hunter has no minion kind');
-  assert.equal(hunter.guard, false);
-  assert.ok(state.floor.minions.includes(hunter));
-  // Woke in a corner, so it's still far off after its first step (10
-  // steps on a 21 floor, walking 8 ways).
-  const steps = Math.max(Math.abs(hunter.row - state.floor.playerRow), Math.abs(hunter.col - state.floor.playerCol));
-  assert.ok(steps >= 9, 'hunter is ' + steps + ' steps away');
-  // Only ever one.
-  assert.deepEqual(ofType(advanceMonsters(), 'hunterWoke', 'hunter'), []);
-});
-
 // --- moves.js: stepPlayer ---
 
 test('by default a press in a new direction turns and steps at once', () => {
@@ -367,38 +260,6 @@ test('by default a press in a new direction turns and steps at once', () => {
   state.floor.wallSet.add(key(r + 1, c + 1));
   assert.deepEqual(stepPlayer(0, 1).map(e => e.type), ['turned', 'blocked', 'bodyTurned']);
   assert.equal(state.floor.facing, 'E');
-});
-
-// --- combat.js: senseUnseen ("I see you.") ---
-
-// A minion that will be beside the player after its next move: two steps
-// straight behind them (south, while they face north), out of their light.
-function minionBehind() {
-  resetFloor();
-  computeVisibility();
-  return spawnMinion({ row: state.floor.playerRow + 3, col: state.floor.playerCol });
-}
-
-test('an unseen minion about to reach the player warns once per approach', () => {
-  const m = minionBehind();
-  // Its move this turn brings it to two steps away: next move, beside them.
-  assert.deepEqual(ofType(advanceMonsters(), 'presenceSensed', 'minion'), [m]);
-  assert.equal(Math.abs(m.row - state.floor.playerRow), 2);
-  // It doesn't warn again while it keeps coming.
-  state.floor.playerRow -= 1;
-  computeVisibility();
-  assert.deepEqual(ofType(advanceMonsters(), 'presenceSensed', 'minion'), []);
-});
-
-test('no warning for a minion the player can already see, or one resting', () => {
-  const m = minionBehind();
-  state.floor.facing = 'S';
-  computeVisibility();
-  assert.deepEqual(ofType(advanceMonsters(), 'presenceSensed', 'minion'), []);
-  const r = minionBehind();
-  r.rest = 3;
-  r.row -= 1;
-  assert.deepEqual(ofType(advanceMonsters(), 'presenceSensed', 'minion'), []);
 });
 
 test('the coin pays goldReward(1), doubled in the darkness', () => {
@@ -419,10 +280,10 @@ test('stepping on a key takes it and counts it among the floor\'s', () => {
   const [r, c] = [state.floor.playerRow, state.floor.playerCol];
   state.floor.keys = [{ row: r - 1, col: c }, { row: r - 2, col: c }, { row: r + 5, col: c }];
   const first = stepPlayer(-1, 0).find(e => e.type === 'keyTaken');
-  assert.deepEqual(first, { type: 'keyTaken', held: 1, total: 3, unsealed: false });
+  assert.deepEqual(first, { type: 'keyTaken', held: 1, total: 3 });
   assert.equal(state.floor.keys.length, 2);
   const second = stepPlayer(-1, 0).find(e => e.type === 'keyTaken');
-  assert.deepEqual(second, { type: 'keyTaken', held: 2, total: 3, unsealed: false });
+  assert.deepEqual(second, { type: 'keyTaken', held: 2, total: 3 });
   assert.equal(whatBlocks(r + 5, c), null, 'a key never blocks');
 });
 
@@ -458,122 +319,6 @@ test('papers give the story in order, then their own roll', () => {
   assert.deepEqual([read(), read(), read()].map(e => [e.loot, e.story]),
     [['story', 'story.a'], ['story', 'story.b'], ['junk', undefined]]);
   assert.deepEqual(state.run.loreQueue, []);
-});
-
-// --- answers.js: settleAnswer ---
-
-// A floor with one target selected and one question showing.
-function resetAnswer(target) {
-  resetFloor();
-  state.run.hearts = MAX_HEARTS;
-  state.battle.wager = 0;
-  state.run.attempts = 1;
-  state.run.correctTotal = 0;
-  state.run.extraSpaceCount = 0;
-  state.battle.currentQuestion = { term: 'Who built the ark?', meaning: 'Noah', difficulty: 'easy' };
-  state.battle.selectedTarget = target;
-}
-
-const types = (events) => events.map(e => e.type);
-
-test('a miss costs 1 heart, 2 in the darkness, and ends at 0 hearts with signalLost', () => {
-  for (const darkness of [false, true]) {
-    const chest = { row: 0, col: 0, kind: 'chest' };
-    resetAnswer(chest);
-    state.floor.chest = chest;
-    state.floor.darkness = darkness;
-    const events = settleAnswer(false, false, 'Moses');
-    const rejected = events.find(e => e.type === 'rejected');
-    assert.equal(rejected.cost, darkness ? DARK_MISS_COST : 1);
-    assert.equal(rejected.expected, 'Noah');
-    // Where the miss happened, for the answer ring (swirl.js).
-    assert.deepEqual(rejected.at, { row: 0, col: 0 });
-    assert.equal(rejected.boss, false);
-    assert.equal(state.run.hearts, MAX_HEARTS - rejected.cost);
-    assert.deepEqual(types(events), ['answerGiven', 'rejected', 'targetSpent']);
-    assert.equal(events[0].given, 'Moses');
-  }
-  const chest = { row: 0, col: 0, kind: 'chest' };
-  resetAnswer(chest);
-  state.floor.chest = chest;
-  state.run.hearts = 1;
-  assert.deepEqual(types(settleAnswer(false, false, 'Moses')), ['answerGiven', 'rejected', 'signalLost']);
-  assert.equal(state.floor.chest, chest, 'the target is left as it was');
-});
-
-test('a right answer adds to the run\'s correct total, a miss does not', () => {
-  const chest = { row: 0, col: 0, kind: 'chest' };
-  resetAnswer(chest);
-  state.floor.chest = chest;
-  settleAnswer(false, false, 'Moses');
-  assert.equal(state.run.correctTotal, 0);
-  resetAnswer(chest);
-  state.floor.chest = chest;
-  state.run.correctTotal = 4;
-  settleAnswer(true, false, 'Noah');
-  assert.equal(state.run.correctTotal, 5);
-});
-
-// --- gate.js: the boss is the gate ---
-
-test('boss hits count down, and the last one fires bossDefeated then darknessFell', () => {
-  const boss = { row: 0, col: 0, kind: 'boss', hp: 2, max: 2 };
-  resetAnswer(boss);
-  state.floor.boss = boss;
-  state.floor.gateSealed = false;
-  const hit = settleAnswer(true, false, 'Noah');
-  assert.deepEqual(types(hit), ['answerGiven', 'accepted', 'bossHit']);
-  assert.equal(hit[2].hp, 1);
-  assert.equal(hit[2].max, 2);
-  assert.deepEqual(types(settleAnswer(true, false, 'Noah')),
-    ['answerGiven', 'accepted', 'bossDefeated', 'darknessFell']);
-  assert.equal(state.floor.boss, null);
-  assert.equal(state.floor.darkness, true);
-});
-
-test('a chest pays 2 gold and is spent', () => {
-  const chest = { row: 0, col: 0, kind: 'chest' };
-  resetAnswer(chest);
-  state.floor.chest = chest;
-  const events = settleAnswer(true, true, 'Noah');
-  assert.deepEqual(types(events), ['answerGiven', 'accepted', 'extraSpaces', 'targetSpent', 'goldGained']);
-  assert.deepEqual(events[4], { type: 'goldGained', amount: 2, from: 'chest' });
-  assert.equal(state.run.coinsTotal, 2);
-  assert.equal(state.floor.chest, null);
-  assert.equal(state.run.extraSpaceCount, 1);
-});
-
-test('a lost wager cannot take gold below 0; a won one pays it', () => {
-  resetAnswer({ row: 0, col: 0, kind: 'chest' });
-  state.run.coinsTotal = 1;
-  state.battle.wager = 3;
-  const lost = settleAnswer(false, false, 'Moses');
-  assert.deepEqual(types(lost), ['answerGiven', 'rejected', 'wagerSettled', 'targetSpent']);
-  assert.deepEqual(lost[2], { type: 'wagerSettled', won: false, n: 3 });
-  assert.equal(state.run.coinsTotal, 0);
-  assert.equal(state.battle.wager, 0);
-
-  state.battle.selectedTarget = { row: 0, col: 0, kind: 'chest' };
-  state.battle.wager = 2;
-  const won = settleAnswer(true, false, 'Noah');
-  const gold = won.filter(e => e.type === 'goldGained').reduce((sum, e) => sum + e.amount, 0);
-  assert.equal(state.run.coinsTotal, 2 + gold, 'the wager and the chest\'s gold');
-});
-
-// --- moves.js / combat.js: items open only when bumped ---
-
-test('standing next to an item does not select it; walking into it does', () => {
-  resetFloor();
-  const r = state.floor.playerRow, c = state.floor.playerCol;
-  state.floor.chest = { kind: 'chest', row: r - 1, col: c };
-  refreshTargetValidity();
-  assert.equal(state.battle.selectedTarget, null);
-
-  const events = stepPlayer(-1, 0);
-  assert.deepEqual(events.map(e => e.type), ['itemReached']);
-  assert.equal(state.battle.selectedTarget, state.floor.chest);
-  assert.equal(state.floor.playerRow, r);
-  assert.equal(state.run.turnCount, 0);
 });
 
 // --- eight ways (eight ways plan step A) ---
@@ -629,30 +374,6 @@ test('a one-wide door cannot be entered from the side', () => {
   assert.equal(stepPlayer(-1, 0).at(-1).type, 'stepped', 'straight in works');
 });
 
-test('a minion chases on a diagonal and reaches from a diagonal tile', () => {
-  resetFloor(21);
-  const r = state.floor.playerRow, c = state.floor.playerCol;
-  const m = spawnMinion({ row: r - 3, col: c + 3 });
-  advanceMonsters();
-  assert.deepEqual({ row: m.row, col: m.col }, { row: r - 2, col: c + 2 }, 'straight down the diagonal');
-  advanceMonsters();
-  assert.deepEqual({ row: m.row, col: m.col }, { row: r - 1, col: c + 1 });
-  const events = advanceMonsters();
-  assert.ok(reached(events, m), 'next to the player on a diagonal');
-});
-
-test('a corner keeps a diagonal minion from striking', () => {
-  resetFloor(21);
-  const r = state.floor.playerRow, c = state.floor.playerCol;
-  state.floor.wallSet.add(key(r - 1, c));
-  state.floor.wallSet.add(key(r, c + 1));
-  const m = spawnMinion({ row: r - 1, col: c + 1 });
-  refreshTargetValidity();
-  assert.equal(state.battle.selectedTarget, null, 'not next to the player through a corner');
-  const events = advanceMonsters();
-  assert.ok(!reached(events, m));
-  assert.notDeepEqual({ row: m.row, col: m.col }, { row: r, col: c });
-});
 test('stepsAway counts a diagonal as one step', () => {
   resetFloor();
   const r = state.floor.playerRow, c = state.floor.playerCol;
