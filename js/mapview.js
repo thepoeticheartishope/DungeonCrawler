@@ -26,9 +26,9 @@ import { chargerHasMore } from './charger.js';
 import { showShot } from './mapshared.js';
 import { hurtStick, killStick, fallStick, crawlStick, grabStick, finishStick } from './stickforms.js';
 import { startAnswerRing, endAnswerRing } from './swirl.js';
-import { ventSealed } from './vents.js';
+
 import { playerStepped, playerBumped } from './playerform.js';
-import { updateStatic } from './staticview.js';
+
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
 const FOG_DIM_ALPHA = 0.68;  // explored-but-unlit floor at a third of its brightness
@@ -40,7 +40,6 @@ const BLOOM_RADIUS = 0.85;   // the hostile bloom behind the boss and minions
 const REMEMBERED_ALPHA = 0.35; // papers and boxes seen before but not lit now
 const COIN_BOB = 0.1;        // how far the coin lifts, as a share of a tile
 const BUMP_DISTANCE = 0.18;  // how far the player nudges into what blocks them, in tiles
-const SOUND_OPEN_MS = 300;   // a tile of a mistake's sound opens out from its middle over this long
 // The glow behind a pulsing glyph at its dim and bright ends: grey level,
 // strength, and blur as a share of a tile.
 const BOSS_GLOW = { dim: [200, 0.5, 0.1], bright: [255, 0.9, 0.29] };
@@ -143,7 +142,6 @@ export function requestMapDraw() {
   if (!canvas) return;
   dirty = true;
   queueFrame();
-  updateStatic();
 }
 
 // Slides a minion that has just stepped from `from` to its new tile. A minion already sliding starts from
@@ -278,90 +276,6 @@ export function deathOnMap(minion) {
   requestMapDraw();
 }
 
-// A mistake's sound (noise.js noiseMade): each tile it reached lights up
-// as an outline one walking step later than the last, every
-// MAP_ANIMATION_MS.soundStep, and fades over soundFade, so the player sees
-// how far it carried. Only on floor they have seen, so it never shows the
-// shape of rooms they haven't found; nothing that came out of a grate
-// whose pair they don't know (the sound just goes in). Under reduced
-// motion it shows all at once, still, then goes. View-only, not state.
-let sounds = []; // [{ tiles, start, ends }]
-export function soundOnMap(tiles) {
-  const now = performance.now();
-  const still = reducedMotion.matches;
-  const far = Math.max(0, ...tiles.map(tile => tile.d));
-  const ends = now + (still ? 0 : far * MAP_ANIMATION_MS.soundStep) + MAP_ANIMATION_MS.soundFade;
-  sounds.push({ tiles, start: now, ends, far });
-  requestMapDraw();
-  setTimeout(requestMapDraw, ends - now + 20);
-}
-
-// The sound's tiles to draw at `now`: [{ row, col, strength, spread }],
-// strength 0..1 (fading, and fainter the further it went), spread 0..1
-// (the outline opens out from the tile's middle as it lights). Drops
-// sounds that are done.
-function soundTilesNow(now) {
-  sounds = sounds.filter(sound => now < sound.ends);
-  if (!sounds.length) return [];
-  const still = reducedMotion.matches;
-  const vents = state.floor.vents;
-  const out = [];
-  sounds.forEach(sound => sound.tiles.forEach(tile => {
-    if (!state.settings.showDucts && tile.through.some(i => !vents[i] || !vents[i].known)) return;
-    if (fogOf(tile.row, tile.col) === 'hidden') return;
-    const age = still ? 0 : now - sound.start - tile.d * MAP_ANIMATION_MS.soundStep;
-    if (age < 0 || age > MAP_ANIMATION_MS.soundFade) return;
-    const strength = (1 - age / MAP_ANIMATION_MS.soundFade) * (1 - tile.d / (sound.far + 2));
-    out.push({ row: tile.row, col: tile.col, strength, spread: still ? 1 : Math.min(1, age / SOUND_OPEN_MS) });
-  }));
-  if (!still) looping = true;
-  return out;
-}
-
-// A grate shudders, the turn before something drops out of it (vents.js
-// ventRattled): the grate wobbles slowly over MAP_ANIMATION_MS.ventRattle.
-// None under reduced motion or in Comfort mode: the line says it.
-const rattles = new Map(); // grate -> when it started shaking
-export function rattleOnMap(vent) {
-  if (reducedMotion.matches || state.settings.simpleEnemies) return;
-  rattles.set(vent, performance.now());
-  requestMapDraw();
-}
-
-// How far a grate's shudder has got, 0..1, or null when it isn't shaking.
-function rattleOf(vent) {
-  const at = rattles.get(vent);
-  if (at === undefined) return null;
-  const age = frameNow - at;
-  if (age >= MAP_ANIMATION_MS.ventRattle) {
-    rattles.delete(vent);
-    return null;
-  }
-  looping = true;
-  return age / MAP_ANIMATION_MS.ventRattle;
-}
-
-// A stick man the player can see heard the sound (noise.js noiseHeard): a
-// small '!' over it fades over MAP_ANIMATION_MS.heardMark. Still under
-// reduced motion, then gone.
-const heardAt = new WeakMap();
-export function heardOnMap(minion) {
-  heardAt.set(minion, performance.now());
-  requestMapDraw();
-  setTimeout(requestMapDraw, MAP_ANIMATION_MS.heardMark + 20);
-}
-
-// How strongly a stick man's '!' shows now, 0 once it is gone.
-function heardMark(m) {
-  const at = heardAt.get(m);
-  if (at === undefined) return 0;
-  const age = frameNow - at;
-  if (age >= MAP_ANIMATION_MS.heardMark) return 0;
-  if (reducedMotion.matches) return 1;
-  looping = true;
-  return 1 - age / MAP_ANIMATION_MS.heardMark;
-}
-
 // After a miss: puts the right answer `text` up as a ring over tile `at`
 // (round the boss when `boss`; answer swirl plan step B). Returns false
 // when it should be the line instead (too long, reduced motion, Simple
@@ -485,7 +399,7 @@ function drawScene(now) {
   ctx.fillRect(0, 0, scene.width, scene.height);
   const shared = {
     colours, things: mapThings(), fogOf, paintGlyph, mistStrength, pulse, keepMoving,
-    showPlain, now, still: reducedMotion.matches, walkAt: walkAt(now), sounds: soundTilesNow(now),
+    showPlain, now, still: reducedMotion.matches, walkAt: walkAt(now),
   };
   const size = { width: scene.width, height: scene.height, pageWidth: pageSize.width };
   // The room view's pixel art has no afterglow: it would smear it.
@@ -562,14 +476,7 @@ function mapThings() {
       glow: glowAt(BOSS_GLOW, pulse(MAP_ANIMATION_MS.bossPulse)),
     });
   }
-  // Grates lie flat in the floor, seen like the floor round them (vents.js).
-  // A held room's grates are sealed (relays.js).
-  f.vents.forEach(v => {
-    const lit = isLit(v.row, v.col);
-    const remembered = state.settings.fogEnabled && !lit && !f.darkness && f.exploredSet.has(key(v.row, v.col));
-    if (!lit && !remembered) return;
-    add('vent', v, t('term.vent.symbol'), { size: 'prop', alpha: remembered ? REMEMBERED_ALPHA : 1, sealed: ventSealed(v), rattle: rattleOf(v) });
-  });
+
   f.props.forEach(p => {
     const lit = isLit(p.row, p.col);
     const remembered = state.settings.fogEnabled && !lit && !f.darkness && f.exploredSet.has(key(p.row, p.col));
@@ -606,13 +513,6 @@ function mapThings() {
   if (f.chest && isLit(f.chest.row, f.chest.col)) {
     add('chest', f.chest, glyphOrUnknown(f.chest, glyphOf(f.chest)), { size: 'chest' });
   }
-  // THE UNFOLDING warps like the boss, slower: a shape the eye keeps losing.
-  if (f.exchange && isLit(f.exchange.row, f.exchange.col)) {
-    add('exchange', f.exchange, glyphOrUnknown(f.exchange, glyphOf(f.exchange)), {
-      size: 'exchange', colour: colours.bright, warp: warpAt(MAP_ANIMATION_MS.exchangeWarp, 0),
-      glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
-    });
-  }
   // The stairs are never lost in the fog: they're the way out (both of
   // them on a between-rest).
   [f.stairs, f.stairsAlt].filter(Boolean).forEach(s => {
@@ -622,11 +522,6 @@ function mapThings() {
   });
   add('player', state.settings.oneStick ? freeAt() : shownAt(PLAYER, f.playerRow, f.playerCol), t('term.player.symbol'), { size: 'player' },
     { row: f.playerRow, col: f.playerCol });
-  // DEV -> Show ducts: a stick man in a duct shows dimly on the grate it
-  // will come out of.
-  if (state.settings.showDucts) f.crawling.forEach(m => {
-    add(m.kind, f.vents[m.vent.to], glyphOf(m), { size: m.kind, colour: colours.muted, alpha: REMEMBERED_ALPHA }, f.vents[m.vent.to]);
-  });
   f.minions.forEach(m => {
     // An enemy shows only while made out (or lit by a dark shot), never
     // as a '?' to follow round the dark.
@@ -637,7 +532,7 @@ function mapThings() {
     if (state.settings.simpleEnemies) {
       // Downed: a smaller, dimmer e low on its tile; E while it holds them.
       const down = m.downed ? { size: 'downed', alpha: m.grabbing ? 1 : DOWNED_GLYPH_LEVEL, lift: DOWNED_GLYPH_LIFT } : {};
-      add(m.kind, shownAt(m, m.row, m.col), glyphOf(m), { size: m.kind, colour: colours.bright, heard: heardMark(m), ...down }, m);
+      add(m.kind, shownAt(m, m.row, m.col), glyphOf(m), { size: m.kind, colour: colours.bright, ...down }, m);
       return;
     }
     const phase = phaseOf(m);
@@ -647,7 +542,6 @@ function mapThings() {
       warp: warpAt(warpMs, phase * warpMs),
       // Only minions drop out; the hunter is always there.
       dropout: hunter ? 0 : dropoutAt(((phase * 2) % 1) * MAP_ANIMATION_MS.glitchBar),
-      heard: heardMark(m),
     }, m);
   });
   return things;

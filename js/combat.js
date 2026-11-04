@@ -7,11 +7,11 @@ import { MINION_KINDS, MINION_TRAIL_LENGTH, MINION_CHASE_RANGE, MINION_LIGHT_SIG
 import { advanceLight } from './light.js';
 import { tickLight, drainLight, batteryInPlay, lightOn } from './battery.js';
 import { minionStrike, struggleDial } from './gun.js';
-import { keptOut } from './relays.js';
+
 import { canPassCorner, solidProp } from './passage.js';
 import { computeVisibility, clearLine, seesEnemy, hiddenFrom, FACING_VECTORS } from './sight.js';
 import { waysInUse } from './look.js';
-import { ductStep, crawlInto, crawlTurn } from './vents.js';
+
 import { inSafeRoom, shutIn, liftShutters, lampLit } from './saferoom.js';
 
 // True if `entity` stands on one of the tiles around the player: the 8
@@ -95,7 +95,6 @@ export function neighbors(r, c) {
 // it's only an obstacle to the player.
 export function blockedTilesFor(minion) {
   const blocked = new Set(state.floor.wallSet);
-  keptOut(minion).forEach(k => blocked.add(k));
   state.floor.pillarSet.forEach(k => blocked.add(k));
   state.floor.props.forEach(p => { if (solidProp(p)) blocked.add(key(p.row, p.col)); });
   if (state.floor.boss) blocked.add(key(state.floor.boss.row, state.floor.boss.col));
@@ -209,10 +208,9 @@ export function movesEvery(m) {
 // `intoPlayer` (the light battery's rules) the player's tile is one of the
 // choices: one that never saw them in the dark can still blunder into them.
 function wanderStep(m, intoPlayer = false) {
-  const out = keptOut(m);
   const isPlayer = (r, c) => intoPlayer && r === state.floor.playerRow && c === state.floor.playerCol;
   const options = neighbors(m.row, m.col)
-    .filter(([r, c]) => !state.floor.wallSet.has(key(r, c)) && !out.has(key(r, c)) && (isPlayer(r, c) || !tileOccupied(r, c, m)));
+    .filter(([r, c]) => !state.floor.wallSet.has(key(r, c)) && (isPlayer(r, c) || !tileOccupied(r, c, m)));
   if (options.length === 0) return null;
   const [row, col] = options[Math.floor(Math.random() * options.length)];
   return { row, col };
@@ -330,26 +328,6 @@ function notice(m) {
   return false;
 }
 
-// A mistake's sound reached `m` (noise.js makeNoise): like being seen, it
-// goes to where the sound was made (`origin`) and searches round there for
-// MINION_TRACK_TURNS turns. One that has the player in view ignores it:
-// seeing them wins. The hunter and the tutorial's stick man already come
-// straight for the player, so they don't need to hear. Works in Comfort
-// mode too (the rules stay, only the look is plain). Returns true if it
-// heard.
-export function hearNoise(m, origin) {
-  if (m.kind === 'hunter' || m.hunts) return false;
-  if (batteryInPlay() && inView(m)) return false;
-  m.lastSeen = { row: origin.row, col: origin.col };
-  m.track = MINION_TRACK_TURNS;
-  m.goal = null;
-  m.linger = 0;
-  // A sound draws a test room's stick man (testroom.js) off its set route
-  // too, so a lure can be tried there.
-  m.route = null;
-  return true;
-}
-
 // Where a tracking stick man that can't see the player goes next: one step
 // along the shortest way to `lastSeen`. Reaching it (or finding no way
 // there, or the spot taken by another) clears `lastSeen`, so it searches
@@ -380,9 +358,7 @@ function towardLastSeen(m) {
 // false (a reload question already open over the map, in real time):
 // then it strikes as usual. A downed one (downed plan) that reaches the
 // player neither strikes nor struggles: it grabs their ankle
-// ({ type: 'ankleGrabbed', minion }) and holds on where it is. Stick men in a duct come first (vents.js
-// crawlTurn: ventRattled, ventDropped), and a hunting one that fits may go
-// into one (crawlInto: ventEntered). Last, { type: 'presenceSensed',
+// ({ type: 'ankleGrabbed', minion }) and holds on where it is. Last, { type: 'presenceSensed',
 // minion } for each unseen one about to get next to the player
 // (senseUnseen). With `minions` false (One stick: each stick man walks on
 // its own clock, clockFrame) the world's beat leaves them out.
@@ -405,20 +381,13 @@ export function advanceMonsters({ canStruggle = true, minions = true } = {}) {
     const hunter = !state.floor.hunter && state.floor.darkTurns >= HUNTER_SPAWN_DELAY ? wakeHunter() : null;
     if (hunter) events.push({ type: 'hunterWoke', hunter });
   }
-  // Stick men in a duct first (vents.js): the shudder, then the drop.
-  // One that drops out moves from next turn.
-  const dropped = crawlTurn();
-  events.push(...dropped);
-  const justOut = new Set(dropped.filter(e => e.type === 'ventDropped').map(e => e.minion));
   if (minions) {
     for (const m of state.floor.minions) {
-      if (justOut.has(m)) continue;
       const moved = moveMinion(m, { canStruggle, lightRules });
       events.push(...moved.events);
       if (moved.over) break;
     }
   }
-  tuckIntoDucts();
   computeVisibility();
   refreshTargetValidity();
   if (state.run.hearts > 0) events.push(...senseUnseen());
@@ -427,7 +396,7 @@ export function advanceMonsters({ canStruggle = true, minions = true } = {}) {
 
 // One stick man's move (the turn's, or one stick's own clock's,
 // clockFrame): what it knows, then a step along a chase, a track, a
-// search or its idle plan, a duct, or reaching the player. `everyTurn`
+// search or its idle plan, or reaching the player. `everyTurn`
 // (the shared turn) skips a slow kind's off turns; on its own clock the
 // pace does that instead. `reach(m)` replaces reaching the player at once
 // (one stick: it reaches first). `elapsedMs` is how long since its last
@@ -441,8 +410,8 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
   // The hunter keeps its own rule (new call 1): it isn't drawn by the light.
   const noticing = lightRules && m.kind !== 'hunter';
   const seen = noticing && notice(m);
-  // Without the light's rules only a sound sets a stick man searching
-  // (hearNoise): its search runs down the same way.
+  // Without the light's rules nothing sets a stick man searching
+  // but its last sight: its search runs down the same way.
   if (!noticing && m.track > 0 && !m.lastSeen) m.track--;
   // A slow kind's off turn comes first, so a rest (a stun) is only used
   // up on a turn it would really have moved.
@@ -484,18 +453,16 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
     else if (next && !onPlayer) events.push(stepTo(m, next));
     return { events, chasing: !looping };
   }
-  // A player inside a room held by a relay can't be reached from outside
-  // it, not even from the doorway (bfsPath would let the last step in).
-  // Hidden in a room spot (spots.js), nobody can get to them, the hunter
+  // Hidden (state.floor.hidden), nobody can get to them, the hunter
   // included: as if sheltered, and no step onto their tile.
-  const sheltered = !!state.floor.hidden || keptOut(m).has(key(state.floor.playerRow, state.floor.playerCol));
+  const sheltered = !!state.floor.hidden;
   const path = sheltered ? null : bfsPath({ row: m.row, col: m.col }, { row: state.floor.playerRow, col: state.floor.playerCol }, blockedTilesFor(m));
   // In the darkness after the boss falls, every minion hunts, from anywhere.
   const noticed = noticing ? seen : path && path.length - 1 <= MINION_CHASE_RANGE && !hiddenFrom(m.row, m.col);
   // The tutorial's stick man (m.hunts) always comes for the player.
   const chasing = path && (state.floor.darkness || noticed || m.hunts);
-  // Out of view but tracking: to where it last saw them (or heard a
-  // mistake, noise.js), then a search of random steps round there.
+  // Out of view but tracking: to where it last saw them, then a search
+  // of random steps round there.
   const tracking = !chasing && m.kind !== 'hunter' && m.lastSeen && !sheltered;
   // Searching round where it last saw them: random steps. Otherwise idle:
   // off to another room (idleStep). A chase or a search drops the idle
@@ -505,15 +472,7 @@ function moveMinion(m, { canStruggle = true, lightRules = batteryInPlay(), every
     m.goal = null;
     m.linger = 0;
   }
-  // Hunting, one that fits takes a duct when it is quicker (vents.js):
-  // into a grate now, or a step on the way to one.
-  const duct = chasing ? ductStep(m, { row: state.floor.playerRow, col: state.floor.playerCol }) : tracking ? ductStep(m, m.lastSeen) : null;
-  if (duct && duct.enter !== undefined) {
-    events.push(...crawlInto(m, duct.enter));
-    return { events, chasing: !!chasing };
-  }
-  if (duct && m.lastSeen && duct.step.row === m.lastSeen.row && duct.step.col === m.lastSeen.col) m.lastSeen = null;
-  let next = duct ? duct.step : chasing ? path[1] : (tracking && towardLastSeen(m)) || (searching ? wanderStep(m, noticing) : idleStep(m, noticing));
+  let next = chasing ? path[1] : (tracking && towardLastSeen(m)) || (searching ? wanderStep(m, noticing) : idleStep(m, noticing));
   if (next && state.floor.hidden && next.row === state.floor.playerRow && next.col === state.floor.playerCol) next = null;
   if (next && hesitates(m, next, ms)) return { events, chasing: !!chasing };
   if (next) {
@@ -675,7 +634,6 @@ export function clockFrame(dtMs, { canStruggle = true } = {}) {
     if (step.over) break;
   }
   if (!changed) return events;
-  tuckIntoDucts();
   computeVisibility();
   refreshTargetValidity();
   return events;
@@ -697,7 +655,7 @@ function startReach(m) {
 
 // A reach runs on by `dtMs`; once it is done, it lands (reachPlayer: a
 // strike, a Struggle, a grab) if the player's free spot is still within
-// ONE_STICK.reach tiles of its tile's centre, no relay holds them from it
+// ONE_STICK.reach tiles of its tile's centre and not hidden
 // and they haven't hidden (spots.js), or else misses. Either way it waits a chase step before it moves
 // again. Events: none while it reaches, reachMissed { minion }, or
 // reachPlayer's.
@@ -710,17 +668,8 @@ function reachOn(m, dtMs, canStruggle) {
   const at = f.playerAt && Math.floor(f.playerAt.x) === f.playerCol && Math.floor(f.playerAt.y) === f.playerRow
     ? f.playerAt : { x: f.playerCol + 0.5, y: f.playerRow + 0.5 };
   const far = Math.hypot(m.col + 0.5 - at.x, m.row + 0.5 - at.y) > ONE_STICK.reach;
-  if (far || f.hidden || keptOut(m).has(key(f.playerRow, f.playerCol))) return [{ type: 'reachMissed', minion: m }];
+  if (far || f.hidden) return [{ type: 'reachMissed', minion: m }];
   return reachPlayer(m, { canStruggle });
-}
-
-// The stick men that went into a duct leave the floor until they drop out
-// (vents.js crawlTurn).
-function tuckIntoDucts() {
-  const gone = state.floor.minions.filter(m => m.vent);
-  if (!gone.length) return;
-  state.floor.minions = state.floor.minions.filter(m => !m.vent);
-  state.floor.crawling.push(...gone);
 }
 
 // What `m` does on reaching the player's tile (it never takes the tile):
@@ -745,14 +694,14 @@ export function reachPlayer(m, { canStruggle = true } = {}) {
 // A lunge (kill or maim plan: the dial stopped in a lunge zone, gun.js):
 // `m` takes one step toward the player at once, out of turn, along the
 // way it would chase them. A step onto the player is reaching them
-// (reachPlayer). It goes nowhere with no way through, from outside a room
-// a relay holds the player in, while they hide (spots.js), or while it
+// (reachPlayer). It goes nowhere with no way through,
+// while they hide, or while it
 // already holds their ankle.
 // Events: minionMoved { minion, from }, reachPlayer's (with One stick
 // reachStarted { minion } instead), or none.
 export function lungeAt(m) {
   const player = { row: state.floor.playerRow, col: state.floor.playerCol };
-  if (m.grabbing || state.floor.hidden || keptOut(m).has(key(player.row, player.col))) return [];
+  if (m.grabbing || state.floor.hidden) return [];
   const path = bfsPath({ row: m.row, col: m.col }, player, blockedTilesFor(m));
   if (!path || path.length < 2) return [];
   const next = path[1];

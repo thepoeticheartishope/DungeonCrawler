@@ -12,16 +12,21 @@
 // Run: node --test tests/*.test.mjs
 
 import { test } from 'node:test';
+
 import assert from 'node:assert/strict';
 
 import { withRandom } from './helpers.mjs';
+
 import { freshLight } from '../js/battery.js';
+
 import { state } from '../js/state.js';
+
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS, ENERGY_MAX, RELOAD_ENERGY,
   GATE_QUESTIONS, MINIGAME_TIER_PAY, HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
   SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM, CODE_BREAK_TIERS, VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS,
 } from '../js/config.js';
+
 import {
   MINIGAMES, MINIGAME_MODIFIERS, SHIP_ONLY, fuelMixSetup, fuelMixPour, fuelMixTier, fuelMixDry, minigamesFor, modifiersFor, rollMinigame, forcedQuestion, endMinigame,
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
@@ -29,10 +34,12 @@ import {
   letterPoolSetup, letterPoolCheck, letterPoolTier, codeChars, codeBreakSetup, codeBreakMarks, codeBreakTier,
   verdictSetup, verdictTier, verdictClaimCount, crosswireSetup, crosswireTier, fogRevealTier, sumLockQuestions, sumLockSetup, sumLockMatches,
 } from '../js/minigames.js';
-import { recordHauntAnswer } from '../js/haunts.js';
+
 import { settleReload } from '../js/gun.js';
+
 import { settleAnswer } from '../js/answers.js';
-import { resetHaunts } from '../js/haunts.js';
+
+
 
 const NUMBER = { term: 'How many days did it rain?', meaning: '40', answerType: 'number' };
 const BIG = { term: 'How many were sealed?', meaning: '144000', answerType: 'number' };
@@ -56,7 +63,6 @@ function reset() {
   state.battle.minigame = null;
   state.battle.wager = 0;
   state.battle.currentQuestion = NUMBER;
-  resetHaunts();
 }
 
 test('every minigame supports at least two modifiers, but Sum Lock (a box carries none) and the ship-only ones', () => {
@@ -336,17 +342,6 @@ test('Letter Pool tiers: every hidden one = X, the count = 2, LETTER_POOL_WEAK =
   assert.equal(letterPoolTier(pool, 1, 1), null);
 });
 
-test('a missed Letter Pool is no haunt', () => {
-  reset();
-  const q = { term: 'BOOKS: FORM 3.', meaning: 'Acts, Ruth', letterPool: { hidden: [] } };
-  assert.equal(recordHauntAnswer(q, false), null);
-  assert.equal(state.run.haunts.size, 0);
-  state.battle.currentQuestion = q;
-  const events = settleReload(false, { modifiers: [], energy: RELOAD_ENERGY[0] });
-  assert.deepEqual(events.map(e => e.type), ['jammed', 'noiseMade']);
-  assert.equal(events[0].expected, 'Acts, Ruth');
-});
-
 test('a reload pays one less energy at tier 1 (at least 1) and one more at X, but two modifiers always fill it', () => {
   const offer = (n) => ({ modifiers: [], energy: RELOAD_ENERGY[n] });
   reset();
@@ -601,18 +596,6 @@ test('a trapped box that rolls a minigame runs Sum Lock; nothing else can', () =
   state.settings.activeData = [SUMS[0], WORD];
   assert.notEqual(withRandom(0, () => rollMinigame(WORD, [])), 'sumLock', 'one number is not enough');
   state.battle.selectedTarget = null;
-});
-
-test('a wrong total makes no haunts: not the two questions, not the lock itself', () => {
-  reset();
-  state.settings.activeData = SUMS;
-  const lock = sumLockSetup();
-  const standIn = { term: 'LOCKED.', meaning: '41 (40 + 1)', sumLock: lock };
-  assert.equal(recordHauntAnswer(standIn, false), null);
-  state.battle.minigame = 'sumLock';
-  state.battle.currentQuestion = standIn;
-  endMinigame({ right: false, tier: null, given: '40', missed: [lock.first, lock.second] });
-  assert.equal(state.run.haunts.size, 0);
 });
 
 // ---- Fuel Mix (ship minigames plan step A) ----

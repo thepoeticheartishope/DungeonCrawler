@@ -180,70 +180,6 @@
     .ship-intro-line { opacity: 1; animation: none; }
   }
 
-  /* ---- Intro (js/introview.js): the chosen set's questions print down a
-     terminal, then the call. Full viewport, out of <main>'s column. The
-     glitch is in the typing's rhythm (stalls, gaps, dim lines, restarts),
-     never flashing or scrambling. ---- */
-  #introGlitch { position: fixed; inset: 0; z-index: 10000; background: #000; overflow: hidden; cursor: pointer; }
-  #introGlitch.show { display: block; }
-  .intro-log {
-    position: absolute;
-    inset: 0 0 34% 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    overflow: hidden;
-    padding: 0 18px;
-    font-family: var(--font);
-    font-size: calc(18px * var(--text-scale, 1));
-    line-height: 1.35;
-    color: rgba(var(--glow-rgb), 0.7);
-  }
-  .intro-line { flex-shrink: 0; min-height: 1.35em; padding-left: 1.1em; text-indent: -1.1em; }
-  .intro-line::before { content: '> '; opacity: 0.5; }
-  .intro-dim { opacity: 0.45; }
-  /* The fake player's answer: their own input, brighter, with a steady
-     (never blinking) cursor while it's typed; then the miss. */
-  .intro-answer { color: var(--text); padding-left: 2.2em; }
-  .intro-answer::before { content: ''; }
-  .intro-answer::after { content: '_'; opacity: 0.6; }
-  .intro-verdict { padding-left: 2.2em; color: var(--muted); }
-  .intro-verdict::before { content: ''; }
-  /* Everything typed fades away before the call. */
-  .intro-log { transition: opacity 1.2s ease; }
-  .intro-log.fading { opacity: 0; }
-  .intro-call {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 90%;
-    max-width: 460px;
-    transform: translate(-50%, -50%);
-    font-family: var(--font);
-    font-size: calc(32px * var(--text-scale, 1));
-    line-height: 1.2;
-    color: var(--torch-bright);
-    text-align: center;
-    text-shadow: var(--glow-strong);
-    opacity: 0;
-    transition: opacity 0.6s ease;
-  }
-  .intro-call.show { opacity: 1; }
-  .intro-skip {
-    position: absolute;
-    bottom: 16px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-family: var(--font);
-    font-size: calc(16px * var(--text-scale, 1));
-    color: var(--muted);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .intro-call, .intro-log { transition: none; }
-    .intro-log.fading { opacity: 0.25; }
-    .intro-call { top: 72%; }
-  }
   @keyframes glitchShift1 {
     0%, 100% { transform: translate(2px, 0); clip-path: inset(0 0 65% 0); opacity: 0.6; }
     50% { transform: translate(-2px, 1px); clip-path: inset(45% 0 15% 0); opacity: 0.4; }
@@ -264,355 +200,7 @@
     cursor: pointer;
   }
   .option-toggle[hidden] { display: none; }
-  /* DEV "Start in" (only with ?dev; devpanel.js): a test room instead of the run. */
-  .dev-start select {
-    font: inherit;
-    font-size: calc(16px * var(--text-scale, 1));
-    color: var(--text);
-    background: var(--stone-dark);
-    border: 1px solid var(--muted);
-  }
-  /* A drawn phosphor box instead of the browser's own checkbox widget. */
-  .option-toggle input {
-    appearance: none;
-    -webkit-appearance: none;
-    flex-shrink: 0;
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    border: 2px solid var(--text);
-    background: transparent;
-    box-shadow: 0 0 6px rgba(var(--glow-rgb), 0.35);
-    cursor: pointer;
-  }
-  .option-toggle input:checked {
-    background: var(--text);
-    box-shadow: inset 0 0 0 2px var(--stone-dark), 0 0 8px rgba(var(--glow-rgb), 0.5);
-  }
-  .option-toggle input:focus-visible { outline: 1px dashed var(--text); outline-offset: 3px; }
-
-  /* The player's name, asked once on the start screen. */
-  .name-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: calc(20px * var(--text-scale, 1));
-    color: var(--muted);
-    margin-bottom: 22px;
-  }
-
-  .loader { text-align: left; }
-  button.small {
-    display: block;
-    margin: 0;
-  }
-  /* The workshop's format notes: folded away until asked for. */
-  .loader-help { margin: 6px 0 10px; }
-  .loader-help summary {
-    cursor: pointer;
-    font-size: calc(18px * var(--text-scale, 1));
-    color: var(--muted);
-    min-height: 32px;
-  }
-  .loader-help summary:focus-visible { outline: 1px dashed var(--text); outline-offset: 3px; }
-
-  /* ---- Set screen: one row per set, picked to start the run ---- */
-  .set-list { display: flex; flex-direction: column; gap: 4px; margin: 10px 0 14px; }
-  .set-list .loader-section-label { margin: 10px 0 2px; }
-  .set-option {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    width: 100%;
-    text-align: left;
-    color: var(--text);
-    padding: 6px 8px;
-  }
-  .set-option::before, .set-option::after { content: none; }
-  .set-option .set-name { color: var(--torch-bright); text-transform: uppercase; }
-  .set-option .set-name::before { content: '> '; color: var(--muted); }
-  .set-option .set-last { color: var(--muted); text-transform: none; font-size: calc(16px * var(--text-scale, 1)); }
-  /* Minigame practice (js/practice.js). The title takes taps without
-     zooming or selecting text; the chosen minigame shows in inverse. */
-  header h1 { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
-  .practice-set { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin: 8px 0; }
-  .practice-set select { font: inherit; background: var(--stone-light); color: var(--torch-bright); border: 1px solid var(--line); padding: 2px 4px; }
-  .practice-games .set-option[aria-pressed="true"] { background: var(--torch-bright); }
-  .practice-games .set-option[aria-pressed="true"] .set-name,
-  .practice-games .set-option[aria-pressed="true"] .set-name::before { color: var(--ink); }
-  .practice-result { margin-top: 10px; min-height: 1.2em; }
-  .set-option .set-meta { color: var(--muted); font-size: calc(16px * var(--text-scale, 1)); line-height: 1.25; padding-left: 1.2em; }
-  .set-option:hover .set-name, .set-option:focus-visible .set-name,
-  .set-option:hover .set-name::before, .set-option:focus-visible .set-name::before,
-  .set-option:hover .set-meta, .set-option:focus-visible .set-meta,
-  .set-option:hover .set-last, .set-option:focus-visible .set-last { color: var(--ink); }
-  .pick-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-top: 10px; }
-  .pick-footer .pick-workshop { color: var(--muted); }
-  .loader-hint {
-    font-size: calc(18px * var(--text-scale, 1));
-    color: var(--muted);
-    line-height: 1.5;
-    margin: 0 0 10px;
-  }
-  .loader-hint code {
-    color: var(--torch-bright);
-    font-family: var(--font);
-  }
-  .loader input[type="file"] {
-    display: block;
-    width: 100%;
-    font-family: var(--font);
-    font-size: calc(18px * var(--text-scale, 1));
-    color: var(--muted);
-    margin-bottom: 10px;
-  }
-  /* The browser's own "Choose File" widget, redrawn as a terminal button. */
-  .loader input[type="file"]::file-selector-button {
-    font: inherit;
-    font-size: calc(20px * var(--text-scale, 1));
-    color: var(--torch-bright);
-    text-shadow: var(--glow);
-    background: transparent;
-    border: 1px solid var(--line);
-    border-radius: 0;
-    padding: 4px 10px;
-    margin-right: 10px;
-    cursor: pointer;
-  }
-  .loader input[type="file"]::file-selector-button:hover {
-    background: var(--text);
-    color: var(--ink);
-    text-shadow: none;
-  }
-  .loader textarea {
-    width: 100%;
-    background: var(--stone-dark);
-    border: 1px solid var(--line);
-    color: var(--text);
-    border-radius: 0;
-    padding: 10px;
-    font-family: var(--font);
-    font-size: calc(18px * var(--text-scale, 1));
-    resize: vertical;
-    margin-bottom: 10px;
-  }
-  .loader textarea:focus { outline: none; border-color: var(--torch); }
-  .loader-actions {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .loader-actions button { flex: 1; padding: 8px 10px; font-size: calc(18px * var(--text-scale, 1)); }
-  .loader-actions select,
-  .loader-actions input[type="text"] {
-    flex: 1;
-    background: var(--stone-dark);
-    border: 1px solid var(--line);
-    color: var(--text);
-    border-radius: 0;
-    padding: 8px 10px;
-    font-family: var(--font);
-    font-size: calc(18px * var(--text-scale, 1));
-    min-width: 0;
-  }
-  /* No native dropdown chrome: a plain phosphor field with a drawn "v"
-     caret (two gradient strokes) on the right. */
-  .loader-actions select {
-    appearance: none;
-    -webkit-appearance: none;
-    padding-right: 28px;
-    background-image:
-      linear-gradient(45deg, transparent 50%, var(--text) 50%),
-      linear-gradient(135deg, var(--text) 50%, transparent 50%);
-    background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%;
-    background-size: 5px 5px, 5px 5px;
-    background-repeat: no-repeat;
-  }
-  .loader-actions select:focus,
-  .loader-actions input[type="text"]:focus { outline: none; border-color: var(--torch); }
-  .loader-status { font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); line-height: 1.5; }
-  .loader-status .loader-ok { color: var(--hit); }
-  .loader-status .loader-error { color: var(--block); }
-  .loader-status .loader-error::before { content: '! '; }
-
-  .loader-section { margin-bottom: 14px; }
-  .loader-section-label {
-    font-size: calc(18px * var(--text-scale, 1));
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--muted);
-    margin-bottom: 6px;
-  }
-  .loader-divider {
-    border: none;
-    border-top: 1px solid var(--line);
-    margin: 14px 0;
-  }
-  .saved-sets { display: flex; flex-direction: column; gap: 6px; }
-  .saved-set-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--stone-dark);
-    border: 1px solid var(--line);
-    border-radius: 0;
-    padding: 6px 8px;
-    font-size: calc(18px * var(--text-scale, 1));
-  }
-  .saved-set-name { flex: 1; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .saved-set-count { color: var(--muted); font-size: calc(18px * var(--text-scale, 1)); }
-  .saved-set-row button {
-    padding: 4px 8px;
-    font-size: calc(18px * var(--text-scale, 1));
-  }
-  .saved-sets-empty { font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); font-style: italic; }
-
-  /* ---- Question data viewer ---- */
-  /* A listing wants more width than the 480px play column on desktop;
-     phones still get the full-width column. */
-  body.data-open main { max-width: 960px; }
-  .data-controls { margin-top: 4px; }
-  .data-controls button { flex: 0 0 auto; }
-  .data-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px 4px;
-    margin: 8px 0;
-  }
-  .data-filters button {
-    min-height: 0;
-    padding: 0 4px;
-    font-size: calc(18px * var(--text-scale, 1));
-    color: var(--muted);
-  }
-  .data-filters button[aria-pressed="true"] {
-    background: var(--text);
-    color: var(--ink);
-    text-shadow: none;
-    box-shadow: var(--inverse-glow);
-  }
-  .data-search { margin-bottom: 12px; }
-  .data-list { border-top: 1px solid var(--line); }
-  .data-row {
-    padding: 10px 0;
-    border-bottom: 1px solid var(--line);
-    font-size: calc(20px * var(--text-scale, 1));
-  }
-  .data-row[hidden] { display: none; }
-  .data-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 10px;
-    font-size: calc(18px * var(--text-scale, 1));
-    color: var(--muted);
-    text-transform: uppercase;
-  }
-  .data-num { color: var(--muted); }
-  /* The answer type is the thing being reviewed, so it's the one inverse
-     block on the line. */
-  .data-type {
-    color: var(--ink);
-    background: var(--text);
-    text-shadow: none;
-    padding: 0 6px;
-  }
-  .data-type.untyped { background: transparent; color: var(--muted); text-shadow: inherit; outline: 1px dashed var(--line); }
-  .data-draft { color: var(--torch-bright); }
-  .data-draft::before { content: '* '; }
-  /* Answer depends on one translation's wording; hover for why. */
-  .data-notfact { color: var(--torch-bright); outline: 1px dashed var(--line); padding: 0 4px; cursor: help; }
-  .data-q { color: var(--text); margin: 4px 0 2px; }
-  .data-a { color: var(--torch-bright); text-shadow: var(--glow-strong); }
-  .data-a::before { content: '=> '; color: var(--muted); text-shadow: var(--glow); }
-  .data-opts, .data-src { font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); }
-  .data-comment {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    margin-top: 6px;
-    font-size: calc(18px * var(--text-scale, 1));
-    color: var(--muted);
-  }
-  .data-comment::before { content: '#'; color: var(--torch); }
-  .data-comment textarea {
-    flex: 1;
-    min-width: 0;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--line);
-    border-radius: 0;
-    color: var(--torch-bright);
-    font-family: var(--font);
-    font-size: calc(18px * var(--text-scale, 1));
-    line-height: 1.25;
-    padding: 0 2px;
-    resize: none;
-    overflow: hidden;
-    text-shadow: inherit;
-  }
-  .data-comment textarea::placeholder { color: var(--muted); opacity: 0.6; }
-  .data-comment textarea:focus { outline: none; border-bottom-color: var(--torch); }
-  .data-row.has-comment .data-comment::before { color: var(--torch-bright); }
-  .data-empty { padding: 10px 0; font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); }
-  .data-export { margin-top: 14px; }
-
-  /* Terminal buttons are just bracketed text — [ ENTER ] — that flips to
-     inverse video when hovered or focused, not filled rounded pills. */
-  button {
-    font-family: var(--font);
-    font-weight: 400;
-    font-size: inherit;
-    line-height: inherit;
-    border-radius: 0;
-    border: none;
-    background: transparent;
-    color: var(--torch-bright);
-    text-shadow: inherit;
-    padding: 6px 8px;
-    min-height: 44px;
-    cursor: pointer;
-  }
-  button::before { content: '[ '; }
-  button::after { content: ' ]'; }
-  button:hover:not(:disabled), button:focus-visible:not(:disabled) {
-    background: var(--text);
-    color: var(--ink);
-    text-shadow: none;
-    box-shadow: var(--inverse-glow);
-    outline: none;
-  }
-  button:disabled { opacity: 0.4; cursor: default; }
-  button.ghost { color: var(--text); }
-
-  /* ---- Room screen ---- */
-  /* DEV (only with ?dev): a small tag in the bottom corner, its panel over
-     the screen, so testing never pushes the game down. */
-  .dev-dock[hidden] { display: none; }
-  .dev-dock {
-    position: fixed;
-    bottom: 4px;
-    left: 4px;
-    z-index: 9000;
-    font-size: calc(16px * var(--text-scale, 1));
-    display: flex;
-    flex-direction: column-reverse;
-    align-items: flex-start;
-  }
-  .dev-skip {
-    padding: 0 4px;
-    min-height: 0;
-    text-shadow: none;
-  }
   .dev-skip[hidden] { display: none; }
-  /* DEV test room tally (devpanel.js): one line over the DEV tag. */
-  .dev-tally {
-    padding: 0 4px;
-    font-size: calc(14px * var(--text-scale, 1));
-    color: var(--text);
-    background: var(--stone-dark);
-  }
-  .dev-tally[hidden] { display: none; }
   #devToggleBtn { opacity: 0.7; }
   .dev-panel {
     display: none;
@@ -707,15 +295,6 @@
     /* A finger dragged on the map aims the light (js/mapview.js
        onMapPointer), so the page mustn't scroll under it. */
     touch-action: none;
-  }
-
-  /* The static (js/staticview.js) lies over the map and lets taps through. */
-  .static-canvas {
-    position: absolute;
-    inset: 1px;
-    width: calc(100% - 2px);
-    height: calc(100% - 2px);
-    pointer-events: none;
   }
 
   /* The ask screen (js/gunpanels.js): a reload's offers and question, or
@@ -1132,29 +711,6 @@
   .answer-note.show { opacity: 1; transition: opacity 0.9s ease; }
   @media (prefers-reduced-motion: reduce) {
     .answer-note, .answer-note.show { transition: none; }
-  }
-
-  /* The NEXT meter in the status bar (Real time only, render.js
-     renderClock): an ink outline whose fill edge glides between the clock's
-     polls (REALTIME_POLL_MS, 100 ms), dim while the clock is paused. Under
-     reduced motion it steps in quarters with no glide. */
-  .clock-meter {
-    position: relative;
-    display: inline-block;
-    align-self: center;
-    width: 34px;
-    height: 8px;
-    border: 1px solid var(--ink);
-  }
-  .clock-fill {
-    position: absolute;
-    top: 0; bottom: 0; left: 0; width: 0;
-    background: var(--ink);
-    transition: left 100ms linear, width 100ms linear;
-  }
-  .clock-held .clock-meter { opacity: 0.4; }
-  @media (prefers-reduced-motion: reduce) {
-    .clock-fill { transition: none; }
   }
 
   /* ---- The d-pad and its buttons, one row under the map ---- */
@@ -1830,10 +1386,6 @@
   .choice-option:hover:not(:disabled) .letter,
   .choice-option:focus-visible:not(:disabled) .letter { color: var(--stone-dark); }
   .choice-option .choice-label { flex: 1; }
-  /* THE UNFOLDING's items: price on the right, why one isn't offered below it. */
-  .choice-option .exchange-price { color: var(--torch-bright); margin-left: 8px; }
-  .choice-option .exchange-why { display: block; color: var(--muted); text-transform: none; }
-  .exchange-note { min-height: 1.2em; }
 
   /* Brief glitch-in as a fight starts. */
   #battleScreen.glitch-in .terminal { animation: battleGlitchIn 0.32s steps(4, end); }
@@ -1961,32 +1513,19 @@
 </style>
 </head>
 <body>
-<!-- The intro before the first floor (js/introview.js): the set's
-     questions print down a terminal, then the call. Any key or tap skips. -->
-<div class="screen" id="introGlitch">
-  <div class="intro-log" id="introLog" aria-hidden="true"></div>
-  <div class="intro-call" id="introCall" role="status"></div>
-  <div class="intro-skip" data-t="intro.skip"></div>
-</div>
 <!-- DEV (js/devpanel.js): only with ?dev on the address. A small tag in
      the corner; its panel lies over the screen instead of pushing the game
      down. Outside <main>, so position: fixed is the screen's. -->
 <div class="dev-dock" id="devDock" hidden>
     <button type="button" class="dev-skip" id="devToggleBtn" title="Testing tools" aria-expanded="false">DEV</button>
-    <output class="dev-tally" id="devTallyOut" title="Testing only: what this test room's mechanic has done since it started" hidden></output>
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devBookPaperBtn" type="button" title="Testing only: the record book's page (the ask screen): dark, as the game has it, or cold paper or cream, to compare">Book paper: dark (dev)</button>
       <button class="dev-skip" id="devLightBatteryBtn" type="button" aria-pressed="true" title="Testing only: your light goes on and off (V) and runs on a 4-turn battery, or is always on, as before">Light battery: ON (dev)</button>
-      <button class="dev-skip" id="devNoiseBtn" type="button" aria-pressed="true" title="Testing only: mistakes make a sound that stick men hear and come to, through grates too, and hunting ones crawl the ducts; or mistakes are quiet and grates are just floor, as before">Noise: ON (dev)</button>
-      <button class="dev-skip" id="devStaticBtn" type="button" aria-pressed="true" title="Testing only: a faint grain grows over the map as the closest stick man nears, in place of &quot;I see you.&quot;; or no grain and &quot;I see you.&quot; as before">Static: ON (dev)</button>
       <button class="dev-skip" id="devWarningBtn" type="button" aria-pressed="false" title="Testing only: when a stick man reaches for you, the room log says how many seconds before he first showed (your light, a lamp, a window or his shadow); presence cues plan step D">Warning timer: OFF (dev)</button>
       <button class="dev-skip" id="devOneStickBtn" type="button" aria-pressed="true" title="Testing only: walk freely in real time (one stick plan, the default), or tile to tile in turns as with the start screen's Turns option">One stick: ON (dev)</button>
-      <button class="dev-skip" id="devShowDuctsBtn" type="button" aria-pressed="false" title="Testing only: stick men in a duct show dimly on the grate they will come out of, and every pair of grates is known">Show ducts: OFF (dev)</button>
-      <button class="dev-skip" id="devShowSpotsBtn" type="button" aria-pressed="false" title="Testing only: every room spot is marked with what it holds this run: H hide, T takedown, L lure, S scout, - nothing">Spots: OFF (dev)</button>
       <button class="dev-skip" id="devSteadyBtn" type="button" aria-pressed="true" title="Testing only: hold SELECT to steady a shot and let go to fire (no dial; the world keeps going). Off: the dial, as before. One stick only">Steady aim: ON (dev)</button>
       <button class="dev-skip" id="devDownedBtn" type="button" aria-pressed="true" title="Testing only: a shot that leaves a stick man on 1 HP knocks it down; it crawls at half speed, grabs your ankle if it reaches you, and walking into it finishes it. Off: it stays standing, as before">Downed: ON (dev)</button>
-      <button class="dev-skip" id="devGazeBtn" type="button" aria-pressed="true" title="Testing only: an eye over a stick man opens while your light is on it; after 3 seconds in total it steps closer">Gaze: ON (dev)</button>
       <button class="dev-skip" id="devMinigameBtn" type="button" title="Testing only: minigames roll as usual, never, or always (one picked), swapping in a question it fits">Minigame: roll (dev)</button>
       <output class="dev-skip" id="devFrameOut" title="Testing only: how long the map takes to draw, median and slowest of the last 120 frames drawn">Draw: - (dev)</output>
       <button class="dev-skip" id="devLookBtn" type="button" title="Testing only: every stick enemy shows the look picked here: the walker (3D moves), or one of the seven odd poses from before">Look: walker (dev)</button>
@@ -1994,7 +1533,6 @@
       <button class="dev-skip" id="devShotBtn" type="button" title="Testing only: fire at the book&#39;s target; a landed shot opens the dial over the map (fills empty energy, spends no turn)">Test shot (dev)</button>
       <button class="dev-skip" id="devReloadBtn" type="button" title="Testing only: the reload panel and its question over the map (spends no turn)">Test reload (dev)</button>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
-      <button class="dev-skip" id="devRestartTestBtn" type="button" title="Testing only: start the test room picked on the start screen over, as new">Restart test room (dev)</button>
       <button class="dev-skip" id="devAutoWinBtn" type="button" aria-pressed="false" title="Testing only: every encounter plays itself out with correct answers">Auto-win: OFF (dev)</button>
       <button class="dev-skip" id="devLearnRolesBtn" type="button" title="Testing only: learn every ship crew role at once (crew roles plan)">Learn all roles (dev)</button>
       <button class="dev-skip" id="devInspectBtn" type="button" aria-pressed="false" title="Testing only: show live game state and the last events">Inspect: OFF (dev)</button>
@@ -2009,8 +1547,8 @@
   </header>
 
   <!-- The HUD: two short lines while playing (stability, energy, target,
-       depth, goals as marks, the light's eye). A tap or Enter on it shows
-       the rest: time, myelin, cycle and the goals' names (main.js toggleHud). -->
+       depth, the light's eye). A tap or Enter on it shows
+       the rest: time, myelin and cycle (main.js toggleHud). -->
   <div class="stats" id="statsBar" role="button" tabindex="0" aria-expanded="false" data-t-title="hud.more">
     <!-- The ship (ship plan step C; render.js renderHud): only these show there. -->
     <div class="stat ship-stat"><span class="stat-label" data-t="stat.taught"></span><strong id="shipTaught">0/0</strong></div>
@@ -2033,18 +1571,12 @@
     <!-- The gun (gun plan step 6), only with DEV -> Combat on gun (render.js renderHud). -->
     <div class="stat" id="energyStat" hidden><span class="stat-label" data-t="stat.energy"></span><strong id="energyCount"></strong></div>
     <div class="stat" id="gunTargetStat" hidden><span class="stat-label" data-t="stat.target"></span><strong id="gunTarget"></strong></div>
-    <!-- Real time only (gun plan step 8): when the world next moves (render.js renderClock). -->
-    <div class="stat" id="clockStat" hidden><span class="stat-label" data-t="stat.clock"></span><span class="clock-meter"><span class="clock-fill" id="clockFill"></span></span></div>
     <div class="stat"><span class="stat-label" data-t="stat.room"></span><strong id="roomNum">0</strong><span id="roomOf">/<strong id="roomTotal">0</strong></span></div>
-    <!-- The floor's goals (strategy plan step A; render.js renderGoals), hidden on a floor with none:
-         marks only, the names with the rest of the HUD. -->
     <!-- Keys held of the floor's (locked core plan; render.js renderHud), hidden on a rest floor. -->
     <div class="stat" id="keysStat" hidden><span class="stat-label" data-t="stat.keys"></span><strong id="keysText"></strong></div>
-    <div class="stat" id="goalsStat" hidden><span class="stat-label" data-t="stat.goals"></span><strong id="goalsText"></strong></div>
     <div class="stat stat-more"><span class="stat-label" data-t="stat.time"></span><strong id="timer">0:00</strong></div>
     <div class="stat stat-more"><span class="stat-label" data-t="stat.gold"></span><strong id="coinsTotal">0</strong></div>
     <div class="stat stat-more"><span class="stat-label" data-t="stat.turn"></span><strong id="turnCount">0</strong></div>
-    <div class="stat stat-more stat-full-line" id="goalNames"></div>
   </div>
 
   <!-- Start screen -->
@@ -2060,53 +1592,16 @@
     </label>
 
     <label class="option-toggle">
-      <input type="checkbox" id="turnsToggle">
-      <span data-t="start.turns"></span>
-    </label>
-
-    <label class="option-toggle" id="realTimeOption">
-      <input type="checkbox" id="realTimeToggle">
-      <span data-t="start.realTime"></span>
-    </label>
-
-    <label class="option-toggle">
       <input type="checkbox" id="dpadRightToggle">
       <span data-t="start.dpadRight"></span>
     </label>
 
-    <!-- Comfort mode and the tutorial belong to the DEPRECATED dungeon crawl,
-         so like the Ship box they show only under ?dev (devpanel.js;
-         Timothy 2026-11-01). -->
+    <!-- Comfort mode belongs to the old dungeon crawl: hidden, and gone in
+         dungeon removal step D. -->
     <label class="option-toggle" id="comfortStartRow" hidden>
       <input type="checkbox" id="simpleEnemiesToggle">
       <span data-t="start.simpleEnemies"></span>
     </label>
-
-    <label class="option-toggle" id="tutorialStartRow" hidden>
-      <input type="checkbox" id="tutorialToggle" checked>
-      <span data-t="start.tutorial"></span>
-    </label>
-
-    <!-- The ship is the game (Timothy 2026-11-01): always checked, and the
-         row shows only under ?dev (devpanel.js), where unchecking it starts
-         the old dungeon crawl instead. The dungeon is DEPRECATED: its code
-         stays, but nothing new is built for it (CLAUDE.md). -->
-    <label class="option-toggle" id="shipStartRow" hidden>
-      <input type="checkbox" id="shipToggle" checked>
-      <span data-t="start.ship"></span>
-    </label>
-
-    <!-- DEV (js/devpanel.js shows it only with ?dev): start in a test room
-         (js/testroom.js) instead of the run, to try one mechanic at a time.
-         devpanel.js adds one option per room. -->
-    <label class="option-toggle dev-start" id="devStartRow" hidden>
-      <span>Start in (dev)</span>
-      <select id="devStartIn">
-        <option value="">The run</option>
-      </select>
-    </label>
-
-
 
     <button id="startBtn" data-t="start.enter"></button>
   </section>
@@ -2261,8 +1756,6 @@
     <div class="grid-wrap" id="mapWrap">
       <!-- The map (js/mapview.js). Glyphs come from text.js term.*.symbol. -->
       <canvas class="map-canvas" id="mapCanvas" aria-hidden="true"></canvas>
-      <!-- The static (js/staticview.js): a thin grain as the closest stick man nears. -->
-      <canvas class="static-canvas" id="staticCanvas" aria-hidden="true"></canvas>
       <!-- Edge glows pointing at an off-screen boss (render.js renderLightHint). -->
       <div class="light-hint light-hint-n" id="lightHintN" aria-hidden="true"></div>
       <div class="light-hint light-hint-s" id="lightHintS" aria-hidden="true"></div>
@@ -2452,22 +1945,6 @@
 
         <div class="end-panel" id="endPanel" hidden>
           <button type="button" id="continueBtn" data-t="battle.continue"></button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- THE UNFOLDING (js/exchangeview.js): trading myelin on a rest floor. -->
-  <section class="screen" id="exchangeScreen">
-    <div class="terminal">
-      <div class="rule"><span data-t="exchange.title"></span></div>
-      <div class="terminal-body">
-        <div class="term-line" data-t="exchange.look"></div>
-        <div class="term-line" id="exchangeHeld"></div>
-        <div class="choice-list" id="exchangeItems"></div>
-        <div class="term-line exchange-note" id="exchangeNote" aria-live="polite"></div>
-        <div class="end-panel">
-          <button type="button" id="exchangeLeaveBtn" data-t="exchange.leave"></button>
         </div>
       </div>
     </div>

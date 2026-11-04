@@ -12,12 +12,8 @@ import { listSavedSets, saveSet, deleteSet } from './sets.js';
 import { t } from './text.js';
 
 const revealToggle = document.getElementById('revealToggle');
-const realTimeToggle = document.getElementById('realTimeToggle');
-const turnsToggle = document.getElementById('turnsToggle');
-const realTimeOption = document.getElementById('realTimeOption');
 const dpadRightToggle = document.getElementById('dpadRightToggle');
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
-const tutorialToggle = document.getElementById('tutorialToggle');
 const roomControls = document.querySelector('.room-controls');
 const playerNameInput = document.getElementById('playerName');
 const workshopScreen = document.getElementById('workshopScreen');
@@ -34,7 +30,7 @@ const savedSetsList = document.getElementById('savedSetsList');
 // Wires the start screen options and the workshop. `showSets` returns to
 // the set screen (setpicker.js), which lists what the workshop made.
 export function initSetLoader({ showSets }) {
-  // ---- Remember the reveal, real-time, swap-sides and simple-enemies toggles and the player's name across sessions ----
+  // ---- Remember the reveal, swap-sides and simple-enemies toggles and the player's name across sessions ----
   // localStorage access is wrapped in try/catch — private browsing or disabled
   // storage should degrade to "just use the checkbox defaults" rather than
   // break the start screen.
@@ -53,22 +49,13 @@ export function initSetLoader({ showSets }) {
     try {
       localStorage.setItem(OPTION_STORAGE_KEY, JSON.stringify({
         revealOnWrong: revealToggle.checked,
-        realTime: realTimeToggle.checked,
-        turns: turnsToggle.checked,
         dpadRight: dpadRightToggle.checked,
         simpleEnemies: simpleEnemiesToggle.checked,
-        tutorial: tutorialToggle.checked,
         playerName: playerNameInput.value,
       }));
     } catch (e) {
       // Storage unavailable — the checkboxes still work for this session.
     }
-  }
-
-  // Real time is a choice only in turns (one stick plan step G): the
-  // default, one stick, is real time already.
-  function showRealTimeOption() {
-    realTimeOption.hidden = !turnsToggle.checked;
   }
 
   // Puts the d-pad on the side the swap-sides toggle asks for: right
@@ -80,23 +67,14 @@ export function initSetLoader({ showSets }) {
 
   const savedOptions = loadSavedOptions();
   if (typeof savedOptions.revealOnWrong === 'boolean') revealToggle.checked = savedOptions.revealOnWrong;
-  if (typeof savedOptions.realTime === 'boolean') realTimeToggle.checked = savedOptions.realTime;
-  if (typeof savedOptions.turns === 'boolean') turnsToggle.checked = savedOptions.turns;
-  showRealTimeOption();
   if (typeof savedOptions.dpadRight === 'boolean') dpadRightToggle.checked = savedOptions.dpadRight;
   if (typeof savedOptions.simpleEnemies === 'boolean') simpleEnemiesToggle.checked = savedOptions.simpleEnemies;
-  // On until a tutorial is finished (main.js switches it off then), so a
-  // player who has never played gets one.
-  if (typeof savedOptions.tutorial === 'boolean') tutorialToggle.checked = savedOptions.tutorial;
   placeDpad();
   playerNameInput.maxLength = PLAYER_NAME_MAX_LENGTH;
   if (typeof savedOptions.playerName === 'string') playerNameInput.value = savedOptions.playerName.slice(0, PLAYER_NAME_MAX_LENGTH);
 
   revealToggle.addEventListener('change', saveOptions);
-  realTimeToggle.addEventListener('change', saveOptions);
-  turnsToggle.addEventListener('change', () => { showRealTimeOption(); saveOptions(); });
   simpleEnemiesToggle.addEventListener('change', saveOptions);
-  tutorialToggle.addEventListener('change', saveOptions);
   dpadRightToggle.addEventListener('change', () => { placeDpad(); saveOptions(); });
   playerNameInput.addEventListener('input', saveOptions);
 

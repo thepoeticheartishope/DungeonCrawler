@@ -4,14 +4,19 @@
 // Run: node --test tests/*.test.mjs
 
 import { test } from 'node:test';
+
 import assert from 'node:assert/strict';
 
 import { FOUR_STEPS } from '../js/grid.js';
+
 import { key } from '../js/state.js';
+
 import { CORE_KEYS } from '../js/config.js';
+
 import { FLOOR_PLANS, PLAN_VERSIONS, buildPlanLayout } from '../js/plans.js';
-import { FLOOR_RECIPES } from '../js/floors.js';
+
 import { TEXT } from '../js/text.js';
+
 
 
 // Steps from `start` to every open tile it can reach on a size x size
@@ -58,10 +63,6 @@ test('the ship has no version walls: both versions are the same', () => {
   const plan = FLOOR_PLANS.ship;
   const [a, b] = PLAN_VERSIONS.map(v => buildPlanLayout(plan, CORE_KEYS, v));
   assert.deepEqual([...a.walls].sort(), [...b.walls].sort());
-});
-
-test('every recipe\'s plan exists', () => {
-  FLOOR_RECIPES.forEach(r => { if (r.plan) assert.ok(FLOOR_PLANS[r.plan], r.plan); });
 });
 
 test('the start reaches every open tile, and the stairs only through the gate', () => {

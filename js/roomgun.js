@@ -12,7 +12,7 @@
 import { state } from './state.js';
 import { ROOM_VIEW, ANSWER_RING, ENEMY_LIGHT, MAP_ANIMATION_MS, MINION_KINDS } from './config.js';
 import {
-  inReach, liveTarget, lastShot, darkRingAt, answerRingLetters, ENEMY_KINDS, POSE_SCALE, REACH_FILL,
+  inReach, liveTarget, lastShot, answerRingLetters, ENEMY_KINDS, POSE_SCALE, REACH_FILL,
   BRACKET_ARM, BRACKET_HALF, BRACKET_LEVEL, BRACKET_PULSE, BRACKET_TEXT_SIZE, BRACKET_HP_GAP, LASER_LEVEL,
   SHOT_RING, MISS_TEXT_SIZE, MISS_RISE, ISO_STICK_HEIGHT, STEADY_OPEN, STEADY_MARK, STEADY_SHAKE,
   STEADY_TEXT_SIZE,
@@ -404,31 +404,5 @@ export function drawAnswerRing(ctx, ring, near) {
   });
   ctx.restore();
   if (!look.still) look.keepMoving();
-}
-
-// The tutorial's ring of dark (tutorial.js stage 'ring'): words in the
-// stick men's cold light circling the player at the edge of their small
-// light; when the light breaks it they scatter outward and fade (still
-// under reduced motion and in Comfort mode, and simply gone when it breaks).
-export function drawDarkRing(ctx) {
-  const ring = darkRingAt(look.now, look.still);
-  if (!ring) return;
-  if (ring.moving) look.keepMoving();
-  const tw = T * scale;
-  const [px, py] = [((look.walkAt.col + 0.5) * T - frame.ox) * scale, ((look.walkAt.row + 0.5) * T - frame.oy) * scale];
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.globalAlpha = ring.level;
-  ctx.fillStyle = 'rgb(' + ENEMY_LIGHT.core + ')';
-  ctx.shadowColor = 'rgba(' + ENEMY_LIGHT.halo + ', 0.6)';
-  const size = tw * DARK_RING.size;
-  ctx.font = Math.round(size) + 'px VT323, monospace';
-  ctx.shadowBlur = size * 0.5;
-  ring.words.forEach((word, i) => {
-    const angle = ring.angles[i];
-    ctx.fillText(word, px + ring.radius * Math.sin(angle) * tw, py + ring.radius * Math.cos(angle) * tw - DARK_RING.lift * tw);
-  });
-  ctx.restore();
 }
 

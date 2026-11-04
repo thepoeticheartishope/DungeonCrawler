@@ -8,26 +8,35 @@
 // the outcome.
 
 import { test } from 'node:test';
+
 import assert from 'node:assert/strict';
 
 import { emptyFloor, gunRun, minionAt, withRandom } from './helpers.mjs';
+
 import { state, key } from '../js/state.js';
+
 import {
   ENERGY_MAX, RELOAD_ENERGY, MATCH_KILL_SCALE, MINION_KINDS, DIAL_DEPTHS, DIAL_ZONE_GAP, DIAL_LAP_MS, DIAL_LAP_LIMIT_MS,
   HARM_KINDS, GUARD_STUN_MOVES, MINION_STRIKE_COST, MINION_STUN_MOVES,
   DARK_MISS_COST, DARK_GOLD_MULTIPLIER, HUNTER_REST_TURNS, MAX_HEARTS, STRUGGLE_PUSHBACK,
   STRUGGLE_ZONE_WIDTH, STRUGGLE_LAP_MS, STRUGGLE_SPEEDUP_MS, STRUGGLE_SHRINK, STRUGGLE_MIN_WIDTH,
 } from '../js/config.js';
+
 import { computeVisibility, seesEnemy } from '../js/sight.js';
+
 import { advanceMonsters, findAdjacentEnemies } from '../js/combat.js';
+
 import { stepPlayer } from '../js/moves.js';
+
 import { whatBlocks } from '../js/passage.js';
-import { buildFloor } from '../js/floor.js';
+
 import { aimLook } from '../js/look.js';
+
 import {
   reloadCategory, reloadOffers, settleReload, pickTarget, refreshGunTarget, cycleTarget, fireBlock, fire, readyShot, cancelShot, settleShot,
   minionStrike, staggerHunter, readyStruggle, settleStruggle, dialZones, rollWeaknesses, addRounds, weaknessOf,
 } from '../js/gun.js';
+
 
 // These are the turn game's rules (the start screen's Turns option): One
 // stick, the default since one stick plan step G, has its own tests.
@@ -94,14 +103,13 @@ test('a right two-modifier reload fills empty energy', () => {
   assert.equal(state.run.energy, ENERGY_MAX);
 });
 
-test('a wrong reload jams: nothing loads, no heart is lost, the miss haunts', () => {
+test('a wrong reload jams: nothing loads, no heart is lost', () => {
   resetFloor();
   const events = settleReload(false, { modifiers: [], energy: 1 });
   assert.equal(state.run.energy, 1);
   assert.equal(state.run.hearts, MAX_HEARTS);
   assert.equal(events[0].type, 'jammed');
   assert.equal(events[0].expected, 'Noah');
-  assert.ok(state.run.haunts.has(SET[0]));
 });
 
 test('a reload from an energy cell uses the drum up, right or wrong', () => {
@@ -460,16 +468,6 @@ test('a jam zone loses one more round, and nothing else', () => {
   assert.equal(state.run.energy, 0);
 });
 
-test('a loud zone makes a noise', () => {
-  resetFloor();
-  const m = minionAt(-1, 0, 'SHARD');
-  aimAt(m);
-  const events = settleShot(harmZone('loud'));
-  assert.deepEqual(events[0], { type: 'shotLoud', minion: m });
-  assert.equal(events[1].type, 'noiseMade', 'loud (noise.js)');
-  assert.equal(events[1].kind, 'loud');
-});
-
 test('a lunge zone brings it one step closer at once; next to the player, it strikes', () => {
   resetFloor();
   const m = minionAt(-3, 0, 'SHARD');
@@ -709,7 +707,7 @@ test('a Struggle lost outside the zone is a strike', () => {
   const { from, to } = state.battle.struggle.zone;
   const outside = from > 0.05 ? from / 2 : (to + 1) / 2;
   const events = settleStruggle(outside);
-  assert.deepEqual(events.slice(0, 3).map(e => e.type), ['struggleLost', 'noiseMade', 'minionStruck']);
+  assert.deepEqual(events.slice(0, 2).map(e => e.type), ['struggleLost', 'minionStruck']);
   assert.equal(state.run.hearts, MAX_HEARTS - MINION_STRIKE_COST);
 });
 
@@ -730,15 +728,6 @@ test('each Struggle on a floor is faster with a smaller zone, never past the spe
   assert.ok(Math.abs(width(dials[9]) - STRUGGLE_MIN_WIDTH) < 1e-9);
   assert.equal(dials[9].lapMs, DIAL_LAP_LIMIT_MS);
   dials.forEach(d => assert.ok(d.zone.from >= 0 && d.zone.to <= 1));
-});
-
-test('a new floor resets the Struggle count', () => {
-  struggleSetUp();
-  advanceMonsters();
-  advanceMonsters();
-  assert.ok(state.floor.struggles > 0);
-  buildFloor();
-  assert.equal(state.floor.struggles, 0);
 });
 
 test('only the first minion to reach an empty-handed player struggles; others strike', () => {

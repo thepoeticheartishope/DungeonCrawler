@@ -1,4 +1,4 @@
-// Settling an answer on the battle screen: hearts, haunts, the Gambler
+// Settling an answer on the battle screen: hearts, the Gambler
 // wager, then what the answer does to the target (boss HP, a spent chest
 // or box).
 // Changes state and returns an events list in the order things happened
@@ -7,9 +7,9 @@
 
 import { state } from './state.js';
 import { DARK_MISS_COST, MINIGAME_TIER_PAY } from './config.js';
-import { recordHauntAnswer } from './haunts.js';
+
 import { sealGate, breakGate } from './gate.js';
-import { makeNoise } from './noise.js';
+
 import { goldReward, openBox } from './moves.js';
 
 // One answer to the current question against state.battle.selectedTarget. The
@@ -42,9 +42,6 @@ export function settleAnswer(isCorrect, hadExtraSpace, given, tier = '2') {
     state.floor.misses++;
     events.push({ type: 'rejected', cost, expected: q.meaning, source: q.source, at: { row: target.row, col: target.col }, boss: target.kind === 'boss' });
   }
-  const haunt = recordHauntAnswer(q, isCorrect);
-  if (haunt === 'silenced') events.push({ type: 'hauntSilenced' });
-  else if (haunt === 'lingers') events.push({ type: 'hauntLingers' });
   const wager = settleWager(isCorrect);
   if (wager) events.push(wager);
 
@@ -72,11 +69,10 @@ function settleWager(isCorrect) {
 // plain answer; bossHit) and the caller asks the next, until it falls
 // (gate.js breakGate: bossDefeated, then darknessFell). A miss ends the
 // fight: the gate seals until the next key and the light gains turns
-// (bossHeld, then gate.js sealGate's gateSealed), and the gate booms
-// (noise.js makeNoise).
+// (bossHeld, then gate.js sealGate's gateSealed).
 function resolveBossAnswer(isCorrect, pay) {
   const boss = state.floor.boss;
-  if (!isCorrect) return [{ type: 'bossHeld' }, sealGate(), ...makeNoise('gate')];
+  if (!isCorrect) return [{ type: 'bossHeld' }, sealGate()];
   boss.hp = Math.max(0, boss.hp - pay.bossDamage);
   if (boss.hp > 0) return [{ type: 'bossHit', hp: boss.hp, max: boss.max }];
   return breakGate();

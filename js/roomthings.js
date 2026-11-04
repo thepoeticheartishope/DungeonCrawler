@@ -9,7 +9,7 @@
 // (drawThingsWith). Reads state and never changes it.
 
 import { state, key, parseKey } from './state.js';
-import { liveSpotAt } from './spots.js';
+
 import { crewLook, crewHeadLook } from './roles.js';
 import { figurePose, turnFigure, projectFigure, phiToward } from './figure3d.js';
 import { emberGlow } from './playerform.js';
@@ -17,8 +17,8 @@ import {
   ROOM_VIEW, LAMP_LIGHT, MAP_ANIMATION_MS, SAFE_ROOM, ENEMY_LIGHT, PLAYER_EMBER, FIGURE3D, CREW_LOOK, SHIP_ROLES,
 } from './config.js';
 import {
-  searched, isWall, grain, DESK_GLOW, DESK_GLOW_RADIUS, DRUM_BREATH, DRUM_BREATH_REACH, GRATE_RATTLE_SWAYS,
-  SOUND_INSET, SOUND_LEVEL, STAIR_BEAM_FADE, STAIR_BEAM_LAYERS,
+  searched, isWall, grain, DESK_GLOW, DESK_GLOW_RADIUS, DRUM_BREATH, DRUM_BREATH_REACH,
+  STAIR_BEAM_FADE, STAIR_BEAM_LAYERS,
 } from './mapshared.js';
 
 const T = ROOM_VIEW.tilePx;
@@ -34,10 +34,8 @@ export const POOL = { level: 0.85, rgb: '255, 196, 132', bars: 'rgb(150, 130, 12
 const CRATE = { top: '#86663f', front: '#6b4f36', plank: '#4a3524', post: '#55402b', inside: '#1c140e' };
 const CELL = { body: '#3b4650', light: '#4d5a66', shade: '#2c353d', band: '#262d34', lid: '#5a6874', dead: '#1a1e22' };
 const SHEET = { fresh: '#d2cbbb', read: '#a8a294', ink: '#8a8476' };
-const GRATE = { frame: '#2a2e32', edge: '#5d656c', bar: '#50575d', seal: '#8b939a', sway: 2 }; // sway: how far it shudders, in picture pixels
 const DESK = { top: '#6e4d33', front: '#523a27', frame: '#4a3a30', glass: '#8fa3ad', shine: '#c9d6dc', dull: '#3a4448' };
 const CHARGER_ART = { body: '#3e4650', edge: '#56606b', shade: '#2b3138', window: '#1c2126', lit: '#e9c48a', cable: '#22272c', plug: '#6a737c' };
-const RELAY = { body: '#4a5058', seam: '#33383e', dead: '#2a2e32', leg: '#2e3236' };
 // The ship's stations (ship plan step B): grey metal like the hull, a dark
 // screen, its light cool once a role is trained or warm while it waits,
 // and the crew's plain white figure, a touch dimmer than the player's (grey
@@ -96,28 +94,6 @@ function drawPaper(thing, x, y) {
   bctx.fillStyle = SHEET.ink;
   bctx.fillRect(x + 5, y + 8, 5, 1);
   bctx.fillRect(x + 5, y + 10, 4, 1);
-}
-
-// A grate in the floor (vents.js): a dark frame with bars, shuddering side
-// to side while something moves in the duct, crossed out when sealed.
-function drawGrate(thing, x, y) {
-  const r = thing.look.rattle;
-  const dx = r === null || r === undefined ? 0 : Math.round(Math.sin(r * Math.PI * GRATE_RATTLE_SWAYS * 2) * (1 - r) * GRATE.sway);
-  const gx = x + dx;
-  bctx.fillStyle = GRATE.frame;
-  bctx.fillRect(gx + 2, y + 3, 12, 10);
-  bctx.fillStyle = '#000';
-  bctx.fillRect(gx + 3, y + 4, 10, 8);
-  bctx.fillStyle = GRATE.edge;
-  bctx.fillRect(gx + 2, y + 3, 12, 1);
-  bctx.fillStyle = GRATE.bar;
-  [5, 8, 11].forEach(bx => bctx.fillRect(gx + bx, y + 4, 1, 8));
-  if (!thing.look.sealed) return;
-  bctx.fillStyle = GRATE.seal;
-  for (let i = 0; i < 8; i++) {
-    bctx.fillRect(gx + 3 + Math.round(i * 10 / 8), y + 4 + i, 1, 1);
-    bctx.fillRect(gx + 12 - Math.round(i * 10 / 8), y + 4 + i, 1, 1);
-  }
 }
 
 // The stairs down: steps sinking into the floor, darker each one, and the
@@ -259,26 +235,6 @@ function drawCharger(thing, x, y, glows) {
     bctx.fillRect(x + 7, y - 1, 2, 8);
     const a = (DESK_GLOW[0] + (DESK_GLOW[1] - DESK_GLOW[0]) * thing.look.deskGlow) * (thing.look.alpha === undefined ? 1 : thing.look.alpha);
     halo(x + T / 2, y + 3, DESK_GLOW_RADIUS * T * 0.8, look.colours.kindRgb, a);
-  });
-}
-
-// A relay (relays.js): a grey box on short legs with a small lamp, lit
-// until it is used.
-function drawRelay(thing, x, y, glows) {
-  bctx.fillStyle = RELAY.leg;
-  bctx.fillRect(x + 4, y + 13, 1, 2);
-  bctx.fillRect(x + 11, y + 13, 1, 2);
-  bctx.fillStyle = RELAY.body;
-  bctx.fillRect(x + 3, y + 3, 10, 10);
-  bctx.fillStyle = RELAY.seam;
-  bctx.fillRect(x + 8, y + 4, 1, 8);
-  bctx.fillRect(x + 3, y + 3, 10, 1);
-  bctx.fillStyle = RELAY.dead;
-  bctx.fillRect(x + 10, y + 5, 2, 2);
-  if (searched(thing.tile)) return;
-  glows.push(() => {
-    bctx.fillStyle = 'rgb(' + look.colours.glowRgb + ')';
-    bctx.fillRect(x + 10, y + 5, 2, 2);
   });
 }
 
@@ -659,19 +615,6 @@ export function drawMist(c0, r0, c1, r1, ox, oy) {
   }
 }
 
-// A mistake's sound spreading over the floor (mapview.js soundOnMap): a
-// square outline on each tile it reaches, opening out and fading.
-export function drawSounds(ox, oy) {
-  look.sounds.forEach(({ row, col, strength, spread }) => {
-    const inset = Math.round((SOUND_INSET[0] + (SOUND_INSET[1] - SOUND_INSET[0]) * spread) * T);
-    const x = col * T - ox + inset, y = row * T - oy + inset, w = T - inset * 2;
-    if (w < 1) return;
-    bctx.strokeStyle = 'rgba(' + look.colours.glowRgb + ', ' + SOUND_LEVEL * strength + ')';
-    bctx.lineWidth = 1;
-    bctx.strokeRect(x + 0.5, y + 0.5, w - 1, w - 1);
-  });
-}
-
 // A soft round glow of `rgb` at (x, y) in picture pixels, `r` across, `a`
 // strong in the middle.
 function halo(x, y, r, rgb, a) {
@@ -682,9 +625,9 @@ function halo(x, y, r, rgb, a) {
   bctx.fillRect(x - r, y - r, r * 2, r * 2);
 }
 
-export const FLAT = { paper: drawPaper, vent: drawGrate, stairs: drawStairs };
+export const FLAT = { paper: drawPaper, stairs: drawStairs };
 export const STAND = {
-  box: drawBox, furniture: drawFurniture, cell: drawCell, desk: drawDesk, charger: drawCharger, relay: drawRelay, chest: drawChest, coin: drawCoin, key: drawKey,
+  box: drawBox, furniture: drawFurniture, cell: drawCell, desk: drawDesk, charger: drawCharger, chest: drawChest, coin: drawCoin, key: drawKey,
   shutter: drawShutter, switch: drawSwitch, console: drawConsole, powerBoard: drawPowerBoard, crew: drawCrew,
 };
 
@@ -702,109 +645,13 @@ const STALL = { door: '#5b6b73', edge: '#6f8089', gap: '#1c2124' };
 const SOFA = { back: '#5a3b3e', seat: '#6b474a', arm: '#4a3033' };
 const EASEL = { leg: '#5a3f29', board: '#b9ab8e', frame: '#8a7a5e' };
 
-// Draws furniture prop `thing` on its tile at (x, y), with its tell over
-// it when it is a live room spot (room spots plan, spots.js).
+// Draws furniture prop `thing` on its tile at (x, y).
 function drawFurniture(thing, x, y) {
   const { piece, part } = thing.at;
   const left = part === 'single' || part === 'left';
   const right = part === 'single' || part === 'right';
-  if (thing.at.fallen) {
-    drawFallenShelf(x, y, left, right, thing.at);
-    return;
-  }
   (PIECES[piece] || PIECES.table)(x, y, left, right, thing.at);
-  const here = s => s && s.row === thing.at.row && s.col === thing.at.col;
-  const hide = liveSpotAt(thing.at.row, thing.at.col, 'hide');
-  if (here(hide) && HIDE_TELLS[piece]) HIDE_TELLS[piece](x, y);
-  const takedown = liveSpotAt(thing.at.row, thing.at.col, 'takedown');
-  if (here(takedown) && piece === 'shelf') drawShelfLeaning(x, y);
-  const lure = liveSpotAt(thing.at.row, thing.at.col, 'lure');
-  if (here(lure) && piece === 'sink') drawSinkDripping(x, y);
 }
-
-// A live lure's tell (room spots plan step D): the sink's tap drips, a
-// bead under it and a wet patch on the floor below. Still, not animated
-// (slow and quiet on the eye, Timothy).
-function drawSinkDripping(x, y) {
-  bctx.fillStyle = PORCELAIN.drop;
-  bctx.fillRect(x + 8, y + 4, 1, 2);
-  bctx.fillStyle = PORCELAIN.wet;
-  bctx.fillRect(x + 3, y + 15, 9, 1);
-  bctx.fillRect(x + 5, y + 14, 5, 1);
-}
-
-// A live takedown's tell (room spots plan step C): the bookcase leans a
-// little off the wall, its top showing a dark gap, and books slide off its
-// shelves.
-function drawShelfLeaning(x, y) {
-  const top = y - 12;
-  bctx.fillStyle = CRATE.inside;
-  bctx.fillRect(x, top - 2, T, 2);
-  bctx.fillStyle = BOOKS[0];
-  bctx.fillRect(x + 4, top + 8, 5, 2);
-  bctx.fillStyle = BOOKS[2];
-  bctx.fillRect(x + 10, top + 14, 2, 5);
-  bctx.fillRect(x + 11, top + 13, 2, 1);
-}
-
-// A bookcase that was pushed over (spots.js topple), lying on its face
-// across the tile it fell onto, books spilled round it. `at.fallen` is
-// the way it fell (1 toward the camera, -1 away).
-function drawFallenShelf(x, y, left, right, at) {
-  const x0 = x + (left ? 1 : 0), x1 = x + (right ? T - 1 : T);
-  bctx.fillStyle = WOODWORK.dark;
-  bctx.fillRect(x0, y + 4, x1 - x0, 9);
-  bctx.fillStyle = WOODWORK.front;
-  bctx.fillRect(x0, y + 4, x1 - x0, 1);
-  bctx.fillRect(x0, y + 8, x1 - x0, 1);
-  bctx.fillStyle = WOODWORK.leg;
-  bctx.fillRect(x0, y + 12, x1 - x0, 1);
-  if (left) bctx.fillRect(x0, y + 4, 1, 9);
-  if (right) bctx.fillRect(x1 - 1, y + 4, 1, 9);
-  // Spilled books, the same every time for the same tile.
-  for (let k = 0; k < 3; k++) {
-    const bx = x + 1 + Math.floor(grain(at.row, at.col, k + 200) * 12);
-    const by = y + (grain(at.row, at.col, k + 210) > 0.5 ? 13 : 1) + Math.floor(grain(at.row, at.col, k + 220) * 2);
-    bctx.fillStyle = BOOKS[Math.floor(grain(at.row, at.col, k + 230) * BOOKS.length)];
-    bctx.fillRect(bx, by, 3, 2);
-  }
-}
-
-// A live hide spot's tell (Timothy 2026-10-28: a live spot can be told
-// from an empty one, so the player can plan): a little something left
-// open, drawn over the piece on the spot's own tile.
-const HIDE_TELLS = {
-  // The stall's door left ajar: the dark of the inside down its edge.
-  stall(x, y) {
-    bctx.fillStyle = STALL.gap;
-    bctx.fillRect(x + 12, y - 9, 3, 22);
-    bctx.fillStyle = STALL.edge;
-    bctx.fillRect(x + 11, y - 9, 1, 22);
-  },
-  // The teacher's desk's knee-hole open and dark, its chair pushed away.
-  teacher(x, y) {
-    bctx.fillStyle = CRATE.inside;
-    bctx.fillRect(x + 5, y + 10, 8, 6);
-  },
-  // The sofa pulled out from the wall: a dark gap behind its back, a
-  // cushion on the floor.
-  sofa(x, y) {
-    bctx.fillStyle = CRATE.inside;
-    bctx.fillRect(x + 1, y - 1, T - 2, 2);
-    bctx.fillStyle = SOFA.seat;
-    bctx.fillRect(x + 4, y + 14, 8, 2);
-  },
-  // A cloth over the table, hanging to the floor.
-  table(x, y) {
-    bctx.fillStyle = SHEET.read;
-    bctx.fillRect(x, y + 3, T, 13);
-    bctx.fillStyle = SHEET.fresh;
-    bctx.fillRect(x, y + 3, T, 1);
-    bctx.fillStyle = SHEET.ink;
-    bctx.fillRect(x + 5, y + 6, 1, 10);
-    bctx.fillRect(x + 11, y + 7, 1, 9);
-  },
-};
 
 // A pupil's desk with its chair behind it.
 function drawSchoolDesk(x, y) {

@@ -1,8 +1,5 @@
 import { state, key } from './state.js';
-import { buildFloor, buildRestFloor, buildTutorialFloor, buildTestFloor, buildAdvancedFloor, buildShipFloor } from './floor.js';
-import { advancedTurn, nextStation, ADVANCED_STATIONS } from './advanced.js';
-import { tutorialTurn, breakRing } from './tutorial.js';
-import { nextFloor } from './run.js';
+import { buildShipFloor } from './floor.js';
 import {
   initBattleScreen, attemptAnswerMC, chooseCategory, clearLog, flashHearts, leaveEncounter, logLine,
   mountBattleQuestion, syncBattleScreen, syncQuestionForTarget,
@@ -14,16 +11,14 @@ import {
 } from './gunactions.js';
 import { initControls, syncLookStick, tapMap, walkHeld } from './controls.js';
 import {
-  MAX_HEARTS, ROOM_COUNT, ENERGY_START, TUTORIAL_EXIT_ENERGY, ROOM_LOG_LINES, ROOM_LOG_DIM_MS,
-  REALTIME_POLL_MS, GAZE_POLL_MS, GAZE_STEP_MS, TUTORIAL_WHISPER_MS, TUTORIAL_KIND_DELAY_MS,
-  TUTORIAL_COMFORT_BREAK_MS, TUTORIAL_STUCK_MS, MAP_ANIMATION_MS, CHARGER, ONE_STICK, SHIP_RUN,
+  MAX_HEARTS, ROOM_COUNT, ENERGY_START, ROOM_LOG_LINES, ROOM_LOG_DIM_MS,
+  REALTIME_POLL_MS, TUTORIAL_WHISPER_MS, CHARGER, ONE_STICK, SHIP_RUN,
 } from './config.js';
-import { resetHaunts } from './haunts.js';
-import { pickQuestion, escapeHtml, normalizeSpaces, buildChoices } from './quiz.js';
+import { pickQuestion, escapeHtml } from './quiz.js';
 import { shuffle } from './random.js';
 import {
   initRender, showScreen, renderRoomHints, renderHud, renderCombatStatus, renderTargeting,
-  formatTime, startTimer, stopTimer, renderClock, showSensed, showWhisper, hideWhisper,
+  formatTime, startTimer, stopTimer, showSensed, showWhisper, hideWhisper,
   showAnswerLine, fadeAnswerLine, renderShipHud
 } from './render.js';
 import { freshShipRun } from './ship.js';
@@ -33,13 +28,12 @@ import {
 } from './combat.js';
 import { lightConsumed } from './light.js';
 import { onStairs, stairsHere } from './moves.js';
-import { scoreGoals } from './goals.js';
-import { playIntro } from './introview.js';
+
 import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
-import { initDevPanel, recordEvents, refreshInspector, startTally, syncDevOneStick } from './devpanel.js';
-import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, answerRingOnMap, endAnswerRingOnMap, soundOnMap, heardOnMap, rattleOnMap, freeStepOnMap, playerHitOnMap } from './mapview.js';
+import { initDevPanel, recordEvents, refreshInspector, syncDevOneStick } from './devpanel.js';
+import { initMapView, requestMapDraw, slideOnMap, slidePlayerOnMap, bumpOnMap, shotOnMap, revealInFlash, hurtOnMap, deathOnMap, downOnMap, crawlOnMap, grabOnMap, finishOnMap, onMapPointer, answerRingOnMap, endAnswerRingOnMap, freeStepOnMap, playerHitOnMap } from './mapview.js';
 import { chargerLine, chargeUp } from './charger.js';
 import { turnWire } from './wires.js';
 import { stationMode, stationDone, trainWires } from './stations.js';
@@ -49,16 +43,13 @@ import { shutterLine } from './saferoom.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { refreshGunTarget, rollWeaknesses, addRounds } from './gun.js';
 import { initGunPanels, showStruggleBar, closeMapPanels, mapPanelShown, askHeld } from './gunpanels.js';
-import { t, TEXT, setTextArea, applyStaticText } from './text.js';
+import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { SCREEN_WAYS } from './dpad.js';
-import { toggleLight, turnsToFull, secondsToFull, batteryInPlay } from './battery.js';
-import { tickGaze } from './gaze.js';
-import { computeVisibility, seesEnemy } from './sight.js';
+import { toggleLight, turnsToFull, secondsToFull } from './battery.js';
+import { computeVisibility } from './sight.js';
 import { noteSigns, warningAtReach } from './warning.js';
-import { buy } from './exchange.js';
-import { initExchangeView, renderExchange } from './exchangeview.js';
-import { pollClock, resetClock } from './realclock.js';
+
 import { resetWalk, walkTileMs } from './walk.js';
 import { setQuestion, placeWager } from './questionview.js';
 import { playMinigameOut } from './minigameview.js';
@@ -74,18 +65,15 @@ import { initBook, bookReading, closeBook, refreshBook, refreshBookLog } from '.
 initGunActions({ applyTurnOutcome, drawEvents, goDown, openCharger, showRoomNote });
 
 const startScreen = document.getElementById('startScreen');
-const introGlitch = document.getElementById('introGlitch');
+
 const revealToggle = document.getElementById('revealToggle');
-const realTimeToggle = document.getElementById('realTimeToggle');
-const turnsToggle = document.getElementById('turnsToggle');
+
 const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
-const tutorialToggle = document.getElementById('tutorialToggle');
-const shipToggle = document.getElementById('shipToggle');
-const devStartIn = document.getElementById('devStartIn');
+
 const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
 const battleScreen = document.getElementById('battleScreen');
-const exchangeScreen = document.getElementById('exchangeScreen');
+
 const winScreen = document.getElementById('winScreen');
 const loseScreen = document.getElementById('loseScreen');
 const shipIntroScreen = document.getElementById('shipIntroScreen');
@@ -132,7 +120,7 @@ const dpadButtons = {
 const btnSelect = document.getElementById('btnSelect');
 
 initRender({
-  startScreen, introGlitch, shipIntroScreen, roomScreen, battleScreen, exchangeScreen, winScreen, loseScreen,
+  startScreen, shipIntroScreen, roomScreen, battleScreen, winScreen, loseScreen,
   heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, combatStatusEl, targetLabelEl, attackBtn, statsEl,
   lightHintEls, dpadButtons,
   senseNote: document.getElementById('senseNote'),
@@ -147,20 +135,17 @@ initRender({
   hudTube: document.getElementById('hudTube'),
   hudTubeWord: document.getElementById('hudTubeWord'),
   gunTarget: document.getElementById('gunTarget'),
-  clockStat: document.getElementById('clockStat'),
+
   keysStat: document.getElementById('keysStat'),
   keysText: document.getElementById('keysText'),
-  goalsStat: document.getElementById('goalsStat'),
-  goalsText: document.getElementById('goalsText'),
-  goalNames: document.getElementById('goalNames'),
-  clockFill: document.getElementById('clockFill'),
+
   btnSelect,
 });
 initMapView(document.getElementById('mapCanvas'));
 onMapPointer({ tap: tapMap });
 
 initDataView({ backScreen: document.getElementById('workshopScreen') });
-initExchangeView({ buyItem, leaveExchange });
+
 // TAKE COMMAND (the ship's opening): onto the ship, and its clock starts.
 initShipIntro({ onBegin: () => { showScreen(roomScreen); startTimer(); } });
 initConsoleView({ pick: pickRole, leave: () => closeConsole(t('console.left')) });
@@ -181,7 +166,7 @@ initSfx();
 // tune while the player is in the safe room on the run's screens.
 initMusic({
   intro: shipIntroScreen,
-  run: [roomScreen, battleScreen, exchangeScreen],
+  run: [roomScreen, battleScreen],
 });
 initBook({ askHeld, mapPanelShown });
 
@@ -191,7 +176,7 @@ initSetLoader({ showSets: showSetPicker });
 initSetPicker({ startGame, openWorkshop: showWorkshop });
 initPractice({ letterPoolQuestion, sumLockQuestion, mountBattleQuestion });
 initDevPanel({
-  advanceRoom, restartTestRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
+  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
   autoWinGun, battleScreen, wagerRow,
 });
 
@@ -207,18 +192,12 @@ function switchLight() {
     showRoomNote('block-msg', t('tut.light.none'));
     return;
   }
-  if (result === 'held') {
-    showRoomNote('block-msg', t('tut.light.held'));
-    return;
-  }
   if (result === 'locked') {
     showRoomNote('block-msg', state.settings.oneStick ? t('room.ownLight.locked.seconds', { seconds: secondsToFull() }) : t('room.ownLight.locked', { turns: turnsToFull() }));
     return;
   }
   computeVisibility();
-  // In the tutorial's ring, the light on is the way out (tutorial.js breakRing).
-  const freed = result === 'on' ? breakRing() : [];
-  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }, ...freed, ...refreshGunTarget()]);
+  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }, ...refreshGunTarget()]);
   showRoomNote(note.cls, note.text);
 }
 // The LIGHT button under the map (light button prototype, Timothy
@@ -226,89 +205,8 @@ function switchLight() {
 // moment).
 document.getElementById('lightBattery').addEventListener('click', () => switchLight());
 
-// The tutorial's ring has closed ("Die in darkness."): a moment later the
-// kind voice says the one hint, "Don't let them dim your light." In
-// Comfort mode the light is always on, so there is nothing to switch:
-// the ring breaks by itself a little after. Real seconds, view-side.
-function speakInRing() {
-  const inRing = () => state.floor.tutorial && state.floor.tutorial.stage === 'ring' && !state.run.runEnded;
-  setTimeout(() => {
-    if (!inRing()) return;
-    showWhisper(t('tut.dimLight'), 'kind', TUTORIAL_WHISPER_MS);
-    if (batteryInPlay()) return;
-    setTimeout(() => {
-      if (!inRing()) return;
-      const note = drawEvents([...breakRing(), ...refreshGunTarget()]);
-      if (note.text) showRoomNote(note.cls, note.text);
-    }, TUTORIAL_COMFORT_BREAK_MS);
-  }, TUTORIAL_KIND_DELAY_MS);
-}
-
-// A tutorial line that waits TUTORIAL_KIND_DELAY_MS before it shows, so
-// the line before it can be read (tutorial.js lookUpLine), and then only
-// if the player is still in the tutorial.
-function whisperSoon(e) {
-  setTimeout(() => {
-    if (!state.floor.tutorial || state.run.runEnded) return;
-    showWhisper(t(e.line), e.tone, TUTORIAL_WHISPER_MS);
-  }, TUTORIAL_KIND_DELAY_MS);
-}
-
-// The tutorial teaches without hand holding (Timothy): a stage's plain
-// hint shows in the room log only if the player is still on it after
-// TUTORIAL_STUCK_MS. Stages with no hint teach themselves. With One stick
-// a hint with a `.stick` wording says it for the stick (one stick plan
-// step G).
-const STUCK_HINTS = { dark: 'tut.hint.move', name: 'tut.hint.barrel', ring: 'tut.hint.light', fight: 'tut.hint.fire', hide: 'tut.hint.hide', push: 'tut.hint.push' };
-let watchedStage = null;
-let stuckTimer = null;
-
-// Starts the stuck clock when the tutorial's stage, or the advanced
-// tutorial's station or its door, changes (`restart`:
-// start it again on the same stage, as when the intro ends). Called after
-// every drawEvents and floor load.
-function watchTutorial(restart = false) {
-  const tut = state.floor.tutorial;
-  const station = state.floor.advanced;
-  const stage = tut ? tut.stage : station ? 'adv.' + station.index + (station.open ? '.open' : '') : null;
-  if (stage === watchedStage && !restart) return;
-  watchedStage = stage;
-  clearTimeout(stuckTimer);
-  // An advanced tutorial station's hint, while its mechanic isn't done.
-  const plain = station ? (station.open ? null : ADVANCED_STATIONS[station.index].hint) : STUCK_HINTS[stage];
-  const hint = plain && state.settings.oneStick && TEXT[plain + '.stick'] ? plain + '.stick' : plain;
-  if (!hint || (stage === 'ring' && !batteryInPlay())) return;
-  stuckTimer = setTimeout(() => {
-    const now = state.floor.tutorial;
-    const still = state.floor.advanced;
-    const same = now ? now.stage === stage : still ? 'adv.' + still.index + (still.open ? '.open' : '') === stage : false;
-    if (same && !state.run.runEnded) showRoomNote('move-msg', t(hint));
-  }, TUTORIAL_STUCK_MS);
-}
-
-// What the intro shows: every question in the set, and one of them with a
-// wrong answer for the fake player to type. The wrong answer is another
-// question's answer of the same type (a name for a name), so it reads as a
-// believable mistake; a set without types falls back to its choices.
-// Drafts (answers longer than one word) are left out where the set has
-// others, so the typed answer stays short.
-function introScript() {
-  const pool = state.settings.activeData;
-  const settled = pool.filter(q => !q.draft);
-  const from = settled.length ? settled : pool;
-  const asked = from[Math.floor(Math.random() * from.length)];
-  const right = normalizeSpaces(asked.meaning).toLowerCase();
-  const isWrong = answer => normalizeSpaces(answer).toLowerCase() !== right;
-  const sameType = from.filter(q => q.answerType && q.answerType === asked.answerType && isWrong(q.meaning));
-  const wrong = sameType.length
-    ? sameType[Math.floor(Math.random() * sameType.length)].meaning
-    : buildChoices(asked).find(isWrong) || '';
-  return { questions: pool.map(q => q.term), attempt: { question: asked.term, answer: wrong } };
-}
-
 // A fresh run's numbers: the questions, hearts, energy (`energy` of it),
-// gold, turns and story. startGame() sets them, and again once the
-// tutorial is left, so nothing spent or won there carries into the run.
+// gold, turns and story. startGame() sets them.
 function resetRun(energy = ENERGY_START) {
   state.run.order = shuffle(state.settings.activeData).slice(0, Math.min(ROOM_COUNT, state.settings.activeData.length));
   state.run.roomIndex = 0;
@@ -335,21 +233,19 @@ function resetRun(energy = ENERGY_START) {
   state.run.lastMinigame = null;
   rollWeaknesses();
   state.run.loreQueue = [];
-  resetHaunts();
 }
 
 function startGame() {
   resetRun();
   state.settings.revealOnWrong = revealToggle.checked;
-  // One stick unless the start screen asks for turns (one stick plan step
-  // G); Real time is a turns option.
-  state.settings.oneStick = !turnsToggle.checked;
-  state.settings.realTime = turnsToggle.checked && realTimeToggle.checked;
+  // Always One stick: free walking on the ship (the dungeon's Turns and
+  // Real time options went with it).
+  state.settings.oneStick = true;
+  state.settings.realTime = false;
   syncDevOneStick();
   // Comfort mode is a dungeon option, shown only under ?dev: a player's
   // old saved pick, hidden now, must not change the ship.
   state.settings.simpleEnemies = simpleEnemiesToggle.checked && !simpleEnemiesToggle.closest('label').hidden;
-  resetClock();
   resetWalk();
   // Read on every start, so a retry keeps the name without asking again.
   state.settings.playerName = playerNameInput.value.trim();
@@ -361,68 +257,27 @@ function startGame() {
   mcOptionsEl.classList.toggle('show', state.settings.mcMode);
   renderHud();
 
-  // Room setup happens immediately (invisibly, behind the intro) so there's
-  // no added real loading time, only the intro itself. The elapsed-time
-  // clock starts once the intro ends or is skipped, so it isn't charged
-  // against the player.
-  // DEV (only with ?dev): the start screen's "Start in" can pick a test
-  // room (testroom.js) instead: straight in, no intro and no tutorial.
-  if (devStartIn.value) {
-    loadRoom('test', devStartIn.value);
-    showScreen(roomScreen);
-    startTimer();
-    return;
-  }
   // The ship, the game (Timothy 2026-11-01): its random tragedy told first
-  // (shipview.js; step C), then the ship once the player takes command. No
-  // tutorial. The box is always checked for players; only ?dev shows it,
-  // to reach the DEPRECATED dungeon crawl below (kept, not built on).
-  if (shipToggle.checked) {
-    freshShipRun();
-    noteOnDuty();
-    loadRoom('ship');
-    fillShipIntro(tragedyLines(state.run.ship.tragedy), state.settings.playerName);
-    showScreen(shipIntroScreen);
-    return;
-  }
-  // A player who has never finished the tutorial room wakes in it first
-  // (the start screen's toggle; tutorial.js).
-  const tutorial = tutorialToggle.checked;
-  loadRoom(tutorial ? 'tutorial' : 'opening');
-  showScreen(introGlitch);
-  playIntro(introScript(), () => {
-    showScreen(roomScreen);
-    startTimer();
-    if (!tutorial) return;
-    showWhisper(t('tut.cantLeave'), 'dread', TUTORIAL_WHISPER_MS);
-    watchTutorial(true);
-  });
+  // (shipview.js; step C), then the ship once the player takes command.
+  // The ship is built now, behind the opening, so there is no wait after it.
+  freshShipRun();
+  noteOnDuty();
+  loadRoom();
+  fillShipIntro(tragedyLines(state.run.ship.tragedy), state.settings.playerName);
+  showScreen(shipIntroScreen);
 }
 
-// A new floor: make the new floor's data, then put it on the page.
-// `restKind` ('opening' / 'between' / 'epilogue') builds a rest floor,
-// 'tutorial' the tutorial room, 'test' the DEV test room `which`
-// (testroom.js), 'advanced' the advanced tutorial's station `which`
-// (advanced.js), 'ship' the ship (ship plan); none builds the danger
-// floor at the current depth.
-function loadRoom(restKind, which) {
-  if (restKind === 'ship') buildShipFloor();
-  else if (restKind === 'test') buildTestFloor(which);
-  else if (restKind === 'advanced') buildAdvancedFloor(which);
-  else if (restKind === 'tutorial') buildTutorialFloor();
-  else if (restKind) buildRestFloor(restKind);
-  else buildFloor();
+// The ship, new: make its data, then put it on the page.
+function loadRoom() {
+  buildShipFloor();
   hideWhisper();
   drawFloor();
-  watchTutorial();
-  startTally();
   refreshInspector();
 }
 
-// Puts the floor buildFloor() made on the page: the map, hints, HUD, and
-// a fresh room screen.
+// Puts the floor buildShipFloor() made on the page: the map, hints, HUD,
+// and a fresh room screen.
 function drawFloor() {
-  resetClock();
   resetWalk();
   fadeAnswerLine(true);
   refreshGunTarget();
@@ -442,100 +297,33 @@ function drawFloor() {
   renderCombatStatus();
   clearLog();
   roomFeedback.innerHTML = '';
-  // The room the player wakes in announces itself like any other; on a
-  // fixed plan, after the building's name.
-  // The tutorial room and the advanced tutorial's stations have no name or
-  // theme line: their whispers and station names speak instead.
-  const startChamber = state.floor.tutorial || state.floor.advanced ? undefined : state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
+  // The room the player wakes in announces itself like any other, after
+  // the ship's name.
+  const startChamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
   const startName = state.floor.chamberNames[startChamber];
   if (startName) {
     showRoomNote('move-msg', t('room.enter.plan', { floor: t(state.floor.plan.name), name: t(startName) }));
   } else if (startChamber !== undefined) {
     showRoomNote('move-msg', t('theme.' + state.floor.chamberThemes[startChamber] + '.enter'));
   }
-  if (state.floor.stairsAlt) showRoomNote('move-msg', t('room.stairs.two'));
-  if (state.floor.path) showRoomNote('move-msg', t('room.path.taken', { path: t('path.' + state.floor.path) }));
-  if (state.floor.goals.length) {
-    showRoomNote('move-msg', t('room.goals.new', { goals: state.floor.goals.map(g => t('goal.' + g.id)).join(' / ') }));
-  }
+
   answerInput.value = '';
   setControlsEnabled(true);
   answerInput.focus();
 }
 
-// Shared by the stairs (goDown) and the dev skip button.
-// run.js decides what comes next: a depth, a rest floor, or the win.
+// The dev skip button (and the stairs, goDown). The ship has no way on:
+// it lays the ship out again.
 function advanceRoom() {
-  if (state.floor.tutorial) { leaveTutorial(); return; }
-  if (state.floor.advanced) { leaveStation(); return; }
-  // The ship has no way on yet: DEV -> Skip room lays it out again.
-  if (state.floor.ship) { loadRoom('ship'); return; }
-  // A test room has no way on: DEV -> Skip room starts the run proper.
-  if (state.floor.testRoom) {
-    resetRun();
-    loadRoom('opening');
-    return;
-  }
-  const next = nextFloor();
-  if (next.kind === 'win') endWin();
-  else loadRoom(next.kind === 'rest' ? next.rest : null);
-}
-
-// DEV -> Restart test room: the test room picked on the start screen
-// starts over as new (startGame, as Retry does), even after a lost run.
-function restartTestRoom() {
-  if (!devStartIn.value) return;
-  startGame();
-}
-
-// Out through one of the tutorial room's doors (or DEV -> Skip room): the
-// tutorial is done, so its toggle goes off and is saved (setloader.js
-// listens), and the run starts fresh on the opening rest, with
-// TUTORIAL_EXIT_ENERGY; or, through the right-hand door (`advanced`), the
-// advanced tutorial's first station comes first (advanced.js).
-function leaveTutorial(advanced = false) {
-  tutorialToggle.checked = false;
-  tutorialToggle.dispatchEvent(new Event('change'));
-  resetRun(TUTORIAL_EXIT_ENERGY);
-  loadRoom(advanced ? 'advanced' : 'opening', nextStation(-1));
-  if (advanced) showStationName();
-}
-
-// Out through an advanced tutorial station's door (or DEV -> Skip room):
-// the next station (advanced.js nextStation: One stick's skipped with
-// Turns), or after the last, the run, fresh, as from the tutorial.
-function leaveStation() {
-  const next = nextStation(state.floor.advanced.index);
-  if (next === -1) {
-    resetRun(TUTORIAL_EXIT_ENERGY);
-    loadRoom('opening');
-    return;
-  }
-  loadRoom('advanced', next);
-  showStationName();
-}
-
-// Each station says which mechanic it shows as the player comes in, and
-// the kind voice says its opening line if it has one.
-function showStationName() {
-  const station = state.floor.advanced;
-  showRoomNote('move-msg', t('adv.station.' + station.name));
-  const intro = ADVANCED_STATIONS[station.index].intro;
-  if (intro) showWhisper(t(intro), 'kind', TUTORIAL_WHISPER_MS);
+  loadRoom();
 }
 
 // Going down the stairs, once the player says so (SELECT or Enter while
-// standing on them): the floor's goals are scored, then the next floor
-// loads and the goals' lines open its room log, so they aren't wiped with
-// the old one. Costs no turn.
+// standing on them). Costs no turn. The ship has no stairs.
 function goDown() {
   if (state.run.turnLocked || state.run.runEnded || mapPanelShown() || !onStairs()) return;
-  const scored = scoreGoals();
   state.run.nextPath = stairsHere().path || null;
   advanceRoom();
-  if (!roomScreen.classList.contains('show')) return;
-  const note = drawEvents(scored);
-  if (note.text) showRoomNote(note.cls, note.text);
 }
 
 function setControlsEnabled(enabled) {
@@ -615,9 +403,6 @@ function applyTurnOutcome(events, worldMoves = !realTimeOn()) {
     turn.push({ type: 'chargerBroken' });
   }
   if (bookReading() && turn.some(e => CHARGER_BREAKERS.has(e.type))) closeBook();
-  // The tutorial room moves on (tutorial.js) after any spent turn.
-  turn.push(...tutorialTurn(turn));
-  turn.push(...advancedTurn(turn));
   turn.push(...chargerLine());
   turn.push(...shutterLine(turn));
   turn.push(...refreshGunTarget());
@@ -673,48 +458,14 @@ function clockMayRun() {
     !devPanel.classList.contains('show');
 }
 
-// One poll of the real-time clock; when the world's turn is due, the
-// minions, the hunter and the light take it, as after a step in turn mode.
-// The HUD's NEXT meter follows each poll.
-function clockTick() {
-  const running = clockMayRun();
-  const due = pollClock(performance.now(), running);
-  renderClock(running);
-  if (bookReading()) refreshBook();
-  if (due) applyTurnOutcome([], true);
-}
-setInterval(clockTick, REALTIME_POLL_MS);
-
-// The eye's clock (gaze.js, light battery plan step E): real time, in turn
-// mode too, paused wherever the real-time clock is (a panel over the map,
-// the battle screen, the DEV panel, a hidden tab) and while a turn plays
-// out. A long gap (a slow tab) counts as one poll at most.
-let gazeAt = performance.now();
-function gazeMayRun() {
-  return !state.run.runEnded && !state.run.turnLocked && !document.hidden &&
-    roomScreen.classList.contains('show') && worldRunsUnder() && !devPanel.classList.contains('show');
-}
-function gazeTick() {
-  const now = performance.now();
-  const dt = Math.min(now - gazeAt, GAZE_POLL_MS * 2);
-  gazeAt = now;
-  if (!gazeMayRun() || state.floor.playerRow === undefined) return;
-  const events = tickGaze(dt);
-  if (events.length) {
-    computeVisibility();
-    const note = drawEvents([...events, ...refreshGunTarget()]);
-    showRoomNote(note.cls, note.text);
-  } else if (state.floor.minions.some(m => m.gaze > 0)) {
-    requestMapDraw();
-  }
-}
-setInterval(gazeTick, GAZE_POLL_MS);
+// The record book, open, is kept up to date every REALTIME_POLL_MS.
+setInterval(() => { if (bookReading()) refreshBook(); }, REALTIME_POLL_MS);
 
 // Draws a list of rule events, in order, then redraws the HUD, fog, eye
 // and targeting once. Returns the room note the events add up to
 // ({ cls, text }, text in event order); the caller decides whether to show it.
 // The events that mean the player moved: they put the answer (line or ring) away.
-const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched', 'minionFinished', 'heldFast', 'hid', 'hideLeft', 'toppled']);
+const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched', 'minionFinished', 'heldFast']);
 
 function drawEvents(events) {
   const parts = [];
@@ -752,95 +503,24 @@ function drawEvents(events) {
         if (!e.bumped) parts.push(t('room.turn'));
         break;
       // On the map itself, not in the room log: a whisper, not a report.
-      // The static says it instead while on (Simple enemies keep "Enemy close.").
       case 'presenceSensed':
-        if (!state.settings.staticNoise || state.settings.simpleEnemies) showSensed();
+        showSensed();
         break;
       case 'stairsReached':
         if (e.hidden) parts.push(t('room.stairs.hidden'));
         else if (e.path) parts.push(t('room.stairs.path', { path: t('path.' + e.path) }));
         parts.push(t('room.stairs.ask'));
         break;
-      case 'stairsScouted':
-        parts.push(t('exchange.scouted', { path: t('path.' + e.path) }));
-        break;
-      case 'goalMet':
-        parts.push(t('room.goal.met', { goal: t('goal.' + e.id), gold: e.gold }));
-        break;
-      case 'goalMissed':
-        parts.push(t('room.goal.missed', { goal: t('goal.' + e.id) }));
-        break;
       case 'turned':
       case 'boxSprung':
       case 'itemReached':
       case 'cellFound':
         break;
-      case 'relayFound':
-        parts.push(t('room.relay.found'));
-        break;
-      // The tutorial room (tutorial.js).
-      case 'nameAsked':
-      case 'tutorialLeft':
-      case 'stationLeft':
-      case 'spotLit':
-      case 'barrelAppeared':
-      case 'ringBroken':
-        break;
+      // A line in the kind voice (the charger's and the safe room's).
       case 'whispered':
-        if (e.wait) whisperSoon(e);
-        else showWhisper(t(e.line), e.tone, TUTORIAL_WHISPER_MS);
-        break;
-      case 'ringClosed':
-        speakInRing();
-        break;
-      case 'nameGiven':
-        // The start screen's name field keeps it (setloader.js saves on input).
-        playerNameInput.value = e.name;
-        playerNameInput.dispatchEvent(new Event('input'));
-        parts.push(t('tut.name.kept', { name: e.name }));
-        break;
-      case 'keyDropped':
-        parts.push(t('tut.key.dropped'));
-        break;
-      case 'doorUnlocked':
-        parts.push(t(e.advanced ? 'adv.door.open' : 'tut.door.open'));
-        break;
-      case 'relayHeld':
-        parts.push(t(e.turns ? 'room.relay.held' : 'room.relay.heldDark', { turns: e.turns }));
-        break;
-      case 'relaySparked':
-        cls = 'block-msg';
-        if (state.settings.revealOnWrong) showAnswerLine(e.expected);
-        parts.push(t(e.turns ? 'room.relay.sparked' : 'room.relay.sparkedDark', { turns: e.turns }));
+        showWhisper(t(e.line), e.tone, TUTORIAL_WHISPER_MS);
         break;
       case 'propSearched':
-        break;
-      case 'ventStepped':
-        parts.push(t('room.vent.stepped'));
-        break;
-      // A mistake's sound (noise.js): drawn on the map only; the mistake's
-      // own line already says what happened.
-      case 'noiseMade':
-        soundOnMap(e.tiles);
-        break;
-      case 'noiseHeard':
-        if (seesEnemy(e.minion)) heardOnMap(e.minion);
-        break;
-      // The ducts (vents.js): one going in is always in the log, seen or
-      // not (Timothy: it builds dread); the shudder only when heard, and it
-      // shakes the grate (none under reduced motion or Comfort mode); the
-      // drop slides out of it, its line only when seen.
-      case 'ventEntered':
-        parts.push(t('room.vent.entered'));
-        break;
-      case 'ventRattled':
-        if (!e.heard) break;
-        rattleOnMap(e.vent);
-        parts.push(t('room.vent.rattle'));
-        break;
-      case 'ventDropped':
-        if (!state.settings.simpleEnemies) slideOnMap(e.minion, e.vent, MAP_ANIMATION_MS.ventDrop);
-        if (e.seen) parts.push(t('room.vent.dropped'));
         break;
       case 'deskHealed':
         parts.push(t('room.desk.healed'));
@@ -974,20 +654,6 @@ function drawEvents(events) {
         parts.push(t('ship.panicEased', { level: t('panic.' + e.level).toLowerCase() }));
         renderShipHud();
         break;
-      case 'exchangeOpened':
-        parts.push(t('room.exchange.opened'));
-        break;
-      case 'itemBought':
-        parts.push(t('exchange.bought'));
-        break;
-      case 'cannotAfford':
-        parts.push(t('exchange.cannotAfford'));
-        break;
-      case 'notOffered':
-        parts.push(t('exchange.why.' + e.reason));
-        break;
-      case 'hauntSilenced':
-        break;
       case 'keyTaken':
         parts.push(t('room.key', { held: e.held, total: e.total }));
         if (e.unsealed) parts.push(t('room.gate.unsealed'));
@@ -1013,16 +679,6 @@ function drawEvents(events) {
         break;
       case 'hunterWoke':
         parts.push(t('room.hunter.wakes'));
-        cls = 'warn-msg';
-        break;
-      // The eye (gaze.js): full, it steps closer, or stares from beside the player.
-      case 'gazeStep':
-        slideOnMap(e.minion, e.from, GAZE_STEP_MS);
-        parts.push(t('room.gaze.step'));
-        cls = 'warn-msg';
-        break;
-      case 'gazeStare':
-        parts.push(t('room.gaze.stare'));
         cls = 'warn-msg';
         break;
       // The player's light (battery.js).
@@ -1051,18 +707,6 @@ function drawEvents(events) {
       case 'coverTaken':
         parts.push(t('room.cover'));
         break;
-      case 'hid':
-        parts.push(t('room.hide.in.' + e.piece));
-        break;
-      case 'hideLeft':
-        parts.push(t('room.hide.out'));
-        break;
-      case 'toppled':
-        parts.push(t('room.takedown.' + e.piece));
-        break;
-      case 'lureSounded':
-        parts.push(t('room.lure.' + e.piece));
-        break;
       case 'reachMissed':
         parts.push(t('room.reach.missed'));
         break;
@@ -1089,12 +733,6 @@ function drawEvents(events) {
           logLine(t('log.expected', { answer: e.expected }), 'sys');
           if (e.source) logLine(t('log.source', { source: e.source }), 'sys');
         }
-        break;
-      case 'hauntSilenced':
-        logLine(t('log.haunt.silenced'), 'bright');
-        break;
-      case 'hauntLingers':
-        logLine(t('log.haunt.lingers'));
         break;
       case 'wagerSettled':
         logLine(t(e.won ? 'log.wager.won' : 'log.wager.lost', { n: e.n }), e.won ? 'bright' : 'alert');
@@ -1273,7 +911,6 @@ function drawEvents(events) {
   requestMapDraw();
   refreshMinimap();
   recordEvents(events);
-  watchTutorial();
   return { cls, text: parts.join(' ') };
 }
 
@@ -1287,7 +924,6 @@ function loseToLight() {
   stopTimer();
   setTimeout(() => endLose('light'), 1400);
 }
-
 
 // DEV -> Warning timer's room log line for stick man m's reach: how long
 // before it he first gave himself away, and by what (warning.js).
@@ -1417,26 +1053,6 @@ function closeCharger(cls, text) {
   if (text) showRoomNote(cls, text);
 }
 
-// THE UNFOLDING's screen (exchangeview.js), opened by bumping it on a rest
-// floor. The room stays as it was underneath: nothing moves while it's up.
-function openExchange() {
-  renderExchange('');
-  showScreen(exchangeScreen);
-}
-
-// One trade at THE UNFOLDING (exchange.js buy()): draws its events (myelin
-// and stability in the HUD), then the screen again with what it added up to.
-function buyItem(itemId) {
-  const note = drawEvents(buy(itemId));
-  renderExchange(note.text);
-}
-
-// Back to the room from THE UNFOLDING's screen.
-function leaveExchange() {
-  showScreen(roomScreen);
-  showRoomNote('move-msg', t('room.exchange.left'));
-}
-
 function skipTurn() {
   if (state.run.turnLocked || state.run.runEnded || walkHeld()) return;
   state.run.turnLocked = true;
@@ -1446,30 +1062,9 @@ function skipTurn() {
 
 initBattleScreen({ drawEvents, askQuestion, dressQuestion, endLose, loseToLight, setControlsEnabled });
 initControls({
-  applyTurnOutcome, clockMayRun, drawEvents, goDown, leaveStation, leaveTutorial, openCharger, openConsole,
-  openExchange, realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame,
+  applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
+  realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame,
 });
-
-function endWin() {
-  stopTimer();
-  winTitle.textContent = t('end.win.title');
-  let msg = t('end.win.stats', {
-    bosses: state.run.order.length, time: formatTime(state.run.seconds), turns: state.run.turnCount,
-    attempts: state.run.attempts, hearts: state.run.hearts, coins: state.run.coinsTotal,
-  });
-  if (state.run.extraSpaceCount > 0) {
-    msg += ' ' + t('end.win.spacing', { count: state.run.extraSpaceCount });
-  }
-  winStats.textContent = msg + hauntStats();
-  showScreen(winScreen);
-}
-
-// " Doubts silenced: X of Y." for the end screens, or nothing if the
-// player never missed.
-function hauntStats() {
-  if (!state.run.hauntsTotal) return '';
-  return ' ' + t('end.haunts', { silenced: state.run.hauntsSilenced, total: state.run.hauntsTotal });
-}
 
 // `reason` is 'light' when the boss light consumed the floor; anything else
 // (running out of hearts) keeps the usual title.
@@ -1478,7 +1073,7 @@ function endLose(reason) {
   loseStats.textContent = t('end.lose.stats', {
     room: state.run.roomIndex + 1, rooms: state.run.order.length, time: formatTime(state.run.seconds),
     turns: state.run.turnCount, coins: state.run.coinsTotal,
-  }) + hauntStats();
+  });
   showScreen(loseScreen);
 }
 

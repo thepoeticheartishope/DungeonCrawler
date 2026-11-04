@@ -3,21 +3,17 @@
 // strengths of the things on the floor, the gun's marks, and the rules for
 // what a view shows that don't depend on how it projects the floor (how
 // bright a tile is, which walls show, what the gun reaches and aims at, a
-// shot's path, the tutorial's ring and the answer ring over time, a stick
-// man's eye). Kept apart from the view since the isometric view shared it
+// shot's path, the answer ring over time). Kept apart from the view since the isometric view shared it
 // (removed 2026-10-18). Sizes are shares of a tile's width unless they say
 // otherwise; the room view reads a tile's width as one tile. Reads
 // state only.
 
 import { state, key } from './state.js';
 import {
-  MAP_ANIMATION_MS, GAZE_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS,
-  TUTORIAL_RING_RADIUS, TUTORIAL_RING_TURN_MS, TUTORIAL_RING_SCATTER_MS, SKY_EYE,
+  MAP_ANIMATION_MS, ANSWER_RING, ANSWER_RING_TURN_MS, ANSWER_RING_IN_MS, ANSWER_RING_OUT_MS,
   REALTIME_STEP_MS, ROOM_VIEW,
 } from './config.js';
 import { canShoot } from './sight.js';
-import { gazeInPlay, inCone } from './gaze.js';
-import { t } from './text.js';
 import { ringLetters } from './swirl.js';
 import { lightProgress } from './light.js';
 
@@ -73,22 +69,13 @@ export const DOOR_MIN_LEVEL = 0.5;      // a remembered doorway's arch is still 
 export const PAPER_SHEET = [[-0.8, -0.55], [0.75, -0.7], [0.8, 0.55], [-0.75, 0.7]];
 export const PAPER_LINES = [-0.3, 0, 0.3];
 export const PAPER_SCALE = 0.2;           // half the paper's size, as a share of the diamond's width (the shoulder view: twice this, in tiles)
-export const SOUND_INSET = [0.4, 0.1];   // a tile of a mistake's sound opens from this inset to this one (shares of a tile)
-export const SOUND_LEVEL = 0.55;         // how bright a tile of the sound is when it first lights
-export const HEARD_LIFT = 0.18;          // the '!' over a stick man that heard a sound sits this share of a tile above its eye
 export const GRATE_RATTLE = 0.03;   // how far a shuddering grate sways, as a share of a tile
-export const GRATE_RATTLE_SWAYS = 3; // side to side this many times while it shudders
 export const GRATE_SCALE = 0.19;     // a grate's frame: its corners sit this share of a tile in from the middle (it lies flat, inside its tile)
 export const GRATE_BARS = [-0.5, -0.17, 0.17, 0.5]; // where its bars cross it, from -1 to 1
 
 // The old isometric view's stick man height, feet to top of head (the
-// shoulder view measures the answer ring's lift against it), and the eye
-// over a stick man in the player's light (gaze.js).
+// shoulder view measures the answer ring's lift against it).
 export const ISO_STICK_HEIGHT = 0.62;
-export const EYE_LIFT = 0.22;         // the eye over a stick man in the light (drawGazeEye): its height over the head
-export const EYE_WIDTH = 0.16;        // half its width
-const EYE_OPEN = 0.07;         // how far the lids part when it is full
-const EYE_LEVEL = [0.45, 1];   // its strength, shut to full
 
 // The gun's marks on the map (gun plan): the tiles it reaches, the
 // brackets, the laser, a shot and its MISS, the maim point's ring.
@@ -183,11 +170,8 @@ export function smooth(x) {
 // How open the eye in the sky is, 0 (shut) to 1 (wide open): the boss's
 // light's progress, eased so it opens slowly at first and settles at the
 // end. Shut with no boss (a rest floor, after the boss falls): light.js
-// lightProgress() is 0 then. In the tutorial room it is wide open
-// (SKY_EYE.tutorial), with no boss: the kind voice's "It's watching you."
-// sends the player up to see it, so they learn an open eye is bad.
+// lightProgress() is 0 then.
 export function skyEyeOpen() {
-  if (state.floor.tutorial) return SKY_EYE.tutorial;
   return smooth(lightProgress());
 }
 
@@ -227,44 +211,6 @@ export function lastShot() {
   return shot;
 }
 
-// The tutorial's ring of dark (tutorial.js stage 'ring') at `now`: words
-// in the stick men's cold light circling at the edge of the player's
-// small light, slowly; when the light breaks the ring they scatter
-// outward and fade over TUTORIAL_RING_SCATTER_MS. Under reduced motion
-// (`still`), and in Comfort mode, they stand still and are simply gone
-// when it breaks. Returns null when there is no ring to draw, else
-// { words, angles (one per word, radians round the player), radius (in
-// tiles), level (0..1), moving }.
-let ringShown = false;   // the ring was drawn closed on the last frame
-let ringBrokeAt = null;  // the frame time it broke (its words scatter), or null
-export function darkRingAt(now, still) {
-  const tut = state.floor.tutorial;
-  const closed = !!tut && tut.stage === 'ring';
-  const calm = still || state.settings.simpleEnemies;
-  if (closed) {
-    ringShown = true;
-    ringBrokeAt = null;
-  } else if (ringShown) {
-    ringShown = false;
-    ringBrokeAt = calm ? null : now;
-  }
-  if (!closed && ringBrokeAt === null) return null;
-  const gone = closed ? 0 : (now - ringBrokeAt) / TUTORIAL_RING_SCATTER_MS;
-  if (gone >= 1) {
-    ringBrokeAt = null;
-    return null;
-  }
-  const words = t('tut.ring.words').split(' ');
-  const spin = calm ? 0 : (now / TUTORIAL_RING_TURN_MS) * Math.PI * 2;
-  return {
-    words,
-    angles: words.map((word, i) => spin + (i / words.length) * Math.PI * 2),
-    radius: TUTORIAL_RING_RADIUS * (1 + gone * 1.5),
-    level: 0.75 * (1 - gone),
-    moving: !calm,
-  };
-}
-
 // The answer ring (swirl.js answerRingNow `ring`) at `now`, the part both
 // views share: how far it has faded out after a move (0..1, `out`), and
 // each letter's place round it and look, in order: { ch, angle, front
@@ -287,20 +233,6 @@ export function answerRingLetters(ring, now) {
     shown.push({ ch, angle, front, level, size: ANSWER_RING.backSize + (1 - ANSWER_RING.backSize) * k });
   });
   return { out, letters: shown };
-}
-
-// The eye over minion `m` while it is in the player's cone (gaze.js):
-// null when it isn't shown; else { share (0..1 of GAZE_MS), open (how far
-// the lids part, in tile widths), level (its strength) }. The pupil shows
-// from a third open. No blink, and it only moves as the gaze grows.
-export function eyeOf(m) {
-  if (!m || !m.gaze || !gazeInPlay() || !inCone(m)) return null;
-  const share = Math.min(1, m.gaze / GAZE_MS);
-  return {
-    share,
-    open: EYE_OPEN * share * share * (3 - 2 * share),
-    level: EYE_LEVEL[0] + (EYE_LEVEL[1] - EYE_LEVEL[0]) * share,
-  };
 }
 
 // Whether (row, col) is wall or off the grid.

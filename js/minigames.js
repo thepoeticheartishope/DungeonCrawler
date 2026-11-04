@@ -8,7 +8,7 @@
 //
 // A result is { right, tier, given }: tier '1' (a weak hit), '2' (as good
 // as a plain right answer) or 'X' (perfect), or null on a miss. The settle
-// rules (answers.js, gun.js, relays.js) take the tier and pay it
+// rules (answers.js, gun.js) take the tier and pay it
 // (MINIGAME_TIER_PAY in config.js).
 
 import { state } from './state.js';

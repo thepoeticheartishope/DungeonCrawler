@@ -100,11 +100,3 @@ the dictionary yet: the plan is that wrong answers come from it.
 
 The game doesn't use the label yet. It's there so a future switch to another
 translation knows exactly which questions to reword or hide.
-
-## Floor statistics
-
-`node tools/floor_stats.mjs [floors per depth]` (Node, no dependencies) builds
-many floors per depth with the game's own `buildFloor()` and prints the walk
-from the start to the boss, the light's turn budget, and the slack between them
-(p10 / p50 / p90). Add `--loss 0.9,0.7,0.5` to compare loss shares on every
-floor. Use it when tuning `js/floors.js`. 300 floors per depth takes about 30 s.

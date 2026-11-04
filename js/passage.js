@@ -35,9 +35,6 @@ export function stepsAway(row, col) {
 
 // null if (row, col) is open, otherwise { kind, thing }: kind is 'wall'
 // (also the grid's edge), 'pillar', 'boss', 'hunter', 'minion', 'chest',
-// 'exchange' (THE UNFOLDING on a rest floor; a bump opens its screen), 'door'
-// (the tutorial room's door, until its key is taken: tutorial.js), 'dark'
-// (anywhere but the player's tile while the tutorial's ring holds them),
 // 'furniture' (a fixed plan's desks, shelves and the like: solid, but a bump
 // only says what it is) or 'prop' (a box, an energy cell, the safe room's
 // switch or a shutter that is down, which a bump examines — papers lie flat
@@ -49,18 +46,12 @@ export function whatBlocks(row, col) {
   const at = (p) => !!p && p.row === row && p.col === col;
   if (state.floor.wallSet.has(k)) return { kind: 'wall' };
   if (state.floor.pillarSet.has(k)) return { kind: 'pillar' };
-  const tut = state.floor.tutorial;
-  if (tut && tut.stage !== 'open' && (at(tut.door) || at(tut.advancedDoor))) return { kind: 'door' };
-  const station = state.floor.advanced;
-  if (station && !station.open && at(station.door)) return { kind: 'door' };
-  // The tutorial's ring of dark holds the player where they stand.
-  if (tut && tut.stage === 'ring' && !at({ row: state.floor.playerRow, col: state.floor.playerCol })) return { kind: 'dark' };
   if (at(state.floor.boss)) return { kind: 'boss' };
   if (at(state.floor.hunter) && !state.floor.hunter.vent) return { kind: 'hunter' };
   const minion = state.floor.minions.find(at);
   if (minion) return { kind: 'minion', thing: minion };
   if (at(state.floor.chest)) return { kind: 'chest' };
-  if (at(state.floor.exchange)) return { kind: 'exchange', thing: state.floor.exchange };
+
   const prop = state.floor.props.find(p => solidProp(p) && at(p));
   if (prop) return { kind: prop.kind === 'furniture' ? 'furniture' : 'prop', thing: prop };
   return null;

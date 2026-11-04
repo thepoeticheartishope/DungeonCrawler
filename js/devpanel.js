@@ -1,8 +1,7 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
-// panel over the screen): Skip room, Restart test room, Auto-win, Fog, Turn, Free look, Minigame, Look, Tendrils and Combat
+// panel over the screen): Skip room, Auto-win, Fog, Turn, Free look, Minigame, Look, Tendrils and Combat
 // toggles, a test shot and a test reload, and the map's frame meter, for testing.
-// Also the start screen's "Start in" (a test room, testroom.js) and, in a
-// test room, its tally over the DEV tag. main.js passes in the game actions and elements it needs.
+// main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw, mapDrawTimes } from './mapview.js';
 import { renderHud } from './render.js';
@@ -13,32 +12,20 @@ import { computeVisibility } from './sight.js';
 import { refreshGunTarget } from './gun.js';
 import { refreshBook } from './bookview.js';
 import { BOOK, SHIP_ROLES } from './config.js';
-import { TEST_ROOMS } from './testroom.js';
 
 const devDock = document.getElementById('devDock');
 const devToggleBtn = document.getElementById('devToggleBtn');
 const devPanel = document.getElementById('devPanel');
 const devSkipBtn = document.getElementById('devSkipBtn');
-const devRestartTestBtn = document.getElementById('devRestartTestBtn');
-const devStartRow = document.getElementById('devStartRow');
-const shipStartRow = document.getElementById('shipStartRow');
-const dungeonOptionRows = ['comfortStartRow', 'tutorialStartRow'].map(id => document.getElementById(id));
-const devStartIn = document.getElementById('devStartIn');
-const devTallyOut = document.getElementById('devTallyOut');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devLearnRolesBtn = document.getElementById('devLearnRolesBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
 const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
-const devGazeBtn = document.getElementById('devGazeBtn');
 const devDownedBtn = document.getElementById('devDownedBtn');
 const devSteadyBtn = document.getElementById('devSteadyBtn');
-const devNoiseBtn = document.getElementById('devNoiseBtn');
-const devStaticBtn = document.getElementById('devStaticBtn');
 const devWarningBtn = document.getElementById('devWarningBtn');
 const devOneStickBtn = document.getElementById('devOneStickBtn');
-const devShowDuctsBtn = document.getElementById('devShowDuctsBtn');
-const devShowSpotsBtn = document.getElementById('devShowSpotsBtn');
 const dpadEl = document.getElementById('dpad');
 const devFrameOut = document.getElementById('devFrameOut');
 const devLookBtn = document.getElementById('devLookBtn');
@@ -55,7 +42,7 @@ export function syncDevOneStick() {
 }
 
 export function initDevPanel({
-  advanceRoom, restartTestRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
+  advanceRoom, chooseCategory, placeWager, attemptAnswerMC, playMinigameOut, leaveEncounter, devTestShot, devTestReload, 
   autoWinGun,
   battleScreen, wagerRow,
 }) {
@@ -63,12 +50,6 @@ export function initDevPanel({
   // (index.html?dev), for testing.
   const params = new URLSearchParams(location.search);
   devDock.hidden = !params.has('dev');
-  devStartRow.hidden = !params.has('dev');
-  // The ship's box: unchecking it starts the deprecated dungeon (dev only),
-  // and that dungeon's own options, Comfort mode and the tutorial.
-  shipStartRow.hidden = !params.has('dev');
-  dungeonOptionRows.forEach(row => { row.hidden = !params.has('dev'); });
-  Object.keys(TEST_ROOMS).forEach(name => devStartIn.add(new Option('Test room: ' + name, name)));
   devToggleBtn.addEventListener('click', () => {
     const open = devPanel.classList.toggle('show');
     devToggleBtn.setAttribute('aria-expanded', String(open));
@@ -94,10 +75,6 @@ export function initDevPanel({
     if (state.run.hearts <= 0) return;
     advanceRoom();
   });
-
-  // Dev tool (test rooms, testroom.js): the test room picked on the start
-  // screen, from the start again, so a mechanic can be tried over and over.
-  devRestartTestBtn.addEventListener('click', restartTestRoom);
 
   // Dev tool: while on, every encounter plays itself out — the first query
   // category is picked, the correct answer given (a minigame is played out
@@ -165,23 +142,6 @@ export function initDevPanel({
     requestMapDraw();
   });
 
-  // Dev tool (vents and noise plan step B): mistakes make a sound stick
-  // men hear, or are quiet, as before.
-  devNoiseBtn.addEventListener('click', () => {
-    state.settings.noise = !state.settings.noise;
-    devNoiseBtn.textContent = state.settings.noise ? 'Noise: ON (dev)' : 'Noise: OFF (dev)';
-    devNoiseBtn.setAttribute('aria-pressed', String(state.settings.noise));
-  });
-
-  // Dev tool (static): the grain as stick men near, or "I see you." as
-  // before, to compare.
-  devStaticBtn.addEventListener('click', () => {
-    state.settings.staticNoise = !state.settings.staticNoise;
-    devStaticBtn.textContent = state.settings.staticNoise ? 'Static: ON (dev)' : 'Static: OFF (dev)';
-    devStaticBtn.setAttribute('aria-pressed', String(state.settings.staticNoise));
-    requestMapDraw();
-  });
-
   // Dev tool (presence cues plan step D): the warning timer, to tune the
   // lamps by how long before a reach a stick man first showed.
   devWarningBtn.addEventListener('click', () => {
@@ -195,24 +155,6 @@ export function initDevPanel({
   devOneStickBtn.addEventListener('click', () => {
     state.settings.oneStick = !state.settings.oneStick;
     syncDevOneStick();
-    requestMapDraw();
-  });
-
-  // Dev tool (vents and noise plan step C): see who is in a duct and where
-  // every pair of grates leads, to check the crawling in play.
-  devShowDuctsBtn.addEventListener('click', () => {
-    state.settings.showDucts = !state.settings.showDucts;
-    devShowDuctsBtn.textContent = state.settings.showDucts ? 'Show ducts: ON (dev)' : 'Show ducts: OFF (dev)';
-    devShowDuctsBtn.setAttribute('aria-pressed', String(state.settings.showDucts));
-    requestMapDraw();
-  });
-
-  // Dev tool (room spots plan step A): every room spot marked with what it
-  // rolled this run, to check the rolls in play.
-  devShowSpotsBtn.addEventListener('click', () => {
-    state.settings.showSpots = !state.settings.showSpots;
-    devShowSpotsBtn.textContent = state.settings.showSpots ? 'Spots: ON (dev)' : 'Spots: OFF (dev)';
-    devShowSpotsBtn.setAttribute('aria-pressed', String(state.settings.showSpots));
     requestMapDraw();
   });
 
@@ -237,16 +179,6 @@ export function initDevPanel({
     state.settings.downed = !state.settings.downed;
     devDownedBtn.textContent = state.settings.downed ? 'Downed: ON (dev)' : 'Downed: OFF (dev)';
     devDownedBtn.setAttribute('aria-pressed', String(state.settings.downed));
-  });
-
-  // Dev tool (light battery plan step E): the eye over a stick man in the
-  // light, or none. Off, every eye shuts.
-  devGazeBtn.addEventListener('click', () => {
-    state.settings.gaze = !state.settings.gaze;
-    devGazeBtn.textContent = state.settings.gaze ? 'Gaze: ON (dev)' : 'Gaze: OFF (dev)';
-    devGazeBtn.setAttribute('aria-pressed', String(state.settings.gaze));
-    state.floor.minions.forEach(m => { m.gaze = 0; });
-    requestMapDraw();
   });
 
   // Dev tool: minigames roll as usual, never, or (one minigame picked)
@@ -304,40 +236,7 @@ devInspectBtn.addEventListener('click', () => {
 export function recordEvents(events) {
   for (const event of events) eventRing.push({ turn: state.run.turnCount, event });
   eventRing.splice(0, eventRing.length - EVENT_RING_SIZE);
-  countTally(events);
   refreshInspector();
-}
-
-// Dev tool (test rooms, testroom.js): in a test room, a running count of
-// what happened since it started, so a mechanic's tries can be tracked:
-// times hidden, lures set off, pieces fallen, kills, gold, reaches (and how many missed),
-// hits taken and Struggles. View-only (not in state), counted from
-// drawEvents' events like the event ring. Each counts one event type, by
-// one or by its `amount`.
-const TALLY_COUNTS = {
-  hid: 'hid', lureSounded: 'lured', toppled: 'fell', minionKilled: 'kills', goldGained: 'gold',
-  reachStarted: 'reaches', reachMissed: 'missed', minionStruck: 'hit', struggleStarted: 'struggles',
-};
-let tally = null; // { [event type]: count } in a test room, else null
-
-// Starts the tally over for the floor just built (main.js loadRoom): from
-// nothing in a test room, gone anywhere else.
-export function startTally() {
-  tally = state.floor.testRoom ? Object.fromEntries(Object.keys(TALLY_COUNTS).map(type => [type, 0])) : null;
-  showTally();
-}
-
-function countTally(events) {
-  if (!tally) return;
-  events.forEach(e => { if (e.type in tally) tally[e.type] += e.type === 'goldGained' ? e.amount : 1; });
-  showTally();
-}
-
-function showTally() {
-  devTallyOut.hidden = !tally;
-  if (!tally) return;
-  devTallyOut.textContent = state.floor.testRoom + ': ' +
-    Object.entries(TALLY_COUNTS).map(([type, label]) => label + ' ' + tally[type]).join(' · ');
 }
 
 // Floor objects (boss, minions, props, chest...) print as "kind @ row,col"

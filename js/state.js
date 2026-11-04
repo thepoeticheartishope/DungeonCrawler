@@ -5,11 +5,10 @@
 // Grouped by how long a value lives:
 //   settings — picked on the start screen (or the DEV panel); outlive every run
 //   run      — one run, from startGame() to the end screen
-//   floor    — one floor, rebuilt by buildFloor() in floor.js
+//   floor    — the ship's floor, rebuilt by buildShipFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
 import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, SHOW_SPOTS, STATIC_NOISE, WARNING_TIMER, ONE_STICK, BOOK, STEADY_AIM } from './config.js';
-import { FLOOR_RECIPES } from './floors.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
 // stored in a Set or looked up by position.
@@ -23,7 +22,9 @@ export function parseKey(k) {
   return { row, col };
 }
 
-const initialGridSize = FLOOR_RECIPES[0].grid;
+// The floor's size before the ship is built: a placeholder, since
+// buildShipFloor() (floor.js) sets the real size before anything is drawn.
+const initialGridSize = 37;
 
 export const state = {
   settings: {
@@ -90,7 +91,7 @@ export const state = {
 
   floor: {
     GRID_SIZE: initialGridSize,
-    CHAMBER_TARGET: FLOOR_RECIPES[0].rooms,
+    CHAMBER_TARGET: 1,
     PLAYER_START: { row: initialGridSize - 1, col: Math.floor(initialGridSize / 2) },
 
     playerRow: undefined,

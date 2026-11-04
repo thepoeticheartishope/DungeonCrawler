@@ -9,12 +9,12 @@ import { useDesk } from './desk.js';
 import { useCharger } from './charger.js';
 import { isStation, useStation } from './stations.js';
 import { pullShutter, enterSafeRoom, autoShutters } from './saferoom.js';
-import { ventUnderfoot } from './vents.js';
+
 import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
 import { followBody, waysInUse } from './look.js';
 import { finishDowned } from './gun.js';
-import { liveSpotAt, hideIn, leaveHiding, topple, soundLure } from './spots.js';
+
 import { DARK_GOLD_MULTIPLIER, BOX_GOLD } from './config.js';
 
 // Gold pays DARK_GOLD_MULTIPLIER times as much in the darkness after the boss.
@@ -62,18 +62,14 @@ function takeKey(index) {
 // bumped: true } if the press turned the body: a spent turn), stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
 // keyTaken { held, total, unsealed }, gateReached { questions } (bumped the
 // boss; main.js opens the battle screen), blocked { kind: 'gate' } (it's sealed),
-// paperRead { paper, loot, story? }, roomEntered { theme, name }, tutorialLeft
-// (stepped into the tutorial's open door), exchangeOpened
-// (bumped THE UNFOLDING; main.js opens its screen), itemReached { thing }
+// paperRead { paper, loot, story? }, roomEntered { theme, name }, itemReached { thing }
 // (bumped the chest; main.js opens the battle screen) and
 // the box events from examineProp. Walking into a downed stick man
 // finishes it (gun.js finishDowned: minionFinished, minionKilled,
 // goldGained). While one holds the player's ankle a step onto another tile
 // is refused, heldFast { minion }, no turn spent (with free look, then
 // bodyTurned { bumped: true } if the press turned the body, as a bump).
-// Hidden in a room spot, a step comes out instead (spots.js leaveHiding:
-// hideLeft, or blocked { kind: 'hideBlocked' }).
-// A turn is spent only by `stepped`, `propSearched`, `bodyTurned`, `minionFinished`, `hid`, `hideLeft` or `toppled`.
+// A turn is spent only by `stepped`, `propSearched`, `bodyTurned` or `minionFinished`.
 export function stepPlayer(dRow, dCol) {
   const events = [];
   const facing = facingOf(dRow, dCol);
@@ -86,8 +82,6 @@ export function stepPlayer(dRow, dCol) {
     events.push({ type: 'turned', facing });
   }
 
-  // Hidden (spots.js), any step comes out of hiding, a turn like a step.
-  if (state.floor.hidden) return [...events, ...leaveHiding()];
 
   const newRow = state.floor.playerRow + dRow;
   const newCol = state.floor.playerCol + dCol;
@@ -96,7 +90,6 @@ export function stepPlayer(dRow, dCol) {
   const cornered = !canPassCorner(state.floor.playerRow, state.floor.playerCol, dRow, dCol);
   const block = cornered ? { kind: 'corner' } : whatBlocks(newRow, newCol);
   if (block) {
-    // Asked before the bump: a takedown that falls is no longer a live spot.
     const plain = plainBump(block);
     events.push(...bumpInto(block));
     // With free look, turning costs a turn, so a bump that turned the body
@@ -121,26 +114,14 @@ export function stepPlayer(dRow, dCol) {
 }
 
 // What a bump into `block` (passage.js whatBlocks) does: a box or another
-// prop is examined (examineProp), a piece of furniture that is a live hide
-// spot is hidden in (spots.js hideIn: hid), one that is a live takedown is
-// pushed over (spots.js topple: toppled, kills), one that is a live lure
-// is set off (spots.js soundLure: lureSounded, a sound), THE UNFOLDING opens (no turn: a rest
-// floor has no light to feed), the gate asks, the chest is selected, a
+// prop is examined (examineProp), the gate asks, the chest is selected, a
 // downed stick man is finished, and anything else just stops the player.
 // Shared by the step (stepPlayer) and free walking (walk.js). Events:
-// blocked { kind, thing }, exchangeOpened, gateReached / blocked gate
+// blocked { kind, thing }, gateReached / blocked gate
 // (gate.js reachGate), itemReached, the box events from examineProp, and
 // gun.js finishDowned's.
 export function bumpInto(block) {
   if (block.kind === 'prop') return examineProp(block.thing);
-  if (block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'hide')) {
-    return hideIn(block.thing.row, block.thing.col, block.thing.piece);
-  }
-  const takedown = block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'takedown');
-  if (takedown) return topple(takedown, block.thing.row, block.thing.col, block.thing.piece);
-  const lure = block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'lure');
-  if (lure) return soundLure(lure, block.thing.row, block.thing.col, block.thing.piece);
-  if (block.kind === 'exchange') return [{ type: 'exchangeOpened' }];
   if (block.kind === 'boss') return [reachGate()];
   if (block.kind === 'chest') return [reachItem(block)];
   if (block.kind === 'minion' && block.thing.downed) return finishDowned(block.thing);
@@ -150,10 +131,7 @@ export function bumpInto(block) {
 // Whether a bump into `block` only stops the player (a wall, a stick man
 // standing, furniture), with nothing to open, ask or finish.
 function plainBump(block) {
-  if (['prop', 'exchange', 'boss', 'chest'].includes(block.kind)) return false;
-  if (block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'hide')) return false;
-  if (block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'takedown')) return false;
-  if (block.kind === 'furniture' && liveSpotAt(block.thing.row, block.thing.col, 'lure')) return false;
+  if (['prop', 'boss', 'chest'].includes(block.kind)) return false;
   return !(block.kind === 'minion' && block.thing.downed);
 }
 
@@ -162,8 +140,8 @@ function plainBump(block) {
 // whatever lies there counts. Shared by the step (stepPlayer) and free
 // walking (walk.js, which passes `free` so the map doesn't slide the
 // player a whole tile). Events: stepped { facing, free }, then
-// tutorialLeft { advanced }, stationLeft, or stairsReached { path, hidden }, or coinTaken { gold },
-// keyTaken, paperRead, the vent events from ventUnderfoot, reachBroken from
+// stairsReached { path, hidden }, or coinTaken { gold },
+// keyTaken, paperRead, reachBroken from
 // crossing into the safe room (saferoom.js enterSafeRoom) and
 // roomEntered { theme, name }.
 export function enterTile(facing, free = false) {
@@ -176,22 +154,6 @@ export function enterTile(facing, free = false) {
   computeVisibility();
   events.push({ type: 'stepped', facing, free });
 
-  // The tutorial's open doors are the ways out of it (tutorial.js): main.js
-  // starts the run, or the advanced tutorial (advanced.js) through the
-  // other door.
-  const tut = state.floor.tutorial;
-  const on = d => d.row === newRow && d.col === newCol;
-  if (tut && tut.stage === 'open' && (on(tut.door) || on(tut.advancedDoor))) {
-    events.push({ type: 'tutorialLeft', advanced: on(tut.advancedDoor) });
-    return events;
-  }
-  // An advanced tutorial station's open door (advanced.js): main.js loads
-  // the next station, or starts the run after the last.
-  const station = state.floor.advanced;
-  if (station && station.open && on(station.door)) {
-    events.push({ type: 'stationLeft' });
-    return events;
-  }
 
   const stairs = stairsHere();
   if (stairs) {
@@ -211,7 +173,7 @@ export function enterTile(facing, free = false) {
   const paper = state.floor.props.find(p => p.kind === 'paper' && !p.searched &&
     p.row === state.floor.playerRow && p.col === state.floor.playerCol);
   if (paper) events.push(readPaper(paper));
-  events.push(...ventUnderfoot());
+
   events.push(...enterSafeRoom());
   // First step into a room: its name on a fixed plan, else its theme line.
   const chamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
@@ -251,24 +213,21 @@ function reachItem(block) {
 // bumping it selects it for the battle screen, with a question guarding
 // its loot (settled in answers.js settleAnswer). Bumping an energy cell
 // takes no turn here: main.js opens the reload panel for it, and the
-// answer is the turn (gun.js settleReload uses the cell up). A relay is
-// the same: main.js asks its question, relays.js settleRelay settles it.
-// The tutorial's barrel asks the player's name instead (tutorial.js; main.js
-// opens the ask screen, settleName settles it). The reflective desk heals
+// answer is the turn (gun.js settleReload uses the cell up). The reflective desk heals
 // (desk.js useDesk), no turn spent. The safe room's switch, or a shutter
 // that is down, drops or lifts its shutters (saferoom.js pullShutter), no
 // turn spent either; on the ship they are automatic and a bump does nothing. A ship station's console, board or crew member opens
 // its wires or speaks (stations.js useStation), no turn spent.
-// Events: blocked, boxSprung, cellFound { prop }, relayFound { prop }, nameAsked { prop },
+// Events: blocked, boxSprung, cellFound { prop },
 // deskUntouched, deskHealed { healed }, shutterDown, shutterUp, shutterBlocked,
 // crewSpoke, stationLocked, stationOpened (stations.js useStation),
 // or propSearched then boxOpened.
 function examineProp(prop) {
   if (prop.searched) return [{ type: 'blocked', kind: 'prop', thing: prop }];
   prop.identified = true;
-  if (prop.asks === 'name') return [{ type: 'nameAsked', prop }];
+
   if (prop.kind === 'cell') return [{ type: 'cellFound', prop }];
-  if (prop.kind === 'relay') return [{ type: 'relayFound', prop }];
+
   if (prop.kind === 'desk') return useDesk(prop);
   if (prop.kind === 'charger') return useCharger(prop);
   if (isStation(prop)) return useStation(prop);
