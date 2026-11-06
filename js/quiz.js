@@ -2,7 +2,7 @@
 // selection, and multiple-choice option building. No DOM access here.
 
 import { state } from './state.js';
-import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE, CHOICE_TYPES, NO_REPEAT_CHOICE_TYPES, NUMBER_NEAR_POOL, STEM_CUES } from './config.js';
+import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE, CHOICE_TYPES, NUMBER_NEAR_POOL, STEM_CUES } from './config.js';
 import { t } from './text.js';
 import { shuffle } from './random.js';
 
@@ -102,7 +102,7 @@ function groupBy(pool, keyFn) {
   return groups;
 }
 
-export function categoryLabel(category) {
+function categoryLabel(category) {
   return CATEGORY_LABELS[category] || category;
 }
 
@@ -174,34 +174,6 @@ export function fightGroups(pool, count) {
     const [category, difficulty] = k.split('\u0000');
     return { label: categoryLabel(category) + ' · ' + difficulty, category, pool: items };
   });
-}
-
-// The battle screen's category choices for one turn: up to `count` groups
-// of `pool` (fightGroups), each { label, category, pool }. One group per
-// category is taken first so the choices stay as varied as possible. A
-// NO_REPEAT_CHOICE_TYPES type the player picked last turn
-// (`lastChoiceType`) sits this turn out, unless dropping it would leave
-// fewer than `count` choices. Returns
-// fewer than 2 choices when the pool can't offer a real choice (e.g. a
-// pasted list with no categories) — the caller skips the choice step then.
-export function buildCategoryChoices(pool, count, lastChoiceType) {
-  let groups = fightGroups(pool, count);
-  if (lastChoiceType && NO_REPEAT_CHOICE_TYPES.includes(lastChoiceType)) {
-    const rested = groups.filter(g => g.choiceType !== lastChoiceType);
-    if (rested.length >= count) groups = rested;
-  }
-
-  const all = shuffle(groups);
-  const picked = [];
-  for (const g of all) {
-    if (picked.length >= count) break;
-    if (!picked.includes(g) && !picked.some(p => p.category === g.category)) picked.push(g);
-  }
-  for (const g of all) {
-    if (picked.length >= count) break;
-    if (!picked.includes(g)) picked.push(g);
-  }
-  return shuffle(picked);
 }
 
 // Bundled-set images are authored as plain relative paths (e.g.

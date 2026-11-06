@@ -36,15 +36,14 @@
 import { state, key, parseKey } from './state.js';
 import { FOUR_STEPS } from './grid.js';
 import {
-  ROOM_VIEW, PLAYER_CONE_RANGE, ISO_TILES_ACROSS, ISO_TILES_ACROSS_NARROW,
-  ISO_NARROW_MAP_WIDTH, FIGURE3D, SHIP_WINDOWS,
+  ROOM_VIEW, PLAYER_CONE_RANGE, FIGURE3D, SHIP_WINDOWS,
 } from './config.js';
 import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
 import { figurePose, projectFigure, phiOfAngle, resetFigure } from './figure3d.js';
 import { isWall, grain } from './mapshared.js';
 import {
-  FLAT, STAND, POOL, drawThingsWith, drawLamp, drawLampShade, drawEmberHead, STICK_LINE,
+  STAND, drawThingsWith, drawLamp, drawLampShade, drawEmberHead, STICK_LINE,
 } from './roomthings.js';
 import { startGunFrame, holdBook, drawBook, drawBookInto } from './roomgun.js';
 import { startSkyFrame, drawWindow, drawSky, drawShipView } from './roomsky.js';
@@ -100,20 +99,15 @@ const PILLAR = { body: '#4a4652', light: '#5a5662', dark: '#38343f', top: '#625d
 // white, the dim room and memory a touch violet.
 const LIT_TINT = [228, 240, 244];
 const DIM_TINT = [244, 236, 255];
-const HIDDEN_HEAD = 0.45;        // hidden in a room spot, how high his head shows, a share of his height
 
 // How each kind of thing is drawn (step B; tests/roomview.test.mjs checks
-// every kind the game puts on the map has one): 'flat' lies on the floor
-// under everything, 'stand' stands on its tile and is sorted with the
-// player, 'glyph' stays its glyph over the picture (the boss and THE
-// UNFOLDING, as in the shoulder view), 'player' is the player's stick man.
-// A thing not made out yet is a pixel '?' that stands like a prop, except
-// the stairs and a grate (drawn as they are).
+// every kind the game puts on the map has one): 'stand' stands on its tile
+// and is sorted with the player, 'player' is the player's stick man. A
+// thing not made out yet is a pixel '?' that stands like a prop, except a
+// shutter (drawn as it is).
 export const ROOM_DRAWINGS = {
-  paper: 'flat', stairs: 'flat',
-  box: 'stand', furniture: 'stand', cell: 'stand', desk: 'stand', charger: 'stand', chest: 'stand', coin: 'stand', key: 'stand',
-  shutter: 'stand', switch: 'stand', console: 'stand', powerBoard: 'stand', crew: 'stand',
-  boss: 'glyph', player: 'player',
+  furniture: 'stand', shutter: 'stand', console: 'stand', powerBoard: 'stand', crew: 'stand',
+  player: 'player',
 };
 // The '?' of a thing not made out yet, as rows of picture pixels.
 const UNKNOWN = [' ### ', '#   #', '    #', '   # ', '  #  ', '     ', '  #  '];
@@ -177,7 +171,7 @@ export function cameraGoal(bounds, at, viewW, viewH) {
 }
 
 // The player's figure in figure3d.js (its owner key).
-export const PLAYER_FIGURE = {};
+const PLAYER_FIGURE = {};
 
 // Where the player was drawn last (one stick: their free spot), and
 // whether they have moved since. While they walk the scene shows plainly
@@ -191,7 +185,7 @@ function walkedSince(at) {
 
 // Draws the whole map from the room camera. `canvasSize` is { width,
 // height, pageWidth }; `shared` is what mapview.js hands it (colours,
-// things, fogOf, paintGlyph, keepMoving, showPlain, now, still, walkAt).
+// things, fogOf, keepMoving, showPlain, now, still, walkAt).
 export function drawRoomScene(ctx, canvasSize, shared) {
   look = shared;
   const f = state.floor;
@@ -244,14 +238,11 @@ export function drawRoomScene(ctx, canvasSize, shared) {
     if (!inView(Math.round(thing.at.row), Math.round(thing.at.col))) return;
     const x = Math.round(thing.at.col * T) - ox;
     const y = Math.round(thing.at.row * T) - oy;
-    if (drawing === 'flat') FLAT[thing.kind](thing, x, y, glows);
     const { row, col } = thing.tile;
     if (drawing === 'stand') items.push({ y: thing.at.row + 1, row, col, draw: () => STAND[thing.kind](thing, x, y, glows) });
     if (drawing === 'unknown') items.push({ y: thing.at.row + 1, row, col, draw: () => drawUnknown(x, y, glows) });
   });
-  // Hidden in a room spot, the player is drawn after its piece (only his
-  // ember head shows).
-  items.push({ y: at.row + (f.hidden ? 1.01 : ROOM_VIEW.footAt + 0.01), draw: () => drawStickMan(at, ox, oy) });
+  items.push({ y: at.row + ROOM_VIEW.footAt + 0.01, draw: () => drawStickMan(at, ox, oy) });
   // The safe room's lamp hangs from the ceiling, over all of it.
   if (f.safeRoom && space.room === f.safeRoom.chamber) items.push({ y: Infinity, draw: () => drawLampShade(ox, oy) });
   items.sort((a, b) => a.y - b.y).forEach(item => item.draw());
@@ -289,7 +280,6 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(buf, 0, 0, viewW, viewH, 0, 0, viewW * scale, viewH * scale);
   ctx.imageSmoothingEnabled = true;
-  drawGlyphs(ctx, ox, oy);
   drawSky(ctx, viewW, viewH, at, ox, oy);
 }
 
@@ -670,12 +660,6 @@ function drawStickMan(at, ox, oy) {
   const fx = (at.col + 0.5) * T - ox;
   const fy = (at.row + ROOM_VIEW.footAt) * T - oy;
   const ax = Math.sin(angle), ay = -Math.cos(angle);
-  // Hidden in a room spot (spots.js): only his ember head, low, peering
-  // out from the piece; no body and no book.
-  if (state.floor.hidden) {
-    drawEmberHead(bctx, fx, fy - h * HIDDEN_HEAD, h, playerHead(ax, pose));
-    return;
-  }
   // The body is the 3D moves' (figure3d.js, one stick plan step F): it
   // walks as far as he goes, crouches while he sneaks, and faces his light.
   const f = state.floor;
@@ -707,29 +691,11 @@ function playerHead(ax, pose) {
   return { lean: ax, ring: look.colours.text, rgb: look.colours.glowRgb, level: emberGlow(pose.breath, look.still) };
 }
 
-// Every thing but the player as its glyph on its tile, over the lit
-// picture at the canvas's own size (steps B to D draw them as pictures),
-// never smaller than on the old isometric map.
-function drawGlyphs(ctx, ox, oy) {
-  const tile = T * scale;
-  const narrow = look && ctx.canvas.width / pageScale < ISO_NARROW_MAP_WIDTH;
-  const isoTile = ctx.canvas.width / (narrow ? ISO_TILES_ACROSS_NARROW : ISO_TILES_ACROSS);
-  const cell = Math.max(tile, Math.min(isoTile, tile * 1.6));
-  look.things.forEach(thing => {
-    if (drawingOf(thing) !== 'glyph') return;
-    const x = ((thing.at.col + 0.5) * T - ox) * scale;
-    const y = ((thing.at.row + 0.5) * T - oy) * scale;
-    if (x < -cell || y < -cell || x > ctx.canvas.width + cell || y > ctx.canvas.height + cell) return;
-    look.paintGlyph(ctx, cell, x, y - (thing.look.lift || 0) * cell, thing.glyph, thing.look);
-  });
-}
-
 // How a map thing is drawn (ROOM_DRAWINGS), allowing for what isn't made
-// out yet: its '?', except the stairs, a grate and a shutter, which show
-// as they are.
+// out yet: its '?', except a shutter, which shows as it is.
 function drawingOf(thing) {
-  const drawing = ROOM_DRAWINGS[thing.kind] || 'glyph';
-  if (thing.glyph === null && !['stairs', 'shutter'].includes(thing.kind)) return 'unknown';
+  const drawing = ROOM_DRAWINGS[thing.kind];
+  if (thing.glyph === null && thing.kind !== 'shutter') return 'unknown';
   return drawing;
 }
 

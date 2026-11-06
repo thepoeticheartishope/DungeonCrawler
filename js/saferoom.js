@@ -8,8 +8,13 @@
 
 import { state, key, parseKey } from './state.js';
 import { FOUR_STEPS } from './grid.js';
-import { startRoom } from './desk.js';
 import { SHIP_DOOR_REACH } from './config.js';
+
+// The room holding `layout.start` (Command on the ship), or undefined.
+function startRoom(layout) {
+  const startKey = key(layout.start.row, layout.start.col);
+  return layout.chambers.find(ch => ch.floorCells.some(p => key(p.row, p.col) === startKey));
+}
 
 // The start room's shutters, or null if it has no doorway. Its doorways
 // are its own tiles with open floor outside the room beside them.

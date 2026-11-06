@@ -1,16 +1,16 @@
 # Noesis Protocol (repo: DungeonCrawler)
 
-Static PWA quiz / dungeon-crawler, plain ES modules, no build step, no dependencies.
+Static PWA quiz game, "There's Been a Tragedy" (a spaceship whose crew the player teaches),
+plain ES modules, no build step, no dependencies.
 Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 
 ## Rules every change must follow
 
 - **The ship is the game** (Timothy 2026-11-01). The start screen always starts the ship; there is
-  no other way in. The old dungeon crawl is being deleted in layers (dungeon removal plan,
-  `ideas/dungeon-removal-plan.md` outside the repo; step B removed its floors, tutorial and extras,
-  step C combat and the charger, step D the light, fog, battery, lamps and the other plans). What
-  is left (the turn-based look and the One stick setting, leftover state and config keys) goes in
-  step E: don't build on it.
+  no other way in. The old dungeon crawl is deleted (dungeon removal plan, steps A–E2,
+  `ideas/dungeon-removal-plan.md` outside the repo; its old plans are in `ideas/reference/dungeon/`).
+  The old PRs keep its code. Don't bring dungeon features back from them; a new idea is checked
+  against `ideas/endgame.md` first.
 - `main` is protected: branch + PR, one PR per logical change.
 - Changed a file listed in `service-worker.js` `APP_SHELL`? Bump `CACHE_NAME` in the same commit.
 - New JS file? Add it to `APP_SHELL` too; a deleted one comes out of it.
@@ -18,7 +18,8 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 - Tunables live in `js/config.js`. Game state lives in `js/state.js`.
 - "Still broken right after a fix" is usually a stale service worker: test in Incognito first.
 - Test with the DEV tools: open the game as `index.html?dev` (hidden without it) and tap the DEV tag in the
-  bottom-left corner: Fog off, Skip room, Auto-win, Inspect (live state + last 20 events).
+  bottom-left corner: Auto-win, Learn all roles, Boss now, Panic (one step up), Book paper, Minigame
+  (roll / off / force one), Inspect (live state + last 20 events) and the map's draw time.
 - Automated tests: `node --test tests/*.test.mjs` (rule unit tests, no dependencies) and
   `node tests/smoke.mjs` (Playwright, see its header; 4 runs at once by default, `SMOKE_JOBS=1` one at a time;
   `SMOKE_ONLY=ship SMOKE_REPEAT=20` runs only those runs, that many times each, to chase one that
@@ -41,8 +42,8 @@ Layers:
   don't import from `main.js`.
 - State goes in the right group in `state.js` (`settings` / `run` / `floor` / `battle`), with a
   trailing comment saying what it holds. Never put DOM elements or timers in new state.
-- One source of truth per question: `whatBlocks()` decides blocking, `goldReward()` decides gold,
-  `renderHud()` is the only writer of hearts / gold / turns. Reuse these. Don't make a second copy.
+- One source of truth per question: `whatBlocks()` decides blocking, `renderShipHud()` is the only
+  writer of the ship's HUD. Reuse these. Don't make a second copy.
 
 Comments:
 - Every file starts with a `//` header: what the file is for, who calls it, and
@@ -51,8 +52,8 @@ Comments:
   sentences. Rule functions list the events they can return.
 - Comments explain design reasons ("Misses don't feed the light: they already cost a heart").
   Don't narrate the code line by line, and don't leave commented-out code.
-- Plain words, short sentences, no jargon the game doesn't use (player, floor, room, minion,
-  boss, light, haunt).
+- Plain words, short sentences, no jargon the game doesn't use (player, ship, room, crew, role,
+  station, breaker, panic, boss).
 
 Code:
 - Plain ES modules, 2-space indent, semicolons, single quotes, `const` (or `let` if it changes),
@@ -86,25 +87,23 @@ Rules and data (no page/DOM access):
 |---|---|
 | `config.js` | Tunable constants and sample data. Never changes at runtime. |
 | `state.js` | The one shared `state` (`settings` / `run` / `floor` / `battle`), `key(r, c)` and `parseKey(k)`. |
-| `grid.js` | `FOUR_STEPS` / `EIGHT_STEPS` step tables and `stepsFrom()`, the one step-count walk over the floor. |
-| `random.js` | `shuffle(list)` and `randInt(lo, hi)`. |
-| `text.js` | All wording: `t()`, per-floor overrides, `data-t` labels. |
-| `plans.js` | `FLOOR_PLANS`: fixed buildings per depth (School, Archive, Observatory), furniture, lamps; `buildPlanLayout()`. |
+| `grid.js` | The `FOUR_STEPS` step table and `stepsFrom()`, the one step-count walk over the floor. |
+| `random.js` | `shuffle(list)`. |
+| `text.js` | All wording: `t()` and the `data-t` labels. |
+| `plans.js` | `FLOOR_PLANS.ship`: the ship's rooms, furniture and stations; `buildPlanLayout()`. |
 | `floor.js` | `buildShipFloor()`: the ship as data. |
-| `decor.js` | Room themes, pillars, papers, boxes, energy cells, fixed-plan furniture (`makePlacer`). |
-| `passage.js` | `whatBlocks()` (can I step here?), `canPassCorner()`, `stepsAway()`. |
-| `sight.js` | The player's light (`computeVisibility`), the look cone, `canMakeOut`, `shootBlock`, cover. |
+| `decor.js` | The plan's furniture (`placeFurniture`) on rules that keep every tile reachable (`makePlacer`). |
+| `passage.js` | `whatBlocks()` (can I step here?) and `solidProp()`. |
+| `sight.js` | What the player sees (`computeVisibility`: all of the ship), `canMakeOut`, cover. |
 | `look.js` | The light's angle: body facing, `lookAngle`, `aimLook`, `swingLook`. |
 | `modifiers.js` | The Gambler's most (`maxWager`), `blindReadMs()`, Flip's roll. |
 | `minigames.js` | Minigame rules: which fit a question, rolls, tiers (Close Enough … Sum Lock). |
-| `moves.js` | The player's step (`stepPlayer`), `bumpInto`, `enterTile`, `goldReward`. |
+| `moves.js` | What a walk finds: `enterTile` (a new tile: the safe room, a new room) and `bumpInto`. |
 | `walk.js` | Free walking with One stick: `walkFree()`, sneak and creep. |
-| `walkpace.js` | `stepMs`: a slide's time by its length on screen. |
 | `windows.js` | Windows on outside walls and their pools of light. |
-| `desk.js` | The reflective desk in the start room: heals to full once a floor. |
-| `saferoom.js` | The safe room: shutters, switch, lamp; who waits outside. |
+| `saferoom.js` | The safe room (Command): its automatic shutters and lamp. |
 | `stations.js` | The ship's stations: training console, a crew member's board, the crew member; breakers that close on a right answer. |
-| `ship.js` | The ship's run: arrival clock, crew panic and its effects, training period, burn window, the tragedy roll, arrive / lose. |
+| `ship.js` | The ship's run: crew panic and its effects, the tragedy roll, arrive / lose. |
 | `roles.js` | The ship's crew roles, one per minigame: who sits out, learning, a 3-round job, the benefit a taught role gives the run, how each crew member looks. |
 | `quiz.js` | Picking questions, building options, fight choice labels, answer types. |
 | `sets.js` | Bundled sets (`lists/`) and saved custom sets. |
@@ -113,16 +112,16 @@ Drawing and page code:
 
 | File | Job |
 |---|---|
-| `main.js` | Everything else: wiring, `drawEvents()`, the world's clock and turn outcome, room log, end screens (~830 lines). |
+| `main.js` | Everything else: wiring, `drawEvents()`, the world's clock and turn outcome, room log, end screens (~640 lines). |
 | `controls.js` | The player's controls: taps aim the light, the walk stick and keys, `walkFrame`. |
 | `gunactions.js` | The ship's questions on the ask screen: breakers, crew jobs, learning, the final boss, dressing a question, Auto-win. |
-| `render.js` | Screens, the HUD (`renderHud()` only writer of hearts / gold / turns), edge glow, d-pad hints. |
-| `mapview.js` | The map canvas, its animations and taps; `requestMapDraw()`, `glyphOf()`, `mapThings()`. |
+| `render.js` | Screens, the ship's HUD (`renderShipHud()`), edge glow, the answer line. |
+| `mapview.js` | The map canvas, its afterglow, animations and taps; `requestMapDraw()`, `mapThings()`. |
 | `roomview.js` | The room view, the only map view: camera, walls and floors, light map, the player (~800 lines). |
-| `roomthings.js` | The room view's things on the floor and the furniture as pixel art (`FLAT` / `STAND`). |
+| `roomthings.js` | The room view's furniture, stations, crew and shutters as pixel art (`STAND`). |
 | `roomgun.js` | The player's book on the room view, shut under his arm. |
 | `roomsky.js` | Windows and their light, and the eye in the sky (`lookUp`). |
-| `mapshared.js` | Sizes and view-independent helpers the map view uses (`floorLevelOf`, `isWall`, `grain` …). |
+| `mapshared.js` | `isWall` and `grain`, shared by the room view's files. |
 | `playerform.js` | The player's stick man: breath, ember head, glances. |
 | `figure3d.js` | Picks and blends the 3D moves into poses for the player and the crew. |
 | `moves3d.js` | Generated 3D move data (Quaternius, CC0). Don't edit by hand. |

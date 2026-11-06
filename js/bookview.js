@@ -69,11 +69,6 @@ export function bookReading() {
   return reading;
 }
 
-// The page the book shows: 'ask', 'log' or 'map'.
-export function bookTab() {
-  return tab;
-}
-
 // The ask screen opened (`asking` true) or closed (gunpanels.js
 // showOnly). Either way a book read from the map is done, and the page
 // is back at ASK.
@@ -90,7 +85,7 @@ export function bookAsks(asking) {
 // the map's place with the clock running; with a question open, a turn to
 // that page. Not while another panel (the dial, CHARGE.SYS) is over the
 // map.
-export function openBook(which) {
+function openBook(which) {
   if (!els.book.hidden) { pickTab(which); return; }
   if (!els.room.classList.contains('show') || deps.mapPanelShown()) return;
   reading = true;
@@ -103,7 +98,7 @@ export function openBook(which) {
 
 // Closes a book read from the map (L / M again, Esc, a tap, a stick man
 // reaching the player). With a question open it turns back to ASK.
-export function closeBook() {
+function closeBook() {
   if (!reading) { if (tab !== 'ask') pickTab('ask'); return; }
   reading = false;
   els.book.hidden = true;

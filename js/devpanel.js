@@ -1,26 +1,28 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
-// panel over the screen): Skip room, Auto-win, Learn all roles, Fog, Book
-// paper, One stick, Minigame, Inspect, and the map's frame meter, for testing.
-// main.js passes in the game actions and elements it needs.
+// panel over the screen), the ship's testing tools (dungeon removal plan,
+// call 1): Auto-win, Learn all roles, Boss now, Panic, Book paper,
+// Minigame, Inspect, and the map's frame meter. main.js passes in the game
+// actions it needs.
 import { state } from './state.js';
-import { requestMapDraw, mapDrawTimes } from './mapview.js';
-import { MINIGAMES } from './minigames.js';
+import { mapDrawTimes } from './mapview.js';
+import { MINIGAMES, matchGroups } from './minigames.js';
 import { lookAngle, bodyAngle } from './look.js';
 import { refreshBook } from './bookview.js';
-import { BOOK, SHIP_ROLES } from './config.js';
+import { renderShipHud } from './render.js';
+import { BOOK, SHIP_ROLES, SHIP_RUN } from './config.js';
 
 const devDock = document.getElementById('devDock');
 const devToggleBtn = document.getElementById('devToggleBtn');
 const devPanel = document.getElementById('devPanel');
-const devSkipBtn = document.getElementById('devSkipBtn');
+const devBossBtn = document.getElementById('devBossBtn');
+const devPanicBtn = document.getElementById('devPanicBtn');
 const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devLearnRolesBtn = document.getElementById('devLearnRolesBtn');
-const devFogBtn = document.getElementById('devFogBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
 const devFrameOut = document.getElementById('devFrameOut');
 const devMinigameBtn = document.getElementById('devMinigameBtn');
 
-export function initDevPanel({ advanceRoom, autoWinGun }) {
+export function initDevPanel({ autoWinGun, openBoss }) {
   // Players never see DEV: it shows only when the address has ?dev
   // (index.html?dev), for testing.
   const params = new URLSearchParams(location.search);
@@ -44,10 +46,24 @@ export function initDevPanel({ advanceRoom, autoWinGun }) {
   }
   setInterval(showFrameTimes, FRAME_METER_MS);
 
-  // Dev tool: lays the ship out again at once.
-  devSkipBtn.addEventListener('click', () => {
-    if (state.run.hearts <= 0) return;
-    advanceRoom();
+  // Dev tool: the final boss now, without teaching the crew first. Its
+  // charge meters come from the crew taught so far (none: no charges). A
+  // set whose answers can't make the board has no boss.
+  devBossBtn.addEventListener('click', () => {
+    if (!state.run.ship) return;
+    if (!matchGroups()) { devBossBtn.textContent = 'Boss: this set has none (dev)'; return; }
+    openBoss();
+  });
+
+  // Dev tool: the crew's panic one step up, from Calm round to Panicking
+  // (never Broken, which ends the run), to try the games at each level.
+  devPanicBtn.addEventListener('click', () => {
+    const ship = state.run.ship;
+    if (!ship) return;
+    ship.panic = (ship.panic + 1) % SHIP_RUN.brokenAt;
+    ship.streak = 0;
+    devPanicBtn.textContent = 'Panic: ' + ship.panic + ' (dev)';
+    renderShipHud();
   });
 
   // Dev tool: while on, a question on the ask screen plays itself out: the
@@ -70,14 +86,6 @@ export function initDevPanel({ advanceRoom, autoWinGun }) {
   devLearnRolesBtn.addEventListener('click', () => {
     state.run.trained = ['engineer', ...SHIP_ROLES.map(r => r.id)];
     devLearnRolesBtn.textContent = 'All roles learned (dev)';
-  });
-
-  // Dev tool: reveal the whole map instantly, to check that the layout,
-  // boss placement, and entities are generating correctly under the fog.
-  devFogBtn.addEventListener('click', () => {
-    state.settings.fogEnabled = !state.settings.fogEnabled;
-    devFogBtn.textContent = state.settings.fogEnabled ? 'Fog: ON (dev)' : 'Fog: OFF (dev)';
-    requestMapDraw();
   });
 
   // Dev tool (record book plan step A): the book's page, dark as the game
@@ -122,7 +130,7 @@ export function recordEvents(events) {
   refreshInspector();
 }
 
-// Floor objects (boss, minions, props, chest...) print as "kind @ row,col"
+// Floor objects (props, stations...) print as "kind @ row,col"
 // instead of the whole object; Sets, Maps and question pools print their size.
 function where(thing) {
   return thing ? thing.kind + ' @ ' + thing.row + ',' + thing.col : null;
@@ -148,9 +156,6 @@ function floorSummary() {
     grid: f.GRID_SIZE,
     player: f.playerRow + ',' + f.playerCol + ' ' + f.facing + ' ' + lookOffset(),
     props: f.props.length,
-    chest: where(f.chest),
-    stairs: f.stairs && f.stairs.row + ',' + f.stairs.col,
-    lastChoiceType: f.lastChoiceType,
     sets: {
       walls: f.wallSet.size, pillars: f.pillarSet.size, visible: f.visibleSet.size,
       explored: f.exploredSet.size,

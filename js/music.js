@@ -154,14 +154,3 @@ function easeTo(ctx, fade, to, ms, equalPower = false) {
   g.setValueCurveAtTime(curve, now + 0.01, ms / 1000);
 }
 
-// Each made tune's loudness now (0 silent), whether it is meant to be up,
-// which voice is playing and how far into the file it is (seconds), by
-// name. For tests.
-export function musicLevel() {
-  const out = {};
-  Object.entries(tunes).forEach(([id, tune]) => {
-    const voice = tune.voices[tune.active];
-    out[id] = { level: tune.fade.gain.value, up: tune.up, voice: tune.active, at: voice.audio.currentTime, voices: tune.voices.map(v => v.gain.gain.value) };
-  });
-  return out;
-}

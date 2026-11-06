@@ -87,7 +87,7 @@ export function crewFull() {
 
 // Whether every crew member the player picked is taught (taughtCount):
 // then the final boss comes (ship minigames plan step G3).
-export function allTaught() {
+function allTaught() {
   const crew = taughtCount();
   return crew.of > 0 && crew.taught >= crew.of;
 }

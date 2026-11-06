@@ -1,24 +1,35 @@
-# Term Dungeon
+# There's Been a Tragedy
 
-A vocabulary quiz game with dungeon-crawler combat, built for educators to gamify vocabulary/term practice.
+A quiz game for teaching: the captain of a spaceship has died, and the player takes command. Each
+crew member has a job that is a small game built from a question set; the player learns each
+role at the training console, then teaches it to the crew. Wrong answers raise the crew's panic.
+Teach the crew and beat the final challenge, and the ship reaches the planet.
 
 ## Play
 
-**[Play Term Dungeon](https://thepoeticheartishope.github.io/DungeonCrawler/)**
+**[Play it here](https://thepoeticheartishope.github.io/DungeonCrawler/)**
 
 Works in any browser, and can be installed as an app (PWA) from that page on desktop or mobile.
 
-## Load your own term list
+## Use your own questions
 
-From the start screen, use "Load your own term list" to upload a `.txt`, `.csv`, or `.json` file, or paste terms directly (`term | definition` per line).
+After **Begin**, the set screen lists the built-in sets. **Make your own set** opens the workshop:
+paste or load a `.txt`, `.csv` or `.json` list (`term | definition` per line), then save it. Saved
+sets show on the set screen.
 
 ## Changing the wording
 
-All game text (the encounter log, battle and map messages, screen labels, end screens) lives in [`js/text.js`](js/text.js), one line per key. Edit the text in quotes; `{name}` parts are filled in by the game. The top of that file explains the rest (capitals, plurals, random variants, per-room overrides). After editing, bump `CACHE_NAME` in `service-worker.js` so browsers pick up the change.
+All game text (screen labels, the room log, the ship's opening, the minigames, the end screens)
+lives in [`js/text.js`](js/text.js), one line per key. Edit the text in quotes; `{name}` parts are
+filled in by the game. The top of that file explains the rest (capitals, plurals, random
+variants). After editing, bump `CACHE_NAME` in `service-worker.js` so browsers pick up the change.
 
-## Drawing rooms
+## The ship's plan
 
-Every room is a text drawing in [`js/rooms.js`](js/rooms.js): `#` wall, `.` floor, `?` a spot that always gets a paper or box, `+` a doorway inside the room, and a `.` on the outer edge is a door out. Each drawing is also used turned and mirrored. Room themes (crypt, library, flooded cellar, shrine), pillar odds, box traps and loot, and the 3-tile `?` distance are in [`js/config.js`](js/config.js); their wording and lore are the `theme.*` lines in `js/text.js`. After editing, bump `CACHE_NAME` as above.
+The ship is one fixed plan in [`js/plans.js`](js/plans.js) (`FLOOR_PLANS.ship`): rows of text for
+its walls and floor, each room's rectangle and name, its furniture, and where the stations and
+crew stand. Room names are `plan.ship.*` lines in `js/text.js`. After editing, bump `CACHE_NAME` as
+above.
 
 ## Credits
 

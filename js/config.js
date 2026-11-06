@@ -207,10 +207,6 @@ export const CHOICE_TYPES = {
   causeNetwork: 'cause',
   causePrinter: 'cause'
 };
-// Choice types that aren't offered on the turn right after the player
-// picked them (when enough other choices remain), so the biggest, most
-// familiar pool can't be the safe pick every turn.
-export const NO_REPEAT_CHOICE_TYPES = ['name'];
 
 // When the answer is a number, buildChoices offers the wrong numbers nearest
 // to it in size, so the right one can't be spotted as the odd size out
@@ -244,7 +240,6 @@ export const CATEGORY_LABELS = {
 
 // Grid size, room count, minions and the light's loss share per floor are
 // in the floor recipes (floors.js).
-export const BOX_GOLD = [1, 2]; // plus the floor index, before the darkness multiplier
 
 // Anything further than this many tiles away (in any direction, diagonals
 // included) shows as a '?' until the player gets closer — enemies, items
@@ -252,26 +247,7 @@ export const BOX_GOLD = [1, 2]; // plus the floor index, before the darkness mul
 export const REVEAL_DISTANCE = 5;
 
 export const MAX_HEARTS = 3;
-// Floor goals (strategy plan step A): each danger depth rolls
-// GOALS_PER_FLOOR of these, shown in the HUD and paid in myelin (flat, not
-// doubled in the darkness) as the player goes down the stairs. Drafts; tune after play.
-//   noMiss      answer nothing wrong on the floor (questions and reloads)
-//   allPapers   read every paper (only with GOAL_PAPERS_MIN or more on the floor)
-//   swift       bring the boss down before the light is GOAL_SWIFT_SHARE of the way (the eye half open)
-//   noHunter    go down before the hunter wakes
-//   noStruggle  never caught with no energy (gun only)
-export const FLOOR_GOALS = [
-  { id: 'noMiss', pay: 2 },
-  { id: 'allPapers', pay: 1 },
-  { id: 'swift', pay: 2 },
-  { id: 'noHunter', pay: 2 },
-  { id: 'noStruggle', pay: 2 },
-];
-// The locked core (locked core plan, step A; dungeon.js, floor.js): every
-// danger depth hides CORE_KEYS keys, one each in that many rooms picked at
-// random (never the start room or the core). Stepping on one takes it.
-export const CORE_KEYS = 3;
-// The charger (charger plan, `ideas/charger-plan.md` outside the repo;
+// The charger (charger plan, `ideas/reference/dungeon/charger-plan.md` outside the repo;
 // charger.js): a machine in the start room, gun on only, that fills energy
 // to full through CHARGE.SYS, a wire puzzle with no wrong move. Wires are
 // `sizes[depth]` square (the last for any deeper depth: Timothy 2026-10-26,
@@ -441,16 +417,6 @@ export const SAFE_ROOM = {
 };
 // The longest name the start screen takes, so it fits on one line in a paper.
 export const PLAYER_NAME_MAX_LENGTH = 20;
-export const ROOM_COUNT = 3;
-// Cover (Timothy 2026-10-26, sight.js): crouched (One stick: sneaking or
-// creeping) with something solid beside them, the player is quieter: a
-// mistake's sound spreads `noiseShare` of its NOISE_RANGES (at least a
-// step). Stick men on the far side of that cover can't notice them at all.
-export const COVER = { noiseShare: 0.5 };
-// Room spots (room spots plan, spots.js; Timothy 2026-10-28): what a
-// plan's spot may hold, and how often one holds nothing ("33% of the time
-// it has nothing I think is fair").
-export const SPOT_KINDS = ['hide', 'takedown', 'lure', 'scout'];
 export const PLAYER_CONE_RANGE = 5;
 // The record book (record book plan, ideas/record-book-plan.md outside the
 // repo): the ask screen drawn as a book with a dark page and the light tube
@@ -484,14 +450,8 @@ export const MAP_DRAG_PX = 8;
 // A tap on the floor this close to the player's own tile (in tiles)
 // doesn't aim: the angle would jump about under it.
 export const LOOK_POINTER_DEAD = 0.35;
-// How long "I see you." stays on the map before it fades (render.js showSensed).
+// How long a whisper stays on the map before it fades (render.js showWhisper).
 export const SENSE_NOTE_MS = 2600;
-// The answer swirl (answer swirl plan, ideas/answer-swirl-plan.md outside the
-// repo): after a wrong answer, with Reveal on, the right answer shows over
-// the map until the player's next move. How long the answer line takes to
-// fade once they move (keep in step with .answer-note in index.html), after
-// which it is taken off the map and "I see you." moves back up.
-export const ANSWER_LINE_FADE_MS = 1600;
 // How long a tutorial line stays on the map before it fades (slowly: render.js showWhisper).
 export const TUTORIAL_WHISPER_MS = 5000;
 
@@ -520,17 +480,6 @@ export const TIMER_SECONDS = 10;
 // the question fits one (minigames.js rollMinigame). Never the same
 // minigame twice in a row.
 export const MINIGAME_CHANCE = 0.25;
-// What a minigame's tier pays, beside a plain right answer (which counts
-// as tier '2'): `energy` added to a reload's energy (never below 1, never
-// past ENERGY_MAX), `bossDamage` HP off the boss, `goldScale` times the
-// gold from a chest, box or category challenge. A relay and a minion
-// fight pay any tier as a plain right answer. Tier 1 is a weak hit, X a
-// perfect one.
-export const MINIGAME_TIER_PAY = {
-  1: { energy: -1, bossDamage: 1, goldScale: 1 },
-  2: { energy: 0, bossDamage: 1, goldScale: 1 },
-  X: { energy: 1, bossDamage: 2, goldScale: 2 },
-};
 // Close Enough: a dial from 0 to the answer times a random reach between
 // CLOSE_ENOUGH_REACH_MIN and _MAX (so the answer isn't always in the
 // middle), rounded up to a round number, and never shorter than
@@ -813,20 +762,6 @@ export const AFTERGLOW_SETTLE_MS = 900;
 // are 3x, which makes every frame's fills, glows and afterglow copy 2.25x
 // the work of 2x for a difference the soft phosphor look doesn't show.
 export const MAP_MAX_PIXEL_RATIO = 2;
-// Glyph height on the map, as a share of one tile: the boss bigger than
-// the player, minions and the coin smaller.
-export const MAP_GLYPH_SIZES = {
-  player: 0.84, boss: 1.03, minion: 0.71, hunter: 0.9, coin: 0.65,
-  stairs: 0.71, chest: 0.77, prop: 0.77, exchange: 0.9, key: 0.71,
-  downed: 0.45, // Simple enemies: a downed minion's small e
-};
-// The room view sizes its glyphs (roomview.js drawGlyphs) so
-// they are never smaller than they were on the old isometric map, which
-// fit ISO_TILES_ACROSS tile widths across the map (ISO_TILES_ACROSS_NARROW
-// on a map narrower than ISO_NARROW_MAP_WIDTH CSS pixels, a phone).
-export const ISO_TILES_ACROSS = 9;
-export const ISO_TILES_ACROSS_NARROW = 7;
-export const ISO_NARROW_MAP_WIDTH = 400;
 // The ship's windows into space (windows.js placeShipWindows, space.js;
 // Timothy 2026-11-02): each room gets one, or two with `twoChance` (never
 // more), at least `gap` tiles of wall between two. The space picture
@@ -902,8 +837,6 @@ export const PLAYER_WALK = {
   scan: 0.35,         // ...and his head scans side to side this far (a share of a glance)
   sway: 0.016,        // his weight shifts over the planted foot this far
   gunLag: 0.2,        // the gun follows the body this share of the way each frame
-  armSwing: 0.12,     // without the gun, each hand swings this far against its foot...
-  armSide: 0.15,      // ...this far out to the side
 };
 // The player's breath: lifting his chest `lift` of his height, quicker
 // after walking (`fastMs` a breath), calming to MAP_ANIMATION_MS.playerBreath
@@ -952,46 +885,9 @@ export const SKY_EYE = {
 // How long each map animation takes, in ms. Looping ones stand still
 // under reduced motion.
 export const MAP_ANIMATION_MS = {
-  slide: 300,       // a minion stepping to the next tile
-  step: 140,        // the player stepping to the next tile: short, so walking stays quick. A grid N/E/S/W step; smooth walk (walkpace.js) scales the others by their length on screen
   bump: 180,        // the player walking into something, out and back
-  bossPulse: 2000,  // the boss's glow swelling and fading
-  warp: 3600,       // the slight wrongness of the boss's and a minion's shape
-  hunterWarp: 1600, // the same warp, faster: the hunter is never still
-  exchangeWarp: 7000, // the same warp, slow: THE UNFOLDING never quite settles into one shape
-  glitchBar: 6500,  // how often a minion's signal drops out
-  coinBob: 1400,    // the coin lifting and settling
-  glow: 1800,       // the stairs' and THE UNFOLDING's glow
-  cellBreath: 4000, // an unused energy cell's faint glow swelling and fading (Timothy: eerie, keep it)
-  deskGlow: 6000,
-  chargerGlow: 5000, // the charger's cell window breathing in the kind voice's warm light while energy isn't full (charger.js)   // the unused reflective desk's pool of the player's own light, swelling and fading: slow and calm, it is safe (desk.js)
-  mist: 14000,      // the boss mist's slow drift, there and back
-  target: 1100,     // the box round the thing being fought
   playerBreath: 2600, // the stick man's chest rising and falling
   playerIdle: 3000, // how long the player stands without moving or turning before the stick man starts glancing round (playerform.js, PLAYER_GLANCE)
-  gunShot: 260,     // the shot's flash from the gun to where it went, fading (gun plan)
-  gunMiss: 900,     // MISS floating up over a minion the shot missed, fading
-  soundStep: 110,   // a mistake's sound reaches one walking step further (noise.js); all at once under reduced motion
-  soundFade: 1100,  // each tile of the sound fading once reached
-  heardMark: 1800,  // the small '!' over a stick man that heard it, fading
-  ventRattle: 900,  // a grate shuddering, slowly, the turn before something drops out (vents.js); still under reduced motion and Comfort mode
-  ventDrop: 260,    // a stick man climbing out of a grate onto the tile beside it
-  darkFlash: 700,   // a stick man hit in the dark, shown in the shot's flash (light battery plan step C)
-  bookOpen: 350,    // the book lifted from his side and opened once something can be shot (roomgun.js holdBook); at once under reduced motion
-  bookPush: 150,    // a shot pushing the book out from reading close to pointing at the enemy
-  bookPoint: 600,   // the book held out at the enemy after a shot
-  bookBack: 350,    // the book coming back to read close
-  bookTurn: 700,    // a page turning from right to left as a shot goes; not under reduced motion
-  // Minions as stick men (stick enemies plan, js/stickforms.js). Slow on
-  // purpose: the calm rule for motion- and flicker-sensitive players.
-  stickTell: 900,    // a stick enemy eases into its tell pose, or back out (stickforms.js)
-  stickTurn: 700,    // a stick enemy turns to face the player when they pass to its other side
-  stickHit: 500,     // a hurt stick enemy's soft brightening and one small push
-  stickDeath: 2400,  // a killed stick enemy's lines fading while six tendrils grow, go limp and fade
-  downedFall: 1600, // a stick man going down (downed plan step B): from its pose to propped on its arms, legs coming apart into letters
-  crawl: 1000,       // a downed one's move: a hand reaches and plants, the body drags up, the other hand catches up
-  grab: 900,         // a downed one's hand reaching for the player's ankle
-  downedFinish: 2000, // a finished one: each line turns to letters that settle to the floor and fade
 };
 // The minimap (minimapview.js): a tile is at most MINIMAP_MAX_UNIT CSS px
 // from its centre to its side point, and the plan keeps MINIMAP_PAD px
@@ -1006,10 +902,6 @@ export const MINIMAP_ARROW = [1.6, 0.55];
 // MINIMAP_TITLE_PX text in its top-left corner. CSS px.
 export const MINIMAP_LABEL_PX = 15;
 export const MINIMAP_TITLE_PX = 22;
-// The stick enemies' light (stickforms.js): the player's glow in a cold blue,
-// a little off from theirs. halo = the glow round a line, core = the line
-// itself (and step C's tendril letters), as 'r, g, b'.
-export const ENEMY_LIGHT = { halo: '112, 150, 255', core: '200, 216, 255' };
 // The room log keeps this many notes, newest at the bottom: all of them
 // show when LOG opens it over the map; otherwise only the newest two sit on
 // the map's bottom edge (index.html .feedback, nth-last-child(-n+2)), and
@@ -1060,7 +952,6 @@ export const FIGURE3D = {
 // `lookUpMs`: the round stick held still in its middle this long looks up
 // at the sky while held (open call 6; U and Space do it too).
 export const ONE_STICK = {
-  on: true,
   walkMs: 450,
   shipWalkMs: 280,    // on the ship (ship plan) the walk is quicker: it is for getting places, not feeling your way (Timothy 2026-10-30)
   sneakMs: 950,

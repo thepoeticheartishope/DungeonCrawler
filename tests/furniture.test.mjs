@@ -22,7 +22,7 @@ const ship = FLOOR_PLANS.ship;
 
 // The ship laid out and furnished, as floor.js buildShipFloor does.
 function furnished() {
-  const layout = buildPlanLayout(ship, 0);
+  const layout = buildPlanLayout(ship);
   const furniture = placeFurniture(layout, makePlacer(layout, ship.rows.length));
   return { layout, furniture: furniture.filter(p => p.kind === 'furniture') };
 }
@@ -69,11 +69,6 @@ test('furniture blocks walking as furniture, not as a prop to examine', () => {
   state.floor.GRID_SIZE = 5;
   state.floor.wallSet = new Set();
   state.floor.pillarSet = new Set();
-  state.floor.minions = [];
-  state.floor.boss = null;
-  state.floor.hunter = null;
-  state.floor.chest = null;
-  state.floor.exchange = null;
   state.floor.props = [{ row: 2, col: 2, kind: 'furniture', piece: 'desk', part: 'single' }];
   const block = whatBlocks(2, 2);
   assert.equal(block.kind, 'furniture');

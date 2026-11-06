@@ -12,36 +12,6 @@ import { placeShipWindows } from './windows.js';
 import { placeSafeRoom, autoShutters } from './saferoom.js';
 import { placeStations } from './stations.js';
 
-// Clears everything dangerous a floor can hold, so nothing from a run
-// before reaches the ship.
-function clearDanger() {
-  const f = state.floor;
-  f.boss = null;
-  f.minions = [];
-  f.hunter = null;
-  f.path = null;
-  f.stairsAlt = null;
-  f.safeRoom = null;
-  f.goals = [];
-  f.chest = null;
-  f.lastChoiceType = null;
-  f.keys = [];
-  f.vents = [];
-  f.keysHeld = 0;
-  f.keySpots = [];
-  f.hidden = null;
-  f.gateSealed = false;
-  f.windows = [];
-  f.ship = false;
-}
-
-// Every doorway on a floor, as tile keys: each room's open doors and inner
-// doors. Only the map uses them (an arch over each), so a way through
-// reads from any side.
-function doorTiles(layout) {
-  return new Set(layout.chambers.flatMap(ch => [...ch.doorKeys]));
-}
-
 // The ship as data (ship plan, ideas/ship-plan.md outside the repo;
 // Timothy 2026-10-30): plans.js `ship`, the School's rooms as a small
 // spaceship. The player starts in Command, the center room, which is the
@@ -54,11 +24,12 @@ function doorTiles(layout) {
 export function buildShipFloor() {
   const plan = FLOOR_PLANS.ship;
   const f = state.floor;
-  clearDanger();
+  f.safeRoom = null;
+  f.windows = [];
   f.ship = true;
-  const layout = buildPlanLayout(plan, 0);
+  const layout = buildPlanLayout(plan);
   f.GRID_SIZE = plan.rows.length;
-  f.plan = { name: plan.name, version: layout.version };
+  f.plan = { name: plan.name };
   f.wallSet = layout.walls;
   f.PLAYER_START = { row: layout.start.row, col: layout.start.col };
   f.playerRow = f.PLAYER_START.row;
@@ -84,9 +55,6 @@ export function buildShipFloor() {
     f.safeRoom = safe.safeRoom;
     safe.props.forEach(p => f.props.push({ ...p, identified: false, searched: false, sprung: false }));
   }
-  f.stairs = null;
-  f.exchange = null;
-  f.coin = null;
 
   placeShipWindows();
   autoShutters();

@@ -61,12 +61,11 @@ test('a small push creeps at ONE_STICK.sneakMs a tile', () => {
 test('coming onto a new tile counts once, and moves the tile the rules see', () => {
   resetFloor();
   const col = state.floor.playerCol;
-  state.floor.coin = { row: state.floor.playerRow, col: col + 1 };
+  state.floor.chamberAt.set(key(state.floor.playerRow, col + 1), 0);
   const events = walk(1, 0, ONE_STICK.walkMs * 0.9);
   assert.equal(state.floor.playerCol, col + 1);
   assert.equal(count(events, 'stepped'), 1);
-  assert.ok(events.find(e => e.type === 'stepped').free);
-  assert.equal(count(events, 'coinTaken'), 1);
+  assert.equal(count(events, 'roomEntered'), 1);
   assert.equal(state.floor.facing, 'E', 'the body turns the way it walks');
 });
 
@@ -125,12 +124,13 @@ test('on slow frames (ONE_STICK.frameMs each) a wall or furniture still stops th
   });
 });
 
-test('a box in the way is examined, once', () => {
+test('a shut shutter in the way stops the player and is bumped', () => {
   resetFloor();
   const { playerRow: row, playerCol: col } = state.floor;
-  state.floor.props.push({ kind: 'box', row: row - 1, col, loot: 'junk' });
+  const shutter = { kind: 'shutter', row: row - 1, col, up: false };
+  state.floor.props.push(shutter);
   const events = walk(0, -1, ONE_STICK.walkMs * 3);
-  assert.equal(count(events, 'propSearched'), 1);
+  assert.ok(events.some(e => e.type === 'blocked' && e.thing === shutter));
   assert.equal(state.floor.playerRow, row);
 });
 

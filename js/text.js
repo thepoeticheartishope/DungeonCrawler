@@ -16,12 +16,6 @@
 //   - A straight apostrophe ' ends the line early and stops the game from
 //     loading: use the curly ’ instead (or write \').
 //
-// Per-area wording: AREAS (bottom of this file) can replace any line for one
-// room, terms and symbols included. A room only lists the lines it changes;
-// everything else falls back to TEXT. The game switches area as each room
-// loads (setTextArea in main.js loadRoom), so this is also where later area-
-// or enemy-specific voices can plug in.
-//
 // Screen labels written in index.html carry a data-t="key" attribute and
 // are filled in from here (applyStaticText), so they're edited here too.
 //
@@ -35,43 +29,10 @@ export const TEXT = {
   // battle screen. Rename something here and every line using it follows.
   // Symbols must be in the VT323 font (see the README) and stay distinct
   // from each other and from the player's arrows ^ v < >.
-  'term.boss': 'BELIEF',
-  'term.boss.symbol': '¤',
-  'term.minion': 'DENDRITE',
-  'term.minion.symbol': '•',
-  'term.minion.simpleSymbol': 'e', // Simple enemies (start screen): every minion on the map is this still letter, like k for a key
-  'term.minion.tellSymbol': 'E', // Simple enemies: the strike tell, one step from being next to the player
-  'term.minion.downedSymbol': 'e', // a downed minion (downed plan): Simple enemies draw it small and dim, low on its tile; it is the tell E while it holds the player
-  'term.hunter': 'OBSESSION', // draft
-  'term.hunter.symbol': 'Ø', // draft
-  'term.hunter.simpleSymbol': 'E', // Simple enemies: the hunter is a still big E (Timothy, 2026-10-12)
-  'term.chest': 'TRAPPED THOUGHT',
-  'term.chest.symbol': '[]',
   'term.hp': 'STABILITY',
   'term.gold': 'MYELIN',
-  'term.gold.symbol': '.',
-  'term.exit': 'THRESHOLD',
-  'term.exit.symbol': '>>',
-  'term.room': 'DEPTH',
-  'term.dungeon': 'LABYRINTH',
   'term.query': 'QUERY',
-  'term.vector': 'VECTOR',
-  'term.paper': 'PAPER', // draft
-  'term.paper.symbol': '=',
-  'term.box': 'BOX', // draft
-  'term.exchange': 'THE UNFOLDING', // Timothy's name; code name exchange (js/exchange.js)
-  'term.exchange.symbol': '8', // a loop folded over itself
-  'term.box.symbol': '&',
   'term.furniture.symbol': '=', // a fixed plan's furniture; drawn as itself in both views, the glyph is a fallback
-  'term.cell': 'ENERGY CELL', // draft
-  'term.relay': 'RELAY', // draft
-  'term.relay.symbol': '¥', // draft. A mast with two arms
-  'term.key': 'KEY', // draft (locked core plan)
-  'term.key.symbol': 'k', // draft
-  'term.desk': 'REFLECTIVE DESK', // draft
-  'term.vent': 'GRATE', // draft. A grate in the floor over a duct (vents.js)
-  'term.vent.symbol': '#', // draft. Drawn as a grate on the map; the glyph is a fallback
-  'term.desk.symbol': 'Π', // draft. A desk seen from the front
   'term.charger': 'CHARGER', // draft
   'term.charger.symbol': 'ϟ', // draft. A spark
   'term.console': 'TRAINING CONSOLE', // draft. Ship plan step B: where you learn a crew role, in Command
@@ -80,19 +41,14 @@ export const TEXT = {
   'term.powerBoard.symbol': 'ϟ', // draft. A spark, like the charger
   'term.crew': 'CREW', // draft. A crew member at their station
   'term.crew.symbol': '☺', // draft. A face
-  'term.cell.symbol': 'o', // drawn as a drum on the map; the glyph is a fallback
   'term.shutter.symbol': '≡', // draft. The safe room's shutter (saferoom.js); drawn as slats on the map, the glyph is a fallback
-  'term.switch.symbol': '¡', // draft. The safe room's pull switch; drawn as a handle on the map, the glyph is a fallback
   // The player's glyph (the map draws a stick man in its place).
   'term.player.symbol': '@',
-  // What anything further than REVEAL_DISTANCE (config.js) shows as.
-  'term.unknown.symbol': '?',
 
   // ---- Status bar ----
   'stat.hp': '{@term.hp}',
   'stat.gold': '{@term.gold}',
   'stat.turn': 'CYCLE', // draft
-  'stat.room': '{@term.room}',
   // The ship's HUD (ship plan step C, render.js renderHud): in place of
   // stability, energy, target and depth.
   'stat.taught': 'TAUGHT', // draft. Crew taught of the roles on duty (crew roles plan step C)
@@ -110,13 +66,8 @@ export const TEXT = {
   'panic.3': 'PANICKING', // draft
   'panic.4': 'BROKEN', // draft
   'stat.time': 'TIME',
-  'stat.keys': '{@term.key}', // draft. HUD: keys held of the floor's
-  'stat.keys.count': '{held}/{total}', // HUD: keys held of the floor's
-  'stat.keys.sealed': '{held}/{total} SEALED', // draft. HUD: the gate is sealed until another key
-  'stat.rest': 'REST', // draft — shown for the depth number while on a rest floor
 
   // ---- Battle screen labels ----
-  'battle.title': 'ENCOUNTER.SYS',
   'battle.query': '{@term.query}:',
   'battle.answerPlaceholder': 'type your answer',
   'battle.wager': 'WAGER:',
@@ -379,35 +330,13 @@ export const TEXT = {
   'log.modifier': 'MODIFIER: {name|upper}.',
   'log.wager': 'WAGER: {n} {@term.gold}.',
 
-  // The tutorial room (tutorial.js). Timothy's script: the dungeon's
-  // whisper, then the kind voice, then the barrel's question.
-  'room.blocked.dark': 'The dark holds you here.', // draft. A step while the tutorial's ring is closed
-  // The advanced tutorial (advanced.js): one station per mechanic.
-  'adv.hide.done': 'It lost you. Come out when you are ready.', // draft. The kind voice, once the player hides in the hide station
-  'adv.sneak.done': 'It walked right past you.', // draft. The kind voice, the player stayed crouched in cover while it passed
-  'room.blocked.door': 'The door is locked.', // draft. The tutorial's door before its key
-  'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
   'room.walkStickTap': 'Hold still to look up.', // draft. A tap on the round stick: what it does
   'dpad.walkStick': 'Move stick: drag to walk, push a little to creep, hold still to look up', // draft. The round stick's label (one stick plan step B)
   'room.sneak.on': 'You crouch low and creep.', // draft. X switched sneaking on (one stick plan step B)
   'room.sneak.off': 'You stand and walk.', // draft. X switched it off
-  // Room spots step C: a live takedown pushed over (spots.js topple).
-  'room.blocked.wontTip': 'It won\'t tip that way. Push it from the front or the back.', // draft. A takedown bumped from the side
-  'room.blocked.noRoom': 'There\'s no room for it to fall.', // draft. A takedown with a wall or furniture where it would land
-  // Room spots step D: a live lure set off (spots.js soundLure). One line
-  // per piece that can be one.
-  'room.blocked.hideBlocked': 'Something is right outside. You stay where you are.', // draft. Hidden, a step with every way out taken
   'room.cover': 'In cover. Keep low.', // draft (Timothy 2026-10-26). Crouched beside something solid: quieter, and unseen from its far side
   'room.turn': 'You turn.', // draft. Free look: turning the body to look further round costs a turn
-  'room.coin': 'You absorb a trace of {@term.gold}.', // draft
-  'room.key': '{@term.key} {held} of {total}.', // draft. A key taken (locked core plan)
-  'room.blocked.gate': 'The {@term.boss} is sealed. Find another {@term.key}.', // draft. Bumped the gate after a wrong answer
-  // The player's own light on its battery (battery.js; light battery plan, wording from the mockup)
-  'room.blocked.boss': 'The {@term.boss} will not move.', // draft
-  'room.blocked.minion': 'A {@term.minion} is in the way.', // draft
-  'room.blocked.hunter': 'The {@term.hunter} is right there.', // draft
-  'room.blocked.corner': 'The corner is in the way.', // draft. A diagonal step that would cut past a wall or pillar (eight ways plan)
   // A fixed plan's furniture, bumped (room view plan step E; plans.js).
   'furniture.desk': ['A desk. A word is carved into it, then scratched out.', 'A desk, its chair pushed in.'], // draft
   'furniture.teacher': "The teacher's desk. The register lies open at a blank page.", // draft
@@ -420,24 +349,9 @@ export const TEXT = {
   'furniture.sofa': 'A sofa, sunk where someone always sat.', // draft
   'room.blocked.pillar': ['A pillar. Cold, and older than you.', 'Stone. It does not think.'], // draft
 
-  // Reading papers (step onto one) and examining boxes (bump into one; a turn passes).
-  'room.paper.lore': 'You read: {lore}', // draft — {lore} is a line from the room theme’s lore below
-  'room.paper.junk': ['The page is blank.', 'The ink has run. Nothing is left.', 'A list of names, all crossed out.', 'It crumbles as you touch it.'], // draft
-  'room.box.gold': 'Inside: {gold} {@term.gold}.', // draft
-  'room.box.junk': ['Empty.', 'Dust, and a smell like old rain.', 'A broken lens. Useless.', 'Rags. Nothing more.'], // draft
-  'room.box.done': 'It is empty now.', // draft
-  'room.cell.done': 'The cell is spent.', // draft. Bumping a used energy cell
-  // Relays (strategy plan step B, relays.js). Bump one: a question over the
-  // map. Right holds the room (no boss light, nothing from outside comes in)
-  // and takes {turns} turns off the light. All drafts for Timothy.
-  'room.relay.done': 'The {@term.relay} is spent.', // draft. Bumping a used relay
-  // The reflective desk (desk.js): in the start room, heals to full once a floor.
-  'room.desk.healed': 'You see yourself in the {@term.desk}. You are whole again.', // draft
-  'room.desk.full': 'Your face looks back from the {@term.desk}. You are already whole.', // draft. Full stability: the heal is kept
   // The charger (charger.js): energy to full through CHARGE.SYS, in the start room.
   'room.charger.kept': 'Your wires are as you left them.', // draft. Opened on half-done wires
   'room.charger.left': 'You step back from the {thing}.', // draft. LEAVE or Escape: {thing} is the charger's or a ship station's term (main.js)
-  'room.charger.done': 'The {@term.charger} hums. Energy full.', // draft
   'charger.title': 'CHARGE.SYS', // draft
   'charger.hint': 'Turn the wires so power reaches the cell.', // draft
   'charger.charged': 'Charged. Energy full.', // draft
@@ -536,43 +450,6 @@ export const TEXT = {
   'end.ship.panic.stats': 'Too many failures. No one is listening to orders now. Failures: {failures}.', // draft
   'end.ship.crew': 'Crew you taught ({taught}/{of}): {names}.', // draft. After the stats, crew roles plan step C
   'end.ship.noCrew': 'You taught no one else.', // draft. No crew role was taught this run
-  'room.desk.done': 'The {@term.desk} is dull now. It will shine on the next floor.', // draft. Bumping a used desk
-
-  // Stairs and floor goals (strategy plan step A). Stepping onto the stairs
-  // only asks; SELECT or Enter goes down. All drafts for Timothy.
-  'room.stairs.ask': 'Stairs lead down. SELECT or ENTER to descend. Step away to stay.', // draft
-  // Two ways down from a between-rest (strategy plan step C): floors.js
-  // FLOOR_PATHS. All drafts for Timothy.
-  'room.stairs.path': 'These stairs lead to {path}.', // draft
-  'room.stairs.hidden': 'Where these stairs lead is hidden. Something here could show you.', // draft
-  'path.crowded': 'MORE OF THEM, MORE TIME', // draft. Two more minions, the light slower
-  'path.hurried': 'FEWER OF THEM, LESS TIME', // draft. One minion fewer, the light faster
-  'path.stalked': 'STALKERS WHERE SHARDS WERE', // draft. Every SHARD a STALKER, the light as usual
-
-  // ---- THE UNFOLDING's screen (js/exchangeview.js), on every rest floor.
-  // It never speaks: every line describes it, in the narrator's voice.
-  // All drafts for Timothy.
-  'exchange.title': '{@term.exchange}',
-
-  // ---- Room themes: each room on a floor gets one (ROOM_THEMES in
-  // config.js). enter shows the first time the player walks in; lore is
-  // what a paper there can say.
-  'theme.crypt.enter': ['A crypt. The names here have been forgotten.', 'Cold air. Something was buried here, once.'], // draft
-  'theme.crypt.lore': ['“We laid the old ideas here so they would stop speaking.”', '“Every certainty ends in a room like this.”', '“Do not wake what was settled.”'], // draft
-  'theme.library.enter': ['A library. The shelves lean in to listen.', 'Paper everywhere. Someone was trying to remember.'], // draft
-  'theme.library.lore': ['“A thought read twice becomes a belief.”', '“The index lists a room that is not here.”', '“Question everything. Especially this page.”'], // draft
-  'theme.flooded.enter': ['A flooded cellar. The water is very still.', 'Water to the ankles. It does not ripple.'], // draft
-  'theme.flooded.lore': ['“It rose while we slept. It always does.”', '“Below the waterline the old doubts keep.”', '“Do not drink. Do not look down.”'], // draft
-  'theme.shrine.enter': ['A shrine. Someone knelt here and asked.', 'Candles, long cold. The quiet feels deliberate.'], // draft
-  'theme.shrine.lore': ['“The light promised rest. It lied.”', '“We prayed to be certain. We were answered.”', '“Ask. Then ask again.”'], // draft
-
-  // ---- The run's story: read in this order, one line per paper, wherever
-  // the papers lie (the order is each floor's lore list in floors.js).
-  // A voice speaking to the player, kinder than the dungeon. {name} is the
-  // name from the start screen (story.nameless if blank); {answered} is the
-  // run's correct answers so far. Once a floor's lines run out, papers go
-  // back to the theme lore above.
-  'story.nameless': 'stranger', // draft — {name} in a story line when the start screen's name was left blank
 
   // ---- Intro, start and end screens ----
   'start.enter': 'Begin', // Timothy 2026-11-01 (was "Enter the LABYRINTH")
@@ -662,20 +539,12 @@ export const TEXT = {
   'data.exportComment': 'COMMENT: {comment}',
 
   'end.win.title': 'Your thought is born.',
-  'end.win.stats': '{@term.boss} rewritten: {bosses}. Time: {time}. Cycles: {turns}. Transmissions: {attempts}. {@term.hp} remaining: {hearts}. {@term.gold} gathered: {coins}.', // draft
   'end.win.again': 'Think again', // draft
   'end.lose.title': 'The thought sleeps.',
-  'end.lose.light.title': 'A thought was born. It consumes.',
-  'end.lose.stats': 'Reached {@term.room} {room} of {rooms} in {time} and {turns} cycles. {@term.gold} gathered: {coins}.', // draft
   'end.lose.retry': 'Wake', // draft
 
   // The gun's panels over the map (gunpanels.js).
-  'gun.reload.title': 'SELECT RELOAD: {category|upper}', // draft. Over the reload choices; {category} is the next category
-  // The dial (kill or maim plan): READY first, then the marker runs; zones K / M and harmful ones.
   'map.btn': 'MAP', // draft. The minimap button (M on a keyboard): opens the record book at MAP
-  'ask.title.reload': 'RELOAD.SYS', // draft. The ask screen's title for a reload (its offers, then its question)
-  'ask.title.relay': 'RELAY.SYS', // draft. The ask screen's title for a relay's question
-  'ask.title.barrel': 'BARREL', // draft. The ask screen's title for the tutorial barrel's question
   'ask.title.breaker': 'BREAKER', // draft. The ask screen's title for a ship station's breaker question (ship plan step B)
   'ask.title.job': '{role} · {round}/{of}', // draft. The ask screen's title for a round of a crew member's job (crew roles plan)
   'ask.title.learn': 'LEARNING {role} · {round}/{of}', // draft. The ask screen's title for a learning round at the console (crew roles plan step B)
@@ -743,33 +612,7 @@ export const TEXT = {
   'plan.ship.galley': 'Galley', // draft
 };
 
-// Per-room overrides, keyed by room number (1 = the first room). List only
-// the lines that room changes, e.g.:
-//
-//   3: {
-//     'log.boss.holds': ['IT DOES NOT BREAK.', 'IT WAITS FOR YOU TO DOUBT.'],
-//     'term.boss.symbol': 'Ω',
-//   },
-// Floor 1 speaks in the plain voice above; each floor below it leans a
-// little further in.
-export const AREAS = {
-  2: {
-    'room.wait': ['You hold still. The hum is louder here.', 'You wait. Something waits with you.'], // draft
-    'room.paper.junk': ['The page is blank, but warm.', 'The same line, written over and over until it means nothing.', 'A name. Yours? The ink has run.'], // draft
-  },
-  3: {
-    'room.wait': ['You hold still. The hum is inside you now.', 'You wait. The dark does not.'], // draft
-    'room.paper.junk': ['The page is blank. It was always blank.', 'Your own handwriting. You do not remember writing it.'], // draft
-  },
-};
-
-let currentArea = null;
 const warnedKeys = new Set();
-
-// Which area's overrides t() should prefer. Called as each room loads.
-export function setTextArea(area) {
-  currentArea = area;
-}
 
 function warnOnce(message) {
   if (warnedKeys.has(message)) return;
@@ -782,8 +625,7 @@ function warnOnce(message) {
 // as the key itself (and warns once), so a typo shows up on screen instead
 // of silently blanking the line.
 export function t(key, vars = {}, depth = 0) {
-  const area = AREAS[currentArea];
-  const entry = area && key in area ? area[key] : TEXT[key];
+  const entry = TEXT[key];
   if (entry === undefined) {
     warnOnce('no wording for "' + key + '"');
     return key;
@@ -816,7 +658,7 @@ export function t(key, vars = {}, depth = 0) {
 // data-t-placeholder="key" for input placeholders and data-t-title="key"
 // for tooltips (also the element's spoken name). Elements that mirror
 // their text into data-text (the glitch effects draw from it) get that
-// updated too. Re-run after setTextArea so area overrides reach them.
+// updated too.
 export function applyStaticText(root = document) {
   root.querySelectorAll('[data-t]').forEach((el) => {
     const text = t(el.dataset.t);

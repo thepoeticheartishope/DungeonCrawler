@@ -5,32 +5,30 @@ import {
 } from './gunactions.js';
 import { initControls, tapMap } from './controls.js';
 import {
-  MAX_HEARTS, ROOM_COUNT, ROOM_LOG_LINES, ROOM_LOG_DIM_MS,
+  MAX_HEARTS, ROOM_LOG_LINES, ROOM_LOG_DIM_MS,
   REALTIME_POLL_MS, TUTORIAL_WHISPER_MS, CHARGER, SHIP_RUN,
 } from './config.js';
 import { pickQuestion, escapeHtml } from './quiz.js';
-import { shuffle } from './random.js';
 import {
   initRender, showScreen, renderHud,
-  formatTime, startTimer, stopTimer, showSensed, showWhisper, hideWhisper,
-  fadeAnswerLine, renderShipHud
+  startTimer, stopTimer, showWhisper, hideWhisper,
+  renderShipHud
 } from './render.js';
 import { freshShipRun } from './ship.js';
 import { initShipIntro, fillShipIntro, tragedyLines } from './shipview.js';
-import { onStairs, stairsHere } from './moves.js';
 
 import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
 import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
-import { initMapView, requestMapDraw, slidePlayerOnMap, bumpOnMap, onMapPointer, freeStepOnMap } from './mapview.js';
+import { initMapView, requestMapDraw, bumpOnMap, onMapPointer, freeStepOnMap } from './mapview.js';
 import { turnWire } from './wires.js';
 import { stationMode, stationDone, trainWires } from './stations.js';
 import { consoleRoles, startLearning, noteOnDuty, taughtCount } from './roles.js';
 import { initConsoleView, showConsole } from './consoleview.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { initGunPanels, closeMapPanels, mapPanelShown, askHeld } from './gunpanels.js';
-import { t, setTextArea, applyStaticText } from './text.js';
+import { t, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 
 import { resetWalk, walkTileMs } from './walk.js';
@@ -57,9 +55,6 @@ const winScreen = document.getElementById('winScreen');
 const loseScreen = document.getElementById('loseScreen');
 const shipIntroScreen = document.getElementById('shipIntroScreen');
 
-const roomNumEl = document.getElementById('roomNum');
-const roomTotalEl = document.getElementById('roomTotal');
-const roomOfEl = document.getElementById('roomOf');
 const timerEl = document.getElementById('timer');
 const heartsEl = document.getElementById('hearts');
 const statsEl = document.getElementById('statsBar');
@@ -81,15 +76,12 @@ const loseTitle = document.getElementById('loseTitle');
 
 initRender({
   startScreen, shipIntroScreen, roomScreen, winScreen, loseScreen,
-  heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, statsEl,
+  heartsEl, coinsTotalEl, turnCountEl, timerEl, statsEl,
   senseNote: document.getElementById('senseNote'),
-  answerNote: document.getElementById('answerNote'),
   shipTaught: document.getElementById('shipTaught'),
   shipPanic: document.getElementById('shipPanic'),
   shipPanicMeter: document.getElementById('shipPanicMeter'),
 
-  keysStat: document.getElementById('keysStat'),
-  keysText: document.getElementById('keysText'),
 });
 initMapView(document.getElementById('mapCanvas'));
 onMapPointer({ tap: tapMap });
@@ -126,15 +118,13 @@ initSetLoader({ showSets: showSetPicker });
 initSetPicker({ startGame, openWorkshop: showWorkshop });
 initPractice({ letterPoolQuestion, sumLockQuestion });
 initDevPanel({
-  advanceRoom, autoWinGun,
+  autoWinGun, openBoss,
 });
 
-// A fresh run's numbers: the questions, hearts, gold, turns and story.
+// A fresh run's numbers: hearts, gold, turns and the ship's.
 // startGame() sets them.
 function resetRun() {
-  state.run.order = shuffle(state.settings.activeData).slice(0, Math.min(ROOM_COUNT, state.settings.activeData.length));
   state.run.roomIndex = 0;
-  state.run.resting = true; // every run opens on a rest floor
   state.run.runEnded = false;
   state.run.correctTotal = 0;
   state.run.hearts = MAX_HEARTS;
@@ -145,7 +135,6 @@ function resetRun() {
   state.run.crewFailures = 0;
   state.run.ship = null;
   state.run.lastMinigame = null;
-  state.run.loreQueue = [];
 }
 
 function startGame() {
@@ -184,11 +173,7 @@ function loadRoom() {
 // and a fresh room screen.
 function drawFloor() {
   resetWalk();
-  fadeAnswerLine(true);
   renderHud();
-  // Per-room wording overrides (text.js AREAS) apply from here on.
-  setTextArea(state.run.roomIndex + 1);
-  applyStaticText();
 
   requestMapDraw();
   refreshMinimap();
@@ -204,19 +189,6 @@ function drawFloor() {
   answerInput.value = '';
   setControlsEnabled(true);
   answerInput.focus();
-}
-
-// The dev skip button (and the stairs, goDown). The ship has no way on:
-// it lays the ship out again.
-function advanceRoom() {
-  loadRoom();
-}
-
-// Going down the stairs, once the player says so (SELECT or Enter while
-// standing on them). Costs no turn. The ship has no stairs.
-function goDown() {
-  if (state.run.turnLocked || state.run.runEnded || mapPanelShown() || !onStairs()) return;
-  advanceRoom();
 }
 
 function setControlsEnabled(enabled) {
@@ -313,20 +285,13 @@ setInterval(() => { if (bookReading()) refreshBook(); }, REALTIME_POLL_MS);
 // Draws a list of rule events, in order, then redraws the HUD, fog, eye
 // and targeting once. Returns the room note the events add up to
 // ({ cls, text }, text in event order); the caller decides whether to show it.
-// The events that mean the player moved: they put the answer (line or ring) away.
-const PLAYER_MOVES = new Set(['stepped', 'waited', 'bodyTurned', 'blocked', 'propSearched']);
-
 function drawEvents(events) {
   const parts = [];
   let cls = 'move-msg';
-  // The player's own move (a step, a turn, a wait, a bump) puts away the
-  // answer line a miss left over the map. Looking around with the light
-  // doesn't.
-  if (events.some(e => PLAYER_MOVES.has(e.type))) fadeAnswerLine();
   for (const e of events) {
     switch (e.type) {
       case 'blocked':
-        bumpOnMap(state.floor.facing);
+        bumpOnMap();
         cls = 'block-msg';
         // A wall says nothing (Timothy 2026-11-01): the bump shows it.
         if (e.kind === 'wall') break;
@@ -335,8 +300,7 @@ function drawEvents(events) {
         break;
       // A step says nothing: the map already shows where the player went.
       case 'stepped':
-        if (e.free) freeStepOnMap(walkTileMs());
-        else slidePlayerOnMap(e.facing);
+        freeStepOnMap(walkTileMs());
         break;
       case 'waited':
         parts.push(t('room.wait'));
@@ -348,15 +312,6 @@ function drawEvents(events) {
       case 'bodyTurned':
         if (!e.bumped) parts.push(t('room.turn'));
         break;
-      // On the map itself, not in the room log: a whisper, not a report.
-      case 'presenceSensed':
-        showSensed();
-        break;
-      case 'stairsReached':
-        if (e.hidden) parts.push(t('room.stairs.hidden'));
-        else if (e.path) parts.push(t('room.stairs.path', { path: t('path.' + e.path) }));
-        parts.push(t('room.stairs.ask'));
-        break;
       case 'turned':
       case 'boxSprung':
       case 'itemReached':
@@ -365,14 +320,6 @@ function drawEvents(events) {
       // A line in the kind voice (the charger's and the safe room's).
       case 'whispered':
         showWhisper(t(e.line), e.tone, TUTORIAL_WHISPER_MS);
-        break;
-      case 'propSearched':
-        break;
-      case 'deskHealed':
-        parts.push(t('room.desk.healed'));
-        break;
-      case 'deskUntouched':
-        parts.push(t('room.desk.full'));
         break;
       // The ship's stations (stations.js; ship plan step B).
       case 'crewSpoke':
@@ -455,25 +402,8 @@ function drawEvents(events) {
         parts.push(t('ship.panicEased', { level: t('panic.' + e.level).toLowerCase() }));
         renderShipHud();
         break;
-      case 'keyTaken':
-        parts.push(t('room.key', { held: e.held, total: e.total }));
-        break;
-      case 'coinTaken':
-        parts.push(t('room.coin'));
-        break;
-      case 'paperRead':
-        if (e.loot === 'story') {
-          const story = t(e.story, { name: state.settings.playerName || t('story.nameless'), answered: state.run.correctTotal });
-          parts.push(t('room.paper.lore', { lore: story }));
-        }
-        else if (e.loot === 'lore') parts.push(t('room.paper.lore', { lore: t('theme.' + e.paper.theme + '.lore') }));
-        else parts.push(t('room.paper.junk'));
-        break;
       case 'roomEntered':
         if (e.name) parts.push(t('room.enter.named', { name: t(e.name) }));
-        break;
-      case 'boxOpened':
-        parts.push(e.gold ? t('room.box.gold', { gold: e.gold }) : t('room.box.junk'));
         break;
       case 'coverTaken':
         parts.push(t('room.cover'));
@@ -594,19 +524,9 @@ function closeCharger(cls, text) {
 }
 
 initControls({
-  applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
+  applyTurnOutcome, clockMayRun, drawEvents, openCharger, openConsole,
   showRoomNote, worldFrame,
 });
-
-// The lose screen for running out of hearts.
-function endLose() {
-  loseTitle.textContent = t('end.lose.title');
-  loseStats.textContent = t('end.lose.stats', {
-    room: state.run.roomIndex + 1, rooms: state.run.order.length, time: formatTime(state.run.seconds),
-    turns: state.run.turnCount, coins: state.run.coinsTotal,
-  });
-  showScreen(loseScreen);
-}
 
 // The ship's run is over (ship.js shipEnded; ship plan step C): `how` is
 // 'arrived' (the win screen) or 'panic' (the lose screen), each

@@ -888,7 +888,7 @@
     pointer-events: none;
     z-index: 3;
   }
-  .sense-note, .answer-note {
+  .sense-note {
     padding: 0 12px;
     text-align: center;
     font-size: calc(24px * var(--text-scale, 1));
@@ -910,25 +910,6 @@
   @media (prefers-reduced-motion: reduce) {
     .sense-note, .sense-note.show, .sense-note.slow, .sense-note.slow.show { transition: none; }
   }
-  /* The right answer after a miss (render.js showAnswerLine, answer swirl
-     plan): "I see you."'s form in the enemies' cold blue (ENEMY_LIGHT),
-     brighter, so it reads as the answer and not a warning. It holds until
-     the player moves, then fades over ANSWER_LINE_FADE_MS (config.js). */
-  .answer-note {
-    font-size: calc(24px * var(--text-scale, 1));
-    letter-spacing: 0.08em;
-    line-height: 1.15;
-    text-wrap: balance;
-    color: rgba(200, 216, 255, 0.95);
-    text-shadow: 0 0 8px rgba(112, 150, 255, 0.7);
-    opacity: 0;
-    transition: opacity 1.6s ease;
-  }
-  .answer-note.show { opacity: 1; transition: opacity 0.9s ease; }
-  @media (prefers-reduced-motion: reduce) {
-    .answer-note, .answer-note.show { transition: none; }
-  }
-
   /* ---- The d-pad and its buttons, one row under the map ---- */
   .room-controls {
     display: flex;
@@ -1495,13 +1476,13 @@
 <div class="dev-dock" id="devDock" hidden>
     <button type="button" class="dev-skip" id="devToggleBtn" title="Testing tools" aria-expanded="false">DEV</button>
     <div class="dev-panel" id="devPanel">
-      <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devBookPaperBtn" type="button" title="Testing only: the record book's page (the ask screen): dark, as the game has it, or cold paper or cream, to compare">Book paper: dark (dev)</button>
       <button class="dev-skip" id="devMinigameBtn" type="button" title="Testing only: minigames roll as usual, never, or always (one picked), swapping in a question it fits">Minigame: roll (dev)</button>
       <output class="dev-skip" id="devFrameOut" title="Testing only: how long the map takes to draw, median and slowest of the last 120 frames drawn">Draw: - (dev)</output>
-      <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
       <button class="dev-skip" id="devAutoWinBtn" type="button" aria-pressed="false" title="Testing only: every encounter plays itself out with correct answers">Auto-win: OFF (dev)</button>
       <button class="dev-skip" id="devLearnRolesBtn" type="button" title="Testing only: learn every ship crew role at once (crew roles plan)">Learn all roles (dev)</button>
+      <button class="dev-skip" id="devBossBtn" type="button" title="Testing only: start the final boss now, with the crew taught so far">Boss now (dev)</button>
+      <button class="dev-skip" id="devPanicBtn" type="button" title="Testing only: the crew's panic one step up, Calm round to Panicking">Panic: 0 (dev)</button>
       <button class="dev-skip" id="devInspectBtn" type="button" aria-pressed="false" title="Testing only: show live game state and the last events">Inspect: OFF (dev)</button>
       <pre class="dev-inspect" id="devInspectOut" hidden></pre>
     </div>
@@ -1535,10 +1516,6 @@
       <div class="sound-menu" id="textSizeMenu" hidden></div>
     </div>
     <div class="stat"><span class="stat-label" data-t="stat.hp"></span><span class="hearts" id="hearts">3/3</span></div>
-    <!-- The gun (gun plan step 6), only with DEV -> Combat on gun (render.js renderHud). -->
-    <div class="stat"><span class="stat-label" data-t="stat.room"></span><strong id="roomNum">0</strong><span id="roomOf">/<strong id="roomTotal">0</strong></span></div>
-    <!-- Keys held of the floor's (locked core plan; render.js renderHud), hidden on a rest floor. -->
-    <div class="stat" id="keysStat" hidden><span class="stat-label" data-t="stat.keys"></span><strong id="keysText"></strong></div>
     <div class="stat stat-more"><span class="stat-label" data-t="stat.time"></span><strong id="timer">0:00</strong></div>
     <div class="stat stat-more"><span class="stat-label" data-t="stat.gold"></span><strong id="coinsTotal">0</strong></div>
     <div class="stat stat-more"><span class="stat-label" data-t="stat.turn"></span><strong id="turnCount">0</strong></div>
@@ -1719,7 +1696,6 @@
            (render.js showAnswerLine, answer swirl), and under it "I see you.":
            something unseen is about to be beside the player (render.js showSensed). -->
       <div class="map-notes">
-        <div class="answer-note" id="answerNote" role="status" aria-live="polite" hidden></div>
         <div class="sense-note" id="senseNote" role="status" aria-live="polite"></div>
       </div>
       <!-- The room log (main.js showRoomNote) on the map's bottom edge: the

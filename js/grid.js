@@ -1,5 +1,5 @@
-// The step tables for walking the grid one tile at a time: four ways
-// (no diagonals) and eight, and the one walk outward over the floor that
+// The step table for walking the grid one tile at a time (four ways, no
+// diagonals), and the one walk outward over the floor that
 // counts steps. One copy, so every search over the floor tries the ways in
 // the same order. No DOM access here.
 
@@ -8,9 +8,6 @@ import { state, key } from './state.js';
 // North, south, east and west as [dRow, dCol], in the order every
 // four-way search has always used.
 export const FOUR_STEPS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-
-// The four ways plus the four diagonals.
-export const EIGHT_STEPS = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
 
 // Walkable steps (four ways) from `from` to every tile it reaches on the
 // floor's grid, as a Map of tile key -> steps. `blocked` holds the keys

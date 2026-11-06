@@ -45,7 +45,6 @@ function reset() {
   state.settings.activeData = [NUMBER, BIG, WORD];
   state.run.lastMinigame = null;
   state.run.energy = 0;
-  state.run.rounds = [];
   state.run.reloadIndex = 0;
   state.run.correctTotal = 0;
   state.run.coinsTotal = 0;
@@ -519,21 +518,6 @@ test('Sum Lock adds whole answers of 1-50 only, no ports', () => {
   assert.equal(sumLockMatches(lock, ' 41 '), true);
   assert.equal(sumLockMatches(lock, '40'), false);
   assert.equal(sumLockMatches(lock, 'forty'), null, 'no digits, no answer yet');
-});
-
-test('a trapped box that rolls a minigame runs Sum Lock; nothing else can', () => {
-  reset();
-  state.settings.activeData = SUMS;
-  state.battle.selectedTarget = { kind: 'box', trapped: true };
-  assert.equal(withRandom(0, () => rollMinigame(WORD, [])), 'sumLock');
-  assert.equal(withRandom(0, () => rollMinigame(WORD, [])), 'slowSpell', 'not twice in a row');
-  state.battle.selectedTarget = { kind: 'chest' };
-  state.run.lastMinigame = null;
-  assert.notEqual(withRandom(0, () => rollMinigame(WORD, [])), 'sumLock');
-  state.battle.selectedTarget = { kind: 'box', trapped: true };
-  state.settings.activeData = [SUMS[0], WORD];
-  assert.notEqual(withRandom(0, () => rollMinigame(WORD, [])), 'sumLock', 'one number is not enough');
-  state.battle.selectedTarget = null;
 });
 
 // ---- Fuel Mix (ship minigames plan step A) ----

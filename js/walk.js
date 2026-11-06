@@ -98,7 +98,7 @@ function slide(spot, axis, delta) {
 // on; letting go (no push) ends it. A creep stays crouched once let go
 // (`creeping`), until the player walks at full pace, so they can hide in
 // cover from the stick too. Events: swingLook's, enterTile's
-// (stepped { free: true } and what the tile holds) and bumpInto's; then
+// (stepped and what the tile holds) and bumpInto's; then
 // coverTaken (coverChanged).
 // How long the player takes to cross a tile now: a creep's sneakMs, or the
 // walk's walkMs, quicker on the ship (shipWalkMs). One source for the
@@ -137,7 +137,7 @@ export function walkFree(dirX, dirY, { push = 1, dtMs = 0, keys = false, still =
   if (row !== f.playerRow || col !== f.playerCol) {
     f.playerRow = row;
     f.playerCol = col;
-    events.push(...enterTile(f.facing, true));
+    events.push(...enterTile(f.facing));
   }
 
   const hit = Math.abs(ux) >= Math.abs(uy) ? hitX || hitY : hitY || hitX;

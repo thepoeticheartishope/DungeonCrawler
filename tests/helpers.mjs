@@ -19,16 +19,13 @@ export function emptyFloor(size = 21, { settings = {}, run = {}, floor = {}, bat
     facing: 'N', look: null, lookWant: null, sneaking: false, creeping: false,
     wallSet: new Set(), pillarSet: new Set(), exploredSet: new Set(),
     visibleSet: new Set(), windows: [],
-    chamberAt: new Map(), visitedChambers: new Set(), chamberNames: [],
-    boss: null, hunter: null, minions: [], crawling: [], vents: [], keys: [], keysHeld: 0, gateSealed: false,
-    chest: null, coin: null, stairs: null, stairsAlt: null, exchange: null, tutorial: null, props: [],
-    gunTarget: null, struggles: 0, misses: 0,
+    chamberAt: new Map(), visitedChambers: new Set(), chamberNames: [], props: [],
   }, floor);
   Object.assign(state.settings, settings);
   Object.assign(state.run, {
-    roomIndex: 0, resting: false, turnCount: 0, hearts: MAX_HEARTS, coinsTotal: 0, correctTotal: 0, loreQueue: [],
+    roomIndex: 0, turnCount: 0, hearts: MAX_HEARTS, coinsTotal: 0, correctTotal: 0,
   }, run);
-  Object.assign(state.battle, { selectedTarget: null, aim: null, struggle: null }, battle);
+  Object.assign(state.battle, { selectedTarget: null }, battle);
   if (see) computeVisibility();
 }
 

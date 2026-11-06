@@ -4,8 +4,7 @@
 // charger, relays, the safe room's shutters, switch and lamp, a plan's hall
 // lamps, the chest, the coin, keys, the boss's mist, a mistake's sound, and
 // a fixed plan's furniture by piece. roomview.js picks what to draw and
-// where (FLAT lies on the floor, STAND stands and is sorted with the stick
-// men) and hands over the canvases it draws into each frame
+// where (STAND stands and is sorted with the stick men) and hands over the canvases it draws into each frame
 // (drawThingsWith). Reads state and never changes it.
 
 import { state, key, parseKey } from './state.js';
@@ -14,23 +13,16 @@ import { crewLook, crewHeadLook } from './roles.js';
 import { figurePose, turnFigure, projectFigure, phiToward } from './figure3d.js';
 import { emberGlow } from './playerform.js';
 import {
-  ROOM_VIEW, MAP_ANIMATION_MS, SAFE_ROOM, ENEMY_LIGHT, PLAYER_EMBER, FIGURE3D, CREW_LOOK, SHIP_ROLES,
+  ROOM_VIEW, SAFE_ROOM, PLAYER_EMBER, FIGURE3D, CREW_LOOK, SHIP_ROLES,
 } from './config.js';
-import {
-  searched, isWall, grain, DESK_GLOW, DESK_GLOW_RADIUS, DRUM_BREATH, DRUM_BREATH_REACH,
-  STAIR_BEAM_FADE, STAIR_BEAM_LAYERS,
-} from './mapshared.js';
+import { isWall, grain } from './mapshared.js';
 
 const T = ROOM_VIEW.tilePx;
 // The warm light of a window's pool and of the lamp, as an rgb list
 // (roomview.js draws the windows' pools in it too).
-export const POOL = { level: 0.85, rgb: '255, 196, 132', bars: 'rgb(150, 130, 120)', glass: 0.8 };
+const POOL = { level: 0.85, rgb: '255, 196, 132', bars: 'rgb(150, 130, 120)', glass: 0.8 };
 // The things' colours, in the picture's pixels.
-const CRATE = { top: '#86663f', front: '#6b4f36', plank: '#4a3524', post: '#55402b', inside: '#1c140e' };
-const CELL = { body: '#3b4650', light: '#4d5a66', shade: '#2c353d', band: '#262d34', lid: '#5a6874', dead: '#1a1e22' };
 const SHEET = { fresh: '#d2cbbb', read: '#a8a294', ink: '#8a8476' };
-const DESK = { top: '#6e4d33', front: '#523a27', frame: '#4a3a30', glass: '#8fa3ad', shine: '#c9d6dc', dull: '#3a4448' };
-const CHARGER_ART = { body: '#3e4650', edge: '#56606b', shade: '#2b3138', window: '#1c2126', lit: '#e9c48a', cable: '#22272c', plug: '#6a737c' };
 // The ship's stations (ship plan step B): grey metal like the hull, a dark
 // screen, its light cool once a role is trained or warm while it waits,
 // and the crew's plain white figure, a touch dimmer than the player's (grey
@@ -44,7 +36,7 @@ const STATION_ART = {
 // picture pixel wide, and a head this share of the figure's height across
 // its radius.
 export const STICK_LINE = 1;
-export const HEAD_SHARE = 0.12;
+const HEAD_SHARE = 0.12;
 // The safe room (saferoom.js): its shutters' slats, posts and lintel box,
 // the pull switch, and the lamp's warm light over the room.
 const SHUTTER = { slat: '#5b6068', shade: '#454950', bar: '#8a9098', post: '#2f3338', box: '#3a3e44', rise: 1.5, slat_px: 2 };
@@ -55,13 +47,6 @@ const SWITCH_ART = { plate: '#4a4e55', cord: '#2a2d31', warm: '#e9c48a', dim: '#
 // to the pool on the floor. reach: the pool's radius, a share of the
 // room's longer side.
 const LAMP = { level: 0.55, reach: 0.65, bulb: 0.45, hang: 1.3, ceiling: 2.6, beam: 0.16, shade: '#34383e', rim: '#5a6068' };
-const CHEST = { lid: '#5a3d2c', lidLight: '#6e4b36', body: '#4a3224', band: '#2e211a', lock: '#b49a6a' };
-const COIN = { face: '#d8b45a', shine: '#f3dc8e', rgb: '216, 180, 90' };
-const KEY = { metal: '#dfe8ea', glow: 0.7 };   // glow: its light at the brightest of its pulse, as a share of the pulse's strength
-const STAIRS = ['#3a3540', '#25212b', '#16131a', '#0a090c']; // each step down darker
-const STAIR_EDGE = '#5a5464';
-const BEAM_RISE = 2.6;          // the stairs' column of light, in tiles above the floor
-const BREATH_GLOW = 2;          // a cell's breath is this many times its shoulder view strength (smaller here)
 
 let bctx = null;   // the picture being drawn into (roomview's, or its mask for what stands in front)
 let gctx = null;   // the light added after the lighting
@@ -79,158 +64,6 @@ export function drawThingsWith(picture, glowCtx, shared) {
 // Each draws into the picture at (x, y), its tile's top-left in picture
 // pixels, and may push what gives off light onto `glows`, drawn after the
 // lighting.
-
-// A paper lying on its tile with two lines of writing; dimmer once read.
-function drawPaper(thing, x, y) {
-  bctx.fillStyle = searched(thing.tile) ? SHEET.read : SHEET.fresh;
-  bctx.fillRect(x + 4, y + 6, 8, 6);
-  bctx.fillRect(x + 5, y + 5, 7, 1);
-  bctx.fillStyle = SHEET.ink;
-  bctx.fillRect(x + 5, y + 8, 5, 1);
-  bctx.fillRect(x + 5, y + 10, 4, 1);
-}
-
-// The stairs down: steps sinking into the floor, darker each one, and the
-// column of light rising out of them, pulsing (it shows in the dark: the
-// stairs are never lost).
-function drawStairs(thing, x, y, glows) {
-  STAIRS.forEach((colour, i) => {
-    bctx.fillStyle = colour;
-    bctx.fillRect(x + 1 + i * 2, y + 2 + i * 2, 14 - i * 3, 12 - i * 3);
-    bctx.fillStyle = STAIR_EDGE;
-    bctx.fillRect(x + 1 + i * 2, y + 2 + i * 2, 14 - i * 3, 1);
-  });
-  glows.push(() => drawBeam(x + T / 2, y + T * 0.7));
-}
-
-// A column of light standing up from (fx, fy) in picture pixels: soft
-// layers, widest and faintest first, fading toward the top, pulsing.
-export function drawBeam(fx, fy) {
-  look.keepMoving();
-  const strength = 0.82 + 0.18 * look.pulse(MAP_ANIMATION_MS.glow);
-  const rgb = look.colours.glowRgb;
-  const top = fy - BEAM_RISE * T;
-  STAIR_BEAM_LAYERS.forEach(layer => {
-    const a = layer.strength * strength;
-    const fade = bctx.createLinearGradient(0, fy, 0, top);
-    fade.addColorStop(0, 'rgba(' + rgb + ', ' + a + ')');
-    fade.addColorStop(STAIR_BEAM_FADE[0], 'rgba(' + rgb + ', ' + a * STAIR_BEAM_FADE[1] + ')');
-    fade.addColorStop(1, 'rgba(' + rgb + ', 0)');
-    const half = Math.max(1, Math.round(T * layer.width / 2));
-    bctx.fillStyle = fade;
-    bctx.fillRect(Math.round(fx - half), Math.round(top), half * 2, Math.round(fy - top));
-  });
-}
-
-// A wooden crate; opened once searched, its lid leaning behind it.
-function drawBox(thing, x, y) {
-  const open = searched(thing.tile);
-  if (open) {
-    bctx.fillStyle = CRATE.top;
-    bctx.fillRect(x + 3, y + 1, 10, 3);
-  }
-  bctx.fillStyle = open ? CRATE.inside : CRATE.top;
-  bctx.fillRect(x + 2, y + 4, 12, 3);
-  bctx.fillStyle = CRATE.front;
-  bctx.fillRect(x + 2, y + 7, 12, 8);
-  bctx.fillStyle = CRATE.plank;
-  bctx.fillRect(x + 2, y + 10, 12, 1);
-  bctx.fillRect(x + 2, y + 13, 12, 1);
-  bctx.fillStyle = CRATE.post;
-  bctx.fillRect(x + 2, y + 4, 1, 11);
-  bctx.fillRect(x + 13, y + 4, 1, 11);
-}
-
-// An energy cell: a round case with bands and three ends on its lid,
-// glowing while unused (with a faint breath of light round it); dark once used.
-function drawCell(thing, x, y, glows) {
-  const spent = searched(thing.tile);
-  bctx.fillStyle = CELL.body;
-  bctx.fillRect(x + 4, y + 5, 8, 10);
-  bctx.fillStyle = CELL.light;
-  bctx.fillRect(x + 5, y + 5, 1, 10);
-  bctx.fillStyle = CELL.shade;
-  bctx.fillRect(x + 11, y + 5, 1, 10);
-  bctx.fillStyle = CELL.band;
-  bctx.fillRect(x + 4, y + 8, 8, 1);
-  bctx.fillRect(x + 4, y + 12, 8, 1);
-  bctx.fillStyle = CELL.lid;
-  bctx.fillRect(x + 5, y + 3, 6, 1);
-  bctx.fillRect(x + 4, y + 4, 8, 1);
-  const ends = [[6, 4], [9, 4], [8, 3]];
-  bctx.fillStyle = CELL.dead;
-  ends.forEach(([ex, ey]) => bctx.fillRect(x + ex, y + ey, 1, 1));
-  if (spent) return;
-  const breath = thing.look.breath;
-  glows.push(() => {
-    bctx.fillStyle = 'rgb(' + look.colours.glowRgb + ')';
-    ends.forEach(([ex, ey]) => bctx.fillRect(x + ex, y + ey, 1, 1));
-    if (breath === null || breath === undefined) return;
-    look.keepMoving();
-    const a = (DRUM_BREATH[0] + (DRUM_BREATH[1] - DRUM_BREATH[0]) * breath) * BREATH_GLOW;
-    halo(x + T / 2, y + 9, DRUM_BREATH_REACH * T * 1.6, look.colours.glowRgb, a);
-  });
-}
-
-// The reflective desk: a small desk with a mirror standing on it, in its
-// pool of the kind voice's warm light while unused; spent, the glass is dull.
-function drawDesk(thing, x, y, glows) {
-  const unused = thing.look.deskGlow !== null && thing.look.deskGlow !== undefined;
-  bctx.fillStyle = DESK.frame;
-  bctx.fillRect(x + 4, y - 6, 8, 12);
-  bctx.fillStyle = unused ? DESK.glass : DESK.dull;
-  bctx.fillRect(x + 5, y - 5, 6, 10);
-  if (unused) {
-    bctx.fillStyle = DESK.shine;
-    for (let i = 0; i < 4; i++) bctx.fillRect(x + 6 + i, y - 3 + i, 1, 1);
-  }
-  bctx.fillStyle = DESK.top;
-  bctx.fillRect(x + 1, y + 6, 14, 3);
-  bctx.fillStyle = DESK.front;
-  bctx.fillRect(x + 1, y + 9, 14, 6);
-  bctx.fillStyle = DESK.frame;
-  bctx.fillRect(x + 4, y + 11, 8, 1);
-  if (!unused) return;
-  glows.push(() => {
-    look.keepMoving();
-    const a = (DESK_GLOW[0] + (DESK_GLOW[1] - DESK_GLOW[0]) * thing.look.deskGlow) * (thing.look.alpha === undefined ? 1 : thing.look.alpha);
-    halo(x + T / 2, y + T * 0.7, DESK_GLOW_RADIUS * T, look.colours.kindRgb, a);
-  });
-}
-
-// The charger (charger.js): a tall grey cabinet with a cable down to the
-// floor and a narrow cell window. While energy isn't full the window is lit
-// and it breathes the kind voice's warm light, like the desk; at full it
-// is dark (it has nothing to give).
-function drawCharger(thing, x, y, glows) {
-  const lit = thing.look.deskGlow !== null && thing.look.deskGlow !== undefined;
-  bctx.fillStyle = CHARGER_ART.cable;
-  bctx.fillRect(x + 13, y + 6, 1, 8);
-  bctx.fillRect(x + 13, y + 14, 2, 1);
-  bctx.fillStyle = CHARGER_ART.body;
-  bctx.fillRect(x + 3, y - 4, 10, 19);
-  bctx.fillStyle = CHARGER_ART.edge;
-  bctx.fillRect(x + 3, y - 4, 10, 1);
-  bctx.fillRect(x + 3, y - 4, 1, 19);
-  bctx.fillStyle = CHARGER_ART.shade;
-  bctx.fillRect(x + 12, y - 3, 1, 18);
-  bctx.fillRect(x + 4, y + 9, 8, 1);
-  bctx.fillStyle = CHARGER_ART.plug;
-  bctx.fillRect(x + 12, y + 5, 2, 2);
-  bctx.fillStyle = lit ? CHARGER_ART.lit : CHARGER_ART.window;
-  bctx.fillRect(x + 7, y - 1, 2, 8);
-  bctx.fillStyle = CHARGER_ART.shade;
-  bctx.fillRect(x + 6, y + 11, 4, 1);
-  bctx.fillRect(x + 6, y + 13, 4, 1);
-  if (!lit) return;
-  glows.push(() => {
-    look.keepMoving();
-    bctx.fillStyle = CHARGER_ART.lit;
-    bctx.fillRect(x + 7, y - 1, 2, 8);
-    const a = (DESK_GLOW[0] + (DESK_GLOW[1] - DESK_GLOW[0]) * thing.look.deskGlow) * (thing.look.alpha === undefined ? 1 : thing.look.alpha);
-    halo(x + T / 2, y + 3, DESK_GLOW_RADIUS * T * 0.8, look.colours.kindRgb, a);
-  });
-}
 
 // ---- the ship's stations (ship plan step B, stations.js) ----
 // The training console in Command: a low desk with a screen tilted up, its
@@ -396,8 +229,7 @@ function shutterDrop(tile, down, slats) {
 
 // A shutter on one of the safe room's doorways: its slats hang from a box
 // over the doorway between two dark posts, rolled up into the box while it
-// is open. A doorway in a side wall shows it edge on, a narrow strip. While
-// the hunter lifts it, its cold blue hand is on the slats.
+// is open. A doorway in a side wall shows it edge on, a narrow strip.
 function drawShutter(thing, x, y, glows) {
   const { row, col } = thing.tile;
   const across = isWall(row, col - 1) && isWall(row, col + 1);
@@ -425,41 +257,6 @@ function drawShutter(thing, x, y, glows) {
   }
   bctx.fillStyle = SHUTTER.box;
   bctx.fillRect(x0 - (across ? 1 : 0), top - 3, w + (across ? 2 : 0), 3);
-  const hunter = f.hunter;
-  if (!hunter || !hunter.lifting || Math.max(Math.abs(hunter.row - row), Math.abs(hunter.col - col)) > 1) return;
-  const hx = x0 + Math.floor(w / 2) - 1, hy = bottom - 3;
-  const hand = () => {
-    bctx.fillRect(hx, hy, 3, 2);
-    bctx.fillRect(hx, hy - 2, 1, 2);
-    bctx.fillRect(hx + 2, hy - 2, 1, 2);
-  };
-  bctx.fillStyle = 'rgb(' + ENEMY_LIGHT.core + ')';
-  hand();
-  glows.push(() => {
-    bctx.fillStyle = 'rgb(' + ENEMY_LIGHT.halo + ')';
-    hand();
-  });
-}
-
-// The safe room's pull switch: a plate on the wall with a cord and a
-// handle, warm while the shutter is up (pull it to be safe), dim once it
-// is down.
-function drawSwitch(thing, x, y, glows) {
-  const f = state.floor;
-  const up = !f.safeRoom || !f.safeRoom.shut;
-  bctx.fillStyle = SWITCH_ART.plate;
-  bctx.fillRect(x + 6, y - 8, 4, 6);
-  bctx.fillStyle = SWITCH_ART.cord;
-  bctx.fillRect(x + 8, y - 2, 1, up ? 8 : 11);
-  const hy = up ? y + 6 : y + 9;
-  bctx.fillStyle = up ? SWITCH_ART.warm : SWITCH_ART.dim;
-  bctx.fillRect(x + 7, hy, 3, 2);
-  if (!up) return;
-  glows.push(() => {
-    bctx.fillStyle = SWITCH_ART.warm;
-    bctx.fillRect(x + 7, hy, 3, 2);
-    halo(x + 8.5, hy + 1, T * 0.45, look.colours.kindRgb, DESK_GLOW[0]);
-  });
 }
 
 // Where the safe room's lamp hangs, in picture pixels: over the middle of
@@ -531,55 +328,6 @@ function bulbAt(cx, cy, bulb) {
   halo(cx + 0.5, sy, T * 0.5, POOL.rgb, bulb);
 }
 
-// The chest: a dark trunk with bands and a brass lock.
-function drawChest(thing, x, y) {
-  bctx.fillStyle = CHEST.lid;
-  bctx.fillRect(x + 2, y + 5, 12, 4);
-  bctx.fillRect(x + 3, y + 4, 10, 1);
-  bctx.fillStyle = CHEST.lidLight;
-  bctx.fillRect(x + 3, y + 5, 10, 1);
-  bctx.fillStyle = CHEST.body;
-  bctx.fillRect(x + 2, y + 9, 12, 6);
-  bctx.fillStyle = CHEST.band;
-  bctx.fillRect(x + 4, y + 4, 1, 11);
-  bctx.fillRect(x + 11, y + 4, 1, 11);
-  bctx.fillStyle = CHEST.lock;
-  bctx.fillRect(x + 7, y + 8, 2, 3);
-}
-
-// The coin, bobbing over its tile with a faint gold glint.
-function drawCoin(thing, x, y, glows) {
-  const lift = Math.round((thing.look.lift || 0) * T);
-  const cy = y + 8 - lift;
-  bctx.fillStyle = COIN.face;
-  bctx.fillRect(x + 6, cy, 4, 4);
-  bctx.fillRect(x + 7, cy - 1, 2, 6);
-  bctx.fillStyle = COIN.shine;
-  bctx.fillRect(x + 7, cy, 1, 1);
-  glows.push(() => halo(x + 8, cy + 2, T * 0.5, COIN.rgb, 0.18));
-}
-
-// A key lying on its tile: a ring, a shaft and two teeth, glowing as the
-// stairs do so a lit one isn't missed.
-function drawKey(thing, x, y, glows) {
-  const paint = () => {
-    bctx.fillStyle = KEY.metal;
-    bctx.fillRect(x + 3, y + 7, 4, 1);
-    bctx.fillRect(x + 3, y + 10, 4, 1);
-    bctx.fillRect(x + 3, y + 7, 1, 4);
-    bctx.fillRect(x + 6, y + 7, 1, 4);
-    bctx.fillRect(x + 7, y + 9, 7, 1);
-    bctx.fillRect(x + 11, y + 10, 1, 2);
-    bctx.fillRect(x + 13, y + 10, 1, 2);
-  };
-  paint();
-  const strength = thing.look.glow ? thing.look.glow[1] : 1;
-  glows.push(() => {
-    halo(x + 8, y + 9, T * 0.7, look.colours.glowRgb, strength * KEY.glow * 0.5);
-    paint();
-  });
-}
-
 // A soft round glow of `rgb` at (x, y) in picture pixels, `r` across, `a`
 // strong in the middle.
 function halo(x, y, r, rgb, a) {
@@ -590,10 +338,8 @@ function halo(x, y, r, rgb, a) {
   bctx.fillRect(x - r, y - r, r * 2, r * 2);
 }
 
-export const FLAT = { paper: drawPaper, stairs: drawStairs };
 export const STAND = {
-  box: drawBox, furniture: drawFurniture, cell: drawCell, desk: drawDesk, charger: drawCharger, chest: drawChest, coin: drawCoin, key: drawKey,
-  shutter: drawShutter, switch: drawSwitch, console: drawConsole, powerBoard: drawPowerBoard, crew: drawCrew,
+  furniture: drawFurniture, shutter: drawShutter, console: drawConsole, powerBoard: drawPowerBoard, crew: drawCrew,
 };
 
 // ---- furniture (step E) ----

@@ -12,7 +12,3 @@ export function shuffle(list) {
   return a;
 }
 
-// A whole number from lo to hi, both ends included.
-export function randInt(lo, hi) {
-  return lo + Math.floor(Math.random() * (hi - lo + 1));
-}

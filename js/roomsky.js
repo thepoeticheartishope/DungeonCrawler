@@ -40,11 +40,6 @@ export function lookUp(on) {
   lookingUp = on;
 }
 
-// How far the sky has faded in, 0 to 1 (for the smoke test).
-export function roomLookUp() {
-  return upShare;
-}
-
 // A window in the still picture: a ship window, looking into space.
 export function drawWindow(ctx, w) {
   drawShipWindow(ctx, w);
@@ -52,7 +47,7 @@ export function drawWindow(ctx, w) {
 
 // Where a ship window's glass is in the still picture, in picture pixels:
 // two tiles wide over both faces of its wall, inside the frame.
-export function shipGlass(w) {
+function shipGlass(w) {
   const x = w.col * T + 5, y = (w.row - 1) * T + 6;
   return { x, y, w: 2 * T - 10, h: 2 * T - 13 };
 }
