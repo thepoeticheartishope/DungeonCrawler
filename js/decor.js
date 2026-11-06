@@ -101,14 +101,18 @@ export function makePlacer(layout, gridSize) {
 // piece's tiles become solid props of kind 'furniture' ({ piece, part }:
 // 'single', or 'left' / 'mid' / 'right' along a wider one) if the floor
 // stays whole and none of them is reserved (placer.tryBlock); otherwise the
-// piece is left out. Furniture blocks walking but not the light, and a bump
-// only says what it is.
-export function placeFurniture(layout, placer) {
+// piece is left out. A piece with a tile off its own room's floor (a wall,
+// a doorway, another room) is left out too. Each piece left out goes to
+// warn (rooms.js devWarn: the console, with ?dev). Furniture blocks walking
+// but not the light, and a bump only says what it is.
+export function placeFurniture(layout, placer, warn = () => {}) {
   const pieces = [];
   layout.chambers.forEach(chamber => (chamber.furniture || []).forEach(([piece, row, col, width = 1]) => {
     const tiles = [];
     for (let i = 0; i < width; i++) tiles.push({ row, col: col + i });
-    if (!placer.tryBlock(tiles, false)) return;
+    const where = chamber.name + ': ' + piece + ' at ' + row + ',' + col;
+    if (!tiles.every(p => chamber.floorCells.some(f => f.row === p.row && f.col === p.col))) { warn(where + ' is off the room floor; left out'); return; }
+    if (!placer.tryBlock(tiles, false)) { warn(where + ' would block a path or a kept tile; left out'); return; }
     tiles.forEach((p, i) => {
       const part = width === 1 ? 'single' : i === 0 ? 'left' : i === width - 1 ? 'right' : 'mid';
       pieces.push({ row: p.row, col: p.col, kind: 'furniture', piece, part });

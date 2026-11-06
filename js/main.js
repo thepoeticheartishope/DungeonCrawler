@@ -1,5 +1,6 @@
 import { state, key } from './state.js';
 import { buildShipFloor } from './floor.js';
+import { loadShipRooms } from './rooms.js';
 import {
   initGunActions, autoWinGun, endAsk, letterPoolQuestion, sumLockQuestion, openBreaker, openLearning, openBoss,
 } from './gunactions.js';
@@ -40,6 +41,10 @@ import { showVersion } from './version.js';
 import { initSfx } from './sfx.js';
 import { initMusic } from './music.js';
 import { initBook, bookReading, refreshBook, refreshBookLog } from './bookview.js';
+
+// The ship's furniture from rooms/ship.json (rooms.js), before the ship is
+// built; plans.js furniture if it can't be loaded.
+await loadShipRooms();
 
 // The gun's actions get the main.js actions they call before anything runs.
 initGunActions({ applyTurnOutcome, drawEvents, openCharger, showRoomNote });
