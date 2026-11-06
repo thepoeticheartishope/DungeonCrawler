@@ -347,6 +347,8 @@ export const TEXT = {
   'furniture.sink': 'A sink. The mirror above it is gone.', // draft
   'furniture.stall': 'A stall door, shut.', // draft
   'furniture.sofa': 'A sofa, sunk where someone always sat.', // draft
+  'furniture.chicken': 'A chicken. Nobody knows how it got on board.', // draft; sample sprite piece (room sprites plan step B)
+  'furniture.other': 'Something stands in the way.', // draft; a sprite-only piece with no line of its own
   'room.blocked.pillar': ['A pillar. Cold, and older than you.', 'Stone. It does not think.'], // draft
 
   // The charger (charger.js): energy to full through CHARGE.SYS, in the start room.
@@ -618,6 +620,13 @@ function warnOnce(message) {
   if (warnedKeys.has(message)) return;
   warnedKeys.add(message);
   console.warn('text.js: ' + message);
+}
+
+// Whether text.js has wording for `key`: a furniture piece named only in
+// sprites/sprites.json may have no bump line of its own (main.js then uses
+// furniture.other).
+export function hasText(key) {
+  return TEXT[key] !== undefined;
 }
 
 // The wording for `key`, with {placeholders} filled from `vars` and

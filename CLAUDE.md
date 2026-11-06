@@ -118,7 +118,9 @@ Drawing and page code:
 | `render.js` | Screens, the ship's HUD (`renderShipHud()`), edge glow, the answer line. |
 | `mapview.js` | The map canvas, its afterglow, animations and taps; `requestMapDraw()`, `mapThings()`. |
 | `roomview.js` | The room view, the only map view: camera, walls and floors, light map, the player (~800 lines). |
-| `roomthings.js` | The room view's furniture, stations, crew and shutters as pixel art (`STAND`). |
+| `roomthings.js` | The room view's furniture, stations, crew and shutters as pixel art (`STAND`); a piece's PNG when it has one. |
+| `rooms.js` | The ship's furniture from `rooms/ship.json` (`loadShipRooms`), plans.js as fallback. |
+| `sprites.js` | Furniture PNGs named in `sprites/sprites.json` (`loadSprites`, `spriteFor`); code art as fallback. |
 | `roomgun.js` | The player's book on the room view, shut under his arm. |
 | `roomsky.js` | Windows and their light, and the eye in the sky (`lookUp`). |
 | `mapshared.js` | `isWall` and `grain`, shared by the room view's files. |

@@ -39,7 +39,8 @@
     ] },
     { "name": "plan.ship.galley", "r0": 24, "c0": 24, "r1": 29, "c1": 30, "furniture": [
       ["table", 26, 26, 3],
-      ["sofa", 29, 25, 2]
+      ["sofa", 29, 25, 2],
+      ["chicken", 28, 29]
     ] }
   ]
 }

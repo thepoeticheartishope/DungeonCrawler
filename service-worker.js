@@ -3,7 +3,7 @@
 // game loads instantly and still works with no connection. Bump
 // CACHE_NAME whenever the cached files change, so old caches get cleared.
 
-const CACHE_NAME = 'term-dungeon-v392';
+const CACHE_NAME = 'term-dungeon-v393';
 const APP_SHELL = [
   './',
   './index.html',
@@ -32,7 +32,11 @@ const APP_SHELL = [
   './js/moves.js',
   './js/plans.js',
   './js/rooms.js',
+  './js/sprites.js',
   './rooms/ship.json',
+  './sprites/sprites.json',
+  './sprites/desk.png',
+  './sprites/chicken.png',
   './js/floor.js',
   './js/decor.js',
   './js/passage.js',
@@ -130,11 +134,21 @@ self.addEventListener('message', (event) => {
   if (event.data === 'version' && event.ports[0]) event.ports[0].postMessage(CACHE_NAME);
 });
 
+// A furniture sprite not in APP_SHELL (a PNG Timothy added in sprites/,
+// sprites/README.md) is kept once fetched, so it works offline too.
+const KEEP_FETCHED = '/sprites/';
+
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
-      return fetch(event.request).catch(() => caches.match('./index.html'));
+      return fetch(event.request).then((response) => {
+        if (response.ok && new URL(event.request.url).pathname.includes(KEEP_FETCHED)) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      }).catch(() => caches.match('./index.html'));
     })
   );
 });

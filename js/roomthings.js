@@ -3,7 +3,7 @@
 // their column of light, boxes, energy cells, the reflective desk, the
 // charger, relays, the safe room's shutters, switch and lamp, a plan's hall
 // lamps, the chest, the coin, keys, the boss's mist, a mistake's sound, and
-// a fixed plan's furniture by piece. roomview.js picks what to draw and
+// a fixed plan's furniture by piece (its PNG from sprites.js if it has one). roomview.js picks what to draw and
 // where (STAND stands and is sorted with the stick men) and hands over the canvases it draws into each frame
 // (drawThingsWith). Reads state and never changes it.
 
@@ -13,8 +13,9 @@ import { crewLook, crewHeadLook } from './roles.js';
 import { figurePose, turnFigure, projectFigure, phiToward } from './figure3d.js';
 import { emberGlow } from './playerform.js';
 import {
-  ROOM_VIEW, SAFE_ROOM, PLAYER_EMBER, FIGURE3D, CREW_LOOK, SHIP_ROLES,
+  ROOM_VIEW, SAFE_ROOM, PLAYER_EMBER, FIGURE3D, CREW_LOOK, SHIP_ROLES, FURNITURE_SPRITES,
 } from './config.js';
+import { spriteFor } from './sprites.js';
 import { isWall, grain } from './mapshared.js';
 
 const T = ROOM_VIEW.tilePx;
@@ -356,12 +357,29 @@ const STALL = { door: '#5b6b73', edge: '#6f8089', gap: '#1c2124' };
 const SOFA = { back: '#5a3b3e', seat: '#6b474a', arm: '#4a3033' };
 const EASEL = { leg: '#5a3f29', board: '#b9ab8e', frame: '#8a7a5e' };
 
-// Draws furniture prop `thing` on its tile at (x, y).
+// Draws furniture prop `thing` on its tile at (x, y): its PNG when
+// sprites.json gives it one (room sprites plan step B), else its code art,
+// else a table. The PNG goes in the same picture as the code art would, so
+// the room's light, the window cut-out and the sorting with the stick men
+// treat it the same.
 function drawFurniture(thing, x, y) {
   const { piece, part } = thing.at;
+  const sprite = spriteFor(piece);
+  if (sprite) { drawSprite(sprite, part, x, y); return; }
   const left = part === 'single' || part === 'left';
   const right = part === 'single' || part === 'right';
   (PIECES[piece] || PIECES.table)(x, y, left, right, thing.at);
+}
+
+// One tile of a sprite: its bottom T px on the tile at (x, y), anything
+// taller rising above it. A sprite with parts picks this tile's frame
+// (single / left / mid / right); one without is the same on every tile.
+function drawSprite(sprite, part, x, y) {
+  const frame = sprite.parts ? Math.max(0, FURNITURE_SPRITES.frames.indexOf(part)) : 0;
+  const smooth = bctx.imageSmoothingEnabled;
+  bctx.imageSmoothingEnabled = false;
+  bctx.drawImage(sprite.image, frame * T, 0, T, sprite.tall, x, y + T - sprite.tall, T, sprite.tall);
+  bctx.imageSmoothingEnabled = smooth;
 }
 
 // A pupil's desk with its chair behind it.
