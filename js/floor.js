@@ -6,6 +6,7 @@
 import { state, key } from './state.js';
 import { FLOOR_PLANS, buildPlanLayout } from './plans.js';
 import { makePlacer, placeFurniture } from './decor.js';
+import { devWarn } from './rooms.js';
 import { BODY_ANGLES } from './look.js';
 import { computeVisibility } from './sight.js';
 import { placeShipWindows } from './windows.js';
@@ -45,7 +46,7 @@ export function buildShipFloor() {
   f.pillarSet = new Set();
   f.chamberAt = layout.chamberAt;
   f.chamberNames = layout.chambers.map(ch => ch.name);
-  f.props = placeFurniture(layout, placer).map(p => ({ ...p, identified: true, searched: false, sprung: false }));
+  f.props = placeFurniture(layout, placer, devWarn).map(p => ({ ...p, identified: true, searched: false, sprung: false }));
   // Each role's console, board and crew member (stations.js).
   placeStations(plan.stations, placer, [f.PLAYER_START]).forEach(p => f.props.push({ ...p, identified: true, searched: false, sprung: false }));
   // Its shutters open and shut by themselves as the player comes near
