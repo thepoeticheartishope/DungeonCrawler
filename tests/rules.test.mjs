@@ -19,7 +19,6 @@ import { stepPlayer, goldReward } from '../js/moves.js';
 
 // These are the turn game's rules (the start screen's Turns option): One
 // stick, the default since one stick plan step G, has its own tests.
-state.settings.oneStick = false;
 
 // An open size x size floor, player in the middle facing north, fog on,
 // nothing else on it.

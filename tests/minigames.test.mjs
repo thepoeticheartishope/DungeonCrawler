@@ -51,7 +51,6 @@ function reset() {
   state.run.coinsTotal = 0;
   state.run.hearts = 3;
   state.run.roomIndex = 0;
-  state.floor.misses = 0;
   state.battle.minigame = null;
   state.battle.wager = 0;
   state.battle.currentQuestion = NUMBER;
@@ -433,13 +432,12 @@ test('Verdict tiers: 3 claims pay X or 1; the boss\'s 5 pay X, 2 or 1', () => {
   assert.equal(verdictTier(3, 5), null);
 });
 
-test('claims called wrong are not haunts (haunts are dungeon-only); the minigame is cleared', () => {
+test('after claims are called wrong the minigame is cleared', () => {
   reset();
   state.settings.activeData = VERDICT_SET;
   state.battle.minigame = 'verdict';
   state.battle.currentQuestion = VERDICT_SET[0];
   endMinigame({ right: true, tier: '1', given: '2 of 3 right', missed: [VERDICT_SET[0], VERDICT_SET[2]] });
-  assert.equal(state.run.haunts.size, 0, 'no claim becomes a haunt');
   assert.equal(state.battle.minigame, null);
 });
 

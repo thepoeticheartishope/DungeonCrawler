@@ -266,7 +266,7 @@ function drawScene(now) {
   ctx.fillRect(0, 0, scene.width, scene.height);
   const shared = {
     colours, things: mapThings(), fogOf, paintGlyph, pulse, keepMoving,
-    showPlain, now, still: reducedMotion.matches, walkAt: walkAt(now),
+    showPlain, now, still: reducedMotion.matches, walkAt: freeAt(),
   };
   const size = { width: scene.width, height: scene.height, pageWidth: pageSize.width };
   // The room view's pixel art has no afterglow: it would smear it.
@@ -369,7 +369,7 @@ function mapThings() {
       size: 'stairs', colour: colours.bright, glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
     });
   });
-  add('player', state.settings.oneStick ? freeAt() : shownAt(PLAYER, f.playerRow, f.playerCol), t('term.player.symbol'), { size: 'player' },
+  add('player', freeAt(), t('term.player.symbol'), { size: 'player' },
     { row: f.playerRow, col: f.playerCol });
   return things;
 }
@@ -446,17 +446,6 @@ function shownAt(effectKey, row, col) {
 }
 
 // How far along its slide a minion (or the player) is at `now`, as a place in tiles.
-// Where the player's step slide has them at `now`: their tile once it has
-// landed. A bump doesn't count, so the camera following this never nudges.
-function walkAt(now) {
-  if (state.settings.oneStick) return freeAt();
-  const f = state.floor;
-  const fx = effects.get(PLAYER);
-  const tile = { row: f.playerRow, col: f.playerCol };
-  if (!fx || fx.kind !== 'slide' || fx.to.row !== tile.row || fx.to.col !== tile.col || now - fx.start >= fx.ms) return tile;
-  return slidePlace(fx, now);
-}
-
 // Where free walking has the player (one stick plan, walk.js), as a place
 // in tiles like a slide's (the tile's top-left corner).
 function freeAt() {

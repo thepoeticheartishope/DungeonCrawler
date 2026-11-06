@@ -1,4 +1,4 @@
-// DOM rendering around the map: screens, the edge glow and d-pad hints,
+// DOM rendering around the map: screens, the edge glow,
 // and the HUD (hearts / the ship's crew and panic / timer). The map
 // itself is drawn on a canvas by mapview.js.
 //
@@ -8,10 +8,6 @@
 
 import { state } from './state.js';
 import { SENSE_NOTE_MS, ANSWER_LINE_FADE_MS } from './config.js';
-import { whatBlocks, canPassCorner } from './passage.js';
-import { SCREEN_WAYS, padWay } from './dpad.js';
-import { FACING_VECTORS } from './sight.js';
-import { waysInUse } from './look.js';
 import { taughtCount } from './roles.js';
 import { t } from './text.js';
 
@@ -94,43 +90,6 @@ export function showScreen(el) {
   els.statsEl.classList.toggle('show', ![els.startScreen, els.shipIntroScreen].includes(el));
 }
 
-// The room screen's hints around the map: which d-pad directions are
-// open. Call after anything that moves the player, the camera or what's
-// around them.
-export function renderRoomHints() {
-  renderMoveHints();
-}
-
-// The d-pad shows which ways the player can go: a blocked direction dims
-// (pressing it still turns to look that way), and one with a paper or box
-// not yet gone through lights up, since that press reads or examines it;
-// so does THE UNFOLDING, which a press opens. A diagonal that would cut a
-// corner is blocked too (passage.js canPassCorner). Each arrow is the way
-// it points on screen (dpad.js padWay).
-function renderMoveHints() {
-  const buttons = els.dpadButtons;
-  if (!buttons) return;
-  for (const [dir, [sx, sy]] of Object.entries(SCREEN_WAYS)) {
-    const btn = buttons[dir];
-    if (!btn) continue;
-    const way = padWay(sx, sy, waysInUse());
-    const step = way && FACING_VECTORS[way];
-    if (!step) {
-      btn.classList.remove('move-examine', 'move-blocked');
-      continue;
-    }
-    const [dr, dc] = step;
-    const row = state.floor.playerRow + dr, col = state.floor.playerCol + dc;
-    const cornered = !canPassCorner(state.floor.playerRow, state.floor.playerCol, dr, dc);
-    const block = cornered ? { kind: 'corner' } : whatBlocks(row, col);
-    const unreadPaper = !block && state.floor.props.some(p => p.kind === 'paper' && !p.searched && p.row === row && p.col === col);
-    const examine = unreadPaper || (!!block && block.kind === 'prop' && !block.thing.searched) ||
-      (!!block && block.kind === 'exchange');
-    btn.classList.toggle('move-examine', examine);
-    btn.classList.toggle('move-blocked', !!block && !examine);
-  }
-}
-
 // Status bar numbers: hearts, gold, turn count and the depth (REST on a
 // rest floor, which isn't a depth). Call after any change to them.
 export function renderHud() {
@@ -138,8 +97,8 @@ export function renderHud() {
   els.heartsEl.textContent = Math.max(state.run.hearts, 0) + '/' + state.run.maxHearts;
   els.coinsTotalEl.textContent = state.run.coinsTotal;
   els.turnCountEl.textContent = state.run.turnCount;
-  // With One stick a walk isn't a turn: the HUD's time says it instead.
-  els.turnCountEl.parentElement.hidden = state.settings.oneStick;
+  // A walk isn't a turn: the HUD's time says it instead.
+  els.turnCountEl.parentElement.hidden = true;
   els.roomNumEl.textContent = state.run.resting ? t('stat.rest') : state.run.roomIndex + 1;
   els.roomOfEl.style.display = state.run.resting ? 'none' : '';
   els.roomTotalEl.textContent = state.run.order.length;

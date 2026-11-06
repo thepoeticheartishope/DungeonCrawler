@@ -16,14 +16,14 @@ import { state, key } from '../js/state.js';
 import { ONE_STICK } from '../js/config.js';
 import { computeVisibility } from '../js/sight.js';
 import { walkFree, freeSpot, resetWalk, switchSneak } from '../js/walk.js';
-import { lookAngle, BODY_ANGLES } from '../js/look.js';
+import { lookAngle, aimLook, swingLook, BODY_ANGLES } from '../js/look.js';
 
 const FRAME = 16;
 
-// An open floor, player in the middle facing north, One stick on.
+// An open floor, player in the middle facing north.
 function resetFloor(size = 21) {
   emptyFloor(size, {
-    settings: { oneStick: true, fogEnabled: true },
+    settings: { fogEnabled: true },
     floor: { look: BODY_ANGLES.N },
     see: false,
   });
@@ -152,6 +152,17 @@ test('the light swings round at ONE_STICK.turnRate and holds when the push stops
   assert.ok(Math.abs(lookAngle() - Math.PI / 2) < 1e-6, 'held');
   walkFree(-1, 0, { push: ONE_STICK.deadZone / 2, dtMs: 16, still: true });
   assert.ok(Math.abs(Math.abs(lookAngle()) - Math.PI / 2) < 1e-6 && lookAngle() < 0, 'reduced motion turns at once');
+});
+
+test('a tap on the map (aimLook) swings the light round to it, never a jump', () => {
+  resetFloor();
+  assert.deepEqual(aimLook(Math.PI / 2), [], 'no events, no turn spent');
+  assert.equal(lookAngle(), 0, 'nothing moves until the frame swings it');
+  swingLook(100);
+  assert.ok(Math.abs(lookAngle() - ONE_STICK.turnRate * 0.1) < 1e-6, 'part way round after 100 ms');
+  swingLook(1000);
+  assert.ok(Math.abs(lookAngle() - Math.PI / 2) < 1e-6, 'east');
+  assert.equal(state.floor.facing, 'E', 'the body faces the light');
 });
 
 test('a key tap or a push in the dead zone only turns; a held key walks', () => {

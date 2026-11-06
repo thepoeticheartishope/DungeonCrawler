@@ -59,7 +59,7 @@ export function clearLine(fromRow, fromCol, row, col) {
 // small push on the stick, which stays crouched once let go until they
 // walk again, so a phone can hide too; walk.js).
 export function crouching() {
-  return state.settings.oneStick && (state.floor.sneaking || state.floor.creeping);
+  return state.floor.sneaking || state.floor.creeping;
 }
 
 // Whether (row, col) is cover: something solid that isn't wall, the

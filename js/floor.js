@@ -18,31 +18,20 @@ function clearDanger() {
   const f = state.floor;
   f.boss = null;
   f.minions = [];
-  f.crawling = [];
   f.hunter = null;
-  f.gunTarget = null;
-  state.battle.struggle = null;
-  f.struggles = 0;
-  f.misses = 0;
   f.path = null;
   f.stairsAlt = null;
   f.safeRoom = null;
   f.goals = [];
   f.chest = null;
   f.lastChoiceType = null;
-  f.beats = [];
   f.keys = [];
   f.vents = [];
   f.keysHeld = 0;
   f.keySpots = [];
-  f.roomSpots = [];
   f.hidden = null;
-  f.keyRoute = 0;
   f.gateSealed = false;
   f.windows = [];
-  f.tutorial = null;
-  f.testRoom = null;
-  f.advanced = null;
   f.ship = false;
 }
 
@@ -69,7 +58,6 @@ export function buildShipFloor() {
   f.ship = true;
   const layout = buildPlanLayout(plan, 0);
   f.GRID_SIZE = plan.rows.length;
-  f.CHAMBER_TARGET = layout.chambers.length;
   f.plan = { name: plan.name, version: layout.version };
   f.wallSet = layout.walls;
   f.PLAYER_START = { row: layout.start.row, col: layout.start.col };
@@ -85,7 +73,6 @@ export function buildShipFloor() {
   const placer = makePlacer(layout, f.GRID_SIZE);
   f.pillarSet = new Set();
   f.chamberAt = layout.chamberAt;
-  f.doorSet = doorTiles(layout);
   f.chamberNames = layout.chambers.map(ch => ch.name);
   f.props = placeFurniture(layout, placer).map(p => ({ ...p, identified: true, searched: false, sprung: false }));
   // Each role's console, board and crew member (stations.js).
@@ -99,7 +86,6 @@ export function buildShipFloor() {
   }
   f.stairs = null;
   f.exchange = null;
-  f.exchangeBought = new Set();
   f.coin = null;
 
   placeShipWindows();

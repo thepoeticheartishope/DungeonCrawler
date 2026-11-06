@@ -139,7 +139,7 @@
   @media (max-width: 480px) { .stats { font-size: calc(17px * var(--text-scale, 1)); gap: 0 12px; } }
   .stats .stat-more { display: none; }
   .stats.full .stat-more { display: flex; }
-  .stat-full-line { flex-basis: 100%; }
+
   /* On the ship (ship plan step C; render.js renderHud) the HUD shows the
      crew taught and the crew's panic, and nothing else (no burns since step G1). */
   .stats .ship-stat { display: none; }
@@ -178,15 +178,6 @@
   .ship-intro.all-in .ship-intro-line { opacity: 1; animation: none; }
   @media (prefers-reduced-motion: reduce) {
     .ship-intro-line { opacity: 1; animation: none; }
-  }
-
-  @keyframes glitchShift1 {
-    0%, 100% { transform: translate(2px, 0); clip-path: inset(0 0 65% 0); opacity: 0.6; }
-    50% { transform: translate(-2px, 1px); clip-path: inset(45% 0 15% 0); opacity: 0.4; }
-  }
-  @keyframes glitchShift2 {
-    0%, 100% { transform: translate(-2px, 0); clip-path: inset(65% 0 0 0); opacity: 0.6; }
-    50% { transform: translate(2px, -1px); clip-path: inset(10% 0 55% 0); opacity: 0.4; }
   }
 
   .option-toggle {
@@ -555,9 +546,6 @@
     word-break: break-all;
   }
 
-  .combat-status .pip-full { color: var(--torch-bright); }
-  .combat-status .pip-empty { color: var(--muted); }
-
   /* ---- The room screen always fits the screen, with no scrolling. On a
      phone 100vh is the screen with the address bar hidden, so the page is
      held to 100dvh (the screen as it is right now) and the map shrinks to
@@ -664,22 +652,7 @@
   .book-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 12px; white-space: nowrap; } /* a long title (a crew role's) pushes CLOCK PAUSED to a second line, never off the edge */
   .book-paused { color: var(--muted); }
   .book-body { position: relative; flex: 1 1 0; min-height: 0; display: flex; gap: 10px; }
-  .book-strip {
-    flex: 0 0 auto;
-    width: 64px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 12px 0 8px;
-    background: var(--strip);
-    border-top: 2px solid var(--case-edge);
-    border-left: 2px solid var(--case-edge);
-  }
-  .book-strip[hidden] { display: none; }
-  .book-tube { width: 44px; height: auto; image-rendering: pixelated; }
-  .book-light { color: var(--muted); margin-top: auto; }
-  .book-readout { color: var(--text); letter-spacing: 1px; }
+
   .book-page {
     position: relative;
     flex: 1 1 0;
@@ -804,9 +777,7 @@
   /* A phone: the strip narrows to the tube alone, so the page keeps its width. */
   @media (max-width: 480px) {
     .book { padding: 4px 6px 8px; }
-    .book-strip { width: 30px; padding-top: 8px; }
-    .book-tube { width: 22px; }
-    .book-light, .book-readout { display: none; }
+
     .book-page {
       padding-left: 30px;
       padding-right: 8px;
@@ -818,37 +789,10 @@
   }
   #roomScreen.asking .map-fit, #roomScreen.asking .room-controls,
   #roomScreen.reading .map-fit, #roomScreen.reading .room-controls { display: none; }
-  #reloadPanel[hidden], #askQuestionPanel[hidden] { display: none; }
-  #reloadPanel { display: flex; flex-direction: column; gap: 6px; }
-  .ask-cancel { align-self: flex-start; }
-  .choice-option .reload-room { color: var(--muted); margin-left: 8px; }
+  #askQuestionPanel[hidden] { display: none; }
 
-  /* The dial (kill or maim plan step B; js/gunpanels.js, drawn by
-     js/dialview.js): a veil over the whole map, fading in over
-     DIAL_FADE_IN_MS with READY in its middle, then the circle, its key
-     under it. After a stop it is already `hidden` to the game (input is
-     free) but `.fading` keeps it on screen while the result holds and it
-     fades out. Opacity only, so the fades stay under reduced motion. */
-  .dial-veil {
-    position: absolute;
-    inset: 1px;
-    z-index: 5;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 6px 10px;
-    background: rgba(0, 0, 0, 0.78);
-    text-align: center;
-    font-size: calc(18px * var(--text-scale, 1));
-    opacity: 0;
-    transition: opacity var(--dial-fade, 700ms) ease;
-  }
-  .dial-veil.on { opacity: 1; }
-  .dial-veil[hidden]:not(.fading) { display: none; }
-  .dial-veil.fading { pointer-events: none; }
-  .dial-prompt { color: var(--muted); }
+  .ask-cancel { align-self: flex-start; }
+
   /* CHARGE.SYS (chargerview.js): a light veil over the map (the room shows
      through, taps don't reach it) and a box of wires in its middle. Wires
      are buttons at least 44 px so a thumb can turn them, without the usual
@@ -930,61 +874,6 @@
      so it reads as "answer me"; filled once a right answer closes it. */
   .charger-wire.breaker.open { color: var(--torch-bright); border-color: var(--torch-bright); }
   .charger-wire.breaker.open .breaker-box { fill: rgba(5, 6, 6, 0.9); stroke: currentColor; stroke-width: 3; }
-  /* The circle's room: what the prompt and the key leave. gunpanels.js
-     sizes the canvas to DIAL_SIZE_SHARE of its shorter side. */
-  .dial-stage {
-    flex: 1 1 0;
-    min-height: 0;
-    width: 100%;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .dial-canvas { display: block; }
-  .dial-canvas[hidden] { display: none; }
-  /* READY in the middle while nothing of the dial shows, BACK under it. */
-  .dial-buttons {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-  }
-  .dial-buttons[hidden], .dial-back[hidden] { display: none; }
-  .dial-ready {
-    font-size: calc(40px * var(--text-scale, 1));
-    padding: 6px 28px;
-    border: 2px solid var(--torch-bright);
-    color: var(--torch-bright);
-    letter-spacing: 0.08em;
-  }
-  .damage-legend { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; color: var(--muted); font-size: calc(14px * var(--text-scale, 1)); text-transform: uppercase; }
-  .damage-legend[hidden] { display: none; }
-  /* The Struggle dial: its prompt in inverse video and a brighter ring
-     (dialview.js), so it reads as danger at a glance. Nothing flashes:
-     the speed of the marker is the pressure. */
-  .dial-veil.struggle .dial-prompt { background: var(--torch-bright); color: var(--ink); padding: 0 6px; }
-
-  /* Edge glows toward an off-screen boss. Opacity is set per edge by
-     render.js renderLightHint, over the map; they never catch clicks. */
-  .light-hint {
-    position: absolute;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-  .light-hint-n, .light-hint-s { left: 0; right: 0; height: 18%; }
-  .light-hint-e, .light-hint-w { top: 0; bottom: 0; width: 18%; }
-  /* After the boss they point at the hunter instead, in white phosphor. */
-  .light-hint { --hint-rgb: var(--boss-light-rgb); }
-  .light-hint.hunter-hint { --hint-rgb: var(--glow-rgb); }
-  .light-hint-n { top: 0; background: linear-gradient(to bottom, rgba(var(--hint-rgb), 0.28), transparent); }
-  .light-hint-s { bottom: 0; background: linear-gradient(to top, rgba(var(--hint-rgb), 0.28), transparent); }
-  .light-hint-w { left: 0; background: linear-gradient(to right, rgba(var(--hint-rgb), 0.28), transparent); }
-  .light-hint-e { right: 0; background: linear-gradient(to left, rgba(var(--hint-rgb), 0.28), transparent); }
 
   /* "I see you." (render.js showSensed): faint text near the top of the map,
      over the dark rather than the player. It fades in and out slowly, never
@@ -1047,85 +936,10 @@
     justify-content: center;
     gap: 28px;
   }
-  /* Swap sides (start screen, js/setloader.js): the d-pad on the right,
+  /* Swap sides (start screen, js/setloader.js): the walk stick on the right,
      MAP, LOG and SELECT on the left. */
   .room-controls.dpad-right { flex-direction: row-reverse; }
 
-  /* Clipped the turned 4-way d-pad's empty corners (8 ways off, retired
-     2026-10-28) so a phone didn't zoom out. The square 8-way pad never
-     pokes out; the padding and negative margin cancel, so it changes nothing. */
-  .dpad-clip {
-    flex: none;
-    padding: 12px;
-    margin: -12px;
-    overflow: hidden;
-    overflow: clip;
-  }
-
-  /* ---- D-pad ---- */
-  /* Square, 8 arrows, each walking that way on screen (eight ways plan,
-     js/dpad.js screenStep). */
-  .dpad {
-    display: grid;
-    grid-template-columns: repeat(3, 60px);
-    grid-template-rows: repeat(3, 60px);
-    gap: 4px;
-    justify-content: center;
-    flex: none;
-  }
-  .dpad button {
-    /* Held to walk (js/dpad.js): no scrolling, text selection or callout
-       menu under a finger that stays down. */
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    padding: 0;
-    min-height: 0;
-    font-size: calc(28px * var(--text-scale, 1));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .dpad button::before, .dpad button::after { content: none; }
-  .dpad-ul { grid-column: 1; grid-row: 1; }
-  .dpad-u { grid-column: 2; grid-row: 1; }
-  .dpad-ur { grid-column: 3; grid-row: 1; }
-  .dpad-l { grid-column: 1; grid-row: 2; }
-  .dpad-center { grid-column: 2; grid-row: 2; }
-  .dpad-r { grid-column: 3; grid-row: 2; }
-  .dpad-dl { grid-column: 1; grid-row: 3; }
-  .dpad-d { grid-column: 2; grid-row: 3; }
-  .dpad-dr { grid-column: 3; grid-row: 3; }
-  /* The look stick (js/dpad.js initLookStick): a knob that follows a drag
-     and springs back; lit while a tap would turn the body. */
-  .look-knob {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: currentColor;
-    pointer-events: none;
-    transition: transform 0.12s ease-out;
-  }
-  .dpad-center.armed { background: var(--torch-bright); color: var(--ink); }
-  /* Holding the stick to wait (light battery plan step D): a ring round
-     the knob brightens slowly over the hold (LOOK_STICK_HOLD_MS), so the
-     player sees it coming; under reduced motion it is just there. */
-  .dpad-center { position: relative; }
-  .dpad-center::after {
-    content: '';
-    position: absolute;
-    inset: 22%;
-    border: 2px solid currentColor;
-    border-radius: 50%;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .dpad-center.holding::after { opacity: 0.9; transition: opacity 1s linear; }
-  @media (prefers-reduced-motion: reduce) {
-    .look-knob { transition: none; }
-    .dpad-center.holding::after { transition: none; }
-  }
   /* The round stick (one stick plan step B): drag from the middle; the
      dashed ring inside is the creep zone: --creep (ONE_STICK.creep, set
      by dpad.js) of the knob's reach, half the stick less half the knob. */
@@ -1167,12 +981,7 @@
     .walk-stick.holding .walk-knob { transition: none; }
   }
 
-  /* Which ways are open (render.js renderMoveHints): blocked dims, a
-     paper or box to examine shows in inverse video. */
-  .dpad button.move-blocked { opacity: 0.3; }
-  .dpad button.move-examine { background: var(--torch-bright); color: var(--ink); }
-
-  /* ---- The buttons right of the d-pad: MAP, LOG, then SELECT (the
+  /* ---- The buttons beside the walk stick: MAP, LOG, then SELECT (the
      gun's one button, only with the gun on) lowest, furthest from the
      dial over the map. ---- */
   .room-buttons {
@@ -1182,38 +991,13 @@
     flex: none;
   }
   .stat[hidden], .room-buttons button[hidden] { display: none; }
-  /* The light button (light button prototype, Timothy 2026-10-27): the
-     light tube on its side (tubeart.js) and ON / OFF / EMPTY, top of the
-     column; a tap switches the light. Off or empty the word dims, as the
-     tube does. */
-  .room-buttons .light-battery {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-size: calc(15px * var(--text-scale, 1));
-    letter-spacing: 0.06em;
-  }
-  .room-buttons .light-battery::before, .room-buttons .light-battery::after { content: none; }
-  /* No inverse video on hover or focus (a tap leaves hover on a phone):
-     it would hide whether the tube is lit. A frame instead. */
-  .room-buttons .light-battery { box-shadow: inset 0 0 0 1px var(--line); }
-  .room-buttons .light-battery:hover:not(:disabled), .room-buttons .light-battery:focus-visible:not(:disabled) {
-    background: transparent;
-    color: var(--torch-bright);
-    text-shadow: inherit;
-    box-shadow: inset 0 0 0 2px var(--text);
-  }
-  .room-buttons .light-battery.battery-off:hover:not(:disabled) { color: var(--muted); }
-  .light-battery.battery-off { color: var(--muted); text-shadow: none; }
-  .hud-tube { width: 64px; height: auto; image-rendering: pixelated; }
+
   .room-buttons button {
     min-width: 96px;
     min-height: 44px;
     padding: 0 8px;
     touch-action: manipulation;
   }
-
 
   /* ---- Battle screen: styled as a terminal window ---- */
   .terminal { text-align: left; }
@@ -1242,15 +1026,6 @@
     padding: 12px 0 0;
   }
 
-  .term-status {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin-bottom: 14px;
-  }
-
-  .term-status-lines { display: flex; flex-direction: column; }
-
   .term-line {
     color: var(--muted);
     text-transform: uppercase;
@@ -1273,40 +1048,6 @@
     filter: grayscale(100%) contrast(1.1);
   }
   .query-image[hidden] { display: none; }
-
-  .battle-glyph {
-    font-family: var(--font);
-    font-size: calc(80px * var(--text-scale, 1));
-    font-weight: 400;
-    line-height: 0.85;
-    color: var(--torch-bright);
-    text-shadow: var(--glow-strong);
-    flex-shrink: 0;
-  }
-
-  /* Clear correct/wrong signal on the battle screen — the map is hidden
-     behind this screen, so a battle needs its own visible feedback. */
-  .battle-glyph.flash-correct { animation: battleCorrect 0.5s ease; }
-  @keyframes battleCorrect {
-    0% { transform: scale(1); color: var(--torch-bright); }
-    40% { transform: scale(1.3); color: var(--hit); text-shadow: 0 0 4px rgba(var(--glow-rgb),1), 0 0 30px rgba(var(--glow-rgb),0.95); }
-    100% { transform: scale(1); color: var(--torch-bright); }
-  }
-
-  .battle-glyph.flash-wrong { animation: battleWrong 0.4s ease; }
-  @keyframes battleWrong {
-    0%, 100% { transform: translateX(0); color: var(--torch-bright); }
-    20%, 60% { transform: translateX(-6px); }
-    40%, 80% { transform: translateX(6px); }
-    50% { color: var(--ink); background: var(--text); text-shadow: none; }
-  }
-
-  .hearts.hit-flash { animation: heartsHit 0.4s ease; }
-  @keyframes heartsHit {
-    0% { transform: scale(1); color: inherit; }
-    40% { transform: scale(1.4); }
-    100% { transform: scale(1); color: inherit; }
-  }
 
   .enemy-name {
     font-family: var(--font);
@@ -1421,8 +1162,7 @@
     text-shadow: none;
     box-shadow: var(--inverse-glow);
   }
-  .choice-option:hover .mod-tag,
-  .choice-option:focus-visible .mod-tag { color: var(--text); background: var(--ink); }
+
   /* Flip: selected answers turned upside down or mirrored. */
   .opt-text.flip-upside, .opt-text.flip-mirror { display: inline-block; }
   .opt-text.flip-upside { transform: rotate(180deg); }
@@ -1678,56 +1418,7 @@
   /* ---- Battle category choice: the glitched "what kind of query?" menu
      a fight opens on. Same achromatic, small-jitter glitch as the intro
      screen (no colour split, no strobe), just inline instead of centred. ---- */
-  .choice-panel[hidden], #queryPanel[hidden], .end-panel[hidden] { display: none; }
-  .battle-glitch {
-    position: relative;
-    color: var(--torch-bright);
-    letter-spacing: 2px;
-    margin: 4px 0 8px;
-  }
-  .battle-glitch::before,
-  .battle-glitch::after {
-    content: attr(data-text);
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    color: var(--text);
-  }
-  .battle-glitch::before { animation: glitchShift1 0.4s steps(2, end) infinite; }
-  .battle-glitch::after { animation: glitchShift2 0.35s steps(2, end) infinite; }
-
-  .choice-list { display: flex; flex-direction: column; text-align: left; }
-  .choice-option {
-    display: flex;
-    align-items: baseline;
-    width: 100%;
-    color: var(--text);
-    text-align: left;
-    text-transform: uppercase;
-    padding: 6px 8px;
-  }
-  .choice-option::before, .choice-option::after { content: none; }
-  .choice-option:disabled { opacity: .55; cursor: default; }
-  .choice-option .letter { color: var(--torch-bright); font-weight: 700; margin-right: 10px; }
-  .choice-option:hover:not(:disabled) .letter,
-  .choice-option:focus-visible:not(:disabled) .letter { color: var(--stone-dark); }
-  .choice-option .choice-label { flex: 1; }
-
-  /* Brief glitch-in as a fight starts. */
-  #battleScreen.glitch-in .terminal { animation: battleGlitchIn 0.32s steps(4, end); }
-  @keyframes battleGlitchIn {
-    0% { clip-path: inset(40% 0 45% 0); transform: translateX(-4px); opacity: .6; }
-    25% { clip-path: inset(10% 0 70% 0); transform: translateX(4px); }
-    50% { clip-path: inset(60% 0 5% 0); transform: translateX(-2px); opacity: .85; }
-    100% { clip-path: inset(0 0 0 0); transform: none; opacity: 1; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .battle-glitch::before, .battle-glitch::after { animation: none; opacity: 0; }
-    .log-line { animation: none; }
-    #battleScreen.glitch-in .terminal { animation: none; }
-  }
+  #queryPanel[hidden] { display: none; }
 
   /* The room log, on the map's bottom edge: only the newest two notes
      (ROOM_LOG_LINES in config.js), over a shade so they read on the map,
@@ -1761,55 +1452,13 @@
   .feedback:has(#roomFeedback:empty) { display: none; }
   /* The tutorial's kind voice talks over the dial (tutorial.js
      tutorialDial), so its line sits above the veil. */
-  #mapWrap:has(.dial-veil:not([hidden])) .map-notes,
-  #mapWrap:has(.charger-veil:not([hidden])) .map-notes,
-  #mapWrap:has(.charger-veil:not([hidden])) .feedback { z-index: 6; }
-  #mapWrap:has(.dial-veil:not([hidden])) .feedback,
-  #mapWrap:has(.dial-veil.fading) .feedback { display: none; }
+  #mapWrap:has(.charger-veil:not([hidden])) .map-notes, #mapWrap:has(.charger-veil:not([hidden])) .feedback { z-index: 6; }
+
   @media (prefers-reduced-motion: reduce) { .feedback { transition: none; } }
   .feedback::-webkit-scrollbar { display: none; }
   .feedback .room-note { margin-top: 4px; }
   .feedback .room-note.note-old { opacity: 0.55; }
   .feedback .note-count { color: var(--muted); }
-  /* ---- Encounter transcript (battle screen) ----
-     No panel or title of its own: it reads as the terminal's scrollback
-     above the current prompt. Capped at 8 lines so a long boss fight never
-     pushes the choices down; older lines scroll away (still scrollable,
-     without a scrollbar's app chrome). */
-  .encounter-log {
-    font-size: calc(16px * var(--text-scale, 1));   /* a step below the 20px prompt, so history reads as secondary */
-    line-height: 1.2;
-    max-height: calc(1.2em * 8);
-    overflow-y: auto;
-    scrollbar-width: none;
-    margin: 0 0 14px;
-    overflow-wrap: anywhere;
-  }
-  .encounter-log::-webkit-scrollbar { display: none; }
-  .encounter-log:empty { display: none; }
-  /* Hanging indent: a wrapped line lines up under the text, not the '> '. */
-  .log-line { padding-left: 1.2em; text-indent: -1.2em; animation: logLineIn 0.18s steps(3, end); }
-  .log-line::before { content: '> '; color: var(--muted); }
-  .log-sys { color: var(--muted); }
-  .log-bright { color: var(--torch-bright); }
-  /* A miss (or the end of the run) is the one line in inverse video — the
-     loudest thing a phosphor screen can do without a second colour. */
-  .log-alert {
-    display: table;
-    color: var(--ink);
-    background: var(--text);
-    text-shadow: none;
-    box-shadow: var(--inverse-glow);
-    padding: 0 6px;
-    text-indent: 0;
-  }
-  .log-alert::before { content: '! '; color: inherit; }
-  /* Aged out of the newest few lines (see main.js ageLog): every kind drops
-     to dim intensity, a miss's inverse bar included. */
-  .log-line.log-old { color: var(--muted); }
-  .log-alert.log-old { background: var(--muted); box-shadow: none; }
-  @keyframes logLineIn { from { opacity: 0; } to { opacity: 1; } }
-  .end-panel { margin-top: 4px; }
 
   /* Room screen's one-line move/engage notes. */
   .feedback .warn-msg {
@@ -1848,7 +1497,6 @@
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devBookPaperBtn" type="button" title="Testing only: the record book's page (the ask screen): dark, as the game has it, or cold paper or cream, to compare">Book paper: dark (dev)</button>
-      <button class="dev-skip" id="devOneStickBtn" type="button" aria-pressed="true" title="Testing only: walk freely in real time (one stick plan, the default), or tile to tile in turns as with the start screen's Turns option">One stick: ON (dev)</button>
       <button class="dev-skip" id="devMinigameBtn" type="button" title="Testing only: minigames roll as usual, never, or always (one picked), swapping in a question it fits">Minigame: roll (dev)</button>
       <output class="dev-skip" id="devFrameOut" title="Testing only: how long the map takes to draw, median and slowest of the last 120 frames drawn">Draw: - (dev)</output>
       <button class="dev-skip" id="devSkipBtn" type="button" title="Testing only: jump to the next room without fighting">Skip room (dev)</button>
@@ -2140,25 +1788,11 @@
       </div>
     </div>
 
-    <!-- The d-pad, and beside it MAP, LOG and SELECT. -->
+    <!-- The walk stick, and beside it MAP and LOG. -->
     <div class="room-controls">
 
-    <div class="dpad-clip" id="dpadClip">
-    <div class="dpad" id="dpad">
-      <button class="dpad-ul dpad-corner" id="btnUL" type="button" aria-label="Move up and left">&#8598;</button>
-      <button class="dpad-u" id="btnU" type="button" aria-label="Move up">&#8593;</button>
-      <button class="dpad-ur dpad-corner" id="btnUR" type="button" aria-label="Move up and right">&#8599;</button>
-      <button class="dpad-l" id="btnL" type="button" aria-label="Move left">&#8592;</button>
-      <button class="dpad-center" id="btnSkip" type="button" aria-label="Look stick: drag to aim, hold to wait"><span class="look-knob" aria-hidden="true"></span></button>
-      <button class="dpad-r" id="btnR" type="button" aria-label="Move right">&#8594;</button>
-      <button class="dpad-dl dpad-corner" id="btnDL" type="button" aria-label="Move down and left">&#8601;</button>
-      <button class="dpad-d" id="btnD" type="button" aria-label="Move down">&#8595;</button>
-      <button class="dpad-dr dpad-corner" id="btnDR" type="button" aria-label="Move down and right">&#8600;</button>
-    </div>
-    </div>
-    <!-- The round stick (one stick plan step B, js/dpad.js initWalkStick),
-         in place of the d-pad with One stick on. -->
-    <div class="walk-stick" id="walkStick" hidden><span class="walk-knob" aria-hidden="true"></span></div>
+    <!-- The round walk stick (one stick plan step B, js/dpad.js initWalkStick). -->
+    <div class="walk-stick" id="walkStick"><span class="walk-knob" aria-hidden="true"></span></div>
     <!-- MAP and LOG (open the record book there, js/bookview.js), lowest. -->
     <div class="room-buttons">
       <!-- The light (render.js renderBattery draws its tube): a tap switches it, as V does. -->

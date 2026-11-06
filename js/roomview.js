@@ -212,7 +212,7 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   const at = look.walkAt;
   const space = spaceOf(f.playerRow, f.playerCol);
   const goal = cameraGoal(space.bounds, { x: (at.col + 0.5) * T, y: (at.row + 0.5) * T }, viewW, viewH);
-  const sliding = state.settings.oneStick ? walkedSince(at) : at.row !== f.playerRow || at.col !== f.playerCol;
+  const sliding = walkedSince(at);
   if (moveCamera(goal) || sliding) look.showPlain();
   const ox = Math.round(shownCam.x);
   const oy = Math.round(shownCam.y);
@@ -679,7 +679,7 @@ function drawStickMan(at, ox, oy) {
   // The body is the 3D moves' (figure3d.js, one stick plan step F): it
   // walks as far as he goes, crouches while he sneaks, and faces his light.
   const f = state.floor;
-  const crouch = state.settings.oneStick && (f.sneaking || f.creeping);
+  const crouch = f.sneaking || f.creeping;
   const pxPerM = h / FIGURE3D.heightM;
   const joints = figurePose(PLAYER_FIGURE, { at: [at.col, at.row], metres: FIGURE3D.heightM / ROOM_VIEW.stickHeight, crouch }, look.now, look.still);
   const J = projectFigure(joints, phiOfAngle(angle), fx, fy, pxPerM);

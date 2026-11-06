@@ -74,7 +74,6 @@ test('furniture blocks walking as furniture, not as a prop to examine', () => {
   state.floor.hunter = null;
   state.floor.chest = null;
   state.floor.exchange = null;
-  state.floor.tutorial = null;
   state.floor.props = [{ row: 2, col: 2, kind: 'furniture', piece: 'desk', part: 'single' }];
   const block = whatBlocks(2, 2);
   assert.equal(block.kind, 'furniture');
