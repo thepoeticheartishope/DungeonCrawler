@@ -569,8 +569,10 @@ document.getElementById('retryBtn').addEventListener('click', startGame);
 // PWA: register the service worker so the game caches for offline use.
 // Runs only over HTTPS (or localhost) — browsers block service workers
 // on plain http:// or file:// for security reasons.
+// main.js waits for rooms/ship.json and the sprites at the top, so the
+// page's load event may already be over by now: register at once then.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+  const register = () => {
     navigator.serviceWorker.register('service-worker.js').then((reg) => {
       // Check for a newer service-worker.js right away, since browsers
       // don't always do this on their own before serving cached content.
@@ -578,7 +580,9 @@ if ('serviceWorker' in navigator) {
     }).catch(() => {
       // Offline support just won't be available; the game still works normally.
     });
-  });
+  };
+  if (document.readyState === 'complete') register();
+  else window.addEventListener('load', register);
 
   // Once a new service worker takes over, reload so the page actually
   // picks up the files it just cached (skipWaiting alone doesn't do this).
