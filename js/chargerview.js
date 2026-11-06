@@ -7,7 +7,6 @@
 // (turnWire, leave). This only draws and listens.
 
 import { powered, openBreaker, N, E, S, W } from './wires.js';
-import { CHARGER } from './config.js';
 import { t } from './text.js';
 
 const els = {};
@@ -15,7 +14,6 @@ let actions = {};
 // The wires showing (the charger's puzzle; kept after a charge clears it
 // from the charger, so the joined-up wires stay on screen until it closes).
 let puzzle = null;
-let realTime = false;
 let focusIndex = 0;
 let done = false;
 // A ship station's mode ('train' / 'teach', stations.js), or null for the
@@ -65,12 +63,10 @@ export function chargerShown() {
 }
 
 // Opens CHARGE.SYS on `wires` (charger.js makeWires' shape), focus on the
-// wire PWR feeds. With Real time on the clock is the cost, so it says so in
-// place of the turns spent. `stationMode` ('train' / 'teach'): a ship
+// wire PWR feeds. The clock is the cost, so it says so. `stationMode` ('train' / 'teach'): a ship
 // station's wires (ship plan step B), named for what they are for.
-export function showCharger(wires, isRealTime, stationMode = null) {
+export function showCharger(wires, stationMode = null) {
   puzzle = wires;
-  realTime = isRealTime;
   mode = stationMode;
   done = false;
   focusIndex = wires.from * wires.n;
@@ -111,7 +107,7 @@ export function renderCharger(wires, charged) {
     els.sub.textContent = t('station.sub.' + mode);
     els.hint.textContent = t(charged ? 'station.done.' + mode : 'station.hint.' + mode);
   } else {
-    els.sub.textContent = realTime ? t('charger.clock') : t('charger.turns', { turns: Math.floor(wires.turns / CHARGER.wireTurnsPerTurn) });
+    els.sub.textContent = t('charger.clock');
     els.hint.textContent = t(charged ? 'charger.charged' : 'charger.hint');
   }
   if (!charged) focusWire();

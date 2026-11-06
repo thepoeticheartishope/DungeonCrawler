@@ -3,15 +3,15 @@ import { buildShipFloor } from './floor.js';
 import {
   initGunActions, autoWinGun, endAsk, letterPoolQuestion, sumLockQuestion, openBreaker, openLearning, openBoss,
 } from './gunactions.js';
-import { initControls, syncLookStick, tapMap, walkHeld } from './controls.js';
+import { initControls, tapMap } from './controls.js';
 import {
   MAX_HEARTS, ROOM_COUNT, ROOM_LOG_LINES, ROOM_LOG_DIM_MS,
-  REALTIME_POLL_MS, TUTORIAL_WHISPER_MS, CHARGER, ONE_STICK, SHIP_RUN,
+  REALTIME_POLL_MS, TUTORIAL_WHISPER_MS, CHARGER, SHIP_RUN,
 } from './config.js';
 import { pickQuestion, escapeHtml } from './quiz.js';
 import { shuffle } from './random.js';
 import {
-  initRender, showScreen, renderRoomHints, renderHud,
+  initRender, showScreen, renderHud,
   formatTime, startTimer, stopTimer, showSensed, showWhisper, hideWhisper,
   fadeAnswerLine, renderShipHud
 } from './render.js';
@@ -22,7 +22,7 @@ import { onStairs, stairsHere } from './moves.js';
 import { initSetLoader, showWorkshop } from './setloader.js';
 import { initSetPicker, showSetPicker } from './setpicker.js';
 import { initPractice } from './practice.js';
-import { initDevPanel, recordEvents, refreshInspector, syncDevOneStick } from './devpanel.js';
+import { initDevPanel, recordEvents, refreshInspector } from './devpanel.js';
 import { initMapView, requestMapDraw, slidePlayerOnMap, bumpOnMap, onMapPointer, freeStepOnMap } from './mapview.js';
 import { turnWire } from './wires.js';
 import { stationMode, stationDone, trainWires } from './stations.js';
@@ -32,7 +32,6 @@ import { initChargerView, showCharger, renderCharger, chargerShown } from './cha
 import { initGunPanels, closeMapPanels, mapPanelShown, askHeld } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
-import { SCREEN_WAYS } from './dpad.js';
 
 import { resetWalk, walkTileMs } from './walk.js';
 import { setQuestion } from './questionview.js';
@@ -80,17 +79,9 @@ const winTitle = document.getElementById('winTitle');
 const loseStats = document.getElementById('loseStats');
 const loseTitle = document.getElementById('loseTitle');
 
-// The d-pad's arrows by where they point on screen (dpad.js SCREEN_WAYS),
-// and its centre.
-const dpadButtons = {
-  ...Object.fromEntries(Object.keys(SCREEN_WAYS).map(way => [way, document.getElementById('btn' + way)])),
-  Skip: document.getElementById('btnSkip'),
-};
-
 initRender({
   startScreen, shipIntroScreen, roomScreen, winScreen, loseScreen,
   heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, statsEl,
-  dpadButtons,
   senseNote: document.getElementById('senseNote'),
   answerNote: document.getElementById('answerNote'),
   shipTaught: document.getElementById('shipTaught'),
@@ -145,16 +136,11 @@ function resetRun() {
   state.run.roomIndex = 0;
   state.run.resting = true; // every run opens on a rest floor
   state.run.runEnded = false;
-  state.run.attempts = 0;
   state.run.correctTotal = 0;
-  state.run.extraSpaceCount = 0;
   state.run.hearts = MAX_HEARTS;
   state.run.maxHearts = MAX_HEARTS;
-  state.run.bonusSlack = 0;
-  state.run.nextPath = null;
   state.run.turnCount = 0;
   state.run.coinsTotal = 0;
-  state.run.shutterTold = false;
   state.run.trained = [];
   state.run.crewFailures = 0;
   state.run.ship = null;
@@ -165,10 +151,6 @@ function resetRun() {
 function startGame() {
   resetRun();
   state.settings.revealOnWrong = revealToggle.checked;
-  // Always One stick: free walking on the ship (the dungeon's Turns and
-  // Real time options went with it).
-  state.settings.oneStick = true;
-  syncDevOneStick();
   resetWalk();
   // Read on every start, so a retry keeps the name without asking again.
   state.settings.playerName = playerNameInput.value.trim();
@@ -208,8 +190,6 @@ function drawFloor() {
   setTextArea(state.run.roomIndex + 1);
   applyStaticText();
 
-  renderRoomHints();
-  syncLookStick();
   requestMapDraw();
   refreshMinimap();
 
@@ -236,14 +216,12 @@ function advanceRoom() {
 // standing on them). Costs no turn. The ship has no stairs.
 function goDown() {
   if (state.run.turnLocked || state.run.runEnded || mapPanelShown() || !onStairs()) return;
-  state.run.nextPath = stairsHere().path || null;
   advanceRoom();
 }
 
 function setControlsEnabled(enabled) {
   answerInput.disabled = !enabled;
   attackBtn.disabled = !enabled;
-  Object.values(dpadButtons).forEach(b => b.disabled = !enabled);
   if (enabled) renderHud();
   mcOptionsEl.querySelectorAll('button').forEach(b => b.disabled = !enabled);
 }
@@ -317,20 +295,14 @@ function closeAskOnRunEnd() {
   if (mapPanelShown()) endAsk();
 }
 
-// Whether the world runs on the real-time clock: Real time on, or One
-// stick (one stick plan: free walking is real time).
-function realTimeOn() {
-  return state.settings.oneStick;
-}
-
-// Whether the real-time clock may run: Real time on, a run going, the
+// Whether the real-time clock may run: a run going, the
 // room screen up with nothing paused over it. It stops for the ask screen
 // (Timothy chose a screen of its own over the pressure of a clock running
 // under the question), THE UNFOLDING, the DEV panel, the end screens and a hidden tab. It keeps running under
 // CHARGE.SYS: the time is the charger's cost (Timothy 2026-10-26), and
 // under the record book read for LOG or MAP.
 function clockMayRun() {
-  return realTimeOn() && !state.run.runEnded && !document.hidden &&
+  return !state.run.runEnded && !document.hidden &&
     roomScreen.classList.contains('show') && worldRunsUnder() &&
     !devPanel.classList.contains('show');
 }
@@ -514,8 +486,6 @@ function drawEvents(events) {
     }
   }
   renderHud();
-  renderRoomHints();
-  syncLookStick();
   requestMapDraw();
   refreshMinimap();
   recordEvents(events);
@@ -551,7 +521,7 @@ let chargerCloseTimer = null;
 function openCharger(charger) {
   clearTimeout(chargerCloseTimer);
   openChargerProp = charger;
-  showCharger(charger.puzzle, realTimeOn(), stationMode(charger));
+  showCharger(charger.puzzle, stationMode(charger));
 }
 
 // A wire turned (a tap, or F / Enter / Space on it): wires.js turnWire.
@@ -572,11 +542,7 @@ function turnChargerWire(index) {
   }
   const charged = events.some(e => ['stationTrained', 'stationTaught'].includes(e.type));
   renderCharger(wires, charged);
-  if (events.some(e => e.type === 'turnSpent') && !realTimeOn()) {
-    state.run.turnLocked = true;
-    applyTurnOutcome(events);
-    state.run.turnLocked = false;
-  } else if (events.some(e => e.type === 'shipEnded')) {
+  if (events.some(e => e.type === 'shipEnded')) {
     // The last crew member taught: applyTurnOutcome ends the ship's run.
     applyTurnOutcome(events);
   } else {
@@ -627,16 +593,9 @@ function closeCharger(cls, text) {
   if (text) showRoomNote(cls, text);
 }
 
-function skipTurn() {
-  if (state.run.turnLocked || state.run.runEnded || walkHeld()) return;
-  state.run.turnLocked = true;
-  applyTurnOutcome([{ type: 'waited' }]);
-  state.run.turnLocked = false;
-}
-
 initControls({
   applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
-  realTimeOn, showRoomNote, skipTurn, worldFrame,
+  showRoomNote, worldFrame,
 });
 
 // The lose screen for running out of hearts.

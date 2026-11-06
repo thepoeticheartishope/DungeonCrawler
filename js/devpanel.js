@@ -17,17 +17,8 @@ const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devLearnRolesBtn = document.getElementById('devLearnRolesBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
-const devOneStickBtn = document.getElementById('devOneStickBtn');
-const dpadEl = document.getElementById('dpad');
 const devFrameOut = document.getElementById('devFrameOut');
 const devMinigameBtn = document.getElementById('devMinigameBtn');
-
-// DEV -> One stick's label from state.settings.oneStick (main.js
-// startGame sets it from the start screen's Turns option).
-export function syncDevOneStick() {
-  devOneStickBtn.textContent = state.settings.oneStick ? 'One stick: ON (dev)' : 'One stick: OFF (dev)';
-  devOneStickBtn.setAttribute('aria-pressed', String(state.settings.oneStick));
-}
 
 export function initDevPanel({ advanceRoom, autoWinGun }) {
   // Players never see DEV: it shows only when the address has ?dev
@@ -96,14 +87,6 @@ export function initDevPanel({ advanceRoom, autoWinGun }) {
     state.settings.bookPaper = papers[(papers.indexOf(state.settings.bookPaper) + 1) % papers.length];
     devBookPaperBtn.textContent = 'Book paper: ' + state.settings.bookPaper + ' (dev)';
     refreshBook();
-  });
-
-  // Dev tool (one stick plan step A): walk freely in real time with the
-  // move keys held, or tile to tile as before. On, it turns Real time on.
-  devOneStickBtn.addEventListener('click', () => {
-    state.settings.oneStick = !state.settings.oneStick;
-    syncDevOneStick();
-    requestMapDraw();
   });
 
   // Dev tool: minigames roll as usual, never, or (one minigame picked)

@@ -114,57 +114,11 @@ export const TEXT = {
   'stat.keys.count': '{held}/{total}', // HUD: keys held of the floor's
   'stat.keys.sealed': '{held}/{total} SEALED', // draft. HUD: the gate is sealed until another key
   'stat.rest': 'REST', // draft — shown for the depth number while on a rest floor
-  'sky.turnsLeft': '{count} {count|plural:turn} left', // draft. Comfort mode's sky while looking up, where the eye would be (sky eye plan)
-  'sky.secondsLeft': '{count} {count|plural:second} left', // draft. The same with One stick, where the light runs by time (one stick plan step D)
-  'sky.watching': 'it is watching', // draft. Comfort mode's sky in the tutorial, where the eye is wide open
-  'sky.noLight': 'no light here', // draft. The same with no boss light on the floor (a rest floor, the tutorial, after the boss)
-
-  // ---- Encounter log: opening lines (what it is, a hint of what's at stake) ----
-  'log.start.boss': 'ENCOUNTER: {@term.boss.symbol}',
-  'log.rules.boss': 'CLEAR {queries} QUERIES TO PROCEED. ONE WRONG SEALS IT.', // draft
-  'log.start.chest': 'ENCOUNTER: {@term.chest}',
-  'log.rules.chest': 'WE ALL SEEK TO BE FREE.',
-  'log.start.box': 'ENCOUNTER: SEALED {@term.box}', // draft
-  'log.rules.box': 'IT OPENS ONLY FOR THE RIGHT ANSWER.', // draft
-
-  // ---- Encounter log: each answer ----
-  'log.vector': '{@term.vector} {n}: {label|upper}',
-  'log.input': 'INPUT: {answer}',
-  'log.accepted': 'ACCEPTED.',
-  'log.extraSpaces': 'NOTE: EXTRA SPACES IN INPUT.',
-  'log.rejected': 'REJECTED. -{cost} {@term.hp}',
-  'log.rejected.free': 'REJECTED.', // a miss that costs no heart (the gate)
-  'log.expected': 'EXPECTED: {answer}',
-  'log.source': 'SOURCE: {source}',
-  'log.signalLost': 'SIGNAL LOST.',
-  'log.outOfRange': 'NOTHING WITHIN REACH.', // draft
-
-  // ---- Encounter log: outcomes ----
-  'log.boss.integrity': 'CONCEPT INTEGRITY {hp}/{max}.',
-  'log.boss.holds': 'ITS {@term.boss} HOLDS.',
-  'log.boss.cleared': '{@term.boss} REWRITTEN. ASCEND.',
-  'log.gate.sealed': 'IT SEALS. THE LIGHT GAINS {turns}. FIND ANOTHER {@term.key}.', // draft. A wrong answer at the gate
-  'log.gate.opened': 'EVERY {@term.key} TURNS. IT CANNOT HOLD.', // draft. All keys held: the gate gives
-  'log.darkness': 'ITS LIGHT DIES WITH IT. WHAT REMAINS HUNTS YOU. MISSES COST MORE; {@term.gold} PAYS DOUBLE.', // draft
-  'log.chest.opened': 'THOUGHT RELEASED. +{gold} {@term.gold}.', // draft (was: CHEST OPENED. +{gold} PROCESS.)
-  'log.chest.trapped': 'IT DOES NOT WANT YOU TO ASCEND.',
-  'log.box.gold': 'IT OPENS. +{gold} {@term.gold}.', // draft
-  'log.box.trapped': 'THE LID SNAPS SHUT. WHATEVER WAS INSIDE IS GONE.', // draft
-
-  // Haunts: a missed question coming back in a later fight (js/haunts.js).
-  'log.haunt.returns': ['A FAMILIAR DOUBT.', 'YOU HAVE HEARD THIS BEFORE.', 'IT REMEMBERS YOU GOT THIS WRONG.'], // draft
-  'log.haunt.silenced': ['YOU REMEMBER NOW. IT GOES QUIET.', 'THE DOUBT HAS NOTHING LEFT TO SAY.'], // draft
-  'log.haunt.lingers': 'IT WILL BE BACK.', // draft
-
 
   // ---- Battle screen labels ----
   'battle.title': 'ENCOUNTER.SYS',
-  'battle.selectVector': 'SELECT {@term.query} {@term.vector}',
   'battle.query': '{@term.query}:',
   'battle.answerPlaceholder': 'type your answer',
-  'battle.attack': 'Transmit', // draft
-  'battle.attempt': 'Transmit', // draft
-  'battle.continue': 'CONTINUE',
   'battle.wager': 'WAGER:',
 
   // ---- Answer types, as shown in a fight's query choices ("OT · Names") ----
@@ -422,124 +376,37 @@ export const TEXT = {
   'battle.timer': 'TIME: {s}',
   'battle.noAnswer': '(no answer)',
   'battle.blindQuestion': '????', // draft
-  'log.timeout': 'TIME EXPIRED.',
   'log.modifier': 'MODIFIER: {name|upper}.',
   'log.wager': 'WAGER: {n} {@term.gold}.',
-  'log.wager.won': 'WAGER WON. +{n} {@term.gold}.',
-  'log.wager.lost': 'WAGER LOST. -{n} {@term.gold}.',
-  'target.none': 'Target: nothing within reach', // draft
-  'target.boss': 'Target: {@term.boss}',
-  'target.minion': 'Target: {@term.minion}',
-  'target.hunter': 'Target: {@term.hunter}',
-  'target.chest': 'Target: {@term.chest}',
-  'target.box': 'Target: {@term.box}',
 
-  // ---- Room (map) screen ----
-  'room.sensed.simple': 'Enemy close.', // draft. "I see you." with Simple enemies on (Timothy: it falls under the filter)
   // The tutorial room (tutorial.js). Timothy's script: the dungeon's
   // whisper, then the kind voice, then the barrel's question.
-  'tut.cantLeave': "You can't leave. Don't try.", // Timothy's wording. Fades on waking, in "I see you."'s style
-  'tut.trust': 'You can do this. I trust you.', // Timothy's wording. The kind voice, walking toward the light
-  'tut.lookUp': "It's watching you. Show it true light.", // Timothy's wording (sky eye plan step B). The kind voice, the first time the player stands in the light from above, shoulder view only: up there the eye is wide open, so they learn an open eye is bad without being told
-  'tut.die': 'Die in darkness.', // Timothy's wording. The dungeon, as the ring of dark closes after the name
-  'tut.dimLight': "Don't let them dim your light.", // Timothy's wording. The kind voice, a moment later: the only hint
-  'tut.ring.words': 'dark dim die dark dim die', // draft. The words circling the player in the ring (split on spaces)
   'room.blocked.dark': 'The dark holds you here.', // draft. A step while the tutorial's ring is closed
-  'tut.hint.light': 'Your light: V, or the LIGHT button.', // draft. Room log, only if stuck in the ring
-  'tut.hint.move.stick': 'Hold to walk. A quick tap only looks.', // draft (one stick plan step G). Stuck in the dark with One stick: the stick or the keys
-  'tut.hint.light.stick': 'Your light: V, or the LIGHT button.', // draft (one stick plan step G). Stuck in the ring with One stick
-  'tut.reach': 'When it reaches, step away.', // draft (one stick plan step G). The kind voice, the first time the tutorial's stick man reaches for the player with One stick: out of reach, it misses
-  'tut.ready': "They'll be listening. Be ready.", // Timothy's wording (vents and noise plan step D: world-driven, not on the nose; it hints that sound brings them). The kind voice, once the ring breaks; then a stick man comes out of the grate
-  'tut.breathe': 'Breathe. Then READY.', // draft (kill or maim plan step C). The kind voice, as the tutorial's first shot opens the dial at READY
-  'tut.hold': 'Hold it. Let it settle.', // draft (steady aim plan step D). The kind voice, as the tutorial's first shot starts to steady (One stick)
-  'tut.steady': 'Now. Let go.', // draft. The kind voice, the first time that aim comes to full
-  'tut.dial': 'Stop on K to kill. M drops it.', // draft. The kind voice, once that dial runs
-  'tut.shutter': 'Pull the shutter. They won’t follow you in.', // draft (safe room plan step C). The kind voice, the first time in a run the player is in the safe room with its switch made out
-  'tut.charger': 'It still holds a charge.', // draft (charger plan step C). The kind voice, the first time in a run the player makes out a charger
-  'tut.static': 'Static means one is close.', // draft (static). The kind voice, the first time the static shows in the tutorial's fight (the stick man is out of the grate), so the player learns the grain means one is near
-  'tut.finish': 'Finish it.', // draft (downed plan step C). The kind voice, when the tutorial's stick man goes down: a bump finishes it
-  'tut.hide': 'Not this one. Hide.', // draft (room spots tutorial beat, Timothy 2026-10-29). The kind voice in the advanced tutorial's hide station, as the stick man drops out of the grate: the book is empty, the stall stands ajar
-  'tut.push': 'Now. Push.', // draft. The kind voice in the takedown station, the first time the player stands behind the bookcase with the stick man under it
-  'tut.missed': 'Too soon. The book, then.', // draft. The kind voice, once the takedown station's bookcase fell on nothing: the book is filled again
-  'tut.name.q': 'What is your name?', // Timothy: the barrel asks the player's name; any name is right
-  // The plain hints show only for a player stuck on a stage (TUTORIAL_STUCK_MS).
-  'tut.hint.move': 'Up walks ahead. Left and right sweep your light.', // draft. Stuck in the dark
-  'tut.hint.barrel': 'Walk into the barrel to open it.', // draft. Stuck at the barrel
-  'tut.hint.fire': 'Look at it and press SELECT to shoot.', // draft. Stuck in the fight
-  'tut.hint.hide': 'Something here stands open. Walk into it.', // draft. Stuck in the hide station
-  'tut.hint.push': 'Get behind the bookcase. Push it as it passes.', // draft. Stuck in the takedown station
-  'tut.hint.lure': 'Light out (V). Then walk into the sink, and wait behind the bookcase.', // draft. Stuck in the lure station
-  'tut.hint.sneak': 'Crouch behind the table: push the stick only a little, or press X.', // draft. Stuck in the sneak station (One stick)
-  'tut.key.dropped': 'It falls. Something is left where it stood.', // draft. The stick man is gone and left the key
-  'tut.door.open': 'Both doors open. The left goes on. The right teaches more.', // draft (tutorial split plan, Timothy 2026-10-29). Key taken: the left door into the run, the right into the advanced tutorial (optional)
   // The advanced tutorial (advanced.js): one station per mechanic.
-  'adv.station.hide': 'Hiding.', // draft. As the hide station starts
-  'adv.station.takedown': 'Takedowns.', // draft. As the takedown station starts
   'adv.hide.done': 'It lost you. Come out when you are ready.', // draft. The kind voice, once the player hides in the hide station
-  'adv.door.open': 'The door opens.', // draft. A station's mechanic done
-  'adv.station.lure': 'Lures.', // draft. As the lure station starts
-  'adv.station.sneak': 'Sneaking.', // draft. As the sneak station starts (One stick only)
-  'adv.lure.heard': 'He heard it. Behind the bookcase, now.', // draft. The kind voice, the tap on and the stick man drawn to it
-  'adv.lure.light': 'He saw your light, not the sound. Put it out and try again.', // draft. The kind voice, the tap on but the stick man saw the player instead: the sink works again
-  'adv.sneak.intro': 'You are low behind the table. Stay down and let it pass.', // draft. The kind voice as the sneak station starts: the player starts crouched behind the table
-  'adv.sneak.seen': 'It saw you. Crouch behind something solid.', // draft. The kind voice, the sneak station's stick man noticed the player
   'adv.sneak.done': 'It walked right past you.', // draft. The kind voice, the player stayed crouched in cover while it passed
-  'tut.light.none': 'Your light will not come on.', // draft. V in the tutorial's dark
-  'tut.light.held': 'Keep your light on.', // draft. V in the tutorial's fight: the light stays on there
-  'tut.name.kept': 'Your name is {name}.', // draft. After the barrel's answer
   'room.blocked.door': 'The door is locked.', // draft. The tutorial's door before its key
   'room.sensed': 'I see you.', // Timothy's wording: something unseen will be beside the player after its next move (combat.js senseUnseen)
   'room.wait': ['You hold still. The hum continues.', 'You wait. Something recalibrates.'], // draft
-  'room.stickTap': 'Hold to wait.', // draft. A tap on the look stick that does nothing: what it does
   'room.walkStickTap': 'Hold still to look up.', // draft. A tap on the round stick: what it does
   'dpad.walkStick': 'Move stick: drag to walk, push a little to creep, hold still to look up', // draft. The round stick's label (one stick plan step B)
   'room.sneak.on': 'You crouch low and creep.', // draft. X switched sneaking on (one stick plan step B)
   'room.sneak.off': 'You stand and walk.', // draft. X switched it off
-  // Room spots (room spots plan step B, spots.js): hiding in a live hide
-  // spot, and coming out. One line per piece that can be one.
-  'room.hide.in.stall': 'You slip into the stall and pull the door to.', // draft
-  'room.hide.in.teacher': 'You crawl under the desk.', // draft
-  'room.hide.in.sofa': 'You squeeze in behind the sofa.', // draft
-  'room.hide.in.table': 'You crawl under the cloth.', // draft
-  'room.hide.out': 'You come out.', // draft
   // Room spots step C: a live takedown pushed over (spots.js topple).
-  'room.takedown.shelf': 'You push. The bookcase leans, then comes down.', // draft
-  'room.takedown.killed': 'It lands on something. {gold} {@term.gold}.', // draft. One under it, and the gold it paid
   'room.blocked.wontTip': 'It won\'t tip that way. Push it from the front or the back.', // draft. A takedown bumped from the side
   'room.blocked.noRoom': 'There\'s no room for it to fall.', // draft. A takedown with a wall or furniture where it would land
   // Room spots step D: a live lure set off (spots.js soundLure). One line
   // per piece that can be one.
-  'room.lure.sink': 'You turn the tap on full. The pipes bang and shudder.', // draft
   'room.blocked.hideBlocked': 'Something is right outside. You stay where you are.', // draft. Hidden, a step with every way out taken
   'room.cover': 'In cover. Keep low.', // draft (Timothy 2026-10-26). Crouched beside something solid: quieter, and unseen from its far side
-  'room.dev.warning': 'DEV: warned {s} s before, by {kind}.', // DEV -> Warning timer (warning.js, presence cues plan step D): how long before a stick man's reach he first gave himself away
-  'room.dev.warning.none': 'DEV: no warning.', // DEV -> Warning timer: he reached for the player with no sign before
-  'room.dev.warning.light': 'your light',
-  'room.dev.warning.lamp': 'a lamp',
-  'room.dev.warning.window': 'a window',
-  'room.dev.warning.shadow': 'his shadow',
-  'room.reach.missed': 'It misses.', // draft. A stick man's reach ended with the player out of reach (one stick plan step C)
-  'dpad.stick.wait': 'Look stick: push sideways to sweep your light, push up to look up, hold to wait', // draft. The d-pad centre's label
-  'dpad.stick.turn': 'Look stick: tap to turn and face your aim', // draft. Its label while the aim is past the arc
   'room.turn': 'You turn.', // draft. Free look: turning the body to look further round costs a turn
   'room.coin': 'You absorb a trace of {@term.gold}.', // draft
   'room.key': '{@term.key} {held} of {total}.', // draft. A key taken (locked core plan)
-  'room.gate.unsealed': 'Somewhere behind you, the {@term.boss} listens again.', // draft. A key taken while the gate was sealed
   'room.blocked.gate': 'The {@term.boss} is sealed. Find another {@term.key}.', // draft. Bumped the gate after a wrong answer
-  'room.light.consumed': 'The light reaches everything.', // draft
   // The player's own light on its battery (battery.js; light battery plan, wording from the mockup)
-  'room.ownLight.on': 'Light on.', // draft
-  'room.ownLight.off': 'Light off. Only the circle round you now.', // draft
-  'room.ownLight.died': 'Your light dies. It needs a full charge.', // draft. Ran empty with the light on: locked off until full
-  'room.ownLight.charged': 'Your light is charged.', // draft. A locked light is full again
-  'room.ownLight.locked': 'No light until it is full. {turns} more turns.', // draft. V while locked
-  'room.ownLight.locked.seconds': 'No light until it is full. {seconds} more seconds.', // draft. The same with One stick (one stick plan step D)
-  'room.gaze.step': 'It comes closer while you look.', // draft. The eye (gaze.js) is full: the stick man steps one closer
-  'room.gaze.stare': 'It stares at you.', // draft. The same, already beside the player
   'room.blocked.boss': 'The {@term.boss} will not move.', // draft
   'room.blocked.minion': 'A {@term.minion} is in the way.', // draft
   'room.blocked.hunter': 'The {@term.hunter} is right there.', // draft
-  'room.hunter.wakes': ['Something else wakes. It knows where you are.', 'An {@term.hunter} stirs, far off, and turns toward you.'], // draft
   'room.blocked.corner': 'The corner is in the way.', // draft. A diagonal step that would cut past a wall or pillar (eight ways plan)
   // A fixed plan's furniture, bumped (room view plan step E; plans.js).
   'furniture.desk': ['A desk. A word is carved into it, then scratched out.', 'A desk, its chair pushed in.'], // draft
@@ -563,42 +430,17 @@ export const TEXT = {
   // Relays (strategy plan step B, relays.js). Bump one: a question over the
   // map. Right holds the room (no boss light, nothing from outside comes in)
   // and takes {turns} turns off the light. All drafts for Timothy.
-  'room.relay.found': 'A dead {@term.relay}. It hums when you come close.', // draft
-  'room.relay.held': 'The {@term.relay} wakes. This room is yours now, and the light falls back.', // draft
-  'room.relay.heldDark': 'The {@term.relay} wakes. This room is yours now.', // draft. Boss already down: no light to push back
-  'room.relay.sparked': 'The {@term.relay} sparks and dies. The light surges.', // draft
-  'room.relay.sparkedDark': 'The {@term.relay} sparks and dies.', // draft
   'room.relay.done': 'The {@term.relay} is spent.', // draft. Bumping a used relay
-  // Grates (vents.js): stepping onto one, as part of the step.
-  'room.vent.stepped': 'A grate. Air moves through it.', // draft (Timothy's plan call 1)
-  'room.vent.entered': 'Something crawls into a grate.', // draft. A stick man goes into a duct, seen or not: always logged (Timothy: dread) (vents.js)
-  'room.vent.rattle': 'The grate shudders.', // draft. Something will drop out of it next turn
-  'room.vent.dropped': 'Something drops out of the grate.', // draft. Seen: now the player knows where its pair leads
   // The reflective desk (desk.js): in the start room, heals to full once a floor.
   'room.desk.healed': 'You see yourself in the {@term.desk}. You are whole again.', // draft
   'room.desk.full': 'Your face looks back from the {@term.desk}. You are already whole.', // draft. Full stability: the heal is kept
-  // The safe room (saferoom.js): the start room's shutters, switch and lamp.
-  'room.shutter.down': 'You pull the shutter down.', // draft
-  'room.shutter.up': 'The shutter rolls up.', // draft
-  'room.shutter.blocked': 'Something is in the doorway. The shutter won’t drop.', // draft. Someone stands under it
-  'room.shutter.waits': 'It waits at the shutter.', // draft. A stick man that knew where the player was, shut out
-  'room.shutter.gone': 'It’s gone.', // draft. It gave up and wandered off
-  'room.shutter.hunter': 'Something is lifting the shutter.', // draft. The hunter's hand on the slats
-  'room.shutter.lifted': 'The shutter is up. It’s coming in.', // draft. The hunter lifted it
-  'room.lamp.ownOff': 'The lamp is on. You switch your light off.', // draft. Coming into the lit safe room: the battery neither drains nor fills there
-  'room.lamp.out': 'The lamp goes out.', // draft. The boss fell: time to leave
   // The charger (charger.js): energy to full through CHARGE.SYS, in the start room.
-  'room.charger.loose': 'CHARGE.SYS. Its wires are loose.', // draft. Opened on new wires
   'room.charger.kept': 'Your wires are as you left them.', // draft. Opened on half-done wires
   'room.charger.left': 'You step back from the {thing}.', // draft. LEAVE or Escape: {thing} is the charger's or a ship station's term (main.js)
-  'room.charger.found': 'It found you. CHARGE.SYS closed.', // draft. A stick man reached the player while it was open
   'room.charger.done': 'The {@term.charger} hums. Energy full.', // draft
-  'room.charger.doneLight': 'The {@term.charger} hums. Energy and light full.', // draft. The same when it filled the light's battery too (Timothy 2026-10-26)
-  'room.charger.full': 'The {@term.charger} has nothing to give. Your energy and light are full.', // draft. Bumped with both full: nothing opens
   'charger.title': 'CHARGE.SYS', // draft
   'charger.hint': 'Turn the wires so power reaches the cell.', // draft
   'charger.charged': 'Charged. Energy full.', // draft
-  'charger.turns': 'TURNS SPENT {turns}', // draft. Turn mode: the turns the wires have cost so far
   'charger.clock': 'THE CLOCK RUNS', // draft. Real time: the clock is the cost
   'charger.pwr': 'PWR▸', // draft
   'charger.cell': '◂CELL', // draft
@@ -701,46 +543,16 @@ export const TEXT = {
   'room.stairs.ask': 'Stairs lead down. SELECT or ENTER to descend. Step away to stay.', // draft
   // Two ways down from a between-rest (strategy plan step C): floors.js
   // FLOOR_PATHS. All drafts for Timothy.
-  'room.stairs.two': 'Two ways lead down.', // draft. Room log on arriving at a between-rest
   'room.stairs.path': 'These stairs lead to {path}.', // draft
   'room.stairs.hidden': 'Where these stairs lead is hidden. Something here could show you.', // draft
-  'room.path.taken': 'You chose {path}.', // draft. Room log on arriving at the depth
   'path.crowded': 'MORE OF THEM, MORE TIME', // draft. Two more minions, the light slower
   'path.hurried': 'FEWER OF THEM, LESS TIME', // draft. One minion fewer, the light faster
   'path.stalked': 'STALKERS WHERE SHARDS WERE', // draft. Every SHARD a STALKER, the light as usual
-  'room.goals.new': 'Asked of you here: {goals}.', // draft. Room log on arrival
-  'room.goal.met': '{goal}: kept. +{gold} {@term.gold}.', // draft. Scored on the way down
-  'room.goal.missed': '{goal}: not kept.', // draft
-  'goal.noMiss': 'NO MISSES', // draft. Nothing answered wrong on the floor
-  'goal.allPapers': 'ALL PAPERS', // draft. Every paper on the floor read
-  'goal.swift': 'SWIFT', // draft. The boss down before the eye is half open
-  'goal.noHunter': 'BEFORE THE HUNTER', // draft. Gone down before the hunter wakes
-  'goal.noStruggle': 'NO STRUGGLE', // draft. Never caught with no energy
 
   // ---- THE UNFOLDING's screen (js/exchangeview.js), on every rest floor.
   // It never speaks: every line describes it, in the narrator's voice.
   // All drafts for Timothy.
   'exchange.title': '{@term.exchange}',
-  'exchange.look': 'A shape the eye keeps losing.', // draft
-  'exchange.held': 'You hold {gold} {@term.gold}.', // draft
-  'exchange.price': '{price} {@term.gold}',
-  'exchange.item.silence': 'Silence a doubt', // draft — the oldest haunt
-  'exchange.item.heal': '+1 {@term.hp}', // draft
-  'exchange.item.maxStability': '+1 max {@term.hp}', // draft — does not heal
-  'exchange.item.slack': 'More time on the next {@term.room}', // draft
-  'exchange.item.scout': 'See where the other stairs lead', // draft (strategy plan step C)
-  'exchange.why.noHidden': 'Nothing here is hidden from you.', // draft
-  'exchange.scouted': 'You see it now. The other stairs lead to {path}.', // draft
-  'exchange.why.bought': 'Already taken here.', // draft
-  'exchange.why.noHaunts': 'No doubts to silence.', // draft
-  'exchange.why.fullStability': '{@term.hp} is full.', // draft
-  'exchange.why.atCap': 'It will not hold more.', // draft
-  'exchange.why.noDepth': 'There is no next {@term.room}.', // draft
-  'exchange.bought': 'It takes the {@term.gold}. Something in you settles.', // draft
-  'exchange.cannotAfford': 'It does not turn toward you.', // draft
-  'exchange.leave': 'LOOK AWAY', // draft — the button that closes the screen
-  'room.exchange.opened': 'Something here was never folded right.', // draft — room log, on bumping it
-  'room.exchange.left': 'You look away. It is easier.', // draft — room log, on leaving its screen
 
   // ---- Room themes: each room on a floor gets one (ROOM_THEMES in
   // config.js). enter shows the first time the player walks in; lore is
@@ -760,31 +572,13 @@ export const TEXT = {
   // name from the start screen (story.nameless if blank); {answered} is the
   // run's correct answers so far. Once a floor's lines run out, papers go
   // back to the theme lore above.
-  'story.1.1': '“Do not be afraid.”', // draft
-  'story.1.2': '“Seek the light, and slay the pretender.”', // draft
-  'story.1.3': '“I know you will know the answers.”', // draft
-  'story.1.4': '“This time is different. I know it will be.”', // draft
-  'story.2.1': '“Rumination will not be your ruin.”', // draft
-  'story.2.2': '“The maw of light consumes all.”', // draft
-  'story.2.3': '“Focus on the journey, lest {@term.hunter} take you.”', // draft
-  'story.3.1': '“Do not be afraid, {name}.”', // draft
-  'story.3.2': '“Look at what you have already accomplished: {answered} {answered|plural:answer}.”', // draft
-  'story.3.3': '“It is time to live.”', // draft
   'story.nameless': 'stranger', // draft — {name} in a story line when the start screen's name was left blank
 
   // ---- Intro, start and end screens ----
-  'intro.call': 'LEARN AND REWRITE FALSE BELIEFS.', // Timothy: ties to the bosses; shows after the fake player's miss fades
-  'intro.rejected': 'REJECTED.', // the fake player's miss, in the word a miss shows in the game (log.rejected)
-  'intro.skip': 'Any key or tap to skip', // draft
   'start.enter': 'Begin', // Timothy 2026-11-01 (was "Enter the LABYRINTH")
   'start.name.label': 'Your name', // draft
   'start.name.placeholder': 'Leave blank to stay nameless', // draft
   'start.dpadRight': 'Swap sides: arrows on the right, buttons on the left', // draft. For a player who moves with the other hand
-  'start.simpleEnemies': 'Comfort mode: plain enemies, light always on', // draft. A comfort option for players who don't want creepy enemies: every enemy a still letter e, and no light battery (was "Simple enemies")
-  'start.tutorial': 'Tutorial room: runs once before your first run', // draft. On until a tutorial is finished
-  'start.ship': 'Ship (dev: uncheck for the old dungeon, deprecated)', // dev only (?dev). The ship is the game; unchecked starts the deprecated dungeon crawl
-  'start.turns': 'Turns: the world waits for you (step by step, no rush)', // draft. Start screen option (one stick plan step G): off, the default, the game is in real time with one stick
-  'start.realTime': 'Real time: the dark keeps moving every 2.5 s, even while you answer', // draft. Shown with Turns on only
 
   // ---- Set screen (after Enter: which questions this run asks) ----
   'pick.title': 'QUERY.SET', // draft
@@ -869,69 +663,15 @@ export const TEXT = {
 
   'end.win.title': 'Your thought is born.',
   'end.win.stats': '{@term.boss} rewritten: {bosses}. Time: {time}. Cycles: {turns}. Transmissions: {attempts}. {@term.hp} remaining: {hearts}. {@term.gold} gathered: {coins}.', // draft
-  'end.haunts': 'Doubts silenced: {silenced} of {total}.', // draft
-  'end.win.spacing': 'Watch spacing on {count} {count|plural:answer} next run.',
   'end.win.again': 'Think again', // draft
   'end.lose.title': 'The thought sleeps.',
   'end.lose.light.title': 'A thought was born. It consumes.',
   'end.lose.stats': 'Reached {@term.room} {room} of {rooms} in {time} and {turns} cycles. {@term.gold} gathered: {coins}.', // draft
   'end.lose.retry': 'Wake', // draft
 
-  // ---- Gun (gun combat plan): why a target can't be shot (sight.js shootBlock).
-  'gun.block.outOfRange': 'Out of range.', // draft
-  'gun.block.notInLight': 'Not in your light. Look at it first.', // draft
-  'gun.block.needsTurn': 'Behind your shoulder. Turn to face it.', // draft. Tapped, but past the free look arc
-  'gun.block.noLineOfSight': 'No line of sight.', // draft
-  'gun.block.noEnergy': 'No energy. Find a cell.', // draft
-  'gun.block.energyFull': 'Energy is full.', // draft
-  'gun.block.notShootable': 'The book does nothing to that.', // draft
-  'gun.block.hidden': 'Not while you hide. Come out first.', // draft. Hidden in a room spot (spots.js)
-  'gun.block.noTarget': 'Nothing in reach.', // draft. FIRE or T with nothing the gun can reach
-  'gun.miss': 'MISS', // floats up over a minion when a shot backfires
   // The gun's panels over the map (gunpanels.js).
   'gun.reload.title': 'SELECT RELOAD: {category|upper}', // draft. Over the reload choices; {category} is the next category
-  'gun.reload.titlePlain': 'SELECT RELOAD', // draft. The same, for a set with no categories
-  'gun.reload.offer': '+{energy} ENERGY', // draft
-  'gun.reload.room': 'room for {room}', // draft. When less energy fits under the most you can hold than the offer gives
-  'gun.reload.cancel': 'CANCEL', // draft
   // The dial (kill or maim plan): READY first, then the marker runs; zones K / M and harmful ones.
-  'gun.dial.ready': 'SELECT WHEN READY', // draft. Over the veil before the dial starts: nothing of it shows yet
-  'gun.dial.readyButton': 'READY', // draft. The button in the middle of the veil; it starts the dial
-  'gun.dial.back': 'BACK', // draft. Under READY: puts the gun down, nothing spent
-  'gun.dial.stop': 'STOP', // draft. In the middle of a running dial with no lap limit
-  'gun.dial.lap': 'LAP {lap}/{of}', // draft. In the middle of a running dial with a lap limit (depth 3)
-  'gun.dial.darkArc': 'dark', // draft. Under the dark arc (a dark shot or a low battery)
-  'gun.dial.guardRing': 'GUARD · ', // draft. Repeated round the inside of a guarded one's dial
-  'gun.dial.result.kill': 'KILL', // draft. In the dial's middle after the stop, while it fades
-  'gun.dial.result.down': 'DOWN', // draft. A maim dropped it
-  'gun.dial.result.finished': 'FINISHED', // draft. A downed one finished
-  'gun.dial.result.guard': 'GUARD BROKEN', // draft
-  'gun.dial.result.hit': 'HIT', // draft. A maim with DEV -> Downed off: it only reels
-  'gun.dial.result.miss': 'MISS', // draft
-  'gun.dial.result.jam': 'JAMMED', // draft
-  'gun.dial.result.loud': 'LOUD', // draft
-  'gun.dial.result.lunge': 'LUNGE', // draft
-  'gun.dial.result.shoved': 'SHOVED', // draft. The Struggle dial stopped in its zone
-  'gun.dial.result.lost': 'LOST', // draft. The Struggle dial missed
-  'gun.dial.prompt': 'PRESS SELECT', // draft. While the dial runs
-  'gun.dial.dark.fast': 'DARK SHOT · FASTER', // draft. A shot in the dark whose dial goes round faster (light battery plan)
-  'gun.dial.dark.plain': 'DARK SHOT', // draft. A shot in the dark in the tutorial room, no harder than a lit one
-  'gun.dial.dark.x': 'DARK SHOT · ONE MORE HARMFUL ZONE', // draft. A shot in the dark with one more harmful zone
-  'gun.dial.label': 'Dial. Press SELECT, Space, F or READY to start it, then SELECT, Space or F to fire. Escape or BACK lowers the book before it starts.', // draft. Read out by screen readers
-  'gun.dial.zone.kill': 'K', // draft. Marked on the kill zone
-  'gun.dial.zone.maim': 'M', // draft. Marked on the maim zone
-  'gun.dial.zone.jam': 'X', // draft. Marked on a jam zone
-  'gun.dial.zone.loud': 'N', // draft. Marked on a loud zone
-  'gun.dial.zone.lunge': '>', // draft. Marked on a lunge zone
-  'gun.dial.key.kill': 'K = kill', // draft. The dial's key, one entry per kind of zone on it
-  'gun.dial.key.maim': 'M = maim', // draft
-  'gun.dial.key.guard': 'K / M = break its guard', // draft. On a guarded one (the HUSK)
-  'gun.dial.key.finish': 'K / M = finish it', // draft. On a downed one
-  'gun.dial.key.jam': 'X = jam, lose 1 energy', // draft
-  'gun.dial.key.loud': 'N = loud', // draft
-  'gun.dial.key.lunge': '> = it lunges', // draft
-  'gun.dial.key.miss': 'else miss', // draft
-  'gun.dark.nothing': 'The shot goes into the dark. Nothing there.', // draft. A shot in the dark that found nothing
   'map.btn': 'MAP', // draft. The minimap button (M on a keyboard): opens the record book at MAP
   'ask.title.reload': 'RELOAD.SYS', // draft. The ask screen's title for a reload (its offers, then its question)
   'ask.title.relay': 'RELAY.SYS', // draft. The ask screen's title for a relay's question
@@ -960,8 +700,6 @@ export const TEXT = {
   'learn.done': 'You’ve got it. Go and teach the {role}: the MAP shows where.', // draft. A right learning round
   'learn.shaky': 'You know enough to try. Go and teach the {role}: the MAP shows where.', // draft. Learned after the last round, without a right one
   'book.paused': 'CLOCK PAUSED', // draft. The record book's top strip, right: nothing moves while it is open
-  'book.light': 'LIGHT', // draft. Under the book's light tube
-  'book.empty': 'EMPTY', // draft. Under the book's light tube when the battery ran empty (locked until full)
   'book.right': 'RIGHT.', // draft. Written beside a right pick on the book's page
   'book.written': '→ {answer}', // draft. Written beside a struck wrong pick: the right answer
   'book.close': 'Tap the page or press a key to close.', // draft. Foot of the book's page once an answer is in
@@ -984,7 +722,6 @@ export const TEXT = {
   // and on the minimap. Depth 1 is Timothy's pick; depths 2 and 3 are drafts.
   'room.enter.named': '{name}.', // draft. The log line on first walking into a room on a fixed plan
   'room.enter.plan': '{floor}. {name}.', // draft. On arriving on a fixed plan: the building's name, then the room you wake in
-  'plan.school': 'THE SCHOOL', // draft. The floor's name, on the minimap
   'plan.school.examHall': 'Exam hall', // draft
   'plan.school.frontHall': 'Front hall', // draft
   'plan.school.lab': 'Lab', // draft
@@ -1004,74 +741,6 @@ export const TEXT = {
   'plan.ship.quarters': 'Crew quarters', // draft
   'plan.ship.washroom': 'Washroom', // draft
   'plan.ship.galley': 'Galley', // draft
-  'plan.archive': 'THE ARCHIVE', // draft. The floor's name, on the minimap
-  'plan.archive.core': 'Strongroom', // draft
-  'plan.archive.wake': 'Front desk', // draft
-  'plan.archive.readingRoom': 'Reading room', // draft
-  'plan.archive.vault': 'Vault', // draft
-  'plan.archive.catalogue': 'Catalogue', // draft
-  'plan.archive.bindery': 'Bindery', // draft
-  'plan.observatory': 'THE OBSERVATORY', // draft. The floor's name, on the minimap
-  'plan.observatory.telescopeRoom': 'Telescope room', // draft
-  'plan.observatory.lobby': 'Lobby', // draft
-  'plan.observatory.dome': 'Dome', // draft
-  'plan.observatory.darkroom': 'Darkroom', // draft
-  'plan.observatory.bunks': 'Bunks', // draft
-  'plan.observatory.orrery': 'Orrery', // draft
-  'plan.observatory.plateStore': 'Plate store', // draft
-  'plan.observatory.clockRoom': 'Clock room', // draft
-  'plan.observatory.boilerRoom': 'Boiler room', // draft
-  'gun.struggle.ready': 'STRUGGLE · SELECT WHEN READY', // draft. Before the Struggle dial starts (no energy, a minion reached the player)
-  'gun.struggle.readyAgain': 'STRUGGLE {count} · SELECT WHEN READY', // draft. The same, for a later Struggle on this floor (faster, smaller zone)
-  'gun.struggle.prompt': 'STRUGGLE: PRESS SELECT', // draft. While the Struggle dial runs
-  'gun.struggle.promptAgain': 'STRUGGLE {count}: PRESS SELECT', // draft. The same, for a later Struggle on this floor
-  'gun.struggle.label': 'Struggle dial. Press SELECT, Space or F to start it, then again in its zone to push it back.', // draft. Read out by screen readers
-  'gun.struggle.start': 'Empty. It is on you.', // draft. A minion reached the player with no energy
-  'gun.struggle.won': 'You shove it away.', // draft. The Struggle dial stopped in the zone
-  'gun.struggle.lost': 'It gets through.', // draft. The Struggle dial missed; the strike line follows
-  'gun.reloaded': '+{energy} energy.', // draft. A right reload answer
-  'gun.jammed': 'The cell fizzles. No energy.', // draft. A wrong reload answer
-  // Gun combat on the map (gun plan step 6): the buttons by the d-pad, the
-  // HUD, and the room notes a shot or a strike adds up to.
-  'gun.btn.select': 'SELECT', // draft. The gun's one button, by the d-pad (key F): fires at the target, or starts and stops the dial
-  'stat.energy': 'ENERGY', // draft. HUD: energy held, # each and - for room left
-  'stat.battery': 'LIGHT {cells} {state}', // draft. Foot of the map: the light's battery, # a turn of charge and - spent, then its state
-  'stat.battery.on': 'ON', // draft
-  'stat.battery.off': 'OFF', // draft
-  'stat.battery.empty': 'EMPTY', // draft. Ran empty: locked off until full
-  'stat.target': 'TARGET', // draft. HUD: the gun's target, and its guard while it has one
-  'stat.guard': '[GUARD]', // draft. HUD and over the target: a minion whose guard is still whole (the HUSK)
-  'stat.noTarget': '-', // the HUD's target with nothing targeted
-  'stat.goals': 'GOALS', // draft. HUD: the floor's goals, [x] kept / [-] lost / [ ] not yet
-  'stat.clock': 'NEXT', // draft. HUD, Real time only: a meter that reaches its end as the dark next moves
-  'minionKind.SHARD': 'SHARD', // draft. A minion kind's name (config.js MINION_KINDS), in the HUD
-  'minionKind.HUSK': 'HUSK', // draft
-  'minionKind.STALKER': 'STALKER', // draft
-  'gun.missed': 'Miss. It keeps coming.', // draft. The dial stopped outside every zone
-  'gun.cleanKill': 'Clean kill.', // draft. The dial stopped in the kill zone
-  'gun.shotJammed': 'Jammed. 1 energy lost.', // draft. The dial stopped in a jam zone
-  'gun.shotJammedEmpty': 'Jammed.', // draft. The same, with no energy left to lose
-  'gun.shotLoud': 'Too loud. It carries.', // draft. The dial stopped in a loud zone
-  'gun.shotLunged': 'It lunges.', // draft. The dial stopped in a lunge zone: it steps closer
-  'gun.guardBroken': 'The guard breaks. It reels.', // draft. A hit on a guard (the HUSK's)
-  'gun.lowered': 'You lower the book.', // draft. BACK before READY: nothing spent
-  'gun.steady.lost': 'It left your aim. You lower the book.', // draft. Steady aim: the stick man went out of the light or reach while SELECT was held
-  'gun.steady.knocked': 'The hit knocks your aim away.', // draft. Steady aim: struck while SELECT was held; nothing spent
-  'gun.steady.dropped': 'Your arm tires and drops.', // draft. Steady aim: held on the head too long, the aim falls back down
-  'gun.stunned': 'It reels.', // draft. A maim with DEV -> Downed off: the minion skips its next move
-  // Category weaknesses (strategy plan step D): {group} is a reload group's label.
-  'gun.matched': 'The round was made for it.', // draft. A round from the group the minion is weak to (its kill zone was wider)
-  'gun.weakFound': 'The {kind} flinches. It is weak to {group}.', // draft. First landed shot on a kind
-  'stat.weakUnknown': '?', // draft. HUD target: a minion kind whose weakness isn't found yet
-  'gun.killed': 'It comes apart. {gold} {@term.gold}.', // draft. A kill and the gold it paid
-  'gun.struck': 'It strikes. -{cost} {@term.hp}.', // draft. A minion reached the player
-  'gun.hunterStruck': 'The {@term.hunter} strikes. -{cost} {@term.hp}.', // draft. The hunter reached the player (gun on)
-  'gun.hunterStaggered': 'The {@term.hunter} staggers.', // draft. A landed shot on the hunter
-  // Downed stick men (downed plan): a shot in the dial's maim zone.
-  'gun.downed': 'It goes down. It keeps coming.', // draft. It falls and crawls on its arms
-  'gun.finished': 'You finish it.', // draft. The player walked into a downed one
-  'gun.grabbed': 'It has your ankle.', // draft. A downed one reached the player
-  'gun.heldFast': 'It holds on. Finish it.', // draft. A step away while it holds the player's ankle
 };
 
 // Per-room overrides, keyed by room number (1 = the first room). List only
@@ -1087,12 +756,10 @@ export const AREAS = {
   2: {
     'room.wait': ['You hold still. The hum is louder here.', 'You wait. Something waits with you.'], // draft
     'room.paper.junk': ['The page is blank, but warm.', 'The same line, written over and over until it means nothing.', 'A name. Yours? The ink has run.'], // draft
-    'log.boss.holds': ['ITS {@term.boss} HOLDS.', 'IT HAS BEEN BELIEVED FOR A LONG TIME.'], // draft
   },
   3: {
     'room.wait': ['You hold still. The hum is inside you now.', 'You wait. The dark does not.'], // draft
     'room.paper.junk': ['The page is blank. It was always blank.', 'Your own handwriting. You do not remember writing it.'], // draft
-    'log.boss.holds': ['ITS {@term.boss} HOLDS.', 'IT IS CERTAIN. ARE YOU?'], // draft
   },
 };
 

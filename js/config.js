@@ -143,7 +143,6 @@ export const STEM_CUES = [
   { cue: /^where\b/i, types: ['location'] }
 ];
 
-
 // How many query categories a boss fight offers to choose from each
 // turn (see quiz.js buildCategoryChoices).
 export const BATTLE_CHOICE_COUNT = 3;
@@ -245,33 +244,6 @@ export const CATEGORY_LABELS = {
 
 // Grid size, room count, minions and the light's loss share per floor are
 // in the floor recipes (floors.js).
-
-// Pillars block walking and the player's light; the boss light spreads
-// past them. A room with pillars gets a mirrored set of one of these sizes.
-export const PILLARS_PER_ROOM = [2, 4];
-// Whether rooms get pillars at all. Off for now (Timothy, 2026-10-10): a
-// random pillar in a room blocks the view and gets in the way. A proper
-// rule for structures in rooms comes later. Turn on to bring them back.
-export const ROOM_PILLARS = false;
-// Whether a wall piece drawn inside a room (one that doesn't touch the
-// room's outer wall, like a block in the middle) is kept. Off for now, for
-// the same reason as ROOM_PILLARS: those pieces block sight, and when the
-// map cuts them down to stubs they look like chests. Off, they are floor.
-// Dividing walls that run from the outer wall stay either way.
-export const ROOM_INNER_WALLS = false;
-// Papers lie flat: anyone can walk over them, and stepping onto one reads
-// it (lore or nothing). Boxes are solid (not to light); bump one to
-// examine it (a turn passes). A box is like the chest:
-// BOX_TRAP_CHANCE of them are trapped and ask a question first (right =
-// gold, wrong = the usual lost heart); the rest just open, with BOX_LOOT
-// (weights, not %). Boxes never restore hearts — like the chest, healing
-// is kept for something else.
-export const PAPER_LORE_CHANCE = 0.4;
-// Papers one room may hold (Timothy: no room littered with papers), so a
-// room gives at most this many lines. Beat papers count too (floor.js).
-export const PAPERS_PER_ROOM = 1;
-export const BOX_TRAP_CHANCE = 0.3;
-export const BOX_LOOT = { junk: 50, gold: 50 };
 export const BOX_GOLD = [1, 2]; // plus the floor index, before the darkness multiplier
 
 // Anything further than this many tiles away (in any direction, diagonals
@@ -280,26 +252,6 @@ export const BOX_GOLD = [1, 2]; // plus the floor index, before the darkness mul
 export const REVEAL_DISTANCE = 5;
 
 export const MAX_HEARTS = 3;
-// THE UNFOLDING (js/exchange.js) can raise max stability, never past this.
-export const MAX_HEARTS_CAP = 5;
-
-// What THE UNFOLDING (code name: exchange, on every rest floor) trades for
-// myelin, in the order its screen lists them. A depth pays roughly 5-10
-// myelin, so +1 max stability means saving across floors. Prices are
-// Timothy's "middle" set; tune after play-tests.
-//   silence       silences the oldest haunt (not offered with none)
-//   heal          +1 stability (not offered at max)
-//   maxStability  +1 max stability, does not heal; once per rest, up to MAX_HEARTS_CAP
-//   slack         EXCHANGE_SLACK_TURNS more turns on the next depth; once per rest, not on the epilogue
-//   scout         shows where a between-rest's hidden stairs lead (strategy plan step C); only while hidden
-export const EXCHANGE_ITEMS = [
-  { id: 'silence', price: 2 },
-  { id: 'heal', price: 4 },
-  { id: 'maxStability', price: 10 },
-  { id: 'slack', price: 3 },
-  { id: 'scout', price: 3 },
-];
-export const EXCHANGE_SLACK_TURNS = 20;
 // Floor goals (strategy plan step A): each danger depth rolls
 // GOALS_PER_FLOOR of these, shown in the HUD and paid in myelin (flat, not
 // doubled in the darkness) as the player goes down the stairs. Drafts; tune after play.
@@ -315,23 +267,10 @@ export const FLOOR_GOALS = [
   { id: 'noHunter', pay: 2 },
   { id: 'noStruggle', pay: 2 },
 ];
-export const GOALS_PER_FLOOR = 2;
-// Category weaknesses (strategy plan step D, gun.js): each minion kind is
-// weak to one reload group, rolled per run. A round loaded from that group
-// makes the dial's kill zone MATCH_KILL_SCALE times as wide (kill or maim
-// plan: there is no damage left to double).
-export const MATCH_KILL_SCALE = 1.5;
 // The locked core (locked core plan, step A; dungeon.js, floor.js): every
 // danger depth hides CORE_KEYS keys, one each in that many rooms picked at
 // random (never the start room or the core). Stepping on one takes it.
 export const CORE_KEYS = 3;
-// Relays (strategy plan step B, relays.js): RELAYS_PER_FLOOR [min, max] per
-// danger depth, never in the boss's or the start room. A right answer holds
-// the room and takes RELAY_TURNS_BACK turns off the light (LIGHT_TURNS_PER_STEP
-// turns = one step of its spread), up to RELAY_TURNS_CAP a floor, fewer than
-// the walk to a relay usually costs, so relays slow the light but can't stop
-// it. A wrong answer gives the light RELAY_WRONG_TURNS. Drafts; tune after play.
-export const RELAYS_PER_FLOOR = [1, 2];
 // The charger (charger plan, `ideas/charger-plan.md` outside the repo;
 // charger.js): a machine in the start room, gun on only, that fills energy
 // to full through CHARGE.SYS, a wire puzzle with no wrong move. Wires are
@@ -500,238 +439,19 @@ export const SAFE_ROOM = {
   dropMs: 700,
   turnMs: 500,
 };
-export const RELAY_TURNS_BACK = 6;
-export const RELAY_TURNS_CAP = 10;
-export const RELAY_WRONG_TURNS = 4;
-export const GOAL_PAPERS_MIN = 2;
-export const GOAL_SWIFT_SHARE = 0.5;
 // The longest name the start screen takes, so it fits on one line in a paper.
 export const PLAYER_NAME_MAX_LENGTH = 20;
 export const ROOM_COUNT = 3;
-
-// The gate (locked core plan, step B; gate.js): the boss is the gate. By
-// keys held (0, 1, 2, all CORE_KEYS), the right answers it asks
-// (GATE_QUESTIONS) and the modifiers on each (GATE_MODIFIERS; two come as
-// one of HUNTER_MODIFIER_PAIRS). With every key it falls with none. A wrong
-// answer gives the light GATE_WRONG_TURNS (like a relay's) and seals the
-// gate until another key is taken. Timothy's numbers, 2026-10-12.
-export const GATE_QUESTIONS = [3, 2, 1, 0];
-export const GATE_MODIFIERS = [2, 1, 0, 0];
-export const GATE_WRONG_TURNS = 4;
-// The kinds of minion (gun combat plan, step 1). Each minion is one of
-// these (`minionKind`); the floor recipe can name which (floors.js
-// `minionKinds`). With the gun on:
-//   moveEvery  it moves every this many turns (1 = every turn)
-//   size       how big it is drawn, against a tile
-//   gold       gold for killing it, before the darkness multiplier
-//   killWidth  the dial's kill zone, a share of the circle (kill or maim plan)
-//   maimWidth  the dial's maim zone (a maim knocks it down)
-//   guard      the first hit only breaks its guard (GUARD_STUN_MOVES)
-//   dial       its dial's traits (Timothy, 2026-10-15: the kind tells you
-//              what the dial will do): spin 'still' or 'with' (its zones
-//              drift along with the marker), turnBack (the marker stops and
-//              turns back at random), surge (one side of the dial is faster)
-// No health (kill or maim plan, Timothy 2026-10-15): one good hit kills,
-// the HUSK's guard takes one more. Widths are drafts for Timothy to tune.
-export const MINION_KINDS = {
-  SHARD: { moveEvery: 1, killWidth: 0.10, maimWidth: 0.18, size: 0.85, gold: 1, vents: true, dial: { spin: 'still', turnBack: false, surge: true } },
-  HUSK: { moveEvery: 2, killWidth: 0.09, maimWidth: 0.20, guard: true, size: 1.15, gold: 3, dial: { spin: 'with', turnBack: false, surge: false } },
-  STALKER: { moveEvery: 1, killWidth: 0.07, maimWidth: 0.14, size: 1.0, gold: 2, vents: true, dial: { spin: 'still', turnBack: true, surge: false } },
-};
-// A hit on a guard breaks it and stuns its minion: longer from the kill
-// zone than the maim zone, so the kill zone is still worth aiming for.
-export const GUARD_STUN_MOVES = { kill: 2, maim: 1 };
-// The order kinds come in on a floor whose recipe names none (or too few).
-export const MINION_KIND_ORDER = ['SHARD', 'STALKER', 'HUSK'];
-// How many of its last tiles a minion remembers, newest last. A strike
-// knocks it back along them, the way it came (the mockup's KNOCKBACK).
-export const MINION_TRAIL_LENGTH = 3;
-// A minion that reaches the player strikes for MINION_STRIKE_COST
-// stability (DARK_MISS_COST in the darkness, like a miss) and is knocked
-// back along its trail, up to MINION_TRAIL_LENGTH tiles.
-export const MINION_STRIKE_COST = 1;
-// A shot that hits (kill or maim zone) stuns the minion: it skips its next
-// MINION_STUN_MOVES moves, so it can't walk into the player straight after
-// (Timothy). A miss or a harmful zone doesn't stun.
-export const MINION_STUN_MOVES = 1;
-// Downed stick men (downed plan, Timothy 2026-10-15): a shot in the dial's
-// maim zone knocks a stick man down. It crawls toward the player
-// on its arms, moving DOWNED_SLOWDOWN times less often than it did
-// standing, grabs their ankle if it reaches them, and a bump finishes it.
-// DEV -> Downed (DOWNED) switches it off: a 1 HP stick man stays standing.
-export const DOWNED = true;
-export const DOWNED_SLOWDOWN = 2;
-// Steady aim (steady aim plan step A, `ideas/steady-aim-plan.md` outside
-// the repo; Timothy 2026-10-27, after Signalis): SELECT is held, not
-// tapped, and no dial opens. The aim steadies over
-// fullMs (slower on a low battery or in the dark) and climbs from the legs
-// to the head; letting go fires. The chance to land climbs with it from
-// minChance to 1 at full hold: below full a hit maims, at full it kills.
-// A miss in the first `wildBelow` of the hold is a harm (HARM_KINDS). Held
-// on the head past shakeAfterMs the arm shakes and the chance falls toward
-// shakeFloor; at dropAtMs it drops back to `dropTo`. The world never stops
-// for it, and the player stands still while aiming (Timothy's calls,
-// 2026-10-28: the aim climbs with time, stand still, a wild early miss,
-// no change by depth). While it steadies the light narrows to a beam
-// (step B, Timothy's call): the cone's half-angle runs from LOOK_CONE_HALF
-// to `beamHalf` and its slack from LOOK_CONE_SLACK to `beamSlack` with the
-// aim, and the beam stays on the stick man. A kind in `kindSlow` steadies that much slower on
-// it: the STALKER weaves. `on` is the start setting, the default since
-// step C (DEV -> Steady aim, or ?aim=steady / ?aim=dial). One stick only:
-// the start screen's Turns option keeps the dial, as does the Struggle.
-export const STEADY_AIM = {
-  on: true,
-  fullMs: 1000,
-  minChance: 0.05,
-  wildBelow: 0.3,
-  shakeAfterMs: 700,
-  dropAtMs: 1600,
-  shakeFloor: 0.4,
-  dropTo: 0.55,
-  lowBattery: 0.75,
-  dark: 0.55,
-  kindSlow: { STALKER: 0.8 },
-  beamHalf: Math.PI / 16,
-  beamSlack: 0.1,
-};
-// How much of a crawl (MAP_ANIMATION_MS.crawl) the leading hand takes to
-// reach and plant before the body starts to drag (mapview.js holds the
-// slide back that long), and how many turns the letters it drops on the
-// tile it left take to fade.
-export const CRAWL_REACH = 0.35;
-export const DOWNED_DROP_TURNS = 3;
-// Minions are placed when a room loads (no summoning; how many is in the
-// floor recipe) and roam freely: they wander at random and only chase once
-// the player is within MINION_CHASE_RANGE walkable steps. That is the rule
-// in Comfort mode and with DEV -> Light battery off; with the battery in
-// play (light battery plan step B, combat.js notice) a stick man chases
-// once it has a clear line, within MINION_LIGHT_SIGHT tiles, to the player
-// or a tile their light is on (with the light on). Out of view it walks to
-// where it last saw them, then searches round there for MINION_TRACK_TURNS
-// turns before it loses them.
-export const MINION_CHASE_RANGE = 4;
-export const MINION_LIGHT_SIGHT = 7;
-export const MINION_TRACK_TURNS = 5;
-// Grates (vents and noise plan step A, vents.js): up to VENT_PAIRS pairs a
-// floor, each joining two rooms at least VENT_MIN_APART walking steps
-// apart, so the duct is a real short cut (Timothy: random, never the start
-// room or the core).
-export const VENT_PAIRS = 2;
-export const VENT_MIN_APART = 12;
-// The ducts (vents and noise plan step C, vents.js): a hunting stick man
-// that fits (MINION_KINDS `vents`: SHARDs and STALKERs, and the hunter;
-// HUSKs are too big) is in a duct VENT_TURNS turns. On the first the far
-// grate shudders, on the next it drops out beside it: one turn of warning.
-// The player hears the shudder when the grate is in sight or within
-// VENT_RATTLE_HEARD tiles.
-export const VENT_TURNS = 2;
-export const VENT_RATTLE_HEARD = 6;
-// Noise (vents and noise plan step B, noise.js): a mistake makes a sound
-// that spreads this many walking steps from the player (walls stop it,
-// doorways carry it, a grate passes it to its pair). Only mistakes are
-// loud (Timothy): shots and steps are quiet, and a wrong answer in a fight
-// makes no noise.
-export const NOISE_RANGES = {
-  reload: 6,   // a wrong reload answer: the gun jams
-  relay: 8,    // a wrong relay answer: it sparks
-  loud: 5,     // the dial stopped in a loud zone
-  struggle: 4, // a lost Struggle
-  gate: 10,    // a wrong answer at the gate
-  lure: 10,    // a room spot's lure set off (spots.js soundLure): the tap on full
-};
 // Cover (Timothy 2026-10-26, sight.js): crouched (One stick: sneaking or
 // creeping) with something solid beside them, the player is quieter: a
 // mistake's sound spreads `noiseShare` of its NOISE_RANGES (at least a
 // step). Stick men on the far side of that cover can't notice them at all.
 export const COVER = { noiseShare: 0.5 };
-// Noise is on by default; DEV -> Noise switches it off (mistakes are quiet).
-export const NOISE = true;
-// DEV -> Show ducts: who is in a duct, and every pair known. Off by default.
-export const SHOW_DUCTS = false;
 // Room spots (room spots plan, spots.js; Timothy 2026-10-28): what a
 // plan's spot may hold, and how often one holds nothing ("33% of the time
 // it has nothing I think is fair").
 export const SPOT_KINDS = ['hide', 'takedown', 'lure', 'scout'];
-export const SPOT_EMPTY_CHANCE = 0.33;
-// A takedown pays the stick man's own gold this many times over (Timothy
-// 2026-10-28: gold, x2; a kill with the book pays it once and costs energy).
-export const TAKEDOWN_GOLD_TIMES = 2;
-// DEV -> Spots: each spot marked with what it rolled. Off by default.
-export const SHOW_SPOTS = false;
-// Static (static.js, staticview.js; Timothy 2026-10-19): a faint grain
-// over the map as the closest stick man nears, in place of "I see you.".
-// On by default; DEV -> Static switches it off.
-export const STATIC_NOISE = true;
-// The warning timer (warning.js, presence cues plan step D): a DEV tool,
-// off by default (DEV -> Warning timer). A stick man's signs out of view
-// `forgetMs` are forgotten, so his next one starts a new approach.
-export const WARNING_TIMER = { on: false, forgetMs: 3000 };
-export const STATIC = {
-  startSteps: 5,      // walking steps from the closest stick man where it begins, about as far as the light reaches (Timothy: 7 put grain on ordinary walking)
-  curve: 1.3,         // strength = share of the way in, to this power: quiet far off, rising near
-  grain: 0.14,        // the grain's strength at full: a thin veil, the map always readable (Timothy: v1 hid everything)
-  band: 0.04,         // a faint lighter band rolling down the screen at full
-  easeMs: 500,        // the strength eases toward a new level over about this long, never a jump
-  driftMs: 600,       // each grain frame crossfades into the next over this long (slow, no flicker)
-  bandMs: 6000,       // the band takes this long to roll down once
-  grainSize: 3,       // CSS pixels per grain
-  letters: 0.25,      // wrong letters start at this strength
-  letterHoldMs: 1400, // a wrong letter holds this long, then turns back
-  letterGapMs: [2500, 5500], // the wait between tries, picked at random in this range; each try comes off with the strength's chance
-};
-// The wrong letters' lookalikes (mockup v2, Timothy picked them): mirrored
-// where a mirror exists, else a near shape. Capitals for HUD labels,
-// small letters for the room log.
-export const STATIC_LOOKALIKES = {
-  E: 'Ǝ', R: 'Я', N: 'И', S: 'Ƨ', Y: 'У', I: '1', O: '0', A: 'Λ',
-  e: 'ɘ', a: 'ɒ', s: 'ƨ', b: 'd', d: 'b', p: 'q', q: 'p', n: 'u', u: 'n', o: '0',
-};
-// An idle stick man walks to a spot in another room, stands there for a
-// number of turns in this [min, max] range, then picks a new room (smarter
-// enemies step 2, Timothy 2026-10-15: random steps each turn looked like
-// twitching in place).
-export const MINION_LINGER_TURNS = [2, 4];
-export const MINION_MIN_START_DISTANCE = 6; // walkable steps from the player's start
-
-// The intro before the first floor (introview.js): the set's questions type
-// out INTRO_CHARS_PER_TICK letters every INTRO_TICK_MS until INTRO_ASK_AT_MS.
-// Each line has an INTRO_GLITCH_CHANCE of one glitch: a stall of
-// INTRO_STALL_MS, missing letters filled in INTRO_GAP_FILL_MS later, a dim
-// line, or a restart. Then the fake player's try: one more question, a
-// pause of INTRO_HESITATE_MS, a wrong answer typed a letter every
-// INTRO_ANSWER_CHAR_MS, REJECTED. after INTRO_VERDICT_MS, the fade
-// (INTRO_FADE_MS, starting INTRO_FADE_AFTER_MS later) and the call, held
-// INTRO_CALL_HOLD_MS. About 8 s in all; any key or tap skips. Under reduced
-// motion INTRO_LINES_STILL lines, the try and the call show at once and
-// hold INTRO_STILL_MS.
-export const INTRO_ASK_AT_MS = 2600;
-export const INTRO_HESITATE_MS = 600;
-export const INTRO_ANSWER_CHAR_MS = 110;
-export const INTRO_ANSWER_MAX_MS = 1400; // a long answer types faster so it never takes longer than this
-export const INTRO_VERDICT_MS = 450;
-export const INTRO_FADE_AFTER_MS = 900;
-export const INTRO_FADE_MS = 1200;
-export const INTRO_CALL_HOLD_MS = 1800;
-export const INTRO_TICK_MS = 16;
-export const INTRO_CHARS_PER_TICK = 3;
-export const INTRO_GLITCH_CHANCE = 0.35;
-export const INTRO_STALL_MS = 280;
-export const INTRO_GAP_FILL_MS = 450;
-export const INTRO_LINES_STILL = 12;
-export const INTRO_STILL_MS = 3500;
-
-// The player's own light: every tile within PLAYER_LIGHT_RADIUS steps, plus
-// tiles up to PLAYER_CONE_RANGE steps inside the cone they're facing.
-export const PLAYER_LIGHT_RADIUS = 1;
 export const PLAYER_CONE_RANGE = 5;
-// The light's battery (battery.js, light battery plan): the light goes on
-// and off (V, no turn spent) and lasts LIGHT_BATTERY_MAX turns on, charging
-// 1 a turn while off. Run empty, it stays off until full again. Off, only
-// the PLAYER_LIGHT_RADIUS circle is lit. DEV -> Light battery switches it
-// (state.settings.lightBattery); off, or in Comfort mode, the light is
-// always on, as before.
-export const LIGHT_BATTERY_MAX = 4;
-export const LIGHT_BATTERY = true;
 // The record book (record book plan, ideas/record-book-plan.md outside the
 // repo): the ask screen drawn as a book with a dark page and the light tube
 // on its left edge (bookview.js). `paper` is the page the book opens with;
@@ -750,37 +470,6 @@ export const BOOK = {
   flapLean: 0.55,
   tubeWarmMs: 700,   // the HUD tube's switch-on (step E): cells and glow fade up, never flicker
 };
-// Shots in the dark (light battery plan step C, gun.js fireDark): the shot
-// goes along the aim, checked every DARK_SHOT_STEP tiles for the first
-// thing in the way. Its dial always hides DIAL_DARK_ARC of the circle, and
-// is one step harder at random: a lap in DARK_SWEEP_SCALE of the time
-// (faster, never past DIAL_LAP_LIMIT_MS), or one more harmful zone.
-export const DARK_SHOT_STEP = 0.25;
-export const DARK_SWEEP_SCALE = 0.65;
-// The eye (light battery plan step E, gaze.js): GAZE_MS of the player's
-// light on a stick man, in total, and it steps one closer, a quick
-// GAZE_STEP_MS slide (none under reduced motion). The clock polls every
-// GAZE_POLL_MS and pauses wherever the real-time clock does. DEV -> Gaze
-// switches it (state.settings.gaze).
-export const GAZE = true;
-export const GAZE_MS = 3000;
-export const GAZE_STEP_MS = 160;
-export const GAZE_POLL_MS = 100;
-
-// Free look (look.js, free look plan): the light points wherever the player
-// aims, up to LOOK_FREE_ARC either side of the way the body faces, at no
-// cost; looking further round turns the body, which costs a turn. The cone
-// stays 90° wide (45° each side of the look) and PLAYER_CONE_RANGE deep.
-// Always on since 2026-10-28 (its DEV toggle retired).
-export const LOOK_FREE_ARC = Math.PI / 6;
-// Eight ways (eight ways plan): the player and the stick men walk and face
-// the 4 grid ways and the 4 diagonals between them. A diagonal step needs
-// both tiles it passes between free of walls and pillars (passage.js
-// canPassCorner). Always on since 2026-10-28 (its DEV toggle retired).
-// The cone's half-width, and the slack each tile gets (sight.js inLookCone:
-// atan2(LOOK_CONE_SLACK, distance)) so an off-angle cone isn't ragged.
-export const LOOK_CONE_HALF = Math.PI / 4;
-export const LOOK_CONE_SLACK = 0.35;
 // The look controls (free look plan step C). The d-pad's centre is a look
 // stick (dpad.js initLookStick): a drag past LOOK_STICK_DRAG_PX sweeps the
 // light (or looks up), its knob following up to LOOK_STICK_KNOB_PX; a tap
@@ -791,17 +480,10 @@ export const LOOK_CONE_SLACK = 0.35;
 // drag, not a tap. A finger's tap wobbles: at 6 px, a tap on a
 // phone became a small drag that re-aimed the light and never turned.
 export const LOOK_STICK_DRAG_PX = 14;
-export const LOOK_STICK_KNOB_PX = 18;
-export const LOOK_STICK_HOLD_MS = 1000;
 export const MAP_DRAG_PX = 8;
 // A tap on the floor this close to the player's own tile (in tiles)
 // doesn't aim: the angle would jump about under it.
 export const LOOK_POINTER_DEAD = 0.35;
-
-// The warning (combat.js senseUnseen, "I see you."): a minion or the hunter
-// the player can't see, SENSE_STEPS walkable steps away and due to move next
-// turn, so its next move puts it right beside them. Once per approach.
-export const SENSE_STEPS = 2;
 // How long "I see you." stays on the map before it fades (render.js showSensed).
 export const SENSE_NOTE_MS = 2600;
 // The answer swirl (answer swirl plan, ideas/answer-swirl-plan.md outside the
@@ -810,209 +492,13 @@ export const SENSE_NOTE_MS = 2600;
 // fade once they move (keep in step with .answer-note in index.html), after
 // which it is taken off the map and "I see you." moves back up.
 export const ANSWER_LINE_FADE_MS = 1600;
-// The answer ring (step B, swirl.js): a short answer circles over the thing
-// that asked it instead. Up to ANSWER_RING_MAX_LETTERS letters and digits
-// rings (a draft number: tune after play); longer is the line. The answer
-// repeats round the ring to at least ANSWER_RING_MIN_CHARS characters, so
-// one copy is always passing along the front. One turn every
-// ANSWER_RING_TURN_MS, slow enough to read. It comes in, letter by letter,
-// over ANSWER_RING_IN_MS and fades over ANSWER_RING_OUT_MS after a move.
-export const ANSWER_RING_MAX_LETTERS = 10;
-export const ANSWER_RING_MIN_CHARS = 20;
-export const ANSWER_RING_TURN_MS = 8000;
-export const ANSWER_RING_IN_MS = 900;
-export const ANSWER_RING_OUT_MS = 1000;
-// Its shape, in tile widths (shoulderview.js drawAnswerRing): the ring's
-// half-width over a minion, chest or box and round the boss, its letters'
-// size, and how high it sits (over the head; round the boss, at its chest).
-// The far side shrinks to backSize and dims to backLevel; the near letters
-// are never under minPx CSS px, so it still reads on a phone.
-export const ANSWER_RING = { radius: 0.62, bossRadius: 0.7, size: 0.26, minPx: 14, lift: 0.95, bossLift: 0.35, depth: 0.3, backSize: 0.68, backLevel: 0.22 };
-
-// The tutorial room (tutorial.js, tutorial chamber plan).
-// Turns in the dark before the light falls from above on its spot.
-export const TUTORIAL_SPOT_TURNS = 4;
-// How far the light from above reaches round its middle, in tiles (3 x 3).
-export const TUTORIAL_SPOT_RADIUS = 1;
-// How close to the light's middle (in steps) counts as walking to it: the kind voice speaks and the barrel appears.
-export const TUTORIAL_SPOT_NEAR = 2;
-// The stick man that comes after the name: a slow kind (moves every other
-// turn), without its guard (tutorial.js), so a maim drops it and a kill ends it.
-export const TUTORIAL_MINION_KIND = 'HUSK';
-// The DEV test rooms' stick man (testroom.js): slow, as the tutorial's, so
-// there is time to watch what a mechanic does.
-export const TEST_ROOM_MINION_KIND = 'HUSK';
-// The advanced tutorial's sneak station (advanced.js): how many of the
-// stick man's steps the player must stay crouched in cover, in his sight
-// but unseen, for the door to open.
-export const ADVANCED_COVER_STEPS = 3;
 // How long a tutorial line stays on the map before it fades (slowly: render.js showWhisper).
 export const TUTORIAL_WHISPER_MS = 5000;
-// After "Die in darkness.", how long until the kind voice: "Don't let them dim your light."
-export const TUTORIAL_KIND_DELAY_MS = 3000;
-// In Comfort mode (the light is always on), how long after the kind voice the ring breaks by itself.
-export const TUTORIAL_COMFORT_BREAK_MS = 2500;
-// How long a tutorial stage can go on before its plain hint shows in the room log (only for a player who is stuck).
-export const TUTORIAL_STUCK_MS = 15000;
-// The ring of words round the player (shoulderview.js drawDarkRing): its distance from them in tiles,
-// ms for one slow turn round, and how long they take to scatter when the light breaks it.
-export const TUTORIAL_RING_RADIUS = 1.4;
-export const TUTORIAL_RING_TURN_MS = 24000;
-export const TUTORIAL_RING_SCATTER_MS = 1400;
 
 // Shooting (gun combat plan, step 2; sight.js canShoot): a minion can be
 // shot when it is in the player's own light with a clear line to it. A shot
 // that can be taken always lands (Timothy, 2026-10-11: the old hit chance by
 // distance felt unfair beside the damage bar, which is the skill part).
-
-// Energy (Timothy, 2026-10-11: was ammo; energy so later weapons and
-// abilities can draw on it too). The player holds up to ENERGY_MAX and a
-// run starts with ENERGY_START; it carries from floor to floor. The gun
-// (gun combat plan, step 3; js/gun.js) spends 1 a shot. A reload offers
-// the next category with no, one or two modifiers (from
-// GUN_RELOAD_MODIFIERS; Gambler is left out, there is no gold at stake)
-// and gives RELOAD_ENERGY[modifier count] energy on a right answer:
-// plain 2, one modifier 3, two fill it (Timothy, 2026-10-11: was 1 / 2 / 3).
-export const ENERGY_MAX = 4;
-export const ENERGY_START = 1;
-// A run that starts by leaving the tutorial room starts with this much instead (Timothy, 2026-10-13).
-export const TUTORIAL_EXIT_ENERGY = 2;
-export const GUN_RELOAD_MODIFIERS = ['blind', 'flip', 'timer'];
-export const RELOAD_ENERGY = [2, 3, ENERGY_MAX];
-// A landed shot's dial (kill or maim plan, Timothy 2026-10-15; replaces the
-// damage bar): a circle with one kill zone and one maim zone sized by the
-// minion kind (MINION_KINDS killWidth / maimWidth), and harmful zones
-// (HARM_WIDTH each, a random HARM_KINDS kind) at new spots each shot
-// (gun.js dialZones). Anywhere else misses. DIAL_DEPTHS, per danger depth
-// (the last row carries on past the table): `scale` for the kill and maim
-// zones, `harms` (how many harmful zones), `speed` (a DIAL_LAP_MS name)
-// and `lapLimit` (laps before it fires by itself; 0 = none). Zones keep
-// DIAL_ZONE_GAP from each other. Drafts for Timothy to tune.
-export const DIAL_DEPTHS = [
-  { scale: 1, harms: 0, speed: 'normal', lapLimit: 0 },
-  { scale: 0.9, harms: 1, speed: 'normal', lapLimit: 0 },
-  { scale: 0.8, harms: 2, speed: 'fast', lapLimit: 3 },
-];
-export const DIAL_ZONE_GAP = 0.04;
-// Speed is a lever with a limit (Timothy): ms for the marker to go once
-// round at each speed, and DIAL_LAP_LIMIT_MS, the fastest any dial may go
-// (the Struggle included). Reduced motion makes every lap DIAL_REDUCED_SCALE
-// times as long (gunpanels.js).
-export const DIAL_LAP_MS = { slow: 3000, normal: 2000, fast: 1500 };
-export const DIAL_LAP_LIMIT_MS = 1100;
-export const DIAL_REDUCED_SCALE = 2;
-// Harmful zones (Timothy: three kinds): jam loses 1 more energy, loud
-// makes a noise (NOISE_RANGES.loud), lunge brings the minion one step
-// closer at once (combat.js lungeAt).
-export const HARM_KINDS = ['jam', 'loud', 'lunge'];
-export const HARM_WIDTH = 0.08;
-// The dark arc: the share of the dial a shot in the dark (or on a low
-// battery: LOW_BATTERY_CHARGE charge left with the light on) hides.
-export const DIAL_DARK_ARC = 0.25;
-export const LOW_BATTERY_CHARGE = 1;
-// How the dial shows (dialview.js, gunpanels.js; kill or maim plan step B):
-// a veil over the map fades in over DIAL_FADE_IN_MS with READY in its
-// middle, and after a stop the result holds DIAL_RESULT_MS, then fades out
-// over DIAL_FADE_OUT_MS. The dial is DIAL_SIZE_SHARE of the map's shorter
-// side. Drafts for Timothy to tune.
-export const DIAL_FADE_IN_MS = 700;
-export const DIAL_RESULT_MS = 900;
-export const DIAL_FADE_OUT_MS = 500;
-export const DIAL_SIZE_SHARE = 0.9;
-// The kind traits as the dial plays them (MINION_KINDS dial):
-// - drift (spin 'with', the HUSK): the zones turn DIAL_DRIFT_LAPS a second
-//   the way the marker goes (none under reduced motion);
-// - surge (the SHARD): round DIAL_SURGE_AT (0 = top, clockwise; 0.75 is
-//   the left side) the marker goes up to 1 + DIAL_SURGE_BOOST times as fast;
-// - turn back (the STALKER): the marker stops DIAL_TURN_PAUSE_MS (the
-//   tell; DIAL_TURN_PAUSE_REDUCED_MS under reduced motion) and goes back the
-//   other way, first after DIAL_TURN_FIRST_MS, then every DIAL_TURN_EVERY_MS
-//   (a random time between the two numbers).
-export const DIAL_DRIFT_LAPS = 0.12;
-export const DIAL_SURGE_AT = 0.75;
-export const DIAL_SURGE_BOOST = 1.3;
-export const DIAL_TURN_PAUSE_MS = 280;
-export const DIAL_TURN_PAUSE_REDUCED_MS = 500;
-export const DIAL_TURN_FIRST_MS = [600, 1600];
-export const DIAL_TURN_EVERY_MS = [900, 2500];
-// Where the dark arc sits on the dial: centred here (0.5 = the bottom),
-// DIAL_DARK_ARC wide. It stays put; drifting zones pass through it.
-export const DIAL_DARK_AT = 0.5;
-// The guard ring's letters (dialview.js) go round once in this many ms
-// (still under reduced motion).
-export const DIAL_GUARD_TURN_MS = 9000;
-// Energy cells (drawn as a drum on the map; decor.js placeEnergyCells):
-// each room of a floor gets one at this chance, then rooms without one are topped up
-// until the floor has at least ENERGY_CELLS_MIN. Bumping one opens the
-// reload panel; any answer uses it up. Only placed with the gun on.
-// Drafts for Timothy to tune.
-export const ENERGY_CELL_ROOM_CHANCE = 0.35;
-// Struggle (Timothy's design): a minion or the hunter that reaches the
-// player while they have no energy doesn't just strike. It gets a dial of
-// its own (kill or maim plan: the same dial as a shot): one zone
-// STRUGGLE_ZONE_WIDTH of the circle at a random spot, a lap in
-// STRUGGLE_LAP_MS; stopping in it pushes the minion back STRUGGLE_PUSHBACK
-// tiles with no damage to it, anything else and it strikes as usual.
-// Each Struggle after the first on the same floor is harder (Timothy:
-// relying on it shouldn't stay easy): a lap STRUGGLE_SPEEDUP_MS faster,
-// never past DIAL_LAP_LIMIT_MS, and a zone STRUGGLE_SHRINK narrower, never
-// under STRUGGLE_MIN_WIDTH. A new floor starts again from the first.
-// Drafts for Timothy to tune.
-export const STRUGGLE_ZONE_WIDTH = 0.2;
-export const STRUGGLE_LAP_MS = 1500;
-export const STRUGGLE_PUSHBACK = 3;
-export const STRUGGLE_SPEEDUP_MS = 100;
-export const STRUGGLE_SHRINK = 0.02;
-export const STRUGGLE_MIN_WIDTH = 0.1;
-export const ENERGY_CELLS_MIN = 3;
-
-// The boss gives off light that spreads through the floor at a steady
-// speed: one more walkable step every LIGHT_TURNS_PER_STEP turns. The run
-// is lost when the floor's turns run out: the walk to the boss plus that
-// floor's slack (floors.js), which is the difficulty dial and shrinks each
-// floor. Battles don't use turns, so
-// answering never costs light — only walking and waiting do.
-export const LIGHT_TURNS_PER_STEP = 4;
-
-// Darkness: once the boss falls, its light dies and the floor goes dark
-// outside the player's own light (explored tiles are forgotten). No new
-// minions ever arrive, but the ones left hunt the player from anywhere,
-// a miss costs DARK_MISS_COST hearts instead of 1, and gold is multiplied
-// by DARK_GOLD_MULTIPLIER — the stairs are right there, so staying is a
-// choice. Question modifiers (still to be designed) are meant to ramp up
-// here too.
-export const DARK_MISS_COST = 2;
-export const DARK_GOLD_MULTIPLIER = 2;
-
-// Haunts (js/haunts.js): a missed question comes back in a later fight
-// at the gate in place of a random one, HAUNT_CHANCE of the
-// time, once at least HAUNT_MIN_GAP other questions have been answered
-// since the miss. Right silences it; wrong keeps it waiting.
-export const HAUNT_CHANCE = 0.35;
-export const HAUNT_MIN_GAP = 3;
-
-// The hunter: HUNTER_SPAWN_DELAY turns after the boss falls, something
-// that can't be killed wakes on the tile farthest from the player and
-// hunts them from anywhere, one step per turn — the player's own pace, so
-// someone who keeps moving stays ahead, and every box opened or dead end
-// lets it gain. A landed shot stops it for HUNTER_REST_TURNS (gun.js
-// staggerHunter).
-export const HUNTER_SPAWN_DELAY = 4;
-export const HUNTER_REST_TURNS = 8;
-// Pairs of modifiers for the gate's questions with fewer keys held (gate.js
-// gateModifierCount). Gambler is left out: a wager on top of a two-heart
-// miss is too harsh, and Blind could hide the question while the wager is
-// being placed.
-export const HUNTER_MODIFIER_PAIRS = [['blind', 'flip'], ['blind', 'timer'], ['flip', 'timer']];
-
-// Question modifiers: each query category offered at the start of a fight
-// may carry one, shown as a small tag beside it, so the player can
-// see it and choose around it — chance per category is the floor's base,
-// plus a bonus in the darkness. Boss questions always carry one (spread
-// across the categories so choosing still matters). For now a modifier is
-// only a mild penalty — no reward for taking it on.
-export const MODIFIER_CHANCE = [0.10, 0.20, 0.30]; // index = room
-export const MODIFIER_DARK_BONUS = 0.20;
 // Blind Pick: the question shows for BLIND_BASE_MS plus BLIND_MS_PER_WORD
 // for each of its words (capped), then it goes blank; the answers stay
 // (Timothy, 2026-10-11: hiding the answers was too hard). Minigames too.
@@ -1315,13 +801,6 @@ export const SCANNER = { xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
 export const SUM_LOCK_MAX_ADDEND = 50;
 export const SUM_LOCK_TIER = 'X';
 
-// A rest floor (dungeon.js buildRestLayout) is one room centred on a
-// REST_GRID x REST_GRID grid; the rest is solid wall around the room.
-export const REST_GRID = 15;
-// A between-rest's two stairs (strategy plan step C) stand at least this
-// many steps apart, and as far from the start.
-export const REST_STAIRS_APART = 4;
-
 // The map (js/mapview.js). Phosphor afterglow: each frame keeps
 // (1 - AFTERGLOW_FADE) of the last frame's light, measured at 60 frames a
 // second, so something the player leaves behind dims out over about half a
@@ -1341,10 +820,6 @@ export const MAP_GLYPH_SIZES = {
   stairs: 0.71, chest: 0.77, prop: 0.77, exchange: 0.9, key: 0.71,
   downed: 0.45, // Simple enemies: a downed minion's small e
 };
-// Simple enemies: a downed minion's e is this bright (full while it holds
-// the player) and sits this far lower on its tile, in tile widths.
-export const DOWNED_GLYPH_LEVEL = 0.65;
-export const DOWNED_GLYPH_LIFT = -0.08;
 // The room view sizes its glyphs (roomview.js drawGlyphs) so
 // they are never smaller than they were on the old isometric map, which
 // fit ISO_TILES_ACROSS tile widths across the map (ISO_TILES_ACROSS_NARROW
@@ -1352,12 +827,6 @@ export const DOWNED_GLYPH_LIFT = -0.08;
 export const ISO_TILES_ACROSS = 9;
 export const ISO_TILES_ACROSS_NARROW = 7;
 export const ISO_NARROW_MAP_WIDTH = 400;
-// Windows on back walls that face the outside (windows.js, room view plan
-// step F): one every `every` columns along such a wall, and the pool of
-// light each throws: `length` tiles down from the wall, leaning `slant`
-// tiles across as it goes, `inset` tiles in from the window's sides. Its
-// light shows stick men as the player's own does (sight.js canMakeOut).
-export const WINDOW_LIGHT = { every: 3, length: 3.4, slant: 1.1, inset: 5 / 16 };
 // The ship's windows into space (windows.js placeShipWindows, space.js;
 // Timothy 2026-11-02): each room gets one, or two with `twoChance` (never
 // more), at least `gap` tiles of wall between two. The space picture
@@ -1378,28 +847,6 @@ export const SHIP_WINDOWS = {
   width: 240, height: 120, dust: 10, nebula: 5, nebulaAt: 0.3, edge: 0.015,
   stars: 150, bigStars: 6, planets: 3, glass: 0.85,
   drift: 0.5,
-};
-// Lamps a fixed plan puts down (lamps.js, plans.js `L`; presence cues plan
-// step A, Timothy 2026-10-28): each lights the floor within `radius` tiles
-// of it, and a stick man in that light is seen from as far as `seeFrom`
-// tiles (any way, diagonals included) with a clear line, about as far as
-// the room view shows, past REVEAL_DISTANCE and from outside the room.
-export const LAMP_LIGHT = { radius: 2, seeFrom: 10 };
-// Shadows (shadows.js, presence cues plan step C): a lamp within `castFrom`
-// tiles with a clear line to a stick man, or a window whose pool he stands
-// in (its light from `windowHigh` tiles above the window), throws his
-// shadow away from it: `base` tiles long and `perTile` longer for each
-// tile he stands from the light; none closer than `minFrom` (right under
-// it). Measured every `sample` tiles. Subtle (Timothy 2026-10-28: a help
-// to notice one moving through light, not a mark in the dark): drawn only
-// on floor that is lit (visibleSet), `dark` over it at
-// his feet, `tipDark` at its tip (the part that reaches the player's light
-// first, so it mustn't fade away), `width` tiles wide there; where it
-// falls glides after him over
-// `glideMs` a tile (at once under reduced motion), so it never jumps.
-export const SHADOW = {
-  castFrom: 5, windowHigh: 1.5, base: 2.5, perTile: 0.5, minFrom: 0.3, sample: 0.25,
-  dark: 0.35, tipDark: 0.25, width: 0.5, glideMs: 400,
 };
 // The pieces of furniture a fixed plan can stand in its rooms (plans.js
 // `furniture`, room view plan step E). Each has a bump line in text.js
@@ -1427,9 +874,6 @@ export const ROOM_VIEW = {
   footAt: 0.78,       // his feet stand this far down his tile, so he rises over the tile behind
   lookUpMs: 120,      // looking up (sky eye plan): the sky fades in and out this fast (at once under reduced motion)
 };
-// Looking up with the look stick (sky eye plan step A): a push up past this
-// share of its reach, more up than sideways, looks up until it comes back.
-export const LOOK_UP_STICK = 0.6;
 // The player's stick man (player figure plan, `ideas/player-figure-plan.md`
 // outside the repo; js/playerform.js): a person feeling their way through
 // a dark place, never quite even (Timothy, the ember head mockup v4).
@@ -1505,12 +949,6 @@ export const SKY_EYE = {
   paleFrom: 0.5,    // the sky pales faintly blue from this much open
   tutorial: 1,      // how open it is in the tutorial room (Timothy: wide open, so "It's watching you." shows an open eye is bad)
 };
-// The light's sweep (shoulder view plan step B, kept for the look stick):
-// pushed fully sideways it sweeps the light round this fast (radians a
-// second; 144° a second), and a quick tap sweeps at least LOOK_SWEEP_TAP.
-// Past the free arc each body turn is a turn (look.js sweepLook).
-export const LOOK_SWEEP_SPEED = Math.PI * 0.8;
-export const LOOK_SWEEP_TAP = Math.PI / 12;
 // How long each map animation takes, in ms. Looping ones stand still
 // under reduced motion.
 export const MAP_ANIMATION_MS = {
@@ -1568,58 +1006,17 @@ export const MINIMAP_ARROW = [1.6, 0.55];
 // MINIMAP_TITLE_PX text in its top-left corner. CSS px.
 export const MINIMAP_LABEL_PX = 15;
 export const MINIMAP_TITLE_PX = 22;
-// A stick enemy shows its strike tell (easing into its tell pose; with
-// Simple enemies, 'e' becomes 'E') when it is this many steps from the player or nearer: one more step brings it
-// next to them. Straight steps (rows + columns), like shootBlock's range.
-export const FORM_TELL_STEPS = 2;
 // The stick enemies' light (stickforms.js): the player's glow in a cold blue,
 // a little off from theirs. halo = the glow round a line, core = the line
 // itself (and step C's tendril letters), as 'r, g, b'.
 export const ENEMY_LIGHT = { halo: '112, 150, 255', core: '200, 216, 255' };
-// Tendrils of letters (stickforms.js, stick enemies plan step C). A hit's
-// tendrils grow over TENDRIL_GROW_MS, hold for TENDRIL_HOLD_MS, then pull
-// back over TENDRIL_BACK_MS, unless they stay out. Letters sit
-// TENDRIL_STEP of a tile's width apart and are TENDRIL_SIZE of it tall.
-export const TENDRIL_GROW_MS = 1300;
-export const TENDRIL_HOLD_MS = 1700;
-export const TENDRIL_BACK_MS = 1700;
-export const TENDRIL_STEP = 0.09;
-export const TENDRIL_SIZE = 0.15;
-// Tendril letters are the set's answers with one letter wrong in each word:
-// a lookalike from this table, or (for a letter in TENDRIL_MIRRORABLE, half
-// the time) itself drawn backwards. Shapes, not wording, so they live here.
-export const TENDRIL_LOOKALIKES = {
-  E: 'F', F: 'E', O: 'Q', Q: 'O', I: 'L', L: 'I', D: 'O', B: '8', S: '5', A: '4', H: 'N', M: 'N', N: 'M',
-  C: 'G', G: 'C', U: 'V', V: 'U', R: 'P', P: 'R', T: 'I', J: 'I', K: 'X', Y: 'V', W: 'V', Z: '2', X: 'K',
-};
-export const TENDRIL_MIRRORABLE = 'NRSJEKZLCPBDGQ';
-
-// On-screen d-pad (js/dpad.js): holding an arrow walks like holding an
-// arrow key. The first step lands on the press; after DPAD_HOLD_DELAY_MS the
-// player keeps stepping every DPAD_HOLD_REPEAT_MS until the finger lifts.
-// The repeat is a little slower than the iso step slide, so each step reads.
-export const DPAD_HOLD_DELAY_MS = 300;
-export const DPAD_HOLD_REPEAT_MS = 170;
-// Smooth walk (walkpace.js): a held way steps again this long after a
-// step's slide has landed (170 - 140, the beat a grid step always had).
-export const WALK_REPEAT_GAP_MS = 30;
 // The room log keeps this many notes, newest at the bottom: all of them
 // show when LOG opens it over the map; otherwise only the newest two sit on
 // the map's bottom edge (index.html .feedback, nth-last-child(-n+2)), and
 // dim ROOM_LOG_DIM_MS after the last one came.
 export const ROOM_LOG_LINES = 20;
 export const ROOM_LOG_DIM_MS = 6000;
-
-// Real time (start screen option, gun plan step 8): the world (minions,
-// the hunter, the boss's light) takes its turn every REALTIME_STEP_MS
-// instead of after each of the player's actions. realclock.js counts
-// time in polls of REALTIME_POLL_MS, and only while the clock may run.
-export const REALTIME_STEP_MS = 2500;
 export const REALTIME_POLL_MS = 100;
-// With Real time on, the player can take a step at most this often (about
-// four a second), so holding an arrow can't outrun the clock. An arrow
-// pressed sooner is ignored; the gun isn't held back.
-export const REALTIME_WALK_MS = 250;
 
 // 3D moves (one stick plan step F, figure3d.js): the stick men move with
 // Quaternius's animations (moves3d.js), drawn at the room's own pixels.
@@ -1644,11 +1041,9 @@ export const FIGURE3D = {
   punchPeak: 4,
 };
 
-// One stick (one stick plan, ideas/one-stick-plan.md outside the repo):
-// the player walks freely in real time (walk.js), not tile to tile. The
-// default since step G (`on`); the start screen's Turns option
-// (state.settings.oneStick false) keeps the game in turns, and DEV -> One
-// stick flips it in play. It turns Real time on. `walkMs` / `sneakMs`: ms to walk / creep one
+// Free walking (one stick plan, ideas/one-stick-plan.md outside the repo):
+// the player walks freely in real time (walk.js), not tile to tile; the
+// only way since dungeon removal step E1. `walkMs` / `sneakMs`: ms to walk / creep one
 // tile (the mockup's quick and natural paces). `creep`: a push on the
 // stick under this share of its reach creeps (0.6 -> 0.8, Timothy
 // 2026-10-27: on the phone a sneak kept turning into a walk). `body`: how far the
@@ -1664,19 +1059,6 @@ export const FIGURE3D = {
 // on the round stick under this share of its reach only turns them.
 // `lookUpMs`: the round stick held still in its middle this long looks up
 // at the sky while held (open call 6; U and Space do it too).
-// Step C, the stick men on their own clocks (combat.js clockFrame):
-// `wanderMs` / `chaseMs` a tile idle / chasing, times the kind's
-// moveEvery. Next to the player one reaches for `reachMs` (a guarded
-// HUSK `reachGuardMs`) before it strikes, and lands only if the player is
-// still within `reach` tiles, centre to centre (a diagonal neighbour is
-// 1.41).
-// Step D, the world's beat (REALTIME_STEP_MS): the boss's light still
-// spreads a step every LIGHT_TURNS_PER_STEP beats, but its budget and the
-// turns a relay or the gate move it were tuned in turns, when a tile
-// walked was a turn. One turn of them counts as `lightTurnMs` of real time
-// (light.js lightTurnsFor; the creep pace: tune in play). The battery runs
-// by time: one charge (a # on the HUD) lasts `batteryChargeMs` on and
-// comes back in the same time off (LIGHT_BATTERY_MAX 4 = 12 s).
 export const ONE_STICK = {
   on: true,
   walkMs: 450,
@@ -1687,13 +1069,6 @@ export const ONE_STICK = {
   tapMs: 130,
   deadZone: 0.15,
   lookUpMs: 500,
-  wanderMs: 950,
-  chaseMs: 550,
-  reachMs: 600,
-  reachGuardMs: 800,
-  reach: 1.7,
-  lightTurnMs: 950,
-  batteryChargeMs: 3000,
   body: 0.28,
   bumpProgress: 0.3,
   bumpRepeatMs: 400,

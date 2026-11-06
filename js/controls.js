@@ -1,7 +1,6 @@
 // The player's controls (moved out of main.js, tech-debt item 4e): a tap
-// on the map, aiming and sweeping the light, looking up, the d-pad and the
-// move keys, free walking every frame with One stick (walkFrame, settleMove),
-// a step in turns (movePlayer), sneaking, the look and walk sticks, and the
+// on the map aims the light, looking up, the move keys, free walking every
+// frame (walkFrame, settleMove), sneaking, the walk stick, and the
 // keyboard. Like devpanel.js it looks up its own
 // elements and gets the main.js actions it calls passed in (initControls,
 // which also wires every button and key and starts the walking frame).
@@ -9,41 +8,28 @@
 import { state } from './state.js';
 
 import { openJob } from './gunactions.js';
-import {
-  REALTIME_WALK_MS, LOOK_POINTER_DEAD, LOOK_STICK_KNOB_PX, LOOK_UP_STICK, LOOK_SWEEP_SPEED,
-} from './config.js';
-import { stepPlayer, onStairs } from './moves.js';
+import { LOOK_POINTER_DEAD } from './config.js';
+import { onStairs } from './moves.js';
 import { requestMapDraw } from './mapview.js';
 import { mapPanelShown } from './gunpanels.js';
 import { t } from './text.js';
-import { initDpad, initLookStick, initWalkStick, SCREEN_WAYS, padWay, sweepHold } from './dpad.js';
+import { initWalkStick, SCREEN_WAYS } from './dpad.js';
 import { lookUp } from './roomsky.js';
-import { repeatMs, noteStep, heldStepReady } from './walkpace.js';
-import { aimLook, turnBody, sweepLook, wantsTurn, waysInUse } from './look.js';
-import { FACING_VECTORS } from './sight.js';
+import { aimLook } from './look.js';
 import { walkFree, freeSpot, resetWalk, switchSneak } from './walk.js';
 
 const roomScreen = document.getElementById('roomScreen');
 const answerInput = document.getElementById('answerInput');
 const mcOptionsEl = document.getElementById('mcOptions');
-const dpadButtons = {
-  ...Object.fromEntries(Object.keys(SCREEN_WAYS).map(way => [way, document.getElementById('btn' + way)])),
-  Skip: document.getElementById('btnSkip'),
-};
-const lookStick = dpadButtons.Skip; // the d-pad's centre: the look stick (dpad.js initLookStick)
 const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // The main.js actions these call, passed in by initControls.
 let applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
-  realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame;
+  showRoomNote, worldFrame;
 
-// A tap on the map aims the light at the floor `point` under it. A mouse
-// click turns the body when the aim is past the free arc (free look plan);
-// a tap on a phone never turns, so a stray tap can't spend a turn. Costs
-// no turn.
+// A tap on the map aims the light at the floor `point` under it.
 export function tapMap(tile, pointerType, point) {
   if (point) aimAtPoint(point);
-  if (pointerType === 'mouse' && wantsTurn()) turnLook();
 }
 
 // Whether the player can aim right now: the room screen up with no panel
@@ -69,51 +55,8 @@ function aimAtPoint(point) {
   aimTo(Math.atan2(dc, -dr));
 }
 
-// Turns the body toward an aim past the free arc (look.js turnBody): a
-// spent turn.
-function turnLook() {
-  if (!wantsTurn() || state.run.turnLocked || state.run.runEnded || mapPanelShown()) return;
-  state.run.turnLocked = true;
-  applyTurnOutcome(turnBody());
-  state.run.turnLocked = false;
-}
-
-// The controls (room view plan step A: the camera never turns). Every
-// d-pad arrow, key (arrows, W A S D, Q / E / Z / C for the corners) and
-// number pad key walks the way it points on screen (dpad.js padWay); the
-// light is aimed by the look stick and taps. Returns the ms until a held
-// press acts again, or null to stop.
-function padPush(sx, sy) {
-  if (!roomScreen.classList.contains('show') || state.run.runEnded) return null;
-  const way = padWay(sx, sy, waysInUse());
-  if (!way) return null;
-  const [dr, dc] = FACING_VECTORS[way];
-  movePlayer(dr, dc);
-  return repeatMs(dr, dc);
-}
-
-// Sweeps the light (look.js sweepLook): free inside the arc; a body turn
-// past it is a spent turn.
-function lightSweep(delta) {
-  if (!lookReady()) return;
-  const events = sweepLook(delta);
-  if (!events.some(e => e.type === 'bodyTurned')) {
-    drawEvents(events);
-    return;
-  }
-  state.run.turnLocked = true;
-  applyTurnOutcome(events);
-  state.run.turnLocked = false;
-}
-const sweep = sweepHold(lightSweep, { speed: LOOK_SWEEP_SPEED });
-
-// The look stick pushed sideways: sweeps faster the further it goes.
-function stickSweep(dx) {
-  sweep.push('stick', Math.max(-1, Math.min(1, dx / LOOK_STICK_KNOB_PX)));
-}
-
-// Looking up at the sky (sky eye plan; the room view's step F): Space held
-// or the look stick pushed up, either one ('key' / 'stick'). Free and
+// Looking up at the sky (sky eye plan; the room view's step F): Space or
+// U held, or the walk stick held still ('key' / 'u' / 'stick'). Free and
 // view-only (roomview.js lookUp): the world keeps its turns, and with
 // Real time on it keeps moving while the player looks away from the floor.
 const lookingUp = new Set();
@@ -125,66 +68,31 @@ function holdLookUp(source, on) {
   requestMapDraw();
 }
 
-// The look stick: pushed up past LOOK_UP_STICK of its reach, more up than
-// sideways, it looks up and stops sweeping; otherwise it sweeps by its
-// sideways push.
-function stickPush(dx, dy) {
-  const up = -dy > Math.abs(dx) && -dy / LOOK_STICK_KNOB_PX >= LOOK_UP_STICK;
-  holdLookUp('stick', up);
-  stickSweep(up ? 0 : dx);
-}
-
-// The keys by the d-pad way they stand for. A held key steps again once
-// the last step has landed (walkpace.js).
+// The move keys by the screen way they stand for (dpad.js SCREEN_WAYS).
 const MOVE_KEYS = {
   ArrowUp: 'U', w: 'U', W: 'U', ArrowDown: 'D', s: 'D', S: 'D',
   ArrowLeft: 'L', a: 'L', A: 'L', ArrowRight: 'R', d: 'R', D: 'R',
   q: 'UL', Q: 'UL', e: 'UR', E: 'UR', z: 'DL', Z: 'DL', c: 'DR', C: 'DR',
 };
-function moveKey(way, repeat) {
-  if (repeat && !heldStepReady(performance.now())) return;
-  padPush(...SCREEN_WAYS[way]);
-}
-
-// The look stick lights up while a tap would turn the body, and its label
-// says what a tap does.
-export function syncLookStick() {
-  const armed = wantsTurn();
-  lookStick.classList.toggle('armed', armed);
-  lookStick.setAttribute('aria-label', t(armed ? 'dpad.stick.turn' : 'dpad.stick.wait'));
-}
-
-// When the player last took a step, for Real time's REALTIME_WALK_MS.
-// View-side timing, so a module var rather than state.
-let lastWalkAt = -Infinity;
-
-// The move keys held down with One stick on (one stick plan step A), by
-// d-pad way: free walking goes the way they add up to. The round stick's
+// The move keys held down (one stick plan step A), by screen way: free walking goes the way they add up to. The round stick's
 // push instead while a finger is on it (step B): [x, y], or null.
 const heldWays = new Set();
 let stickPushed = null;
 const walkStick = document.getElementById('walkStick');
-const dpadClip = document.getElementById('dpadClip');
 // When the last walking frame ran, for its length.
 let walkFrameAt = null;
 
-// One frame of free walking with One stick on (walk.js walkFree): while
+// One frame of free walking (walk.js walkFree): while
 // the real-time clock may run and nothing holds the player, the round
 // stick's push or the held keys move them and swing their light round; a
 // new tile or a bump settles like a step (settleMove). While the walk
 // can't run, held keys and the stick's push are forgotten, so a key held
 // through a panel doesn't walk on (or bump the same chest again) once it
-// closes. The round stick stands in for the d-pad while One stick is on.
+// closes.
 function walkFrame(now) {
   requestAnimationFrame(walkFrame);
   const dt = walkFrameAt === null ? 0 : now - walkFrameAt;
   walkFrameAt = now;
-  const one = state.settings.oneStick;
-  if (walkStick.hidden === one) {
-    walkStick.hidden = !one;
-    dpadClip.hidden = one;
-  }
-  if (!one) return;
   if (!clockMayRun() || state.run.turnLocked || walkHeld()) {
     heldWays.clear();
     stickPushed = null;
@@ -212,38 +120,21 @@ function walkFrame(now) {
   worldFrame(dt);
 }
 
-// Sneaking on or off (X, One stick only; walk.js switchSneak).
+// Sneaking on or off (X; walk.js switchSneak).
 function toggleSneak() {
-  if (!state.settings.oneStick || !roomScreen.classList.contains('show') || mapPanelShown() || state.run.runEnded) return;
+  if (!roomScreen.classList.contains('show') || mapPanelShown() || state.run.runEnded) return;
   const note = drawEvents(switchSneak());
   showRoomNote(note.cls, note.text);
 }
 
-// A move key went down or up with One stick on: it joins or leaves the
+// A move key went down or up: it joins or leaves the
 // held ways.
 function holdWay(way, down) {
   if (down) heldWays.add(way);
   else heldWays.delete(way);
 }
 
-// One arrow press (stepPlayer in moves.js). A step or a first look in a
-// box spends a turn; a step onto the stairs only asks (goDown takes them);
-// a turn to a new direction or a bump only draws, except that with free look a bump that turned the body
-// is a turn (bodyTurned). With Real time
-// on, a press too soon after the last step is ignored (REALTIME_WALK_MS).
-function movePlayer(dRow, dCol) {
-  if (state.run.turnLocked || state.run.runEnded || walkHeld()) return;
-  if (realTimeOn() && performance.now() - lastWalkAt < REALTIME_WALK_MS) return;
-  state.run.turnLocked = true;
-  const events = stepPlayer(dRow, dCol);
-  if (events.some(e => e.type === 'stepped')) {
-    lastWalkAt = performance.now();
-    noteStep(dRow, dCol, lastWalkAt);
-  }
-  settleMove(events);
-}
-
-// What the player's move (a step, or free walking's new tile or bump)
+// What the player's move (free walking's new tile or bump)
 // leads to, with the turn locked by the caller: a spent turn plays out
 // (applyTurnOutcome), else its events are drawn; then any panel or
 // screen it asks for opens.
@@ -276,37 +167,14 @@ export function walkHeld() {
   return shown === 'charger' || shown === 'console' || shown === 'book';
 }
 
-// Hands over the main.js actions, then wires the d-pad, the look
-// and walk sticks and the keys, and starts the walking frame. main.js calls
+// Hands over the main.js actions, then wires the walk stick and the keys, and starts the walking frame. main.js calls
 // it once at load, where these used to be set up.
 export function initControls(actions) {
   ({
     applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
-    realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame,
+    showRoomNote, worldFrame,
   } = actions);
-  window.addEventListener('blur', () => sweep.reset());
   requestAnimationFrame(walkFrame);
-
-  initDpad({
-    buttons: dpadButtons,
-    canWalk: () => roomScreen.classList.contains('show') && !state.run.runEnded,
-    push: padPush,
-  });
-  initLookStick({
-    button: lookStick,
-    // The stick sweeps the light, faster the further it is pushed sideways,
-    // or looks up when pushed up.
-    aim: stickPush,
-    done: () => {
-      sweep.release('stick');
-      holdLookUp('stick', false);
-    },
-    wait: skipTurn,
-    // A tap that does nothing says what the stick does.
-    tap: () => showRoomNote('move-msg', t('room.stickTap')),
-    turn: turnLook,
-    wantsTurn,
-  });
 
   walkStick.setAttribute('aria-label', t('dpad.walkStick'));
   initWalkStick({
@@ -338,30 +206,21 @@ export function initControls(actions) {
 
   // Keys on desktop, ignored while typing in the answer box. The arrows,
   // W A S D, Q / E / Z / C and the number pad walk the way they point on
-  // screen (moveKey, padPush), unless a question on the map is taking number keys. Space held looks up at the
-  // sky (sky eye plan step A). V switches the light (light battery plan).
-  // With One stick on, the move keys are held (walkFrame), X switches
-  // sneaking and U held looks up as Space does.
+  // screen, held down (walkFrame), unless a panel is up. Space or U held
+  // looks up at the sky (sky eye plan step A). X switches sneaking.
   // On the stairs, Enter goes down.
   // Letter and number keys answer a question on the ask screen.
   document.addEventListener('keydown', (e) => {
     if (document.activeElement === answerInput || e.defaultPrevented) return;
     if (!roomScreen.classList.contains('show')) return;
     const numpad = NUMPAD_WAYS[e.code];
-    // One stick: the move keys are held, not pressed (walkFrame).
-    const held = state.settings.oneStick && !mapPanelShown() && (MOVE_KEYS[e.key] || numpad);
+    // The move keys are held, not pressed (walkFrame).
+    const held = !mapPanelShown() && (MOVE_KEYS[e.key] || numpad);
     if (held) { e.preventDefault(); holdWay(held, true); return; }
-    // A held number pad key steps again only once its last step has landed
-    // (walkpace.js), not at the keyboard's own repeat rate.
-    if (e.repeat && numpad && !heldStepReady(performance.now())) { e.preventDefault(); return; }
-    const way = !mapPanelShown() && MOVE_KEYS[e.key];
-    if (way) { e.preventDefault(); moveKey(way, e.repeat); return; }
-    if (numpad && !mapPanelShown()) { e.preventDefault(); padPush(...SCREEN_WAYS[numpad]); }
-    else if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
+    if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
     else if (e.key === ' ' && !mapPanelShown()) { e.preventDefault(); holdLookUp('key', true); }
-    else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); switchLight(); }
-    else if (state.settings.oneStick && (e.key === 'x' || e.key === 'X')) { e.preventDefault(); toggleSneak(); }
-    else if (state.settings.oneStick && (e.key === 'u' || e.key === 'U') && !mapPanelShown()) { e.preventDefault(); holdLookUp('u', true); }
+    else if (e.key === 'x' || e.key === 'X') { e.preventDefault(); toggleSneak(); }
+    else if ((e.key === 'u' || e.key === 'U') && !mapPanelShown()) { e.preventDefault(); holdLookUp('u', true); }
     else if (mapPanelShown() === 'question' && state.settings.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {
       const idxMap = { 1: 0, a: 0, 2: 1, b: 1, 3: 2, c: 2, 4: 3, d: 3 };
       const idx = idxMap[e.key.toLowerCase()];

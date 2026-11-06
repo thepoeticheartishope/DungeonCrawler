@@ -94,12 +94,12 @@ Rules and data (no page/DOM access):
 | `decor.js` | Room themes, pillars, papers, boxes, energy cells, fixed-plan furniture (`makePlacer`). |
 | `passage.js` | `whatBlocks()` (can I step here?), `canPassCorner()`, `stepsAway()`. |
 | `sight.js` | The player's light (`computeVisibility`), the look cone, `canMakeOut`, `shootBlock`, cover. |
-| `look.js` | Free look: body facing vs. aim, `aimLook`, `turnBody`, `sweepLook`, `swingLook`. |
+| `look.js` | The light's angle: body facing, `lookAngle`, `aimLook`, `swingLook`. |
 | `modifiers.js` | The Gambler's most (`maxWager`), `blindReadMs()`, Flip's roll. |
 | `minigames.js` | Minigame rules: which fit a question, rolls, tiers (Close Enough … Sum Lock). |
 | `moves.js` | The player's step (`stepPlayer`), `bumpInto`, `enterTile`, `goldReward`. |
 | `walk.js` | Free walking with One stick: `walkFree()`, sneak and creep. |
-| `walkpace.js` | Smooth walk: every way takes the same time per screen distance. |
+| `walkpace.js` | `stepMs`: a slide's time by its length on screen. |
 | `windows.js` | Windows on outside walls and their pools of light. |
 | `desk.js` | The reflective desk in the start room: heals to full once a floor. |
 | `saferoom.js` | The safe room: shutters, switch, lamp; who waits outside. |
@@ -114,7 +114,7 @@ Drawing and page code:
 | File | Job |
 |---|---|
 | `main.js` | Everything else: wiring, `drawEvents()`, the world's clock and turn outcome, room log, end screens (~830 lines). |
-| `controls.js` | The player's controls: taps, aiming, the sticks and keys, `walkFrame` and `movePlayer`. |
+| `controls.js` | The player's controls: taps aim the light, the walk stick and keys, `walkFrame`. |
 | `gunactions.js` | The ship's questions on the ask screen: breakers, crew jobs, learning, the final boss, dressing a question, Auto-win. |
 | `render.js` | Screens, the HUD (`renderHud()` only writer of hearts / gold / turns), edge glow, d-pad hints. |
 | `mapview.js` | The map canvas, its animations and taps; `requestMapDraw()`, `glyphOf()`, `mapThings()`. |
@@ -139,7 +139,7 @@ Drawing and page code:
 | `setloader.js` | Start screen options and the workshop. |
 | `setpicker.js` | The set screen; `fetchSet()` shared with practice.js. |
 | `practice.js` | Hidden minigame practice screen. |
-| `dpad.js` | The on-screen pad, the walk stick and look stick, `padWay()`. |
+| `dpad.js` | The walk stick (`initWalkStick`, `stickGestures`) and `SCREEN_WAYS`. |
 | `devpanel.js` | The DEV panel (`?dev`) and the Inspect view. |
 
 ## How the game moves
@@ -147,8 +147,6 @@ Drawing and page code:
 - **One stick (always):** controls.js `walkFrame()` runs every animation frame: input →
   walk.js `walkFree()` → moves.js `enterTile()` / `bumpInto()` → events →
   main.js `applyTurnOutcome(events)`. Then `worldFrame()` redraws the ship's HUD.
-- **Turns:** no start option reaches it any more (dungeon removal step B); controls.js
-  `movePlayer()` → `stepPlayer()` is still the DEV One stick OFF path, and goes in step E.
 - **Questions:** a breaker, a crew member's job, a lesson or the final boss → gunactions.js
   (`openBreaker`, `openJob`, `openLearning`, `openBoss`) → the ask screen (gunpanels.js) →
   stations.js / roles.js settle the answer. Combat (the gun, the dial, stick men, the battle

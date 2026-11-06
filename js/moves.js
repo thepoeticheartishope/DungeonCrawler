@@ -10,7 +10,7 @@ import { enterSafeRoom, autoShutters } from './saferoom.js';
 
 import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
-import { followBody, waysInUse } from './look.js';
+import { waysInUse } from './look.js';
 
 import { BOX_GOLD } from './config.js';
 
@@ -47,9 +47,7 @@ function takeKey(index) {
 // (eight ways plan). A press in a new direction turns the player's body to
 // face it, then goes on to step that way in the same press. A diagonal that
 // would cut a corner (passage.js canPassCorner) is a bump, kind 'corner',
-// before anything on the tile itself counts. A turn or a
-// step points the light straight ahead again (look.js followBody), even
-// with free look on. Events: turned { facing } (before the rest),
+// before anything on the tile itself counts. Events: turned { facing } (before the rest),
 // blocked { kind, thing } (kind 'corner' too; with free look, then bodyTurned { facing,
 // bumped: true } if the press turned the body: a spent turn), stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
 // keyTaken { held, total }, paperRead { paper, loot, story? },
@@ -62,7 +60,6 @@ export function stepPlayer(dRow, dCol) {
   const turned = state.floor.facing !== facing;
   if (turned) {
     state.floor.facing = facing;
-    followBody();
     computeVisibility();
     events.push({ type: 'turned', facing });
   }
@@ -84,7 +81,6 @@ export function stepPlayer(dRow, dCol) {
   }
   state.floor.playerRow = newRow;
   state.floor.playerCol = newCol;
-  followBody();
   events.push(...enterTile(facing));
   return events;
 }
