@@ -8,19 +8,6 @@ import { REVEAL_DISTANCE } from './config.js';
 import { solidProp } from './passage.js';
 import { shutterDownAt } from './saferoom.js';
 
-// One step each way the body can face. The 4 grid ways, then the 4
-// diagonals (eight ways plan); on screen the diagonals are straight up,
-// right, down and left (grid NW is screen up).
-export const FACING_VECTORS = {
-  N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1],
-  NE: [-1, 1], SE: [1, 1], SW: [1, -1], NW: [-1, -1],
-};
-
-// The way a one-tile step (dRow, dCol) faces, or null for none.
-export function facingOf(dRow, dCol) {
-  return Object.keys(FACING_VECTORS).find(way => FACING_VECTORS[way][0] === dRow && FACING_VECTORS[way][1] === dCol) || null;
-}
-
 // What the player can see. The ship has no dark areas (ship plan), so
 // every open tile is seen from the start. Seen tiles are remembered (exploredSet), and
 // a paper or box once made out keeps its real glyph from then on.
@@ -39,7 +26,7 @@ export function computeVisibility() {
 // True if a straight line from (fromRow, fromCol) to (row, col) passes no
 // wall, pillar or shutter that is down between them (the ends don't count). A stick man's view
 // of the player's light uses it too (combat.js notice).
-export function clearLine(fromRow, fromCol, row, col) {
+function clearLine(fromRow, fromCol, row, col) {
   const dr = row - fromRow;
   const dc = col - fromCol;
   const steps = Math.max(Math.abs(dr), Math.abs(dc)) * 4;
@@ -58,18 +45,17 @@ export function clearLine(fromRow, fromCol, row, col) {
 // Whether the player is crouched: One stick, sneaking (X) or creeping (a
 // small push on the stick, which stays crouched once let go until they
 // walk again, so a phone can hide too; walk.js).
-export function crouching() {
+function crouching() {
   return state.floor.sneaking || state.floor.creeping;
 }
 
 // Whether (row, col) is cover: something solid that isn't wall, the
 // player hides behind it (a pillar, furniture, a box, a cell, a relay,
-// the desk, the charger, the chest, a shutter that is down). A paper lies
+// the desk, the charger, a shutter that is down). A paper lies
 // flat, an up shutter is open floor; a stick man isn't cover.
 function coverAt(row, col) {
   const f = state.floor;
   if (f.pillarSet.has(key(row, col))) return true;
-  if (f.chest && f.chest.row === row && f.chest.col === col) return true;
   return f.props.some(p => solidProp(p) && p.row === row && p.col === col);
 }
 
@@ -82,25 +68,6 @@ export function besideCover() {
     for (let dc = -1; dc <= 1; dc++) {
       if ((dr || dc) && coverAt(f.playerRow + dr, f.playerCol + dc)) return true;
     }
-  }
-  return false;
-}
-
-// Whether the player, crouched, is hidden from one at (row, col): cover
-// beside them stands on the straight line between (sampled as clearLine
-// does). Then it can't notice them, nor their light (combat.js notice).
-export function hiddenFrom(row, col) {
-  if (!crouching()) return false;
-  const f = state.floor;
-  const dr = f.playerRow - row;
-  const dc = f.playerCol - col;
-  const steps = Math.max(Math.abs(dr), Math.abs(dc)) * 4;
-  for (let i = 1; i < steps; i++) {
-    const r = Math.round(row + (dr * i) / steps);
-    const c = Math.round(col + (dc * i) / steps);
-    if ((r === f.playerRow && c === f.playerCol) || (r === row && c === col)) continue;
-    if (Math.max(Math.abs(r - f.playerRow), Math.abs(c - f.playerCol)) > 1) continue;
-    if (coverAt(r, c)) return true;
   }
   return false;
 }

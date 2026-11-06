@@ -154,16 +154,14 @@ export function rollMinigame(q, offered, group = null) {
   return picked;
 }
 
-// rollMinigame's choice, without recording it.
-// A trapped box that rolls one runs Sum Lock when it can, since that is
-// its own; never twice in a row, like any other.
+// rollMinigame's choice, without recording it. Never the same one twice
+// in a row.
 function pickMinigame(q, offered, group) {
   const mode = state.settings.minigame;
   if (mode === 'off') return null;
   // DEV -> Minigame may force a ship-only one; a roll never picks one.
   const ids = minigamesFor(q).filter(id => mode !== 'roll' || !SHIP_ONLY.includes(id));
   if (letterPoolFits(group)) ids.push('letterPool');
-  if (sumLockFits()) ids.push('sumLock');
   const fits = ids.filter(id => modifiersFor(id, offered));
   if (mode !== 'roll') return fits.includes(mode) ? mode : null;
   const fresh = fits.filter(id => id !== state.run.lastMinigame);
@@ -320,7 +318,7 @@ export function fuelMixPour(engine, size) {
 
 // How many pours over par `engine` has used, vents counted at
 // FUEL_MIX.ventCost each.
-export function fuelMixOver(engine) {
+function fuelMixOver(engine) {
   return engine.pours + engine.vents * FUEL_MIX.ventCost - engine.par;
 }
 
@@ -1367,13 +1365,6 @@ export function sumLockQuestions() {
   });
   sumLockCache = { data, questions };
   return questions;
-}
-
-// Whether the target is a trapped box and the set has two questions to
-// add: Sum Lock can run in place of its question.
-function sumLockFits() {
-  const target = state.battle.selectedTarget;
-  return Boolean(target && target.kind === 'box' && target.trapped) && sumLockQuestions().length >= 2;
 }
 
 // A new lock: two different questions to add (`first`, `second`), their

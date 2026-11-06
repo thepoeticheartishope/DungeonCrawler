@@ -14,12 +14,12 @@ export const BODY_ANGLES = {
 };
 
 // The ways the body can face and walk: all 8 (eight ways plan).
-export function waysInUse() {
+function waysInUse() {
   return Object.keys(BODY_ANGLES);
 }
 
 // The way in use closest to `angle`.
-export function nearestWay(angle) {
+function nearestWay(angle) {
   return waysInUse().reduce((best, way) =>
     Math.abs(wrapAngle(angle - BODY_ANGLES[way])) < Math.abs(wrapAngle(angle - BODY_ANGLES[best])) ? way : best);
 }

@@ -9,7 +9,6 @@ import { state } from './state.js';
 
 import { openJob } from './gunactions.js';
 import { LOOK_POINTER_DEAD } from './config.js';
-import { onStairs } from './moves.js';
 import { requestMapDraw } from './mapview.js';
 import { mapPanelShown } from './gunpanels.js';
 import { t } from './text.js';
@@ -24,7 +23,7 @@ const mcOptionsEl = document.getElementById('mcOptions');
 const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // The main.js actions these call, passed in by initControls.
-let applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
+let applyTurnOutcome, clockMayRun, drawEvents, openCharger, openConsole,
   showRoomNote, worldFrame;
 
 // A tap on the map aims the light at the floor `point` under it.
@@ -140,7 +139,7 @@ function holdWay(way, down) {
 // screen it asks for opens.
 function settleMove(events) {
   const has = (type) => events.some(e => e.type === type);
-  if (has('stepped') || has('propSearched') || has('bodyTurned')) {
+  if (has('stepped') || has('bodyTurned')) {
     applyTurnOutcome(events);
   } else {
     const note = drawEvents(events);
@@ -162,7 +161,7 @@ function settleMove(events) {
 // Whether walking and waiting are held: CHARGE.SYS's wires are (its turns are spent there),
 // COMMAND.SYS's pick is (the ship's console), and the record book read from
 // the map has the map's place.
-export function walkHeld() {
+function walkHeld() {
   const shown = mapPanelShown();
   return shown === 'charger' || shown === 'console' || shown === 'book';
 }
@@ -171,7 +170,7 @@ export function walkHeld() {
 // it once at load, where these used to be set up.
 export function initControls(actions) {
   ({
-    applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
+    applyTurnOutcome, clockMayRun, drawEvents, openCharger, openConsole,
     showRoomNote, worldFrame,
   } = actions);
   requestAnimationFrame(walkFrame);
@@ -208,7 +207,6 @@ export function initControls(actions) {
   // W A S D, Q / E / Z / C and the number pad walk the way they point on
   // screen, held down (walkFrame), unless a panel is up. Space or U held
   // looks up at the sky (sky eye plan step A). X switches sneaking.
-  // On the stairs, Enter goes down.
   // Letter and number keys answer a question on the ask screen.
   document.addEventListener('keydown', (e) => {
     if (document.activeElement === answerInput || e.defaultPrevented) return;
@@ -217,8 +215,7 @@ export function initControls(actions) {
     // The move keys are held, not pressed (walkFrame).
     const held = !mapPanelShown() && (MOVE_KEYS[e.key] || numpad);
     if (held) { e.preventDefault(); holdWay(held, true); return; }
-    if (e.key === 'Enter' && onStairs() && !mapPanelShown()) { e.preventDefault(); goDown(); }
-    else if (e.key === ' ' && !mapPanelShown()) { e.preventDefault(); holdLookUp('key', true); }
+    if (e.key === ' ' && !mapPanelShown()) { e.preventDefault(); holdLookUp('key', true); }
     else if (e.key === 'x' || e.key === 'X') { e.preventDefault(); toggleSneak(); }
     else if ((e.key === 'u' || e.key === 'U') && !mapPanelShown()) { e.preventDefault(); holdLookUp('u', true); }
     else if (mapPanelShown() === 'question' && state.settings.mcMode && ['1', '2', '3', '4', 'a', 'A', 'b', 'B', 'c', 'C', 'd', 'D'].includes(e.key)) {

@@ -1,10 +1,9 @@
-// The map: draws the floor (tiles, fog, walls, pillars, the boss light's
-// mist, items and every actor's glyph) onto one <canvas> from `state`,
-// with a phosphor afterglow and the map's animations (the player's step
-// and bump, warps, pulses, glows, the mist's drift).
+// The map: draws the floor (tiles, walls, props and the player) onto one
+// <canvas> from `state`, with a phosphor afterglow and the map's
+// animations (the player's step and bump, pulses, glows).
 //
 // main.js calls initMapView() once, requestMapDraw() after anything on
-// the map may have changed, slidePlayerOnMap() / bumpOnMap() from their
+// the map may have changed, freeStepOnMap() / bumpOnMap() from their
 // drawEvents cases, and onMapPointer() to hear taps on the map. This file
 // reads state and never changes it.
 //
@@ -13,11 +12,10 @@
 
 import { state, key } from './state.js';
 import {
-  AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO, MAP_GLYPH_SIZES,
+  AFTERGLOW_FADE, AFTERGLOW_SETTLE_MS, MAP_MAX_PIXEL_RATIO,
   MAP_ANIMATION_MS, MAP_DRAG_PX,
 } from './config.js';
-import { canMakeOut, FACING_VECTORS } from './sight.js';
-import { stepMs } from './walkpace.js';
+import { canMakeOut } from './sight.js';
 import { freeSpot } from './walk.js';
 import { t } from './text.js';
 import { drawRoomScene, roomTileAt, roomGridAt } from './roomview.js';
@@ -26,34 +24,15 @@ import { playerStepped, playerBumped } from './playerform.js';
 
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
-const BLOOM_RADIUS = 0.85;   // the hostile bloom behind the boss and minions
-const REMEMBERED_ALPHA = 0.35; // papers and boxes seen before but not lit now
-const COIN_BOB = 0.1;        // how far the coin lifts, as a share of a tile
-const BUMP_DISTANCE = 0.18;  // how far the player nudges into what blocks them, in tiles
-// The glow behind a pulsing glyph at its dim and bright ends: grey level,
-// strength, and blur as a share of a tile.
-const BOSS_GLOW = { dim: [200, 0.5, 0.1], bright: [255, 0.9, 0.29] };
-const ITEM_GLOW = { dim: [180, 0.4, 0.065], bright: [230, 0.85, 0.23] };
-// The black bar of a minion's signal dropout, in tiles from the tile's top-left.
-const GLITCH_BAR = { left: -0.2, top: 0.15, width: 1.4, height: 0.7 };
 
-// Keyframes, as [share of the cycle, value]. The
-// warp's values are [scale x, scale y, skew x, skew y] in degrees; the
-// glitch bar's are its strength; a pulse runs from 0 (dim) to 1 (bright).
-const WARP_KEYS = [
-  [0, [1, 1, 0, 0]], [0.18, [1.06, 0.94, -4, 1]], [0.34, [0.95, 1.05, 2, -3]],
-  [0.52, [1.03, 0.97, 3, 1]], [0.71, [0.97, 1.04, -2, -2]], [0.85, [1.02, 0.98, 1, 2]], [1, [1, 1, 0, 0]],
-];
+// Keyframes, as [share of the cycle, value]: a pulse runs from 0 (dim)
+// to 1 (bright) and back.
 const PULSE_KEYS = [[0, 0], [0.5, 1], [1, 0]];
 
-// The CSS timing curves the animations use (ease, ease-in-out, ease-out),
-// as functions from time (0..1) to progress (0..1).
-const EASE = cubicBezier(0.25, 0.1, 0.25, 1);
+// The CSS timing curve the pulses use (ease-in-out),
+// as a function from time (0..1) to progress (0..1).
 const EASE_IN_OUT = cubicBezier(0.42, 0, 0.58, 1);
-const EASE_OUT = cubicBezier(0, 0, 0.58, 1);
 
-// The key a player's bump is stored under; minions' slides use the minion.
-const PLAYER = 'player';
 
 // Floor beyond the player's memory, a touch warmer than black.
 const HIDDEN_FLOOR = '#050403';
@@ -74,11 +53,8 @@ let lastChange = 0;  // when the scene last changed, for the afterglow's settle
 let lastFrame = 0;   // when the last faded frame was drawn, 0 while idle
 let frameNow = 0;    // this frame's time, which every animation reads
 let looping = false; // the last scene drew something that keeps moving
-// Slides and bumps still playing: minion (or PLAYER) -> { kind, start, ms, ... }.
-const effects = new Map();
-// Each minion's place in its warp and dropout cycles, so they don't move in step.
-const phases = new WeakMap();
-let phaseCount = 0;
+// Until when a bump is still playing (performance.now ms): frames keep coming till then.
+let bumpUntil = 0;
 // How long the last drawn scenes took, in ms, newest last (DEV panel's frame meter).
 const DRAW_TIMES_KEPT = 120;
 const drawTimes = [];
@@ -110,7 +86,7 @@ export function initMapView(canvasEl) {
 
 // The glyph a map thing shows once it's made out, from its term.*.symbol
 // line in text.js (so a room's AREAS overrides can change it).
-export function glyphOf(thing) {
+function glyphOf(thing) {
   return t('term.' + thing.kind + '.symbol');
 }
 
@@ -122,23 +98,6 @@ export function requestMapDraw() {
   queueFrame();
 }
 
-// Slides the player onto the tile they just stepped to, from the one
-// behind them (a step is always one tile toward `facing`), over the
-// step's time on screen (walkpace.js), and tells the stick man's body a
-// step started (playerform.js). A slide still playing starts from where
-// the player shows now.
-export function slidePlayerOnMap(facing) {
-  if (!canvas || reducedMotion.matches) return;
-  const f = state.floor;
-  const [dr, dc] = FACING_VECTORS[facing];
-  const now = performance.now();
-  const running = effects.get(PLAYER);
-  const from = running && running.kind === 'slide' ? slidePlace(running, now) : { row: f.playerRow - dr, col: f.playerCol - dc };
-  effects.set(PLAYER, { kind: 'slide', start: now, ms: stepMs(dr, dc), from, to: { row: f.playerRow, col: f.playerCol } });
-  playerStepped(now, stepMs(dr, dc));
-  requestMapDraw();
-}
-
 // The player walked freely onto a new tile (one stick plan, walk.js): the
 // stick man's body takes a step over `ms`, the time a tile takes at their
 // pace (playerform.js). The spot itself moves every frame, so no slide.
@@ -148,13 +107,12 @@ export function freeStepOnMap(ms) {
   requestMapDraw();
 }
 
-// Nudges the player toward `facing` and back: the feel of walking into
-// something, alongside the d-pad's blocked look; the stick man takes a
-// half step (playerform.js).
-export function bumpOnMap(facing) {
+// The feel of walking into something: the stick man takes a half step
+// (playerform.js) and frames keep coming while it plays.
+export function bumpOnMap() {
   if (!canvas || reducedMotion.matches) return;
   const now = performance.now();
-  effects.set(PLAYER, { kind: 'bump', start: now, ms: MAP_ANIMATION_MS.bump, facing });
+  bumpUntil = now + MAP_ANIMATION_MS.bump;
   playerBumped(now, MAP_ANIMATION_MS.bump);
   requestMapDraw();
 }
@@ -208,12 +166,13 @@ function drawFrame(now) {
   frameHandle = 0;
   if (!fitCanvas()) return;
   const still = reducedMotion.matches;
-  if (dirty || effects.size) lastChange = now;
-  if (dirty || effects.size || (looping && !still)) {
+  const bumping = now < bumpUntil;
+  if (dirty || bumping) lastChange = now;
+  if (dirty || bumping || (looping && !still)) {
     drawScene(now);
     dirty = false;
   }
-  const moving = !still && (looping || effects.size > 0);
+  const moving = !still && (looping || bumping);
   if (snap || still || now - lastChange >= AFTERGLOW_SETTLE_MS) {
     screen.globalCompositeOperation = 'copy';
     screen.drawImage(scene, 0, 0);
@@ -265,7 +224,7 @@ function drawScene(now) {
   ctx.fillStyle = HIDDEN_FLOOR;
   ctx.fillRect(0, 0, scene.width, scene.height);
   const shared = {
-    colours, things: mapThings(), fogOf, paintGlyph, pulse, keepMoving,
+    colours, things: mapThings(), fogOf, pulse, keepMoving,
     showPlain, now, still: reducedMotion.matches, walkAt: freeAt(),
   };
   const size = { width: scene.width, height: scene.height, pageWidth: pageSize.width };
@@ -307,164 +266,35 @@ function fogOf(row, col) {
   return state.floor.exploredSet.has(k) ? 'dim' : 'hidden';
 }
 
-// Every glyph on the map, as a list the room view draws from: { kind, at, tile, glyph, look }. `at` is where it
-// shows this frame in tiles (between tiles while something slides), `tile`
-// the tile the rules have it on (where a slide ends), glyph is
-// null for the '?' of something too far to make out, and look holds the
-// paintGlyph options. Things are seen only on lit tiles, '?' until the
-// player is close enough to make them out, enemies only once made out
-// (no '?' to track them by), stairs always, papers and boxes remembered
-// dimly once seen. The list runs in drawing order: moving things after
-// items, so they draw over them.
+// Every thing on the map, as a list the room view draws from: { kind, at,
+// tile, glyph }. `at` is where it shows this frame in tiles (the player
+// walks between tiles), `tile` the tile the rules have it on, glyph is
+// null for the '?' of something too far to make out. Things are seen only
+// on lit tiles, '?' until the player is close enough to make them out, and
+// props remembered once seen. The player comes last, so they draw over the
+// rest.
 function mapThings() {
   const f = state.floor;
   const things = [];
-  const add = (kind, at, glyph, look, tile = at) => things.push({ kind, at, tile: { row: tile.row, col: tile.col }, glyph, look });
+  const add = (kind, at, glyph, tile = at) => things.push({ kind, at, tile: { row: tile.row, col: tile.col }, glyph });
   const isLit = (row, col) => !state.settings.fogEnabled || f.visibleSet.has(key(row, col));
-  const glyphOrUnknown = (thing, glyph) => (canMakeOut(thing.row, thing.col) ? glyph : null);
-
-  if (f.boss && isLit(f.boss.row, f.boss.col)) {
-    add('boss', f.boss, glyphOrUnknown(f.boss, glyphOf(f.boss)), {
-      size: 'boss', bloom: 0.26, warp: warpAt(MAP_ANIMATION_MS.warp, 0),
-      glow: glowAt(BOSS_GLOW, pulse(MAP_ANIMATION_MS.bossPulse)),
-    });
-  }
 
   f.props.forEach(p => {
     const lit = isLit(p.row, p.col);
     const remembered = state.settings.fogEnabled && !lit && f.exploredSet.has(key(p.row, p.col));
     if (!lit && !remembered) return;
-    // A paper under the player is hidden, so glyphs don't pile up.
-    if (p.kind === 'paper' && p.row === f.playerRow && p.col === f.playerCol) return;
     const known = !state.settings.fogEnabled || p.identified || canMakeOut(p.row, p.col);
-    // An unused energy cell breathes a faint glow (roomview.js drawCell).
-    const breath = p.kind === 'cell' && !p.searched && !remembered ? pulse(MAP_ANIMATION_MS.cellBreath, phaseOf(p) * MAP_ANIMATION_MS.cellBreath) : null;
-    // An unused reflective desk sits in a pool of the kind voice's warm
-    // light (roomview.js drawDesk), remembered ones too: it says "safe"
-    // and calls the player back. Spent, the pool is gone.
-    const deskGlow = p.kind === 'desk' && !p.searched ? pulse(MAP_ANIMATION_MS.deskGlow) : null;
-    add(p.kind, p, known ? glyphOf(p) : null, {
-      size: 'prop', colour: p.searched ? colours.muted : deskGlow !== null ? 'rgb(' + colours.kindRgb + ')' : colours.torch, alpha: remembered ? REMEMBERED_ALPHA : 1, breath, deskGlow,
-    });
+    add(p.kind, p, known ? glyphOf(p) : null);
   });
-  if (f.coin && isLit(f.coin.row, f.coin.col)) {
-    add('coin', f.coin, glyphOrUnknown(f.coin, t('term.gold.symbol')), {
-      size: 'coin', lift: COIN_BOB * pulse(MAP_ANIMATION_MS.coinBob), moves: true,
-    });
-  }
-  // A key glows like the stairs, so a lit one isn't missed in a room.
-  f.keys.forEach(k => {
-    if (!isLit(k.row, k.col)) return;
-    add('key', k, glyphOrUnknown(k, t('term.key.symbol')), {
-      size: 'key', colour: colours.bright, glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
-    });
-  });
-  if (f.chest && isLit(f.chest.row, f.chest.col)) {
-    add('chest', f.chest, glyphOrUnknown(f.chest, glyphOf(f.chest)), { size: 'chest' });
-  }
-  // The stairs are never lost in the fog: they're the way out (both of
-  // them on a between-rest).
-  [f.stairs, f.stairsAlt].filter(Boolean).forEach(s => {
-    add('stairs', s, t('term.exit.symbol'), {
-      size: 'stairs', colour: colours.bright, glow: glowAt(ITEM_GLOW, pulse(MAP_ANIMATION_MS.glow)),
-    });
-  });
-  add('player', freeAt(), t('term.player.symbol'), { size: 'player' },
-    { row: f.playerRow, col: f.playerCol });
+  add('player', freeAt(), t('term.player.symbol'), { row: f.playerRow, col: f.playerCol });
   return things;
 }
 
-// Paints one glyph centred on (x, y) in canvas pixels, sized for a tile
-// `cell` pixels wide, with the terminal's soft phosphor glow. The room
-// view paints with it. A null glyph is the '?' of something too far to make
-// out: dim, and without the hostile bloom or any animation.
-// Look options: size (a MAP_GLYPH_SIZES key), colour, alpha, bloom (the
-// strength of the glow behind a hostile glyph), warp ([scale x, scale y,
-// skew x, skew y] round the glyph's middle, bloom and dropout included),
-// glow ([grey, strength, blur] in place of the soft glow), dropout (the
-// strength of a minion's black signal bar over it), lift (how far it rises
-// off its tile, in tiles; the views place it) and moves (it animates with
-// no other option saying so, like the coin's bob).
-function paintGlyph(ctx, cell, x, y, glyph, { size, colour = colours.text, alpha = 1, bloom = 0, warp, glow, dropout = 0, moves = false }) {
-  const known = glyph !== null;
-  if (known && (warp || glow || moves)) looping = true;
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.translate(x, y);
-  if (known && warp) {
-    const [sx, sy, kx, ky] = warp;
-    const rad = Math.PI / 180;
-    ctx.transform(sx, sy * Math.tan(ky * rad), sx * Math.tan(kx * rad), sy, 0, 0);
-  }
-  if (known && bloom) {
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, cell * BLOOM_RADIUS);
-    g.addColorStop(0, 'rgba(' + colours.glowRgb + ', ' + bloom + ')');
-    g.addColorStop(0.55, 'rgba(' + colours.glowRgb + ', ' + (bloom / 4) + ')');
-    g.addColorStop(0.75, 'rgba(' + colours.glowRgb + ', 0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(-cell, -cell, cell * 2, cell * 2);
-  }
-  ctx.font = Math.round(cell * MAP_GLYPH_SIZES[size]) + 'px VT323, monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = known ? colour : colours.muted;
-  if (known && glow) {
-    const [grey, strength, blur] = glow;
-    ctx.shadowColor = 'rgba(' + grey + ', ' + grey + ', ' + grey + ', ' + strength + ')';
-    ctx.shadowBlur = cell * blur;
-  } else {
-    ctx.shadowColor = 'rgba(' + colours.glowRgb + ', 0.35)';
-    ctx.shadowBlur = cell * 0.2;
-  }
-  ctx.fillText(known ? glyph : t('term.unknown.symbol'), 0, 0);
-  ctx.shadowBlur = 0;
-  if (known && dropout > 0) {
-    ctx.globalAlpha = alpha * dropout;
-    ctx.fillStyle = '#000';
-    ctx.fillRect((GLITCH_BAR.left - 0.5) * cell, (GLITCH_BAR.top - 0.5) * cell, GLITCH_BAR.width * cell, GLITCH_BAR.height * cell);
-  }
-  ctx.restore();
-}
-
-// Where something shows this frame, in tiles: its own tile, or part way
-// through a slide or bump still playing. A finished effect is dropped, and
-// so is a slide the thing has since left (the hunter thrown back, a new
-// floor), so it shows where it is.
-function shownAt(effectKey, row, col) {
-  const fx = effects.get(effectKey);
-  if (!fx) return { row, col };
-  const done = (frameNow - fx.start) / fx.ms >= 1;
-  const left = fx.kind === 'slide' && (fx.to.row !== row || fx.to.col !== col);
-  if (done || left) {
-    effects.delete(effectKey);
-    return { row, col };
-  }
-  if (fx.kind === 'slide') return slidePlace(fx, frameNow);
-  const [dr, dc] = FACING_VECTORS[fx.facing];
-  const out = BUMP_DISTANCE * sampleKeys(PULSE_KEYS, (frameNow - fx.start) / fx.ms, EASE_OUT);
-  return { row: row + dr * out, col: col + dc * out };
-}
-
-// How far along its slide a minion (or the player) is at `now`, as a place in tiles.
 // Where free walking has the player (one stick plan, walk.js), as a place
 // in tiles like a slide's (the tile's top-left corner).
 function freeAt() {
   const at = freeSpot();
   return { row: at.y - 0.5, col: at.x - 0.5 };
-}
-
-function slidePlace(fx, now) {
-  const hold = fx.hold || 0;
-  const s = EASE(Math.min(1, Math.max(0, ((now - fx.start) / fx.ms - hold) / (1 - hold))));
-  return { row: fx.from.row + (fx.to.row - fx.from.row) * s, col: fx.from.col + (fx.to.col - fx.from.col) * s };
-}
-
-// A minion's own place in its warp and dropout cycles, from 0 to 1. Spread
-// by the golden ratio, not Math.random: the seeded tests replace
-// Math.random, and drawing must never use up their numbers.
-function phaseOf(thing) {
-  if (!phases.has(thing)) phases.set(thing, (phaseCount++ * 0.618034) % 1);
-  return phases.get(thing);
 }
 
 // Where a looping pulse is this frame, from 0 (dim) to 1 (bright) and back
@@ -473,18 +303,6 @@ function phaseOf(thing) {
 function pulse(period, offsetMs = 0) {
   if (reducedMotion.matches) return 0.5;
   return sampleKeys(PULSE_KEYS, ((frameNow + offsetMs) % period) / period, EASE_IN_OUT);
-}
-
-// The boss's or a minion's warp this frame, as [scale x, scale y, skew x,
-// skew y]. None under reduced motion.
-function warpAt(period, offsetMs) {
-  if (reducedMotion.matches) return null;
-  return sampleKeys(WARP_KEYS, ((frameNow + offsetMs) % period) / period, EASE_IN_OUT);
-}
-
-// A glyph's glow part way between its dim and bright ends.
-function glowAt({ dim, bright }, amount) {
-  return dim.map((v, i) => v + (bright[i] - v) * amount);
 }
 
 // The value of a keyframe list at `at` (0..1 through the cycle), eased

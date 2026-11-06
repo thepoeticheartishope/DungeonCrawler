@@ -1,5 +1,5 @@
-// Unit tests for plans.js: every fixed plan keeps its own rules in both
-// versions, and buildPlanLayout lays it out the way floor.js expects.
+// Unit tests for plans.js: the ship's plan keeps its own rules, and
+// buildPlanLayout lays it out the way floor.js expects.
 //
 // Run: node --test tests/*.test.mjs
 
@@ -11,13 +11,9 @@ import { FOUR_STEPS } from '../js/grid.js';
 
 import { key } from '../js/state.js';
 
-import { CORE_KEYS } from '../js/config.js';
-
-import { FLOOR_PLANS, PLAN_VERSIONS, buildPlanLayout } from '../js/plans.js';
+import { FLOOR_PLANS, buildPlanLayout } from '../js/plans.js';
 
 import { TEXT } from '../js/text.js';
-
-
 
 // Steps from `start` to every open tile it can reach on a size x size
 // grid, never through `blocked`.
@@ -37,79 +33,18 @@ function stepsFrom(layout, size, start, blocked = new Set()) {
   return dist;
 }
 
-// Every danger-floor plan in both versions. The ship has no core, gate or
-// keys, so it has its own checks below.
-function eachPlanVersion(check) {
-  Object.entries(FLOOR_PLANS).filter(([, plan]) => !plan.ship).forEach(([id, plan]) => {
-    PLAN_VERSIONS.forEach(v => check(buildPlanLayout(plan, CORE_KEYS, v), plan, id + ' ' + v));
-  });
-}
-
-test('the ship reaches every open tile from the start, with no gate, stairs or keys', () => {
+test('the ship reaches every open tile from the start', () => {
   const plan = FLOOR_PLANS.ship;
   const size = plan.rows.length;
-  PLAN_VERSIONS.forEach(v => {
-    const layout = buildPlanLayout(plan, CORE_KEYS, v);
-    assert.equal(stepsFrom(layout, size, layout.start).size, size * size - layout.walls.size, v + ': tiles cut off');
-    assert.equal(layout.spawn, undefined, v);
-    assert.equal(layout.stairs, undefined, v);
-    assert.deepEqual(layout.keys, [], v);
-  });
-});
-
-// Timothy 2026-11-02: no random wall in the ship's side halls, so the
-// ship is the same building in both versions.
-test('the ship has no version walls: both versions are the same', () => {
-  const plan = FLOOR_PLANS.ship;
-  const [a, b] = PLAN_VERSIONS.map(v => buildPlanLayout(plan, CORE_KEYS, v));
-  assert.deepEqual([...a.walls].sort(), [...b.walls].sort());
-});
-
-test('the start reaches every open tile, and the stairs only through the gate', () => {
-  eachPlanVersion((layout, plan, label) => {
-    const size = plan.rows.length;
-    const open = size * size - layout.walls.size;
-    assert.equal(stepsFrom(layout, size, layout.start).size, open, label + ': tiles cut off');
-    const gate = new Set([key(layout.spawn.row, layout.spawn.col)]);
-    assert.ok(!stepsFrom(layout, size, layout.start, gate).has(key(layout.stairs.row, layout.stairs.col)), label + ': stairs reachable without the gate');
-  });
-});
-
-test('the core is one room with the gate as its only doorway and the stairs inside', () => {
-  eachPlanVersion((layout, plan, label) => {
-    const cores = layout.chambers.filter(ch => ch.isBoss);
-    assert.equal(cores.length, 1, label);
-    const core = layout.chambers.indexOf(cores[0]);
-    assert.deepEqual([...cores[0].doorKeys], [key(layout.spawn.row, layout.spawn.col)], label + ': core doorways');
-    assert.equal(layout.chamberAt.get(key(layout.stairs.row, layout.stairs.col)), core, label + ': stairs outside the core');
-    assert.notEqual(layout.chamberAt.get(key(layout.start.row, layout.start.col)), core, label + ': start in the core');
-  });
-});
-
-test('no key spot is in the core or the start room, and keys go in different rooms', () => {
-  eachPlanVersion((layout, plan, label) => {
-    const core = layout.chambers.findIndex(ch => ch.isBoss);
-    const startRoom = layout.chamberAt.get(key(layout.start.row, layout.start.col));
-    layout.keySpots.forEach(p => {
-      const room = layout.chamberAt.get(key(p.row, p.col));
-      assert.notEqual(room, core, label + ': key spot in the core');
-      assert.notEqual(room, startRoom, label + ': key spot in the start room');
-    });
-    for (let i = 0; i < 20; i++) {
-      const again = buildPlanLayout(plan, CORE_KEYS, layout.version);
-      assert.equal(again.keys.length, CORE_KEYS, label);
-      const rooms = again.keys.map(p => again.chamberAt.get(key(p.row, p.col))).filter(r => r !== undefined);
-      assert.equal(new Set(rooms).size, rooms.length, label + ': two keys in one room');
-    }
-  });
+  const layout = buildPlanLayout(plan);
+  assert.equal(stepsFrom(layout, size, layout.start).size, size * size - layout.walls.size, 'tiles cut off');
 });
 
 test('each room\'s doorways are its own floor, and every room tile is in the room tiles', () => {
-  eachPlanVersion((layout, plan, label) => {
-    layout.chambers.forEach((ch, i) => {
-      ch.doorKeys.forEach(k => assert.equal(layout.chamberAt.get(k), i, label + ' ' + ch.name));
-      ch.floorCells.forEach(p => assert.ok(layout.roomTiles.has(key(p.row, p.col)), label + ' ' + ch.name));
-    });
+  const layout = buildPlanLayout(FLOOR_PLANS.ship);
+  layout.chambers.forEach((ch, i) => {
+    ch.doorKeys.forEach(k => assert.equal(layout.chamberAt.get(k), i, ch.name));
+    ch.floorCells.forEach(p => assert.ok(layout.roomTiles.has(key(p.row, p.col)), ch.name));
   });
 });
 

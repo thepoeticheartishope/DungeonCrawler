@@ -30,7 +30,7 @@ export function initMinimap() {
 }
 
 // Whether the minimap is showing: the book is open at its MAP page.
-export function minimapShown() {
+function minimapShown() {
   return !!els.canvas && els.canvas.offsetParent !== null;
 }
 

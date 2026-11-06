@@ -184,7 +184,7 @@ export function openBreaker(station, index) {
 // came from, for DEV -> Minigame forcing one (minigames.js forcedQuestion).
 // `group` is the category the player picked it from, if any, which a
 // Letter Pool can run instead.
-export function askQuestion(q, modifiers, pool, group = null) {
+function askQuestion(q, modifiers, pool, group = null) {
   setQuestion(forcedQuestion(q, pool));
   dressQuestion(modifiers, group);
 }
@@ -192,7 +192,7 @@ export function askQuestion(q, modifiers, pool, group = null) {
 // Rolls whether the question showing runs as a minigame (minigames.js
 // rollMinigame: only one that can carry all of `modifiers`), then puts
 // the modifiers on it. A Letter Pool swaps the question for its stand-in.
-export function dressQuestion(modifiers, group = null) {
+function dressQuestion(modifiers, group = null) {
   const list = modifiers.filter(Boolean);
   const minigame = rollMinigame(state.battle.currentQuestion, list, group);
   if (minigame === 'letterPool') setQuestion(letterPoolQuestion(group));

@@ -181,12 +181,11 @@ async function checkShip(page, url) {
     const dark = [...f.chamberAt.keys()].filter(k => !f.visibleSet.has(k)).length;
     const console = f.props.find(p => p.kind === 'console');
     const board = f.props.find(p => p.kind === 'powerBoard');
-    return { ship: f.ship, room, dark, minions: f.minions.length, console, board };
+    return { ship: f.ship, room, dark, console, board };
   });
   if (!start.ship) return 'the ship option did not start on the ship';
   if (start.room !== 'plan.ship.command') return 'did not start in Command: ' + start.room;
   if (start.dark) return start.dark + ' room tiles not seen: the ship should have no dark areas';
-  if (start.minions) return 'stick men on the ship';
   if (!start.console || !start.board) return 'no console or power board';
 
   // The console: COMMAND.SYS's roles (crew roles plan step B), the

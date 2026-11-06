@@ -1,50 +1,35 @@
 // The ship's floor plan (ship plan, ideas/ship-plan.md outside the repo):
 // the same every run. floor.js buildShipFloor() calls buildPlanLayout().
-// The dungeon's other plans went in dungeon removal step D (the old PRs
-// keep them); the layout code still reads their tiles (gate, stairs, keys,
-// versions).
+// The dungeon's plans and their gate, stairs, keys and versions went in
+// dungeon removal steps D and E2 (the old PRs keep them).
 //
-// Draw a plan as rows of text, all the same length, one per grid row:
+// Draw the plan as rows of text, all the same length, one per grid row:
 //   #  wall
 //   .  floor
-//   G  the gate: the core's one way in, where the boss stands
-//   X  the stairs, inside the core
-//   S  where the player wakes
-//   K  a key spot: CORE_KEYS of them hold a key each run
-//   a  floor only in version A (wall in B)
-//   b  floor only in version B (wall in A)
-// Rooms are rectangles of floor (r0, c0 to r1, c1, inclusive); the one
-// with `core: true` is the core. Floor outside every room is hallway. A
-// hallway tile beside a room is that room's doorway, as in rooms.js.
-// A plan's and its rooms' `name` are text.js keys: the room's name shows
-// the first time the player walks in (moves.js roomEntered) and on the
-// minimap. Depth 1 is the keeper; depths 2 and 3 are drafts Timothy will
-// redraw and rename.
+//   S  where the player wakes (Command)
+// Rooms are rectangles of floor (r0, c0 to r1, c1, inclusive). Floor
+// outside every room is hallway; a hallway tile beside a room is that
+// room's doorway. The plan's and its rooms' `name`s are text.js keys: a
+// room's name shows the first time the player walks in (moves.js
+// roomEntered) and on the minimap.
 // A room's `furniture` (room view plan step E) lists its pieces as
 // [piece, row, col, width]: width tiles along the row from (row, col),
 // 1 when left out. The same pieces stand there every run. decor.js puts
 // them down first, as solid props of kind 'furniture' that block walking
-// but not the light; one that would cut the floor in two, or stand on a
-// doorway, the start, a key spot, the gate or the stairs, is left out.
-// The pieces are the ones roomview.js draws (FURNITURE_PIECES in
-// config.js). Only the School is furnished so far.
-// A room's `spots` (room spots plan, ideas/room-spots-plan.md outside the
-// repo; Timothy 2026-10-28) are places that may hold something to help the
-// player: [row, col, kinds], each on one of the room's furniture tiles,
-// `kinds` what it may hold (SPOT_KINDS in config.js). Each run spots.js
-// rolls each one: one of its kinds, or nothing a third of the time.
+// but not sight; one that would cut the floor in two, or stand on a
+// doorway or the start, is left out. The pieces are the ones roomthings.js
+// draws (FURNITURE_PIECES in config.js).
+// `stations` are [kind, row, col, role] (stations.js placeStations).
 // No DOM access here.
 
 import { key } from './state.js';
 import { FOUR_STEPS } from './grid.js';
-import { SPOT_KINDS } from './config.js';
 
 export const FLOOR_PLANS = {
   // No 'a'/'b' tiles: both side halls by Command are always open, so the
   // player can walk the whole ship every run (Timothy 2026-11-02).
   ship: {
     name: 'plan.ship',
-    ship: true,
     stations: [
       ['console', 12, 14, 'engineer'],
       ['powerBoard', 12, 4, 'engineer'],
@@ -129,72 +114,25 @@ export const FLOOR_PLANS = {
   },
 };
 
-export const PLAN_VERSIONS = ['A', 'B'];
-
-// Takes `count` random items from `list`, never the same one twice.
-function pickSome(list, count) {
-  const pool = list.slice();
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool.slice(0, count);
-}
-
-// The key spots that will hold keys: `count` of the plan's spots, never
-// two in the same room, so finding one key never gives away the room the
-// next is in. A spot in a hallway counts as a room of its own.
-function pickKeySpots(spots, chamberAt, count) {
-  const picked = [];
-  const rooms = new Set();
-  for (const p of pickSome(spots, spots.length)) {
-    const room = chamberAt.get(key(p.row, p.col));
-    if (room !== undefined && rooms.has(room)) continue;
-    if (room !== undefined) rooms.add(room);
-    picked.push(p);
-    if (picked.length === count) break;
-  }
-  return picked;
-}
-
-// Throws when one of `room`'s spots is not on one of its furniture tiles or
-// names a kind spots.js doesn't know: a mistake in this file.
-function checkSpots(planName, room) {
-  (room.spots || []).forEach(([row, col, kinds]) => {
-    const onPiece = (room.furniture || []).some(([, r, c, width = 1]) => r === row && col >= c && col < c + width);
-    if (!onPiece) throw new Error(planName + ': spot ' + row + ',' + col + ' is not on furniture in ' + room.name);
-    if (!kinds.length || kinds.some(k => !SPOT_KINDS.includes(k))) throw new Error(planName + ': spot ' + row + ',' + col + ' has an unknown kind');
-  });
-}
-
-// A floor layout built from a fixed plan, in the same shape as dungeon.js
-// generateDungeonLayout returns (walls, roomTiles, chambers, chamberAt,
-// start, spawn = the gate, stairs, keys), plus `version` and `keySpots`.
-// `version` is 'A' or 'B' (random if left out); `keyCount` key spots
-// get keys. A plan that breaks its own rules is a mistake in this file,
-// so it throws.
-export function buildPlanLayout(plan, keyCount, version = null) {
-  const v = version || PLAN_VERSIONS[Math.floor(Math.random() * PLAN_VERSIONS.length)];
+// The ship's layout from its plan: walls, the room tiles (every room's
+// floor and doorways), each room (`chambers`: floorCells, doorKeys, name,
+// furniture), which room each tile is in (`chamberAt`), and the start. A
+// plan that breaks its own rules is a mistake in this file, so it throws.
+export function buildPlanLayout(plan) {
   const size = plan.rows.length;
   const walls = new Set();
   const floor = new Set();
-  const found = { G: [], X: [], S: [], K: [] };
+  const starts = [];
   plan.rows.forEach((row, r) => {
     if (row.length !== size) throw new Error(plan.name + ': row ' + r + ' is not ' + size + ' long');
     [...row].forEach((ch, c) => {
-      const open = ch !== '#' && (ch !== 'a' || v === 'A') && (ch !== 'b' || v === 'B');
-      (open ? floor : walls).add(key(r, c));
-      if (found[ch]) found[ch].push({ row: r, col: c });
+      (ch === '#' ? walls : floor).add(key(r, c));
+      if (ch === 'S') starts.push({ row: r, col: c });
     });
   });
-  // A ship plan has no gate or stairs: only the start.
-  (plan.ship ? ['S'] : ['G', 'X', 'S']).forEach(ch => {
-    if (found[ch].length !== 1) throw new Error(plan.name + ': needs exactly one ' + ch);
-  });
+  if (starts.length !== 1) throw new Error(plan.name + ': needs exactly one S');
 
-  // Each room's floor, then its doorways: hallway tiles beside it. The
-  // gate is the core's doorway, so it counts as the core's, as the boss's
-  // door does on a random floor.
+  // Each room's floor, then its doorways: hallway tiles beside it.
   const chamberAt = new Map();
   const chambers = plan.rooms.map((room, i) => {
     const floorCells = [];
@@ -205,11 +143,7 @@ export function buildPlanLayout(plan, keyCount, version = null) {
         chamberAt.set(key(r, c), i);
       }
     }
-    checkSpots(plan.name, room);
-    return {
-      floorCells, doorKeys: new Set(), slots: [], name: room.name, isBoss: !!room.core,
-      furniture: room.furniture || [], spots: room.spots || [],
-    };
+    return { floorCells, doorKeys: new Set(), name: room.name, furniture: room.furniture || [] };
   });
   chambers.forEach((ch, i) => {
     ch.floorCells.slice().forEach(p => FOUR_STEPS.forEach(([dr, dc]) => {
@@ -220,15 +154,5 @@ export function buildPlanLayout(plan, keyCount, version = null) {
       ch.floorCells.push({ row: p.row + dr, col: p.col + dc });
     }));
   });
-  const roomTiles = new Set(chamberAt.keys());
-
-  const keySpots = found.K;
-  // A ship has no core, so no keys.
-  const wanted = plan.ship ? 0 : keyCount;
-  const keys = pickKeySpots(keySpots, chamberAt, wanted);
-  if (keys.length < wanted) throw new Error(plan.name + ': not enough key spots in different rooms');
-  return {
-    walls, roomTiles, chambers, chamberAt, keys, keySpots, version: v,
-    start: found.S[0], spawn: found.G[0], stairs: found.X[0],
-  };
+  return { walls, roomTiles: new Set(chamberAt.keys()), chambers, chamberAt, start: starts[0] };
 }

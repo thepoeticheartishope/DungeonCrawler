@@ -42,11 +42,6 @@ export function rollTragedy(rand = Math.random) {
   };
 }
 
-// The crew's panic now: 0 Calm to SHIP_RUN.brokenAt Broken.
-export function panicLevel() {
-  return state.run.ship ? state.run.ship.panic : 0;
-}
-
 // A failure while teaching: panic up a step and the run of right answers
 // broken. At Broken the run is lost. A shield (the Comms officer's)
 // takes the step instead, once.

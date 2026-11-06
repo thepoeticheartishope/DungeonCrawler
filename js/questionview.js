@@ -247,7 +247,7 @@ function restartCountdown() {
 }
 
 // Gambler: the player bet `n`, so the answers unlock.
-export function placeWager(n) {
+function placeWager(n) {
   if (state.battle.wager || wagerRow.hidden) return;
   state.battle.wager = n;
   wagerRow.hidden = true;
@@ -296,13 +296,6 @@ export function setMinigame(id) {
   queryPanel.classList.toggle('minigame-asks', minigameAsks());
   // One that draws the question's picture itself (Fog Reveal) hides this one.
   queryPanel.classList.toggle('minigame-image', minigameDrawsImage());
-}
-
-// Types the question now showing again. A question is often set well
-// before it is seen (off-screen, at room load), so the typing would
-// otherwise be missed.
-export function retypeQuestion() {
-  typeText(enemyName, state.battle.currentQuestion.term);
 }
 
 attackBtn.addEventListener('click', () => handlers.onTyped(answerInput.value));

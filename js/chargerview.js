@@ -1,4 +1,4 @@
-// CHARGE.SYS, the charger's panel (charger plan step B, `ideas/charger-plan.md`
+// CHARGE.SYS, the charger's panel (charger plan step B, `ideas/reference/dungeon/charger-plan.md`
 // outside the repo): a box of wires over the map, not on the ask screen, so
 // the room, the static and anything coming stay in view. A tap on a wire
 // turns it; arrows move between wires, Enter / Space (the focused button)

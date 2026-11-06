@@ -28,16 +28,14 @@ export function makePlacer(layout, gridSize) {
   const examinable = new Set();
 
   // Never solid: doorways and the tile either side of them, where the
-  // player starts, the boss's door, the stairs and the keys.
+  // player starts.
   const reserved = new Set();
   layout.chambers.forEach(ch => ch.doorKeys.forEach(k => {
     reserved.add(k);
     const { row, col } = parseKey(k);
     FOUR_STEPS.forEach(([dr, dc]) => reserved.add(key(row + dr, col + dc)));
   }));
-  // Every key spot on a fixed plan, not only this run's, so its furniture
-  // stands the same every run. The ship has no boss's door or stairs.
-  [layout.start, layout.spawn, layout.stairs, ...(layout.keys || []), ...(layout.keySpots || [])].filter(Boolean).forEach(p => reserved.add(key(p.row, p.col)));
+  reserved.add(key(layout.start.row, layout.start.col));
 
   const startKey = key(layout.start.row, layout.start.col);
 
