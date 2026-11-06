@@ -13,7 +13,6 @@ import { t } from './text.js';
 
 const revealToggle = document.getElementById('revealToggle');
 const dpadRightToggle = document.getElementById('dpadRightToggle');
-const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 const roomControls = document.querySelector('.room-controls');
 const playerNameInput = document.getElementById('playerName');
 const workshopScreen = document.getElementById('workshopScreen');
@@ -50,7 +49,6 @@ export function initSetLoader({ showSets }) {
       localStorage.setItem(OPTION_STORAGE_KEY, JSON.stringify({
         revealOnWrong: revealToggle.checked,
         dpadRight: dpadRightToggle.checked,
-        simpleEnemies: simpleEnemiesToggle.checked,
         playerName: playerNameInput.value,
       }));
     } catch (e) {
@@ -68,13 +66,11 @@ export function initSetLoader({ showSets }) {
   const savedOptions = loadSavedOptions();
   if (typeof savedOptions.revealOnWrong === 'boolean') revealToggle.checked = savedOptions.revealOnWrong;
   if (typeof savedOptions.dpadRight === 'boolean') dpadRightToggle.checked = savedOptions.dpadRight;
-  if (typeof savedOptions.simpleEnemies === 'boolean') simpleEnemiesToggle.checked = savedOptions.simpleEnemies;
   placeDpad();
   playerNameInput.maxLength = PLAYER_NAME_MAX_LENGTH;
   if (typeof savedOptions.playerName === 'string') playerNameInput.value = savedOptions.playerName.slice(0, PLAYER_NAME_MAX_LENGTH);
 
   revealToggle.addEventListener('change', saveOptions);
-  simpleEnemiesToggle.addEventListener('change', saveOptions);
   dpadRightToggle.addEventListener('change', () => { placeDpad(); saveOptions(); });
   playerNameInput.addEventListener('input', saveOptions);
 

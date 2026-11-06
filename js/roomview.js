@@ -43,13 +43,11 @@ import { lookAngle, wrapAngle } from './look.js';
 import { playerPose, playerActive, resetPlayerForm, emberGlow } from './playerform.js';
 import { figurePose, projectFigure, phiOfAngle, resetFigure } from './figure3d.js';
 import { isWall, grain } from './mapshared.js';
-import { lampsOn, lampPoolLit } from './lamps.js';
 import {
-  FLAT, STAND, HALL_LAMP, POOL, drawThingsWith, bulbAt, hallLampSpot, drawLamp, drawLampShade, drawMist,
-  lampLevel, shadeAt, drawEmberHead, STICK_LINE,
+  FLAT, STAND, POOL, drawThingsWith, drawLamp, drawLampShade, drawEmberHead, STICK_LINE,
 } from './roomthings.js';
 import { startGunFrame, holdBook, drawBook, drawBookInto } from './roomgun.js';
-import { startSkyFrame, drawWindow, drawPool, drawSky, drawShipView } from './roomsky.js';
+import { startSkyFrame, drawWindow, drawSky, drawShipView } from './roomsky.js';
 
 const T = ROOM_VIEW.tilePx;
 
@@ -102,7 +100,6 @@ const PILLAR = { body: '#4a4652', light: '#5a5662', dark: '#38343f', top: '#625d
 // white, the dim room and memory a touch violet.
 const LIT_TINT = [228, 240, 244];
 const DIM_TINT = [244, 236, 255];
-const LAMP_TINT = [255, 214, 170];
 const HIDDEN_HEAD = 0.45;        // hidden in a room spot, how high his head shows, a share of his height
 
 // How each kind of thing is drawn (step B; tests/roomview.test.mjs checks
@@ -221,7 +218,7 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   const oy = Math.round(shownCam.y);
   drawThingsWith(bctx, gctx, look);
   startGunFrame(bctx);
-  startSkyFrame(gctx, look, scale);
+  startSkyFrame(look, scale);
 
   // The picture: the still floor, then what stands on it, back to front.
   bctx.globalCompositeOperation = 'source-over';
@@ -257,9 +254,6 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   items.push({ y: at.row + (f.hidden ? 1.01 : ROOM_VIEW.footAt + 0.01), draw: () => drawStickMan(at, ox, oy) });
   // The safe room's lamp hangs from the ceiling, over all of it.
   if (f.safeRoom && space.room === f.safeRoom.chamber) items.push({ y: Infinity, draw: () => drawLampShade(ox, oy) });
-  // A plan's lamps hang the same way, in the halls as well as rooms.
-  const lamps = f.lamps.filter(l => inView(l.row, l.col));
-  lamps.forEach(l => items.push({ y: Infinity, draw: () => shadeAt(...hallLampSpot(l, ox, oy)) }));
   items.sort((a, b) => a.y - b.y).forEach(item => item.draw());
 
   // The light, multiplied over it.
@@ -277,17 +271,11 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   gctx.fillStyle = g;
   gctx.fillRect(head.x - ROOM_VIEW.ember.radius * T, head.y - ROOM_VIEW.ember.radius * T, ROOM_VIEW.ember.radius * T * 2, ROOM_VIEW.ember.radius * T * 2);
   const lit = built.windows.filter(w => w.room === space.room);
-  // Space throws no light in: only the old warm windows have a pool.
-  lit.filter(w => !w.view).forEach(w => drawPool(w, ox, oy));
   const safe = f.safeRoom;
-  if (safe && safe.lamp && space.room === safe.chamber) drawLamp(ox, oy, glows);
-  if (lampsOn()) lamps.filter(l => !state.settings.fogEnabled || f.visibleSet.has(key(l.row, l.col))).forEach(l => glows.push(() => bulbAt(...hallLampSpot(l, ox, oy), HALL_LAMP.bulb)));
+  if (safe && space.room === safe.chamber) drawLamp(ox, oy, glows);
   bctx.globalCompositeOperation = 'multiply';
   bctx.drawImage(glow, 0, 0);
-  // The windows' glass glows from outside, behind whoever stands in front.
   bctx.globalCompositeOperation = 'source-over';
-  const warm = lit.filter(w => !w.view);
-  glassBehind(warm, items, glows, POOL.glass, c => warm.forEach(w => c.drawImage(built.world, w.col * T, (w.row - 1) * T, 2 * T, 2 * T, w.col * T - ox, (w.row - 1) * T - oy, 2 * T, 2 * T)));
   // A ship window's view of space stays near its own brightness (only the
   // glass, so its frame takes the ship's light like the wall), scrolling
   // slowly as the ship flies (still under reduced motion).
@@ -296,7 +284,6 @@ export function drawRoomScene(ctx, canvasSize, shared) {
   // What gives off its own light, over the lit picture.
   bctx.globalCompositeOperation = 'lighter';
   glows.forEach(draw => draw());
-  drawMist(c0, r0, c1, r1, ox, oy);
   bctx.globalCompositeOperation = 'source-over';
 
   ctx.imageSmoothingEnabled = false;
@@ -612,9 +599,6 @@ function lightTiles(space, at, c0, r0, w, h) {
       const d = Math.hypot(row - at.row, col - at.col);
       const near = ROOM_VIEW.litNear + (ROOM_VIEW.litFar - ROOM_VIEW.litNear) * Math.min(1, d / PLAYER_CONE_RANGE);
       return [Math.max(near, ROOM_VIEW.shipLit), SHIP_TINT];
-    }
-    if (fog && f.visibleSet.has(k) && !f.sightSet.has(k) && lampPoolLit(row, col)) {
-      return [Math.max(lampLevel(row, col), space.tiles.has(k) ? ROOM_VIEW.room : 0), LAMP_TINT];
     }
     if (!fog || f.visibleSet.has(k)) {
       const d = Math.hypot(row - at.row, col - at.col);

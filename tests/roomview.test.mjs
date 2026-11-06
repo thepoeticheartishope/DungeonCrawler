@@ -79,29 +79,6 @@ test('a room too big follows the player without showing past its edge; a hallway
   assert.deepEqual(cameraGoal(null, { x: 300, y: 200 }, 240, 176), { x: 180, y: 112 });
 });
 
-test('the eye in the sky opens with the boss light and is shut with none', async () => {
-  const { state } = await import('../js/state.js');
-  const { skyEyeOpen, skyTurnsLeft } = await import('../js/mapshared.js');
-  // In turns (the start screen's Turns option); beat.test.mjs has One stick's seconds.
-  state.settings.oneStick = false;
-  state.floor.tutorial = null;
-  state.floor.boss = { row: 1, col: 1 };
-  state.floor.lightTurnBudget = 40;
-  state.floor.lightTurns = 0;
-  assert.equal(skyEyeOpen(), 0);
-  assert.equal(skyTurnsLeft(), 40);
-  state.floor.lightTurns = 10;
-  const quarter = skyEyeOpen();
-  state.floor.lightTurns = 30;
-  const most = skyEyeOpen();
-  assert.ok(quarter > 0 && quarter < most && most < 1, 'it opens as the light spreads');
-  state.floor.lightTurns = 40;
-  assert.equal(skyEyeOpen(), 1);
-  state.floor.boss = null; // a rest floor, or the boss has fallen
-  assert.equal(skyEyeOpen(), 0);
-  assert.equal(skyTurnsLeft(), null);
-});
-
 test('every kind of thing the game puts on the map has a room view drawing', async () => {
   const { readFileSync } = await import('node:fs');
   const { ROOM_DRAWINGS } = await import('../js/roomview.js');

@@ -1,7 +1,6 @@
-// Unit tests for free look (js/look.js) and the look cone (sight.js
-// inLookCone): the free arc, turning the body, the look recentred on a walk,
-// the bump rule, the shoulder view's sweep (one turn per body turn), and the cone matching the old diamond when looking
-// straight along a way.
+// Unit tests for free look (js/look.js): the free arc, turning the body,
+// the look recentred on a walk, the bump rule and the shoulder view's
+// sweep (one turn per body turn).
 //
 // Run: node --test tests/*.test.mjs
 //
@@ -13,8 +12,7 @@ import assert from 'node:assert/strict';
 
 import { emptyFloor } from './helpers.mjs';
 import { state, key } from '../js/state.js';
-import { LOOK_FREE_ARC, PLAYER_CONE_RANGE } from '../js/config.js';
-import { inLookCone, FACING_VECTORS } from '../js/sight.js';
+import { LOOK_FREE_ARC } from '../js/config.js';
 import { BODY_ANGLES, lookAngle, aimLook, wantsTurn, turnBody, sweepLook } from '../js/look.js';
 import { stepPlayer } from '../js/moves.js';
 
@@ -46,13 +44,10 @@ test('the light follows the aim, held inside the free arc', () => {
   assert.ok(near(lookAngle(), -LOOK_FREE_ARC));
 });
 
-test('aiming costs no turn and moves the cone', () => {
+test('aiming costs no turn', () => {
   resetFloor();
   const turns = state.run.turnCount;
-  const eastFar = key(state.floor.playerRow - 1, state.floor.playerCol + 3);
-  assert.ok(!state.floor.sightSet.has(eastFar), 'out of the straight cone');
   aimLook(LOOK_FREE_ARC);
-  assert.ok(state.floor.sightSet.has(eastFar), 'in it once looking 30° east');
   assert.equal(state.run.turnCount, turns);
 });
 
@@ -88,24 +83,6 @@ test('a bump that turns the body is a spent turn; a bump straight ahead is free'
   assert.equal(turned.at(-1).bumped, true);
   const ahead = stepPlayer(0, 1);
   assert.deepEqual(ahead.map(e => e.type), ['blocked'], 'already facing it: free');
-});
-
-test('looking straight along a way, the cone lights exactly the old diamond', () => {
-  resetFloor();
-  const reach = 2 * PLAYER_CONE_RANGE;
-  for (const [facing, [fr, fc]] of Object.entries(FACING_VECTORS)) {
-    state.floor.facing = facing;
-    state.floor.look = BODY_ANGLES[facing];
-    for (let dr = -reach; dr <= reach; dr++) {
-      for (let dc = -reach; dc <= reach; dc++) {
-        const forward = dr * fr + dc * fc;
-        const lateral = dr * fc - dc * fr;
-        const diamond = forward >= 0 && Math.abs(lateral) <= forward;
-        const cone = inLookCone(state.floor.playerRow + dr, state.floor.playerCol + dc);
-        assert.equal(cone, diamond, `${facing} ${dr},${dc}`);
-      }
-    }
-  }
 });
 
 test('turnBody picks among 8 ways', () => {

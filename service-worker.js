@@ -3,7 +3,7 @@
 // game loads instantly and still works with no connection. Bump
 // CACHE_NAME whenever the cached files change, so old caches get cleared.
 
-const CACHE_NAME = 'term-dungeon-v388';
+const CACHE_NAME = 'term-dungeon-v389';
 const APP_SHELL = [
   './',
   './index.html',
@@ -28,10 +28,8 @@ const APP_SHELL = [
   './js/walk.js',
   './js/moves3d.js',
   './js/figure3d.js',
-  './js/battery.js',
   './js/bookview.js',
   './js/pageturn.js',
-  './js/tubeart.js',
   './js/moves.js',
   './js/plans.js',
   './js/floor.js',
@@ -46,7 +44,6 @@ const APP_SHELL = [
   './js/gunactions.js',
   './js/controls.js',
   './js/text.js',
-  './js/light.js',
   './js/modifiers.js',
   './js/saferoom.js',
   './js/desk.js',
@@ -59,9 +56,6 @@ const APP_SHELL = [
   './js/space.js',
   './js/chargerview.js',
   './js/windows.js',
-  './js/lamps.js',
-  './js/shadows.js',
-  './js/warning.js',
   './js/questionview.js',
   './js/minigames.js',
   './js/minigameview.js',

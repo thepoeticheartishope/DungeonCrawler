@@ -7,21 +7,19 @@
 
 import { state, key } from '../js/state.js';
 import { MAX_HEARTS } from '../js/config.js';
-import { freshLight } from '../js/battery.js';
 import { computeVisibility } from '../js/sight.js';
 
 // An open size × size floor with nothing on it and the player in the middle
-// facing north, a fresh battery and no haunts. `settings`, `run`, `floor`
-// and `battle` are laid over the defaults; `see: false` leaves the light
-// uncomputed (rules.test.mjs checks computeVisibility itself).
+// facing north. `settings`, `run`, `floor`
+// and `battle` are laid over the defaults; `see: false` leaves what the player
+// sees uncomputed (rules.test.mjs checks computeVisibility itself).
 export function emptyFloor(size = 21, { settings = {}, run = {}, floor = {}, battle = {}, see = true } = {}) {
   Object.assign(state.floor, {
     GRID_SIZE: size, playerRow: Math.floor(size / 2), playerCol: Math.floor(size / 2), playerAt: null,
     facing: 'N', look: null, lookWant: null, sneaking: false, creeping: false,
-    darkness: false, darkTurns: 0, light: freshLight(),
-    wallSet: new Set(), pillarSet: new Set(), bossLitSet: new Set(), exploredSet: new Set(),
-    visibleSet: new Set(), sightSet: new Set(),
-    heldChambers: new Set(), chamberAt: new Map(), visitedChambers: new Set(), chamberThemes: [], chamberNames: [],
+    wallSet: new Set(), pillarSet: new Set(), exploredSet: new Set(),
+    visibleSet: new Set(), windows: [],
+    chamberAt: new Map(), visitedChambers: new Set(), chamberNames: [],
     boss: null, hunter: null, minions: [], crawling: [], vents: [], keys: [], keysHeld: 0, gateSealed: false,
     chest: null, coin: null, stairs: null, stairsAlt: null, exchange: null, tutorial: null, props: [],
     gunTarget: null, struggles: 0, misses: 0,

@@ -78,19 +78,6 @@ export function refreshMinimap() {
   }
   ctx.globalAlpha = 1;
   const at = tile => [left + across(tile) * unit, top + down(tile) * unit];
-  const seen = v => !state.settings.fogEnabled || f.exploredSet.has(key(v.row, v.col));
-  ctx.save();
-  ctx.strokeStyle = colours.player;
-  ctx.lineWidth = 1;
-  // Lamps the player has seen (lamps.js): a small ring, so the lit places
-  // to plan from are on the map.
-  f.lamps.filter(seen).forEach(l => {
-    const [x, y] = at(l);
-    ctx.beginPath();
-    ctx.arc(x, y, Math.max(2, unit * 0.3), 0, Math.PI * 2);
-    ctx.stroke();
-  });
-  ctx.restore();
   // Names first, so the player's dot is never hidden under one.
   drawNames(ctx, colours, tile => ({ x: left + across(tile) * unit, y: top + down(tile) * unit }), targets);
   drawTargets(ctx, colours, targets.map(at), unit);

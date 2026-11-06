@@ -1848,8 +1848,6 @@
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devFogBtn" type="button" title="Testing only: reveal the whole map">Fog: ON (dev)</button>
       <button class="dev-skip" id="devBookPaperBtn" type="button" title="Testing only: the record book's page (the ask screen): dark, as the game has it, or cold paper or cream, to compare">Book paper: dark (dev)</button>
-      <button class="dev-skip" id="devLightBatteryBtn" type="button" aria-pressed="true" title="Testing only: your light goes on and off (V) and runs on a 4-turn battery, or is always on, as before">Light battery: ON (dev)</button>
-      <button class="dev-skip" id="devWarningBtn" type="button" aria-pressed="false" title="Testing only: when a stick man reaches for you, the room log says how many seconds before he first showed (your light, a lamp, a window or his shadow); presence cues plan step D">Warning timer: OFF (dev)</button>
       <button class="dev-skip" id="devOneStickBtn" type="button" aria-pressed="true" title="Testing only: walk freely in real time (one stick plan, the default), or tile to tile in turns as with the start screen's Turns option">One stick: ON (dev)</button>
       <button class="dev-skip" id="devMinigameBtn" type="button" title="Testing only: minigames roll as usual, never, or always (one picked), swapping in a question it fits">Minigame: roll (dev)</button>
       <output class="dev-skip" id="devFrameOut" title="Testing only: how long the map takes to draw, median and slowest of the last 120 frames drawn">Draw: - (dev)</output>
@@ -1913,13 +1911,6 @@
     <label class="option-toggle">
       <input type="checkbox" id="dpadRightToggle">
       <span data-t="start.dpadRight"></span>
-    </label>
-
-    <!-- Comfort mode belongs to the old dungeon crawl: hidden, and gone in
-         dungeon removal step D. -->
-    <label class="option-toggle" id="comfortStartRow" hidden>
-      <input type="checkbox" id="simpleEnemiesToggle">
-      <span data-t="start.simpleEnemies"></span>
     </label>
 
     <button id="startBtn" data-t="start.enter"></button>
@@ -2076,10 +2067,6 @@
       <!-- The map (js/mapview.js). Glyphs come from text.js term.*.symbol. -->
       <canvas class="map-canvas" id="mapCanvas" aria-hidden="true"></canvas>
       <!-- Edge glows pointing at an off-screen boss (render.js renderLightHint). -->
-      <div class="light-hint light-hint-n" id="lightHintN" aria-hidden="true"></div>
-      <div class="light-hint light-hint-s" id="lightHintS" aria-hidden="true"></div>
-      <div class="light-hint light-hint-e" id="lightHintE" aria-hidden="true"></div>
-      <div class="light-hint light-hint-w" id="lightHintW" aria-hidden="true"></div>
       <!-- Lines over the top of the map: the right answer after a miss
            (render.js showAnswerLine, answer swirl), and under it "I see you.":
            something unseen is about to be beside the player (render.js showSensed). -->
@@ -2119,15 +2106,10 @@
          a lesson's or the final boss's question, in place of the map and the
          controls (the HUD stays). The real-time clock waits while it shows.
          Drawn as the record book (js/bookview.js): the screen's name over
-         a dark page, and the light tube on its left edge. -->
+         a dark page. -->
     <div class="terminal ask-screen book" id="askScreen" data-paper="dark" hidden>
       <div class="book-top"><span id="askTitle"></span><span id="bookTabTitle" hidden></span><span class="book-paused" id="bookClock"></span></div>
       <div class="book-body">
-        <div class="book-strip" id="bookStrip">
-          <canvas class="book-tube" id="bookTube" aria-hidden="true"></canvas>
-          <div class="book-light" data-t="book.light"></div>
-          <div class="book-readout" id="bookReadout"></div>
-        </div>
         <div class="book-page" id="bookPage">
           <div class="terminal-body" id="bookAsk">
             <div id="askQuestionPanel" hidden>
@@ -2180,7 +2162,6 @@
     <!-- MAP and LOG (open the record book there, js/bookview.js), lowest. -->
     <div class="room-buttons">
       <!-- The light (render.js renderBattery draws its tube): a tap switches it, as V does. -->
-      <button type="button" class="light-battery" id="lightBattery" hidden><canvas class="hud-tube" id="hudTube" aria-hidden="true"></canvas><span id="hudTubeWord" aria-hidden="true"></span></button>
       <button type="button" id="btnMinimap" data-t="map.btn"></button>
       <button type="button" id="btnLog" data-t="log.btn"></button>
     </div>

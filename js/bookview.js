@@ -1,7 +1,6 @@
 // The record book (record book plan, ideas/record-book-plan.md outside the
 // repo): the ask screen (#askScreen) drawn as a slate book with a ringed
-// spine, a dark page, and on its left edge the light tube (tubeart.js)
-// showing the battery. Step D: tabs on its right edge, ASK, LOG and MAP,
+// spine and a dark page. Step D: tabs on its right edge, ASK, LOG and MAP,
 // turn its pages (pageturn.js). LOG is the whole room log, newest first;
 // MAP is the minimap (minimapview.js draws into the page's canvas). The
 // LOG and MAP buttons (and L / M) open the book at that tab from the map:
@@ -11,9 +10,6 @@
 // Reads state only.
 
 import { state } from './state.js';
-import { LIGHT_BATTERY_MAX } from './config.js';
-import { batteryInPlay } from './battery.js';
-import { drawTube, TUBE_W, TUBE_H } from './tubeart.js';
 import { turnPage, pageTurning } from './pageturn.js';
 import { refreshMinimap } from './minimapview.js';
 import { t } from './text.js';
@@ -28,9 +24,6 @@ const els = {
   title: document.getElementById('askTitle'),
   tabTitle: document.getElementById('bookTabTitle'),
   clock: document.getElementById('bookClock'),
-  strip: document.getElementById('bookStrip'),
-  tube: document.getElementById('bookTube'),
-  readout: document.getElementById('bookReadout'),
   page: document.getElementById('bookPage'),
   tabs: document.getElementById('bookTabs'),
   readClose: document.getElementById('bookReadClose'),
@@ -43,9 +36,6 @@ const els = {
     map: document.getElementById('bookMap'),
   },
 };
-els.tube.width = TUBE_W;
-els.tube.height = TUBE_H;
-const tubeCtx = els.tube.getContext('2d');
 
 // The page showing: 'ask', 'log' or 'map'. View-only, so not in state.
 let tab = 'ask';
@@ -163,25 +153,13 @@ export function showAskTab() {
   if (tab !== 'ask') showTab('ask');
 }
 
-// Redraws the book from state: its paper, the clock's word and the tube.
-// The tube's strip is hidden while the battery is out of play (Comfort
-// mode, DEV), as the HUD's battery is, and before the first floor (DEV ->
-// Book paper). Read from the map, the clock runs, so main.js calls this
-// on each of its polls.
+// Redraws the book from state: its paper and the clock's word. Read from
+// the map, the clock runs, so main.js calls this on each of its polls.
 export function refreshBook() {
   els.book.dataset.paper = state.settings.bookPaper;
   els.clock.textContent = t(reading ? 'book.running' : 'book.paused');
   // No clock on the ship (Timothy 2026-10-31: no timers there).
   els.clock.hidden = Boolean(state.floor && state.floor.ship);
-  const inPlay = batteryInPlay() && Boolean(state.floor.light);
-  els.strip.hidden = !inPlay;
-  if (!inPlay) return;
-  const light = state.floor.light;
-  drawTube(tubeCtx, { charge: light.charge, max: LIGHT_BATTERY_MAX, lit: light.on });
-  const left = Math.ceil(light.charge);
-  els.readout.textContent = light.locked
-    ? t('book.empty')
-    : '#'.repeat(left) + '-'.repeat(Math.max(LIGHT_BATTERY_MAX - left, 0));
 }
 
 // The LOG page: the room log's notes (main.js showRoomNote keeps them in

@@ -1,5 +1,5 @@
 // What the map view (roomview.js) draws that
-// isn't about how it projects the floor: the light's levels, the sizes and
+// isn't about how it projects the floor: the sizes and
 // strengths of the things on the floor, and the rules for what a view
 // shows that don't depend on how it projects the floor (how bright a tile
 // is, which walls show). Kept apart from the view since the isometric view shared it
@@ -8,14 +8,7 @@
 // state only.
 
 import { state, key } from './state.js';
-import { REALTIME_STEP_MS } from './config.js';
-import { lightProgress } from './light.js';
 
-// How bright a lit tile is, by its steps from the player (0 = their own
-// tile): the light fades over the five steps they can see.
-const LIGHT_FALLOFF = [1, 1, 0.85, 0.7, 0.56, 0.44];
-const BOSS_LIT_LEVEL = 0.5;  // floor only the boss's light shows
-const REMEMBERED_LEVEL = 0.2; // floor explored but not lit now
 export const WALL_MIN_LEVEL = 0.28; // a wall beside remembered floor: still a shape
 export const SEARCHED_LEVEL = 0.6;  // a box or paper already searched is dimmer
 
@@ -67,20 +60,6 @@ export const GRATE_RATTLE = 0.03;   // how far a shuddering grate sways, as a sh
 export const GRATE_SCALE = 0.19;     // a grate's frame: its corners sit this share of a tile in from the middle (it lies flat, inside its tile)
 export const GRATE_BARS = [-0.5, -0.17, 0.17, 0.5]; // where its bars cross it, from -1 to 1
 
-// How bright a floor tile is, from 0 to 1: fading over the player's own
-// light, a middle level where only the boss's light shows it, dim where
-// only remembered. `fogOf(row, col)` is mapview.js's ('lit' / 'dim' /
-// 'hidden').
-export function floorLevelOf(row, col, fogOf) {
-  const fog = fogOf(row, col);
-  if (fog === 'hidden') return 0;
-  if (fog === 'dim') return REMEMBERED_LEVEL;
-  if (!state.settings.fogEnabled) return 1;
-  if (!state.floor.sightSet.has(key(row, col))) return BOSS_LIT_LEVEL;
-  const steps = Math.max(Math.abs(row - state.floor.playerRow), Math.abs(col - state.floor.playerCol));
-  return LIGHT_FALLOFF[Math.min(steps, LIGHT_FALLOFF.length - 1)];
-}
-
 // Walls are never lit themselves (the light stops at them), so a wall
 // shows once any floor beside it, corners included, has been seen.
 export function wallShownBy(row, col, fogOf) {
@@ -106,23 +85,6 @@ export function searched(at) {
 export function smooth(x) {
   const k = Math.max(0, Math.min(1, x));
   return k * k * (3 - 2 * k);
-}
-
-// How open the eye in the sky is, 0 (shut) to 1 (wide open): the boss's
-// light's progress, eased so it opens slowly at first and settles at the
-// end. Shut with no boss (a rest floor, after the boss falls): light.js
-// lightProgress() is 0 then.
-export function skyEyeOpen() {
-  return smooth(lightProgress());
-}
-
-// The turns left before the light takes the floor, for Comfort mode's
-// number in the sky (with One stick, seconds: the world's beats left);
-// null with no boss's light on this floor.
-export function skyTurnsLeft() {
-  if (!state.floor.boss) return null;
-  const left = Math.max(0, state.floor.lightTurnBudget - state.floor.lightTurns);
-  return state.settings.oneStick ? Math.round(left * REALTIME_STEP_MS / 1000) : left;
 }
 
 // Whether (row, col) is wall or off the grid.

@@ -15,7 +15,6 @@ import assert from 'node:assert/strict';
 
 import { withRandom } from './helpers.mjs';
 
-import { freshLight } from '../js/battery.js';
 
 import { state } from '../js/state.js';
 
@@ -53,8 +52,6 @@ function reset() {
   state.run.hearts = 3;
   state.run.roomIndex = 0;
   state.floor.misses = 0;
-  state.floor.darkness = false;
-  state.floor.light = freshLight();
   state.battle.minigame = null;
   state.battle.wager = 0;
   state.battle.currentQuestion = NUMBER;

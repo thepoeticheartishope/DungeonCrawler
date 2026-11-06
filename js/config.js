@@ -246,19 +246,6 @@ export const CATEGORY_LABELS = {
 // Grid size, room count, minions and the light's loss share per floor are
 // in the floor recipes (floors.js).
 
-// Room themes. Every room on a floor gets one, dealt out so a floor has a
-// mix (wording and lore are theme.* in text.js).
-//   pillarChance  chance the room tries for pillars — kept low (tight rooms
-//                 often can't fit a mirrored set, so fewer actually get them)
-//   props         extra papers/boxes beyond the drawing's '?' spots [min, max]
-//   boxShare      share of those that are boxes rather than papers
-export const ROOM_THEMES = {
-  crypt:   { pillarChance: 0.30, props: [1, 2], boxShare: 0.4 },
-  library: { pillarChance: 0.15, props: [2, 4], boxShare: 0.2 },
-  flooded: { pillarChance: 0.15, props: [0, 2], boxShare: 0.6 },
-  shrine:  { pillarChance: 0.40, props: [0, 1], boxShare: 0.3 },
-};
-
 // Pillars block walking and the player's light; the boss light spreads
 // past them. A room with pillars gets a mirrored set of one of these sizes.
 export const PILLARS_PER_ROOM = [2, 4];

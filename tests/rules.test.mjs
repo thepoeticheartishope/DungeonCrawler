@@ -12,8 +12,8 @@ import assert from 'node:assert/strict';
 
 import { emptyFloor } from './helpers.mjs';
 import { state, key } from '../js/state.js';
-import { PLAYER_LIGHT_RADIUS, PLAYER_CONE_RANGE, REVEAL_DISTANCE, DARK_GOLD_MULTIPLIER } from '../js/config.js';
-import { computeVisibility, canMakeOut, shootBlock, canShoot } from '../js/sight.js';
+import { REVEAL_DISTANCE } from '../js/config.js';
+import { computeVisibility, canMakeOut } from '../js/sight.js';
 import { whatBlocks, canPassCorner, stepsAway } from '../js/passage.js';
 import { stepPlayer, goldReward } from '../js/moves.js';
 
@@ -37,81 +37,14 @@ function rel(dr, dc) {
 
 // --- sight.js: computeVisibility ---
 
-test('the player always sees their own tile', () => {
-  resetFloor();
+test('the ship is lit everywhere: every open tile is seen and remembered, no wall is', () => {
+  resetFloor(9);
+  state.floor.wallSet.add(rel(-1, 0));
   computeVisibility();
-  assert.ok(state.floor.visibleSet.has(rel(0, 0)));
-  assert.ok(state.floor.sightSet.has(rel(0, 0)));
-});
-
-test('the light radius reaches every side, even behind the player', () => {
-  resetFloor();
-  computeVisibility();
-  for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-    assert.ok(state.floor.sightSet.has(rel(dr * PLAYER_LIGHT_RADIUS, dc * PLAYER_LIGHT_RADIUS)));
-  }
-  // Behind, past the radius: dark.
-  assert.ok(!state.floor.visibleSet.has(rel(PLAYER_LIGHT_RADIUS + 1, 0)));
-});
-
-test('the facing cone reaches PLAYER_CONE_RANGE ahead and widens, but no further', () => {
-  resetFloor();
-  computeVisibility();
-  assert.ok(state.floor.sightSet.has(rel(-PLAYER_CONE_RANGE, 0)));
-  assert.ok(!state.floor.visibleSet.has(rel(-PLAYER_CONE_RANGE - 1, 0)));
-  // Two ahead, one across: inside the widening cone (lateral <= forward).
-  assert.ok(state.floor.sightSet.has(rel(-2, 1)));
-  // One ahead, two across: outside the cone and past the radius.
-  assert.ok(!state.floor.visibleSet.has(rel(-1, 2)));
-});
-
-test('turning changes which way the cone points', () => {
-  resetFloor();
-  state.floor.facing = 'E';
-  computeVisibility();
-  assert.ok(state.floor.sightSet.has(rel(0, PLAYER_CONE_RANGE)));
-  assert.ok(!state.floor.visibleSet.has(rel(-PLAYER_CONE_RANGE, 0)));
-});
-
-test('walls block the light and are not lit themselves', () => {
-  resetFloor();
-  for (let c = 0; c < state.floor.GRID_SIZE; c++) state.floor.wallSet.add(key(state.floor.playerRow - 2, c));
-  computeVisibility();
-  assert.ok(state.floor.sightSet.has(rel(-1, 0)));
-  assert.ok(!state.floor.visibleSet.has(rel(-2, 0)));
-  assert.ok(!state.floor.visibleSet.has(rel(-3, 0)));
-});
-
-test('a pillar is lit but casts a shadow behind it', () => {
-  resetFloor();
-  state.floor.pillarSet.add(rel(-2, 0));
-  computeVisibility();
-  assert.ok(state.floor.sightSet.has(rel(-2, 0)));
-  // Light creeps around the pillar's sides onto the tile just behind it,
-  // but a clear view is still blocked, so it can't be made out...
-  assert.ok(!canMakeOut(state.floor.playerRow - 3, state.floor.playerCol));
-  // ...and further back, where the way around is too long, it stays dark.
-  assert.ok(!state.floor.visibleSet.has(rel(-4, 0)));
-});
-
-test("the boss's light is visible but is not the player's sight", () => {
-  resetFloor();
-  const far = key(0, 0);
-  state.floor.bossLitSet = new Set([far]);
-  computeVisibility();
-  assert.ok(state.floor.visibleSet.has(far));
-  assert.ok(!state.floor.sightSet.has(far));
-});
-
-test('visible tiles are remembered, except in the darkness', () => {
-  resetFloor();
-  computeVisibility();
-  assert.ok(state.floor.exploredSet.has(rel(-1, 0)));
-
-  resetFloor();
-  state.floor.darkness = true;
-  computeVisibility();
-  assert.equal(state.floor.exploredSet.size, 0);
+  assert.equal(state.floor.visibleSet.size, 9 * 9 - 1);
+  assert.ok(!state.floor.visibleSet.has(rel(-1, 0)));
+  assert.ok(state.floor.visibleSet.has(rel(-2, 0)), 'behind the wall too');
+  assert.equal(state.floor.exploredSet.size, 9 * 9 - 1);
 });
 
 // --- sight.js: canMakeOut ---
@@ -133,17 +66,13 @@ test('a pillar in the line of view hides what is behind it', () => {
   resetFloor();
   state.floor.pillarSet.add(rel(-1, 0));
   computeVisibility();
-  // Still lit, around the pillar's side...
-  assert.ok(state.floor.sightSet.has(rel(-2, 1)));
-  // ...but the straight line to it passes the pillar.
+  // Lit, but the straight line to it passes the pillar.
   assert.ok(!canMakeOut(state.floor.playerRow - 2, state.floor.playerCol + 1));
 });
 
-test('only boss light, or too far, cannot be made out', () => {
+test('too far cannot be made out', () => {
   resetFloor();
-  state.floor.bossLitSet = new Set([rel(-1, 3)]);
   computeVisibility();
-  assert.ok(!canMakeOut(state.floor.playerRow - 1, state.floor.playerCol + 3));
   assert.ok(!canMakeOut(state.floor.playerRow - REVEAL_DISTANCE - 1, state.floor.playerCol));
 });
 
@@ -159,60 +88,6 @@ test('a paper once made out stays identified after the player walks off', () => 
   computeVisibility();
   assert.ok(near.identified);
 });
-
-// --- sight.js: shootBlock / canShoot ---
-
-// A thing relative to the player.
-function at(dr, dc) {
-  return { row: state.floor.playerRow + dr, col: state.floor.playerCol + dc };
-}
-
-test('a thing in the light with a clear line can be shot', () => {
-  resetFloor();
-  computeVisibility();
-  assert.equal(shootBlock(at(-3, 1)), null);
-  assert.ok(canShoot(at(-3, 1)));
-  assert.ok(canShoot(at(-PLAYER_CONE_RANGE, 0)));
-  assert.ok(state.floor.sightSet.has(key(at(1, 0).row, at(1, 0).col)), 'next to the player, even behind, is lit');
-  assert.equal(shootBlock(at(1, 0)), 'notInLight', 'but lit only by standing beside them, it can\'t be shot (free look plan)');
-  assert.equal(shootBlock(at(0, 1)), 'notInLight');
-});
-
-test('past the light\'s reach is out of range', () => {
-  resetFloor();
-  computeVisibility();
-  assert.equal(shootBlock(at(-PLAYER_CONE_RANGE - 1, 0)), 'outOfRange');
-  assert.equal(shootBlock(at(-4, 3)), 'outOfRange', 'reach counts walkable steps');
-  assert.equal(shootBlock(at(PLAYER_CONE_RANGE + 1, 0)), 'outOfRange', 'behind and far is range, not light');
-  assert.ok(!canShoot(at(-PLAYER_CONE_RANGE - 1, 0)));
-});
-
-test('in range but outside the cone is not in your light', () => {
-  resetFloor();
-  computeVisibility();
-  assert.equal(shootBlock(at(2, 0)), 'notInLight');
-  assert.equal(shootBlock(at(1, 1)), 'notInLight', 'a diagonal behind needs turning toward');
-  assert.equal(shootBlock(at(-1, 3)), 'notInLight');
-});
-
-test('only the boss\'s light is not enough to shoot', () => {
-  resetFloor();
-  state.floor.bossLitSet = new Set([rel(2, 0)]);
-  computeVisibility();
-  assert.equal(shootBlock(at(2, 0)), 'notInLight');
-});
-
-test('a pillar in the line blocks the shot', () => {
-  resetFloor();
-  state.floor.pillarSet = new Set([rel(-1, 0)]);
-  computeVisibility();
-  // Lit by creeping round the pillar, but there's no straight line to it.
-  assert.ok(state.floor.sightSet.has(rel(-2, 1)));
-  assert.equal(shootBlock(at(-2, 1)), 'noLineOfSight');
-  assert.ok(canShoot(at(-1, 0)), 'the pillar tile itself can be shot at');
-});
-
-// --- light.js ---
 
 // --- passage.js ---
 
@@ -262,17 +137,14 @@ test('by default a press in a new direction turns and steps at once', () => {
   assert.equal(state.floor.facing, 'E');
 });
 
-test('the coin pays goldReward(1), doubled in the darkness', () => {
-  for (const darkness of [false, true]) {
-    resetFloor();
-    state.floor.darkness = darkness;
-    state.floor.coin = { row: state.floor.playerRow - 1, col: state.floor.playerCol };
-    const taken = stepPlayer(-1, 0).find(e => e.type === 'coinTaken');
-    assert.equal(taken.gold, goldReward(1));
-    assert.equal(taken.gold, darkness ? DARK_GOLD_MULTIPLIER : 1);
-    assert.equal(state.run.coinsTotal, taken.gold);
-    assert.equal(state.floor.coin, null);
-  }
+test('the coin pays goldReward(1)', () => {
+  resetFloor();
+  state.floor.coin = { row: state.floor.playerRow - 1, col: state.floor.playerCol };
+  const taken = stepPlayer(-1, 0).find(e => e.type === 'coinTaken');
+  assert.equal(taken.gold, goldReward(1));
+  assert.equal(taken.gold, 1);
+  assert.equal(state.run.coinsTotal, taken.gold);
+  assert.equal(state.floor.coin, null);
 });
 
 test('stepping on a key takes it and counts it among the floor\'s', () => {
@@ -292,11 +164,9 @@ test('the first step into a room fires roomEntered once', () => {
   const [r, c] = [state.floor.playerRow, state.floor.playerCol];
   state.floor.chamberAt.set(key(r - 1, c), 0);
   state.floor.chamberAt.set(key(r - 2, c), 0);
-  state.floor.chamberThemes = ['crypt'];
   const first = stepPlayer(-1, 0);
   assert.deepEqual(first.map(e => e.type), ['stepped', 'roomEntered']);
-  assert.equal(first[1].theme, 'crypt');
-  assert.equal(first[1].name, null, 'a random floor\'s room has no name');
+  assert.equal(first[1].name, null, 'a room without a name');
   assert.deepEqual(stepPlayer(-1, 0).map(e => e.type), ['stepped']);
 });
 
@@ -304,10 +174,9 @@ test('on a fixed plan, roomEntered carries the room\'s name', () => {
   resetFloor();
   const [r, c] = [state.floor.playerRow, state.floor.playerCol];
   state.floor.chamberAt.set(key(r - 1, c), 0);
-  state.floor.chamberThemes = ['crypt'];
-  state.floor.chamberNames = ['plan.school.library'];
+  state.floor.chamberNames = ['plan.ship.galley'];
   const entered = stepPlayer(-1, 0).find(e => e.type === 'roomEntered');
-  assert.equal(entered.name, 'plan.school.library');
+  assert.equal(entered.name, 'plan.ship.galley');
 });
 
 test('papers give the story in order, then their own roll', () => {

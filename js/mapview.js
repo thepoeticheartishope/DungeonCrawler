@@ -26,11 +26,6 @@ import { playerStepped, playerBumped } from './playerform.js';
 
 
 // Drawing proportions, as shares of a tile or strengths from 0 to 1.
-const FOG_DIM_ALPHA = 0.68;  // explored-but-unlit floor at a third of its brightness
-const MIST_DRIFT = [0.7, 1];  // the mist's strength at either end of its drift
-// The drift starts at three points in its cycle, tile by tile, so the mist
-// doesn't pulse in step.
-const MIST_OFFSETS_MS = [0, 2300, 4700];
 const BLOOM_RADIUS = 0.85;   // the hostile bloom behind the boss and minions
 const REMEMBERED_ALPHA = 0.35; // papers and boxes seen before but not lit now
 const COIN_BOB = 0.1;        // how far the coin lifts, as a share of a tile
@@ -270,7 +265,7 @@ function drawScene(now) {
   ctx.fillStyle = HIDDEN_FLOOR;
   ctx.fillRect(0, 0, scene.width, scene.height);
   const shared = {
-    colours, things: mapThings(), fogOf, paintGlyph, mistStrength, pulse, keepMoving,
+    colours, things: mapThings(), fogOf, paintGlyph, pulse, keepMoving,
     showPlain, now, still: reducedMotion.matches, walkAt: walkAt(now),
   };
   const size = { width: scene.width, height: scene.height, pageWidth: pageSize.width };
@@ -305,25 +300,11 @@ function showPlain() {
 }
 
 // How much of a tile the player sees: 'lit' now, 'dim' (explored, not lit
-// now) or 'hidden' (never seen, or wiped by the darkness).
+// now) or 'hidden' (never seen).
 function fogOf(row, col) {
   const k = key(row, col);
   if (!state.settings.fogEnabled || state.floor.visibleSet.has(k)) return 'lit';
   return state.floor.exploredSet.has(k) ? 'dim' : 'hidden';
-}
-
-// How strongly the boss mist shows on a tile this frame, from 0 (none) to
-// 1: only on lit floor (not walls, not floor the player has never seen),
-// dimmed on remembered floor, drifting over time. The room view draws with it.
-function mistStrength(row, col) {
-  const k = key(row, col);
-  if (!state.floor.bossLitSet.has(k) || state.floor.wallSet.has(k)) return 0;
-  const fog = fogOf(row, col);
-  if (fog === 'hidden') return 0;
-  looping = true;
-  const offset = MIST_OFFSETS_MS[(row * state.floor.GRID_SIZE + col) % MIST_OFFSETS_MS.length];
-  const strength = MIST_DRIFT[0] + (MIST_DRIFT[1] - MIST_DRIFT[0]) * pulse(MAP_ANIMATION_MS.mist, offset);
-  return strength * (fog === 'dim' ? 1 - FOG_DIM_ALPHA : 1);
 }
 
 // Every glyph on the map, as a list the room view draws from: { kind, at, tile, glyph, look }. `at` is where it
@@ -351,7 +332,7 @@ function mapThings() {
 
   f.props.forEach(p => {
     const lit = isLit(p.row, p.col);
-    const remembered = state.settings.fogEnabled && !lit && !f.darkness && f.exploredSet.has(key(p.row, p.col));
+    const remembered = state.settings.fogEnabled && !lit && f.exploredSet.has(key(p.row, p.col));
     if (!lit && !remembered) return;
     // A paper under the player is hidden, so glyphs don't pile up.
     if (p.kind === 'paper' && p.row === f.playerRow && p.col === f.playerCol) return;
