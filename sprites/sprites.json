@@ -1,0 +1,7 @@
+{
+  "tile": 16,
+  "pieces": {
+    "desk": { "src": "sprites/desk.png" },
+    "chicken": { "src": "sprites/chicken.png" }
+  }
+}

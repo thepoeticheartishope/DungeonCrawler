@@ -12,17 +12,23 @@ import { readFileSync } from 'node:fs';
 import { FLOOR_PLANS, buildPlanLayout } from '../js/plans.js';
 import { applyRoomFurniture } from '../js/rooms.js';
 import { makePlacer, placeFurniture } from '../js/decor.js';
+import { FURNITURE_PIECES } from '../js/config.js';
 
 const file = JSON.parse(readFileSync(new URL('../rooms/ship.json', import.meta.url)));
 const copyPlan = () => structuredClone(FLOOR_PLANS.ship);
 
-test('rooms/ship.json has the same rooms and furniture as plans.js', () => {
+// Pieces with a PNG and no code art (sprites/sprites.json, room sprites
+// plan step B, e.g. the chicken): only in the file, never in plans.js.
+const sprites = JSON.parse(readFileSync(new URL('../sprites/sprites.json', import.meta.url)));
+const spriteOnly = ([piece]) => sprites.pieces[piece] && !FURNITURE_PIECES.includes(piece);
+
+test('rooms/ship.json has the same rooms and furniture as plans.js, plus sprite-only pieces', () => {
   const plan = FLOOR_PLANS.ship;
   assert.deepEqual(file.rooms.map(r => r.name), plan.rooms.map(r => r.name));
   file.rooms.forEach((r, i) => {
     const room = plan.rooms[i];
     assert.deepEqual([r.r0, r.c0, r.r1, r.c1], [room.r0, room.c0, room.r1, room.c1]);
-    assert.deepEqual(r.furniture, room.furniture);
+    assert.deepEqual(r.furniture.filter(p => !spriteOnly(p)), room.furniture);
   });
   assert.deepEqual(applyRoomFurniture(copyPlan(), file), []);
 });

@@ -787,6 +787,12 @@ export const SHIP_WINDOWS = {
 // `furniture`, room view plan step E). Each has a bump line in text.js
 // (`furniture.<piece>`) and a drawing in roomview.js.
 export const FURNITURE_PIECES = ['desk', 'teacher', 'shelf', 'table', 'bench', 'easel', 'sink', 'stall', 'sofa'];
+// Furniture sprites (sprites/sprites.json, sprites.js; room sprites plan
+// step B): a sprite is 16 px wide a tile (ROOM_VIEW.tilePx) and at most
+// maxTall tall, its bottom tile standing on the floor; a sprite with
+// `parts` has `frames` side by side (single, left, mid, right) so a wide
+// piece joins up.
+export const FURNITURE_SPRITES = { file: 'sprites/sprites.json', maxTall: 32, frames: ['single', 'left', 'mid', 'right'] };
 // The room view (js/roomview.js, room view plan `ideas/room-view-plan.md`
 // outside the repo; the game's map view since step G): a fixed camera looking
 // down on one room at a time, drawn as pixel art at tilePx a tile and

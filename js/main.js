@@ -1,6 +1,7 @@
 import { state, key } from './state.js';
 import { buildShipFloor } from './floor.js';
 import { loadShipRooms } from './rooms.js';
+import { loadSprites } from './sprites.js';
 import {
   initGunActions, autoWinGun, endAsk, letterPoolQuestion, sumLockQuestion, openBreaker, openLearning, openBoss,
 } from './gunactions.js';
@@ -29,7 +30,7 @@ import { consoleRoles, startLearning, noteOnDuty, taughtCount } from './roles.js
 import { initConsoleView, showConsole } from './consoleview.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { initGunPanels, closeMapPanels, mapPanelShown, askHeld } from './gunpanels.js';
-import { t, applyStaticText } from './text.js';
+import { t, hasText, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 
 import { resetWalk, walkTileMs } from './walk.js';
@@ -43,8 +44,9 @@ import { initMusic } from './music.js';
 import { initBook, bookReading, refreshBook, refreshBookLog } from './bookview.js';
 
 // The ship's furniture from rooms/ship.json (rooms.js), before the ship is
-// built; plans.js furniture if it can't be loaded.
-await loadShipRooms();
+// built; plans.js furniture if it can't be loaded. Its PNGs from
+// sprites/sprites.json (sprites.js) at the same time; code art if not.
+await Promise.all([loadShipRooms(), loadSprites()]);
 
 // The gun's actions get the main.js actions they call before anything runs.
 initGunActions({ applyTurnOutcome, drawEvents, openCharger, showRoomNote });
@@ -300,7 +302,7 @@ function drawEvents(events) {
         cls = 'block-msg';
         // A wall says nothing (Timothy 2026-11-01): the bump shows it.
         if (e.kind === 'wall') break;
-        if (e.kind === 'furniture') parts.push(t('furniture.' + e.thing.piece));
+        if (e.kind === 'furniture') parts.push(t(hasText('furniture.' + e.thing.piece) ? 'furniture.' + e.thing.piece : 'furniture.other'));
         else parts.push(e.kind === 'prop' ? t('room.' + e.thing.kind + '.done') : t('room.blocked.' + e.kind));
         break;
       // A step says nothing: the map already shows where the player went.
@@ -567,8 +569,10 @@ document.getElementById('retryBtn').addEventListener('click', startGame);
 // PWA: register the service worker so the game caches for offline use.
 // Runs only over HTTPS (or localhost) — browsers block service workers
 // on plain http:// or file:// for security reasons.
+// main.js waits for rooms/ship.json and the sprites at the top, so the
+// page's load event may already be over by now: register at once then.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+  const register = () => {
     navigator.serviceWorker.register('service-worker.js').then((reg) => {
       // Check for a newer service-worker.js right away, since browsers
       // don't always do this on their own before serving cached content.
@@ -576,7 +580,9 @@ if ('serviceWorker' in navigator) {
     }).catch(() => {
       // Offline support just won't be available; the game still works normally.
     });
-  });
+  };
+  if (document.readyState === 'complete') register();
+  else window.addEventListener('load', register);
 
   // Once a new service worker takes over, reload so the page actually
   // picks up the files it just cached (skipWaiting alone doesn't do this).
