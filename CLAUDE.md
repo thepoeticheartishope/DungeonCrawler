@@ -8,8 +8,9 @@ Hosted on GitHub Pages from `main`. Run locally: `python3 -m http.server 8000`.
 - **The ship is the game** (Timothy 2026-11-01). The start screen always starts the ship; there is
   no other way in. The old dungeon crawl is being deleted in layers (dungeon removal plan,
   `ideas/dungeon-removal-plan.md` outside the repo; step B removed its floors, tutorial and extras,
-  step C combat and the charger). What is left of it (the boss's light, fog, the battery) is
-  unreachable and goes in step D: don't build on it.
+  step C combat and the charger, step D the light, fog, battery, lamps and the other plans). What
+  is left (the turn-based look and the One stick setting, leftover state and config keys) goes in
+  step E: don't build on it.
 - `main` is protected: branch + PR, one PR per logical change.
 - Changed a file listed in `service-worker.js` `APP_SHELL`? Bump `CACHE_NAME` in the same commit.
 - New JS file? Add it to `APP_SHELL` too; a deleted one comes out of it.
@@ -94,17 +95,12 @@ Rules and data (no page/DOM access):
 | `passage.js` | `whatBlocks()` (can I step here?), `canPassCorner()`, `stepsAway()`. |
 | `sight.js` | The player's light (`computeVisibility`), the look cone, `canMakeOut`, `shootBlock`, cover. |
 | `look.js` | Free look: body facing vs. aim, `aimLook`, `turnBody`, `sweepLook`, `swingLook`. |
-| `light.js` | The boss's light spreading over the floor; the run is lost at the threshold. |
-| `battery.js` | The player's light on a battery: switching, drain, lock-out. |
 | `modifiers.js` | The Gambler's most (`maxWager`), `blindReadMs()`, Flip's roll. |
 | `minigames.js` | Minigame rules: which fit a question, rolls, tiers (Close Enough … Sum Lock). |
 | `moves.js` | The player's step (`stepPlayer`), `bumpInto`, `enterTile`, `goldReward`. |
 | `walk.js` | Free walking with One stick: `walkFree()`, sneak and creep. |
 | `walkpace.js` | Smooth walk: every way takes the same time per screen distance. |
 | `windows.js` | Windows on outside walls and their pools of light. |
-| `lamps.js` | Fixed-plan lamps and their pools (seen from afar, not shootable by). |
-| `shadows.js` | Stick men's shadows thrown away from lamps and windows. |
-| `warning.js` | DEV warning timer: how long before a reach the player had a sign. |
 | `desk.js` | The reflective desk in the start room: heals to full once a floor. |
 | `saferoom.js` | The safe room: shutters, switch, lamp; who waits outside. |
 | `stations.js` | The ship's stations: training console, a crew member's board, the crew member; breakers that close on a right answer. |
@@ -136,7 +132,6 @@ Drawing and page code:
 | `chargerview.js` | CHARGE.SYS, a ship station's wires panel. |
 | `bookview.js` | The record book: ASK / LOG / MAP tabs, held answers. |
 | `pageturn.js` | The record book's page turn. |
-| `tubeart.js` | The light tube as pixel art (book strip and LIGHT button). |
 | `minimapview.js` | The minimap on the book's MAP page. |
 | `shipview.js` | The ship's opening: the run's tragedy a line at a time, then TAKE COMMAND. |
 | `consoleview.js` | COMMAND.SYS, the ship's training console: the roles to learn and where each stands. |
@@ -151,9 +146,9 @@ Drawing and page code:
 
 - **One stick (always):** controls.js `walkFrame()` runs every animation frame: input →
   walk.js `walkFree()` → moves.js `enterTile()` / `bumpInto()` → events →
-  main.js `applyTurnOutcome(events)`. Then `worldFrame()` → battery.js `drainLight(dt)`.
+  main.js `applyTurnOutcome(events)`. Then `worldFrame()` redraws the ship's HUD.
 - **Turns:** no start option reaches it any more (dungeon removal step B); controls.js
-  `movePlayer()` → `stepPlayer()` is still the DEV One stick OFF path, and goes in step D.
+  `movePlayer()` → `stepPlayer()` is still the DEV One stick OFF path, and goes in step E.
 - **Questions:** a breaker, a crew member's job, a lesson or the final boss → gunactions.js
   (`openBreaker`, `openJob`, `openLearning`, `openBoss`) → the ask screen (gunpanels.js) →
   stations.js / roles.js settle the answer. Combat (the gun, the dial, stick men, the battle

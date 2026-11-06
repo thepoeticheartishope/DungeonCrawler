@@ -8,7 +8,7 @@
 //   floor    — the ship's floor, rebuilt by buildShipFloor() in floor.js
 //   battle   — the fight on the battle screen right now
 
-import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, LIGHT_BATTERY, LIGHT_BATTERY_MAX, GAZE, NOISE, DOWNED, SHOW_DUCTS, SHOW_SPOTS, STATIC_NOISE, WARNING_TIMER, ONE_STICK, BOOK, STEADY_AIM } from './config.js';
+import { MAX_HEARTS, MC_SAMPLE_DATA, ENERGY_START, ONE_STICK, BOOK } from './config.js';
 
 // Turns a (row, col) pair into the string key used everywhere tiles are
 // stored in a Set or looked up by position.
@@ -29,25 +29,12 @@ const initialGridSize = 37;
 export const state = {
   settings: {
     revealOnWrong: false,
-    realTime: false,        // start screen option: the world moves on a clock (realclock.js), not after each action; remembered
-    enemyTendrils: 'random', // DEV -> Tendrils: each stick enemy's own random tendril style, or one of stickforms.js TENDRIL_STYLES for all
-    enemyPose: 'walker',    // DEV -> Look: the stickforms.js STICK_POSES id every stick enemy shows (the walker: the 3D moves)
-    simpleEnemies: false,   // start screen option, Comfort mode: every minion on the map is a still 'e' (tell 'E'), no form, no motion, and the light is always on (no battery); remembered
     soundStep: 1,           // the top bar's SOUND button: index into config.js SOUND_VOLUME.steps (0 = off); remembered (sound.js)
     playerName: '',         // the name typed on the start screen ('' = none); kept across runs and remembered
     mcMode: true, // always on for now; see startGame in main.js
     fogEnabled: true,       // dev toggle can flip this off to verify layouts
     bookPaper: BOOK.paper,  // the record book's page (bookview.js): one of BOOK.papers; DEV -> Book paper cycles it
-    lightBattery: LIGHT_BATTERY, // the light goes on and off and runs on a battery (battery.js); DEV -> Light battery flips it (off: always on)
-    showSpots: SHOW_SPOTS,  // DEV -> Spots: each room spot marked on the map with what it rolled (H hide, T takedown, L lure, S scout, - nothing)
-    showDucts: SHOW_DUCTS,  // DEV -> Show ducts: stick men in a duct drawn dimly at the grate they will come out of, and every pair of grates known
-    noise: NOISE,           // mistakes make a sound stick men hear (noise.js); DEV -> Noise flips it (off: mistakes are quiet)
     oneStick: ONE_STICK.on, // walk freely in real time with one stick (walk.js), not tile to tile; turns Real time on; DEV -> One stick flips it
-    staticNoise: STATIC_NOISE, // a faint grain grows as the closest stick man nears, in place of "I see you." (static.js); DEV -> Static flips it
-    warningTimer: WARNING_TIMER.on, // the room log says how long before a stick man's reach he first gave himself away (warning.js); DEV -> Warning timer flips it
-    steadyAim: STEADY_AIM.on, // SELECT held steadies a shot instead of opening the dial (gun.js startSteady); DEV -> Steady aim or ?aim=steady / ?aim=dial flips it
-    downed: DOWNED,         // a shot that leaves a stick man on 1 HP knocks it down: it crawls, grabs, and a bump finishes it (gun.js); DEV -> Downed flips it
-    gaze: GAZE,             // an eye over a stick man opens in the player's light and it steps closer (gaze.js); DEV -> Gaze flips it
     minigame: 'roll',       // DEV -> Minigame: 'roll' (minigames roll as usual), 'off' (never), or a minigame id (always, when it fits)
     usingSample: true, // the workshop list is the built-in sample (it can't be saved as a set); false once a list is pasted or loaded there
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
@@ -103,42 +90,23 @@ export const state = {
     facing: 'N', // 'N'|'S'|'E'|'W' — which way the player's body faces (bumps, slides, the stick man's legs)
     look: null,  // where the player aims, in radians on the grid (0 = north, +π/2 = east), or null = straight ahead; the light points here, held inside the body's free arc (look.js lookAngle)
     wallSet: new Set(),
-    light: { on: true, charge: LIGHT_BATTERY_MAX, locked: false }, // the player's light (battery.js): on or off, turns of charge left, locked off until full after running empty; full again each floor
 
     visibleSet: new Set(),  // tiles lit right now, from the player's spot
-    sightSet: new Set(),    // just the player's own light (not the boss's) — what they can make out
     exploredSet: new Set(), // every tile ever seen this room (fog memory)
 
     boss: null,         // { row, col, hp, max }: hp = right answers the gate still asks, max = how many it asked (gate.js)
     minions: [],        // [{ row, col, hp, kind }]
     crawling: [],       // stick men in a duct (vents.js): out of play, `m.vent` { from, to, left }, back in `minions` once they drop out
-    // Boss light (see light.js). Reset as each room loads.
-    bossDist: new Map(),   // walkable steps from the boss, per floor tile key
-    floorCount: 0,         // walkable tiles in the room
-    lightFullRadius: 0,    // light radius at which the run is lost
-    lightTurnBudget: 1,    // turns until that radius: the walk to the boss plus the slack
-    lightSlack: 0,         // turns the budget gives beyond the walk to the boss (floors.js slack)
-    lightLossShare: 0,     // share of the walkable tiles the light covers when the budget runs out
-    lightTurns: 0,         // turns spent in this room
-    darkness: false,       // the boss has fallen on this floor (see DARK_* in config.js)
-    darkTurns: 0,          // turns since the boss fell (the hunter wakes at HUNTER_SPAWN_DELAY)
     hunter: null,          // the hunter, once awake — also in state.floor.minions, with kind 'hunter'
     gunTarget: null,       // the minion (or hunter) the gun is aimed at, picked by a tap on the map (gun.js pickTarget), or null
     goals: [],             // this floor's side goals: [{ id, pay }] from FLOOR_GOALS (goals.js rollGoals); none on a rest floor
-    heldChambers: new Set(), // rooms held by a relay (relays.js): no boss light, no minion from outside
-    safeRoom: null,        // the start room's shutters on a danger floor (saferoom.js): { chamber, cells: Set of its tile keys, doors: [keys], switchAt: { row, col } (null on the ship: no switch), shut, lamp, playerIn }; null on a rest or tutorial floor or with DEV -> Safe room off
-    relayTurnsWon: 0,      // light turns relays have taken back on this floor (capped at RELAY_TURNS_CAP)
+    safeRoom: null,        // Command's shutters (saferoom.js): { chamber, cells: Set of its tile keys, doors: [keys], shut, playerIn }; null before the ship is built
     path: null,            // the way down the player took to this depth (floors.js FLOOR_PATHS), or null
     stairsAlt: null,       // a between-rest's second stairs: { row, col, path, hidden } (hidden until scouted); null elsewhere
     misses: 0,             // wrong answers on this floor, questions and reloads (the noMiss goal)
     struggles: 0,          // Struggles started on this floor; each one makes the next dial harder (gun.js struggleDial)
-    bossLitSet: new Set(), // tiles the boss light currently reaches
-    spotSet: new Set(),    // tiles lit by the tutorial's light from above (tutorial.js); empty elsewhere
     windows: [],           // windows on back walls that face the outside (windows.js): [{ row, col, room }]
-    windowLitSet: new Set(), // tiles the windows light (windows.js); a stick man in them is seen (sight.js canMakeOut)
     spaceSeed: 0,          // the ship's space picture seen through its windows (windows.js placeShipWindows, space.js)
-    lamps: [],             // a fixed plan's lamps (lamps.js, plans.js `L`): [{ row, col }]; none on a random floor or a rest
-    lampPoolSet: new Set(), // tiles the lamps light (lamps.js); a stick man in them is seen from afar while they're on (sight.js canMakeOut)
     advanced: null,        // the advanced tutorial's station on this floor (advanced.js freshStation): { index, name, door, route, minion, told, done, open }; null on every other floor
     testRoom: null,        // the DEV test room this floor is (testroom.js TEST_ROOMS key, floor.js buildTestFloor); null on every other floor
     ship: false,           // the "There's Been a Tragedy" ship (floor.js buildShipFloor, plans.js ship): lit everywhere, nothing dangerous; false on every other floor
@@ -164,7 +132,6 @@ export const state = {
     props: [],                // papers and boxes: [{ row, col, kind, theme, loot, gold, trapped, identified, searched, sprung }]
     chamberAt: new Map(),     // tile key -> which room on the floor it belongs to
     doorSet: new Set(),       // doorway tiles: each room's open doors and inner doors (the shoulder view drew an arch over each)
-    chamberThemes: [],        // theme per room
     chamberNames: [],         // text.js key of each room's name on a fixed plan (plans.js), same order as chamberAt's rooms; empty on a random floor or a rest
     visitedChambers: new Set(), // rooms the player has walked into (their theme line shows once)
   },

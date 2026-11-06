@@ -6,17 +6,17 @@
 import { state, key } from './state.js';
 import { useDesk } from './desk.js';
 import { isStation, useStation } from './stations.js';
-import { pullShutter, enterSafeRoom, autoShutters } from './saferoom.js';
+import { enterSafeRoom, autoShutters } from './saferoom.js';
 
 import { whatBlocks, canPassCorner } from './passage.js';
 import { computeVisibility, facingOf } from './sight.js';
 import { followBody, waysInUse } from './look.js';
 
-import { DARK_GOLD_MULTIPLIER, BOX_GOLD } from './config.js';
+import { BOX_GOLD } from './config.js';
 
-// Gold pays DARK_GOLD_MULTIPLIER times as much in the darkness after the boss.
+// The gold a find pays (one source of truth for gold rewards).
 export function goldReward(base) {
-  return state.floor.darkness ? base * DARK_GOLD_MULTIPLIER : base;
+  return base;
 }
 
 // The stairs the player stands on (a between-rest has two: `stairs` and
@@ -53,7 +53,7 @@ function takeKey(index) {
 // blocked { kind, thing } (kind 'corner' too; with free look, then bodyTurned { facing,
 // bumped: true } if the press turned the body: a spent turn), stepped { facing }, stairsReached { path, hidden }, coinTaken { gold },
 // keyTaken { held, total }, paperRead { paper, loot, story? },
-// roomEntered { theme, name } and the box events from examineProp.
+// roomEntered { name } and the box events from examineProp.
 // A turn is spent only by `stepped`, `propSearched` or `bodyTurned`.
 export function stepPlayer(dRow, dCol) {
   const events = [];
@@ -112,7 +112,7 @@ function plainBump(block) {
 // stairsReached { path, hidden }, or coinTaken { gold },
 // keyTaken, paperRead, reachBroken from
 // crossing into the safe room (saferoom.js enterSafeRoom) and
-// roomEntered { theme, name }.
+// roomEntered { name }.
 export function enterTile(facing, free = false) {
   const events = [];
   const newRow = state.floor.playerRow;
@@ -144,11 +144,11 @@ export function enterTile(facing, free = false) {
   if (paper) events.push(readPaper(paper));
 
   events.push(...enterSafeRoom());
-  // First step into a room: its name on a fixed plan, else its theme line.
+  // First step into a room: its name.
   const chamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
   if (chamber !== undefined && !state.floor.visitedChambers.has(chamber)) {
     state.floor.visitedChambers.add(chamber);
-    events.push({ type: 'roomEntered', theme: state.floor.chamberThemes[chamber], name: state.floor.chamberNames[chamber] || null });
+    events.push({ type: 'roomEntered', name: state.floor.chamberNames[chamber] || null });
   }
   return events;
 }
@@ -169,11 +169,10 @@ function readPaper(paper) {
 // Bumping a box examines it. The first look takes a turn (the light
 // spreads, minions move); after that there's nothing left in it, and a
 // bump is just `blocked`. The reflective desk heals
-// (desk.js useDesk), no turn spent. The safe room's switch, or a shutter
-// that is down, drops or lifts its shutters (saferoom.js pullShutter), no
-// turn spent either; on the ship they are automatic and a bump does nothing. A ship station's console, board or crew member opens
+// (desk.js useDesk), no turn spent. The safe room's shutters are
+// automatic, so bumping one does nothing. A ship station's console, board or crew member opens
 // its wires or speaks (stations.js useStation), no turn spent.
-// Events: blocked, deskUntouched, deskHealed { healed }, shutterDown, shutterUp, shutterBlocked,
+// Events: blocked, deskUntouched, deskHealed { healed },
 // crewSpoke, stationLocked, stationOpened (stations.js useStation),
 // or propSearched then boxOpened.
 function examineProp(prop) {
@@ -184,8 +183,7 @@ function examineProp(prop) {
   if (isStation(prop)) return useStation(prop);
   // The ship's shutters are automatic (saferoom.js autoShutters): a bump
   // does nothing.
-  if (prop.kind === 'shutter' && state.floor.ship) return [{ type: 'blocked', kind: 'prop', thing: prop }];
-  if (prop.kind === 'switch' || prop.kind === 'shutter') return pullShutter();
+  if (prop.kind === 'shutter') return [{ type: 'blocked', kind: 'prop', thing: prop }];
   prop.searched = true;
   return [{ type: 'propSearched', prop }, { type: 'boxOpened', prop, gold: openBox(prop) }];
 }

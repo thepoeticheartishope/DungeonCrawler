@@ -6,11 +6,8 @@
 // here — it stores the DOM references every other function needs instead
 // of each one threading them through as parameters.
 
-import { state, key } from './state.js';
-import { SENSE_NOTE_MS, LIGHT_BATTERY_MAX, ANSWER_LINE_FADE_MS, BOOK } from './config.js';
-import { drawTube, TUBE_W, TUBE_H } from './tubeart.js';
-import { batteryInPlay } from './battery.js';
-import { lightProgress } from './light.js';
+import { state } from './state.js';
+import { SENSE_NOTE_MS, ANSWER_LINE_FADE_MS } from './config.js';
 import { whatBlocks, canPassCorner } from './passage.js';
 import { SCREEN_WAYS, padWay } from './dpad.js';
 import { FACING_VECTORS } from './sight.js';
@@ -19,7 +16,6 @@ import { taughtCount } from './roles.js';
 import { t } from './text.js';
 
 let els = {};
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 export function initRender(elements) {
   els = elements;
@@ -32,7 +28,7 @@ let senseFadeTimer = null;
 // (a plain "Enemy close." with Simple enemies on). A new warning while it
 // shows just keeps it up longer: no flash.
 export function showSensed() {
-  showWhisper(t(state.settings.simpleEnemies ? 'room.sensed.simple' : 'room.sensed'));
+  showWhisper(t('room.sensed'));
 }
 
 // Shows `text` over the map where "I see you." shows, for `ms`, then lets
@@ -98,15 +94,10 @@ export function showScreen(el) {
   els.statsEl.classList.toggle('show', ![els.startScreen, els.shipIntroScreen].includes(el));
 }
 
-// How far away (in steps, as the crow flies) the hunter's edge glow starts
-// to brighten.
-const HUNTER_HINT_RANGE = 20;
-
-// The room screen's hints around the map: the edge glow toward an
-// off-screen boss or hunter, and which d-pad directions are open. Call
-// after anything that moves the player, the camera or what's around them.
+// The room screen's hints around the map: which d-pad directions are
+// open. Call after anything that moves the player, the camera or what's
+// around them.
 export function renderRoomHints() {
-  renderLightHint();
   renderMoveHints();
 }
 
@@ -140,41 +131,6 @@ function renderMoveHints() {
   }
 }
 
-// While the boss is off screen, the edge of the view facing it glows —
-// brighter as its light spreads — so the player always has a sense of
-// where it is. A diagonal boss lights two edges: its way from the player
-// on screen (the room view's camera never turns, so north is the top edge).
-//
-// After the boss, the same edges point at the hunter instead (in white,
-// not the boss's blue), brighter the closer it gets.
-function renderLightHint() {
-  const edges = els.lightHintEls;
-  if (!edges) return;
-  const boss = state.floor.boss || state.floor.hunter;
-  const { dx, dy, offScreen } = boss ? placeOnScreen(boss) : { dx: 0, dy: 0, offScreen: false };
-  const near = state.floor.hunter && !state.floor.boss
-    ? 1 - Math.min(1, (Math.abs(boss.row - state.floor.playerRow) + Math.abs(boss.col - state.floor.playerCol)) / HUNTER_HINT_RANGE)
-    : lightProgress();
-  const strength = offScreen ? (0.25 + 0.6 * near).toFixed(2) : '0';
-  Object.values(edges).forEach(el => el.classList.toggle('hunter-hint', !state.floor.boss && !!state.floor.hunter));
-  const on = {
-    n: dy < 0 && Math.abs(dy) * 2 >= Math.abs(dx),
-    s: dy > 0 && Math.abs(dy) * 2 >= Math.abs(dx),
-    w: dx < 0 && Math.abs(dx) * 2 >= Math.abs(dy),
-    e: dx > 0 && Math.abs(dx) * 2 >= Math.abs(dy),
-  };
-  Object.entries(edges).forEach(([side, el]) => { el.style.opacity = on[side] ? strength : '0'; });
-}
-
-// Where a thing is compared with the player on screen: dx right and dy
-// down (only the direction is used; grid north is up). It counts as on
-// screen while it is in the player's own sight (walls hide it, its light
-// alone doesn't show it).
-function placeOnScreen(thing) {
-  const seen = !state.settings.fogEnabled || state.floor.sightSet.has(key(thing.row, thing.col));
-  return { dx: thing.col - state.floor.playerCol, dy: thing.row - state.floor.playerRow, offScreen: !seen };
-}
-
 // Status bar numbers: hearts, gold, turn count and the depth (REST on a
 // rest floor, which isn't a depth). Call after any change to them.
 export function renderHud() {
@@ -191,7 +147,6 @@ export function renderHud() {
   const keysTotal = state.floor.keysHeld + state.floor.keys.length;
   els.keysStat.hidden = keysTotal === 0;
   els.keysText.textContent = t(state.floor.gateSealed ? 'stat.keys.sealed' : 'stat.keys.count', { held: state.floor.keysHeld, total: keysTotal });
-  renderBattery();
   renderShipHud();
 }
 
@@ -208,47 +163,6 @@ export function renderShipHud() {
   els.shipTaught.textContent = crew.taught + '/' + crew.of;
   els.shipPanic.textContent = t('panic.' + ship.panic);
   [...els.shipPanicMeter.children].forEach((cell, i) => cell.classList.toggle('on', i < ship.panic));
-}
-
-// The light's battery on the LIGHT button under the map (battery.js; light
-// button prototype): the light tube on its side (tubeart.js, record book
-// plan step E), a cell a turn of
-// charge, then ON / OFF / EMPTY (locked until full). Its label keeps the
-// words the HUD used to show (LIGHT ##-- ON), so a screen reader hears
-// the same. Hidden with the battery out of play (Comfort mode, DEV).
-function renderBattery() {
-  const inPlay = batteryInPlay();
-  els.lightBattery.hidden = !inPlay;
-  if (!inPlay) return;
-  const light = state.floor.light;
-  // With One stick the charge runs by time: a # stays until it is all spent.
-  const left = Math.ceil(light.charge);
-  const cells = '#'.repeat(left) + '-'.repeat(Math.max(LIGHT_BATTERY_MAX - left, 0));
-  const word = light.on ? 'on' : light.locked ? 'empty' : 'off';
-  els.lightBattery.setAttribute('aria-label', t('stat.battery', { cells, state: t('stat.battery.' + word) }));
-  els.hudTubeWord.textContent = t('stat.battery.' + word);
-  els.lightBattery.classList.toggle('battery-off', !light.on);
-  if (light.on && !tubeWasOn) tubeWarmFrom = reducedMotion.matches ? null : performance.now();
-  tubeWasOn = light.on;
-  drawHudTube();
-}
-
-// The HUD tube's switch-on: when it started (null = done), and whether
-// the light was on at the last draw. View-only timing, so module vars.
-let tubeWarmFrom = null;
-let tubeWasOn = true;
-
-// Draws the HUD tube from the light now. While it warms after a
-// switch-on, the cells and glow come up over BOOK.tubeWarmMs, one frame
-// at a time; reduced motion lights it at once.
-function drawHudTube() {
-  const canvas = els.hudTube;
-  if (canvas.width !== TUBE_H) { canvas.width = TUBE_H; canvas.height = TUBE_W; }
-  const light = state.floor.light;
-  const warm = tubeWarmFrom === null ? 1 : Math.min(1, (performance.now() - tubeWarmFrom) / BOOK.tubeWarmMs);
-  drawTube(canvas.getContext('2d'), { charge: light.charge, max: LIGHT_BATTERY_MAX, lit: light.on, bright: warm, upright: false });
-  if (warm >= 1) { tubeWarmFrom = null; return; }
-  requestAnimationFrame(() => { if (light.on && tubeWarmFrom !== null) drawHudTube(); });
 }
 
 export function formatTime(s) {

@@ -1,13 +1,11 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
-// panel over the screen): Skip room, Auto-win, Fog, Minigame and the other
-// toggles, Inspect, and the map's frame meter, for testing.
+// panel over the screen): Skip room, Auto-win, Learn all roles, Fog, Book
+// paper, One stick, Minigame, Inspect, and the map's frame meter, for testing.
 // main.js passes in the game actions and elements it needs.
 import { state } from './state.js';
 import { requestMapDraw, mapDrawTimes } from './mapview.js';
-import { renderHud } from './render.js';
 import { MINIGAMES } from './minigames.js';
 import { lookAngle, bodyAngle } from './look.js';
-import { computeVisibility } from './sight.js';
 import { refreshBook } from './bookview.js';
 import { BOOK, SHIP_ROLES } from './config.js';
 
@@ -19,8 +17,6 @@ const devAutoWinBtn = document.getElementById('devAutoWinBtn');
 const devLearnRolesBtn = document.getElementById('devLearnRolesBtn');
 const devFogBtn = document.getElementById('devFogBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
-const devLightBatteryBtn = document.getElementById('devLightBatteryBtn');
-const devWarningBtn = document.getElementById('devWarningBtn');
 const devOneStickBtn = document.getElementById('devOneStickBtn');
 const dpadEl = document.getElementById('dpad');
 const devFrameOut = document.getElementById('devFrameOut');
@@ -102,26 +98,6 @@ export function initDevPanel({ advanceRoom, autoWinGun }) {
     refreshBook();
   });
 
-  // Dev tool (light battery plan): the light goes on and off and runs on
-  // its battery, or is always on, as before. Off, the light comes back on.
-  devLightBatteryBtn.addEventListener('click', () => {
-    state.settings.lightBattery = !state.settings.lightBattery;
-    devLightBatteryBtn.textContent = state.settings.lightBattery ? 'Light battery: ON (dev)' : 'Light battery: OFF (dev)';
-    devLightBatteryBtn.setAttribute('aria-pressed', String(state.settings.lightBattery));
-    if (state.floor.playerRow === undefined) return;
-    computeVisibility();
-    renderHud();
-    requestMapDraw();
-  });
-
-  // Dev tool (presence cues plan step D): the warning timer, to tune the
-  // lamps by how long before a reach a stick man first showed.
-  devWarningBtn.addEventListener('click', () => {
-    state.settings.warningTimer = !state.settings.warningTimer;
-    devWarningBtn.textContent = state.settings.warningTimer ? 'Warning timer: ON (dev)' : 'Warning timer: OFF (dev)';
-    devWarningBtn.setAttribute('aria-pressed', String(state.settings.warningTimer));
-  });
-
   // Dev tool (one stick plan step A): walk freely in real time with the
   // move keys held, or tile to tile as before. On, it turns Real time on.
   devOneStickBtn.addEventListener('click', () => {
@@ -188,19 +164,13 @@ function floorSummary() {
   return {
     grid: f.GRID_SIZE,
     player: f.playerRow + ',' + f.playerCol + ' ' + f.facing + ' ' + lookOffset(),
-    boss: f.boss && where(f.boss) + ' hp ' + f.boss.hp,
-    hunter: where(f.hunter),
-    darkness: f.darkness,
-    darkTurns: f.darkTurns,
-    lightTurns: f.lightTurns + ' / ' + f.lightTurnBudget,
-    lightSlack: f.lightSlack + ' (loss ' + Math.round(f.lightLossShare * 100) + '%)',
     props: f.props.length,
     chest: where(f.chest),
     stairs: f.stairs && f.stairs.row + ',' + f.stairs.col,
     lastChoiceType: f.lastChoiceType,
     sets: {
       walls: f.wallSet.size, pillars: f.pillarSet.size, visible: f.visibleSet.size,
-      sight: f.sightSet.size, explored: f.exploredSet.size, bossLit: f.bossLitSet.size,
+      explored: f.exploredSet.size,
       visitedChambers: f.visitedChambers.size,
     },
   };

@@ -14,7 +14,7 @@ import { crewLook, crewHeadLook } from './roles.js';
 import { figurePose, turnFigure, projectFigure, phiToward } from './figure3d.js';
 import { emberGlow } from './playerform.js';
 import {
-  ROOM_VIEW, LAMP_LIGHT, MAP_ANIMATION_MS, SAFE_ROOM, ENEMY_LIGHT, PLAYER_EMBER, FIGURE3D, CREW_LOOK, SHIP_ROLES,
+  ROOM_VIEW, MAP_ANIMATION_MS, SAFE_ROOM, ENEMY_LIGHT, PLAYER_EMBER, FIGURE3D, CREW_LOOK, SHIP_ROLES,
 } from './config.js';
 import {
   searched, isWall, grain, DESK_GLOW, DESK_GLOW_RADIUS, DRUM_BREATH, DRUM_BREATH_REACH,
@@ -22,12 +22,7 @@ import {
 } from './mapshared.js';
 
 const T = ROOM_VIEW.tilePx;
-// A plan's lamps (lamps.js, presence cues plan step B): their pool is warm,
-// `floor` bright under the lamp and fading to `edge` of that at its rim,
-// steady (no flicker: Timothy's motion rule). Each hangs like the safe
-// room's lamp (LAMP), its bulb `bulb` bright.
-export const HALL_LAMP = { floor: 0.7, edge: 0.3, bulb: 0.4 };
-// The warm light of a window's pool and of the lamps, as an rgb list
+// The warm light of a window's pool and of the lamp, as an rgb list
 // (roomview.js draws the windows' pools in it too).
 export const POOL = { level: 0.85, rgb: '255, 196, 132', bars: 'rgb(150, 130, 120)', glass: 0.8 };
 // The things' colours, in the picture's pixels.
@@ -66,7 +61,6 @@ const KEY = { metal: '#dfe8ea', glow: 0.7 };   // glow: its light at the brighte
 const STAIRS = ['#3a3540', '#25212b', '#16131a', '#0a090c']; // each step down darker
 const STAIR_EDGE = '#5a5464';
 const BEAM_RISE = 2.6;          // the stairs' column of light, in tiles above the floor
-const MIST_GLOW = 0.22;         // the boss's mist at full strength over a tile
 const BREATH_GLOW = 2;          // a cell's breath is this many times its shoulder view strength (smaller here)
 
 let bctx = null;   // the picture being drawn into (roomview's, or its mask for what stands in front)
@@ -487,7 +481,7 @@ export function drawLampShade(ox, oy) {
 
 // A lamp's cord and shade hanging over the floor point (cx, cy), in the
 // picture's pixels: the safe room's lamp and a plan's lamps alike.
-export function shadeAt(cx, cy) {
+function shadeAt(cx, cy) {
   const sy = Math.round(cy - LAMP.hang * T);
   const top = Math.round(cy - LAMP.ceiling * T);
   bctx.fillStyle = SWITCH_ART.cord;
@@ -518,7 +512,7 @@ export function drawLamp(ox, oy, glows) {
 // A lit lamp's bulb under its shade over the floor point (cx, cy), `bulb`
 // bright, and a faint cone of light falling from it to the floor. Drawn
 // over the lit picture, so it shows in the dark.
-export function bulbAt(cx, cy, bulb) {
+function bulbAt(cx, cy, bulb) {
   const sy = Math.round(cy - LAMP.hang * T) + 2;
   const spread = T * 1.2;
   const cone = bctx.createLinearGradient(0, sy, 0, cy);
@@ -535,21 +529,6 @@ export function bulbAt(cx, cy, bulb) {
   bctx.fillStyle = SWITCH_ART.warm;
   bctx.fillRect(cx - 1, sy, 3, 1);
   halo(cx + 0.5, sy, T * 0.5, POOL.rgb, bulb);
-}
-
-// Where a plan's lamp `l` hangs, as [cx, cy]: over its tile's middle, in
-// the picture's pixels with the camera at (ox, oy).
-export function hallLampSpot(l, ox, oy) {
-  return [Math.round((l.col + 0.5) * T - ox), Math.round((l.row + 0.5) * T - oy)];
-}
-
-// How bright a plan's lamps light the tile (row, col): HALL_LAMP.floor
-// under a lamp, down to HALL_LAMP.edge of that at LAMP_LIGHT.radius, the
-// brightest lamp's.
-export function lampLevel(row, col) {
-  const near = Math.min(...state.floor.lamps.map(l => Math.hypot(row - l.row, col - l.col)));
-  const share = 1 - (1 - HALL_LAMP.edge) * Math.min(1, near / LAMP_LIGHT.radius);
-  return HALL_LAMP.floor * share;
 }
 
 // The chest: a dark trunk with bands and a brass lock.
@@ -599,20 +578,6 @@ function drawKey(thing, x, y, glows) {
     halo(x + 8, y + 9, T * 0.7, look.colours.glowRgb, strength * KEY.glow * 0.5);
     paint();
   });
-}
-
-// The boss's mist over the floor in view (mapview.js mistStrength: lit
-// floor only, dimmed when remembered, drifting).
-export function drawMist(c0, r0, c1, r1, ox, oy) {
-  const rgb = look.colours.bossFogRgb;
-  for (let row = r0; row <= r1; row++) {
-    for (let col = c0; col <= c1; col++) {
-      const mist = look.mistStrength(row, col);
-      if (!mist) continue;
-      bctx.fillStyle = 'rgba(' + rgb + ', ' + MIST_GLOW * mist + ')';
-      bctx.fillRect(col * T - ox, row * T - oy, T, T);
-    }
-  }
 }
 
 // A soft round glow of `rgb` at (x, y) in picture pixels, `r` across, `a`

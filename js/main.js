@@ -17,7 +17,6 @@ import {
 } from './render.js';
 import { freshShipRun } from './ship.js';
 import { initShipIntro, fillShipIntro, tragedyLines } from './shipview.js';
-import { lightConsumed } from './light.js';
 import { onStairs, stairsHere } from './moves.js';
 
 import { initSetLoader, showWorkshop } from './setloader.js';
@@ -29,15 +28,11 @@ import { turnWire } from './wires.js';
 import { stationMode, stationDone, trainWires } from './stations.js';
 import { consoleRoles, startLearning, noteOnDuty, taughtCount } from './roles.js';
 import { initConsoleView, showConsole } from './consoleview.js';
-import { shutterLine } from './saferoom.js';
 import { initChargerView, showCharger, renderCharger, chargerShown } from './chargerview.js';
 import { initGunPanels, closeMapPanels, mapPanelShown, askHeld } from './gunpanels.js';
 import { t, setTextArea, applyStaticText } from './text.js';
 import { initDataView } from './dataview.js';
 import { SCREEN_WAYS } from './dpad.js';
-import { toggleLight, turnsToFull, secondsToFull, drainLight } from './battery.js';
-import { computeVisibility } from './sight.js';
-import { noteSigns } from './warning.js';
 
 import { resetWalk, walkTileMs } from './walk.js';
 import { setQuestion } from './questionview.js';
@@ -55,8 +50,6 @@ initGunActions({ applyTurnOutcome, drawEvents, openCharger, showRoomNote });
 const startScreen = document.getElementById('startScreen');
 
 const revealToggle = document.getElementById('revealToggle');
-
-const simpleEnemiesToggle = document.getElementById('simpleEnemiesToggle');
 
 const playerNameInput = document.getElementById('playerName');
 const roomScreen = document.getElementById('roomScreen');
@@ -86,12 +79,6 @@ const winStats = document.getElementById('winStats');
 const winTitle = document.getElementById('winTitle');
 const loseStats = document.getElementById('loseStats');
 const loseTitle = document.getElementById('loseTitle');
-const lightHintEls = {
-  n: document.getElementById('lightHintN'),
-  s: document.getElementById('lightHintS'),
-  e: document.getElementById('lightHintE'),
-  w: document.getElementById('lightHintW'),
-};
 
 // The d-pad's arrows by where they point on screen (dpad.js SCREEN_WAYS),
 // and its centre.
@@ -103,15 +90,12 @@ const dpadButtons = {
 initRender({
   startScreen, shipIntroScreen, roomScreen, winScreen, loseScreen,
   heartsEl, coinsTotalEl, turnCountEl, roomNumEl, roomOfEl, roomTotalEl, timerEl, statsEl,
-  lightHintEls, dpadButtons,
+  dpadButtons,
   senseNote: document.getElementById('senseNote'),
   answerNote: document.getElementById('answerNote'),
   shipTaught: document.getElementById('shipTaught'),
   shipPanic: document.getElementById('shipPanic'),
   shipPanicMeter: document.getElementById('shipPanicMeter'),
-  lightBattery: document.getElementById('lightBattery'),
-  hudTube: document.getElementById('hudTube'),
-  hudTubeWord: document.getElementById('hudTubeWord'),
 
   keysStat: document.getElementById('keysStat'),
   keysText: document.getElementById('keysText'),
@@ -154,31 +138,6 @@ initDevPanel({
   advanceRoom, autoWinGun,
 });
 
-// Switches the light on or off (battery.js toggleLight; V, the LIGHT
-// button). No turn, so
-// the real-time clock doesn't matter. Locked after running empty, it stays
-// off and says how long until it is full.
-function switchLight() {
-  if (!roomScreen.classList.contains('show') || mapPanelShown() || state.run.turnLocked || state.run.runEnded) return;
-  const result = toggleLight();
-  if (!result) return;
-  if (result === 'locked' && state.floor.light.steady) {
-    showRoomNote('block-msg', t('tut.light.none'));
-    return;
-  }
-  if (result === 'locked') {
-    showRoomNote('block-msg', state.settings.oneStick ? t('room.ownLight.locked.seconds', { seconds: secondsToFull() }) : t('room.ownLight.locked', { turns: turnsToFull() }));
-    return;
-  }
-  computeVisibility();
-  const note = drawEvents([{ type: 'lightSwitched', on: result === 'on' }]);
-  showRoomNote(note.cls, note.text);
-}
-// The LIGHT button under the map (light button prototype, Timothy
-// 2026-10-27: 3 taps on a stick, the way before, were too much in a tense
-// moment).
-document.getElementById('lightBattery').addEventListener('click', () => switchLight());
-
 // A fresh run's numbers: the questions, hearts, gold, turns and story.
 // startGame() sets them.
 function resetRun() {
@@ -209,11 +168,7 @@ function startGame() {
   // Always One stick: free walking on the ship (the dungeon's Turns and
   // Real time options went with it).
   state.settings.oneStick = true;
-  state.settings.realTime = false;
   syncDevOneStick();
-  // Comfort mode is a dungeon option, shown only under ?dev: a player's
-  // old saved pick, hidden now, must not change the ship.
-  state.settings.simpleEnemies = simpleEnemiesToggle.checked && !simpleEnemiesToggle.closest('label').hidden;
   resetWalk();
   // Read on every start, so a retry keeps the name without asking again.
   state.settings.playerName = playerNameInput.value.trim();
@@ -264,11 +219,7 @@ function drawFloor() {
   // the ship's name.
   const startChamber = state.floor.chamberAt.get(key(state.floor.playerRow, state.floor.playerCol));
   const startName = state.floor.chamberNames[startChamber];
-  if (startName) {
-    showRoomNote('move-msg', t('room.enter.plan', { floor: t(state.floor.plan.name), name: t(startName) }));
-  } else if (startChamber !== undefined) {
-    showRoomNote('move-msg', t('theme.' + state.floor.chamberThemes[startChamber] + '.enter'));
-  }
+  if (startName) showRoomNote('move-msg', t('room.enter.plan', { floor: t(state.floor.plan.name), name: t(startName) }));
 
   answerInput.value = '';
   setControlsEnabled(true);
@@ -343,19 +294,14 @@ statsEl.addEventListener('keydown', (e) => {
 });
 
 // A spent turn: the player's events, drawn once, then the room note from
-// all of them (or the run ends in the light, or the ship's run ends).
+// all of them (or the ship's run ends).
 // The world doesn't move on a turn: with One stick (always, on the ship)
 // it runs on the clock (worldFrame), and the stick men that once moved
 // here went with combat (dungeon removal step C). `worldMoves` is kept
 // for the callers that still pass it.
 function applyTurnOutcome(events) {
   const turn = [...events];
-  turn.push(...shutterLine(turn));
   const note = drawEvents(turn);
-  if (lightConsumed()) {
-    loseToLight();
-    return;
-  }
   // The ship's run is over: arrived, the clock out, or the crew broken.
   const shipEnd = turn.find(e => e.type === 'shipEnded');
   if (shipEnd) {
@@ -374,7 +320,7 @@ function closeAskOnRunEnd() {
 // Whether the world runs on the real-time clock: Real time on, or One
 // stick (one stick plan: free walking is real time).
 function realTimeOn() {
-  return state.settings.realTime || state.settings.oneStick;
+  return state.settings.oneStick;
 }
 
 // Whether the real-time clock may run: Real time on, a run going, the
@@ -455,35 +401,6 @@ function drawEvents(events) {
         break;
       case 'deskUntouched':
         parts.push(t('room.desk.full'));
-        break;
-      // The safe room (saferoom.js): the shutters, the lamp, and what waits
-      // outside. Several shut out at once are said once.
-      case 'shutterDown':
-        parts.push(t('room.shutter.down'));
-        break;
-      case 'shutterUp':
-        parts.push(t('room.shutter.up'));
-        break;
-      case 'shutterBlocked':
-        parts.push(t('room.shutter.blocked'));
-        cls = 'block-msg';
-        break;
-      case 'shutterWaited':
-        if (!parts.includes(t('room.shutter.waits'))) parts.push(t('room.shutter.waits'));
-        break;
-      case 'shutterGaveUp':
-        if (!parts.includes(t('room.shutter.gone'))) parts.push(t('room.shutter.gone'));
-        break;
-      case 'shutterLifting':
-        parts.push(t('room.shutter.hunter'));
-        cls = 'warn-msg';
-        break;
-      case 'shutterLifted':
-        parts.push(t('room.shutter.lifted'));
-        cls = 'warn-msg';
-        break;
-      case 'lightSwitchedForLamp':
-        parts.push(t('room.lamp.ownOff'));
         break;
       // The ship's stations (stations.js; ship plan step B).
       case 'crewSpoke':
@@ -581,23 +498,10 @@ function drawEvents(events) {
         else parts.push(t('room.paper.junk'));
         break;
       case 'roomEntered':
-        // On a fixed plan the room's own name says where you are; a random
-        // theme line ("A crypt.") would argue with it.
-        parts.push(e.name ? t('room.enter.named', { name: t(e.name) }) : t('theme.' + e.theme + '.enter'));
+        if (e.name) parts.push(t('room.enter.named', { name: t(e.name) }));
         break;
       case 'boxOpened':
         parts.push(e.gold ? t('room.box.gold', { gold: e.gold }) : t('room.box.junk'));
-        break;
-      // The player's light (battery.js).
-      case 'lightSwitched':
-        parts.push(t(e.on ? 'room.ownLight.on' : 'room.ownLight.off'));
-        break;
-      case 'lightDied':
-        parts.push(t('room.ownLight.died'));
-        cls = 'warn-msg';
-        break;
-      case 'lightCharged':
-        parts.push(t('room.ownLight.charged'));
         break;
       case 'coverTaken':
         parts.push(t('room.cover'));
@@ -618,35 +522,11 @@ function drawEvents(events) {
   return { cls, text: parts.join(' ') };
 }
 
-// The floor's turns have run out and the boss light has won: the run
-// ends where the player stands, after a beat to see it.
-function loseToLight() {
-  state.run.runEnded = true;
-  closeAskOnRunEnd();
-  showRoomNote('warn-msg', t('room.light.consumed'));
-  setControlsEnabled(false);
-  stopTimer();
-  setTimeout(() => endLose('light'), 1400);
-}
-
-// The world's frame with One stick on (one stick plan steps C and D),
-// after the player's frame of walking: the battery runs by time
-// (battery.js drainLight). What it did is drawn like a turn
-// (applyTurnOutcome). The HUD's battery is redrawn whenever a # of it is
-// spent or back.
-function worldFrame(dt) {
+// The world's frame (one stick plan step C), after the player's frame of
+// walking: the ship's HUD keeps up with the crew's panic.
+function worldFrame() {
   if (state.run.turnLocked || state.run.runEnded || !clockMayRun()) return;
-  const cells = Math.ceil(state.floor.light.charge);
-  const frameMs = Math.min(dt, ONE_STICK.frameMs);
-  const events = drainLight(frameMs);
-  if (events.length) computeVisibility();
   if (state.floor.ship) renderShipHud();
-  if (state.settings.warningTimer) noteSigns(performance.now());
-  if (Math.ceil(state.floor.light.charge) !== cells) renderHud();
-  if (!events.length) return;
-  state.run.turnLocked = true;
-  applyTurnOutcome(events);
-  state.run.turnLocked = false;
 }
 
 // Whether the world may go on with a panel up: none, CHARGE.SYS (it sits
@@ -756,13 +636,12 @@ function skipTurn() {
 
 initControls({
   applyTurnOutcome, clockMayRun, drawEvents, goDown, openCharger, openConsole,
-  realTimeOn, showRoomNote, skipTurn, switchLight, worldFrame,
+  realTimeOn, showRoomNote, skipTurn, worldFrame,
 });
 
-// `reason` is 'light' when the boss light consumed the floor; anything else
-// (running out of hearts) keeps the usual title.
-function endLose(reason) {
-  loseTitle.textContent = t(reason === 'light' ? 'end.lose.light.title' : 'end.lose.title');
+// The lose screen for running out of hearts.
+function endLose() {
+  loseTitle.textContent = t('end.lose.title');
   loseStats.textContent = t('end.lose.stats', {
     room: state.run.roomIndex + 1, rooms: state.run.order.length, time: formatTime(state.run.seconds),
     turns: state.run.turnCount, coins: state.run.coinsTotal,

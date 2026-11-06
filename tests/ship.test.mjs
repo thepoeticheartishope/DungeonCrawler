@@ -78,7 +78,6 @@ function standAt(row, col) {
 
 test('the ship has no switch, and its shutters start down with the player far from them', () => {
   const f = shipFloor();
-  assert.equal(f.safeRoom.switchAt, null);
   assert.ok(!f.props.some(p => p.kind === 'switch'));
   assert.equal(f.safeRoom.shut, true);
   assert.ok(f.props.filter(p => p.kind === 'shutter').every(p => !p.up));

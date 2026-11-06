@@ -17,7 +17,6 @@ import { ONE_STICK } from '../js/config.js';
 import { computeVisibility } from '../js/sight.js';
 import { walkFree, freeSpot, resetWalk, switchSneak } from '../js/walk.js';
 import { lookAngle, BODY_ANGLES } from '../js/look.js';
-import { inLookCone } from '../js/sight.js';
 
 const FRAME = 16;
 
@@ -142,16 +141,13 @@ test('a spot off its tile goes back to the tile centre', () => {
   assert.deepEqual(at, { x: state.floor.playerCol + 0.5, y: state.floor.playerRow + 0.5 });
 });
 
-test('the light swings round at ONE_STICK.turnRate, holds when the push stops, and the cone follows', () => {
+test('the light swings round at ONE_STICK.turnRate and holds when the push stops', () => {
   resetFloor();
-  const { playerRow: row, playerCol: col } = state.floor;
-  assert.ok(inLookCone(row - 3, col) && !inLookCone(row, col + 3));
   walk(1, 0, 100, ONE_STICK.deadZone / 2);
   assert.ok(Math.abs(lookAngle() - ONE_STICK.turnRate * 0.1) < 1e-6, 'part way round after 100 ms');
   walk(1, 0, 400, ONE_STICK.deadZone / 2);
   assert.ok(Math.abs(lookAngle() - Math.PI / 2) < 1e-6, 'east');
   assert.equal(state.floor.facing, 'E');
-  assert.ok(inLookCone(row, col + 3) && !inLookCone(row - 3, col), 'the cone looks east');
   walk(0, 0, 200);
   assert.ok(Math.abs(lookAngle() - Math.PI / 2) < 1e-6, 'held');
   walkFree(-1, 0, { push: ONE_STICK.deadZone / 2, dtMs: 16, still: true });

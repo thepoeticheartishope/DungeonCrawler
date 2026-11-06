@@ -113,12 +113,6 @@ test('each room\'s doorways are its own floor, and every room tile is in the roo
   });
 });
 
-test('a version is picked at random when none is given, and both come up', () => {
-  const seen = new Set();
-  for (let i = 0; i < 60; i++) seen.add(buildPlanLayout(FLOOR_PLANS.school, CORE_KEYS).version);
-  assert.deepEqual([...seen].sort(), PLAN_VERSIONS);
-});
-
 test('every plan and every room has a name with wording, and no two rooms share one', () => {
   Object.values(FLOOR_PLANS).forEach(plan => {
     assert.ok(plan.name in TEXT, plan.name);
