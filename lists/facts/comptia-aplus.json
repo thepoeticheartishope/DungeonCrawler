@@ -19,7 +19,7 @@
     {"id": "coaxial", "name": "coaxial", "type": "cable"},
     {"id": "fiber", "name": "fiber optic", "type": "cable"},
     {"id": "serial_cable", "name": "serial", "type": "cable"},
-    {"id": "serial", "name": "serial", "type": "interface"},
+    {"id": "serial_interface", "name": "serial", "type": "interface"},
     {"id": "ssh", "name": "SSH", "type": "protocol"},
     {"id": "telnet", "name": "Telnet", "type": "protocol"},
     {"id": "smtp", "name": "SMTP", "type": "protocol"},
