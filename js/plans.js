@@ -39,6 +39,7 @@ export const FLOOR_PLANS = {
       ['crew', 2, 19, 'pilot'],
       ['crew', 5, 13, 'gunner'], // the Bridge, by its doorway (Timothy 2026-11-01: the Bridge; the top row would wall a corner off)
       ['crew', 12, 28, 'comms'],
+      ['crew', 16, 28, 'signals'], // beside Comms (facts list plan step E)
       ['crew', 2, 4, 'medic'],
       ['crew', 24, 30, 'cook'],
       ['crew', 12, 2, 'systems'],

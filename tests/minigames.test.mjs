@@ -5,7 +5,8 @@
 // Syllable Split's splitter, fit, tray and tiers, Letter Pool's roll,
 // tray, checks, tiers and no haunts, Code Break's fit, marks and tiers,
 // Verdict's fit, claims, tiers and haunts, Crosswire's fit, grid and
-// tiers, Fog Reveal's fit and tiers, and Sum Lock's roll, lock and haunts.
+// tiers, Fog Reveal's fit and tiers, Sum Lock's roll, lock and haunts,
+// and Patch Bay's boards, nudges, checks, fit and levels.
 //
 // Run: node --test tests/*.test.mjs
 
@@ -21,8 +22,10 @@ import { state } from '../js/state.js';
 import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS,
-  SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM, CODE_BREAK_TIERS, VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS,
+  SYLLABLE_SPLIT_DECOYS, LETTER_POOL_FORM, CODE_BREAK_TIERS, VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, MINIGAME_LEVELS, PATCH_BAY,
 } from '../js/config.js';
+
+import { t } from '../js/text.js';
 
 import {
   MINIGAMES, MINIGAME_MODIFIERS, SHIP_ONLY, fuelMixSetup, fuelMixPour, fuelMixTier, fuelMixDry, minigamesFor, modifiersFor, rollMinigame, forcedQuestion, endMinigame,
@@ -44,6 +47,7 @@ function reset() {
   state.settings.minigame = 'roll';
   state.settings.activeData = [NUMBER, BIG, WORD];
   state.settings.activeFacts = [];
+  state.settings.activeTriples = { facts: [], labels: {} };
   state.run.lastMinigame = null;
   state.run.energy = 0;
   state.run.reloadIndex = 0;
@@ -937,4 +941,173 @@ test('Match boss: numbers never make a kind of tile (they give themselves away)'
   reset();
   state.settings.activeData = [...BOSS_SET, ...['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(m => ({ question: 'How many?', answer: m, answerType: 'number' }))];
   assert.ok(!matchGroups().some(g => g.key === 'number'));
+});
+
+// ---- Patch Bay (facts list plan step E) ----
+
+// A small triples set like the Bible file: David married two wives, so
+// they can't share a board with him; Ruth has a fact of another predicate.
+function person(id, name) { return { id, name, type: 'person', aliases: [] }; }
+const P = Object.fromEntries([['david', 'David'], ['bathsheba', 'Bathsheba'], ['abigail', 'Abigail'], ['boaz', 'Boaz'], ['ruth', 'Ruth'],
+  ['isaac', 'Isaac'], ['rebekah', 'Rebekah'], ['abraham', 'Abraham'], ['sarah', 'Sarah'], ['jacob', 'Jacob'], ['rachel', 'Rachel'],
+  ['obed', 'Obed'], ['solomon', 'Solomon']].map(([id, name]) => [id, person(id, name)]));
+const fact = (s, predicate, o) => ({ subject: P[s], predicate, object: typeof o === 'number' ? o : P[o] });
+const PATCH_TRIPLES = {
+  facts: [
+    fact('david', 'married', 'bathsheba'), fact('david', 'married', 'abigail'), fact('boaz', 'married', 'ruth'),
+    fact('isaac', 'married', 'rebekah'), fact('abraham', 'married', 'sarah'), fact('jacob', 'married', 'rachel'),
+    fact('ruth', 'mother_of', 'obed'), fact('bathsheba', 'mother_of', 'solomon'), fact('sarah', 'age_at_promise', 90),
+  ],
+  labels: { married: '{subject}\'s wife', mother_of: '{object}\'s mother' },
+};
+const PORT = id => ({ id, name: id.toUpperCase(), type: 'protocol', aliases: [] });
+const PORT_TRIPLES = {
+  facts: [['http', 80], ['https', 443], ['ssh', 22], ['dns', 53], ['ftp', 21], ['smtp', 25]].map(([id, n]) => ({ subject: PORT(id), predicate: 'uses_port', object: n })),
+  labels: { uses_port: '{subject} port' },
+};
+
+test('Patch Bay boards: no subject or object repeats, no plug fits two, the spare is a real free object', async () => {
+  const { patchBayPredicates, patchBaySetup } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeTriples = PATCH_TRIPLES;
+  assert.deepEqual(patchBayPredicates(), ['married'], 'mother_of has only two pairs');
+  const married = new Set(PATCH_TRIPLES.facts.filter(f => f.predicate === 'married').map(f => f.subject.id + '|' + f.object.id));
+  for (let level = 0; level < 3; level++) {
+    for (let n = 0; n < 30; n++) {
+      const board = patchBaySetup('married', level);
+      const lefts = board.left.map(l => l.subject.id);
+      const rights = board.right.map(r => r.key);
+      assert.equal(new Set(lefts).size, lefts.length, 'no subject twice');
+      assert.equal(new Set(rights).size, rights.length, 'no object twice');
+      board.left.forEach((l) => {
+        const fits = board.right.filter(r => married.has(l.subject.id + '|' + r.key));
+        assert.deepEqual(fits.map(r => r.id), [board.pairs[l.id]], l.text + ' fits exactly its own plug');
+      });
+      assert.ok(!(rights.includes('bathsheba') && rights.includes('abigail') && lefts.includes('david')), 'both of David\'s wives never show with him');
+      const cables = MINIGAME_LEVELS.games.patchBay[level].cables;
+      assert.equal(board.left.length, Math.min(cables, 5), 'as many cables as the level asks, while the facts have them');
+      const spares = board.right.filter(r => !Object.values(board.pairs).includes(r.id));
+      assert.ok(spares.length <= 1, 'one spare at most');
+      spares.forEach(s => assert.ok(PATCH_TRIPLES.facts.some(f => f.predicate === 'married' && f.object.id === s.key), 'a spare is a real object of the predicate'));
+      if (!MINIGAME_LEVELS.games.patchBay[level].spare) assert.equal(spares.length, 0, 'no spare below the top level');
+    }
+  }
+});
+
+test('Patch Bay: the spare plug shows at the top level when the predicate has a free object', async () => {
+  const { patchBaySetup } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeTriples = PORT_TRIPLES;
+  const top = MINIGAME_LEVELS.games.patchBay.length - 1;
+  for (let n = 0; n < 20; n++) {
+    const board = patchBaySetup('uses_port', top);
+    assert.equal(board.left.length, 5);
+    assert.equal(board.right.length, 6, 'five partners and a spare');
+  }
+});
+
+test('Patch Bay\'s nudge names no plug on the board, never the answer', async () => {
+  const { patchBaySetup, patchBayNudge } = await import('../js/minigames.js');
+  reset();
+  for (const triples of [PATCH_TRIPLES, PORT_TRIPLES]) {
+    state.settings.activeTriples = triples;
+    const predicate = triples === PORT_TRIPLES ? 'uses_port' : 'married';
+    for (let n = 0; n < 30; n++) {
+      const board = patchBaySetup(predicate, n % 3);
+      board.left.forEach((l) => {
+        board.right.filter(r => r.id !== board.pairs[l.id]).forEach((wrong) => {
+          const nudge = patchBayNudge(board, l.id, wrong.id);
+          // A number nudge names the wrong plug ("higher than 80"), never another.
+          const others = board.right.filter(r => triples === PATCH_TRIPLES || r.id !== wrong.id);
+          others.forEach(r => assert.ok(!new RegExp('\\b' + r.text + '\\b').test(nudge), nudge + ' names ' + r.text));
+        });
+      });
+    }
+  }
+  // Abraham's only other fact is Sarah's (the answer): it says there is no
+  // other fact. Sarah's own age is a fact about her, not about Abraham.
+  state.settings.activeTriples = PATCH_TRIPLES;
+  for (let n = 0; n < 20; n++) {
+    const board = patchBaySetup('married', 0);
+    const abraham = board.left.find(l => l.subject.id === 'abraham');
+    if (!abraham) continue;
+    const wrong = board.right.find(r => r.id !== board.pairs[abraham.id]);
+    assert.equal(patchBayNudge(board, abraham.id, wrong.id), t('mg.patchBay.noFact', { left: 'Abraham' }));
+  }
+});
+
+test('Patch Bay\'s nudge uses a fact of another predicate, by its label', async () => {
+  const { patchBaySetup, patchBayNudge } = await import('../js/minigames.js');
+  reset();
+  // A mother_of board (three mothers) where Ruth's other fact names Boaz,
+  // who is not a plug on it.
+  state.settings.activeTriples = {
+    facts: [...PATCH_TRIPLES.facts, fact('rebekah', 'mother_of', 'jacob')],
+    labels: PATCH_TRIPLES.labels,
+  };
+  const board = patchBaySetup('mother_of', 0);
+  const ruth = board.left.find(l => l.subject.id === 'ruth');
+  const wrong = board.right.find(r => r.id !== board.pairs[ruth.id]);
+  assert.equal(patchBayNudge(board, ruth.id, wrong.id), t('mg.patchBay.fact', { label: 'Boaz\'s wife', value: 'Ruth' }));
+});
+
+test('Patch Bay\'s number nudge says higher or lower than the wrong plug', async () => {
+  const { patchBaySetup, patchBayNudge } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeTriples = PORT_TRIPLES;
+  const board = patchBaySetup('uses_port', 0);
+  const l = board.left[0];
+  const want = Number(board.right.find(r => r.id === board.pairs[l.id]).text);
+  board.right.filter(r => r.id !== board.pairs[l.id]).forEach((wrong) => {
+    const nudge = patchBayNudge(board, l.id, wrong.id);
+    assert.equal(nudge, t(want > Number(wrong.text) ? 'mg.patchBay.higher' : 'mg.patchBay.lower', { left: l.text, n: wrong.text }));
+  });
+});
+
+test('Patch Bay\'s CHECK locks right cables, drops wrong ones, and scores by checks', async () => {
+  const { patchBaySetup, patchBayCheck, patchBayTier } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeTriples = PORT_TRIPLES;
+  const board = patchBaySetup('uses_port', 0);
+  const [a, b, c] = board.left.map(l => l.id);
+  const first = patchBayCheck(board, { [a]: board.pairs[a], [b]: board.pairs[c], [c]: board.pairs[b] });
+  assert.equal(board.checks, 1);
+  assert.deepEqual(first.wrong.map(w => w.left), [b, c]);
+  assert.ok(!first.solved);
+  assert.ok(board.locked[a] && !board.locked[b]);
+  const second = patchBayCheck(board, { [a]: board.pairs[a], [b]: board.pairs[b], [c]: board.pairs[c] });
+  assert.ok(second.solved);
+  assert.equal(patchBayTier(1), 'X');
+  assert.equal(patchBayTier(2), '2');
+  assert.equal(patchBayTier(PATCH_BAY.maxChecks), '1');
+});
+
+test('Patch Bay fits only its stand-in; the Signals officer sits out with no board', async () => {
+  const { patchBayQuestion, roleCanRun } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeTriples = { facts: [], labels: {} };
+  assert.ok(!roleCanRun('patchBay'), 'no facts file: sits out');
+  state.settings.activeTriples = { facts: PATCH_TRIPLES.facts.filter(f => f.predicate !== 'married'), labels: {} };
+  assert.ok(!roleCanRun('patchBay'), 'no predicate with three clean pairs: sits out');
+  state.settings.activeTriples = PATCH_TRIPLES;
+  assert.ok(roleCanRun('patchBay'));
+  assert.ok(SHIP_ONLY.includes('patchBay'));
+  assert.ok(!minigamesFor(WORD).includes('patchBay'), 'a question of the set never runs it');
+  const q = patchBayQuestion();
+  assert.deepEqual(minigamesFor(q), ['patchBay'], 'its stand-in does');
+  assert.equal(q.answer.split(', ').length, q.patchBay.left.length, 'its answer lists every pair');
+});
+
+test('Patch Bay grows a level with each perfect solve, up to its last', async () => {
+  const { patchBaySetup, minigameLevel } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeTriples = PORT_TRIPLES;
+  state.run.ship = { perfect: {} };
+  const levels = MINIGAME_LEVELS.games.patchBay;
+  for (let k = 0; k < levels.length + 2; k++) {
+    state.run.ship.perfect.patchBay = k;
+    assert.equal(minigameLevel('patchBay'), Math.min(k, levels.length - 1));
+    assert.equal(patchBaySetup('uses_port').left.length, levels[Math.min(k, levels.length - 1)].cables);
+  }
+  state.run.ship = null;
 });

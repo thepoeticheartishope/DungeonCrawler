@@ -15,7 +15,7 @@ import { showQuestionScreen, closeMapPanels, holdAskScreen, askHeld, closeHeldAs
 import { t } from './text.js';
 import { setQuestion, setMinigame, clearModifier, applyModifier, markAnswer, matchesAnswer, parkQuestionPanel } from './questionview.js';
 import {
-  rollMinigame, forcedQuestion, endMinigame, letterPoolSetup, sumLockSetup, modifiersFor, roleQuestions, roleGroups, matchGroups, matchSetup, inferenceQuestion,
+  rollMinigame, forcedQuestion, endMinigame, letterPoolSetup, sumLockSetup, modifiersFor, roleQuestions, roleGroups, matchGroups, matchSetup, inferenceQuestion, patchBayQuestion,
 } from './minigames.js';
 import { playMinigameOut } from './minigameview.js';
 
@@ -145,7 +145,8 @@ function askRound(role, how) {
 }
 
 // A question for a round of `minigame`: a Letter Pool over a category it
-// can run, a fresh Sum Lock, an Inference over one of the set's facts, or
+// can run, a fresh Sum Lock, an Inference over one of the set's facts, a
+// Patch Bay board of them, or
 // a question of the set it fits.
 function jobQuestion(minigame) {
   if (minigame === 'letterPool') {
@@ -154,6 +155,7 @@ function jobQuestion(minigame) {
   }
   if (minigame === 'sumLock') return sumLockQuestion();
   if (minigame === 'inference') return inferenceQuestion(state.battle.currentQuestion);
+  if (minigame === 'patchBay') return patchBayQuestion(state.battle.currentQuestion);
   return pickQuestion(state.battle.currentQuestion, roleQuestions(minigame));
 }
 

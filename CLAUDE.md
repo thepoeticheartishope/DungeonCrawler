@@ -97,7 +97,7 @@ Rules and data (no page/DOM access):
 | `sight.js` | What the player sees (`computeVisibility`: all of the ship), `canMakeOut`, cover. |
 | `look.js` | The light's angle: body facing, `lookAngle`, `aimLook`, `swingLook`. |
 | `modifiers.js` | The Gambler's most (`maxWager`), `blindReadMs()`, Flip's roll. |
-| `minigames.js` | Minigame rules: which fit a question, rolls, tiers (Close Enough … Sum Lock). |
+| `minigames.js` | Minigame rules: which fit a question, rolls, tiers (Close Enough … Sum Lock, Patch Bay). |
 | `moves.js` | What a walk finds: `enterTile` (a new tile: the safe room, a new room) and `bumpInto`. |
 | `walk.js` | Free walking with One stick: `walkFree()`, sneak and creep. |
 | `windows.js` | Windows on outside walls and their pools of light. |

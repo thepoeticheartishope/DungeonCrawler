@@ -16,7 +16,7 @@ import {
   MINIGAME_CHANCE, CLOSE_ENOUGH_REACH_MIN, CLOSE_ENOUGH_REACH_MAX, CLOSE_ENOUGH_MIN_TOP, CLOSE_ENOUGH_MIN_STEPS,
   CLOSE_ENOUGH_BANDS, CLOSE_ENOUGH_SMALL, CLOSE_ENOUGH_SMALL_OFF,
   HIGHER_LOWER_REACH_MIN, HIGHER_LOWER_REACH_MAX, HIGHER_LOWER_MIN_TOP, HIGHER_LOWER_MIN_STEPS, HIGHER_LOWER_MAX_AT,
-  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, STAR_CHART, HULL_PATCH, INFERENCE, ASTEROIDS, MATCH_BOSS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
+  PORT_LIKE_TYPES, HIGHER_LOWER_TIERS, FUEL_MIX, SCANNER, STAR_CHART, HULL_PATCH, INFERENCE, PATCH_BAY, ASTEROIDS, MATCH_BOSS, SLOW_SPELL_MIN_LETTERS, SLOW_SPELL_MAX_LETTERS, SLOW_SPELL_X_SHOWN,
   SYLLABLE_SPLIT_MIN_PIECES, SYLLABLE_SPLIT_DECOYS, SYLLABLE_SPLIT_TIERS,
   CODE_BREAK_MIN_CHARS, CODE_BREAK_MAX_CHARS, CODE_BREAK_TIERS,
   VERDICT_CLAIMS, VERDICT_BOSS_CLAIMS, VERDICT_TIERS, VERDICT_BOSS_TIERS, VERDICT_FALSE_SHARE, VERDICT_MIN_DECOYS,
@@ -56,6 +56,7 @@ export const MINIGAME_MODIFIERS = {
   starChart: [],
   hullPatch: [],
   inference: [],
+  patchBay: [],
   asteroids: [],
   // The final boss: run by its own stand-in question only (bossQuestion).
   match: [],
@@ -63,7 +64,7 @@ export const MINIGAME_MODIFIERS = {
 
 // Minigames only the ship's crew roles run (ship minigames plan): never
 // rolled in place of a question elsewhere.
-export const SHIP_ONLY = ['fuelMix', 'scanner', 'starChart', 'hullPatch', 'inference', 'asteroids', 'match'];
+export const SHIP_ONLY = ['fuelMix', 'scanner', 'starChart', 'hullPatch', 'inference', 'patchBay', 'asteroids', 'match'];
 
 export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 
@@ -93,6 +94,9 @@ const FITS = {
   // Inference runs a fact of the set's facts list, not a question: only
   // its own stand-in question (inferenceQuestion) fits it.
   inference: q => Boolean(q.inference),
+  // Patch Bay runs a board of the set's facts, not a question: only its
+  // own stand-in question (patchBayQuestion) fits it.
+  patchBay: q => Boolean(q.patchBay),
   asteroids: q => asteroidsFits(q),
   match: q => Boolean(q.match),
 };
@@ -115,13 +119,15 @@ function answerInStem(q) {
 
 // Whether `minigame` can be a ship crew role's job on the loaded set (crew
 // roles plan; roles.js): Letter Pool needs a category it can run, Sum Lock
-// two number answers to add, any other enough questions it fits
+// two number answers to add, Patch Bay a predicate that makes a board,
+// any other enough questions it fits
 // (SHIP_JOB.minFitting). One that can't, its role sits out the run.
 export function roleCanRun(minigame) {
   const data = state.settings.activeData || [];
   if (minigame === 'letterPool') return roleGroups().length > 0;
   if (minigame === 'sumLock') return sumLockQuestions().length >= 2;
   if (minigame === 'inference') return inferenceTargets().length >= SHIP_JOB.minFitting;
+  if (minigame === 'patchBay') return patchBayPredicates().length > 0;
   return data.filter(FITS[minigame]).length >= SHIP_JOB.minFitting;
 }
 
@@ -192,6 +198,7 @@ export function forcedQuestion(q, pool) {
   const mode = state.settings.minigame;
   if (!FITS[mode] || FITS[mode](q)) return q;
   if (mode === 'inference') return inferenceTargets().length ? inferenceQuestion(q) : q;
+  if (mode === 'patchBay') return patchBayPredicates().length ? patchBayQuestion(q) : q;
   const inPool = (pool || []).filter(FITS[mode]);
   const fitting = inPool.length ? inPool : state.settings.activeData.filter(FITS[mode]);
   return fitting.length ? pickQuestion(q, fitting) : q;
@@ -631,6 +638,198 @@ export function inferenceCheck(puzzle, values) {
 // INFERENCE.maxChecks = 1.
 export function inferenceTier(checks) {
   return checks <= 1 ? 'X' : checks === 2 ? '2' : '1';
+}
+
+// ---- Patch Bay: cable each subject to its object ----
+// The Signals officer's job (facts list plan step E; Timothy 2026-11-07).
+// It reads the set's facts as triples (state.settings.activeTriples,
+// factgen.js readTriples): one predicate per board, its subjects as plugs
+// on the left, objects on the right. A board never lets one plug fit two:
+// no subject and no object repeats, and no left plug has a fact of the
+// predicate with another right plug (David married two of the wives:
+// only one of them goes on a board with him).
+
+// A fact side's key: an entity by id, a number by value.
+function sideKey(side) {
+  return typeof side === 'number' ? '#' + side : side.id;
+}
+
+// What a fact side shows: an entity's name (never its id), or the number.
+function sideText(side) {
+  return typeof side === 'number' ? String(side) : side.name;
+}
+
+// A plug's name as a key, so two plugs that read the same count as one.
+function plugName(side) {
+  return 'name:' + sideText(side).toLowerCase();
+}
+
+// A predicate as words: "father_of" -> "father of".
+function predicateWords(predicate) {
+  return predicate.replaceAll('_', ' ');
+}
+
+// The set's triples (none when a set has no facts file).
+function triples() {
+  return state.settings.activeTriples || { facts: [], labels: {} };
+}
+
+// The facts of the loaded set, grouped by predicate in file order:
+// Map predicate -> facts.
+function patchBayByPredicate() {
+  const byPredicate = new Map();
+  (triples().facts || []).forEach((f) => {
+    if (!byPredicate.has(f.predicate)) byPredicate.set(f.predicate, []);
+    byPredicate.get(f.predicate).push(f);
+  });
+  return byPredicate;
+}
+
+// Every "subject|object" key of `facts`.
+function linkedPairs(facts) {
+  return new Set(facts.map(f => sideKey(f.subject) + '|' + sideKey(f.object)));
+}
+
+// Up to `n` of `facts` (all of one predicate) that can share a board,
+// taken in the order given: each new pair's subject and object are new to
+// the board, and neither its subject has a fact with a board object nor a
+// board subject with its object (`linked`: linkedPairs of the predicate).
+// Plug names don't repeat either, so two plugs never read the same.
+function cleanPairs(facts, n, linked) {
+  const picked = [];
+  const used = new Set();
+  for (const f of facts) {
+    if (picked.length >= n) break;
+    const s = sideKey(f.subject);
+    const o = sideKey(f.object);
+    const names = ['L' + plugName(f.subject), 'R' + plugName(f.object)];
+    if (used.has(s) || used.has(o) || names.some(k => used.has(k))) continue;
+    if (picked.some(g => linked.has(s + '|' + sideKey(g.object)) || linked.has(sideKey(g.subject) + '|' + o))) continue;
+    picked.push(f);
+    [s, o, ...names].forEach(k => used.add(k));
+  }
+  return picked;
+}
+
+// The predicates of the loaded set a board can be made from: ones with
+// PATCH_BAY.minCables clean pairs in file order (so the answer never
+// changes with a shuffle). None: the Signals officer sits out.
+export function patchBayPredicates() {
+  const out = [];
+  patchBayByPredicate().forEach((facts, predicate) => {
+    if (cleanPairs(facts, Infinity, linkedPairs(facts)).length >= PATCH_BAY.minCables) out.push(predicate);
+  });
+  return out;
+}
+
+// A new board over `predicate` at `level` (MINIGAME_LEVELS.games.patchBay):
+// the most clean pairs up to the level's cables, from file order and
+// PATCH_BAY.tries shuffles (file order always gives at least minCables),
+// plus, when the level has a spare and the predicate has one, a right plug
+// with no partner: a real object of the predicate, not on the board, that
+// no left plug has a fact with. Returns { predicate, words, left, right,
+// pairs, locked, checks, level }: left plugs { id 'A'..., text, subject },
+// right plugs { id 'r0'..., text, key } in shuffled order, `pairs` left
+// id -> right id, `locked` the left ids cabled right so far.
+export function patchBaySetup(predicate, level = minigameLevel('patchBay')) {
+  const facts = patchBayByPredicate().get(predicate) || [];
+  const linked = linkedPairs(facts);
+  const { cables, spare } = MINIGAME_LEVELS.games.patchBay[level];
+  let best = cleanPairs(facts, cables, linked);
+  for (let i = 0; i < PATCH_BAY.tries && best.length < cables; i++) {
+    const tried = cleanPairs(shuffle(facts.slice()), cables, linked);
+    if (tried.length > best.length) best = tried;
+  }
+  best = shuffle(best.slice());
+  const left = best.map((f, i) => ({ id: String.fromCharCode(65 + i), text: sideText(f.subject), subject: f.subject }));
+  const right = best.map(f => ({ text: sideText(f.object), key: sideKey(f.object) }));
+  if (spare) {
+    const taken = new Set(best.flatMap(f => [sideKey(f.object), plugName(f.object)]));
+    const free = facts.map(f => f.object).find(o => !taken.has(sideKey(o)) && !taken.has(plugName(o))
+      && !best.some(f => linked.has(sideKey(f.subject) + '|' + sideKey(o))));
+    if (free !== undefined) right.push({ text: sideText(free), key: sideKey(free) });
+  }
+  const order = shuffle(right.map((r, i) => i));
+  const shown = order.map((i, n) => ({ ...right[i], id: 'r' + n }));
+  const pairs = {};
+  left.forEach((l, i) => { pairs[l.id] = shown[order.indexOf(i)].id; });
+  return { predicate, words: predicateWords(predicate), left, right: shown, pairs, locked: {}, checks: 0, level };
+}
+
+// Patch Bay's stand-in for a question: a board over one of the set's
+// predicates (never the one just asked when there is another; `exclude`
+// is the last question). Its answer lists each pair, for the log on a miss.
+export function patchBayQuestion(exclude = null) {
+  const predicates = patchBayPredicates();
+  const last = exclude && exclude.patchBay && exclude.patchBay.predicate;
+  const fresh = predicates.length > 1 ? predicates.filter(p => p !== last) : predicates;
+  const board = patchBaySetup(fresh[Math.floor(Math.random() * fresh.length)]);
+  const textOf = id => board.right.find(r => r.id === id).text;
+  return {
+    question: t('mg.patchBay.term', { words: board.words }),
+    answer: board.left.map(l => t('mg.patchBay.pair', { left: l.text, right: textOf(board.pairs[l.id]) })).join(', '),
+    patchBay: board,
+  };
+}
+
+// A CHECK of `board` with the player's `cables` (left id -> right id, every
+// left plug cabled): right cables lock (`board.locked`), and each wrong one
+// comes back with its nudge (patchBayNudge), for the view to drop it.
+// Counts the CHECK. Returns { wrong: [{ left, right, nudge }], solved }.
+export function patchBayCheck(board, cables) {
+  board.checks++;
+  const wrong = [];
+  board.left.forEach((l) => {
+    if (board.locked[l.id]) return;
+    if (cables[l.id] === board.pairs[l.id]) board.locked[l.id] = true;
+    else wrong.push({ left: l.id, right: cables[l.id], nudge: patchBayNudge(board, l.id, cables[l.id]) });
+  });
+  return { wrong, solved: wrong.length === 0 };
+}
+
+// The tier of a board solved on CHECK `checks`: 1 = X, 2 = 2, then 1.
+export function patchBayTier(checks) {
+  return checks <= 1 ? 'X' : checks === 2 ? '2' : '1';
+}
+
+// A fact as a line: its template's label filled in, then the other side
+// ("Solomon's father: David", "RJ45 cable: twisted pair"), or, with no
+// label naming just one side, "<subject> <predicate words> <object>".
+function factLine(f) {
+  const label = triples().labels[f.predicate];
+  const s = sideText(f.subject);
+  const o = sideText(f.object);
+  const hasS = Boolean(label) && label.includes('{subject}');
+  const hasO = Boolean(label) && label.includes('{object}');
+  if (hasS && !hasO) return t('mg.patchBay.fact', { label: label.replaceAll('{subject}', s), value: o });
+  if (hasO && !hasS) return t('mg.patchBay.fact', { label: label.replaceAll('{object}', o), value: s });
+  return t('mg.patchBay.plain', { subject: s, words: predicateWords(f.predicate), object: o });
+}
+
+// The light nudge for a wrong cable from left plug `leftId` to right plug
+// `rightId` (2026-11-01 light-nudge rule): a fact about that left plug's
+// subject, on either side, of another predicate, that names no right plug
+// on the board ("Boaz's wife: Ruth."). None: for numbers, whether its
+// partner is higher or lower than the wrong plug; else that there is no
+// other fact about it here. Never the answer.
+export function patchBayNudge(board, leftId, rightId) {
+  const l = board.left.find(p => p.id === leftId);
+  const wrongPlug = board.right.find(p => p.id === rightId);
+  const rightPlug = board.right.find(p => p.id === board.pairs[leftId]);
+  const onBoard = new Set(board.right.flatMap(p => [p.key, 'name:' + p.text.toLowerCase()]));
+  const named = side => onBoard.has(sideKey(side)) || onBoard.has(plugName(side));
+  const me = sideKey(l.subject);
+  const fact = (triples().facts || []).find((f) => {
+    if (f.predicate === board.predicate) return false;
+    if (sideKey(f.subject) === me) return !named(f.object);
+    if (typeof f.object !== 'number' && sideKey(f.object) === me) return !named(f.subject);
+    return false;
+  });
+  if (fact) return factLine(fact);
+  if (wrongPlug && rightPlug.key[0] === '#' && wrongPlug.key[0] === '#') {
+    return t(Number(rightPlug.text) > Number(wrongPlug.text) ? 'mg.patchBay.higher' : 'mg.patchBay.lower', { left: l.text, n: wrongPlug.text });
+  }
+  return t('mg.patchBay.noFact', { left: l.text });
 }
 
 // ---- Asteroids: shoot the rock that carries the answer ----
