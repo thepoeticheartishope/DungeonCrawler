@@ -1,15 +1,7 @@
 {
   "entities": [
-    {
-      "id": "rj45",
-      "name": "RJ45",
-      "type": "connector"
-    },
-    {
-      "id": "rj11",
-      "name": "RJ11",
-      "type": "connector"
-    },
+    { "id": "rj45", "name": "RJ45", "type": "connector" },
+    { "id": "rj11", "name": "RJ11", "type": "connector" },
     {
       "id": "db9",
       "name": "DB9",
