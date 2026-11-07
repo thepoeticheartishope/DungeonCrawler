@@ -990,11 +990,12 @@ const CRISIS = { kind: 'crisis', word: '!!' };
 // steps A-B), whether its one retry is spent (`retried`), and for Call:
 // the question asked (`ask`: { q, word, kind }), the `answers` so far,
 // the questions already `asked` (none twice) and the turns `stuck` since
-// the last answer (the hint ladder).
+// the last answer (the hint ladder), and in Dark the swaps in a row with no
+// line (`misses`, Dark's hint ladder; boss plan step C).
 export function matchSetup(groups) {
   const board = {
     groups, cells: [], charge: [0, 0, 0], turn: 0, toSpread: 0, skip: 0, reveal: 0, phase: 0, retried: false,
-    ask: null, answers: 0, asked: [], stuck: 0, answeredNow: false,
+    ask: null, answers: 0, asked: [], stuck: 0, answeredNow: false, misses: 0,
   };
   matchFreshPhase(board);
   return board;
@@ -1017,6 +1018,7 @@ function matchFreshPhase(board) {
   board.ask = null;
   board.answers = 0;
   board.stuck = 0;
+  board.misses = 0;
   board.answeredNow = false;
   if (board.phase === MATCH_CALL) matchAsk(board);
 }
@@ -1066,13 +1068,49 @@ export function matchAnswerAt(board) {
   return board.cells.findIndex(tile => matchIsAnswer(board, tile));
 }
 
-// How far up the hint ladder `board` is for its Call question (boss plan):
-// 0 none, 1 its kind, 2 its row, 3 its column glows. Each step comes
-// MATCH_BOSS.hintTurns turns with no answer, one turn later per `panic`
-// level; it starts again after an answer.
+// The Dark phase's number: words only (boss plan step A).
+export const MATCH_DARK = 1;
+
+// How far up the hint ladder `board` is (boss plan): 0 none, 1 a kind, 2
+// a row, 3 a column glows. In Call it points at the question's answer and
+// climbs with turns with no answer; in Dark it points at a swap that makes
+// a line and climbs with swaps in a row that made none. Each step comes
+// after MATCH_BOSS.hintTurns of those, one later per `panic` level; it
+// starts again after an answer (Call) or a line (Dark). Sort has none:
+// its colours are the hint.
 export function matchHint(board, panic = 0) {
-  if (board.phase !== MATCH_CALL || !board.ask) return 0;
-  return MATCH_BOSS.hintTurns.filter(n => board.stuck >= n + panic).length;
+  if (board.phase === MATCH_CALL) return board.ask ? MATCH_BOSS.hintTurns.filter(n => board.stuck >= n + panic).length : 0;
+  if (board.phase !== MATCH_DARK) return 0;
+  return MATCH_BOSS.hintTurns.filter(n => board.misses >= n + panic).length;
+}
+
+// What `board`'s hint ladder points at: { at (a tile), kind }, the
+// question's answer in Call, in Dark a tile that one swap moves into a
+// line (matchFindMove), else null. The ladder never names the word.
+export function matchHintAt(board) {
+  if (board.phase === MATCH_CALL) {
+    const at = matchAnswerAt(board);
+    return at >= 0 ? { at, kind: board.ask.kind } : null;
+  }
+  return board.phase === MATCH_DARK ? matchFindMove(board) : null;
+}
+
+// The first swap on `board` (top-left first) that makes a line: { at (the
+// tile that moves into it), to (where it goes), kind (the line's) }, or
+// null when no swap does. The board is left as it was.
+export function matchFindMove(board) {
+  const cells = board.cells;
+  const size = MATCH_BOSS.size;
+  for (let a = 0; a < cells.length; a++) {
+    for (const b of [a % size < size - 1 ? a + 1 : -1, a + size < cells.length ? a + size : -1]) {
+      if (b < 0 || cells[a].kind === 'crisis' || cells[b].kind === 'crisis') continue;
+      [cells[a], cells[b]] = [cells[b], cells[a]];
+      const run = matchRuns(board)[0];
+      [cells[a], cells[b]] = [cells[b], cells[a]];
+      if (run) return run.cells.includes(b) ? { at: a, to: b, kind: run.kind } : { at: b, to: a, kind: run.kind };
+    }
+  }
+  return null;
 }
 
 // Whether `board` is on its last phase: winning it wins the boss.
@@ -1142,23 +1180,30 @@ export function matchNear(k) {
 // more for 4 or more). Charge stops at MATCH_BOSS.full. In Call, a line
 // through the answer tile (in any wave) is an answer: `answered` is the
 // question it answers, and a new question is asked unless the phase is
-// won.
+// won. With no answer, a line of the question's kind is `wrong`: its first
+// word (right kind, wrong word; boss plan step C). A swap with no line
+// adds to `misses`; a line starts them again.
 export function matchSwap(board, a, b) {
   const cells = board.cells;
   if (!matchNear(a).includes(b) || cells[a].kind === 'crisis' || cells[b].kind === 'crisis') return { lined: false, invalid: true };
   [cells[a], cells[b]] = [cells[b], cells[a]];
   if (!matchRuns(board).length) {
     [cells[a], cells[b]] = [cells[b], cells[a]];
+    board.misses++;
     return { lined: false };
   }
+  board.misses = 0;
   const waves = [];
   const start = cells.map(t => ({ ...t }));
   const size = MATCH_BOSS.size;
   let answered = null;
+  let wrong = null;
   for (let runs = matchRuns(board); runs.length; runs = matchRuns(board)) {
     const hit = new Set();
     const gained = [0, 0, 0];
     if (!answered && runs.some(run => run.cells.some(k => matchIsAnswer(board, cells[k])))) answered = board.ask;
+    const shelf = board.ask && runs.find(run => run.kind === board.ask.kind);
+    if (!wrong && shelf) wrong = cells[shelf.cells[0]].word;
     runs.forEach((run) => {
       gained[run.kind] += 1 + (run.cells.length >= 4 ? MATCH_BOSS.bonus : 0);
       run.cells.forEach(k => hit.add(k));
@@ -1193,7 +1238,7 @@ export function matchSwap(board, a, b) {
     board.ask = null;
     if (!matchWon(board)) matchAsk(board);
   }
-  return { lined: true, start, waves, answered };
+  return { lined: true, start, waves, answered, wrong: answered ? null : wrong };
 }
 
 // Whether `board`'s phase is won: every crew slot charged full, or in

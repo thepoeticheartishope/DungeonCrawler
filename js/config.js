@@ -777,6 +777,11 @@ export const MATCH_BOSS = {
   // hint ladder's steps (kind, row, the column glows) after this many turns
   // with no answer, each one turn later per panic level.
   callAnswers: 3, hintTurns: [2, 4, 6],
+  // The crew chat over the board keeps this many lines (boss plan step C).
+  // Its spread warning speaks only once the crisis covers `warnFrom` tiles:
+  // it spreads every 2nd move, so a warning every time crowded out the
+  // nudges (found in play, 2026-11-07).
+  chatLines: 4, warnFrom: 5,
 };
 export const SCANNER = { xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
 // Sum Lock: a trapped box only. When a trapped box rolls a minigame it is
