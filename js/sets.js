@@ -6,7 +6,8 @@ const CUSTOM_SETS_KEY = 'termDungeon.customSets';
 
 // ---- Bundled sets (lists/manifest.json + lists/<file>.json) ----
 //
-// Each manifest entry: { id, subject, name, description, file }. Sets with
+// Each manifest entry: { id, subject, name, description, file, facts? }
+// (facts: the set's facts file, see fetchFacts below). Sets with
 // the same "subject" (e.g. both Bible sets are "bible") cover the same
 // material; CompTIA subjects are per exam ("comptia-aplus"). The subject
 // picks the term dictionary wrong answers are drawn from
@@ -37,6 +38,54 @@ export async function fetchBundledSet(file) {
     return Array.isArray(data) ? data : null;
   } catch (e) {
     return null;
+  }
+}
+
+// ---- Facts (lists/facts/<id>.json; facts list plan step B) ----
+//
+// A set's facts are their own list, apart from its questions: rows
+// { fact, value, source? }, the value a number or text. The manifest
+// entry names the file ("facts": "facts/<id>.json"); no entry, no facts.
+// Inference uses the whole-number values (minigames.js). A missing or
+// broken file gives [] (the set still plays, with no facts) and a warning
+// in the console with ?dev on the address. Bad rows are skipped.
+
+function factsWarn(message) {
+  if (typeof location !== 'undefined' && new URLSearchParams(location.search).has('dev')) console.warn('facts: ' + message);
+}
+
+// Whether `f` is a fact row: a fact name and a number or text value.
+export function goodFact(f) {
+  if (!f || typeof f !== 'object' || typeof f.fact !== 'string' || !f.fact.trim()) return false;
+  if (typeof f.value === 'number') return Number.isFinite(f.value);
+  return typeof f.value === 'string' && f.value.trim() !== '';
+}
+
+// The good rows of a facts list, each { fact, value, source? }.
+export function cleanFacts(rows) {
+  if (!Array.isArray(rows)) return [];
+  return rows.filter(goodFact).map(f => ({
+    fact: f.fact.trim(),
+    value: typeof f.value === 'string' ? f.value.trim() : f.value,
+    ...(typeof f.source === 'string' && f.source.trim() ? { source: f.source.trim() } : {}),
+  }));
+}
+
+// Returns the facts list in `file` (relative to lists/), or [] when there
+// is none or it can't be had.
+export async function fetchFacts(file) {
+  if (!file) return [];
+  try {
+    const res = await fetch('lists/' + file);
+    if (!res.ok) { factsWarn('lists/' + file + ' not found (' + res.status + '); the set plays with no facts'); return []; }
+    const data = await res.json();
+    if (!Array.isArray(data)) { factsWarn('lists/' + file + ' is not a list; the set plays with no facts'); return []; }
+    const facts = cleanFacts(data);
+    if (facts.length < data.length) factsWarn('lists/' + file + ': ' + (data.length - facts.length) + ' bad rows skipped');
+    return facts;
+  } catch (e) {
+    factsWarn('lists/' + file + ' could not be read (' + e.message + '); the set plays with no facts');
+    return [];
   }
 }
 

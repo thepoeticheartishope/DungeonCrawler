@@ -6,7 +6,7 @@
 // way into the workshop (setloader.js showWorkshop).
 import { state } from './state.js';
 import { escapeHtml } from './quiz.js';
-import { fetchManifest, fetchBundledSet, fetchDictionary, listSavedSets, loadSavedSet } from './sets.js';
+import { fetchManifest, fetchBundledSet, fetchDictionary, fetchFacts, listSavedSets, loadSavedSet } from './sets.js';
 import { t } from './text.js';
 
 // Which set was picked last: 'builtin:<id>', 'saved:<name>' or 'workshop'.
@@ -118,20 +118,21 @@ export async function setChoices() {
   return [...builtins.map(s => ({ value: 'builtin:' + s.id, name: s.name })), ...own];
 }
 
-// Fetches set `value` and its subject dictionary (built-in sets only):
-// { data, dictionary }, or null if it can't be had. `builtins` is the
+// Fetches set `value` with its subject dictionary and its facts (built-in
+// sets only): { data, dictionary, facts }, or null if it can't be had. No
+// facts (or a facts file that can't be had) is [], and the set still plays. `builtins` is the
 // manifest, fetched again when not given.
 export async function fetchSet(value, builtins = null) {
-  if (value === 'workshop') return state.settings.workshopData ? { data: state.settings.workshopData, dictionary: null } : null;
+  if (value === 'workshop') return state.settings.workshopData ? { data: state.settings.workshopData, dictionary: null, facts: [] } : null;
   if (value.startsWith('saved:')) {
     const data = loadSavedSet(value.slice('saved:'.length));
-    return data && data.length ? { data, dictionary: null } : null;
+    return data && data.length ? { data, dictionary: null, facts: [] } : null;
   }
   if (!value.startsWith('builtin:')) return null;
   const chosen = (builtins || await fetchManifest()).find(s => s.id === value.slice('builtin:'.length));
   if (!chosen) return null;
-  const [data, dictionary] = await Promise.all([fetchBundledSet(chosen.file), fetchDictionary(chosen.subject)]);
-  return data && data.length ? { data, dictionary } : null;
+  const [data, dictionary, facts] = await Promise.all([fetchBundledSet(chosen.file), fetchDictionary(chosen.subject), fetchFacts(chosen.facts)]);
+  return data && data.length ? { data, dictionary, facts } : null;
 }
 
 // Loads the picked set into state.settings and starts the run. A built-in
@@ -153,6 +154,7 @@ async function pick(value, builtins) {
 
   state.settings.activeData = set.data;
   state.settings.activeDictionary = set.dictionary;
+  state.settings.activeFacts = set.facts;
   writeLastSet(value);
   // startGame's showScreen only knows the game screens, so leave this one first.
   pickScreen.classList.remove('show');

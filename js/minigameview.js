@@ -1393,10 +1393,10 @@ function buildHullPatch() {
   };
 }
 
-// ---- Inference: work a labelled fact out from lines that add up ----
+// ---- Inference: work a fact out from lines that add up ----
 // The Science job (ship minigames plan step E), in place of Verdict. The
-// lines are labelled facts that add up; the player fills in each helping
-// fact, then the answer (the question's own fact), and CHECKs. CHECK
+// lines are facts of the set's facts list that add up; the player fills in
+// each helping fact, then the answer (the fact asked for), and CHECKs. CHECK
 // marks only which lines don't hold with those numbers (the light nudge),
 // never the right value. Enter checks too. No modifiers (the ship asks with none).
 // How Inference shows its operations (minigames.js inferenceSetup's terms).
@@ -1404,7 +1404,7 @@ const INFER_OPS = { '+': '+', '-': '\u2212', 'x': '\u00d7', '/': '\u00f7' };
 
 function buildInference() {
   slot.classList.add('mg-infer');
-  const puzzle = inferenceSetup(state.battle.currentQuestion);
+  const puzzle = inferenceSetup(state.battle.currentQuestion.inference);
   const ids = [...Object.keys(puzzle.facts).filter(id => id !== 'T'), 'T'];
   // A fact's symbol: its zodiac sign, named for a screen reader by the
   // fact it stands for.
@@ -1412,7 +1412,7 @@ function buildInference() {
     const el = add(parent, 'span', 'mg-infer-sym' + (id === 'T' ? ' ask' : ''));
     el.innerHTML = zodiacSvg(ZODIAC[puzzle.facts[id].sign]);
     el.setAttribute('role', 'img');
-    el.setAttribute('aria-label', puzzle.facts[id].label);
+    el.setAttribute('aria-label', puzzle.facts[id].fact);
     return el;
   };
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.inference.hint');
@@ -1422,7 +1422,7 @@ function buildInference() {
     const row = add(key, 'div', 'mg-infer-keyrow' + (id === 'T' ? ' ask' : ''));
     symbol(row, id);
     add(row, 'span', 'mg-infer-op').textContent = '=';
-    add(row, 'span', 'mg-infer-label').textContent = puzzle.facts[id].label;
+    add(row, 'span', 'mg-infer-label').textContent = puzzle.facts[id].fact;
   });
   // The sums, in symbols only.
   const lines = add(slot, 'div', 'mg-infer-lines');
@@ -1448,7 +1448,7 @@ function buildInference() {
     input.type = 'text';
     input.inputMode = 'numeric';
     input.autocomplete = 'off';
-    input.setAttribute('aria-label', id === 'T' ? t('mg.inference.answer', { label: puzzle.facts.T.label }) : puzzle.facts[id].label);
+    input.setAttribute('aria-label', id === 'T' ? t('mg.inference.answer', { fact: puzzle.facts.T.fact }) : puzzle.facts[id].fact);
     input.addEventListener('keydown', e => e.stopPropagation());
     inputs[id] = input;
   });

@@ -28,6 +28,7 @@ import { numberQuestion, pickQuestion, normalizeSpaces, fightGroups } from './qu
 import { shuffle } from './random.js';
 import { ZODIAC } from './zodiac.js';
 import { MINIGAME_LEVELS } from './config.js';
+import { t } from './text.js';
 
 // The modifiers each minigame supports (the plan's compatibility table).
 // A minigame only ever carries modifiers from its own list, so none is
@@ -89,7 +90,9 @@ const FITS = {
   scanner: q => Boolean(String(q.image || '').trim()),
   starChart: q => starChartWord(q) !== null && !answerInStem(q),
   hullPatch: q => hullPatchWord(q) !== null && !answerInStem(q),
-  inference: q => inferenceFact(q) !== null && inferenceHelpers(q).length >= 2,
+  // Inference runs a fact of the set's facts list, not a question: only
+  // its own stand-in question (inferenceQuestion) fits it.
+  inference: q => Boolean(q.inference),
   asteroids: q => asteroidsFits(q),
   match: q => Boolean(q.match),
 };
@@ -108,6 +111,7 @@ export function roleCanRun(minigame) {
   const data = state.settings.activeData || [];
   if (minigame === 'letterPool') return roleGroups().length > 0;
   if (minigame === 'sumLock') return sumLockQuestions().length >= 2;
+  if (minigame === 'inference') return inferenceTargets().length >= SHIP_JOB.minFitting;
   return data.filter(FITS[minigame]).length >= SHIP_JOB.minFitting;
 }
 
@@ -177,6 +181,7 @@ function pickMinigame(q, offered, group) {
 export function forcedQuestion(q, pool) {
   const mode = state.settings.minigame;
   if (!FITS[mode] || FITS[mode](q)) return q;
+  if (mode === 'inference') return inferenceTargets().length ? inferenceQuestion(q) : q;
   const inPool = (pool || []).filter(FITS[mode]);
   const fitting = inPool.length ? inPool : state.settings.activeData.filter(FITS[mode]);
   return fitting.length ? pickQuestion(q, fitting) : q;
@@ -449,23 +454,44 @@ export function hullPatchTier(strain) {
   return strain === 0 ? 'X' : strain <= HULL_PATCH.strain2 ? '2' : '1';
 }
 
-// ---- Inference: work a labelled fact out from lines that add up ----
+// ---- Inference: work a fact out from lines that add up ----
+// Inference reads the set's facts list (state.settings.activeFacts,
+// lists/facts/<id>.json; facts list plan step B), not its questions: only
+// facts with a whole-number value of at least 1.
 
-// Question `q` as a fact Inference can use: { label, value, q } for a
-// labelled question with a whole-number answer of at least 1, or null.
-function inferenceFact(q) {
-  const label = String(q.label || '').trim();
-  const n = label && numberQuestion(q);
-  if (!n || !Number.isInteger(n.value) || n.value < 1 || n.unit) return null;
-  return { label, value: n.value, q };
+// The set's facts Inference can use: { fact, value, source? } with a
+// whole-number value of at least 1.
+export function inferenceFacts() {
+  return (state.settings.activeFacts || []).filter(f => Number.isInteger(f.value) && f.value >= 1);
 }
 
-// The set's other labelled facts that can help work out `q`: different
-// questions, with a different label and value from it.
-function inferenceHelpers(q) {
-  const own = inferenceFact(q);
-  if (!own) return [];
-  return (state.settings.activeData || []).map(inferenceFact).filter(f => f && f.q !== q && f.label !== own.label && f.value !== own.value);
+// The facts that can help work out fact `target`: other facts, with a
+// different name and value from it.
+function inferenceHelpers(target) {
+  return inferenceFacts().filter(f => f !== target && f.fact !== target.fact && f.value !== target.value);
+}
+
+// The facts Inference can ask for: ones with at least two others to help.
+// None (CompTIA for now, or a set with no facts file): the Science Officer
+// sits out (roleCanRun).
+export function inferenceTargets() {
+  return inferenceFacts().filter(f => inferenceHelpers(f).length >= 2);
+}
+
+// Inference's stand-in for a question: it asks for a fact Inference can
+// run (never the one `exclude` asked, when there's another), and its
+// answer is the fact's value, for the log on a miss.
+export function inferenceQuestion(exclude = null) {
+  const targets = inferenceTargets();
+  const last = exclude && exclude.inference && exclude.inference.fact;
+  const fresh = targets.length > 1 ? targets.filter(f => f.fact !== last) : targets;
+  const fact = fresh[Math.floor(Math.random() * fresh.length)];
+  return {
+    question: t('mg.inference.term', { fact: fact.fact }),
+    answer: String(fact.value),
+    ...(fact.source ? { source: fact.source } : {}),
+    inference: fact,
+  };
 }
 
 // The puzzle level for this run: Inference's perfect solves on the ship
@@ -476,10 +502,10 @@ export function inferenceLevel() {
   return Math.min(INFERENCE.levels.length - 1, Math.floor(perfect / INFERENCE.solvesPerLevel));
 }
 
-// A new puzzle for question `q` (one Inference can run), at `level` (an
+// A new puzzle for fact `target` (one of inferenceTargets), at `level` (an
 // index into INFERENCE.levels: how many facts, which operations, whether
 // a line can hold three symbols): `facts`, by id ('A', 'B', 'C' help, 'T'
-// is the question's own), each { label, value, sign (its ZODIAC index, a
+// is the one asked for), each { fact, value, sign (its ZODIAC index, a
 // different one each) }, and `lines`, each { terms, total }. Terms are
 // fact ids and '+', '-', 'x', '/' and '^2' (the symbol before it squared).
 // Each line brings in one new fact beside ones already worked out (A on
@@ -487,16 +513,16 @@ export function inferenceLevel() {
 // exactly one answer. A fact goes into a line only where the numbers
 // allow (a whole division, a total no bigger than INFERENCE.maxTotal), so
 // a level whose sums the set's numbers can't make falls back to + and -.
-export function inferenceSetup(q, level = inferenceLevel()) {
+export function inferenceSetup(target, level = inferenceLevel()) {
   const lv = INFERENCE.levels[Math.max(0, Math.min(level, INFERENCE.levels.length - 1))];
-  const T = inferenceFact(q);
-  const pool = shuffle(inferenceHelpers(q));
+  const T = target;
+  const pool = shuffle(inferenceHelpers(target));
   const helpers = [];
   pool.forEach((f) => { if (helpers.length < lv.facts - 1 && !helpers.some(h => h.value === f.value)) helpers.push(f); });
   const ids = ['A', 'B', 'C'].slice(0, helpers.length);
   const facts = {};
-  ids.forEach((id, k) => { facts[id] = { label: helpers[k].label, value: helpers[k].value }; });
-  facts.T = { label: T.label, value: T.value };
+  ids.forEach((id, k) => { facts[id] = { fact: helpers[k].fact, value: helpers[k].value }; });
+  facts.T = { fact: T.fact, value: T.value };
   const can = op => lv.ops.includes(op);
   const v = id => facts[id].value;
   const lines = [];

@@ -10,7 +10,7 @@
 // sumLockQuestion (the stand-in questions).
 import { state } from './state.js';
 import { BATTLE_CHOICE_COUNT, PRACTICE_TAPS, PRACTICE_TAP_MS, PRACTICE_MODIFIERS, PRACTICE_DEFAULT_SET } from './config.js';
-import { MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, letterPoolFits, sumLockQuestions } from './minigames.js';
+import { MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, letterPoolFits, sumLockQuestions, inferenceTargets, inferenceQuestion } from './minigames.js';
 import { mountQuestionPanel, parkQuestionPanel, setQuestion, setMinigame, applyModifier, clearModifier } from './questionview.js';
 import { fightGroups, pickQuestion } from './quiz.js';
 import { lastSetValue, setChoices, fetchSet } from './setpicker.js';
@@ -102,6 +102,7 @@ async function loadSet(value) {
   if (!set) { status.textContent = t('practice.loadFailed'); return; }
   state.settings.activeData = set.data;
   state.settings.activeDictionary = set.dictionary;
+  state.settings.activeFacts = set.facts;
   fitting = new Map();
   renderGames();
 }
@@ -142,11 +143,12 @@ function renderGames() {
 function questionsFor(id) {
   if (!fitting.has(id)) {
     const data = state.settings.activeData;
-    // Letter Pool runs a category and Sum Lock two number questions, not
-    // one question each.
+    // Letter Pool runs a category, Sum Lock two number questions and
+    // Inference the set's facts, not one question each.
     const runs = {
       letterPool: () => fightGroups(data, BATTLE_CHOICE_COUNT).filter(letterPoolFits),
       sumLock: () => (sumLockQuestions().length >= 2 ? sumLockQuestions() : []),
+      inference: () => inferenceTargets(),
     };
     fitting.set(id, runs[id] ? runs[id]() : data.filter(q => minigamesFor(q).includes(id)));
   }
@@ -168,6 +170,7 @@ function play() {
   const standIn = {
     letterPool: () => actions.letterPoolQuestion(pool[Math.floor(Math.random() * pool.length)]),
     sumLock: () => actions.sumLockQuestion(),
+    inference: () => inferenceQuestion(state.battle.currentQuestion),
   }[chosenGame];
   const q = standIn ? standIn() : pickQuestion(state.battle.currentQuestion, pool);
   setQuestion(q);

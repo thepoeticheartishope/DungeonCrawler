@@ -89,6 +89,7 @@ export function initSetLoader({ showSets }) {
     state.settings.workshopData = data;
     state.settings.activeData = data;
     state.settings.activeDictionary = null;
+    state.settings.activeFacts = [];
   }
 
   fileInput.addEventListener('change', () => {

@@ -1,0 +1,98 @@
+[
+  {
+    "fact": "Books of the Pentateuch",
+    "value": 5
+  },
+  {
+    "fact": "Years of the captivity in Babylon",
+    "value": 70,
+    "source": "2 Chron 36:21"
+  },
+  {
+    "fact": "Beatitudes in Matthew",
+    "value": 9,
+    "source": "Matt 5:1-12"
+  },
+  {
+    "fact": "Years between Jubilees",
+    "value": 50,
+    "source": "Lev 25"
+  },
+  {
+    "fact": "Joseph's age when sold",
+    "value": 17,
+    "source": "Gen 37:2"
+  },
+  {
+    "fact": "Rulers of Judah",
+    "value": 20,
+    "source": "1 & 2 Kings"
+  },
+  {
+    "fact": "Marches around Jericho",
+    "value": 13,
+    "source": "Josh 6"
+  },
+  {
+    "fact": "Silver pieces paid to Judas",
+    "value": 30,
+    "source": "Matt 26:14-15"
+  },
+  {
+    "fact": "People saved in Noah's ark",
+    "value": 8,
+    "source": "1 Pet 3:20"
+  },
+  {
+    "fact": "Loaves that fed the 4,000",
+    "value": 7,
+    "source": "Matt 15:34"
+  },
+  {
+    "fact": "Sarah's age at the promise",
+    "value": 90,
+    "source": "Gen 17:17"
+  },
+  {
+    "fact": "Abraham's age when Isaac was born",
+    "value": 100,
+    "source": "Gen 21:5"
+  },
+  {
+    "fact": "Days to walk across Nineveh",
+    "value": 3,
+    "source": "Jonah 3:3"
+  },
+  {
+    "fact": "Epistles in the New Testament",
+    "value": 21
+  },
+  {
+    "fact": "Soldiers casting lots",
+    "value": 4,
+    "source": "John 19:23"
+  },
+  {
+    "fact": "Gates of the New Jerusalem",
+    "value": 12,
+    "source": "Rev 21:12"
+  },
+  {
+    "fact": "Books in the Old Testament",
+    "value": 39
+  },
+  {
+    "fact": "Elders around the throne",
+    "value": 24,
+    "source": "Rev 4:4"
+  },
+  {
+    "fact": "Kings of the Northern Kingdom",
+    "value": 19
+  },
+  {
+    "fact": "Days Moses spent on the mountain",
+    "value": 40,
+    "source": "Ex 24:18"
+  }
+]

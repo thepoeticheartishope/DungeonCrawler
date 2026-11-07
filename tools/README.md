@@ -6,7 +6,7 @@ Python 3, standard library only. Run them from the repo root.
 
 | Script | Needs internet | What it does |
 |---|---|---|
-| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), every answer is in the subject's dictionary when it has one, fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", no old field names (`term`, `meaning`, `factNote`, `fact`), a `note` is never empty. Run it before every PR that touches a question set. |
+| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), every answer is in the subject's dictionary when it has one, fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", no old field names (`term`, `meaning`, `factNote`, `fact`), a `note` is never empty, no `label` on a question; a set's facts file (`facts` in its manifest entry) is a list of `{ "fact", "value", "source"? }` with a 1-34 character name, a number value without quotes (or text), no repeated fact names, and a `"220-1201 2.5"` source for CompTIA. Run it before every PR that touches a question set. |
 | `stem_check.mjs` | no | `node tools/stem_check.mjs` (Node): per set, how many questions a stem cue covers (`STEM_CUES` in `js/config.js`: "Who…?" → people, "How many…?" → numbers) and which tagged questions have a type their stem doesn't allow. The tag wins in play, so each listed one is a tagging mistake to fix or a real exception to leave. Reports only. |
 | `import_acronyms.py` | no | `python3 tools/import_acronyms.py comptia-aplus OBJECTIVES.pdf [MORE.pdf]` (needs `pdftotext`): adds a CompTIA objectives PDF's acronym list to the subject's dictionary, one `term` entry per definition with its `acronym`. Reports spellings it merged and definitions listed twice. Re-running only adds what's new. |
 | `wording_check.py` | no | `python3 tools/wording_check.py lists/comptia-aplus.json ~/ForClaude/CompTIA_A+_Core1_Lessons_Split/*.pdf` (needs `pdftotext`): lists questions that share a run of 5 words (`--words N`) with CompTIA's course books, so they get reworded. Our questions are in our own words. Exits 1 if any share. |
@@ -57,6 +57,18 @@ cached so re-runs are quick.
    under another name (Diana / Artemis) count as facts. Then run step 3 again.
 5. `python3 tools/build_dictionary.py bible`: adds the new answers to the dictionary; check what it marks.
 6. `python3 tools/validate.py` should print "All question sets and dictionaries pass."
+
+## Facts files
+
+A set's facts sit apart from its questions, in `lists/facts/<id>.json`, named
+by `"facts": "facts/<id>.json"` in the set's `lists/manifest.json` entry (no
+entry, no facts):
+
+    [{ "fact": "Days Moses spent on the mountain", "value": 40, "source": "Ex 24:18" }]
+
+`value` is a number (no quotes) or text. Inference (the Science Officer's job)
+uses the whole-number values of 1 or more; a set with fewer than three it can
+use sits its Science Officer out. Add a new facts file to `service-worker.js`.
 
 ## Subject dictionaries
 
