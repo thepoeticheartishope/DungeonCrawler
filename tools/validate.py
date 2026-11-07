@@ -53,11 +53,8 @@ for set_info in manifest:
         if e.get('answerType') not in TYPES:
             err(f'unknown answerType {e.get("answerType")!r}')
         if 'label' in e:
-            # Inference's tiles (ship minigames plan step E): a short name for a number fact.
-            if e.get('answerType') != 'number':
-                err('label on a question that is not a number')
-            if not isinstance(e['label'], str) or not e['label'].strip() or len(e['label']) > 34:
-                err(f'label must be 1-34 characters: {e["label"]!r}')
+            # Facts moved to their own file (facts list plan step B, 2026-11-06).
+            err('"label" is gone: put the fact in the set\'s facts file (lists/facts/<id>.json)')
         if 'difficulty' in e and e['difficulty'] not in DIFFICULTIES:
             err(f'unknown difficulty {e["difficulty"]!r}')
         image = e.get('image')
@@ -90,6 +87,48 @@ for set_info in manifest:
                 err(f'no domain {source.group(2)} for exam {source.group(1)} in COMPTIA_DOMAINS')
             elif e.get('category') != domains[source.group(2)]:
                 err(f'category {e.get("category")!r} should be {domains[source.group(2)]!r} (domain {source.group(2)})')
+
+# A set's facts (lists/facts/<id>.json, named by "facts" in its manifest
+# entry; facts list plan step B) are optional: a list of
+# { "fact": short name, "value": number or text, "source"?: text }.
+# Inference uses the whole-number values of 1 or more.
+FACT_FIELDS = {'fact', 'value', 'source'}
+for set_info in manifest:
+    if 'facts' not in set_info:
+        continue
+    path = os.path.join('lists', str(set_info['facts']))
+    if not os.path.isfile(os.path.join(ROOT, path)):
+        errors.append(f'lists/manifest.json {set_info["id"]}: facts file not found: {path}')
+        continue
+    facts = json.load(open(os.path.join(ROOT, path), encoding='utf-8'))
+    if not isinstance(facts, list):
+        errors.append(f'{path}: must be a list of facts')
+        continue
+    is_comptia = str(set_info.get('subject', '')).startswith('comptia')
+    names = {}
+    for i, f in enumerate(facts):
+        tag = f'{path} #{i + 1}'
+        if not isinstance(f, dict):
+            errors.append(f'{tag}: a fact must be {{"fact": ..., "value": ...}}')
+            continue
+        name = f.get('fact')
+        if not isinstance(name, str) or not name.strip() or len(name) > 34:
+            errors.append(f'{tag}: "fact" must be 1-34 characters: {name!r}')
+        elif name.strip().lower() in names:
+            errors.append(f'{tag}: {name!r} is already fact #{names[name.strip().lower()]}')
+        else:
+            names[name.strip().lower()] = i + 1
+        value = f.get('value')
+        if isinstance(value, bool) or not (isinstance(value, (int, float)) or (isinstance(value, str) and value.strip())):
+            errors.append(f'{tag}: "value" must be a number (no quotes) or text: {value!r}')
+        elif isinstance(value, str) and re.fullmatch(r'\s*-?\d+(\.\d+)?\s*', value):
+            errors.append(f'{tag}: write the number {value!r} without quotes')
+        if 'source' in f and (not isinstance(f['source'], str) or not f['source'].strip()):
+            errors.append(f'{tag}: "source" must be text when present')
+        if is_comptia and not COMPTIA_SOURCE.match(str(f.get('source', ''))):
+            errors.append(f'{tag}: source {f.get("source")!r} is not like "220-1201 2.5"')
+        for extra in sorted(set(f) - FACT_FIELDS):
+            errors.append(f'{tag}: unknown field {extra!r} (fact / value / source)')
 
 # A subject's dictionary (lists/dictionaries/<subject>.json, built by
 # tools/build_dictionary.py) is optional; when there is one, every answer of

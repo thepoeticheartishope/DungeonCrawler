@@ -38,6 +38,7 @@ export const state = {
     usingSample: true, // the workshop list is the built-in sample (it can't be saved as a set); false once a list is pasted or loaded there
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
     activeDictionary: null, // the active set's subject dictionary (lists/dictionaries/), or null (pasted, saved and sample sets)
+    activeFacts: [],        // the active set's facts ({ fact, value, source? }, lists/facts/), or [] (none; pasted, saved and sample sets for now)
     workshopData: null,     // the list last loaded in the workshop (pasted, file or the sample), offered on the set screen; null until then
   },
 

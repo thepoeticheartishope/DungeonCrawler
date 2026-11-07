@@ -432,8 +432,7 @@
     "answer": "5",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "number",
-    "label": "Books of the Pentateuch"
+    "answerType": "number"
   },
   {
     "question": "Whose hospitality in Thessalonica got him into hot water?",
@@ -934,8 +933,7 @@
     "category": "P",
     "difficulty": "hard",
     "source": "2 Chron 36:21",
-    "answerType": "number",
-    "label": "Years of the captivity in Babylon"
+    "answerType": "number"
   },
   {
     "question": "Name the wife of Isaac.",
@@ -1235,8 +1233,7 @@
     "category": "W",
     "difficulty": "hard",
     "source": "Matt 5:1-12",
-    "answerType": "number",
-    "label": "Beatitudes in Matthew"
+    "answerType": "number"
   },
   {
     "question": "Three times in the Bible, God is described as physically writing something. Upon what did He write the second time?",
@@ -1334,8 +1331,7 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Lev 25",
-    "answerType": "number",
-    "label": "Years between Jubilees"
+    "answerType": "number"
   },
   {
     "question": "Who said, \"Daughters of Jerusalem, weep not for me\"?",
@@ -3099,8 +3095,7 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Gen 37:2",
-    "answerType": "number",
-    "label": "Joseph's age when sold"
+    "answerType": "number"
   },
   {
     "question": "What situation brought Jesus back to Judea even though the people there had once tried to stone him?",
@@ -3480,8 +3475,7 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "1 & 2 Kings",
-    "answerType": "number",
-    "label": "Rulers of Judah"
+    "answerType": "number"
   },
   {
     "question": "What was Jesus asked by Pilate, just before He responded: \"Thou sayest it\"?",
@@ -3629,8 +3623,7 @@
     "category": "LNS",
     "difficulty": "hard",
     "source": "Josh 6",
-    "answerType": "number",
-    "label": "Marches around Jericho"
+    "answerType": "number"
   },
   {
     "question": "For what activity was Dorcas admired?",
@@ -4425,8 +4418,7 @@
     "category": "LNS",
     "difficulty": "easy",
     "source": "Matt 26:14-15",
-    "answerType": "number",
-    "label": "Silver pieces paid to Judas"
+    "answerType": "number"
   },
   {
     "question": "Who took the body of Jesus to be entombed?",
@@ -4830,8 +4822,7 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "1 Pet 3:20",
-    "answerType": "number",
-    "label": "People saved in Noah's ark"
+    "answerType": "number"
   },
   {
     "question": "What did Mary use to wipe the feet of Jesus after anointing them with perfume?",
@@ -5239,8 +5230,7 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Matt 15:34",
-    "answerType": "number",
-    "label": "Loaves that fed the 4,000"
+    "answerType": "number"
   },
   {
     "question": "What was Judas' blood money later used to buy, as prophesied in Zechariah?",
@@ -5942,8 +5932,7 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Gen 17:17",
-    "answerType": "number",
-    "label": "Sarah's age at the promise"
+    "answerType": "number"
   },
   {
     "question": "What action on the part of the disciples prompted Jesus to say: \"For the Son of man is Lord even of the sabbath day.\"?",
@@ -6614,8 +6603,7 @@
     "category": "LNS",
     "difficulty": "easy",
     "source": "Gen 21:5",
-    "answerType": "number",
-    "label": "Abraham's age when Isaac was born"
+    "answerType": "number"
   },
   {
     "question": "What single statement did Jesus make to the thief on the cross next to him?",
@@ -6949,8 +6937,7 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "Jonah 3:3",
-    "answerType": "number",
-    "label": "Days to walk across Nineveh"
+    "answerType": "number"
   },
   {
     "question": "Of what did Peter have a vision at Joppa?",
@@ -7114,8 +7101,7 @@
     "answer": "21",
     "category": "LNS",
     "difficulty": "medium",
-    "answerType": "number",
-    "label": "Epistles in the New Testament"
+    "answerType": "number"
   },
   {
     "question": "To whom did Jesus say \"Thou sayest it\" after being asked if he was King of the Jews?",
@@ -7289,8 +7275,7 @@
     "category": "LNS",
     "difficulty": "medium",
     "source": "John 19:23",
-    "answerType": "number",
-    "label": "Soldiers casting lots"
+    "answerType": "number"
   },
   {
     "question": "Who in the NT is specified as having worn a coat without seam, woven from the top throughout?",
@@ -8723,8 +8708,7 @@
     "category": "P",
     "difficulty": "easy",
     "source": "Rev 21:12",
-    "answerType": "number",
-    "label": "Gates of the New Jerusalem"
+    "answerType": "number"
   },
   {
     "question": "Name the father of Shem.",
@@ -8902,8 +8886,7 @@
     "answer": "39",
     "category": "LNS",
     "difficulty": "easy",
-    "answerType": "number",
-    "label": "Books in the Old Testament"
+    "answerType": "number"
   },
   {
     "question": "What two new apostolic partners sailed to Cyprus when Paul and Silas formed a new team?",
@@ -9950,8 +9933,7 @@
     "category": "P",
     "difficulty": "medium",
     "source": "Rev 4:4",
-    "answerType": "number",
-    "label": "Elders around the throne"
+    "answerType": "number"
   },
   {
     "question": "Who in the OT once fled to the Mt. of Olives?",
@@ -10139,8 +10121,7 @@
     "answer": "19",
     "category": "LNS",
     "difficulty": "hard",
-    "answerType": "number",
-    "label": "Kings of the Northern Kingdom"
+    "answerType": "number"
   },
   {
     "question": "Name the governor who held Paul for two years but was unable to find him guilty?",
@@ -10196,8 +10177,7 @@
     "category": "LNS",
     "difficulty": "easy",
     "source": "Ex 24:18",
-    "answerType": "number",
-    "label": "Days Moses spent on the mountain"
+    "answerType": "number"
   },
   {
     "question": "Whom did King Herod call to ascertain the time that the star of Bethlehem appeared?",

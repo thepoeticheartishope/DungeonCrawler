@@ -43,6 +43,7 @@ const WORD = { question: 'Who built the ark?', answer: 'Noah', answerType: 'name
 function reset() {
   state.settings.minigame = 'roll';
   state.settings.activeData = [NUMBER, BIG, WORD];
+  state.settings.activeFacts = [];
   state.run.lastMinigame = null;
   state.run.energy = 0;
   state.run.reloadIndex = 0;
@@ -646,43 +647,54 @@ test('Hull Patch: a right plate fills every spot, a wrong one strains; breach at
 
 // ---- Inference (ship minigames plan step E) ----
 
-const LABELLED = [
-  { question: 'Pentateuch?', answer: '5', answerType: 'number', label: 'Books of the Pentateuch' },
-  { question: 'Loaves?', answer: '7', answerType: 'number', label: 'Loaves that fed the 4,000' },
-  { question: 'Moses?', answer: '40', answerType: 'number', label: 'Days Moses spent on the mountain' },
-  { question: 'Elders?', answer: '24', answerType: 'number', label: 'Elders around the throne' },
-  { question: 'Gates?', answer: '12', answerType: 'number', label: 'Gates of the New Jerusalem' },
+const FIVE_FACTS = [
+  { fact: 'Books of the Pentateuch', value: 5 },
+  { fact: 'Loaves that fed the 4,000', value: 7 },
+  { fact: 'Days Moses spent on the mountain', value: 40 },
+  { fact: 'Elders around the throne', value: 24 },
+  { fact: 'Gates of the New Jerusalem', value: 12 },
 ];
 
-test('Inference fits a labelled number question with two other labelled facts to help', async () => {
+test('Inference runs the set\'s facts list: whole numbers of 1 or more, with two others to help', async () => {
+  const { inferenceTargets, inferenceQuestion, roleCanRun } = await import('../js/minigames.js');
   reset();
-  state.settings.activeData = LABELLED.slice(0, 2);
-  assert.ok(!minigamesFor(LABELLED[0]).includes('inference'), 'one helper is not enough');
-  state.settings.activeData = LABELLED;
-  assert.ok(minigamesFor(LABELLED[2]).includes('inference'));
-  assert.ok(!minigamesFor(NUMBER).includes('inference'), 'no label, no tile');
+  state.settings.activeFacts = FIVE_FACTS.slice(0, 2);
+  assert.equal(inferenceTargets().length, 0, 'one helper is not enough');
+  assert.ok(!roleCanRun('inference'), 'the Science Officer sits out');
+  state.settings.activeFacts = [...FIVE_FACTS.slice(0, 2), { fact: 'Port', value: 'encrypted web' }, { fact: 'Half', value: 2.5 }, { fact: 'None', value: 0 }];
+  assert.equal(inferenceTargets().length, 0, 'text, fractions and 0 are kept but not used');
+  state.settings.activeFacts = FIVE_FACTS;
+  assert.equal(inferenceTargets().length, 5);
+  assert.ok(roleCanRun('inference'));
+  assert.ok(!minigamesFor(NUMBER).includes('inference'), 'a question of the set never runs it');
+  const q = inferenceQuestion();
+  assert.ok(minigamesFor(q).includes('inference'), 'its stand-in does');
+  assert.equal(q.answer, String(q.inference.value));
+  for (let n = 0; n < 20; n++) assert.notEqual(inferenceQuestion(q).inference.fact, q.inference.fact, 'never the same fact twice running');
+  state.settings.activeFacts = [];
+  assert.ok(!roleCanRun('inference'), 'no facts file: sits out');
 });
 
 const BIBLE_FACTS = [[5, 'Pentateuch'], [70, 'Babylon'], [9, 'Beatitudes'], [50, 'Jubilee'], [17, 'Joseph'], [20, 'Judah'],
   [13, 'Jericho'], [30, 'Judas'], [8, 'Ark'], [7, 'Loaves'], [90, 'Sarah'], [100, 'Abraham'], [3, 'Nineveh'], [21, 'Epistles'],
   [4, 'Soldiers'], [12, 'Gates'], [39, 'OT books'], [24, 'Elders'], [19, 'Kings'], [40, 'Moses']]
-  .map(([n, label]) => ({ question: label + '?', answer: String(n), answerType: 'number', label }));
+  .map(([value, fact]) => ({ fact, value }));
 
 test('Inference: at every level each line brings in one new symbol, the truth holds, a wrong answer breaks a line', async () => {
   const { inferenceSetup, inferenceCheck, inferenceValue } = await import('../js/minigames.js');
   const { INFERENCE } = await import('../js/config.js');
   reset();
-  for (const data of [LABELLED, BIBLE_FACTS]) {
-    state.settings.activeData = data;
+  for (const data of [FIVE_FACTS, BIBLE_FACTS]) {
+    state.settings.activeFacts = data;
     INFERENCE.levels.forEach((lv, level) => {
       const used = new Set();
       for (let n = 0; n < 60; n++) {
-        const q = data[n % data.length];
-        const puzzle = inferenceSetup(q, level);
+        const target = data[n % data.length];
+        const puzzle = inferenceSetup(target, level);
         const ids = Object.keys(puzzle.facts);
         assert.ok(ids.length <= lv.facts && ids.includes('T'));
         const truth = Object.fromEntries(ids.map(id => [id, puzzle.facts[id].value]));
-        assert.equal(truth.T, Number(q.answer));
+        assert.equal(truth.T, target.value);
         assert.equal(new Set(ids.map(id => puzzle.facts[id].sign)).size, ids.length, 'a sign each');
         const order = [...ids.filter(id => id !== 'T'), 'T'];
         puzzle.lines.forEach((line, k) => {
@@ -721,7 +733,7 @@ test('Inference grows with the run: every INFERENCE.solvesPerLevel perfect solve
   const { inferenceLevel, inferenceSetup, inferenceTier } = await import('../js/minigames.js');
   const { INFERENCE } = await import('../js/config.js');
   reset();
-  state.settings.activeData = BIBLE_FACTS;
+  state.settings.activeFacts = BIBLE_FACTS;
   state.run.ship = { panic: 0, perfect: {} };
   assert.equal(inferenceLevel(), 0);
   const per = INFERENCE.solvesPerLevel;

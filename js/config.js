@@ -672,9 +672,11 @@ export const MINIGAME_LEVELS = {
   },
 };
 // Inference (ship minigames plan step E; the Science job, in place of
-// Verdict): a number question with a `label` (a short name for its fact,
-// "Days Moses spent on the mountain") is worked out from lines of other
-// labelled facts; the player never needs to know the facts first
+// Verdict): a fact from the set's facts list (lists/facts/<id>.json, a
+// { fact, value } with a whole-number value of 1 or more, "Days Moses
+// spent on the mountain" = 40; facts list plan step B) is worked out from
+// lines of other such facts; a set with too few sits its Science Officer
+// out. The player never needs to know the facts first
 // (Timothy: most of the problem is deduction, the data is given). Each
 // fact is a zodiac symbol (zodiac.js). The puzzles grow with the run
 // (Timothy 2026-11-01: harder logic as the player learns more algebra):

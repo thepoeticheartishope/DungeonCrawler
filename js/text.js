@@ -185,7 +185,8 @@ export const TEXT = {
   'mg.hullPatch.scored.miss': '{name|upper}: the hull breached. It was {answer}.', // draft
   'mg.inference': 'Inference', // draft. The Science job (ship minigames plan step E)
   'mg.inference.hint': 'Each symbol is a number. Work them out from the sums, then answer.', // draft
-  'mg.inference.answer': 'Your answer: {label}', // draft
+  'mg.inference.term': 'WORK IT OUT: {fact|upper}.', // draft. Stands in for a question: the fact asked for
+  'mg.inference.answer': 'Your answer: {fact}', // draft
   'mg.inference.check': 'Check', // draft
   'mg.inference.fill': 'Fill in every box first.', // draft
   'mg.inference.whole': 'Each symbol is a whole number, 1 or more.', // draft

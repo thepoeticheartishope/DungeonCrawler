@@ -11,6 +11,7 @@
     "subject": "bible",
     "name": "Bible Quiz Bowl",
     "description": "1,368 competition-style questions across Old Testament, Prophets, History & Geography, Names, Letters/Numbers/Symbols, New Testament, and Wisdom. Some ask for the exact verse a line of scripture comes from.",
-    "file": "bible-quiz-bowl.json"
+    "file": "bible-quiz-bowl.json",
+    "facts": "facts/bible-quiz-bowl.json"
   }
 ]
