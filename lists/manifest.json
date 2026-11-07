@@ -3,14 +3,14 @@
     "id": "comptia-aplus",
     "subject": "comptia-aplus",
     "name": "CompTIA A+ Core 1",
-    "description": "47 short-answer questions from A+ Core 1 (220-1201), so far all from Networking: ports, protocols, devices, tools, network types and DNS records, with 7 picture questions on network tools. More domains are coming.",
+    "description": "317 short-answer questions from A+ Core 1 (220-1201): Hardware, Networking, Troubleshooting, Mobile Devices, and Virtualization & Cloud, with 22 picture questions.",
     "file": "comptia-aplus.json"
   },
   {
     "id": "bible-quiz-bowl",
     "subject": "bible",
     "name": "Bible Quiz Bowl",
-    "description": "647 competition-style questions across Old Testament, Prophets, History & Geography, Names, Letters/Numbers/Symbols, New Testament, and Wisdom. Some ask for the exact verse a line of scripture comes from.",
+    "description": "1,368 competition-style questions across Old Testament, Prophets, History & Geography, Names, Letters/Numbers/Symbols, New Testament, and Wisdom. Some ask for the exact verse a line of scripture comes from.",
     "file": "bible-quiz-bowl.json"
   }
 ]

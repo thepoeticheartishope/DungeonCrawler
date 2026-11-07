@@ -2,46 +2,45 @@
 // mutable game state lives in state.js instead.
 
 // ---- Sample data. Replaced at runtime if the player loads their own list. ----
-// Each entry needs a "term" and its "meaning".
+// Each entry needs a "question" and its "answer".
 // "category", "difficulty" and "answerType" are optional. When present,
 // category (with difficulty, "easy"/"medium"/"hard") groups entries into
 // a fight's query choices (see quiz.js fightGroups), and answerType groups entries for multiple-
 // choice distractor selection (see quiz.js buildChoices) so wrong answers
 // share the same rough "shape" as the correct one (a name isn't offered
 // as a wrong answer next to a date, etc).
-// Bible sets also carry "fact": true when the answer holds in every Bible
-// translation, or false (with a "factNote" saying why) when it depends on
-// one translation's wording. The game doesn't use it yet; DATA.SYS shows
-// it, and tools/fact_check.py sets it (see tools/README.md).
+// Any entry may carry a "note" saying why its answer can differ (a Bible
+// translation's wording, an older exam). The game doesn't use it yet;
+// DATA.SYS shows it, and tools/fact_check.py sets it (see tools/README.md).
 export const TYPING_SAMPLE_DATA = [
-  { term: "CPU", meaning: "Central Processing Unit", category: "Hardware", difficulty: "easy", answerType: "term" },
-  { term: "RAM", meaning: "Random Access Memory", category: "Hardware", difficulty: "easy", answerType: "term" },
-  { term: "SSD", meaning: "Solid State Drive", category: "Hardware", difficulty: "medium", answerType: "term" },
-  { term: "DNS", meaning: "Domain Name System", category: "Networking", difficulty: "medium", answerType: "term" }
+  { question: "CPU", answer: "Central Processing Unit", category: "Hardware", difficulty: "easy", answerType: "term" },
+  { question: "RAM", answer: "Random Access Memory", category: "Hardware", difficulty: "easy", answerType: "term" },
+  { question: "SSD", answer: "Solid State Drive", category: "Hardware", difficulty: "medium", answerType: "term" },
+  { question: "DNS", answer: "Domain Name System", category: "Networking", difficulty: "medium", answerType: "term" }
 ];
 
 export const MC_SAMPLE_DATA = [
   {
-    term: "RAID",
-    meaning: "Redundant Array of Independent Disks",
+    question: "RAID",
+    answer: "Redundant Array of Independent Disks",
     category: "Hardware",
     difficulty: "medium"
   },
   {
-    term: "HTTP",
-    meaning: "Hypertext Transfer Protocol",
+    question: "HTTP",
+    answer: "Hypertext Transfer Protocol",
     category: "Networking",
     difficulty: "easy"
   },
   {
-    term: "VPN",
-    meaning: "Virtual Private Network",
+    question: "VPN",
+    answer: "Virtual Private Network",
     category: "Networking",
     difficulty: "hard"
   },
   {
-    term: "DHCP",
-    meaning: "Dynamic Host Configuration Protocol",
+    question: "DHCP",
+    answer: "Dynamic Host Configuration Protocol",
     category: "Networking",
     difficulty: "medium"
   }

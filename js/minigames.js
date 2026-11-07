@@ -70,7 +70,7 @@ export const MINIGAMES = Object.keys(MINIGAME_MODIFIERS);
 const FITS = {
   closeEnough: q => closeEnoughAnswer(q) !== null,
   higherLower: q => higherLowerAnswer(q) !== null,
-  slowSpell: q => spellable(q.meaning) && !answerInStem(q),
+  slowSpell: q => spellable(q.answer) && !answerInStem(q),
   syllableSplit: q => {
     const pieces = !answerInStem(q) && syllableSplitPieces(q);
     return Boolean(pieces) && pieceDecoys(pieces).length >= SYLLABLE_SPLIT_DECOYS;
@@ -97,7 +97,7 @@ const FITS = {
 // Whether question `q`'s wording holds its own answer ("Spell
 // Bartimaeus."): a minigame that spells the answer out would be free.
 function answerInStem(q) {
-  return String(q.term || '').toLowerCase().includes(String(q.meaning || '').trim().toLowerCase());
+  return String(q.question || '').toLowerCase().includes(String(q.answer || '').trim().toLowerCase());
 }
 
 // Whether `minigame` can be a ship crew role's job on the loaded set (crew
@@ -219,7 +219,7 @@ export function endMinigame(result) {
     state.run.ship.perfect = state.run.ship.perfect || {};
     state.run.ship.perfect[minigame] = (state.run.ship.perfect[minigame] || 0) + 1;
   }
-  return [{ type: 'minigameScored', minigame, tier: result.tier, given: result.given, answer: state.battle.currentQuestion.meaning }];
+  return [{ type: 'minigameScored', minigame, tier: result.tier, given: result.given, answer: state.battle.currentQuestion.answer }];
 }
 
 // ---- Close Enough: set a dial to a number answer ----
@@ -360,7 +360,7 @@ export function scannerTier(scanned, total, wrongs) {
 // The word Star Chart spells, in capitals: one word of plain letters,
 // STAR_CHART.minLetters to maxLetters long, or null.
 function starChartWord(q) {
-  const word = String(q.meaning || '').trim().toUpperCase();
+  const word = String(q.answer || '').trim().toUpperCase();
   return /^[A-Z]+$/.test(word) && word.length >= STAR_CHART.minLetters && word.length <= STAR_CHART.maxLetters ? word : null;
 }
 
@@ -411,7 +411,7 @@ export function starChartTier(wrong) {
 // The word Hull Patch's hole spells, in capitals: one word of plain
 // letters, HULL_PATCH.minLetters to maxLetters long, or null.
 function hullPatchWord(q) {
-  const word = String(q.meaning || '').trim().toUpperCase();
+  const word = String(q.answer || '').trim().toUpperCase();
   return /^[A-Z]+$/.test(word) && word.length >= HULL_PATCH.minLetters && word.length <= HULL_PATCH.maxLetters ? word : null;
 }
 
@@ -607,11 +607,11 @@ function asteroidsIndex() {
   if (asteroidsCache.data === data) return asteroidsCache.byType;
   const byType = new Map();
   data.forEach((q) => {
-    const text = normalizeSpaces(q.meaning || '');
+    const text = normalizeSpaces(q.answer || '');
     if (!q.answerType || q.image || !text || text.length > ASTEROIDS.maxChars) return;
     const answers = byType.get(q.answerType) || new Map();
     const key = text.toLowerCase();
-    if (!answers.has(key)) answers.set(key, { key, text, asks: q.term });
+    if (!answers.has(key)) answers.set(key, { key, text, asks: q.question });
     byType.set(q.answerType, answers);
   });
   asteroidsCache = { data, byType };
@@ -623,14 +623,14 @@ function asteroidsIndex() {
 function asteroidsDecoys(q) {
   const answers = asteroidsIndex().get(q.answerType);
   if (!answers) return [];
-  const own = normalizeSpaces(q.meaning || '').toLowerCase();
+  const own = normalizeSpaces(q.answer || '').toLowerCase();
   return [...answers.values()].filter(a => a.key !== own);
 }
 
 // Whether Asteroids can run `q`: a short answer, no picture, the stem
 // not holding it, and enough decoys of its kind for a field of rocks.
 function asteroidsFits(q) {
-  const text = normalizeSpaces(q.meaning || '');
+  const text = normalizeSpaces(q.answer || '');
   return Boolean(text) && text.length <= ASTEROIDS.maxChars && !q.image && !answerInStem(q) && asteroidsDecoys(q).length >= ASTEROIDS.rocks - 1;
 }
 
@@ -642,7 +642,7 @@ function asteroidsFits(q) {
 export function asteroidsSetup(q) {
   const { rocks: count, shots } = levelOf('asteroids');
   const decoys = shuffle(asteroidsDecoys(q)).slice(0, count - 1).map(d => ({ text: d.text, right: false, asks: d.asks }));
-  return { rocks: [{ text: normalizeSpaces(q.meaning), right: true, asks: q.term }, ...decoys], shots, maxShots: shots };
+  return { rocks: [{ text: normalizeSpaces(q.answer), right: true, asks: q.question }, ...decoys], shots, maxShots: shots };
 }
 
 // Rock `rock` of `field` was hit: 'right', 'wrong' (spends a shot; the
@@ -721,7 +721,7 @@ export function matchGroups() {
   const pick = (keyOf, labelOf) => {
     const byKey = new Map();
     data.forEach((q) => {
-      const word = normalizeSpaces(q.meaning || '');
+      const word = normalizeSpaces(q.answer || '');
       const k = keyOf(q);
       if (!k || !word || word.length > MATCH_BOSS.maxChars || q.image) return;
       const words = byKey.get(k) || new Set();
@@ -963,7 +963,7 @@ function spellable(answer) {
 // so the answer is never simply read off). The answer is typed, not
 // picked (Timothy, 2026-10-11: options gave it away).
 export function slowSpellWord(q) {
-  const chars = [...q.meaning.trim()];
+  const chars = [...q.answer.trim()];
   const places = chars.map((c, i) => i).filter(i => /\p{L}/u.test(chars[i]));
   return {
     chars,
@@ -1041,7 +1041,7 @@ function cutSyllables(word) {
 // fewer than SYLLABLE_SPLIT_MIN_PIECES pieces.
 export function syllableSplitPieces(q) {
   if (!q || q.answerType !== 'name') return null;
-  const answer = String(q.meaning || '').trim();
+  const answer = String(q.answer || '').trim();
   if (!/^\p{L}+$/u.test(answer)) return null;
   const own = typeof q.syllables === 'string' ? q.syllables.split('-') : q.syllables;
   const fits = Array.isArray(own) && own.join('').toLowerCase() === answer.toLowerCase();
@@ -1058,9 +1058,9 @@ function pieceDecoys(pieces) {
   const seen = new Set();
   const decoys = [];
   for (const d of state.settings.activeData) {
-    if (d.answerType !== 'name' || !/^\p{L}+$/u.test(String(d.meaning).trim())) continue;
-    if (d.meaning.trim().toLowerCase() === answer) continue;
-    const split = splitSyllables(d.meaning.trim());
+    if (d.answerType !== 'name' || !/^\p{L}+$/u.test(String(d.answer).trim())) continue;
+    if (d.answer.trim().toLowerCase() === answer) continue;
+    const split = splitSyllables(d.answer.trim());
     // A name of one piece ("Noah") is a whole name, plainly no piece.
     if (split.length < 2) continue;
     for (const piece of split) {
@@ -1097,7 +1097,7 @@ export function syllableSplitTier(wrong) {
 function poolWords(group) {
   const words = new Set();
   for (const d of group.pool) {
-    const word = String(d.meaning || '').trim().toUpperCase();
+    const word = String(d.answer || '').trim().toUpperCase();
     if (/^\p{L}+$/u.test(word) && word.length >= LETTER_POOL_MIN_LETTERS && word.length <= LETTER_POOL_MAX_LETTERS) words.add(word);
   }
   return [...words];
@@ -1153,7 +1153,7 @@ export function letterPoolTier(pool, formed, hiddenFound) {
 // length, or a number answer (Close Enough and Higher / Lower do those).
 function codeBreakCode(q) {
   if (q.answerType === 'number') return null;
-  const answer = String(q.meaning || '').trim();
+  const answer = String(q.answer || '').trim();
   if (!/^[\p{L}\p{N}][\p{L}\p{N}'-]*$/u.test(answer)) return null;
   const code = codeChars(answer);
   return code.length >= CODE_BREAK_MIN_CHARS && code.length <= CODE_BREAK_MAX_CHARS ? code : null;
@@ -1215,7 +1215,7 @@ function verdictIndex() {
   data.forEach((q) => {
     if (!q.answerType) return;
     const answers = byType.get(q.answerType) || new Map();
-    answers.set(normalizeSpaces(q.meaning).toLowerCase(), q.meaning);
+    answers.set(normalizeSpaces(q.answer).toLowerCase(), q.answer);
     byType.set(q.answerType, answers);
   });
   // Cached before the fit check, which reads the answers back from it.
@@ -1229,7 +1229,7 @@ function verdictIndex() {
 function verdictDecoys(q) {
   const answers = verdictIndex().byType.get(q.answerType);
   if (!answers) return [];
-  const own = normalizeSpaces(q.meaning).toLowerCase();
+  const own = normalizeSpaces(q.answer).toLowerCase();
   return [...answers].filter(([key]) => key !== own).map(([, answer]) => answer);
 }
 
@@ -1253,7 +1253,7 @@ export function verdictClaimCount() {
 export function verdictSetup(q, count = verdictClaimCount()) {
   const others = shuffle(verdictIndex().fitting.filter(o => o !== q)).slice(0, count - 1);
   return shuffle([q, ...others]).map((claim) => {
-    if (Math.random() >= VERDICT_FALSE_SHARE) return { q: claim, shown: claim.meaning, truth: true };
+    if (Math.random() >= VERDICT_FALSE_SHARE) return { q: claim, shown: claim.answer, truth: true };
     const decoys = verdictDecoys(claim);
     return { q: claim, shown: decoys[Math.floor(Math.random() * decoys.length)], truth: false };
   });
@@ -1273,7 +1273,7 @@ export function verdictTier(wrong, count) {
 // question can't: its clue would show without its picture.
 function crosswireWord(q) {
   if (q.image) return null;
-  const answer = String(q.meaning || '').trim();
+  const answer = String(q.answer || '').trim();
   if (!/^\p{L}+$/u.test(answer)) return null;
   const word = [...answer.toUpperCase()];
   return word.length >= CROSSWIRE_MIN_LETTERS && word.length <= CROSSWIRE_MAX_LETTERS ? word : null;

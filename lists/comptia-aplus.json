@@ -1,327 +1,327 @@
 [
   {
-    "term": "What TCP port does SSH listen on by default?",
-    "meaning": "22",
+    "question": "What TCP port does SSH listen on by default?",
+    "answer": "22",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
-    "term": "What TCP port relays email between SMTP servers?",
-    "meaning": "25",
+    "question": "What TCP port relays email between SMTP servers?",
+    "answer": "25",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
-    "term": "What port does a client use to send DNS queries?",
-    "meaning": "53",
+    "question": "What port does a client use to send DNS queries?",
+    "answer": "53",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
-    "term": "What TCP port serves unsecure HTTP web pages by default?",
-    "meaning": "80",
+    "question": "What TCP port serves unsecure HTTP web pages by default?",
+    "answer": "80",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
-    "term": "What TCP port does a POP3 client use to collect mail without encryption?",
-    "meaning": "110",
+    "question": "What TCP port does a POP3 client use to collect mail without encryption?",
+    "answer": "110",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
-    "term": "What TCP port does IMAP use without encryption?",
-    "meaning": "143",
+    "question": "What TCP port does IMAP use without encryption?",
+    "answer": "143",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
-    "term": "What TCP port carries HTTPS traffic by default?",
-    "meaning": "443",
+    "question": "What TCP port carries HTTPS traffic by default?",
+    "answer": "443",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
-    "term": "What TCP port does RDP use?",
-    "meaning": "3389",
+    "question": "What TCP port does RDP use?",
+    "answer": "3389",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
-    "term": "Which protocol gives clients an IP address configuration automatically?",
-    "meaning": "DHCP",
+    "question": "Which protocol gives clients an IP address configuration automatically?",
+    "answer": "DHCP",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.4",
     "answerType": "protocol"
   },
   {
-    "term": "Which protocol resolves host names to IP addresses?",
-    "meaning": "DNS",
+    "question": "Which protocol resolves host names to IP addresses?",
+    "answer": "DNS",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.4",
     "answerType": "protocol"
   },
   {
-    "term": "Which protocol gives an encrypted command-line session on a remote host?",
-    "meaning": "SSH",
+    "question": "Which protocol gives an encrypted command-line session on a remote host?",
+    "answer": "SSH",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.1",
     "answerType": "protocol"
   },
   {
-    "term": "Which protocol opens a graphical desktop session on a remote Windows machine?",
-    "meaning": "RDP",
+    "question": "Which protocol opens a graphical desktop session on a remote Windows machine?",
+    "answer": "RDP",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "protocol"
   },
   {
-    "term": "Which protocol queries and updates a network directory of users and resources?",
-    "meaning": "LDAP",
+    "question": "Which protocol queries and updates a network directory of users and resources?",
+    "answer": "LDAP",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "protocol"
   },
   {
-    "term": "Which protocol keeps the clocks on a network matched to one time server?",
-    "meaning": "NTP",
+    "question": "Which protocol keeps the clocks on a network matched to one time server?",
+    "answer": "NTP",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.3",
     "answerType": "protocol"
   },
   {
-    "term": "Which device forwards each frame to the port that matches its destination MAC address?",
-    "meaning": "Switch",
+    "question": "Which device forwards each frame to the port that matches its destination MAC address?",
+    "answer": "Switch",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
-    "term": "Which device forwards packets between different IP networks?",
-    "meaning": "Router",
+    "question": "Which device forwards packets between different IP networks?",
+    "answer": "Router",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
-    "term": "Which device allows or blocks traffic using the rules in a network ACL?",
-    "meaning": "Firewall",
+    "question": "Which device allows or blocks traffic using the rules in a network ACL?",
+    "answer": "Firewall",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
-    "term": "Office wall-port cables run through the walls to the IDCs on the back of what, with RJ45 ports on its front?",
-    "meaning": "Patch panel",
+    "question": "Office wall-port cables run through the walls to the IDCs on the back of what, with RJ45 ports on its front?",
+    "answer": "Patch panel",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
-    "term": "When fiber runs all the way to a home, which box at the customer end turns light pulses into electrical signals?",
-    "meaning": "ONT",
+    "question": "When fiber runs all the way to a home, which box at the customer end turns light pulses into electrical signals?",
+    "answer": "ONT",
     "category": "Networking",
     "difficulty": "hard",
     "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
-    "term": "Which server takes whole requests for internet resources and fulfills them on behalf of clients?",
-    "meaning": "Proxy server",
+    "question": "Which server takes whole requests for internet resources and fulfills them on behalf of clients?",
+    "answer": "Proxy server",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.3",
     "answerType": "device"
   },
   {
-    "term": "Which tool fixes an RJ45 plug onto the end of a patch cord?",
-    "meaning": "Crimper",
+    "question": "Which tool fixes an RJ45 plug onto the end of a patch cord?",
+    "answer": "Crimper",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
-    "term": "Which tool presses each wire into an IDC on a patch panel?",
-    "meaning": "Punchdown tool",
+    "question": "Which tool presses each wire into an IDC on a patch panel?",
+    "answer": "Punchdown tool",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
-    "term": "Which pair of devices sends a signal down every wire, one by one, to confirm a cable was wired to the right pins?",
-    "meaning": "Cable tester",
+    "question": "Which pair of devices sends a signal down every wire, one by one, to confirm a cable was wired to the right pins?",
+    "answer": "Cable tester",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
-    "term": "Which tool puts a tone on a cable so you can find it in an unlabeled bundle?",
-    "meaning": "Toner probe",
+    "question": "Which tool puts a tone on a cable so you can find it in an unlabeled bundle?",
+    "answer": "Toner probe",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
-    "term": "Which adapter, plugged into a network card or switch port, makes the link light come on if that port works?",
-    "meaning": "Loopback plug",
+    "question": "Which adapter, plugged into a network card or switch port, makes the link light come on if that port works?",
+    "answer": "Loopback plug",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
-    "term": "Which tool scores a cable's outer jacket so it can come off without nicking the wire pairs?",
-    "meaning": "Cable stripper",
+    "question": "Which tool scores a cable's outer jacket so it can come off without nicking the wire pairs?",
+    "answer": "Cable stripper",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
-    "term": "Which hardware or software tool records the signal strength and channels of nearby access points?",
-    "meaning": "Wi-Fi analyzer",
+    "question": "Which hardware or software tool records the signal strength and channels of nearby access points?",
+    "answer": "Wi-Fi analyzer",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
-    "term": "Which network type links devices a few meters apart, such as a phone and a headset?",
-    "meaning": "PAN",
+    "question": "Which network type links devices a few meters apart, such as a phone and a headset?",
+    "answer": "PAN",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.7",
     "answerType": "networkType"
   },
   {
-    "term": "Which network type is dedicated to giving servers access to shared storage?",
-    "meaning": "SAN",
+    "question": "Which network type is dedicated to giving servers access to shared storage?",
+    "answer": "SAN",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.7",
     "answerType": "networkType"
   },
   {
-    "term": "Which network type spans multiple geographic locations?",
-    "meaning": "WAN",
+    "question": "Which network type spans multiple geographic locations?",
+    "answer": "WAN",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.7",
     "answerType": "networkType"
   },
   {
-    "term": "Which network type connects sites across one city: bigger than a LAN, smaller than a WAN?",
-    "meaning": "MAN",
+    "question": "Which network type connects sites across one city: bigger than a LAN, smaller than a WAN?",
+    "answer": "MAN",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.7",
     "answerType": "networkType"
   },
   {
-    "term": "Which network type joins hosts by radio instead of cable, mostly using IEEE 802.11?",
-    "meaning": "WLAN",
+    "question": "Which network type joins hosts by radio instead of cable, mostly using IEEE 802.11?",
+    "answer": "WLAN",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.7",
     "answerType": "networkType"
   },
   {
-    "term": "Which DNS record points a domain name at an IPv4 address?",
-    "meaning": "A",
+    "question": "Which DNS record points a domain name at an IPv4 address?",
+    "answer": "A",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.4",
     "answerType": "record"
   },
   {
-    "term": "Which DNS record points a domain name at an IPv6 address?",
-    "meaning": "AAAA",
+    "question": "Which DNS record points a domain name at an IPv6 address?",
+    "answer": "AAAA",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.4",
     "answerType": "record"
   },
   {
-    "term": "Which DNS record names the email servers for a domain?",
-    "meaning": "MX",
+    "question": "Which DNS record names the email servers for a domain?",
+    "answer": "MX",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.4",
     "answerType": "record"
   },
   {
-    "term": "Which DNS record makes one domain name an alias of another?",
-    "meaning": "CNAME",
+    "question": "Which DNS record makes one domain name an alias of another?",
+    "answer": "CNAME",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.4",
     "answerType": "record"
   },
   {
-    "term": "Which DNS record type publishes SPF and DKIM data for spam management?",
-    "meaning": "TXT",
+    "question": "Which DNS record type publishes SPF and DKIM data for spam management?",
+    "answer": "TXT",
     "category": "Networking",
     "difficulty": "hard",
     "source": "220-1201 2.4",
     "answerType": "record"
   },
   {
-    "term": "How many bits long is a MAC address?",
-    "meaning": "48",
+    "question": "How many bits long is a MAC address?",
+    "answer": "48",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.5",
     "answerType": "number"
   },
   {
-    "term": "About how many watts can a powered device draw under 802.3af PoE?",
-    "meaning": "13",
+    "question": "About how many watts can a powered device draw under 802.3af PoE?",
+    "answer": "13",
     "category": "Networking",
     "difficulty": "hard",
     "source": "220-1201 2.5",
     "answerType": "number"
   },
   {
-    "term": "What is the longest twisted pair Ethernet run allowed, in meters?",
-    "meaning": "100",
+    "question": "What is the longest twisted pair Ethernet run allowed, in meters?",
+    "answer": "100",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.5",
     "answerType": "number"
   },
   {
-    "term": "Which tool is shown?",
-    "meaning": "Crimper",
+    "question": "Which tool is shown?",
+    "answer": "Crimper",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.8",
@@ -329,8 +329,8 @@
     "image": "images/crimper.svg"
   },
   {
-    "term": "Which tool is shown?",
-    "meaning": "Punchdown tool",
+    "question": "Which tool is shown?",
+    "answer": "Punchdown tool",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
@@ -338,8 +338,8 @@
     "image": "images/punchdown-tool.svg"
   },
   {
-    "term": "Which tool is shown?",
-    "meaning": "Toner probe",
+    "question": "Which tool is shown?",
+    "answer": "Toner probe",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
@@ -347,8 +347,8 @@
     "image": "images/toner-probe.svg"
   },
   {
-    "term": "Which tool is shown?",
-    "meaning": "Loopback plug",
+    "question": "Which tool is shown?",
+    "answer": "Loopback plug",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
@@ -356,8 +356,8 @@
     "image": "images/loopback-plug.svg"
   },
   {
-    "term": "Which tool is shown?",
-    "meaning": "Cable tester",
+    "question": "Which tool is shown?",
+    "answer": "Cable tester",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
@@ -365,8 +365,8 @@
     "image": "images/cable-tester.svg"
   },
   {
-    "term": "Which tool is shown?",
-    "meaning": "Cable stripper",
+    "question": "Which tool is shown?",
+    "answer": "Cable stripper",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
@@ -374,8 +374,8 @@
     "image": "images/cable-stripper.svg"
   },
   {
-    "term": "Which tool is shown?",
-    "meaning": "Wi-Fi analyzer",
+    "question": "Which tool is shown?",
+    "answer": "Wi-Fi analyzer",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
@@ -383,2048 +383,2048 @@
     "image": "images/wifi-analyzer.svg"
   },
   {
-    "term": "Which TCP port does an FTP client open first, to send its commands?",
-    "meaning": "21",
+    "question": "Which TCP port does an FTP client open first, to send its commands?",
+    "answer": "21",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
-    "term": "Which TCP port does a Telnet server wait on by default?",
-    "meaning": "23",
+    "question": "Which TCP port does a Telnet server wait on by default?",
+    "answer": "23",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
-    "term": "Which TCP port carries Windows file and printer sharing (SMB)?",
-    "meaning": "445",
+    "question": "Which TCP port carries Windows file and printer sharing (SMB)?",
+    "answer": "445",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "port"
   },
   {
-    "term": "Which old protocol uploads and downloads files with no encryption, using one channel for commands and another for data?",
-    "meaning": "FTP",
+    "question": "Which old protocol uploads and downloads files with no encryption, using one channel for commands and another for data?",
+    "answer": "FTP",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "protocol"
   },
   {
-    "term": "Which protocol lets Windows computers share folders and printers with each other?",
-    "meaning": "SMB",
+    "question": "Which protocol lets Windows computers share folders and printers with each other?",
+    "answer": "SMB",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.1",
     "answerType": "protocol"
   },
   {
-    "term": "Which mail protocol leaves messages on the server so a phone and a laptop see the same inbox?",
-    "meaning": "IMAP",
+    "question": "Which mail protocol leaves messages on the server so a phone and a laptop see the same inbox?",
+    "answer": "IMAP",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "protocol"
   },
   {
-    "term": "Which transport protocol opens a connection with SYN, SYN/ACK and ACK before any data moves?",
-    "meaning": "TCP",
+    "question": "Which transport protocol opens a connection with SYN, SYN/ACK and ACK before any data moves?",
+    "answer": "TCP",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.1",
     "answerType": "protocol"
   },
   {
-    "term": "Which transport protocol sends data with no handshake and no check that it arrived?",
-    "meaning": "UDP",
+    "question": "Which transport protocol sends data with no handshake and no check that it arrived?",
+    "answer": "UDP",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.1",
     "answerType": "protocol"
   },
   {
-    "term": "Which 802.11 standard is sold as Wi-Fi 6?",
-    "meaning": "802.11ax",
+    "question": "Which 802.11 standard is sold as Wi-Fi 6?",
+    "answer": "802.11ax",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.2",
     "answerType": "standard"
   },
   {
-    "term": "Which 802.11 standard, now called Wi-Fi 4, can use both the 2.4 and 5 GHz bands?",
-    "meaning": "802.11n",
+    "question": "Which 802.11 standard, now called Wi-Fi 4, can use both the 2.4 and 5 GHz bands?",
+    "answer": "802.11n",
     "category": "Networking",
     "difficulty": "hard",
     "source": "220-1201 2.2",
     "answerType": "standard"
   },
   {
-    "term": "Which short-range radio standard links a phone to wireless headphones?",
-    "meaning": "Bluetooth",
+    "question": "Which short-range radio standard links a phone to wireless headphones?",
+    "answer": "Bluetooth",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.2",
     "answerType": "standard"
   },
   {
-    "term": "Which wireless tech lets you pay by holding a phone a few centimeters from a card reader?",
-    "meaning": "NFC",
+    "question": "Which wireless tech lets you pay by holding a phone a few centimeters from a card reader?",
+    "answer": "NFC",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.2",
     "answerType": "standard"
   },
   {
-    "term": "Which wireless tech tracks parcels with sticker tags that need no battery?",
-    "meaning": "RFID",
+    "question": "Which wireless tech tracks parcels with sticker tags that need no battery?",
+    "answer": "RFID",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.2",
     "answerType": "standard"
   },
   {
-    "term": "Which PoE standard, known as PoE+, lets a device draw about 25 W?",
-    "meaning": "802.3at",
-    "category": "Networking",
-    "difficulty": "hard",
-    "source": "220-1201 2.5",
-    "answerType": "standard"
-  },
-  {
-    "term": "Which PoE standard, known as PoE++, supplies the most power, up to about 73 W?",
-    "meaning": "802.3bt",
+    "question": "Which PoE standard, known as PoE+, lets a device draw about 25 W?",
+    "answer": "802.3at",
     "category": "Networking",
     "difficulty": "hard",
     "source": "220-1201 2.5",
     "answerType": "standard"
   },
   {
-    "term": "How many 2.4 GHz Wi-Fi channels can run side by side without overlapping?",
-    "meaning": "3",
+    "question": "Which PoE standard, known as PoE++, supplies the most power, up to about 73 W?",
+    "answer": "802.3bt",
+    "category": "Networking",
+    "difficulty": "hard",
+    "source": "220-1201 2.5",
+    "answerType": "standard"
+  },
+  {
+    "question": "How many 2.4 GHz Wi-Fi channels can run side by side without overlapping?",
+    "answer": "3",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.2",
     "answerType": "number"
   },
   {
-    "term": "How many bits long is an IPv4 address?",
-    "meaning": "32",
+    "question": "How many bits long is an IPv4 address?",
+    "answer": "32",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.6",
     "answerType": "number"
   },
   {
-    "term": "How many bits long is an IPv6 address?",
-    "meaning": "128",
+    "question": "How many bits long is an IPv6 address?",
+    "answer": "128",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.6",
     "answerType": "number"
   },
   {
-    "term": "Which server gathers log messages from routers, switches and servers in one place?",
-    "meaning": "Syslog server",
+    "question": "Which server gathers log messages from routers, switches and servers in one place?",
+    "answer": "Syslog server",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.3",
     "answerType": "device"
   },
   {
-    "term": "Which server checks logins for every switch, access point and VPN server, so each device needn't store them?",
-    "meaning": "AAA server",
+    "question": "Which server checks logins for every switch, access point and VPN server, so each device needn't store them?",
+    "answer": "AAA server",
     "category": "Networking",
     "difficulty": "hard",
     "source": "220-1201 2.3",
     "answerType": "device"
   },
   {
-    "term": "Which appliance shares incoming client requests across a farm of servers?",
-    "meaning": "Load balancer",
+    "question": "Which appliance shares incoming client requests across a farm of servers?",
+    "answer": "Load balancer",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.3",
     "answerType": "device"
   },
   {
-    "term": "Which single appliance does the work of several security tools, with one place to set rules and read reports?",
-    "meaning": "UTM",
+    "question": "Which single appliance does the work of several security tools, with one place to set rules and read reports?",
+    "answer": "UTM",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.3",
     "answerType": "device"
   },
   {
-    "term": "Which appliance filters junk email before it reaches users' inboxes?",
-    "meaning": "Spam gateway",
+    "question": "Which appliance filters junk email before it reaches users' inboxes?",
+    "answer": "Spam gateway",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.3",
     "answerType": "device"
   },
   {
-    "term": "Which kind of system runs industrial plants such as power and water works?",
-    "meaning": "SCADA",
+    "question": "Which kind of system runs industrial plants such as power and water works?",
+    "answer": "SCADA",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.3",
     "answerType": "device"
   },
   {
-    "term": "Which device lets wireless clients join a wired network?",
-    "meaning": "Access point",
+    "question": "Which device lets wireless clients join a wired network?",
+    "answer": "Access point",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
-    "term": "Which device adds power to an Ethernet link when the switch can't supply PoE?",
-    "meaning": "PoE injector",
+    "question": "Which device adds power to an Ethernet link when the switch can't supply PoE?",
+    "answer": "PoE injector",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.5",
     "answerType": "device"
   },
   {
-    "term": "Which device copies every frame on a cable to a monitor port for a packet analyzer?",
-    "meaning": "Network tap",
+    "question": "Which device copies every frame on a cable to a monitor port for a packet analyzer?",
+    "answer": "Network tap",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
     "answerType": "tool"
   },
   {
-    "term": "What is the range of addresses a DHCP server may hand out?",
-    "meaning": "Scope",
+    "question": "What is the range of addresses a DHCP server may hand out?",
+    "answer": "Scope",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.4",
     "answerType": "config"
   },
   {
-    "term": "Which DHCP setting gives the same IP address to one MAC address every time?",
-    "meaning": "Reservation",
+    "question": "Which DHCP setting gives the same IP address to one MAC address every time?",
+    "answer": "Reservation",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.4",
     "answerType": "config"
   },
   {
-    "term": "Which managed-switch feature splits one switch into separate logical networks?",
-    "meaning": "VLAN",
+    "question": "Which managed-switch feature splits one switch into separate logical networks?",
+    "answer": "VLAN",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.4",
     "answerType": "config"
   },
   {
-    "term": "Which feature builds an encrypted tunnel over the internet into an office network?",
-    "meaning": "VPN",
+    "question": "Which feature builds an encrypted tunnel over the internet into an office network?",
+    "answer": "VPN",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.4",
     "answerType": "config"
   },
   {
-    "term": "What does Windows call it when a host picks itself a 169.254.x.x address because no DHCP server answered?",
-    "meaning": "APIPA",
+    "question": "What does Windows call it when a host picks itself a 169.254.x.x address because no DHCP server answered?",
+    "answer": "APIPA",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.6",
     "answerType": "config"
   },
   {
-    "term": "Which setting holds the router address a host uses to reach other networks?",
-    "meaning": "Default gateway",
+    "question": "Which setting holds the router address a host uses to reach other networks?",
+    "answer": "Default gateway",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.6",
     "answerType": "config"
   },
   {
-    "term": "Which setting shows which bits of an IPv4 address are the network ID?",
-    "meaning": "Subnet mask",
+    "question": "Which setting shows which bits of an IPv4 address are the network ID?",
+    "answer": "Subnet mask",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.6",
     "answerType": "config"
   },
   {
-    "term": "Which internet connection runs over the copper phone line and is often faster down than up?",
-    "meaning": "DSL",
+    "question": "Which internet connection runs over the copper phone line and is often faster down than up?",
+    "answer": "DSL",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.7",
     "answerType": "connection"
   },
   {
-    "term": "Which internet connection comes in over the TV provider's coax?",
-    "meaning": "Cable",
+    "question": "Which internet connection comes in over the TV provider's coax?",
+    "answer": "Cable",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.7",
     "answerType": "connection"
   },
   {
-    "term": "Which internet connection has high latency because the signal goes to orbit and back?",
-    "meaning": "Satellite",
+    "question": "Which internet connection has high latency because the signal goes to orbit and back?",
+    "answer": "Satellite",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.7",
     "answerType": "connection"
   },
   {
-    "term": "Which internet connection uses a mobile carrier's 4G or 5G network?",
-    "meaning": "Cellular",
+    "question": "Which internet connection uses a mobile carrier's 4G or 5G network?",
+    "answer": "Cellular",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.7",
     "answerType": "connection"
   },
   {
-    "term": "Which kind of provider links homes to the internet with a fixed directional antenna on the roof?",
-    "meaning": "WISP",
+    "question": "Which kind of provider links homes to the internet with a fixed directional antenna on the roof?",
+    "answer": "WISP",
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.7",
     "answerType": "connection"
   },
   {
-    "term": "Which internet connection sends light through glass strands right up to the building?",
-    "meaning": "Fiber",
+    "question": "Which internet connection sends light through glass strands right up to the building?",
+    "answer": "Fiber",
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.7",
     "answerType": "connection"
   },
   {
-    "term": "Which copper network cable has four twisted pairs and no foil or braid around them?",
-    "meaning": "UTP",
+    "question": "Which copper network cable has four twisted pairs and no foil or braid around them?",
+    "answer": "UTP",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "cable"
   },
   {
-    "term": "Which twisted pair cable adds foil or braid to cope with motors and fluorescent lights nearby?",
-    "meaning": "STP",
+    "question": "Which twisted pair cable adds foil or braid to cope with motors and fluorescent lights nearby?",
+    "answer": "STP",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "cable"
   },
   {
-    "term": "Which fire-safe cable must be used in the air-handling space above a false ceiling?",
-    "meaning": "Plenum cable",
+    "question": "Which fire-safe cable must be used in the air-handling space above a false ceiling?",
+    "answer": "Plenum cable",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "cable"
   },
   {
-    "term": "Which cable type is gel-filled, often armored, and laid straight into the ground?",
-    "meaning": "Direct burial",
+    "question": "Which cable type is gel-filled, often armored, and laid straight into the ground?",
+    "answer": "Direct burial",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "cable"
   },
   {
-    "term": "Which fiber has a tiny core and a laser light source, for runs of many kilometers?",
-    "meaning": "Single-mode",
+    "question": "Which fiber has a tiny core and a laser light source, for runs of many kilometers?",
+    "answer": "Single-mode",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "cable"
   },
   {
-    "term": "Which fiber uses cheaper LEDs and a wider core, suiting LANs more than long links?",
-    "meaning": "Multimode",
+    "question": "Which fiber uses cheaper LEDs and a wider core, suiting LANs more than long links?",
+    "answer": "Multimode",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "cable"
   },
   {
-    "term": "Which cable has a center conductor and a mesh shield on the same axis, used for cable TV?",
-    "meaning": "Coaxial",
+    "question": "Which cable has a center conductor and a mesh shield on the same axis, used for cable TV?",
+    "answer": "Coaxial",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "cable"
   },
   {
-    "term": "Which is the lowest Cat rating still sold that carries Gigabit Ethernet the full 100 m?",
-    "meaning": "Cat 5e",
+    "question": "Which is the lowest Cat rating still sold that carries Gigabit Ethernet the full 100 m?",
+    "answer": "Cat 5e",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.2",
     "answerType": "cable"
   },
   {
-    "term": "Which Cat rating carries 10 Gbps the full 100 m and still plugs into RJ45?",
-    "meaning": "Cat 6A",
+    "question": "Which Cat rating carries 10 Gbps the full 100 m and still plugs into RJ45?",
+    "answer": "Cat 6A",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "cable"
   },
   {
-    "term": "Which Cat rating reaches 25 or 40 Gbps, but only to 30 m?",
-    "meaning": "Cat 8",
+    "question": "Which Cat rating reaches 25 or 40 Gbps, but only to 30 m?",
+    "answer": "Cat 8",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.2",
     "answerType": "cable"
   },
   {
-    "term": "Which Cat rating carries 10 Gbps, but only to about 55 m?",
-    "meaning": "Cat 6",
+    "question": "Which Cat rating carries 10 Gbps, but only to about 55 m?",
+    "answer": "Cat 6",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "cable"
   },
   {
-    "term": "Which 8-pin connector ends an Ethernet patch cord?",
-    "meaning": "RJ45",
+    "question": "Which 8-pin connector ends an Ethernet patch cord?",
+    "answer": "RJ45",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which smaller connector ends two-pair phone and DSL cable?",
-    "meaning": "RJ11",
+    "question": "Which smaller connector ends two-pair phone and DSL cable?",
+    "answer": "RJ11",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which screw-on connector ends coax from a cable TV wall plate?",
-    "meaning": "F-type",
+    "question": "Which screw-on connector ends coax from a cable TV wall plate?",
+    "answer": "F-type",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which fiber connector locks with a push and a twist, mostly on older multimode links?",
-    "meaning": "ST",
+    "question": "Which fiber connector locks with a push and a twist, mostly on older multimode links?",
+    "answer": "ST",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which fiber connector is small with a tab, so more ports fit on one panel?",
-    "meaning": "LC",
+    "question": "Which fiber connector is small with a tab, so more ports fit on one panel?",
+    "answer": "LC",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which square push/pull fiber connector works with both single-mode and multimode?",
-    "meaning": "SC",
+    "question": "Which square push/pull fiber connector works with both single-mode and multimode?",
+    "answer": "SC",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which connector does Cat 7 cable use in place of RJ45?",
-    "meaning": "GG45",
+    "question": "Which connector does Cat 7 cable use in place of RJ45?",
+    "answer": "GG45",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which 9-pin D-shaped connector is found on a PC's serial port?",
-    "meaning": "DB9",
+    "question": "Which 9-pin D-shaped connector is found on a PC's serial port?",
+    "answer": "DB9",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which 4-pin white plastic connector powers older drives from the PSU?",
-    "meaning": "Molex",
+    "question": "Which 4-pin white plastic connector powers older drives from the PSU?",
+    "answer": "Molex",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which Apple connector, now giving way to USB-C, charges iPhones and iPads?",
-    "meaning": "Lightning",
+    "question": "Which Apple connector, now giving way to USB-C, charges iPhones and iPads?",
+    "answer": "Lightning",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which reversible USB connector do Thunderbolt 3 and later also use?",
-    "meaning": "USB-C",
+    "question": "Which reversible USB connector do Thunderbolt 3 and later also use?",
+    "answer": "USB-C",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which small, flat USB connector was common on phones and tablets before USB-C?",
-    "meaning": "Micro-USB",
+    "question": "Which small, flat USB connector was common on phones and tablets before USB-C?",
+    "answer": "Micro-USB",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which USB connector, now rare, was used on early digital cameras?",
-    "meaning": "Mini-USB",
+    "question": "Which USB connector, now rare, was used on early digital cameras?",
+    "answer": "Mini-USB",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which square USB connector with a sloped top plugs into big devices like printers?",
-    "meaning": "USB Type B",
+    "question": "Which square USB connector with a sloped top plugs into big devices like printers?",
+    "answer": "USB Type B",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Permanent cable in the wall ends on which block of IDCs, worked with a punchdown tool?",
-    "meaning": "Punchdown block",
+    "question": "Permanent cable in the wall ends on which block of IDCs, worked with a punchdown tool?",
+    "answer": "Punchdown block",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "connector"
   },
   {
-    "term": "Which video interface carries HD video and sound in one cable to TVs and game consoles?",
-    "meaning": "HDMI",
+    "question": "Which video interface carries HD video and sound in one cable to TVs and game consoles?",
+    "answer": "HDMI",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "interface"
   },
   {
-    "term": "Which video interface can drive several monitors from one port using MST?",
-    "meaning": "DisplayPort",
+    "question": "Which video interface can drive several monitors from one port using MST?",
+    "answer": "DisplayPort",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "interface"
   },
   {
-    "term": "Which older video interface can send analog, digital or both, depending on its pin layout?",
-    "meaning": "DVI",
+    "question": "Which older video interface can send analog, digital or both, depending on its pin layout?",
+    "answer": "DVI",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "interface"
   },
   {
-    "term": "Which 15-pin analog video interface was the PC standard back in the CRT monitor days?",
-    "meaning": "VGA",
+    "question": "Which 15-pin analog video interface was the PC standard back in the CRT monitor days?",
+    "answer": "VGA",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "interface"
   },
   {
-    "term": "Which interface, shown by a lightning-bolt icon on its port, carries both display and data at up to 40 Gbps in version 3?",
-    "meaning": "Thunderbolt",
+    "question": "Which interface, shown by a lightning-bolt icon on its port, carries both display and data at up to 40 Gbps in version 3?",
+    "answer": "Thunderbolt",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "interface"
   },
   {
-    "term": "Which interface links internal hard drives to the motherboard with a 7-pin data cable?",
-    "meaning": "SATA",
+    "question": "Which interface links internal hard drives to the motherboard with a 7-pin data cable?",
+    "answer": "SATA",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
     "answerType": "interface"
   },
   {
-    "term": "Which interface connects external drives over a shielded cable up to 2 m long?",
-    "meaning": "eSATA",
+    "question": "Which interface connects external drives over a shielded cable up to 2 m long?",
+    "answer": "eSATA",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "interface"
   },
   {
-    "term": "Which legacy interface, also called RS-232, shows up in Windows as a COM port?",
-    "meaning": "Serial",
+    "question": "Which legacy interface, also called RS-232, shows up in Windows as a COM port?",
+    "answer": "Serial",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "interface"
   },
   {
-    "term": "Which USB version first reached 5 Gbps, often marked with a blue tab?",
-    "meaning": "USB 3.0",
+    "question": "Which USB version first reached 5 Gbps, often marked with a blue tab?",
+    "answer": "USB 3.0",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "interface"
   },
   {
-    "term": "Which USB version raised the top speed to 480 Mbps?",
-    "meaning": "USB 2.0",
+    "question": "Which USB version raised the top speed to 480 Mbps?",
+    "answer": "USB 2.0",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "interface"
   },
   {
-    "term": "How many pins are on a SATA power connector?",
-    "meaning": "15",
+    "question": "How many pins are on a SATA power connector?",
+    "answer": "15",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "number"
   },
   {
-    "term": "In theory, how many devices can one USB host controller support?",
-    "meaning": "127",
+    "question": "In theory, how many devices can one USB host controller support?",
+    "answer": "127",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.2",
     "answerType": "number"
   },
   {
-    "term": "Which wiring standard puts the orange pair on pins 1 and 2 of an RJ45?",
-    "meaning": "T568B",
+    "question": "Which wiring standard puts the orange pair on pins 1 and 2 of an RJ45?",
+    "answer": "T568B",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
     "answerType": "standard"
   },
   {
-    "term": "Which wiring standard puts the green pair on pins 1 and 2 of an RJ45?",
-    "meaning": "T568A",
+    "question": "Which wiring standard puts the green pair on pins 1 and 2 of an RJ45?",
+    "answer": "T568A",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.2",
     "answerType": "standard"
   },
   {
-    "term": "Which memory module form factor fits laptops and mini PCs?",
-    "meaning": "SODIMM",
+    "question": "Which memory module form factor fits laptops and mini PCs?",
+    "answer": "SODIMM",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.3",
     "answerType": "memory"
   },
   {
-    "term": "Which full-size memory module goes in desktop PCs?",
-    "meaning": "DIMM",
+    "question": "Which full-size memory module goes in desktop PCs?",
+    "answer": "DIMM",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.3",
     "answerType": "memory"
   },
   {
-    "term": "Which DDR generation splits each module into two 32-bit channels?",
-    "meaning": "DDR5",
+    "question": "Which DDR generation splits each module into two 32-bit channels?",
+    "answer": "DDR5",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.3",
     "answerType": "memory"
   },
   {
-    "term": "Which kind of RAM stores extra check bits so it can find and repair a single flipped bit?",
-    "meaning": "ECC",
+    "question": "Which kind of RAM stores extra check bits so it can find and repair a single flipped bit?",
+    "answer": "ECC",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.3",
     "answerType": "memory"
   },
   {
-    "term": "Most ECC memory is sold as which kind of module, whose register takes strain off the memory controller?",
-    "meaning": "RDIMM",
+    "question": "Most ECC memory is sold as which kind of module, whose register takes strain off the memory controller?",
+    "answer": "RDIMM",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.3",
     "answerType": "memory"
   },
   {
-    "term": "Which DDR generation runs at 1600 to 3200 MT/s?",
-    "meaning": "DDR4",
+    "question": "Which DDR generation runs at 1600 to 3200 MT/s?",
+    "answer": "DDR4",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.3",
     "answerType": "memory"
   },
   {
-    "term": "How many bits wide is the data path in dual-channel memory?",
-    "meaning": "128",
+    "question": "How many bits wide is the data path in dual-channel memory?",
+    "answer": "128",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.3",
     "answerType": "number"
   },
   {
-    "term": "How many bits wide is the data bus for ECC memory?",
-    "meaning": "72",
+    "question": "How many bits wide is the data bus for ECC memory?",
+    "answer": "72",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.3",
     "answerType": "number"
   },
   {
-    "term": "Which SSD interface talks to the CPU over PCIe lanes, far faster than SATA?",
-    "meaning": "NVMe",
+    "question": "Which SSD interface talks to the CPU over PCIe lanes, far faster than SATA?",
+    "answer": "NVMe",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.4",
     "answerType": "storage"
   },
   {
-    "term": "Which small SSD form factor is a flat stick that screws onto the motherboard and needs no power cable?",
-    "meaning": "M.2",
+    "question": "Which small SSD form factor is a flat stick that screws onto the motherboard and needs no power cable?",
+    "answer": "M.2",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.4",
     "answerType": "storage"
   },
   {
-    "term": "Which small SSD form factor uses a single slot for both data and power, but is capped at SATA speed?",
-    "meaning": "mSATA",
+    "question": "Which small SSD form factor uses a single slot for both data and power, but is capped at SATA speed?",
+    "answer": "mSATA",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.4",
     "answerType": "storage"
   },
   {
-    "term": "Which enterprise drive interface sends SCSI commands over a serial link?",
-    "meaning": "SAS",
+    "question": "Which enterprise drive interface sends SCSI commands over a serial link?",
+    "answer": "SAS",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.4",
     "answerType": "storage"
   },
   {
-    "term": "Which drive width is the usual size for desktop hard disks?",
-    "meaning": "3.5-inch",
+    "question": "Which drive width is the usual size for desktop hard disks?",
+    "answer": "3.5-inch",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.4",
     "answerType": "storage"
   },
   {
-    "term": "Which drive width is found in laptops and pocket-sized external drives?",
-    "meaning": "2.5-inch",
+    "question": "Which drive width is found in laptops and pocket-sized external drives?",
+    "answer": "2.5-inch",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.4",
     "answerType": "storage"
   },
   {
-    "term": "Which pocket-sized removable storage plugs straight into a USB port?",
-    "meaning": "Flash drive",
+    "question": "Which pocket-sized removable storage plugs straight into a USB port?",
+    "answer": "Flash drive",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.4",
     "answerType": "storage"
   },
   {
-    "term": "Which drive reads CDs, DVDs and Blu-ray discs?",
-    "meaning": "Optical drive",
+    "question": "Which drive reads CDs, DVDs and Blu-ray discs?",
+    "answer": "Optical drive",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.4",
     "answerType": "storage"
   },
   {
-    "term": "At how many RPM does a typical desktop hard drive spin?",
-    "meaning": "7200",
+    "question": "At how many RPM does a typical desktop hard drive spin?",
+    "answer": "7200",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.4",
     "answerType": "number"
   },
   {
-    "term": "Which RAID level stripes data across disks with no redundancy at all?",
-    "meaning": "RAID 0",
+    "question": "Which RAID level stripes data across disks with no redundancy at all?",
+    "answer": "RAID 0",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.4",
     "answerType": "raid"
   },
   {
-    "term": "Which RAID level copies one disk onto another?",
-    "meaning": "RAID 1",
+    "question": "Which RAID level copies one disk onto another?",
+    "answer": "RAID 1",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.4",
     "answerType": "raid"
   },
   {
-    "term": "Which RAID level stripes data with one set of parity and survives one failed disk?",
-    "meaning": "RAID 5",
+    "question": "Which RAID level stripes data with one set of parity and survives one failed disk?",
+    "answer": "RAID 5",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.4",
     "answerType": "raid"
   },
   {
-    "term": "Which RAID level keeps two sets of parity and survives two failed disks?",
-    "meaning": "RAID 6",
+    "question": "Which RAID level keeps two sets of parity and survives two failed disks?",
+    "answer": "RAID 6",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.4",
     "answerType": "raid"
   },
   {
-    "term": "Which RAID level is a stripe built out of mirrored pairs?",
-    "meaning": "RAID 10",
+    "question": "Which RAID level is a stripe built out of mirrored pairs?",
+    "answer": "RAID 10",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.4",
     "answerType": "raid"
   },
   {
-    "term": "What is the fewest number of disks RAID 5 can use?",
-    "meaning": "3",
+    "question": "What is the fewest number of disks RAID 5 can use?",
+    "answer": "3",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.4",
     "answerType": "number"
   },
   {
-    "term": "Which full-size motherboard form factor is 12 by 9.6 inches and holds as many as seven cards?",
-    "meaning": "ATX",
+    "question": "Which full-size motherboard form factor is 12 by 9.6 inches and holds as many as seven cards?",
+    "answer": "ATX",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.5",
     "answerType": "board"
   },
   {
-    "term": "Which motherboard form factor is a 9.6-inch square, smaller than ATX?",
-    "meaning": "microATX",
+    "question": "Which motherboard form factor is a 9.6-inch square, smaller than ATX?",
+    "answer": "microATX",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.5",
     "answerType": "board"
   },
   {
-    "term": "Which small square motherboard, about 6.7 inches a side, has just one expansion slot?",
-    "meaning": "Mini-ITX",
+    "question": "Which small square motherboard, about 6.7 inches a side, has just one expansion slot?",
+    "answer": "Mini-ITX",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.5",
     "answerType": "board"
   },
   {
-    "term": "Which expansion slot standard gives each card its own serial link, in sizes like x1 and x16?",
-    "meaning": "PCIe",
+    "question": "Which expansion slot standard gives each card its own serial link, in sizes like x1 and x16?",
+    "answer": "PCIe",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.5",
     "answerType": "board"
   },
   {
-    "term": "Which older expansion slot interface sits beside PCIe on some motherboards?",
-    "meaning": "PCI",
+    "question": "Which older expansion slot interface sits beside PCIe on some motherboards?",
+    "answer": "PCI",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.5",
     "answerType": "board"
   },
   {
-    "term": "Which add-in card records or streams video from a game console or camera?",
-    "meaning": "Capture card",
+    "question": "Which add-in card records or streams video from a game console or camera?",
+    "answer": "Capture card",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.5",
     "answerType": "board"
   },
   {
-    "term": "Which chip on the motherboard holds encryption keys and checks boot files for tampering?",
-    "meaning": "TPM",
+    "question": "Which chip on the motherboard holds encryption keys and checks boot files for tampering?",
+    "answer": "TPM",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.5",
     "answerType": "component"
   },
   {
-    "term": "Which UEFI feature lets only digitally signed bootloaders start?",
-    "meaning": "Secure Boot",
+    "question": "Which UEFI feature lets only digitally signed bootloaders start?",
+    "answer": "Secure Boot",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.5",
     "answerType": "component"
   },
   {
-    "term": "What is a secure USB key that holds encryption keys, often used when a PC has no TPM?",
-    "meaning": "HSM",
+    "question": "What is a secure USB key that holds encryption keys, often used when a PC has no TPM?",
+    "answer": "HSM",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.5",
     "answerType": "component"
   },
   {
-    "term": "Which finned metal block draws heat away from the CPU?",
-    "meaning": "Heat sink",
+    "question": "Which finned metal block draws heat away from the CPU?",
+    "answer": "Heat sink",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.5",
     "answerType": "component"
   },
   {
-    "term": "What fills the tiny air gaps between a CPU and its heat sink?",
-    "meaning": "Thermal paste",
+    "question": "What fills the tiny air gaps between a CPU and its heat sink?",
+    "answer": "Thermal paste",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.5",
     "answerType": "component"
   },
   {
-    "term": "Which power-saving CPU architecture runs most Android phones and Apple M-series Macs?",
-    "meaning": "ARM",
+    "question": "Which power-saving CPU architecture runs most Android phones and Apple M-series Macs?",
+    "answer": "ARM",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.5",
     "answerType": "component"
   },
   {
-    "term": "Which 64-bit extension of x86, first made by AMD, runs most Windows PCs?",
-    "meaning": "x64",
+    "question": "Which 64-bit extension of x86, first made by AMD, runs most Windows PCs?",
+    "answer": "x64",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.5",
     "answerType": "component"
   },
   {
-    "term": "Which kind of PSU lets you attach only the power cables the PC needs?",
-    "meaning": "Modular PSU",
+    "question": "Which kind of PSU lets you attach only the power cables the PC needs?",
+    "answer": "Modular PSU",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.6",
     "answerType": "component"
   },
   {
-    "term": "Which setup gives a server a second PSU that takes over if the first one fails?",
-    "meaning": "Redundant PSU",
+    "question": "Which setup gives a server a second PSU that takes over if the first one fails?",
+    "answer": "Redundant PSU",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.6",
     "answerType": "component"
   },
   {
-    "term": "Which DC voltage rail, in volts, carries the most load in a modern PC?",
-    "meaning": "12",
+    "question": "Which DC voltage rail, in volts, carries the most load in a modern PC?",
+    "answer": "12",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.6",
     "answerType": "number"
   },
   {
-    "term": "How many pins does a modern ATX motherboard power connector have?",
-    "meaning": "24",
+    "question": "How many pins does a modern ATX motherboard power connector have?",
+    "answer": "24",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.6",
     "answerType": "number"
   },
   {
-    "term": "Which LCD panel type gives the truest color and widest viewing angles, but responds more slowly?",
-    "meaning": "IPS",
+    "question": "Which LCD panel type gives the truest color and widest viewing angles, but responds more slowly?",
+    "answer": "IPS",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.1",
     "answerType": "display"
   },
   {
-    "term": "Which LCD panel type responds fastest for gaming, but has weak color and narrow viewing angles?",
-    "meaning": "TN",
+    "question": "Which LCD panel type responds fastest for gaming, but has weak color and narrow viewing angles?",
+    "answer": "TN",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.1",
     "answerType": "display"
   },
   {
-    "term": "In which LCD panel type do the crystals stand upright and tip over when voltage is applied?",
-    "meaning": "VA",
+    "question": "In which LCD panel type do the crystals stand upright and tip over when voltage is applied?",
+    "answer": "VA",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.1",
     "answerType": "display"
   },
   {
-    "term": "Which display type lights each pixel by itself, giving true blacks but risking burn-in?",
-    "meaning": "OLED",
+    "question": "Which display type lights each pixel by itself, giving true blacks but risking burn-in?",
+    "answer": "OLED",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.1",
     "answerType": "display"
   },
   {
-    "term": "Which LCD upgrade puts thousands of tiny LEDs behind the panel for finer brightness control?",
-    "meaning": "Mini-LED",
+    "question": "Which LCD upgrade puts thousands of tiny LEDs behind the panel for finer brightness control?",
+    "answer": "Mini-LED",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.1",
     "answerType": "display"
   },
   {
-    "term": "Which part in older LCDs turns DC into AC to drive a fluorescent backlight?",
-    "meaning": "Inverter",
+    "question": "Which part in older LCDs turns DC into AC to drive a fluorescent backlight?",
+    "answer": "Inverter",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.1",
     "answerType": "display"
   },
   {
-    "term": "Which layer of a touch screen turns a finger or stylus touch into input?",
-    "meaning": "Digitizer",
+    "question": "Which layer of a touch screen turns a finger or stylus touch into input?",
+    "answer": "Digitizer",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.1",
     "answerType": "display"
   },
   {
-    "term": "Which display attribute, measured in Hz, makes motion look smoother?",
-    "meaning": "Refresh rate",
+    "question": "Which display attribute, measured in Hz, makes motion look smoother?",
+    "answer": "Refresh rate",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.1",
     "answerType": "display"
   },
   {
-    "term": "Which display attribute is the spread of colors a screen can reproduce, such as sRGB or DCI-P3?",
-    "meaning": "Color gamut",
+    "question": "Which display attribute is the spread of colors a screen can reproduce, such as sRGB or DCI-P3?",
+    "answer": "Color gamut",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.1",
     "answerType": "display"
   },
   {
-    "term": "Which display attribute counts how many pixels are packed into each inch?",
-    "meaning": "Pixel density",
+    "question": "Which display attribute counts how many pixels are packed into each inch?",
+    "answer": "Pixel density",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.1",
     "answerType": "display"
   },
   {
-    "term": "How many pixels wide is a 4K display?",
-    "meaning": "3840",
+    "question": "How many pixels wide is a 4K display?",
+    "answer": "3840",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.1",
     "answerType": "number"
   },
   {
-    "term": "Which printer option puts the job on the front and back of each sheet?",
-    "meaning": "Duplex",
+    "question": "Which printer option puts the job on the front and back of each sheet?",
+    "answer": "Duplex",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.7",
     "answerType": "printSetting"
   },
   {
-    "term": "Which print setting picks portrait or landscape?",
-    "meaning": "Orientation",
+    "question": "Which print setting picks portrait or landscape?",
+    "answer": "Orientation",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.7",
     "answerType": "printSetting"
   },
   {
-    "term": "Which feature keeps a print job waiting at the printer until its owner signs in there?",
-    "meaning": "Secured print",
+    "question": "Which feature keeps a print job waiting at the printer until its owner signs in there?",
+    "answer": "Secured print",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.7",
     "answerType": "printSetting"
   },
   {
-    "term": "Which way of releasing a held print job uses an ID card held up to a smart card reader?",
-    "meaning": "Badging",
+    "question": "Which way of releasing a held print job uses an ID card held up to a smart card reader?",
+    "answer": "Badging",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.7",
     "answerType": "printSetting"
   },
   {
-    "term": "Which record shows who printed which document, so a leak can be traced?",
-    "meaning": "Audit log",
+    "question": "Which record shows who printed which document, so a leak can be traced?",
+    "answer": "Audit log",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.7",
     "answerType": "printSetting"
   },
   {
-    "term": "Which network scan service needs the MFD to know an SMTP server address?",
-    "meaning": "Scan to email",
+    "question": "Which network scan service needs the MFD to know an SMTP server address?",
+    "answer": "Scan to email",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.7",
     "answerType": "printSetting"
   },
   {
-    "term": "Which protocol does an MFD use to save scans into a shared folder on a file server?",
-    "meaning": "SMB",
+    "question": "Which protocol does an MFD use to save scans into a shared folder on a file server?",
+    "answer": "SMB",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.7",
     "answerType": "protocol"
   },
   {
-    "term": "Which MFD part pulls a stack of pages one at a time past a fixed scan head?",
-    "meaning": "ADF",
+    "question": "Which MFD part pulls a stack of pages one at a time past a fixed scan head?",
+    "answer": "ADF",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.7",
     "answerType": "printer"
   },
   {
-    "term": "Which kind of scanner reads a page lying face down on a sheet of glass?",
-    "meaning": "Flatbed scanner",
+    "question": "Which kind of scanner reads a page lying face down on a sheet of glass?",
+    "answer": "Flatbed scanner",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.7",
     "answerType": "printer"
   },
   {
-    "term": "Which HP page description language is closely tied to printer models and is usually the faster choice?",
-    "meaning": "PCL",
+    "question": "Which HP page description language is closely tied to printer models and is usually the faster choice?",
+    "answer": "PCL",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.7",
     "answerType": "pdl"
   },
   {
-    "term": "Which device-independent page description language do graphic designers pick for the same output on every printer?",
-    "meaning": "PostScript",
+    "question": "Which device-independent page description language do graphic designers pick for the same output on every printer?",
+    "answer": "PostScript",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.7",
     "answerType": "pdl"
   },
   {
-    "term": "Which computer shares its printer with other clients and controls who may print?",
-    "meaning": "Print server",
+    "question": "Which computer shares its printer with other clients and controls who may print?",
+    "answer": "Print server",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.7",
     "answerType": "device"
   },
   {
-    "term": "Which printer type uses a drum, toner and a fuser?",
-    "meaning": "Laser printer",
+    "question": "Which printer type uses a drum, toner and a fuser?",
+    "answer": "Laser printer",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.8",
     "answerType": "printer"
   },
   {
-    "term": "Which printer type sprays tiny droplets of ink onto the page, often for photos?",
-    "meaning": "Inkjet printer",
+    "question": "Which printer type sprays tiny droplets of ink onto the page, often for photos?",
+    "answer": "Inkjet printer",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.8",
     "answerType": "printer"
   },
   {
-    "term": "Which printer type needs heat-sensitive paper and is used for receipts and labels?",
-    "meaning": "Thermal printer",
+    "question": "Which printer type needs heat-sensitive paper and is used for receipts and labels?",
+    "answer": "Thermal printer",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.8",
     "answerType": "printer"
   },
   {
-    "term": "Which printer type strikes an inked ribbon and can mark several carbon copies in one pass?",
-    "meaning": "Impact printer",
+    "question": "Which printer type strikes an inked ribbon and can mark several carbon copies in one pass?",
+    "answer": "Impact printer",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.8",
     "answerType": "printer"
   },
   {
-    "term": "Which laser printer part bonds toner to the paper with heat and pressure?",
-    "meaning": "Fuser",
+    "question": "Which laser printer part bonds toner to the paper with heat and pressure?",
+    "answer": "Fuser",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.8",
     "answerType": "printer"
   },
   {
-    "term": "Which light-sensitive laser printer part carries the charge pattern that toner sticks to?",
-    "meaning": "Imaging drum",
+    "question": "Which light-sensitive laser printer part carries the charge pattern that toner sticks to?",
+    "answer": "Imaging drum",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.8",
     "answerType": "printer"
   },
   {
-    "term": "Which laser printer part gives the drum an even negative charge before the laser writes on it?",
-    "meaning": "Primary charge roller",
+    "question": "Which laser printer part gives the drum an even negative charge before the laser writes on it?",
+    "answer": "Primary charge roller",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.8",
     "answerType": "printer"
   },
   {
-    "term": "Which laser printer kit swaps out the fuser, transfer roller and feed rollers together?",
-    "meaning": "Maintenance kit",
+    "question": "Which laser printer kit swaps out the fuser, transfer roller and feed rollers together?",
+    "answer": "Maintenance kit",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.8",
     "answerType": "printer"
   },
   {
-    "term": "Which consumable does a dot matrix printer hit with its pins to mark the page?",
-    "meaning": "Ribbon",
+    "question": "Which consumable does a dot matrix printer hit with its pins to mark the page?",
+    "answer": "Ribbon",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.8",
     "answerType": "printer"
   },
   {
-    "term": "Which inkjet routine flushes blocked nozzles that leave gaps in the output?",
-    "meaning": "Head cleaning",
+    "question": "Which inkjet routine flushes blocked nozzles that leave gaps in the output?",
+    "answer": "Head cleaning",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.8",
     "answerType": "printSetting"
   },
   {
-    "term": "Which routine sets how much toner a laser printer uses, for the right density and color balance?",
-    "meaning": "Calibration",
+    "question": "Which routine sets how much toner a laser printer uses, for the right density and color balance?",
+    "answer": "Calibration",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.8",
     "answerType": "printSetting"
   },
   {
-    "term": "What percent isopropyl alcohol should be used to clean printer rollers?",
-    "meaning": "99",
+    "question": "What percent isopropyl alcohol should be used to clean printer rollers?",
+    "answer": "99",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.8",
     "answerType": "number"
   },
   {
-    "term": "Which pressure-sensitive nub in the middle of some laptop keyboards moves the cursor?",
-    "meaning": "Track point",
+    "question": "Which pressure-sensitive nub in the middle of some laptop keyboards moves the cursor?",
+    "answer": "Track point",
     "category": "Mobile Devices",
     "difficulty": "easy",
     "source": "220-1201 1.2",
     "answerType": "accessory"
   },
   {
-    "term": "Which large touch surface, also called a graphics tablet, is used for sketching and digital painting?",
-    "meaning": "Drawing pad",
+    "question": "Which large touch surface, also called a graphics tablet, is used for sketching and digital painting?",
+    "answer": "Drawing pad",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.2",
     "answerType": "accessory"
   },
   {
-    "term": "Which pen-like tool gives finer control than a finger on a touch screen?",
-    "meaning": "Stylus",
+    "question": "Which pen-like tool gives finer control than a finger on a touch screen?",
+    "answer": "Stylus",
     "category": "Mobile Devices",
     "difficulty": "easy",
     "source": "220-1201 1.2",
     "answerType": "accessory"
   },
   {
-    "term": "Which device adds a full set of ports to a laptop but no other features?",
-    "meaning": "Port replicator",
+    "question": "Which device adds a full set of ports to a laptop but no other features?",
+    "answer": "Port replicator",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.2",
     "answerType": "accessory"
   },
   {
-    "term": "Which device gives a laptop extra ports plus room for drives or a full-size expansion card?",
-    "meaning": "Docking station",
+    "question": "Which device gives a laptop extra ports plus room for drives or a full-size expansion card?",
+    "answer": "Docking station",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.2",
     "answerType": "accessory"
   },
   {
-    "term": "Which accessory pairs earphones with a microphone for calls?",
-    "meaning": "Headset",
+    "question": "Which accessory pairs earphones with a microphone for calls?",
+    "answer": "Headset",
     "category": "Mobile Devices",
     "difficulty": "easy",
     "source": "220-1201 1.2",
     "answerType": "accessory"
   },
   {
-    "term": "What is the built-in panel below a laptop keyboard that steers the pointer?",
-    "meaning": "Touchpad",
+    "question": "What is the built-in panel below a laptop keyboard that steers the pointer?",
+    "answer": "Touchpad",
     "category": "Mobile Devices",
     "difficulty": "easy",
     "source": "220-1201 1.2",
     "answerType": "accessory"
   },
   {
-    "term": "Which sliding or magnetic cover blocks a laptop camera when it is not in use?",
-    "meaning": "Privacy shade",
+    "question": "Which sliding or magnetic cover blocks a laptop camera when it is not in use?",
+    "answer": "Privacy shade",
     "category": "Mobile Devices",
     "difficulty": "easy",
     "source": "220-1201 1.1",
     "answerType": "accessory"
   },
   {
-    "term": "Which way of sharing a phone's cellular data with a laptop can run over USB, Bluetooth or Wi-Fi?",
-    "meaning": "Tethering",
+    "question": "Which way of sharing a phone's cellular data with a laptop can run over USB, Bluetooth or Wi-Fi?",
+    "answer": "Tethering",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.2",
     "answerType": "mobileSetting"
   },
   {
-    "term": "What is it called when a phone shares its cellular data by acting as a Wi-Fi access point?",
-    "meaning": "Hotspot",
+    "question": "What is it called when a phone shares its cellular data by acting as a Wi-Fi access point?",
+    "answer": "Hotspot",
     "category": "Mobile Devices",
     "difficulty": "easy",
     "source": "220-1201 1.2",
     "answerType": "mobileSetting"
   },
   {
-    "term": "Which small card identifies a phone on its carrier's network?",
-    "meaning": "SIM",
+    "question": "Which small card identifies a phone on its carrier's network?",
+    "answer": "SIM",
     "category": "Mobile Devices",
     "difficulty": "easy",
     "source": "220-1201 1.3",
     "answerType": "mobileSetting"
   },
   {
-    "term": "Which chip built into a phone does a SIM card's job, with profiles downloaded over the air?",
-    "meaning": "eSIM",
+    "question": "Which chip built into a phone does a SIM card's job, with profiles downloaded over the air?",
+    "answer": "eSIM",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.3",
     "answerType": "mobileSetting"
   },
   {
-    "term": "Which mode switches off a phone's cellular, Wi-Fi and Bluetooth radios for a flight?",
-    "meaning": "Airplane mode",
+    "question": "Which mode switches off a phone's cellular, Wi-Fi and Bluetooth radios for a flight?",
+    "answer": "Airplane mode",
     "category": "Mobile Devices",
     "difficulty": "easy",
     "source": "220-1201 1.3",
     "answerType": "mobileSetting"
   },
   {
-    "term": "Which system works out a phone's latitude and longitude from satellite signals?",
-    "meaning": "GPS",
+    "question": "Which system works out a phone's latitude and longitude from satellite signals?",
+    "answer": "GPS",
     "category": "Mobile Devices",
     "difficulty": "easy",
     "source": "220-1201 1.3",
     "answerType": "mobileSetting"
   },
   {
-    "term": "Which software sets policies, limits features and can remotely wipe company phones?",
-    "meaning": "MDM",
+    "question": "Which software sets policies, limits features and can remotely wipe company phones?",
+    "answer": "MDM",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.3",
     "answerType": "mobileSetting"
   },
   {
-    "term": "Which software controls which apps may handle company data and keeps it apart from personal apps?",
-    "meaning": "MAM",
+    "question": "Which software controls which apps may handle company data and keeps it apart from personal apps?",
+    "answer": "MAM",
     "category": "Mobile Devices",
     "difficulty": "hard",
     "source": "220-1201 1.3",
     "answerType": "mobileSetting"
   },
   {
-    "term": "Which model lets staff use their own phones to reach company email and apps?",
-    "meaning": "BYOD",
+    "question": "Which model lets staff use their own phones to reach company email and apps?",
+    "answer": "BYOD",
     "category": "Mobile Devices",
     "difficulty": "easy",
     "source": "220-1201 1.3",
     "answerType": "mobileSetting"
   },
   {
-    "term": "Which limit on a phone plan means syncing big files over cellular can cost extra?",
-    "meaning": "Data cap",
+    "question": "Which limit on a phone plan means syncing big files over cellular can cost extra?",
+    "answer": "Data cap",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.3",
     "answerType": "mobileSetting"
   },
   {
-    "term": "Which feature lets a phone find its mail server settings from DNS records once you type your address?",
-    "meaning": "Autodiscover",
+    "question": "Which feature lets a phone find its mail server settings from DNS records once you type your address?",
+    "answer": "Autodiscover",
     "category": "Mobile Devices",
     "difficulty": "hard",
     "source": "220-1201 1.3",
     "answerType": "mobileSetting"
   },
   {
-    "term": "Which phone sensor gives more accurate compass directions?",
-    "meaning": "Magnetometer",
+    "question": "Which phone sensor gives more accurate compass directions?",
+    "answer": "Magnetometer",
     "category": "Mobile Devices",
     "difficulty": "hard",
     "source": "220-1201 1.3",
     "answerType": "component"
   },
   {
-    "term": "Tapping an NFC headset against a phone sets up which kind of wireless link for you?",
-    "meaning": "Bluetooth",
+    "question": "Tapping an NFC headset against a phone sets up which kind of wireless link for you?",
+    "answer": "Bluetooth",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.2",
     "answerType": "standard"
   },
   {
-    "term": "Which cellular generation brought LTE, at up to about 300 Mbps?",
-    "meaning": "4G",
+    "question": "Which cellular generation brought LTE, at up to about 300 Mbps?",
+    "answer": "4G",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.3",
     "answerType": "cellular"
   },
   {
-    "term": "Which cellular generation did the very first iPhones and Android phones use?",
-    "meaning": "3G",
+    "question": "Which cellular generation did the very first iPhones and Android phones use?",
+    "answer": "3G",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.3",
     "answerType": "cellular"
   },
   {
-    "term": "Which protocol does Exchange use to sync mail, contacts and calendars to phones?",
-    "meaning": "Exchange ActiveSync",
+    "question": "Which protocol does Exchange use to sync mail, contacts and calendars to phones?",
+    "answer": "Exchange ActiveSync",
     "category": "Mobile Devices",
     "difficulty": "hard",
     "source": "220-1201 1.3",
     "answerType": "protocol"
   },
   {
-    "term": "Which incoming mail protocol downloads messages and removes them from the server?",
-    "meaning": "POP3",
+    "question": "Which incoming mail protocol downloads messages and removes them from the server?",
+    "answer": "POP3",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.3",
     "answerType": "protocol"
   },
   {
-    "term": "Which rechargeable battery type do laptops use, which wears out after about 2 to 3 years?",
-    "meaning": "Li-ion",
+    "question": "Which rechargeable battery type do laptops use, which wears out after about 2 to 3 years?",
+    "answer": "Li-ion",
     "category": "Mobile Devices",
     "difficulty": "easy",
     "source": "220-1201 1.1",
     "answerType": "component"
   },
   {
-    "term": "Which security part records a fingerprint, face or iris template to unlock a laptop?",
-    "meaning": "Biometric sensor",
+    "question": "Which security part records a fingerprint, face or iris template to unlock a laptop?",
+    "answer": "Biometric sensor",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.1",
     "answerType": "component"
   },
   {
-    "term": "At what charge percent does balanced charging stop topping up a laptop battery?",
-    "meaning": "80",
+    "question": "At what charge percent does balanced charging stop topping up a laptop battery?",
+    "answer": "80",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.1",
     "answerType": "number"
   },
   {
-    "term": "At what angle, in degrees, does a SODIMM slot tip up so the module can be fitted?",
-    "meaning": "45",
+    "question": "At what angle, in degrees, does a SODIMM slot tip up so the module can be fitted?",
+    "answer": "45",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.1",
     "answerType": "number"
   },
   {
-    "term": "How many millimeters long is an M.2 2280 card?",
-    "meaning": "80",
+    "question": "How many millimeters long is an M.2 2280 card?",
+    "answer": "80",
     "category": "Mobile Devices",
     "difficulty": "medium",
     "source": "220-1201 1.1",
     "answerType": "number"
   },
   {
-    "term": "Which laptop hard drive size is smaller than 2.5-inch and may need a micro SATA connector?",
-    "meaning": "1.8-inch",
+    "question": "Which laptop hard drive size is smaller than 2.5-inch and may need a micro SATA connector?",
+    "answer": "1.8-inch",
     "category": "Mobile Devices",
     "difficulty": "hard",
     "source": "220-1201 1.1",
     "answerType": "storage"
   },
   {
-    "term": "Which older laptop card slot for Wi-Fi adapters does not fit mSATA or M.2 cards?",
-    "meaning": "Mini PCIe",
+    "question": "Which older laptop card slot for Wi-Fi adapters does not fit mSATA or M.2 cards?",
+    "answer": "Mini PCIe",
     "category": "Mobile Devices",
     "difficulty": "hard",
     "source": "220-1201 1.1",
     "answerType": "board"
   },
   {
-    "term": "Which hypervisor installs straight onto the hardware, with no host OS beneath it?",
-    "meaning": "Type 1 hypervisor",
+    "question": "Which hypervisor installs straight onto the hardware, with no host OS beneath it?",
+    "answer": "Type 1 hypervisor",
     "category": "Virtualization & Cloud",
     "difficulty": "easy",
     "source": "220-1201 4.1",
     "answerType": "virtualization"
   },
   {
-    "term": "Which hypervisor runs as an app inside a normal desktop OS, like VirtualBox?",
-    "meaning": "Type 2 hypervisor",
+    "question": "Which hypervisor runs as an app inside a normal desktop OS, like VirtualBox?",
+    "answer": "Type 2 hypervisor",
     "category": "Virtualization & Cloud",
     "difficulty": "easy",
     "source": "220-1201 4.1",
     "answerType": "virtualization"
   },
   {
-    "term": "Which isolated VM lets a researcher run malware without risking the real PC?",
-    "meaning": "Sandbox",
+    "question": "Which isolated VM lets a researcher run malware without risking the real PC?",
+    "answer": "Sandbox",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.1",
     "answerType": "virtualization"
   },
   {
-    "term": "Which setup gives staff thin clients that log on to desktop VMs held on a server?",
-    "meaning": "VDI",
+    "question": "Which setup gives staff thin clients that log on to desktop VMs held on a server?",
+    "answer": "VDI",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.1",
     "answerType": "virtualization"
   },
   {
-    "term": "Which low-spec computer gets nearly all its resources from a central server?",
-    "meaning": "Thin client",
+    "question": "Which low-spec computer gets nearly all its resources from a central server?",
+    "answer": "Thin client",
     "category": "Virtualization & Cloud",
     "difficulty": "easy",
     "source": "220-1201 4.1",
     "answerType": "virtualization"
   },
   {
-    "term": "Which kind of virtualization shares the host OS kernel and needs no hypervisor?",
-    "meaning": "Container",
+    "question": "Which kind of virtualization shares the host OS kernel and needs no hypervisor?",
+    "answer": "Container",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.1",
     "answerType": "virtualization"
   },
   {
-    "term": "Which approach streams programs from a server so users always run the newest version without installing it?",
-    "meaning": "Application virtualization",
+    "question": "Which approach streams programs from a server so users always run the newest version without installing it?",
+    "answer": "Application virtualization",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.1",
     "answerType": "virtualization"
   },
   {
-    "term": "Which saved copy of a VM's disk state lets you roll back after a test?",
-    "meaning": "Snapshot",
+    "question": "Which saved copy of a VM's disk state lets you roll back after a test?",
+    "answer": "Snapshot",
     "category": "Virtualization & Cloud",
     "difficulty": "easy",
     "source": "220-1201 4.1",
     "answerType": "virtualization"
   },
   {
-    "term": "What is it called when unapproved VMs pile up and become hard to secure and manage?",
-    "meaning": "VM sprawl",
+    "question": "What is it called when unapproved VMs pile up and become hard to secure and manage?",
+    "answer": "VM sprawl",
     "category": "Virtualization & Cloud",
     "difficulty": "hard",
     "source": "220-1201 4.1",
     "answerType": "virtualization"
   },
   {
-    "term": "Which attack lets malware in a guest OS break out to other VMs or the host?",
-    "meaning": "VM escaping",
+    "question": "Which attack lets malware in a guest OS break out to other VMs or the host?",
+    "answer": "VM escaping",
     "category": "Virtualization & Cloud",
     "difficulty": "hard",
     "source": "220-1201 4.1",
     "answerType": "virtualization"
   },
   {
-    "term": "Which use of VMs tests one app under several different operating systems?",
-    "meaning": "Cross-platform virtualization",
+    "question": "Which use of VMs tests one app under several different operating systems?",
+    "answer": "Cross-platform virtualization",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.1",
     "answerType": "virtualization"
   },
   {
-    "term": "Which Intel CPU extension speeds up virtual machines?",
-    "meaning": "VT-x",
+    "question": "Which Intel CPU extension speeds up virtual machines?",
+    "answer": "VT-x",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.1",
     "answerType": "cpuFeature"
   },
   {
-    "term": "Which AMD CPU extension speeds up virtual machines?",
-    "meaning": "AMD-V",
+    "question": "Which AMD CPU extension speeds up virtual machines?",
+    "answer": "AMD-V",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.1",
     "answerType": "cpuFeature"
   },
   {
-    "term": "At least how many GB of RAM does a PC need to host one Windows 11 guest on Windows 11?",
-    "meaning": "8",
+    "question": "At least how many GB of RAM does a PC need to host one Windows 11 guest on Windows 11?",
+    "answer": "8",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.1",
     "answerType": "number"
   },
   {
-    "term": "Which cloud model is offered over the internet to many tenants at once?",
-    "meaning": "Public cloud",
+    "question": "Which cloud model is offered over the internet to many tenants at once?",
+    "answer": "Public cloud",
     "category": "Virtualization & Cloud",
     "difficulty": "easy",
     "source": "220-1201 4.2",
     "answerType": "cloudModel"
   },
   {
-    "term": "Which cloud model is owned and run by one organization for its own use?",
-    "meaning": "Private cloud",
+    "question": "Which cloud model is owned and run by one organization for its own use?",
+    "answer": "Private cloud",
     "category": "Virtualization & Cloud",
     "difficulty": "easy",
     "source": "220-1201 4.2",
     "answerType": "cloudModel"
   },
   {
-    "term": "Which cloud model mixes public and private, such as renting public capacity only at peak times?",
-    "meaning": "Hybrid cloud",
+    "question": "Which cloud model mixes public and private, such as renting public capacity only at peak times?",
+    "answer": "Hybrid cloud",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.2",
     "answerType": "cloudModel"
   },
   {
-    "term": "Which cloud model has several organizations split the costs to meet shared needs like security policies?",
-    "meaning": "Community cloud",
+    "question": "Which cloud model has several organizations split the costs to meet shared needs like security policies?",
+    "answer": "Community cloud",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.2",
     "answerType": "cloudModel"
   },
   {
-    "term": "Which service model rents out virtual servers, storage and networks, so no hardware has to be bought?",
-    "meaning": "IaaS",
+    "question": "Which service model rents out virtual servers, storage and networks, so no hardware has to be bought?",
+    "answer": "IaaS",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.2",
     "answerType": "cloudService"
   },
   {
-    "term": "Which service model delivers ready-made apps like Microsoft 365 by subscription?",
-    "meaning": "SaaS",
+    "question": "Which service model delivers ready-made apps like Microsoft 365 by subscription?",
+    "answer": "SaaS",
     "category": "Virtualization & Cloud",
     "difficulty": "easy",
     "source": "220-1201 4.2",
     "answerType": "cloudService"
   },
   {
-    "term": "Which service model gives developers servers plus tools to build their own apps, but no finished app?",
-    "meaning": "PaaS",
+    "question": "Which service model gives developers servers plus tools to build their own apps, but no finished app?",
+    "answer": "PaaS",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.2",
     "answerType": "cloudService"
   },
   {
-    "term": "Which service model delivers whole virtual desktops over the internet, run by a third party?",
-    "meaning": "DaaS",
+    "question": "Which service model delivers whole virtual desktops over the internet, run by a third party?",
+    "answer": "DaaS",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.2",
     "answerType": "cloudService"
   },
   {
-    "term": "Which cloud trait means you pay only for the resources you actually use?",
-    "meaning": "Metered utilization",
+    "question": "Which cloud trait means you pay only for the resources you actually use?",
+    "answer": "Metered utilization",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.2",
     "answerType": "cloud"
   },
   {
-    "term": "Which cloud trait copes with sudden swings in demand without losing performance?",
-    "meaning": "Elasticity",
+    "question": "Which cloud trait copes with sudden swings in demand without losing performance?",
+    "answer": "Elasticity",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.2",
     "answerType": "cloud"
   },
   {
-    "term": "Which cloud trait means one provider's hardware serves many customers at the same time?",
-    "meaning": "Multitenancy",
+    "question": "Which cloud trait means one provider's hardware serves many customers at the same time?",
+    "answer": "Multitenancy",
     "category": "Virtualization & Cloud",
     "difficulty": "hard",
     "source": "220-1201 4.2",
     "answerType": "cloud"
   },
   {
-    "term": "What is data leaving the cloud called, which providers often charge for?",
-    "meaning": "Egress",
+    "question": "What is data leaving the cloud called, which providers often charge for?",
+    "answer": "Egress",
     "category": "Virtualization & Cloud",
     "difficulty": "medium",
     "source": "220-1201 4.2",
     "answerType": "cloud"
   },
   {
-    "term": "Which cloud storage feature keeps the same files up to date on every device?",
-    "meaning": "File synchronization",
+    "question": "Which cloud storage feature keeps the same files up to date on every device?",
+    "answer": "File synchronization",
     "category": "Virtualization & Cloud",
     "difficulty": "easy",
     "source": "220-1201 4.2",
     "answerType": "cloud"
   },
   {
-    "term": "A desktop PC forgets the date and time every time it is unplugged. What is the most likely cause?",
-    "meaning": "Failing CMOS battery",
+    "question": "A desktop PC forgets the date and time every time it is unplugged. What is the most likely cause?",
+    "answer": "Failing CMOS battery",
     "category": "Troubleshooting",
     "difficulty": "easy",
     "source": "220-1201 5.1",
     "answerType": "causePC"
   },
   {
-    "term": "A PC gives one long continuous beep at startup and shows nothing. What is the most likely cause?",
-    "meaning": "Faulty RAM",
+    "question": "A PC gives one long continuous beep at startup and shows nothing. What is the most likely cause?",
+    "answer": "Faulty RAM",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.1",
     "answerType": "causePC"
   },
   {
-    "term": "A PC gives off a burning smell and its case feels hot. Which part is the most likely source?",
-    "meaning": "Power supply",
+    "question": "A PC gives off a burning smell and its case feels hot. Which part is the most likely source?",
+    "answer": "Power supply",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.1",
     "answerType": "causePC"
   },
   {
-    "term": "A PC restarts on its own, but only once it has been on for an hour or so. What is the most likely cause?",
-    "meaning": "Overheating",
+    "question": "A PC restarts on its own, but only once it has been on for an hour or so. What is the most likely cause?",
+    "answer": "Overheating",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.1",
     "answerType": "causePC"
   },
   {
-    "term": "A PC feels slower right after an extra memory module was added. What is the most likely cause?",
-    "meaning": "Dual-channel disabled",
+    "question": "A PC feels slower right after an extra memory module was added. What is the most likely cause?",
+    "answer": "Dual-channel disabled",
     "category": "Troubleshooting",
     "difficulty": "hard",
     "source": "220-1201 5.1",
     "answerType": "causePC"
   },
   {
-    "term": "The fans spin but a PC shows nothing, right after its firmware was updated. What is the most likely cause?",
-    "meaning": "Failed firmware update",
+    "question": "The fans spin but a PC shows nothing, right after its firmware was updated. What is the most likely cause?",
+    "answer": "Failed firmware update",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.1",
     "answerType": "causePC"
   },
   {
-    "term": "Windows shows a blue screen each time since a new device driver was installed. What is the most likely cause?",
-    "meaning": "Faulty driver",
+    "question": "Windows shows a blue screen each time since a new device driver was installed. What is the most likely cause?",
+    "answer": "Faulty driver",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.1",
     "answerType": "causePC"
   },
   {
-    "term": "A hard drive makes loud clicking and grinding noises. What is the most likely cause?",
-    "meaning": "Mechanical failure",
+    "question": "A hard drive makes loud clicking and grinding noises. What is the most likely cause?",
+    "answer": "Mechanical failure",
     "category": "Troubleshooting",
     "difficulty": "easy",
     "source": "220-1201 5.2",
     "answerType": "causeDrive"
   },
   {
-    "term": "The disk light stays lit nonstop and the PC crawls while several apps are open. What is the most likely cause?",
-    "meaning": "Not enough RAM",
+    "question": "The disk light stays lit nonstop and the PC crawls while several apps are open. What is the most likely cause?",
+    "answer": "Not enough RAM",
     "category": "Troubleshooting",
     "difficulty": "hard",
     "source": "220-1201 5.2",
     "answerType": "causeDrive"
   },
   {
-    "term": "A RAID 1 volume is marked degraded, but all its data can still be read. What is the most likely cause?",
-    "meaning": "One failed disk",
+    "question": "A RAID 1 volume is marked degraded, but all its data can still be read. What is the most likely cause?",
+    "answer": "One failed disk",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.2",
     "answerType": "causeDrive"
   },
   {
-    "term": "A RAID volume has vanished and its configuration utility will not open. What is the most likely cause?",
-    "meaning": "Failed RAID controller",
+    "question": "A RAID volume has vanished and its configuration utility will not open. What is the most likely cause?",
+    "answer": "Failed RAID controller",
     "category": "Troubleshooting",
     "difficulty": "hard",
     "source": "220-1201 5.2",
     "answerType": "causeDrive"
   },
   {
-    "term": "A new drive shows up in Disk Management but not in File Explorer. What is the most likely cause?",
-    "meaning": "Unformatted drive",
+    "question": "A new drive shows up in Disk Management but not in File Explorer. What is the most likely cause?",
+    "answer": "Unformatted drive",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.2",
     "answerType": "causeDrive"
   },
   {
-    "term": "Disk checks keep finding more bad sectors on a drive each week. What is the most likely cause?",
-    "meaning": "Failing drive",
+    "question": "Disk checks keep finding more bad sectors on a drive each week. What is the most likely cause?",
+    "answer": "Failing drive",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.2",
     "answerType": "causeDrive"
   },
   {
-    "term": "After a virus, a PC detects its drive but reports \"OS not found.\" What is the most likely cause?",
-    "meaning": "Damaged boot sector",
+    "question": "After a virus, a PC detects its drive but reports \"OS not found.\" What is the most likely cause?",
+    "answer": "Damaged boot sector",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.2",
     "answerType": "causeDrive"
   },
   {
-    "term": "A monitor is on and says \"no signal\" while the PC runs normally. What is the most likely cause?",
-    "meaning": "Wrong input source",
+    "question": "A monitor is on and says \"no signal\" while the PC runs normally. What is the most likely cause?",
+    "answer": "Wrong input source",
     "category": "Troubleshooting",
     "difficulty": "easy",
     "source": "220-1201 5.3",
     "answerType": "causeDisplay"
   },
   {
-    "term": "A monitor's picture looks blurry after the video driver was reinstalled. What is the most likely cause?",
-    "meaning": "Non-native resolution",
+    "question": "A monitor's picture looks blurry after the video driver was reinstalled. What is the most likely cause?",
+    "answer": "Non-native resolution",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.3",
     "answerType": "causeDisplay"
   },
   {
-    "term": "A projector switches itself off partway through a meeting. What is the most likely cause?",
-    "meaning": "Overheating",
+    "question": "A projector switches itself off partway through a meeting. What is the most likely cause?",
+    "answer": "Overheating",
     "category": "Troubleshooting",
     "difficulty": "easy",
     "source": "220-1201 5.3",
     "answerType": "causeDisplay"
   },
   {
-    "term": "A projector's picture keeps getting dimmer and a lamp warning appears. What is the most likely cause?",
-    "meaning": "Failing bulb",
+    "question": "A projector's picture keeps getting dimmer and a lamp warning appears. What is the most likely cause?",
+    "answer": "Failing bulb",
     "category": "Troubleshooting",
     "difficulty": "easy",
     "source": "220-1201 5.3",
     "answerType": "causeDisplay"
   },
   {
-    "term": "A laptop screen shows a picture so faint you can only see it with a flashlight. What is the most likely cause?",
-    "meaning": "Failed backlight",
+    "question": "A laptop screen shows a picture so faint you can only see it with a flashlight. What is the most likely cause?",
+    "answer": "Failed backlight",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.3",
     "answerType": "causeDisplay"
   },
   {
-    "term": "A faint ghost of the taskbar stays on an OLED screen all the time. What is the most likely cause?",
-    "meaning": "Burn-in",
+    "question": "A faint ghost of the taskbar stays on an OLED screen all the time. What is the most likely cause?",
+    "answer": "Burn-in",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.3",
     "answerType": "causeDisplay"
   },
   {
-    "term": "Purple and green lines flicker across a monitor's picture. What is the most likely cause?",
-    "meaning": "Loose video cable",
+    "question": "Purple and green lines flicker across a monitor's picture. What is the most likely cause?",
+    "answer": "Loose video cable",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.3",
     "answerType": "causeDisplay"
   },
   {
-    "term": "A laptop rocks on a flat desk and its touchpad bulges upward. What is the most likely cause?",
-    "meaning": "Swollen battery",
+    "question": "A laptop rocks on a flat desk and its touchpad bulges upward. What is the most likely cause?",
+    "answer": "Swollen battery",
     "category": "Troubleshooting",
     "difficulty": "easy",
     "source": "220-1201 5.4",
     "answerType": "causeMobile"
   },
   {
-    "term": "A phone runs hot, its battery drains fast, and its data use suddenly spikes. What is the most likely cause?",
-    "meaning": "Malware",
+    "question": "A phone runs hot, its battery drains fast, and its data use suddenly spikes. What is the most likely cause?",
+    "answer": "Malware",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.4",
     "answerType": "causeMobile"
   },
   {
-    "term": "A laptop pointer jumps around the screen while the user is typing. What is the most likely cause?",
-    "meaning": "Touchpad too sensitive",
+    "question": "A laptop pointer jumps around the screen while the user is typing. What is the most likely cause?",
+    "answer": "Touchpad too sensitive",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.4",
     "answerType": "causeMobile"
   },
   {
-    "term": "A laptop's Wi-Fi stopped working right after a repair inside the case. What is the most likely cause?",
-    "meaning": "Loose antenna wire",
+    "question": "A laptop's Wi-Fi stopped working right after a repair inside the case. What is the most likely cause?",
+    "answer": "Loose antenna wire",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.4",
     "answerType": "causeMobile"
   },
   {
-    "term": "A Bluetooth mouse that worked yesterday no longer responds. What is the most likely cause?",
-    "meaning": "Dead mouse battery",
+    "question": "A Bluetooth mouse that worked yesterday no longer responds. What is the most likely cause?",
+    "answer": "Dead mouse battery",
     "category": "Troubleshooting",
     "difficulty": "easy",
     "source": "220-1201 5.4",
     "answerType": "causeMobile"
   },
   {
-    "term": "A phone only charges when its cable is held at an angle. What is the most likely cause?",
-    "meaning": "Damaged charging port",
+    "question": "A phone only charges when its cable is held at an angle. What is the most likely cause?",
+    "answer": "Damaged charging port",
     "category": "Troubleshooting",
     "difficulty": "easy",
     "source": "220-1201 5.4",
     "answerType": "causeMobile"
   },
   {
-    "term": "A laptop gets very hot and shuts down when used on a bed. What is the most likely cause?",
-    "meaning": "Blocked vents",
+    "question": "A laptop gets very hot and shuts down when used on a bed. What is the most likely cause?",
+    "answer": "Blocked vents",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.4",
     "answerType": "causeMobile"
   },
   {
-    "term": "Windows shows limited connectivity and the PC has a 169.254.x.x address. What is the most likely cause?",
-    "meaning": "No DHCP lease",
+    "question": "Windows shows limited connectivity and the PC has a 169.254.x.x address. What is the most likely cause?",
+    "answer": "No DHCP lease",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.5",
     "answerType": "causeNetwork"
   },
   {
-    "term": "A switch port keeps flipping between up and down. What is the most likely cause?",
-    "meaning": "Bad cabling",
+    "question": "A switch port keeps flipping between up and down. What is the most likely cause?",
+    "answer": "Bad cabling",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.5",
     "answerType": "causeNetwork"
   },
   {
-    "term": "VoIP calls break up whenever big downloads run on the same network. What is the most likely cause?",
-    "meaning": "Network congestion",
+    "question": "VoIP calls break up whenever big downloads run on the same network. What is the most likely cause?",
+    "answer": "Network congestion",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.5",
     "answerType": "causeNetwork"
   },
   {
-    "term": "Wi-Fi drops out whenever the office microwave is running. What is the most likely cause?",
-    "meaning": "Interference",
+    "question": "Wi-Fi drops out whenever the office microwave is running. What is the most likely cause?",
+    "answer": "Interference",
     "category": "Troubleshooting",
     "difficulty": "easy",
     "source": "220-1201 5.5",
     "answerType": "causeNetwork"
   },
   {
-    "term": "A cabled link is slow, and its wire pairs are untwisted far back from the plug. What is the most likely cause?",
-    "meaning": "Crosstalk",
+    "question": "A cabled link is slow, and its wire pairs are untwisted far back from the plug. What is the most likely cause?",
+    "answer": "Crosstalk",
     "category": "Troubleshooting",
     "difficulty": "hard",
     "source": "220-1201 5.5",
     "answerType": "causeNetwork"
   },
   {
-    "term": "A Gigabit link runs slowly because the NIC and switch port are set differently. What is the most likely cause?",
-    "meaning": "Duplex mismatch",
+    "question": "A Gigabit link runs slowly because the NIC and switch port are set differently. What is the most likely cause?",
+    "answer": "Duplex mismatch",
     "category": "Troubleshooting",
     "difficulty": "hard",
     "source": "220-1201 5.5",
     "answerType": "causeNetwork"
   },
   {
-    "term": "Pages from a laser printer come out faint and washed out. What is the most likely cause?",
-    "meaning": "Low toner",
+    "question": "Pages from a laser printer come out faint and washed out. What is the most likely cause?",
+    "answer": "Low toner",
     "category": "Troubleshooting",
     "difficulty": "easy",
     "source": "220-1201 5.6",
     "answerType": "causePrinter"
   },
   {
-    "term": "Laser printouts smudge when you rub a finger across them. What is the most likely cause?",
-    "meaning": "Faulty fuser",
+    "question": "Laser printouts smudge when you rub a finger across them. What is the most likely cause?",
+    "answer": "Faulty fuser",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.6",
     "answerType": "causePrinter"
   },
   {
-    "term": "Each laser printout shows a faint repeat of the image further down the page. What is the most likely cause?",
-    "meaning": "Dirty drum",
+    "question": "Each laser printout shows a faint repeat of the image further down the page. What is the most likely cause?",
+    "answer": "Dirty drum",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.6",
     "answerType": "causePrinter"
   },
   {
-    "term": "Laser printouts come out with black stripes or a fully black page. What is the most likely cause?",
-    "meaning": "Dirty charge roller",
+    "question": "Laser printouts come out with black stripes or a fully black page. What is the most likely cause?",
+    "answer": "Dirty charge roller",
     "category": "Troubleshooting",
     "difficulty": "hard",
     "source": "220-1201 5.6",
     "answerType": "causePrinter"
   },
   {
-    "term": "A printer keeps pulling in two or more sheets at once. What is the most likely cause?",
-    "meaning": "Worn pickup rollers",
+    "question": "A printer keeps pulling in two or more sheets at once. What is the most likely cause?",
+    "answer": "Worn pickup rollers",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.6",
     "answerType": "causePrinter"
   },
   {
-    "term": "Every line on a dot matrix printout has the same blank gap through it. What is the most likely cause?",
-    "meaning": "Stuck pin",
+    "question": "Every line on a dot matrix printout has the same blank gap through it. What is the most likely cause?",
+    "answer": "Stuck pin",
     "category": "Troubleshooting",
     "difficulty": "medium",
     "source": "220-1201 5.6",
     "answerType": "causePrinter"
   },
   {
-    "term": "An inkjet printout has thin blank lines running through it. What is the most likely cause?",
-    "meaning": "Blocked nozzle",
+    "question": "An inkjet printout has thin blank lines running through it. What is the most likely cause?",
+    "answer": "Blocked nozzle",
     "category": "Troubleshooting",
     "difficulty": "easy",
     "source": "220-1201 5.6",
     "answerType": "causePrinter"
   },
   {
-    "term": "Which connector is shown?",
-    "meaning": "RJ45",
+    "question": "Which connector is shown?",
+    "answer": "RJ45",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
@@ -2432,8 +2432,8 @@
     "image": "images/rj45.svg"
   },
   {
-    "term": "Which connector is shown?",
-    "meaning": "RJ11",
+    "question": "Which connector is shown?",
+    "answer": "RJ11",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
@@ -2441,8 +2441,8 @@
     "image": "images/rj11.svg"
   },
   {
-    "term": "Which connector is shown?",
-    "meaning": "F-type",
+    "question": "Which connector is shown?",
+    "answer": "F-type",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
@@ -2450,8 +2450,8 @@
     "image": "images/f-type.svg"
   },
   {
-    "term": "Which connector is shown?",
-    "meaning": "ST",
+    "question": "Which connector is shown?",
+    "answer": "ST",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.2",
@@ -2459,8 +2459,8 @@
     "image": "images/st-fiber.svg"
   },
   {
-    "term": "Which connector is shown?",
-    "meaning": "LC",
+    "question": "Which connector is shown?",
+    "answer": "LC",
     "category": "Hardware",
     "difficulty": "hard",
     "source": "220-1201 3.2",
@@ -2468,8 +2468,8 @@
     "image": "images/lc-fiber.svg"
   },
   {
-    "term": "Which connector is shown?",
-    "meaning": "DB9",
+    "question": "Which connector is shown?",
+    "answer": "DB9",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
@@ -2477,8 +2477,8 @@
     "image": "images/db9.svg"
   },
   {
-    "term": "Which connector is shown?",
-    "meaning": "Molex",
+    "question": "Which connector is shown?",
+    "answer": "Molex",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
@@ -2486,8 +2486,8 @@
     "image": "images/molex.svg"
   },
   {
-    "term": "Which connector is shown?",
-    "meaning": "USB Type B",
+    "question": "Which connector is shown?",
+    "answer": "USB Type B",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
@@ -2495,8 +2495,8 @@
     "image": "images/usb-b.svg"
   },
   {
-    "term": "Which connector is shown?",
-    "meaning": "USB-C",
+    "question": "Which connector is shown?",
+    "answer": "USB-C",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
@@ -2504,8 +2504,8 @@
     "image": "images/usb-c.svg"
   },
   {
-    "term": "Which connector is shown?",
-    "meaning": "Lightning",
+    "question": "Which connector is shown?",
+    "answer": "Lightning",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
@@ -2513,8 +2513,8 @@
     "image": "images/lightning.svg"
   },
   {
-    "term": "Which port is shown?",
-    "meaning": "HDMI",
+    "question": "Which port is shown?",
+    "answer": "HDMI",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
@@ -2522,8 +2522,8 @@
     "image": "images/hdmi.svg"
   },
   {
-    "term": "Which port is shown?",
-    "meaning": "DisplayPort",
+    "question": "Which port is shown?",
+    "answer": "DisplayPort",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
@@ -2531,8 +2531,8 @@
     "image": "images/displayport.svg"
   },
   {
-    "term": "Which port is shown?",
-    "meaning": "VGA",
+    "question": "Which port is shown?",
+    "answer": "VGA",
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
@@ -2540,8 +2540,8 @@
     "image": "images/vga.svg"
   },
   {
-    "term": "Which port is shown?",
-    "meaning": "DVI",
+    "question": "Which port is shown?",
+    "answer": "DVI",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
@@ -2549,8 +2549,8 @@
     "image": "images/dvi.svg"
   },
   {
-    "term": "Which SSD form factor is shown?",
-    "meaning": "M.2",
+    "question": "Which SSD form factor is shown?",
+    "answer": "M.2",
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.4",

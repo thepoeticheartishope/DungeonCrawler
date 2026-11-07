@@ -48,7 +48,7 @@ function typeOf(entry) {
 // for a picture question, since those share a text ("Which tool is
 // shown?").
 function commentKey(entry) {
-  return entry.image ? entry.term + ' [' + entry.image + ']' : entry.term;
+  return entry.image ? entry.question + ' [' + entry.image + ']' : entry.question;
 }
 
 function commentFor(entry) {
@@ -161,8 +161,7 @@ function renderRows() {
       '<span class="data-num">' + String(i + 1).padStart(pad, '0') + '</span>',
       '<span class="data-type' + (type ? '' : ' untyped') + '">' + escapeHtml((type || t('data.untyped')).toUpperCase()) + '</span>',
       entry.draft ? '<span class="data-draft">' + escapeHtml(t('data.draft')) + '</span>' : '',
-      entry.fact === false
-        ? '<span class="data-notfact" title="' + escapeHtml(entry.factNote || '') + '">' + escapeHtml(t('data.notFact')) + '</span>' : '',
+      entry.note ? '<span class="data-hasnote">' + escapeHtml(t('data.hasNote')) + '</span>' : '',
       entry.category ? '<span>' + escapeHtml(entry.category) + '</span>' : '',
       entry.difficulty ? '<span>' + escapeHtml(entry.difficulty) + '</span>' : ''
     ].join('');
@@ -170,12 +169,14 @@ function renderRows() {
       ? '<div class="data-opts">' + escapeHtml(t('data.options', { options: entry.options.join(' / ') })) + '</div>' : '';
     const src = entry.source
       ? '<div class="data-src">' + escapeHtml(t('data.source', { source: entry.source })) + '</div>' : '';
+    const note = entry.note
+      ? '<div class="data-note">' + escapeHtml(t('data.note', { note: entry.note })) + '</div>' : '';
     const comment = commentFor(entry);
     return '<div class="data-row' + (comment ? ' has-comment' : '') + '" data-i="' + i + '">' +
       '<div class="data-meta">' + meta + '</div>' +
-      '<div class="data-q">' + escapeHtml(entry.term) + '</div>' +
-      '<div class="data-a">' + escapeHtml(entry.meaning) + '</div>' +
-      opts + src +
+      '<div class="data-q">' + escapeHtml(entry.question) + '</div>' +
+      '<div class="data-a">' + escapeHtml(entry.answer) + '</div>' +
+      opts + src + note +
       '<label class="data-comment"><textarea rows="1" placeholder="' + escapeHtml(t('data.commentPlaceholder')) +
       '">' + escapeHtml(comment) + '</textarea></label>' +
       '</div>';
@@ -226,12 +227,9 @@ function renderFilters() {
   types.forEach(type => buttons.push(['type:' + type, t('data.filterType', { type: type || t('data.untyped'), count: counts.get(type) })]));
   const drafts = entries.filter(e => e.draft).length;
   if (drafts) buttons.push(['draft', t('data.filterDraft', { count: drafts })]);
-  // Fact filters only appear for sets that carry the label (the Bible sets).
-  const labelled = entries.filter(e => typeof e.fact === 'boolean');
-  if (labelled.length) {
-    buttons.push(['fact', t('data.filterFact', { count: labelled.filter(e => e.fact).length })]);
-    buttons.push(['notfact', t('data.filterNotFact', { count: labelled.filter(e => !e.fact).length })]);
-  }
+  // A note says why an answer can differ (a Bible translation, an older exam).
+  const notes = entries.filter(e => e.note).length;
+  if (notes) buttons.push(['note', t('data.filterNote', { count: notes })]);
   buttons.push(['commented', t('data.filterCommented', { count: commentedCount() })]);
   els.filters.innerHTML = buttons.map(([key, label]) =>
     '<button type="button" data-filter="' + escapeHtml(key) + '" aria-pressed="' + (key === filter) + '">' + escapeHtml(label) + '</button>'
@@ -249,8 +247,7 @@ function syncFilters() {
 
 function matchesFilter(entry) {
   if (filter === 'draft') return Boolean(entry.draft);
-  if (filter === 'fact') return entry.fact === true;
-  if (filter === 'notfact') return entry.fact === false;
+  if (filter === 'note') return Boolean(entry.note);
   if (filter === 'commented') return Boolean(commentFor(entry).trim());
   if (filter.startsWith('type:')) return typeOf(entry) === filter.slice(5);
   return true;
@@ -262,7 +259,7 @@ function applyFilter() {
   els.list.querySelectorAll('.data-row').forEach((row) => {
     const entry = entries[Number(row.dataset.i)];
     const hit = matchesFilter(entry) &&
-      (!q || (entry.term + '\n' + entry.meaning + '\n' + (entry.source || '')).toLowerCase().includes(q));
+      (!q || (entry.question + '\n' + entry.answer + '\n' + (entry.source || '')).toLowerCase().includes(q));
     row.hidden = !hit;
     if (hit) shown++;
   });
@@ -287,9 +284,9 @@ function buildExport() {
     count++;
     const tags = [typeOf(entry) || t('data.untyped')];
     if (entry.draft) tags.push('draft');
-    if (entry.fact === false) tags.push('not fact');
+    if (entry.note) tags.push('note');
     lines.push('#' + (i + 1) + ' [' + tags.join(', ') + '] ' + commentKey(entry));
-    lines.push('  ' + t('data.exportAnswer', { answer: entry.meaning }));
+    lines.push('  ' + t('data.exportAnswer', { answer: entry.answer }));
     comment.split('\n').forEach((line, n) => {
       lines.push('  ' + (n === 0 ? t('data.exportComment', { comment: line }) : line));
     });

@@ -440,11 +440,11 @@
   .data-draft { color: var(--torch-bright); }
   .data-draft::before { content: '* '; }
   /* Answer depends on one translation's wording; hover for why. */
-  .data-notfact { color: var(--torch-bright); outline: 1px dashed var(--line); padding: 0 4px; cursor: help; }
+  .data-hasnote { color: var(--torch-bright); outline: 1px dashed var(--line); padding: 0 4px; }
   .data-q { color: var(--text); margin: 4px 0 2px; }
   .data-a { color: var(--torch-bright); text-shadow: var(--glow-strong); }
   .data-a::before { content: '=> '; color: var(--muted); text-shadow: var(--glow); }
-  .data-opts, .data-src { font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); }
+  .data-opts, .data-src, .data-note { font-size: calc(18px * var(--text-scale, 1)); color: var(--muted); }
   .data-comment {
     display: flex;
     align-items: flex-start;
@@ -1614,7 +1614,7 @@
             <summary data-t="workshop.formatHelp"></summary>
             <p class="loader-hint">
               Paste one item per line as <code>Prompt | Answer</code>, or paste a JSON
-              array of <code>{"term","meaning"}</code> objects. You can also load a
+              array of <code>{"question","answer"}</code> objects. You can also load a
               text file instead of pasting. A JSON entry
               may add an <code>"options"</code> array with 2–4 answer choices
               (the correct answer is added in if you leave it out); entries
@@ -1631,7 +1631,7 @@
               (a reference or short reasoning) shows up alongside the correct
               answer when "Reveal the correct answer" is on and you miss one.
               An optional <code>"image"</code> field (a URL, or a path relative
-              to a bundled set's own folder) displays above the question.
+              to a bundled set's own folder) displays above the question. An optional <code>"note"</code> says why an answer can differ (a Bible translation, an older exam).
             </p>
           </details>
           <div class="loader-actions">

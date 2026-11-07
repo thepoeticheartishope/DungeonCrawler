@@ -27,8 +27,8 @@ import { emptyFloor } from './helpers.mjs';
 // Five number questions (Close Enough, Higher/Lower, Sum Lock) and five
 // one-word names, enough for some roles and not others.
 const SET = [
-  ...[12, 40, 7, 99, 365].map((n, i) => ({ term: 'How many ' + i + '?', meaning: String(n), answerType: 'number', category: 'Numbers' })),
-  ...['Moses', 'Aaron', 'Miriam', 'Joshua', 'Caleb'].map((name, i) => ({ term: 'Who was ' + i + '?', meaning: name, answerType: 'name', category: 'Names' })),
+  ...[12, 40, 7, 99, 365].map((n, i) => ({ question: 'How many ' + i + '?', answer: String(n), answerType: 'number', category: 'Numbers' })),
+  ...['Moses', 'Aaron', 'Miriam', 'Joshua', 'Caleb'].map((name, i) => ({ question: 'Who was ' + i + '?', answer: name, answerType: 'name', category: 'Names' })),
 ];
 
 // A fresh ship run on SET, every role learned.
@@ -288,9 +288,9 @@ test('the last of the player\'s crew taught brings the final boss when the set c
   const { arrivedIfAllTaught, settleBoss, startBoss } = await import('../js/roles.js');
   const ship = crewRun(false);
   noteOnDuty();
-  const books = ['Ruth', 'Acts', 'Jude', 'Amos', 'Joel', 'Ezra'].map(m => ({ term: 'Which book?', meaning: m, answerType: 'book' }));
-  const places = ['Rome', 'Eden', 'Moab', 'Edom', 'Joppa', 'Nebo'].map(m => ({ term: 'Where?', meaning: m, answerType: 'location' }));
-  const names = ['Paul', 'Herod', 'Lot', 'Aaron', 'Silas', 'Jacob'].map(m => ({ term: 'Who?', meaning: m, answerType: 'name' }));
+  const books = ['Ruth', 'Acts', 'Jude', 'Amos', 'Joel', 'Ezra'].map(m => ({ question: 'Which book?', answer: m, answerType: 'book' }));
+  const places = ['Rome', 'Eden', 'Moab', 'Edom', 'Joppa', 'Nebo'].map(m => ({ question: 'Where?', answer: m, answerType: 'location' }));
+  const names = ['Paul', 'Herod', 'Lot', 'Aaron', 'Silas', 'Jacob'].map(m => ({ question: 'Who?', answer: m, answerType: 'name' }));
   state.settings.activeData = [...SET, ...books, ...places, ...names];
   ship.taught = ['engineer', 'a', 'b'];
   assert.deepEqual(arrivedIfAllTaught(), [{ type: 'bossReady' }]);

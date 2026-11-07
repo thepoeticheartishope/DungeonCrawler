@@ -6,9 +6,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { state } from '../js/state.js';
-import { buildChoices, numericAnswer, stemTypes } from '../js/quiz.js';
+import { buildChoices, numericAnswer, stemTypes, parseListInput } from '../js/quiz.js';
+import { upgradeOldNames, saveSet, loadSavedSet } from '../js/sets.js';
 
-const q = (term, meaning, extra = {}) => ({ term, meaning, ...extra });
+const q = (question, answer, extra = {}) => ({ question, answer, ...extra });
 
 test('numericAnswer reads numbers, units and thousands commas', () => {
   assert.deepEqual(numericAnswer('144,000'), { value: 144000, unit: '' });
@@ -217,4 +218,43 @@ test('an acronym question gets definitions of look-alike acronyms first', () => 
     assert.ok(got.every(c => c[0] === 'R'));
   }
   state.settings.activeDictionary = null;
+});
+
+// Field names (facts list plan step A): question / answer / note, and
+// files or saved sets with the old names still load.
+test('the parser reads question / answer / note', () => {
+  const { data } = parseListInput(JSON.stringify([
+    { question: 'Q1', answer: 'A1', note: 'why' }, { question: 'Q2', answer: 'A2' }]));
+  assert.equal(data[0].question, 'Q1');
+  assert.equal(data[0].answer, 'A1');
+  assert.equal(data[0].note, 'why');
+  assert.equal(data[1].note, undefined);
+});
+
+test('the parser still reads the old names, and gives only the new ones', () => {
+  const { data } = parseListInput(JSON.stringify([
+    { term: 'Q1', meaning: 'A1', fact: false, factNote: 'KJV only' }, { term: 'Q2', meaning: 'A2', fact: true }]));
+  assert.deepEqual([data[0].question, data[0].answer, data[0].note], ['Q1', 'A1', 'KJV only']);
+  for (const row of data) {
+    for (const old of ['term', 'meaning', 'fact', 'factNote']) assert.ok(!(old in row), old + ' is gone');
+  }
+});
+
+test('Prompt | Answer lines give question / answer', () => {
+  const { data } = parseListInput('CPU | Central Processing Unit\nRAM | Random Access Memory');
+  assert.deepEqual(data[0], { question: 'CPU', answer: 'Central Processing Unit' });
+});
+
+test('a set saved with the old names loads in the new names', () => {
+  const store = new Map();
+  globalThis.localStorage = { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)) };
+  try {
+    saveSet('old', [{ term: 'Q1', meaning: 'A1', fact: false, factNote: 'why', category: 'OT' }, { term: 'Q2', meaning: 'A2', fact: true }]);
+    const rows = loadSavedSet('old');
+    assert.deepEqual(rows[0], { category: 'OT', question: 'Q1', answer: 'A1', note: 'why' });
+    assert.deepEqual(rows[1], { question: 'Q2', answer: 'A2' });
+  } finally {
+    delete globalThis.localStorage;
+  }
+  assert.deepEqual(upgradeOldNames({ question: 'Q', answer: 'A' }), { question: 'Q', answer: 'A' }, 'new rows stay as they are');
 });
