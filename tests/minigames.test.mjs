@@ -936,6 +936,52 @@ test('Match boss: the crisis spreads every 2nd turn (unless held back); abilitie
   assert.ok(matchEndTurn(board).lost || matchCrisis(board) >= 8, 'the crisis takes it in the end');
 });
 
+test('Match boss phases (boss plan A): a won phase moves on to a fresh board, colours off in Dark, the last phase ends', async () => {
+  const { matchGroups, matchSetup, matchEndTurn, matchUse, matchWon, matchCrisis, matchNextPhase, matchLastPhase, matchTints } = await import('../js/minigames.js');
+  const { MATCH_BOSS } = await import('../js/config.js');
+  reset();
+  state.settings.activeData = BOSS_SET;
+  const board = matchSetup(matchGroups());
+  assert.equal(board.phase, 0);
+  assert.ok(matchTints(board), 'Sort shows the kind colours');
+  matchEndTurn(board);
+  matchEndTurn(board);
+  board.charge = [5, 5, 5];
+  assert.ok(matchWon(board));
+  assert.ok(!matchLastPhase(board));
+  const turn = board.turn;
+  assert.ok(matchNextPhase(board));
+  assert.equal(board.phase, 1);
+  assert.deepEqual(board.charge, [0, 0, 0], 'meters reset');
+  assert.equal(matchCrisis(board), MATCH_BOSS.crisisStart.length, 'the crisis resets');
+  assert.equal(board.toSpread, MATCH_BOSS.spreadEvery);
+  assert.equal(board.turn, turn, 'the board does not start the clock or turns over');
+  assert.ok(!matchTints(board), 'Dark: words only');
+  board.charge = [5, 5, 5];
+  assert.ok(matchUse(board, 2));
+  assert.ok(matchTints(board), 'a crew member showing kinds lights them for a while');
+  assert.ok(matchLastPhase(board), 'two phases until step B');
+  assert.ok(!matchNextPhase(board), 'no phase after the last');
+  assert.equal(board.phase, 1);
+});
+
+test('Match boss retry (boss plan A): the first loss restarts the same phase; there is only one', async () => {
+  const { matchGroups, matchSetup, matchEndTurn, matchCrisis, matchNextPhase, matchRetry } = await import('../js/minigames.js');
+  const { MATCH_BOSS } = await import('../js/config.js');
+  reset();
+  state.settings.activeData = BOSS_SET;
+  const board = matchSetup(matchGroups());
+  matchNextPhase(board);
+  let lost = false;
+  for (let i = 0; i < 40 && !lost; i++) lost = matchEndTurn(board).lost;
+  assert.ok(lost);
+  assert.ok(matchRetry(board), 'the first loss is retried');
+  assert.equal(board.phase, 1, 'the same phase');
+  assert.equal(matchCrisis(board), MATCH_BOSS.crisisStart.length);
+  assert.deepEqual(board.charge, [0, 0, 0]);
+  assert.ok(!matchRetry(board), 'no second retry');
+});
+
 test('Match boss: numbers never make a kind of tile (they give themselves away)', async () => {
   const { matchGroups } = await import('../js/minigames.js');
   reset();

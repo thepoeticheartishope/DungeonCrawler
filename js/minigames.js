@@ -985,16 +985,59 @@ const CRISIS = { kind: 'crisis', word: '!!' };
 // A new board on `groups` (matchGroups): `cells` (MATCH_BOSS.size squared
 // tiles, no line to start with, crisis on MATCH_BOSS.crisisStart), each
 // crew slot's `charge`, the `turn`, turns until the crisis next spreads
-// (`toSpread`), a spread to skip (`skip`) and turns of kinds shown
-// (`reveal`).
+// (`toSpread`), a spread to skip (`skip`), turns of kinds shown
+// (`reveal`), the boss's `phase` (0 Sort, 1 Dark; boss plan step A) and
+// whether its one retry is spent (`retried`).
 export function matchSetup(groups) {
-  const board = { groups, cells: [], charge: [0, 0, 0], turn: 0, toSpread: MATCH_BOSS.spreadEvery, skip: 0, reveal: 0 };
+  const board = { groups, cells: [], charge: [0, 0, 0], turn: 0, toSpread: 0, skip: 0, reveal: 0, phase: 0, retried: false };
+  matchFreshPhase(board);
+  return board;
+}
+
+// Starts `board`'s current phase from the top: new tiles with no line,
+// the crisis back on MATCH_BOSS.crisisStart, empty meters, the spread
+// count, skip and reveal reset. Each phase is a fresh start (Timothy
+// 2026-11-07); only the clock (the view's) carries on.
+function matchFreshPhase(board) {
   const n = MATCH_BOSS.size * MATCH_BOSS.size;
   do {
     board.cells = Array.from({ length: n }, () => matchTile(board, Math.floor(Math.random() * 3)));
   } while (matchRuns(board).length);
   MATCH_BOSS.crisisStart.forEach((k) => { board.cells[k] = { ...CRISIS }; });
-  return board;
+  board.charge = [0, 0, 0];
+  board.toSpread = MATCH_BOSS.spreadEvery;
+  board.skip = 0;
+  board.reveal = 0;
+}
+
+// Whether `board` is on its last phase: winning it wins the boss.
+export function matchLastPhase(board) {
+  return board.phase >= MATCH_BOSS.phases - 1;
+}
+
+// Moves `board` on to its next phase after a won one (not the last), a
+// fresh board for it. Phase 1 (Dark) hides the kind colours.
+export function matchNextPhase(board) {
+  if (matchLastPhase(board)) return false;
+  board.phase++;
+  matchFreshPhase(board);
+  return true;
+}
+
+// The boss's one retry (Timothy 2026-11-07): the first loss restarts the
+// phase the player was in, from its start. False once it is spent: a
+// second loss ends the run.
+export function matchRetry(board) {
+  if (board.retried) return false;
+  board.retried = true;
+  matchFreshPhase(board);
+  return true;
+}
+
+// Whether `board`'s tiles show their kind colours: only in phase 0 (Sort)
+// or while a crew member shows the kinds. Phase 1 (Dark) is words only.
+export function matchTints(board) {
+  return board.phase === 0 || board.reveal > 0;
 }
 
 // Every run of 3 or more same-kind tiles in a row or column on `board`:
@@ -1077,7 +1120,7 @@ export function matchSwap(board, a, b) {
   return { lined: true, start, waves };
 }
 
-// Whether `board` is won: every crew slot charged full.
+// Whether `board`'s phase is won: every crew slot charged full.
 export function matchWon(board) {
   return board.charge.every(c => c >= MATCH_BOSS.full);
 }

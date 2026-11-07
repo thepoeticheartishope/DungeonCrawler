@@ -1268,6 +1268,10 @@
   .mg-match-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .mg-match-clock { font-size: calc(26px * var(--text-scale, 1)); color: var(--torch-bright); }
   .mg-match-board { display: grid; gap: 3px; margin: 6px 0; overflow: hidden; }
+  .mg-match-phase { font-size: calc(16px * var(--text-scale, 1)); color: var(--torch-bright); }
+  .mg-match-beat { margin: 6px 0; padding: 8px; border: 1px solid var(--torch-bright); text-align: center; }
+  .mg-match-beat[hidden] { display: none; }
+  .mg-match-beat p { margin: 0 0 8px; }
   .mg-match-tile { aspect-ratio: 1; min-width: 0; padding: 1px; margin: 0; font-size: calc(15px * var(--text-scale, 1)); line-height: 1; border: 1px solid var(--line); background: var(--stone); color: var(--text); overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .mg-match-tile::before, .mg-match-tile::after { content: none; }
   .mg-match-tile:hover:not(:disabled), .mg-match-tile:focus-visible:not(:disabled) { background: var(--stone-light); color: var(--text); box-shadow: none; }

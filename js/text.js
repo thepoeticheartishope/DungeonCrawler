@@ -248,6 +248,15 @@ export const TEXT = {
   'match.used.2': 'Every tile shows its kind for 2 turns.', // draft
   'match.lost': 'The crisis has taken too much of the ship.', // draft
   'match.time': 'Out of time.', // draft
+  'match.phase': 'Phase {n}/{of} · {name}', // draft. The boss's phase (boss plan step A)
+  'match.phase.0': 'Sort', // draft. Phase 1: the kind colours are on
+  'match.phase.1': 'Dark', // draft. Phase 2: the colours are off, words only
+  'match.beat.1': 'The lights fail. The colours are gone: from now on you sort by the words alone.', // draft. Between phase 1 and 2
+  'match.beat.go': 'GO ON', // draft. The button that starts the next phase
+  'match.start.1': 'Dark now. Read each word and line up the ones that belong together.', // draft. Phase 2 starts
+  'match.retry': 'The crisis broke through, but the crew pulls it back. One more try at this phase. The clock keeps running.', // draft. The first loss: the one retry
+  'match.retry.go': 'TRY AGAIN', // draft
+  'match.retried': 'A fresh start on this phase. There is no second retry.', // draft
   'mg.scanner': 'Scanner', // draft. The Sensors' job (ship minigames plan step B)
   'mg.scanner.hint': 'Tap the fog to scan a patch. Answer when you know.', // draft
   'mg.scanner.patch': 'Scan patch {n}', // draft. A fog patch's label for screen readers

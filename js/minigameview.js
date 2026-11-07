@@ -23,7 +23,7 @@ import {
   fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier, scannerGrid, scannerTier,
   starChartSetup, starChartPick, starChartTier, hullPatchSetup, hullPatchPlate, hullPatchTier,
   inferenceSetup, inferenceCheck, inferenceTier, patchBayCheck, patchBayTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout, levelOf,
-  matchSwap, matchEndTurn, matchWon, matchUse, matchCrisis, matchNear,
+  matchSwap, matchEndTurn, matchWon, matchUse, matchCrisis, matchNear, matchNextPhase, matchRetry, matchTints, matchLastPhase,
 } from './minigames.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
 import { normalizeSpaces, buildChoices, resolveImageSrc } from './quiz.js';
@@ -1828,9 +1828,14 @@ function buildAsteroids() {
 // member the player taught, each with their ability. Tap a tile, then a
 // neighbour, to swap: lines clear (a slow shrink), the rest fall and new
 // tiles drop in, wave by wave. A swap with no line snaps back, shows both
-// kinds and spends the turn. Win: all three meters full. Lose: the crisis
-// on MATCH_BOSS.loseAt tiles, or the time (its song's length) running out;
-// the clock only counts while the page is seen. Under reduced motion the clear and fall are instant.
+// kinds and spends the turn. A phase is won with all three meters full;
+// a short beat (a line and a button) then starts the next on a fresh
+// board, and phase 1 (Dark) hides the kind colours (boss plan step A).
+// Winning the last phase wins the boss. Lose: the crisis on
+// MATCH_BOSS.loseAt tiles (the first time, the one retry restarts the
+// phase after a beat), or the time (its song's length, one clock across
+// every phase) running out; the clock only counts while the page is seen.
+// Under reduced motion the clear and fall are instant.
 function buildMatch() {
   slot.classList.add('mg-match');
   const { board, crew } = state.battle.currentQuestion.match;
@@ -1838,8 +1843,14 @@ function buildMatch() {
   const wait = ms => new Promise(r => setTimeout(r, still ? 0 : ms));
   const top = add(slot, 'div', 'mg-match-top');
   const clock = add(top, 'span', 'mg-match-clock');
+  const phaseLabel = add(top, 'span', 'mg-match-phase');
   const meta = add(top, 'span', 'mg-hint');
-  const grid = add(slot, 'div', 'mg-match-board tints');
+  const beat = add(slot, 'div', 'mg-match-beat');
+  const beatLine = add(beat, 'p', 'term-line');
+  const beatGo = add(beat, 'button');
+  beatGo.type = 'button';
+  beat.hidden = true;
+  const grid = add(slot, 'div', 'mg-match-board');
   const meters = add(slot, 'div', 'mg-match-meters');
   const said = add(slot, 'div', 'term-line mg-said');
   said.setAttribute('aria-live', 'polite');
@@ -1855,6 +1866,8 @@ function buildMatch() {
   // tiles shaken with their kinds shown.
   const draw = (cells = board.cells, { pop = [], fall = {}, shake = [] } = {}) => {
     grid.innerHTML = '';
+    grid.classList.toggle('tints', matchTints(board));
+    phaseLabel.textContent = t('match.phase', { n: board.phase + 1, of: MATCH_BOSS.phases, name: t('match.phase.' + board.phase) });
     cells.forEach((tile, k) => {
       const b = add(grid, 'button', 'mg-match-tile');
       b.type = 'button';
@@ -1887,10 +1900,42 @@ function buildMatch() {
     const s = Math.max(0, Math.ceil(left / 1000));
     clock.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
   };
+  // A pause between boards: `line` and a `go` button; the board waits
+  // (the clock does not). `then` starts the next board.
+  const showBeat = (line, go, then) => {
+    busy = true;
+    sel = null;
+    arming = false;
+    beatLine.textContent = line;
+    beatGo.textContent = go;
+    beatGo.onclick = () => {
+      if (shown.done) return;
+      beat.hidden = true;
+      busy = false;
+      then();
+      draw();
+      const first = grid.querySelector('button');
+      if (first) first.focus();
+    };
+    beat.hidden = false;
+    draw();
+    beatGo.focus();
+  };
   const endTurn = (shake = []) => {
     const turn = matchEndTurn(board);
     draw(board.cells, { shake });
-    if (turn.lost) { said.textContent = t('match.lost'); finish({ right: false, tier: null, given: '' }); }
+    if (!turn.lost) return;
+    if (!board.retried) {
+      showBeat(t('match.retry'), t('match.retry.go'), () => { matchRetry(board); said.textContent = t('match.retried'); });
+      return;
+    }
+    said.textContent = t('match.lost');
+    finish({ right: false, tier: null, given: '' });
+  };
+  // A phase won: the boss if it was the last, else a beat and the next.
+  const phaseWon = () => {
+    if (matchLastPhase(board)) { draw(); finish({ right: true, tier: 'X', given: '' }); return; }
+    showBeat(t('match.beat.' + (board.phase + 1)), t('match.beat.go'), () => { matchNextPhase(board); said.textContent = t('match.start.' + board.phase); });
   };
   const tap = async (k) => {
     if (busy || shown.done) return;
@@ -1931,7 +1976,7 @@ function buildMatch() {
     busy = false;
     const parts = [0, 1, 2].filter(i => gained[i]).map(i => '+' + gained[i] + ' ' + (crew[i] ? t('role.' + crew[i]) : kindName(i)));
     said.textContent = t(got.waves.length > 1 ? 'match.chain' : 'match.line', { n: got.waves.length, gains: parts.join(', ') }) + (freed ? ' ' + t('match.freed', { n: freed }) : '');
-    if (matchWon(board)) { draw(); finish({ right: true, tier: 'X', given: '' }); return; }
+    if (matchWon(board)) { phaseWon(); return; }
     endTurn();
   };
   const useAbility = (i) => {
