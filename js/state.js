@@ -92,7 +92,7 @@ export const state = {
     currentChoices: [],
     minigame: null,        // the minigame the current question runs as (minigames.js rollMinigame), or null for a plain question
     wager: 0,              // gold staked on the current question (Gambler modifier), 0 if none
-    currentQuestion: null, // { term, meaning } — reshuffles after every attempt
+    currentQuestion: null, // { question, answer } — reshuffles after every attempt
     selectedTarget: null,  // what the question is asked against; always null on the ship (minigames.js verdictClaimCount still reads it)
   },
 };

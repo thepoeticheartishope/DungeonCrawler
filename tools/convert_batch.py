@@ -5,14 +5,14 @@
         tools/batches.json, so a re-sent photo under a new name is caught)
 
     python3 tools/convert_batch.py add BATCH.json --front FRONT.jpg --back BACK.jpg [--set quiz-bowl]
-        BATCH.json is a list of new entries (term, meaning, category,
+        BATCH.json is a list of new entries (question, answer, category,
         difficulty, source, answerType, draft) transcribed from the photos.
         Refuses exact duplicates, lists likely near-duplicates to judge,
         appends the rest, records the batch, bumps CACHE_NAME, then runs check.
 
     python3 tools/convert_batch.py check
         For the questions that are new compared with origin/main: the KJV
-        check, fact labels (tools/fact_check.py) with anything still needing
+        check, translation notes (tools/fact_check.py) with anything still needing
         review, new answers added to lists/dictionaries/bible.json
         (tools/build_dictionary.py), and tools/validate.py. Re-run after
         fixing or reviewing.
@@ -101,13 +101,13 @@ def cmd_add(a):
         print('Stopping: photos were converted before (pass --force to add anyway).')
         if not a.force:
             return 1
-    have = {e['term'].strip().lower(): i + 1 for i, e in enumerate(data)}
-    exact = [e['term'] for e in batch if e['term'].strip().lower() in have]
+    have = {e['question'].strip().lower(): i + 1 for i, e in enumerate(data)}
+    exact = [e['question'] for e in batch if e['question'].strip().lower() in have]
     seen, self_dups = set(), []
     for e in batch:
-        k = e['term'].strip().lower()
+        k = e['question'].strip().lower()
         if k in seen:
-            self_dups.append(e['term'])
+            self_dups.append(e['question'])
         seen.add(k)
     if exact or self_dups:
         for t in exact:
@@ -118,18 +118,18 @@ def cmd_add(a):
 
     # Near-duplicates: same answer with overlapping wording, very similar
     # wording, or a reverse pair (each answer named in the other's question).
-    existing = [(i + 1, e, words(e['term']), norm(e['meaning'])) for i, e in enumerate(data)]
+    existing = [(i + 1, e, words(e['question']), norm(e['answer'])) for i, e in enumerate(data)]
     flagged = 0
     for e in batch:
-        w, ans = words(e['term']), norm(e['meaning'])
+        w, ans = words(e['question']), norm(e['answer'])
         for num, old, ow, oans in existing:
             j = len(w & ow) / max(1, len(w | ow))
             same_answer = ans == oans
-            reverse = bool(ans and oans and mentions(old['term'], ans) and mentions(e['term'], oans))
+            reverse = bool(ans and oans and mentions(old['question'], ans) and mentions(e['question'], oans))
             if (same_answer and j >= 0.25) or j >= 0.6 or reverse:
                 why = 'same answer' if same_answer else 'reverse pair' if reverse else 'similar wording'
-                print(f'  NEAR ({why}, {j:.2f}) #{num}: {old["term"][:80]} => {old["meaning"]}\n'
-                      f'      new: {e["term"][:80]} => {e["meaning"]}')
+                print(f'  NEAR ({why}, {j:.2f}) #{num}: {old["question"][:80]} => {old["answer"]}\n'
+                      f'      new: {e["question"][:80]} => {e["answer"]}')
                 flagged += 1
     print(f'{flagged} near-duplicate candidate(s) to judge (policy: skip only true duplicates).')
 
@@ -164,8 +164,8 @@ def new_indexes():
     out = {}
     for path in SETS.values():
         main = on_main(path)
-        old = {e['term'] for e in json.loads(main)} if main else set()
-        out[path] = {i + 1 for i, e in enumerate(load(path, [])) if e['term'] not in old}
+        old = {e['question'] for e in json.loads(main)} if main else set()
+        out[path] = {i + 1 for i, e in enumerate(load(path, [])) if e['question'] not in old}
     return out
 
 
@@ -204,7 +204,7 @@ def cmd_check(a=None):
         return 0
     print('\n### KJV check (new questions only; "answer not in cited passage" is advisory)')
     print('\n'.join(filtered(run('kjv_check.py').stdout, new)))
-    print('\n### Fact labels')
+    print('\n### Translation notes')
     fc = run('fact_check.py')
     if fc.returncode:
         print(fc.stdout + fc.stderr)
@@ -219,8 +219,7 @@ def cmd_check(a=None):
         if idx:
             data = load(path)
             batch = [data[i - 1] for i in sorted(idx)]
-            print(f'{path}: {sum(e.get("fact") is True for e in batch)} fact / '
-                  f'{sum(e.get("fact") is False for e in batch)} not fact, '
+            print(f'{path}: {sum(1 for e in batch if e.get("note"))} with a note, '
                   f'{sum(1 for e in batch if e.get("draft"))} draft')
     print('\n### Dictionary (new answers are added for review)')
     d = run('build_dictionary.py', 'bible')

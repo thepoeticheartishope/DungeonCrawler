@@ -6,7 +6,7 @@ Python 3, standard library only. Run them from the repo root.
 
 | Script | Needs internet | What it does |
 |---|---|---|
-| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), every answer is in the subject's dictionary when it has one, fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", every Bible question labelled `fact`. Run it before every PR that touches a question set. |
+| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), every answer is in the subject's dictionary when it has one, fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", no old field names (`term`, `meaning`, `factNote`, `fact`), a `note` is never empty. Run it before every PR that touches a question set. |
 | `stem_check.mjs` | no | `node tools/stem_check.mjs` (Node): per set, how many questions a stem cue covers (`STEM_CUES` in `js/config.js`: "Who…?" → people, "How many…?" → numbers) and which tagged questions have a type their stem doesn't allow. The tag wins in play, so each listed one is a tagging mistake to fix or a real exception to leave. Reports only. |
 | `import_acronyms.py` | no | `python3 tools/import_acronyms.py comptia-aplus OBJECTIVES.pdf [MORE.pdf]` (needs `pdftotext`): adds a CompTIA objectives PDF's acronym list to the subject's dictionary, one `term` entry per definition with its `acronym`. Reports spellings it merged and definitions listed twice. Re-running only adds what's new. |
 | `wording_check.py` | no | `python3 tools/wording_check.py lists/comptia-aplus.json ~/ForClaude/CompTIA_A+_Core1_Lessons_Split/*.pdf` (needs `pdftotext`): lists questions that share a run of 5 words (`--words N`) with CompTIA's course books, so they get reworded. Our questions are in our own words. Exits 1 if any share. |
@@ -14,7 +14,7 @@ Python 3, standard library only. Run them from the repo root.
 | `convert_batch.py` | yes (cached) | The steps for a photographed card batch in one place: checks the photos weren't converted before, refuses exact duplicates and lists likely near-duplicates, adds the batch, bumps `CACHE_NAME`, then runs the three scripts above for just the new questions. |
 | `kjv_check.py` | first run only | Checks citations and quotes against the KJV text: citations exist, "Which verse says…?" quotes match, quoted phrases are in the cited verses. Reports only. |
 | `moves3d_extract.mjs` | no | `node tools/moves3d_extract.mjs UAL1_Standard.glb UAL2_Standard.glb` (Node): writes `js/moves3d.js`, the 3D moves the stick men are drawn with (one stick plan step F), sampled 12 times a second from Quaternius's Universal Animation Library 1 and 2 (CC0, kept outside the repo). Not a question-set tool, but it lives here. |
-| `fact_check.py` | yes (cached) | Labels every Bible question `"fact": true` or `false` by comparing the cited verse in the KJV, ASV and WEB. Writes the label into the JSON. |
+| `fact_check.py` | yes (cached) | Checks every Bible question by comparing the cited verse in the KJV, ASV and WEB. A question whose answer depends on the translation gets a `"note"` saying why; the rest get none. Writes the notes into the JSON. |
 
 Downloads and caches go in `~/.cache/dungeoncrawler-tools/` (outside the repo,
 so every checkout and worktree shares them; set `DUNGEONCRAWLER_TOOLS_CACHE` to
@@ -27,7 +27,7 @@ cached so re-runs are quick.
 1. `python3 tools/convert_batch.py photos FRONT.jpg BACK.jpg`: stops you if
    either photo was converted before, even under another name
    (`tools/batches.json` keeps every batch's photo hashes and PR).
-2. Transcribe the cards into a JSON list of entries (`term`, `meaning`,
+2. Transcribe the cards into a JSON list of entries (`question`, `answer`,
    `category`, `difficulty`, `source`, `answerType`, `draft` when the answer is
    more than one word; a person named through another, "Pharaoh's daughter",
    counts as one answer: type `related`), then
@@ -46,7 +46,7 @@ cached so re-runs are quick.
 
 1. Add the questions to `lists/bible-quiz-bowl.json`.
 2. `python3 tools/kjv_check.py`: fix any wrong citations or misquoted verses it reports.
-3. `python3 tools/fact_check.py`: labels every question.
+3. `python3 tools/fact_check.py`: writes a translation note where one is needed.
 4. Look at its **NEEDS REVIEW** list. For each one, decide whether the answer
    really depends on the translation, and record the decision in
    `tools/fact_review.json`:
@@ -87,16 +87,24 @@ with that `subject` in `lists/manifest.json`), one entry per line:
 here (names in the Bible, acronyms on the exam's list). The game doesn't use
 the dictionary yet: the plan is that wrong answers come from it.
 
-## What "fact" means
+## What a "note" means
 
-- **Fact:** the answer is true in every translation. Most questions: people,
+Every question row uses the same field names in every set: `question`,
+`answer`, `answerType`, and optional `note`, `source` and the rest.
+(Dictionaries keep `term`: there it really is a word.)
+
+- **No note:** the answer is true in every translation. Most questions: people,
   places, events, numbers.
-- **Not fact** (`"fact": false`, with a `"factNote"` saying why): the answer
+- **A `"note"` saying why:** the answer
   depends on one translation's wording ("his *truth* endureth" is "his
   *faithfulness*" in the ASV and WEB), the question names a translation
   ("the last word of the King James Version"), or the passage is missing
   from some translations because they follow different manuscripts
   (Matthew 6:13's "For thine is the kingdom…").
 
-The game doesn't use the label yet. It's there so a future switch to another
-translation knows exactly which questions to reword or hide.
+A note can go on any set's question (a CompTIA answer that changed with a
+newer exam, too). The game doesn't use notes yet. They're there so a future
+switch to another translation knows exactly which questions to reword or
+hide. (Sets used to carry a `"fact": true/false` flag next to a `"factNote"`;
+the flag was dropped 2026-11-06 and `factNote` became `note`.
+`tools/fact_review.json` still records its own `fact` decisions.)

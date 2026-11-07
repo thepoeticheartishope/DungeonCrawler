@@ -1,6 +1,6 @@
-"""Label every Bible question as a translation-independent fact or not.
+"""Check every Bible question: does its answer hold in every translation?
 
-    python3 tools/fact_check.py            # label lists/bible-*.json in place
+    python3 tools/fact_check.py            # write notes into lists/bible-*.json in place
     python3 tools/fact_check.py --dry-run  # report only, change nothing
 
 A question is a FACT when its answer holds in every translation: its key
@@ -13,8 +13,10 @@ It is NOT a fact when the answer depends on one translation's wording
 when the question names a particular translation, or when the passage is
 missing from some translations (manuscript differences, e.g. Matt 6:13).
 
-Each entry gets "fact": true/false, and "factNote" (why) when false.
-Hand-reviewed decisions in tools/fact_review.json always win. Anything the
+An entry that is not a fact gets a "note" saying why; a fact has no note.
+(Sets used to carry a "fact": true/false flag as well; it was dropped
+2026-11-06, the note alone is the warning.) Hand-reviewed decisions in
+tools/fact_review.json always win. Anything the
 automatic check marks "not fact", or that cites a disputed passage, and
 isn't reviewed yet is listed at the end: review it, add it to
 fact_review.json, and re-run.
@@ -44,7 +46,7 @@ def touches_disputed(refs):
 
 def classify(e):
     """(fact, note, needs_review)"""
-    if NAMES_A_VERSION.search(e['term']):
+    if NAMES_A_VERSION.search(e['question']):
         return False, 'the question names a particular translation', True
     refs, _ = parse_refs(e.get('source'))
     disputed = touches_disputed(refs)
@@ -52,7 +54,7 @@ def classify(e):
         return True, None, disputed
     if not refs:
         return True, None, False
-    keys = answer_keywords(e['meaning'])
+    keys = answer_keywords(e['answer'])
     in_kjv = [w for w in keys if w in set(tokens(kjv_passage(refs)))]
     if not in_kjv:
         return True, None, disputed  # narrative answer, not spelled out in any translation
@@ -77,8 +79,8 @@ def main():
     for path in BIBLE_SETS:
         data = json.load(open(path, encoding='utf-8'))
         for i, e in enumerate(data):
-            if e['term'] in review:
-                fact, note = review[e['term']]['fact'], review[e['term']].get('note')
+            if e['question'] in review:
+                fact, note = review[e['question']]['fact'], review[e['question']].get('note')
             else:
                 fact, note, needs = classify(e)
                 if needs:
@@ -86,11 +88,10 @@ def main():
             totals[fact] += 1
             if fact is None:
                 continue
-            e['fact'] = fact
             if fact is False and note:
-                e['factNote'] = note
+                e['note'] = note
             else:
-                e.pop('factNote', None)
+                e.pop('note', None)
         if not dry:
             open(path, 'w', encoding='utf-8').write(json.dumps(data, indent=2, ensure_ascii=False))
     n = totals[True] + totals[False]
@@ -101,7 +102,7 @@ def main():
         print('  "<question text>": {"fact": true|false, "note": "why (for not-fact)"}\n')
         for path, num, e, fact, note in to_review:
             print(f'  {os.path.basename(path)} #{num} [{e.get("source")}] auto={fact} {note or ""}')
-            print(f'      {e["term"][:100]} => {e["meaning"]}')
+            print(f'      {e["question"][:100]} => {e["answer"]}')
 
 
 if __name__ == '__main__':

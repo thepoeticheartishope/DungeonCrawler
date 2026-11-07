@@ -33,17 +33,23 @@ for set_info in manifest:
     subject = set_info.get('subject')
     if not isinstance(subject, str) or not SUBJECT.match(subject):
         errors.append(f'lists/manifest.json {set_info["id"]}: "subject" must be a lowercase name like "bible" or "comptia-aplus", got {subject!r}')
-    is_bible = subject == 'bible'
     is_comptia = subject.startswith('comptia')
     seen = {}
     subject_answers = answers_by_subject.setdefault(subject, set())
     for i, e in enumerate(data):
-        subject_answers.add((' '.join(str(e.get('meaning', '')).split()).lower(), e.get('answerType')))
+        subject_answers.add((' '.join(str(e.get('answer', '')).split()).lower(), e.get('answerType')))
         tag = f'{path} #{i + 1}'
-        def err(msg): errors.append(f'{tag}: {msg} | {str(e.get("term", ""))[:70]}')
-        for field in ('term', 'meaning'):
+        def err(msg): errors.append(f'{tag}: {msg} | {str(e.get("question", ""))[:70]}')
+        for field in ('question', 'answer'):
             if not isinstance(e.get(field), str) or not e[field].strip():
                 err(f'missing "{field}"')
+        # Old field names (renamed 2026-11-06: term -> question,
+        # meaning -> answer, factNote -> note; the fact flag was dropped).
+        for old in ('term', 'meaning', 'factNote', 'fact'):
+            if old in e:
+                err(f'old field "{old}" (use question / answer / note; fact is gone)')
+        if 'note' in e and (not isinstance(e['note'], str) or not e['note'].strip()):
+            err('"note" must be a non-empty string when present')
         if e.get('answerType') not in TYPES:
             err(f'unknown answerType {e.get("answerType")!r}')
         if 'label' in e:
@@ -59,20 +65,20 @@ for set_info in manifest:
             err(f'image not found: lists/{image}')
         # A picture question is told apart by its picture ("Which tool is
         # shown?" with a different image each time).
-        key = (str(e.get('term', '')).strip().lower(), e.get('image') or '')
+        key = (str(e.get('question', '')).strip().lower(), e.get('image') or '')
         if key in seen:
             err(f'same question text as #{seen[key]}')
         seen[key] = i + 1
-        answers = [e.get('meaning', '')] + list(e.get('options') or [])
+        answers = [e.get('answer', '')] + list(e.get('options') or [])
         if any(EXPLICIT.search(a or '') for a in answers):
             err('explicit term in an answer or option')
         if 'options' in e:
             if not isinstance(e['options'], list) or not 2 <= len(e['options']) <= 4:
                 err('"options" must list 2 to 4 answers')
-            elif e.get('meaning') not in e['options']:
+            elif e.get('answer') not in e['options']:
                 err('"options" must include the correct answer')
-        if e.get('answerType') == 'verse' and not VERSE_ADDRESS.match(e.get('meaning', '')):
-            err(f'verse answer {e.get("meaning")!r} is not an address like "Micah 1:1"')
+        if e.get('answerType') == 'verse' and not VERSE_ADDRESS.match(e.get('answer', '')):
+            err(f'verse answer {e.get("answer")!r} is not an address like "Micah 1:1"')
         if 'draft' in e and e['draft'] is not True:
             err('"draft" must be true when present')
         if is_comptia:
@@ -84,11 +90,6 @@ for set_info in manifest:
                 err(f'no domain {source.group(2)} for exam {source.group(1)} in COMPTIA_DOMAINS')
             elif e.get('category') != domains[source.group(2)]:
                 err(f'category {e.get("category")!r} should be {domains[source.group(2)]!r} (domain {source.group(2)})')
-        if is_bible:
-            if not isinstance(e.get('fact'), bool):
-                err('missing "fact": true/false (run python3 tools/fact_check.py)')
-            elif e['fact'] is False and not str(e.get('factNote', '')).strip():
-                err('"fact": false needs a "factNote" saying why')
 
 # A subject's dictionary (lists/dictionaries/<subject>.json, built by
 # tools/build_dictionary.py) is optional; when there is one, every answer of

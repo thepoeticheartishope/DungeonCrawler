@@ -43,9 +43,9 @@ for book in args.books:
 
 found = 0
 for i, q in enumerate(json.load(open(args.set_file, encoding='utf-8'))):
-    shared = [r for r in runs(words(q.get('term', '')), args.words) if r in book_runs]
+    shared = [r for r in runs(words(q.get('question', '')), args.words) if r in book_runs]
     if shared:
         found += 1
-        print(f'#{i + 1} {q["term"]}\n    shares: ' + ' | '.join(dict.fromkeys(shared)))
+        print(f'#{i + 1} {q["question"]}\n    shares: ' + ' | '.join(dict.fromkeys(shared)))
 print(f'{found} question(s) share a {args.words}-word run with the books.')
 sys.exit(1 if found else 0)

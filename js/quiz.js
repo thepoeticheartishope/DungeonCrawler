@@ -14,9 +14,18 @@ export function defaultSample(mcMode) {
   return mcMode ? MC_SAMPLE_DATA : TYPING_SAMPLE_DATA;
 }
 
-// Parses pasted text as either a JSON array of {term, meaning} objects,
-// or plain lines of "TERM | Meaning". Returns { data } or { error }, with
-// an optional { warning } when some lines had to be skipped.
+// Parses pasted text as either a JSON array of {question, answer} objects,
+// or plain lines of "Prompt | Answer". Returns { data } or { error }, with
+// an optional { warning } when some lines had to be skipped. Old field
+// names (term, meaning, factNote) are still read, so files from before the
+// rename load; the old "fact" flag is ignored. The result uses only the
+// new names.
+// A row's note, read from "note" or the old "factNote".
+function noteOf(item) {
+  const note = item && (typeof item.note === 'string' ? item.note : item.factNote);
+  return (typeof note === 'string' && note.trim()) || undefined;
+}
+
 export function parseListInput(text) {
   const trimmed = text.trim();
   if (!trimmed) return { error: 'Paste a list or choose a file first.' };
@@ -28,7 +37,7 @@ export function parseListInput(text) {
     } catch (e) {
       return { error: 'That JSON could not be parsed. Check the format.' };
     }
-    if (!Array.isArray(parsed)) return { error: 'JSON must be an array of {"term","meaning"} objects.' };
+    if (!Array.isArray(parsed)) return { error: 'JSON must be an array of {"question","answer"} objects.' };
     const cleaned = parsed
       .map(item => {
         const category = String((item && item.category) || '').trim();
@@ -37,8 +46,8 @@ export function parseListInput(text) {
         const image = String((item && item.image) || '').trim();
         const answerType = String((item && item.answerType) || '').trim();
         return {
-          term: String((item && item.term) || '').trim(),
-          meaning: String((item && item.meaning) || '').trim(),
+          question: String((item && (item.question ?? item.term)) || '').trim(),
+          answer: String((item && (item.answer ?? item.meaning)) || '').trim(),
           options: Array.isArray(item && item.options)
             ? item.options.map(o => String(o).trim()).filter(Boolean)
             : undefined,
@@ -48,14 +57,14 @@ export function parseListInput(text) {
           image: image || undefined,
           answerType: answerType || undefined,
           draft: (item && item.draft === true) || undefined,
-          fact: typeof (item && item.fact) === 'boolean' ? item.fact : undefined,
-          factNote: (item && typeof item.factNote === 'string' && item.factNote.trim()) || undefined,
+          // Why an answer can differ (a Bible translation, an older exam).
+          note: noteOf(item),
           // A name's pieces for Syllable Split ("Ne-bu-chad-nez-zar"), when
           // its own split on the vowels is wrong (minigames.js).
           syllables: (item && typeof item.syllables === 'string' && item.syllables.trim()) || undefined
         };
       })
-      .filter(item => item.term && item.meaning);
+      .filter(item => item.question && item.answer);
     if (cleaned.length < 2) return { error: 'Need at least 2 valid entries with both a prompt and an answer.' };
     return { data: cleaned };
   }
@@ -66,9 +75,9 @@ export function parseListInput(text) {
   lines.forEach((line, i) => {
     const idx = line.indexOf('|');
     if (idx === -1) { badLines.push(i + 1); return; }
-    const term = line.slice(0, idx).trim();
-    const meaning = line.slice(idx + 1).trim();
-    if (term && meaning) cleaned.push({ term, meaning });
+    const question = line.slice(0, idx).trim();
+    const answer = line.slice(idx + 1).trim();
+    if (question && answer) cleaned.push({ question, answer });
     else badLines.push(i + 1);
   });
 
@@ -86,7 +95,7 @@ export function pickQuestion(exclude, pool) {
   pool = pool || state.settings.activeData;
   let candidates = pool;
   if (exclude && pool.length > 1) {
-    candidates = pool.filter(d => d.term !== exclude.term);
+    candidates = pool.filter(d => d.question !== exclude.question);
   }
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
@@ -293,7 +302,7 @@ export function numericAnswer(s) {
 // typed non-number answer with words after the number ("1 Corinthians",
 // a book) is not.
 export function numberQuestion(item) {
-  const n = numericAnswer(item.meaning);
+  const n = numericAnswer(item.answer);
   if (!n) return null;
   if (ANSWER_TYPE_GROUPS[item.answerType] === 'number' || !item.answerType || !n.unit) return n;
   return null;
@@ -339,7 +348,7 @@ export function stemTypes(question) {
 // pasted list) the first type its stem allows, or undefined.
 function answerTypeOf(d) {
   if (d.answerType) return d.answerType;
-  const types = stemTypes(d.term);
+  const types = stemTypes(d.question);
   return types ? types[0] : undefined;
 }
 
@@ -384,18 +393,18 @@ export function buildChoices(item) {
   let opts;
   if (Array.isArray(item.options) && item.options.length >= 2) {
     opts = item.options.slice();
-    const hasCorrect = opts.some(o => normalizeSpaces(o).toLowerCase() === normalizeSpaces(item.meaning).toLowerCase());
-    if (!hasCorrect) opts.push(item.meaning);
+    const hasCorrect = opts.some(o => normalizeSpaces(o).toLowerCase() === normalizeSpaces(item.answer).toLowerCase());
+    if (!hasCorrect) opts.push(item.answer);
   } else {
     const dictionary = state.settings.activeDictionary || [];
     const itemType = answerTypeOf(item);
-    const allowed = stemTypes(item.term);
+    const allowed = stemTypes(item.question);
     const lock = allowed && allowed.includes(itemType) ? allowed : null;
     const fits = type => !lock || lock.includes(type);
-    const own = dictionaryEntry(dictionary, item.meaning, itemType);
+    const own = dictionaryEntry(dictionary, item.answer, itemType);
     // A set answer's shown spelling: its dictionary entry's term, if any.
     const shown = m => { const e = dictionaryEntry(dictionary, m); return e ? e.term : m; };
-    const rightKey = spellingKey(shown(item.meaning));
+    const rightKey = spellingKey(shown(item.answer));
     const isWrong = m => spellingKey(shown(m)) !== rightKey && !EXPLICIT_ANSWER_TERMS.test(m);
 
     const dictPool = itemType
@@ -405,7 +414,7 @@ export function buildChoices(item) {
     const sameForm = e => !own || entryForm(e) === entryForm(own);
     const sameDraft = d => !d.draft === !item.draft;
 
-    const basePool = state.settings.activeData.filter(d => d !== item && isWrong(d.meaning));
+    const basePool = state.settings.activeData.filter(d => d !== item && isWrong(d.answer));
     const typedPool = itemType
       ? basePool.filter(d => answerTypeOf(d) === itemType)
       : [];
@@ -417,10 +426,10 @@ export function buildChoices(item) {
     const locked = items => items.filter(d => fits(answerTypeOf(d)));
     const num = numberQuestion(item);
     const numberPool = num
-      ? basePool.filter(d => { const v = numericAnswer(d.meaning); return v && v.unit === num.unit; })
+      ? basePool.filter(d => { const v = numericAnswer(d.answer); return v && v.unit === num.unit; })
       : [];
     const terms = entries => entries.map(e => e.term);
-    const meanings = items => items.map(d => shown(d.meaning));
+    const meanings = items => items.map(d => shown(d.answer));
     const tiers = [
       terms(dictPool.filter(e => sharesPart(e, own) && sameForm(e) && sameDraft(e))),
       terms(dictPool.filter(e => acronymLikeness(e, own) === 2)),
@@ -455,7 +464,7 @@ export function buildChoices(item) {
         distractors.push(m);
       }
     }
-    opts = [item.meaning, ...distractors];
+    opts = [item.answer, ...distractors];
   }
   return shuffle(opts).slice(0, 4);
 }

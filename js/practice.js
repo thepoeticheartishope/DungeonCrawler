@@ -184,7 +184,7 @@ function settle(outcome) {
   const tier = outcome && outcome.right ? outcome.tier : null;
   result.textContent = tier
     ? t('practice.tier', { tier })
-    : t('practice.miss', { answer: state.battle.currentQuestion.meaning });
+    : t('practice.miss', { answer: state.battle.currentQuestion.answer });
   resultButtons.hidden = false;
   againBtn.focus();
 }

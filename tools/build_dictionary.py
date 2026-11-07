@@ -46,7 +46,7 @@ def key(s):
 
 
 def collect(subject):
-    """{(meaning, type): all_draft} over every bundled set of `subject`."""
+    """{(answer, type): all_draft} over every bundled set of `subject`."""
     manifest = json.load(open(os.path.join(ROOT, 'lists', 'manifest.json'), encoding='utf-8'))
     sets = [s for s in manifest if s.get('subject') == subject]
     if not sets:
@@ -54,8 +54,8 @@ def collect(subject):
     answers = {}
     for s in sets:
         for e in json.load(open(os.path.join(ROOT, 'lists', s['file']), encoding='utf-8')):
-            meaning = re.sub(r'\s+', ' ', e['meaning'].strip())
-            k = (meaning, e.get('answerType'))
+            answer = re.sub(r'\s+', ' ', e['answer'].strip())
+            k = (answer, e.get('answerType'))
             answers[k] = answers.get(k, True) and e.get('draft') is True
     return [s['file'] for s in sets], answers
 

@@ -35,9 +35,9 @@ import {
 
 
 
-const NUMBER = { term: 'How many days did it rain?', meaning: '40', answerType: 'number' };
-const BIG = { term: 'How many were sealed?', meaning: '144000', answerType: 'number' };
-const WORD = { term: 'Who built the ark?', meaning: 'Noah', answerType: 'name' };
+const NUMBER = { question: 'How many days did it rain?', answer: '40', answerType: 'number' };
+const BIG = { question: 'How many were sealed?', answer: '144000', answerType: 'number' };
+const WORD = { question: 'Who built the ark?', answer: 'Noah', answerType: 'name' };
 
 // The shared state a roll or a settle reads, back to a plain start.
 function reset() {
@@ -64,14 +64,14 @@ test('every minigame supports at least two modifiers, but Sum Lock (a box carrie
 
 test('Close Enough fits plain number answers only', () => {
   assert.deepEqual(minigamesFor(NUMBER), ['closeEnough', 'higherLower', 'fuelMix']);
-  assert.deepEqual(minigamesFor({ meaning: '1,500%', answerType: 'number' }), ['closeEnough', 'higherLower', 'fuelMix']);
-  assert.deepEqual(minigamesFor({ meaning: '4 B.C.', answerType: 'number' }), ['closeEnough', 'higherLower', 'fuelMix']);
+  assert.deepEqual(minigamesFor({ answer: '1,500%', answerType: 'number' }), ['closeEnough', 'higherLower', 'fuelMix']);
+  assert.deepEqual(minigamesFor({ answer: '4 B.C.', answerType: 'number' }), ['closeEnough', 'higherLower', 'fuelMix']);
   assert.deepEqual(minigamesFor(WORD), ['slowSpell', 'codeBreak', 'starChart', 'hullPatch'], 'a one-word name: no dial');
-  assert.deepEqual(minigamesFor({ meaning: '7½', answerType: 'number' }), []);
-  assert.deepEqual(minigamesFor({ meaning: '13 and 14', answerType: 'number' }), []);
-  assert.deepEqual(minigamesFor({ meaning: '0', answerType: 'number' }), []);
-  assert.deepEqual(minigamesFor({ meaning: '1 Corinthians', answerType: 'book' }), []);
-  assert.deepEqual(minigamesFor({ meaning: '443', answerType: 'port' }), ['codeBreak'], 'a port is a label, not an amount');
+  assert.deepEqual(minigamesFor({ answer: '7½', answerType: 'number' }), []);
+  assert.deepEqual(minigamesFor({ answer: '13 and 14', answerType: 'number' }), []);
+  assert.deepEqual(minigamesFor({ answer: '0', answerType: 'number' }), []);
+  assert.deepEqual(minigamesFor({ answer: '1 Corinthians', answerType: 'book' }), []);
+  assert.deepEqual(minigamesFor({ answer: '443', answerType: 'port' }), ['codeBreak'], 'a port is a label, not an amount');
 });
 
 test('modifiersFor keeps every offered modifier, or gives null', () => {
@@ -82,11 +82,11 @@ test('modifiersFor keeps every offered modifier, or gives null', () => {
 });
 
 test('Higher / Lower fits whole numbers that make a short enough bar', () => {
-  for (const meaning of ['1', '12', '37', '950', '12000', '600000']) {
-    assert.ok(minigamesFor({ meaning, answerType: 'number' }).includes('higherLower'), meaning);
+  for (const answer of ['1', '12', '37', '950', '12000', '600000']) {
+    assert.ok(minigamesFor({ answer, answerType: 'number' }).includes('higherLower'), answer);
   }
-  for (const meaning of ['3.5', '1453', '912', '1906', '144000', '0']) {
-    assert.ok(!minigamesFor({ meaning, answerType: 'number' }).includes('higherLower'), meaning);
+  for (const answer of ['3.5', '1453', '912', '1906', '144000', '0']) {
+    assert.ok(!minigamesFor({ answer, answerType: 'number' }).includes('higherLower'), answer);
   }
   assert.ok(!minigamesFor(WORD).includes('higherLower'));
 });
@@ -98,13 +98,13 @@ test('a fitting question runs as a minigame MINIGAME_CHANCE of the time', () => 
   reset();
   assert.equal(withRandom(MINIGAME_CHANCE, () => rollMinigame(NUMBER, [])), null);
   assert.equal(state.battle.minigame, null);
-  assert.equal(withRandom(0, () => rollMinigame({ ...WORD, meaning: 'John Mark' }, [])), null, 'nothing fits a two-word name');
+  assert.equal(withRandom(0, () => rollMinigame({ ...WORD, answer: 'John Mark' }, [])), null, 'nothing fits a two-word name');
 });
 
 test('the same minigame never runs twice in a row; a plain question clears it', () => {
   reset();
   // A question only Close Enough fits.
-  const DECIMAL = { meaning: '3.5', answerType: 'number' };
+  const DECIMAL = { answer: '3.5', answerType: 'number' };
   withRandom(0, () => rollMinigame(DECIMAL, []));
   assert.equal(withRandom(0, () => rollMinigame(DECIMAL, [])), null, 'not twice in a row');
   assert.equal(state.run.lastMinigame, null, 'that question was plain');
@@ -142,17 +142,17 @@ test('endMinigame scores it and clears it', () => {
 });
 
 test('the dial lands on the answer, reaches past it, and has enough steps', () => {
-  for (const q of [NUMBER, BIG, { meaning: '1' }, { meaning: '1453' }, { meaning: '3.5' }, { meaning: '1,500%' }]) {
+  for (const q of [NUMBER, BIG, { answer: '1' }, { answer: '1453' }, { answer: '3.5' }, { answer: '1,500%' }]) {
     for (const r of [0, 0.5, 0.999]) {
       const dial = withRandom(r, () => closeEnoughDial(q));
-      assert.ok(Math.abs(dial.answerAt * dial.step - dial.answer) < 1e-9, q.meaning + ' lands on a step');
-      assert.ok(dial.top >= Math.max(CLOSE_ENOUGH_MIN_TOP, dial.answer * CLOSE_ENOUGH_REACH_MIN), q.meaning + ' reaches past it');
-      assert.ok(Math.abs(dial.steps * dial.step - dial.top) < 1e-9, q.meaning + ' top is a step');
-      assert.ok(dial.steps >= CLOSE_ENOUGH_MIN_STEPS || dial.step === 1, q.meaning + ' has enough steps');
+      assert.ok(Math.abs(dial.answerAt * dial.step - dial.answer) < 1e-9, q.answer + ' lands on a step');
+      assert.ok(dial.top >= Math.max(CLOSE_ENOUGH_MIN_TOP, dial.answer * CLOSE_ENOUGH_REACH_MIN), q.answer + ' reaches past it');
+      assert.ok(Math.abs(dial.steps * dial.step - dial.top) < 1e-9, q.answer + ' top is a step');
+      assert.ok(dial.steps >= CLOSE_ENOUGH_MIN_STEPS || dial.step === 1, q.answer + ' has enough steps');
     }
   }
-  assert.equal(withRandom(0, () => closeEnoughDial({ meaning: '1' })).step, 1, 'a whole number gets whole steps');
-  assert.equal(withRandom(0, () => closeEnoughDial({ meaning: '3.5' })).step, 0.1);
+  assert.equal(withRandom(0, () => closeEnoughDial({ answer: '1' })).step, 1, 'a whole number gets whole steps');
+  assert.equal(withRandom(0, () => closeEnoughDial({ answer: '3.5' })).step, 0.1);
 });
 
 test('Close Enough bands: exact X, 10% = 2, 25% = 1, past that a miss', () => {
@@ -174,17 +174,17 @@ test('Close Enough under 10: 1 off = 2, no tier 1', () => {
 });
 
 test('the Higher / Lower bar lands on the answer, reaches past it, and has enough steps', () => {
-  for (const meaning of ['1', '4', '12', '37', '40', '950', '12000', '600000', '1,500%']) {
+  for (const answer of ['1', '4', '12', '37', '40', '950', '12000', '600000', '1,500%']) {
     for (const r of [0, 0.5, 0.999]) {
-      const bar = withRandom(r, () => higherLowerBar({ meaning, answerType: 'number' }));
-      assert.equal(bar.answerAt * bar.step, bar.answer, meaning + ' lands on a step');
-      assert.ok(Number.isInteger(bar.answerAt) && Number.isInteger(bar.steps), meaning + ' whole steps');
-      assert.ok(bar.top >= Math.max(HIGHER_LOWER_MIN_TOP, bar.answer * HIGHER_LOWER_REACH_MIN), meaning + ' reaches past it');
-      assert.equal(bar.steps * bar.step, bar.top, meaning + ' top is a step');
-      assert.ok(bar.steps >= HIGHER_LOWER_MIN_STEPS && bar.steps <= 100, meaning + ' has ' + bar.steps + ' steps');
+      const bar = withRandom(r, () => higherLowerBar({ answer, answerType: 'number' }));
+      assert.equal(bar.answerAt * bar.step, bar.answer, answer + ' lands on a step');
+      assert.ok(Number.isInteger(bar.answerAt) && Number.isInteger(bar.steps), answer + ' whole steps');
+      assert.ok(bar.top >= Math.max(HIGHER_LOWER_MIN_TOP, bar.answer * HIGHER_LOWER_REACH_MIN), answer + ' reaches past it');
+      assert.equal(bar.steps * bar.step, bar.top, answer + ' top is a step');
+      assert.ok(bar.steps >= HIGHER_LOWER_MIN_STEPS && bar.steps <= 100, answer + ' has ' + bar.steps + ' steps');
     }
   }
-  assert.equal(withRandom(0, () => higherLowerBar({ meaning: '40' })).step, 5, '0-50 in fives');
+  assert.equal(withRandom(0, () => higherLowerBar({ answer: '40' })).step, 5, '0-50 in fives');
 });
 
 test('Higher / Lower hints and tiers: guess 1 = X, 2 = 2, 3 = 1, then a miss', () => {
@@ -197,8 +197,8 @@ test('Higher / Lower hints and tiers: guess 1 = X, 2 = 2, 3 = 1, then a miss', (
 
 // Names for Slow Spell.
 const NAMES = ['Noah', 'Adam', 'adam', 'Ruth', 'Saul', 'Moses', 'Eve']
-  .map(meaning => ({ term: 'Who?', meaning, answerType: 'name' }));
-const BOOK = { term: 'Which book?', meaning: 'Ruth', answerType: 'book' };
+  .map(answer => ({ question: 'Who?', answer, answerType: 'name' }));
+const BOOK = { question: 'Which book?', answer: 'Ruth', answerType: 'book' };
 
 test('Slow Spell fits one-word answers of 4 to 12 letters, no decoys needed (typed)', () => {
   reset();
@@ -206,9 +206,9 @@ test('Slow Spell fits one-word answers of 4 to 12 letters, no decoys needed (typ
   assert.deepEqual(minigamesFor(NAMES[0]), ['slowSpell', 'codeBreak', 'starChart', 'hullPatch'], 'alone in the set: typed, so nothing to pick from');
   state.settings.activeData = [...NAMES, BOOK];
   assert.ok(!minigamesFor(NAMES[6]).includes('slowSpell'), 'Eve: too short');
-  assert.ok(!minigamesFor({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }).includes('slowSpell'), 'two words');
+  assert.ok(!minigamesFor({ question: 'Who?', answer: 'John Mark', answerType: 'name' }).includes('slowSpell'), 'two words');
   assert.ok(!minigamesFor(NUMBER).includes('slowSpell'), 'a number is no word');
-  assert.ok(!minigamesFor({ ...NAMES[0], term: 'Spell Noah.' }).includes('slowSpell'), 'the stem gives it away');
+  assert.ok(!minigamesFor({ ...NAMES[0], question: 'Spell Noah.' }).includes('slowSpell'), 'the stem gives it away');
   assert.ok(!MINIGAME_MODIFIERS.slowSpell.includes('timer'), 'no Timer: waiting is the game');
 });
 
@@ -224,7 +224,7 @@ test('the Slow Spell word fills every letter but one, and takes a typed answer',
   assert.ok(slowSpellMatches(word, '  Noah '), 'nor extra spaces');
   assert.ok(!slowSpellMatches(word, 'Noa'));
   assert.ok(!slowSpellMatches(word, 'Adam'));
-  const dashed = slowSpellWord({ term: 'Who?', meaning: 'Abed-nego', answerType: 'name' });
+  const dashed = slowSpellWord({ question: 'Who?', answer: 'Abed-nego', answerType: 'name' });
   assert.equal(dashed.total, 8, 'the hyphen is no letter');
   assert.ok(!dashed.order.includes(4), 'and shows from the start');
 });
@@ -236,7 +236,7 @@ test('Slow Spell tiers: 0-1 letters = X, up to half = 2, more = 1', () => {
 
 // Long names for Syllable Split, and a short one whose pieces are decoys.
 const LONG = ['Solomon', 'Benjamin', 'Jonathan', 'Abraham', 'Noah']
-  .map(meaning => ({ term: 'Who?', meaning, answerType: 'name' }));
+  .map(answer => ({ question: 'Who?', answer, answerType: 'name' }));
 
 test('names split on their vowels, keeping digraphs and starting pairs', () => {
   const split = w => splitSyllables(w).join('-');
@@ -254,14 +254,14 @@ test('Syllable Split fits one-word names of 3+ pieces with enough decoys', () =>
   assert.deepEqual(minigamesFor(LONG[0]), ['slowSpell', 'syllableSplit', 'codeBreak', 'verdict', 'crosswire', 'starChart', 'hullPatch', 'asteroids']);
   assert.equal(syllableSplitPieces(LONG[4]), null, 'Noah: two pieces');
   assert.equal(syllableSplitPieces({ ...LONG[0], answerType: 'book' }), null, 'names only');
-  assert.equal(syllableSplitPieces({ ...LONG[0], meaning: 'King Solomon' }), null, 'one word');
-  assert.deepEqual(minigamesFor({ ...LONG[0], term: 'Spell Solomon.' }), [], 'the stem gives it away');
+  assert.equal(syllableSplitPieces({ ...LONG[0], answer: 'King Solomon' }), null, 'one word');
+  assert.deepEqual(minigamesFor({ ...LONG[0], question: 'Spell Solomon.' }), [], 'the stem gives it away');
   state.settings.activeData = [...LONG.slice(0, 2), LONG[4]];
   assert.ok(!minigamesFor(LONG[0]).includes('syllableSplit'), 'Benjamin gives 3 decoys; Noah, one piece, none');
 });
 
 test('a question\'s own syllables field fixes a bad split, if it spells the answer', () => {
-  const q = { term: 'Who?', meaning: 'Talebearer', answerType: 'name' };
+  const q = { question: 'Who?', answer: 'Talebearer', answerType: 'name' };
   assert.deepEqual(syllableSplitPieces(q), ['Ta', 'le', 'bea', 'rer']);
   assert.deepEqual(syllableSplitPieces({ ...q, syllables: 'Tale-bear-er' }), ['Tale', 'bear', 'er']);
   assert.deepEqual(syllableSplitPieces({ ...q, syllables: ['Tale', 'bear', 'er'] }), ['Tale', 'bear', 'er']);
@@ -288,7 +288,7 @@ test('Syllable Split tiers: clean = 2, one wrong piece = 1, two = a miss', () =>
 const BOOKS = {
   label: 'Books',
   pool: ['Acts', 'Ruth', 'Mark', 'Job', 'Amos', 'Song of Solomon', 'Deuteronomy']
-    .map(meaning => ({ term: 'Which book?', meaning, answerType: 'book' })),
+    .map(answer => ({ question: 'Which book?', answer, answerType: 'book' })),
 };
 
 test('Letter Pool rolls only on a category the player picked, with a label and enough answers', () => {
@@ -333,33 +333,33 @@ test('Letter Pool tiers: every hidden one = X, the count = 2, LETTER_POOL_WEAK =
 });
 
 test('Code Break fits one-word answers of 2-9 letters or digits, not number answers', () => {
-  const fits = q => minigamesFor({ term: 'Which one?', ...q }).includes('codeBreak');
-  assert.ok(fits({ meaning: 'MX', answerType: 'record' }));
-  assert.ok(fits({ meaning: '3389', answerType: 'port' }));
-  assert.ok(fits({ meaning: 'Wi-Fi', answerType: 'networkType' }), 'a hyphen is dropped');
-  assert.ok(fits({ meaning: 'Barnabas', answerType: 'name' }));
-  assert.ok(!fits({ meaning: 'A', answerType: 'record' }), 'too short');
-  assert.ok(!fits({ meaning: 'Mephibosheth', answerType: 'name' }), 'too long');
-  assert.ok(!fits({ meaning: 'Patch panel', answerType: 'device' }), 'two words');
-  assert.ok(!fits({ meaning: '40', answerType: 'number' }), 'the dials take numbers');
-  assert.ok(!minigamesFor({ term: 'Spell Noah.', meaning: 'Noah', answerType: 'name' }).includes('codeBreak'), 'not when the question holds it');
+  const fits = q => minigamesFor({ question: 'Which one?', ...q }).includes('codeBreak');
+  assert.ok(fits({ answer: 'MX', answerType: 'record' }));
+  assert.ok(fits({ answer: '3389', answerType: 'port' }));
+  assert.ok(fits({ answer: 'Wi-Fi', answerType: 'networkType' }), 'a hyphen is dropped');
+  assert.ok(fits({ answer: 'Barnabas', answerType: 'name' }));
+  assert.ok(!fits({ answer: 'A', answerType: 'record' }), 'too short');
+  assert.ok(!fits({ answer: 'Mephibosheth', answerType: 'name' }), 'too long');
+  assert.ok(!fits({ answer: 'Patch panel', answerType: 'device' }), 'two words');
+  assert.ok(!fits({ answer: '40', answerType: 'number' }), 'the dials take numbers');
+  assert.ok(!minigamesFor({ question: 'Spell Noah.', answer: 'Noah', answerType: 'name' }).includes('codeBreak'), 'not when the question holds it');
 });
 
 test('a Code Break code is the answer in capitals; a port gets the number pad', () => {
-  assert.deepEqual(codeBreakSetup({ meaning: 'Wi-Fi' }).code, ['W', 'I', 'F', 'I']);
-  assert.equal(codeBreakSetup({ meaning: 'Wi-Fi' }).digits, false);
-  assert.equal(codeBreakSetup({ meaning: '443', answerType: 'port' }).digits, true);
+  assert.deepEqual(codeBreakSetup({ answer: 'Wi-Fi' }).code, ['W', 'I', 'F', 'I']);
+  assert.equal(codeBreakSetup({ answer: 'Wi-Fi' }).digits, false);
+  assert.equal(codeBreakSetup({ answer: '443', answerType: 'port' }).digits, true);
   assert.deepEqual(codeChars(' a-a a '), ['A', 'A', 'A']);
 });
 
 test('Code Break marks right places first, and each character only as often as the code has it', () => {
-  const code = codeBreakSetup({ meaning: '443', answerType: 'port' });
+  const code = codeBreakSetup({ answer: '443', answerType: 'port' });
   assert.deepEqual(codeBreakMarks(code, '443'), ['hit', 'hit', 'hit']);
   assert.deepEqual(codeBreakMarks(code, '143'), ['miss', 'hit', 'hit']);
   assert.deepEqual(codeBreakMarks(code, '344'), ['near', 'hit', 'near']);
   assert.deepEqual(codeBreakMarks(code, '444'), ['hit', 'hit', 'miss'], 'only two 4s to find');
-  assert.deepEqual(codeBreakMarks(codeBreakSetup({ meaning: 'AXAY' }), 'aaaa'), ['hit', 'miss', 'hit', 'miss']);
-  assert.deepEqual(codeBreakMarks(codeBreakSetup({ meaning: 'Noah' }), 'hano'), ['near', 'near', 'near', 'near']);
+  assert.deepEqual(codeBreakMarks(codeBreakSetup({ answer: 'AXAY' }), 'aaaa'), ['hit', 'miss', 'hit', 'miss']);
+  assert.deepEqual(codeBreakMarks(codeBreakSetup({ answer: 'Noah' }), 'hano'), ['near', 'near', 'near', 'near']);
   assert.equal(codeBreakMarks(code, '44'), null, 'the wrong length is not a guess');
 });
 
@@ -373,14 +373,14 @@ test('Code Break tiers: guess 1 = X, 2 = 2, 3 = 1, then out of guesses', () => {
 
 // A small set for Verdict: five names, two books, one number.
 const VERDICT_SET = [
-  { term: 'Who built the ark?', meaning: 'Noah', answerType: 'name' },
-  { term: 'Who led Israel out of Egypt?', meaning: 'Moses', answerType: 'name' },
-  { term: 'Who killed Goliath?', meaning: 'David', answerType: 'name' },
-  { term: 'Who was swallowed by a fish?', meaning: 'Jonah', answerType: 'name' },
-  { term: 'Who was the first man?', meaning: 'Adam', answerType: 'name' },
-  { term: 'Which book comes first?', meaning: 'Genesis', answerType: 'book' },
-  { term: 'Which book comes last?', meaning: 'Revelation', answerType: 'book' },
-  { term: 'How many days did it rain?', meaning: '40', answerType: 'number' },
+  { question: 'Who built the ark?', answer: 'Noah', answerType: 'name' },
+  { question: 'Who led Israel out of Egypt?', answer: 'Moses', answerType: 'name' },
+  { question: 'Who killed Goliath?', answer: 'David', answerType: 'name' },
+  { question: 'Who was swallowed by a fish?', answer: 'Jonah', answerType: 'name' },
+  { question: 'Who was the first man?', answer: 'Adam', answerType: 'name' },
+  { question: 'Which book comes first?', answer: 'Genesis', answerType: 'book' },
+  { question: 'Which book comes last?', answer: 'Revelation', answerType: 'book' },
+  { question: 'How many days did it rain?', answer: '40', answerType: 'number' },
 ];
 
 test('Verdict fits a question with enough other answers of its type, and enough claims in the set', () => {
@@ -388,7 +388,7 @@ test('Verdict fits a question with enough other answers of its type, and enough 
   state.settings.activeData = VERDICT_SET;
   assert.ok(minigamesFor(VERDICT_SET[0]).includes('verdict'), 'four other names');
   assert.ok(!minigamesFor(VERDICT_SET[5]).includes('verdict'), 'one other book');
-  assert.ok(!minigamesFor({ ...VERDICT_SET[0], term: 'Did Noah build the ark?' }).includes('verdict'), 'the stem holds the answer');
+  assert.ok(!minigamesFor({ ...VERDICT_SET[0], question: 'Did Noah build the ark?' }).includes('verdict'), 'the stem holds the answer');
   assert.ok(!minigamesFor({ ...VERDICT_SET[0], image: 'ark.svg' }).includes('verdict'), 'claims show words only');
   state.settings.activeData = VERDICT_SET.slice(0, 4);
   assert.ok(!minigamesFor(VERDICT_SET[0]).includes('verdict'), 'too few names for a decoy each');
@@ -403,11 +403,11 @@ test('Verdict claims hold the question asked, and a false one shows another answ
   assert.ok(claims.some(c => c.q === q), 'the question showing is one of them');
   for (const c of claims) {
     assert.equal(c.truth, false);
-    assert.notEqual(c.shown, c.q.meaning);
-    assert.ok(VERDICT_SET.some(o => o.meaning === c.shown && o.answerType === c.q.answerType), 'same type');
+    assert.notEqual(c.shown, c.q.answer);
+    assert.ok(VERDICT_SET.some(o => o.answer === c.shown && o.answerType === c.q.answerType), 'same type');
   }
   const honest = withRandom(0.99, () => verdictSetup(q, 3));
-  assert.ok(honest.every(c => c.truth && c.shown === c.q.meaning));
+  assert.ok(honest.every(c => c.truth && c.shown === c.q.answer));
 });
 
 test('Verdict asks 5 claims against the boss only, 3 anywhere else', () => {
@@ -446,14 +446,14 @@ test('Crosswire fits a one-word answer of 4-8 letters that crosses another, past
   const fits = q => minigamesFor(q).includes('crosswire');
   assert.ok(fits(VERDICT_SET[1]), 'Moses crosses Jonah on its O');
   assert.ok(!fits(VERDICT_SET[7]), '40 is no word');
-  assert.ok(!fits({ term: 'Who?', meaning: 'Eve', answerType: 'name' }), 'too short');
-  assert.ok(!fits({ term: 'Who?', meaning: 'Methuselah', answerType: 'name' }), 'too long');
-  assert.ok(!fits({ term: 'Who?', meaning: 'John Mark', answerType: 'name' }), 'two words');
-  assert.ok(!fits({ term: 'Did Moses lead them?', meaning: 'Moses', answerType: 'name' }), 'the question holds it');
+  assert.ok(!fits({ question: 'Who?', answer: 'Eve', answerType: 'name' }), 'too short');
+  assert.ok(!fits({ question: 'Who?', answer: 'Methuselah', answerType: 'name' }), 'too long');
+  assert.ok(!fits({ question: 'Who?', answer: 'John Mark', answerType: 'name' }), 'two words');
+  assert.ok(!fits({ question: 'Did Moses lead them?', answer: 'Moses', answerType: 'name' }), 'the question holds it');
   assert.ok(!fits({ ...VERDICT_SET[1], image: 'images/moses.svg' }), 'a clue shows no picture');
-  state.settings.activeData = [VERDICT_SET[0], { term: 'Who?', meaning: 'Noah', answerType: 'name' }];
+  state.settings.activeData = [VERDICT_SET[0], { question: 'Who?', answer: 'Noah', answerType: 'name' }];
   assert.ok(!fits(VERDICT_SET[0]), 'the same answer twice is no crossing');
-  state.settings.activeData = [{ term: 'Who?', meaning: 'Abel', answerType: 'name' }, { term: 'Who?', meaning: 'Amos', answerType: 'name' }];
+  state.settings.activeData = [{ question: 'Who?', answer: 'Abel', answerType: 'name' }, { question: 'Who?', answer: 'Amos', answerType: 'name' }];
   assert.ok(!fits(state.settings.activeData[0]), 'they share only a first letter');
   assert.ok(!MINIGAME_MODIFIERS.crosswire.includes('flip'), 'no Flip');
 });
@@ -483,7 +483,7 @@ test('Crosswire tiers: both words with 0 / 1 / 2+ reveals = X / 2 / 1, one word 
 
 test('Fog Reveal fits picture questions only, and takes no Timer or Blind', () => {
   reset();
-  const PICTURE = { term: 'Which tool is shown?', meaning: 'Crimper', answerType: 'tool', image: 'images/crimper.svg' };
+  const PICTURE = { question: 'Which tool is shown?', answer: 'Crimper', answerType: 'tool', image: 'images/crimper.svg' };
   assert.ok(minigamesFor(PICTURE).includes('fogReveal'));
   assert.ok(!minigamesFor({ ...PICTURE, image: undefined }).includes('fogReveal'));
   assert.ok(!minigamesFor({ ...PICTURE, image: '  ' }).includes('fogReveal'));
@@ -501,10 +501,10 @@ test('Fog Reveal tiers: 12+ tiles covered = X, 6+ = 2, fewer = 1', () => {
 
 // Number questions a Sum Lock can add, and one it can't.
 const SUMS = [
-  { term: 'How many days did it rain?', meaning: '40', answerType: 'number' },
-  { term: 'How many years was the honeymoon?', meaning: '1', answerType: 'number' },
-  { term: 'How many were sealed?', meaning: '144000', answerType: 'number' },
-  { term: 'What TCP port does SSH use?', meaning: '22', answerType: 'port' },
+  { question: 'How many days did it rain?', answer: '40', answerType: 'number' },
+  { question: 'How many years was the honeymoon?', answer: '1', answerType: 'number' },
+  { question: 'How many were sealed?', answer: '144000', answerType: 'number' },
+  { question: 'What TCP port does SSH use?', answer: '22', answerType: 'port' },
   WORD,
 ];
 
@@ -523,20 +523,20 @@ test('Sum Lock adds whole answers of 1-50 only, no ports', () => {
 // ---- Fuel Mix (ship minigames plan step A) ----
 
 test('Fuel Mix: tanks are powers of ten up to the answer, at least three, and a 5; par is the fewest pours', () => {
-  assert.deepEqual(fuelMixSetup({ meaning: '13', answerType: 'number' }).tanks, [100, 10, 5, 1]);
-  assert.deepEqual(fuelMixSetup({ meaning: '950', answerType: 'number' }).tanks, [100, 10, 5, 1]);
-  assert.deepEqual(fuelMixSetup({ meaning: '1260', answerType: 'number' }).tanks, [1000, 100, 10, 5, 1]);
-  assert.equal(fuelMixSetup({ meaning: '950', answerType: 'number' }).par, 14);
-  assert.equal(fuelMixSetup({ meaning: '1,000', answerType: 'number' }).par, 1);
-  assert.equal(fuelMixSetup({ meaning: '7', answerType: 'number' }).par, 3, '5 + 1 + 1');
-  assert.equal(fuelMixSetup({ meaning: '19', answerType: 'number' }).par, 6, '10 + 5 + 1 x 4');
+  assert.deepEqual(fuelMixSetup({ answer: '13', answerType: 'number' }).tanks, [100, 10, 5, 1]);
+  assert.deepEqual(fuelMixSetup({ answer: '950', answerType: 'number' }).tanks, [100, 10, 5, 1]);
+  assert.deepEqual(fuelMixSetup({ answer: '1260', answerType: 'number' }).tanks, [1000, 100, 10, 5, 1]);
+  assert.equal(fuelMixSetup({ answer: '950', answerType: 'number' }).par, 14);
+  assert.equal(fuelMixSetup({ answer: '1,000', answerType: 'number' }).par, 1);
+  assert.equal(fuelMixSetup({ answer: '7', answerType: 'number' }).par, 3, '5 + 1 + 1');
+  assert.equal(fuelMixSetup({ answer: '19', answerType: 'number' }).par, 6, '10 + 5 + 1 x 4');
   assert.ok(minigamesFor(BIG).includes('fuelMix'), '144000 fits (tanks up to 100000)');
-  assert.ok(!minigamesFor({ meaning: '7½', answerType: 'number' }).includes('fuelMix'));
+  assert.ok(!minigamesFor({ answer: '7½', answerType: 'number' }).includes('fuelMix'));
   assert.ok(!minigamesFor(WORD).includes('fuelMix'));
 });
 
 test('Fuel Mix: a pour says only under, over (vent to empty) or match', () => {
-  const e = fuelMixSetup({ meaning: '13', answerType: 'number' });
+  const e = fuelMixSetup({ answer: '13', answerType: 'number' });
   assert.equal(fuelMixPour(e, 10), 'under');
   assert.equal(fuelMixPour(e, 10), 'over');
   assert.equal(e.total, 0, 'over vents the engine');
@@ -547,7 +547,7 @@ test('Fuel Mix: a pour says only under, over (vent to empty) or match', () => {
 });
 
 test('Fuel Mix: tier by pours over par, vents counted; past the slack it runs dry', () => {
-  const at = (pours, vents) => ({ ...fuelMixSetup({ meaning: '13', answerType: 'number' }), pours, vents });
+  const at = (pours, vents) => ({ ...fuelMixSetup({ answer: '13', answerType: 'number' }), pours, vents });
   assert.equal(fuelMixTier(at(4, 0)), 'X', 'par 4');
   assert.equal(fuelMixTier(at(6, 1)), '2', '2 over + 1 vent = 3');
   assert.equal(fuelMixTier(at(9, 0)), '1');
@@ -574,14 +574,14 @@ test('Scanner: tier by share scanned, one step down per wrong option, a miss pas
   assert.equal(scannerTier(0, 20, 2), null, 'a second wrong option is a miss');
   assert.deepEqual(scannerGrid(0), { cols: 5, rows: 4 });
   assert.ok(ship.includes('scanner'));
-  assert.ok(minigamesFor({ term: 'Which tool is shown?', meaning: 'Crimper', image: 'images/crimper.svg', answerType: 'term' }).includes('scanner'));
+  assert.ok(minigamesFor({ question: 'Which tool is shown?', answer: 'Crimper', image: 'images/crimper.svg', answerType: 'term' }).includes('scanner'));
 });
 
 // ---- Star Chart (ship minigames plan step C) ----
 
 test('Star Chart: the word\'s letters plus decoys not in it; more decoys with its level', async () => {
   const { starChartSetup } = await import('../js/minigames.js');
-  const q = { term: 'What king wanted to kill baby Jesus?', meaning: 'Herod', answerType: 'name' };
+  const q = { question: 'What king wanted to kill baby Jesus?', answer: 'Herod', answerType: 'name' };
   const calm = starChartSetup(q);
   assert.equal(calm.word, 'HEROD');
   assert.equal(calm.stars.length, 5 + 6);
@@ -591,13 +591,13 @@ test('Star Chart: the word\'s letters plus decoys not in it; more decoys with it
   assert.equal(starChartSetup(q).stars.length, 5 + 10);
   state.run.ship = null;
   calm.stars.forEach(s => assert.ok(s.x > 0 && s.x < 100 && s.y > 0 && s.y < 100));
-  assert.ok(!minigamesFor({ meaning: 'Lot\'s wife', answerType: 'related' }).includes('starChart'), 'one word of plain letters only');
-  assert.ok(!minigamesFor({ term: 'Spell Noah.', meaning: 'Noah', answerType: 'name' }).includes('starChart'), 'not when the stem holds it');
+  assert.ok(!minigamesFor({ answer: 'Lot\'s wife', answerType: 'related' }).includes('starChart'), 'one word of plain letters only');
+  assert.ok(!minigamesFor({ question: 'Spell Noah.', answer: 'Noah', answerType: 'name' }).includes('starChart'), 'not when the stem holds it');
 });
 
 test('Star Chart: picks join in order; a wrong star goes dark; tiers by wrong stars', async () => {
   const { starChartSetup, starChartPick, starChartTier } = await import('../js/minigames.js');
-  const chart = starChartSetup({ term: 'Who?', meaning: 'Lot', answerType: 'name' });
+  const chart = starChartSetup({ question: 'Who?', answer: 'Lot', answerType: 'name' });
   const at = c => chart.stars.findIndex(s => s.letter === c);
   const decoy = chart.stars.findIndex(s => !'LOT'.includes(s.letter));
   assert.equal(starChartPick(chart, at('O')), 'wrong', 'O is not first');
@@ -616,7 +616,7 @@ test('Star Chart: picks join in order; a wrong star goes dark; tiers by wrong st
 
 test('Hull Patch: the tray holds the word\'s letters once each plus decoys', async () => {
   const { hullPatchSetup } = await import('../js/minigames.js');
-  const q = { term: 'Which Caesar reigned?', meaning: 'Tiberius', answerType: 'name' };
+  const q = { question: 'Which Caesar reigned?', answer: 'Tiberius', answerType: 'name' };
   const hull = hullPatchSetup(q);
   assert.equal(hull.word, 'TIBERIUS');
   assert.equal(hull.tray.length, 7 + 7, 'T I B E R U S once each, and 7 decoys');
@@ -626,14 +626,14 @@ test('Hull Patch: the tray holds the word\'s letters once each plus decoys', asy
 
 test('Hull Patch: a right plate fills every spot, a wrong one strains; breach at the max; tiers by strain', async () => {
   const { hullPatchSetup, hullPatchPlate, hullPatchTier } = await import('../js/minigames.js');
-  const hull = hullPatchSetup({ term: 'Who?', meaning: 'Anna', answerType: 'name' });
+  const hull = hullPatchSetup({ question: 'Who?', answer: 'Anna', answerType: 'name' });
   assert.equal(hullPatchPlate(hull, 'A'), 'fits', 'both As at once');
   assert.equal(hullPatchPlate(hull, 'A'), 'used');
   assert.equal(hullPatchPlate(hull, 'Z'), 'off');
   assert.equal(hull.strain, 1);
   assert.equal(hullPatchPlate(hull, 'N'), 'sealed');
   state.run.ship = { panic: 0, perfect: { hullPatch: 2 } };
-  const weak = hullPatchSetup({ term: 'Who?', meaning: 'Anna', answerType: 'name' });
+  const weak = hullPatchSetup({ question: 'Who?', answer: 'Anna', answerType: 'name' });
   state.run.ship = null;
   assert.equal(hullPatchPlate(weak, 'B'), 'off');
   assert.equal(hullPatchPlate(weak, 'C'), 'off');
@@ -647,11 +647,11 @@ test('Hull Patch: a right plate fills every spot, a wrong one strains; breach at
 // ---- Inference (ship minigames plan step E) ----
 
 const LABELLED = [
-  { term: 'Pentateuch?', meaning: '5', answerType: 'number', label: 'Books of the Pentateuch' },
-  { term: 'Loaves?', meaning: '7', answerType: 'number', label: 'Loaves that fed the 4,000' },
-  { term: 'Moses?', meaning: '40', answerType: 'number', label: 'Days Moses spent on the mountain' },
-  { term: 'Elders?', meaning: '24', answerType: 'number', label: 'Elders around the throne' },
-  { term: 'Gates?', meaning: '12', answerType: 'number', label: 'Gates of the New Jerusalem' },
+  { question: 'Pentateuch?', answer: '5', answerType: 'number', label: 'Books of the Pentateuch' },
+  { question: 'Loaves?', answer: '7', answerType: 'number', label: 'Loaves that fed the 4,000' },
+  { question: 'Moses?', answer: '40', answerType: 'number', label: 'Days Moses spent on the mountain' },
+  { question: 'Elders?', answer: '24', answerType: 'number', label: 'Elders around the throne' },
+  { question: 'Gates?', answer: '12', answerType: 'number', label: 'Gates of the New Jerusalem' },
 ];
 
 test('Inference fits a labelled number question with two other labelled facts to help', async () => {
@@ -666,7 +666,7 @@ test('Inference fits a labelled number question with two other labelled facts to
 const BIBLE_FACTS = [[5, 'Pentateuch'], [70, 'Babylon'], [9, 'Beatitudes'], [50, 'Jubilee'], [17, 'Joseph'], [20, 'Judah'],
   [13, 'Jericho'], [30, 'Judas'], [8, 'Ark'], [7, 'Loaves'], [90, 'Sarah'], [100, 'Abraham'], [3, 'Nineveh'], [21, 'Epistles'],
   [4, 'Soldiers'], [12, 'Gates'], [39, 'OT books'], [24, 'Elders'], [19, 'Kings'], [40, 'Moses']]
-  .map(([n, label]) => ({ term: label + '?', meaning: String(n), answerType: 'number', label }));
+  .map(([n, label]) => ({ question: label + '?', answer: String(n), answerType: 'number', label }));
 
 test('Inference: at every level each line brings in one new symbol, the truth holds, a wrong answer breaks a line', async () => {
   const { inferenceSetup, inferenceCheck, inferenceValue } = await import('../js/minigames.js');
@@ -682,7 +682,7 @@ test('Inference: at every level each line brings in one new symbol, the truth ho
         const ids = Object.keys(puzzle.facts);
         assert.ok(ids.length <= lv.facts && ids.includes('T'));
         const truth = Object.fromEntries(ids.map(id => [id, puzzle.facts[id].value]));
-        assert.equal(truth.T, Number(q.meaning));
+        assert.equal(truth.T, Number(q.answer));
         assert.equal(new Set(ids.map(id => puzzle.facts[id].sign)).size, ids.length, 'a sign each');
         const order = [...ids.filter(id => id !== 'T'), 'T'];
         puzzle.lines.forEach((line, k) => {
@@ -745,7 +745,7 @@ test('a perfect solve on the ship raises that game\'s level; anything less, or o
   const { MINIGAME_LEVELS } = await import('../js/config.js');
   reset();
   state.run.ship = { panic: 0, perfect: {} };
-  state.battle.currentQuestion = { term: 'Who?', meaning: 'Lot' };
+  state.battle.currentQuestion = { question: 'Who?', answer: 'Lot' };
   const play = (id, tier, right = true) => { state.battle.minigame = id; endMinigame({ right, tier, given: 'x' }); };
   play('starChart', '2');
   play('starChart', 'X', false);
@@ -772,15 +772,15 @@ test('each game\'s setup follows its level', async () => {
   reset();
   state.run.ship = { panic: 0, perfect: {} };
   const at = (id, n) => { state.run.ship.perfect[id] = n; };
-  const word = { term: 'Who?', meaning: 'Tiberius', answerType: 'name' };
+  const word = { question: 'Who?', answer: 'Tiberius', answerType: 'name' };
   at('starChart', 0); const base = m.starChartSetup(word).stars.length;
   at('starChart', 3); assert.equal(m.starChartSetup(word).stars.length, base + 6, 'more decoy stars');
   at('hullPatch', 3); const hull = m.hullPatchSetup(word);
   assert.equal(hull.max, 3); assert.equal(hull.tray.length, 7 + 11);
   at('scanner', 1); assert.deepEqual(m.scannerGrid(0), { cols: 6, rows: 5 });
-  at('fuelMix', 3); const engine = m.fuelMixSetup({ meaning: '13', answerType: 'number' });
+  at('fuelMix', 3); const engine = m.fuelMixSetup({ answer: '13', answerType: 'number' });
   assert.ok(engine.hideTotal && engine.slack1 === 5 && engine.slack2 === 1);
-  at('codeBreak', 2); const code = m.codeBreakSetup({ meaning: 'Noah' });
+  at('codeBreak', 2); const code = m.codeBreakSetup({ answer: 'Noah' });
   assert.deepEqual(code.tiers, ['X', '2']);
   assert.equal(m.codeBreakTier(2, code.tiers), '2');
   assert.equal(m.codeBreakTier(3, code.tiers), null, 'out of guesses sooner');
@@ -803,11 +803,11 @@ test('Asteroids: the right rock and decoys of its kind, each a real answer; more
   const calm = asteroidsSetup(q);
   assert.equal(calm.rocks.length, 4);
   assert.equal(calm.rocks.filter(r => r.right).length, 1);
-  assert.equal(calm.rocks[0].text, q.meaning, 'the right rock comes first; the view mixes them');
+  assert.equal(calm.rocks[0].text, q.answer, 'the right rock comes first; the view mixes them');
   calm.rocks.slice(1).forEach((r) => {
-    const from = NAMES.find(n => n.meaning === r.text);
+    const from = NAMES.find(n => n.answer === r.text);
     assert.ok(from, 'a decoy is another answer in the set');
-    assert.equal(r.asks, from.term, 'and says what it is the answer to');
+    assert.equal(r.asks, from.question, 'and says what it is the answer to');
   });
   state.run.ship = { panic: 0, perfect: { asteroids: 2 } };
   assert.equal(asteroidsSetup(q).rocks.length, Math.min(6, NAMES.length));
@@ -854,10 +854,10 @@ test('Asteroids: a wrong rock spends a shot, the last is a miss; tiers by shots 
 // ---- Match, the final boss (ship minigames plan step G3) ----
 
 const BOSS_SET = [
-  ...['Ruth', 'Acts', 'Jude', 'Amos', 'Joel', 'Ezra', 'Luke'].map(m => ({ term: 'Which book?', meaning: m, answerType: 'book' })),
-  ...['Rome', 'Eden', 'Moab', 'Edom', 'Joppa', 'Nebo', 'Egypt'].map(m => ({ term: 'Where?', meaning: m, answerType: 'location' })),
-  ...['Paul', 'Herod', 'Lot', 'Aaron', 'Silas', 'Jacob', 'Saul', 'Eli'].map(m => ({ term: 'Who?', meaning: m, answerType: 'name' })),
-  { term: 'Long?', meaning: 'Nebuchadnezzar', answerType: 'name' },
+  ...['Ruth', 'Acts', 'Jude', 'Amos', 'Joel', 'Ezra', 'Luke'].map(m => ({ question: 'Which book?', answer: m, answerType: 'book' })),
+  ...['Rome', 'Eden', 'Moab', 'Edom', 'Joppa', 'Nebo', 'Egypt'].map(m => ({ question: 'Where?', answer: m, answerType: 'location' })),
+  ...['Paul', 'Herod', 'Lot', 'Aaron', 'Silas', 'Jacob', 'Saul', 'Eli'].map(m => ({ question: 'Who?', answer: m, answerType: 'name' })),
+  { question: 'Long?', answer: 'Nebuchadnezzar', answerType: 'name' },
 ];
 
 test('Match boss: three kinds of short answers, biggest first; a fresh board has no line and its crisis', async () => {
@@ -923,6 +923,6 @@ test('Match boss: the crisis spreads every 2nd turn (unless held back); abilitie
 test('Match boss: numbers never make a kind of tile (they give themselves away)', async () => {
   const { matchGroups } = await import('../js/minigames.js');
   reset();
-  state.settings.activeData = [...BOSS_SET, ...['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(m => ({ term: 'How many?', meaning: m, answerType: 'number' }))];
+  state.settings.activeData = [...BOSS_SET, ...['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].map(m => ({ question: 'How many?', answer: m, answerType: 'number' }))];
   assert.ok(!matchGroups().some(g => g.key === 'number'));
 });

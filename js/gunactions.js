@@ -97,7 +97,7 @@ export function openBoss() {
   clearModifier();
   showQuestionScreen(askAnswers, 'boss');
   const crew = state.run.ship.taught.slice(0, 3);
-  setQuestion({ term: t('boss.q'), meaning: '', match: { board: matchSetup(matchGroups()), crew } });
+  setQuestion({ question: t('boss.q'), answer: '', match: { board: matchSetup(matchGroups()), crew } });
   state.battle.minigame = 'match';
   state.run.lastMinigame = 'match';
   setMinigame('match');
@@ -207,8 +207,8 @@ function dressQuestion(modifiers, group = null) {
 export function sumLockQuestion() {
   const lock = sumLockSetup();
   return {
-    term: t('mg.sumLock.term'),
-    meaning: t('mg.sumLock.reveal', { a: lock.a, b: lock.b, total: lock.total }),
+    question: t('mg.sumLock.term'),
+    answer: t('mg.sumLock.reveal', { a: lock.a, b: lock.b, total: lock.total }),
     source: [lock.first.source, lock.second.source].filter(Boolean).join(' · '),
     sumLock: lock,
   };
@@ -219,8 +219,8 @@ export function sumLockQuestion() {
 // the hidden ones, for the log on a miss.
 export function letterPoolQuestion(group) {
   const pool = letterPoolSetup(group);
-  const meaning = pool.hidden.map(w => w[0] + w.slice(1).toLowerCase()).join(', ');
-  return { term: t('mg.letterPool.term', { label: group.label, n: LETTER_POOL_FORM }), meaning, letterPool: pool };
+  const answer = pool.hidden.map(w => w[0] + w.slice(1).toLowerCase()).join(', ');
+  return { question: t('mg.letterPool.term', { label: group.label, n: LETTER_POOL_FORM }), answer, letterPool: pool };
 }
 
 // Closes the ask screen, parks the question panel and frees the turn;
@@ -240,5 +240,5 @@ export function autoWinGun() {
   if (askHeld()) { closeHeldAsk(); return; }
   if (mapPanelShown() !== 'question' || !askAnswers) return;
   if (state.battle.minigame) playMinigameOut();
-  else askAnswers.onChoice(state.battle.currentQuestion.meaning);
+  else askAnswers.onChoice(state.battle.currentQuestion.answer);
 }

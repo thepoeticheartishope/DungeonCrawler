@@ -100,10 +100,24 @@ export function saveSet(name, data) {
   return writeCustomSets(sets);
 }
 
+// A saved row with the old field names (term, meaning, factNote, fact),
+// as sets saved before the rename have, in the new names: question,
+// answer, note. The old "fact" flag is dropped. Rows already in the new
+// names come back as they are.
+export function upgradeOldNames(row) {
+  if (!row || typeof row !== 'object') return row;
+  const { term, meaning, factNote, fact, ...rest } = row;
+  const out = { ...rest };
+  if (out.question === undefined && term !== undefined) out.question = term;
+  if (out.answer === undefined && meaning !== undefined) out.answer = meaning;
+  if (out.note === undefined && factNote !== undefined) out.note = factNote;
+  return out;
+}
+
 // Returns the item array, or null if no set has that name.
 export function loadSavedSet(name) {
   const sets = readCustomSets();
-  return sets[name] && Array.isArray(sets[name].data) ? sets[name].data : null;
+  return sets[name] && Array.isArray(sets[name].data) ? sets[name].data.map(upgradeOldNames) : null;
 }
 
 export function deleteSet(name) {

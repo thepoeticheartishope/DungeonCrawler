@@ -52,7 +52,7 @@ export function parkQuestionPanel() {
 // Whether `given` is the current question's answer, ignoring case and
 // extra spaces.
 export function matchesAnswer(given) {
-  return normalizeSpaces(given).toLowerCase() === normalizeSpaces(state.battle.currentQuestion.meaning).toLowerCase();
+  return normalizeSpaces(given).toLowerCase() === normalizeSpaces(state.battle.currentQuestion.answer).toLowerCase();
 }
 
 // Draws state.battle.currentChoices as lettered option buttons.
@@ -169,7 +169,7 @@ export function applyModifier(modifier) {
   if (state.battle.minigame && (modifier === 'flip' || (modifier === 'blind' && minigameAsks()))) {
     applyMinigameModifier(modifier);
   } else if (modifier === 'blind') {
-    blindTimer = setTimeout(hideQuestion, blindReadMs(state.battle.currentQuestion.term));
+    blindTimer = setTimeout(hideQuestion, blindReadMs(state.battle.currentQuestion.question));
   } else if (modifier === 'flip') {
     const { slots, mode } = rollFlip(buttons.length);
     buttons.forEach((b, i) => { if (slots.has(i)) b.querySelector('.opt-text').classList.add('flip-' + mode); });
@@ -209,7 +209,7 @@ function hideQuestion() {
 function showQuestionAgain() {
   enemyName.classList.remove('mod-blind');
   enemyName.style.minHeight = '';
-  enemyName.textContent = state.battle.currentQuestion ? state.battle.currentQuestion.term : '';
+  enemyName.textContent = state.battle.currentQuestion ? state.battle.currentQuestion.question : '';
 }
 
 // Timer modifier: TIMER_SECONDS to answer (a minigame may take longer).
@@ -261,7 +261,7 @@ export function setQuestion(q) {
   clearModifier();
   setMinigame(null);
   state.battle.currentQuestion = q;
-  typeText(enemyName, q.term);
+  typeText(enemyName, q.question);
   answerInput.value = '';
   const imageSrc = resolveImageSrc(q.image);
   if (imageSrc) {

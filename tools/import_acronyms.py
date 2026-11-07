@@ -119,7 +119,7 @@ def main():
         if s.get('subject') != subject:
             continue
         for q in json.load(open(os.path.join(ROOT, 'lists', s['file']), encoding='utf-8')):
-            m = q['meaning'].strip()
+            m = q['answer'].strip()
             e = next((e for e in entries if any(loose(x) == loose(m) for x in spellings(e))), None)
             if e and key(m) not in [key(x) for x in spellings(e)]:
                 add_aka(e, m)

@@ -21,14 +21,14 @@ for (const set of manifest) {
   let covered = 0;
   const conflicts = [];
   data.forEach((q, i) => {
-    const types = stemTypes(q.term);
+    const types = stemTypes(q.question);
     if (!types) return;
     covered++;
     if (q.answerType && !types.includes(q.answerType)) conflicts.push({ n: i + 1, q, types });
   });
   console.log(`== ${set.file}: ${covered} of ${data.length} questions have a stem cue, ${conflicts.length} tagged outside it`);
   for (const { n, q, types } of conflicts) {
-    console.log(`  #${n} [${q.answerType}] ${q.term.slice(0, 80)}`);
-    console.log(`      answer: ${q.meaning}; the stem allows: ${types.join(', ')}`);
+    console.log(`  #${n} [${q.answerType}] ${q.question.slice(0, 80)}`);
+    console.log(`      answer: ${q.answer}; the stem allows: ${types.join(', ')}`);
   }
 }

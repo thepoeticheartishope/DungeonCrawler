@@ -825,13 +825,13 @@ function buildVerdict() {
     const claim = claims[at];
     marks[at].classList.add('mg-tally-now');
     which.textContent = t('mg.verdict.claim', { i: at + 1, n: count });
-    stem.textContent = claim.q.term;
+    stem.textContent = claim.q.question;
     stem.classList.remove('mod-blind');
     shownLine.textContent = '→ ' + claim.shown.toUpperCase();
     if (flip && Math.random() < 0.5) lock.insertBefore(no, yes);
     else lock.insertBefore(yes, no);
     clearTimeout(claimTimer);
-    if (blind) claimTimer = setTimeout(hideClaim, blindReadMs(claim.q.term));
+    if (blind) claimTimer = setTimeout(hideClaim, blindReadMs(claim.q.question));
   };
   const hideClaim = () => {
     stem.textContent = t('battle.blindQuestion');
@@ -849,8 +849,8 @@ function buildVerdict() {
       wrong++;
       missed.push(claim.q);
       const line = claim.truth
-        ? t('mg.verdict.wasTrue', { answer: claim.q.meaning.toUpperCase() })
-        : t('mg.verdict.wasFalse', { answer: claim.q.meaning.toUpperCase(), shown: claim.shown.toUpperCase() });
+        ? t('mg.verdict.wasTrue', { answer: claim.q.answer.toUpperCase() })
+        : t('mg.verdict.wasFalse', { answer: claim.q.answer.toUpperCase(), shown: claim.shown.toUpperCase() });
       add(notes, 'div', 'term-line').textContent = said === null ? t('mg.verdict.timeUp', { line }) : line;
     }
     at++;
@@ -886,7 +886,7 @@ function buildVerdict() {
     finish: () => { while (!over) call(claims[at].truth); },
     blind: () => {
       blind = true;
-      claimTimer = setTimeout(hideClaim, blindReadMs(claims[at].q.term));
+      claimTimer = setTimeout(hideClaim, blindReadMs(claims[at].q.question));
     },
     flip: () => { flip = true; },
   };
@@ -914,7 +914,7 @@ function buildCrosswire() {
     const line = add(clues, 'div', 'mg-clue');
     add(line, 'span', 'mg-clue-dir').textContent = t('mg.crosswire.' + dir, { n: entry.word.length });
     const text = add(line, 'span', 'mg-clue-q');
-    text.textContent = entry.q.term;
+    text.textContent = entry.q.question;
     return text;
   });
   const lock = add(slot, 'fieldset', 'mg-cross-form');
@@ -1007,7 +1007,7 @@ function buildCrosswire() {
     over = true;
     clearTimeout(claimTimer);
     clueTexts.forEach((text, i) => {
-      text.textContent = [across, down][i].q.term;
+      text.textContent = [across, down][i].q.question;
       text.classList.remove('mod-blind');
     });
     const acrossRight = right(acrossCells);
@@ -1049,7 +1049,7 @@ function buildCrosswire() {
       cells.forEach((cell) => { cell.input.value = cell.want; });
       settle();
     },
-    blind: () => { claimTimer = setTimeout(hideClues, blindReadMs(across.q.term + ' ' + down.q.term)); },
+    blind: () => { claimTimer = setTimeout(hideClues, blindReadMs(across.q.question + ' ' + down.q.question)); },
   };
 }
 
@@ -1098,7 +1098,7 @@ function buildFogReveal() {
   const choose = (opt) => {
     if (shown.done) return;
     clearInterval(fogClock);
-    const right = normalizeSpaces(opt).toLowerCase() === normalizeSpaces(q.meaning).toLowerCase();
+    const right = normalizeSpaces(opt).toLowerCase() === normalizeSpaces(q.answer).toLowerCase();
     const tier = right ? fogRevealTier(covered()) : null;
     tiles.forEach(tile => tile.classList.add('mg-gone'));
     finish({ right, tier, given: opt });
@@ -1119,7 +1119,7 @@ function buildFogReveal() {
     lock,
     drawsImage: true,
     focus: () => buttons[0].focus(),
-    finish: () => choose(q.meaning),
+    finish: () => choose(q.answer),
     flip: () => {
       const { slots, mode } = rollFlip(buttons.length);
       buttons.forEach((btn, i) => { if (slots.has(i)) btn.querySelector('.opt-text').classList.add('flip-' + mode); });
@@ -1179,7 +1179,7 @@ function buildScanner() {
   });
   const choose = (opt, btn) => {
     if (shown.done || (btn && btn.disabled)) return;
-    const right = normalizeSpaces(opt).toLowerCase() === normalizeSpaces(q.meaning).toLowerCase();
+    const right = normalizeSpaces(opt).toLowerCase() === normalizeSpaces(q.answer).toLowerCase();
     if (!right) wrongs++;
     if (right || wrongs > SCANNER.wrongsAllowed) {
       patches.forEach(patch => patch.classList.add('mg-gone'));
@@ -1205,7 +1205,7 @@ function buildScanner() {
     drawsImage: true,
     focus: () => patches[Math.floor(total / 2)].focus(),
     // DEV -> Auto-win: answers right with nothing scanned (tier X).
-    finish: () => choose(q.meaning, null),
+    finish: () => choose(q.answer, null),
     flip: () => {},
   };
 }
@@ -1832,8 +1832,8 @@ function buildSumLock() {
   const lock = state.battle.currentQuestion.sumLock;
   add(slot, 'div', 'term-line mg-hint').textContent = t('mg.sumLock.hint');
   const list = add(slot, 'ol', 'mg-sum-list');
-  add(list, 'li').textContent = lock.first.term;
-  add(list, 'li').textContent = lock.second.term;
+  add(list, 'li').textContent = lock.first.question;
+  add(list, 'li').textContent = lock.second.question;
   const box = add(slot, 'fieldset', 'mg-code-form');
   const form = add(box, 'form', 'term-input-row mg-type');
   const input = add(form, 'input');
