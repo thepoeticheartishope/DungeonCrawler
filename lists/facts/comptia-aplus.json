@@ -8,6 +8,8 @@
     {"id": "sc", "name": "SC", "type": "connector"},
     {"id": "lc", "name": "LC", "type": "connector"},
     {"id": "sata_data", "name": "SATA data", "type": "connector"},
+    {"id": "sata_power", "name": "SATA power", "type": "connector"},
+    {"id": "atx_power", "name": "ATX 24-pin", "type": "connector"},
     {"id": "molex", "name": "Molex", "type": "connector"},
     {"id": "hdmi", "name": "HDMI", "type": "connector"},
     {"id": "vga", "name": "VGA", "type": "connector"},
@@ -21,8 +23,8 @@
     {"id": "coaxial", "name": "coaxial", "type": "cable"},
     {"id": "fiber", "name": "fiber optic", "type": "cable"},
     {"id": "serial_cable", "name": "serial", "type": "cable"},
-    
     {"id": "serial_interface", "name": "serial", "type": "interface"},
+    
     {"id": "ssh", "name": "SSH", "type": "protocol"},
     {"id": "telnet", "name": "Telnet", "type": "protocol"},
     {"id": "smtp", "name": "SMTP", "type": "protocol"},
@@ -31,6 +33,13 @@
     {"id": "ldap", "name": "LDAP", "type": "protocol"},
     {"id": "https", "name": "HTTPS", "type": "protocol"},
     {"id": "rdp", "name": "RDP", "type": "protocol"},
+    {"id": "ftp", "name": "FTP", "type": "protocol"},
+    {"id": "pop3", "name": "POP3", "type": "protocol"},
+    {"id": "imap", "name": "IMAP", "type": "protocol"},
+    {"id": "smb", "name": "SMB", "type": "protocol"},
+    {"id": "ipv4", "name": "IPv4", "type": "protocol"},
+    {"id": "ipv6", "name": "IPv6", "type": "protocol"},
+    {"id": "mac_address", "name": "MAC address", "type": "standard"},
     
     {"id": "docking_station", "name": "Docking station", "type": "accessory"},
     {"id": "drawing_pad", "name": "Drawing pad", "type": "accessory"},
@@ -310,11 +319,6 @@
     
     {"id": "dhcp", "name": "DHCP", "type": "protocol"},
     {"id": "exchange_activesync", "name": "Exchange ActiveSync", "type": "protocol"},
-    {"id": "ftp", "name": "FTP", "type": "protocol"},
-    {"id": "imap", "name": "IMAP", "type": "protocol"},
-    {"id": "ntp", "name": "NTP", "type": "protocol"},
-    {"id": "pop3", "name": "POP3", "type": "protocol"},
-    {"id": "smb", "name": "SMB", "type": "protocol"},
     {"id": "tcp", "name": "TCP", "type": "protocol"},
     {"id": "udp", "name": "UDP", "type": "protocol"},
     
@@ -585,21 +589,37 @@
   "facts": [
     {"subject": "rj45", "predicate": "pin_count", "object": 8, "source": "220-1201 3.2"},
     {"subject": "sata_data", "predicate": "pin_count", "object": 7, "source": "220-1201 3.2"},
+    {"subject": "sata_power", "predicate": "pin_count", "object": 15, "source": "220-1201 3.2"},
+    {"subject": "atx_power", "predicate": "pin_count", "object": 24, "source": "220-1201 3.6"},
+    {"subject": "db9", "predicate": "pin_count", "object": 9, "source": "220-1201 3.2"},
     {"subject": "molex", "predicate": "pin_count", "object": 4, "source": "220-1201 3.2"},
     {"subject": "hdmi", "predicate": "pin_count", "object": 19, "source": "220-1201 3.2"},
     {"subject": "vga", "predicate": "pin_count", "object": 15, "source": "220-1201 3.2"},
+
     {"subject": "ddr3_dimm", "predicate": "module_pins", "object": 240, "source": "220-1201 3.3"},
     {"subject": "ddr3_sodimm", "predicate": "module_pins", "object": 204, "source": "220-1201 3.3"},
     {"subject": "ddr4_dimm", "predicate": "module_pins", "object": 288, "source": "220-1201 3.3"},
     {"subject": "ddr4_sodimm", "predicate": "module_pins", "object": 260, "source": "220-1201 3.3"},
+
+    {"subject": "ftp", "predicate": "uses_port", "object": 21, "source": "220-1201 2.1"},
     {"subject": "ssh", "predicate": "uses_port", "object": 22, "source": "220-1201 2.1"},
     {"subject": "telnet", "predicate": "uses_port", "object": 23, "source": "220-1201 2.1"},
     {"subject": "smtp", "predicate": "uses_port", "object": 25, "source": "220-1201 2.1"},
     {"subject": "dns", "predicate": "uses_port", "object": 53, "source": "220-1201 2.1"},
     {"subject": "http", "predicate": "uses_port", "object": 80, "source": "220-1201 2.1"},
+    {"subject": "pop3", "predicate": "uses_port", "object": 110, "source": "220-1201 2.1"},
+    {"subject": "imap", "predicate": "uses_port", "object": 143, "source": "220-1201 2.1"},
     {"subject": "ldap", "predicate": "uses_port", "object": 389, "source": "220-1201 2.1"},
     {"subject": "https", "predicate": "uses_port", "object": 443, "source": "220-1201 2.1"},
+    {"subject": "smb", "predicate": "uses_port", "object": 445, "source": "220-1201 2.1"},
     {"subject": "rdp", "predicate": "uses_port", "object": 3389, "source": "220-1201 2.1"},
+
+    {"subject": "ipv4", "predicate": "bit_length", "object": 32, "source": "220-1201 2.6"},
+    {"subject": "ipv6", "predicate": "bit_length", "object": 128, "source": "220-1201 2.6"},
+    {"subject": "mac_address", "predicate": "bit_length", "object": 48, "source": "220-1201 2.5"},
+    {"subject": "twisted_pair", "predicate": "max_distance_meters", "object": 100, "source": "220-1201 2.5"},
+    {"subject": "raid_5", "predicate": "min_disks", "object": 3, "source": "220-1201 3.4"},
+
     {"subject": "rj45", "predicate": "used_on", "object": "twisted_pair", "source": "220-1201 3.2"},
     {"subject": "rj11", "predicate": "used_on", "object": "twisted_pair", "source": "220-1201 3.2"},
     {"subject": "f_type", "predicate": "used_on", "object": "coaxial", "source": "220-1201 3.2"},
@@ -641,6 +661,30 @@
       "difficulty": "easy",
       "ask_object": "Which kind of cable uses the {subject} connector?",
       "ask_subject": "Name a connector made for {object} cable.",
+      "exhaustive": ["ask_object"]
+    },
+    {
+      "predicate": "bit_length",
+      "label": "{subject} bit length",
+      "category": "Networking",
+      "difficulty": "medium",
+      "ask_object": "How many bits long is a standard {subject}?",
+      "exhaustive": ["ask_object"]
+    },
+    {
+      "predicate": "max_distance_meters",
+      "label": "{subject} max distance (m)",
+      "category": "Networking",
+      "difficulty": "medium",
+      "ask_object": "What is the maximum standard run distance in meters for {subject} Ethernet?",
+      "exhaustive": ["ask_object"]
+    },
+    {
+      "predicate": "min_disks",
+      "label": "{subject} minimum disks",
+      "category": "Hardware",
+      "difficulty": "medium",
+      "ask_object": "What is the minimum number of disks required to build a {subject} array?",
       "exhaustive": ["ask_object"]
     }
   ]
