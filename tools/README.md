@@ -6,11 +6,11 @@ Python 3, standard library only. Run them from the repo root.
 
 | Script | Needs internet | What it does |
 |---|---|---|
-| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), every answer is in the subject's dictionary when it has one, fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", no old field names (`term`, `meaning`, `factNote`, `fact`), a `note` is never empty, no `label` on a question, `acceptedAnswers` a list of answers; a set's facts file (`facts` in its manifest entry) is one `{ "entities", "facts", "templates" }` object: unique snake_case entity ids, entity `type` an answerType, every fact's subject an entity id and its object an entity id or a number without quotes, no fact twice, labels 1-34 characters and not repeated, and a `"220-1201 2.5"` source for CompTIA. Run it before every PR that touches a question set. |
+| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", no old field names (`term`, `meaning`, `factNote`, `fact`), a `note` is never empty, no `label` on a question, `acceptedAnswers` a list of answers; a set's facts file (`facts` in its manifest entry) is one `{ "entities", "facts", "templates" }` object: unique snake_case entity ids, entity `type` an answerType, the optional word fields right (`acronym`, `of` + `relation` for `related`, `description` / `list` / `draft` true), no spelling twice for one type, every answer of the set an entity's name or alias, every fact's subject an entity id and its object an entity id or a number without quotes, no fact twice, labels 1-34 characters and not repeated, and a `"220-1201 2.5"` source for CompTIA. Run it before every PR that touches a question set. |
 | `stem_check.mjs` | no | `node tools/stem_check.mjs` (Node): per set, how many questions a stem cue covers (`STEM_CUES` in `js/config.js`: "Who…?" → people, "How many…?" → numbers) and which tagged questions have a type their stem doesn't allow. The tag wins in play, so each listed one is a tagging mistake to fix or a real exception to leave. Reports only. |
-| `import_acronyms.py` | no | `python3 tools/import_acronyms.py comptia-aplus OBJECTIVES.pdf [MORE.pdf]` (needs `pdftotext`): adds a CompTIA objectives PDF's acronym list to the subject's dictionary, one `term` entry per definition with its `acronym`. Reports spellings it merged and definitions listed twice. Re-running only adds what's new. |
+| `import_acronyms.py` | no | `python3 tools/import_acronyms.py comptia-aplus OBJECTIVES.pdf [MORE.pdf]` (needs `pdftotext`): adds a CompTIA objectives PDF's acronym list to the set's entities (its facts file), one `term` entity per definition with its `acronym`. Reports spellings it merged and definitions listed twice. Re-running only adds what's new. |
 | `wording_check.py` | no | `python3 tools/wording_check.py lists/comptia-aplus.json ~/ForClaude/CompTIA_A+_Core1_Lessons_Split/*.pdf` (needs `pdftotext`): lists questions that share a run of 5 words (`--words N`) with CompTIA's course books, so they get reworded. Our questions are in our own words. Exits 1 if any share. |
-| `build_dictionary.py` | no | `python3 tools/build_dictionary.py bible`: adds every answer of the subject's sets that `lists/dictionaries/<subject>.json` doesn't cover yet. Keeps existing entries as they are, so edits are safe. See "Subject dictionaries" below. |
+| `build_entities.py` | no | `python3 tools/build_entities.py bible-quiz-bowl`: adds every answer of the set that no entity of its facts file covers yet (by name or alias). Keeps existing entities as they are, so edits are safe. See "Entities are the word list" below. |
 | `convert_batch.py` | yes (cached) | The steps for a photographed card batch in one place: checks the photos weren't converted before, refuses exact duplicates and lists likely near-duplicates, adds the batch, bumps `CACHE_NAME`, then runs the three scripts above for just the new questions. |
 | `kjv_check.py` | first run only | Checks citations and quotes against the KJV text: citations exist, "Which verse says…?" quotes match, quoted phrases are in the cited verses. Reports only. |
 | `moves3d_extract.mjs` | no | `node tools/moves3d_extract.mjs UAL1_Standard.glb UAL2_Standard.glb` (Node): writes `js/moves3d.js`, the 3D moves the stick men are drawn with (one stick plan step F), sampled 12 times a second from Quaternius's Universal Animation Library 1 and 2 (CC0, kept outside the repo). Not a question-set tool, but it lives here. |
@@ -55,8 +55,8 @@ cached so re-runs are quick.
    ```
    Spelling differences (Elias / Elijah, colours / colors) and the same thing
    under another name (Diana / Artemis) count as facts. Then run step 3 again.
-5. `python3 tools/build_dictionary.py bible`: adds the new answers to the dictionary; check what it marks.
-6. `python3 tools/validate.py` should print "All question sets and dictionaries pass."
+5. `python3 tools/build_entities.py bible-quiz-bowl`: adds the new answers as entities; check what it marks.
+6. `python3 tools/validate.py` should print "All question sets and facts files pass."
 
 ## Facts files
 
@@ -74,7 +74,8 @@ entry, no facts). Each fact is a Subject · Predicate · Object triple:
 
 - `entities`: `id` is lowercase words joined by `_`, written by hand; `name` is
   what the player sees; `type` is an answerType word (`name`, `location`,
-  `book` ...); `aliases` (optional) are other right answers.
+  `book` ...); `aliases` (optional) are other right answers. An entity is
+  also a word for wrong choices (see "Entities are the word list").
 - `facts`: one row per pair. `subject` is an entity id; `object` is an entity
   id or a number (no quotes). Any word can be a predicate.
 - `templates` (optional, one per predicate): `label` names the fact, with
@@ -103,40 +104,47 @@ number of 1 or more, shown by their label; a set with fewer than three it can
 use sits its Science Officer out. An old plain list of `{ "fact", "value" }`
 rows still loads in the game. Add a new facts file to `service-worker.js`.
 
-## Subject dictionaries
+## Entities are the word list
 
-`lists/dictionaries/<subject>.json` lists the terms of one subject (all sets
-with that `subject` in `lists/manifest.json`), one entry per line:
+There is one file per set for words and facts: every entity of
+`lists/facts/<id>.json` is also a word that wrong choices are drawn from,
+even when no fact uses it (the old `lists/dictionaries/` moved in, so each
+word is written once and its `type` can't disagree between two files).
+One entity per line:
 
 ```json
-{"term": "David", "type": "name", "aka": ["David's"]}
-{"term": "The woman Jesus met at the well", "type": "name", "description": true}
-{"term": "Abraham and Sarah", "type": "name", "list": true}
+{"id": "david", "name": "David", "type": "name", "aliases": ["David's"]}
+{"id": "the_woman_jesus_met_at_the_well", "name": "The woman Jesus met at the well", "type": "name", "description": true}
+{"id": "abraham_and_sarah", "name": "Abraham and Sarah", "type": "name", "list": true}
 ```
 
-- `type`: an answerType. A name and a book with the same text ("Jonah") are two entries.
-- `aka`: other spellings that mean this entry. A question's answer matches an
-  entry by its `term` or an `aka`.
+- `id`: the name in lowercase, `_` for anything else. When one spelling has
+  more than one type, every one of them gets `_` + its type (`name` reads
+  `_person`): `jonah_person` + `jonah_book`, `judah_person` + `judah_location`.
+- `type`: an answerType. Every answer of the set must be an entity's `name`
+  or one of its `aliases` (`validate.py`).
+- `aliases`: other spellings that mean this entity, also right answers.
 - `of` / `relation`: for type `related` (one person named through another):
   "Pharaoh's daughter" is of "Pharaoh", relation "daughter". Wrong answers
   that share a part ("Jairus' daughter", "Lot's daughters") come first.
 - `acronym`: for CompTIA terms, the acronym the definition belongs to
-  (`tools/import_acronyms.py`). `lists/dictionaries/comptia-aplus.json` is
-  the A+ 220-1201 + 220-1202 objectives' acronym lists; the 220-1201 list's
-  "XXS" (Cross-site Scripting) is fixed to XSS by hand.
+  (`tools/import_acronyms.py`). The CompTIA set's entities hold the A+
+  220-1201 + 220-1202 objectives' acronym lists; the 220-1201 list's "XXS"
+  (Cross-site Scripting) is fixed to XSS by hand.
 - `description`: the answer describes rather than names. `list`: it names
   several terms. `draft`: every question with this answer is a draft.
 
-`build_dictionary.py` only guesses `description` / `list` / the possessive
-`aka`s; review its new entries. Only terms from the course material belong
-here (names in the Bible, acronyms on the exam's list). The game doesn't use
-the dictionary yet: the plan is that wrong answers come from it.
+`build_entities.py` only guesses `description` / `list` / the possessive
+`aliases`; review its new entities. Only terms from the course material
+belong here (names in the Bible, acronyms on the exam's list). A
+generated question's own wrong choices come only from entities some fact
+uses; the rest are words for `buildChoices` (`js/quiz.js`), which an
+open-list question never reaches.
 
 ## What a "note" means
 
 Every question row uses the same field names in every set: `question`,
 `answer`, `answerType`, and optional `note`, `source` and the rest.
-(Dictionaries keep `term`: there it really is a word.)
 
 - **No note:** the answer is true in every translation. Most questions: people,
   places, events, numbers.

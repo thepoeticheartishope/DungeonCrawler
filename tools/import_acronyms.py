@@ -1,38 +1,39 @@
 """Adds the acronym list of one or more CompTIA exam objectives PDFs to a
-subject's term dictionary (lists/dictionaries/<subject>.json).
+set's entities (lists/facts/<id>.json, the "facts" file of its manifest
+entry). Entities are also the words wrong choices are drawn from.
 
     python3 tools/import_acronyms.py comptia-aplus OBJECTIVES.pdf [MORE.pdf ...]
 
 Needs `pdftotext` (poppler-utils). Each objectives PDF ends with an
 "Acronym List" (ACRONYM / DEFINITION columns); every definition becomes an
-entry of type "term" (the sets ask "RAM" and want "Random Access Memory"):
+entity of type "term" (the sets ask "RAM" and want "Random Access Memory"):
 
-  {"term": "Random-access Memory", "type": "term", "acronym": "RAM", "aka": ["Random Access Memory"]}
+  {"id": "random_access_memory", "name": "Random-access Memory", "type": "term", "acronym": "RAM", "aliases": ["Random Access Memory"]}
 
 - A bracketed expansion inside a definition is dropped from the shown
-  term and kept as an aka: "Virtual LAN [Local Area Network]" -> "Virtual
+  name and kept as an alias: "Virtual LAN [Local Area Network]" -> "Virtual
   LAN". Shown with it, the right answer would stand out by its length.
 - When two PDFs spell the same acronym's definition differently only by
   case or wording ("Identity and Access Management" / "Identity Access
-  Management"), the first PDF's spelling is the term and the other an aka.
-  An acronym with two unrelated meanings (SPICE) gets two entries. A
-  definition already in the dictionary under another acronym is skipped
-  and reported (the 220-1201 list has "XXS" for Cross-site Scripting, a
-  typo for XSS): fix the kept entry's "acronym" by hand if it's the wrong one.
-- An answer of the subject's sets that matches a definition ignoring case,
-  hyphens and spaces ("Random Access Memory" / "Random-access Memory")
-  becomes an aka of it, so the dictionary has one entry for it.
+  Management"), the first PDF's spelling is the name and the other an alias.
+  An acronym with two unrelated meanings (SPICE) gets two entities. A
+  definition already an entity under another acronym is skipped and
+  reported (the 220-1201 list has "XXS" for Cross-site Scripting, a typo
+  for XSS): fix the kept entity's "acronym" by hand if it's the wrong one.
+- An answer of the set that matches a definition ignoring case, hyphens
+  and spaces ("Random Access Memory" / "Random-access Memory") becomes an
+  alias of it, so the set has one entity for it.
 
-Re-running keeps existing entries as they are and only adds what's new.
-Then run tools/build_dictionary.py for any set answer the list doesn't
+Re-running keeps existing entities as they are and only adds what's new.
+Then run tools/build_entities.py for any set answer the list doesn't
 have, and tools/validate.py.
 """
-import json, os, re, subprocess, sys
+import os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
-from build_dictionary import dump, key  # noqa: E402
+from build_entities import dump, insert, key, load_set, new_id, spellings  # noqa: E402
 
 HEADER = re.compile(r'^CompTIA .*\(\d{3}-\d{3,4}\) Acronym List')
 ROW = re.compile(r'^(\S+)\s{2,}(\S.*)$')
@@ -77,64 +78,55 @@ def words(s):
 def main():
     if len(sys.argv) < 3:
         sys.exit(__doc__)
-    subject, pdfs = sys.argv[1], sys.argv[2:]
-    path = os.path.join(ROOT, 'lists', 'dictionaries', subject + '.json')
-    entries = json.load(open(path, encoding='utf-8')) if os.path.exists(path) else []
+    set_id, pdfs = sys.argv[1], sys.argv[2:]
+    questions, path, data = load_set(set_id)
+    entities = data['entities']
 
-    def spellings(e):
-        return [e['term']] + list(e.get('aka', []))
-
-    def add_aka(e, spelling):
+    def add_alias(e, spelling):
         if key(spelling) not in [key(s) for s in spellings(e)]:
-            e.setdefault('aka', []).append(spelling)
+            e.setdefault('aliases', []).append(spelling)
 
-    added, akas, repeats = [], [], []
+    added, aliases, repeats = [], [], []
     for pdf in pdfs:
         for acronym, definition in acronyms(pdf):
             shown = BRACKET.sub('', definition).strip()
-            same = [e for e in entries if e.get('acronym') == acronym]
+            same = [e for e in entities if e.get('acronym') == acronym]
             # Same acronym, mostly the same words: another spelling of one meaning.
-            match = next((e for e in same if loose(e['term']) == loose(shown)
-                          or len(words(e['term']) & words(shown)) >= max(len(words(shown)) - 1, 1)), None)
+            match = next((e for e in same if loose(e['name']) == loose(shown)
+                          or len(words(e['name']) & words(shown)) >= max(len(words(shown)) - 1, 1)), None)
             if match:
                 for spelling in (shown, definition):
                     if key(spelling) not in [key(s) for s in spellings(match)]:
-                        add_aka(match, spelling)
-                        akas.append(f'{acronym}: {spelling} -> {match["term"]}')
+                        add_alias(match, spelling)
+                        aliases.append(f'{acronym}: {spelling} -> {match["name"]}')
                 continue
-            other = next((e for e in entries if key(e['term']) == key(shown)), None)
+            other = next((e for e in entities if e.get('type') == 'term' and key(e['name']) == key(shown)), None)
             if other:
                 if other.get('acronym') != acronym:
                     repeats.append(f'{acronym}: same definition as {other.get("acronym")} ({shown}); kept {other.get("acronym")}')
                 continue
-            entry = {'term': shown, 'type': 'term', 'acronym': acronym}
+            entity = {'id': new_id(shown, 'term', entities), 'name': shown, 'type': 'term', 'acronym': acronym}
             if definition != shown:
-                entry['aka'] = [definition]
-            entries.append(entry)
-            added.append(entry)
+                entity['aliases'] = [definition]
+            insert(entities, entity)
+            added.append(entity)
 
-    # Set answers spelled a little differently from the list become akas.
-    manifest = json.load(open(os.path.join(ROOT, 'lists', 'manifest.json'), encoding='utf-8'))
-    for s in manifest:
-        if s.get('subject') != subject:
-            continue
-        for q in json.load(open(os.path.join(ROOT, 'lists', s['file']), encoding='utf-8')):
-            m = q['answer'].strip()
-            e = next((e for e in entries if any(loose(x) == loose(m) for x in spellings(e))), None)
-            if e and key(m) not in [key(x) for x in spellings(e)]:
-                add_aka(e, m)
-                akas.append(f'set answer: {m} -> {e["term"]}')
+    # Set answers spelled a little differently from the list become aliases.
+    for q in questions:
+        m = q['answer'].strip()
+        e = next((e for e in entities if e.get('acronym') and any(loose(x) == loose(m) for x in spellings(e))), None)
+        if e and key(m) not in [key(x) for x in spellings(e)]:
+            add_alias(e, m)
+            aliases.append(f'set answer: {m} -> {e["name"]}')
 
-    entries.sort(key=lambda e: (e['type'], key(e['term'])))
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    open(path, 'w', encoding='utf-8').write(dump(entries))
-    print(f'{os.path.relpath(path, ROOT)}: {len(entries)} entries, added {len(added)}')
-    for line in akas:
-        print('  aka: ' + line)
+    open(path, 'w', encoding='utf-8').write(dump(data))
+    print(f'{os.path.relpath(path, ROOT)}: {len(entities)} entities, added {len(added)}')
+    for line in aliases:
+        print('  alias: ' + line)
     for line in repeats:
         print('  check: ' + line)
-    for acronym in sorted({e['acronym'] for e in entries if e.get('acronym')}):
-        meanings = [e['term'] for e in entries if e.get('acronym') == acronym]
+    for acronym in sorted({e['acronym'] for e in entities if e.get('acronym')}):
+        meanings = [e['name'] for e in entities if e.get('acronym') == acronym]
         if len(meanings) > 1:
             print(f'  {acronym} has {len(meanings)} meanings: {" / ".join(meanings)}')
 
