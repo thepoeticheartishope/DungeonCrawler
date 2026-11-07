@@ -33,6 +33,12 @@ above.
 
 ## Credits
 
+Music: Jeremy Blake: "Recovery Mission" (*Helios's Dreams*), "Nightscape" and "Exoplanet" (*Circular Reality*), "Novum (Good Final Boss, long)" (*Infinity Zero*). Also credited on the game's end screens, as his licence asks.
+
+3D moves: Quaternius's Universal Animation Library 1 and 2 (CC0), sampled into `js/moves3d.js`.
+
+Zodiac symbols in Inference: from the 1-bit Pixel Icons pack (`js/zodiac.js`).
+
 Terminal font: [VT323](https://github.com/phoikoi/VT323) by Peter Hull, under the SIL Open Font License 1.1 (see `fonts/OFL.txt`).
 
 Space outside the ship's windows: drawn by a port of [PixelSpace](https://deep-fold.itch.io/) by Deep-Fold (`js/space.js`), under the MIT licence, copyright (c) 2021 Deep-Fold.

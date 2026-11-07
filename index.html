@@ -1455,6 +1455,10 @@
   .feedback .move-msg { color: var(--muted); }
 
   /* ---- Win / lose screens ---- */
+  /* Credits under the end screens' button: still, small, muted (never scrolls). */
+  .credits { margin-top: 28px; max-width: 640px; text-align: center; }
+  .credits .credits-title { color: var(--muted); letter-spacing: 2px; font-size: calc(16px * var(--text-scale, 1)); margin-bottom: 6px; }
+  .win .credits p, .lose .credits p { font-size: calc(15px * var(--text-scale, 1)); margin-bottom: 4px; }
   .win p, .lose p { color: var(--muted); font-size: calc(20px * var(--text-scale, 1)); margin-bottom: 22px; }
   .win .big, .lose .big {
     font-size: calc(40px * var(--text-scale, 1)); line-height: 1; margin-bottom: 12px;
@@ -1810,6 +1814,14 @@
     <div class="big" id="winTitle" data-t="end.win.title"></div>
     <p id="winStats"></p>
     <button id="restartBtn" data-t="end.win.again"></button>
+    <div class="credits" aria-label="Credits">
+      <div class="credits-title" data-t="credits.title"></div>
+      <p data-t="credits.music"></p>
+      <p data-t="credits.font"></p>
+      <p data-t="credits.space"></p>
+      <p data-t="credits.moves"></p>
+      <p data-t="credits.icons"></p>
+    </div>
   </section>
 
   <!-- The ship's opening (ship plan step C, js/shipview.js): the run's
@@ -1825,6 +1837,14 @@
     <div class="big" id="loseTitle" data-t="end.lose.title"></div>
     <p id="loseStats"></p>
     <button id="retryBtn" data-t="end.lose.retry"></button>
+    <div class="credits" aria-label="Credits">
+      <div class="credits-title" data-t="credits.title"></div>
+      <p data-t="credits.music"></p>
+      <p data-t="credits.font"></p>
+      <p data-t="credits.space"></p>
+      <p data-t="credits.moves"></p>
+      <p data-t="credits.icons"></p>
+    </div>
   </section>
 </main>
 
