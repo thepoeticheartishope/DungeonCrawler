@@ -41,14 +41,23 @@ export async function fetchBundledSet(file) {
   }
 }
 
-// ---- Facts (lists/facts/<id>.json; facts list plan step B) ----
+// ---- Facts (lists/facts/<id>.json; facts list plan steps B and C1) ----
 //
-// A set's facts are their own list, apart from its questions: rows
-// { fact, value, source? }, the value a number or text. The manifest
-// entry names the file ("facts": "facts/<id>.json"); no entry, no facts.
-// Inference uses the whole-number values (minigames.js). A missing or
-// broken file gives [] (the set still plays, with no facts) and a warning
-// in the console with ?dev on the address. Bad rows are skipped.
+// A set's facts are their own file, apart from its questions. The manifest
+// entry names it ("facts": "facts/<id>.json"); no entry, no facts. The file
+// is one object of triples (step C1):
+//   { entities: [{ id, name, type, aliases? }],
+//     facts: [{ subject, predicate, object, source? }],
+//     templates: [{ predicate, label?, ... }] }
+// `subject` is an entity id; `object` is an entity id or a number. The
+// game reads each fact as a row { fact, value, source? }: `fact` is the
+// template's label with {subject} / {object} filled in by entity names
+// (no template: "<subject name> <predicate with spaces>"), `value` is the
+// number or the object entity's name. An old file (a plain array of
+// { fact, value } rows, step B) still loads as it is, so saved and teacher
+// data never breaks. Inference uses the whole-number values (minigames.js).
+// A missing or broken file gives [] (the set still plays, with no facts)
+// and a warning in the console with ?dev on the address. Bad rows are skipped.
 
 function factsWarn(message) {
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).has('dev')) console.warn('facts: ' + message);
@@ -71,6 +80,47 @@ export function cleanFacts(rows) {
   }));
 }
 
+// A triple's label: its template's `label` with {subject} and {object}
+// filled in by names (a number object prints as the number), or the plain
+// fallback "<subject name> <predicate with _ as spaces>". Ids never show.
+function tripleLabel(f, subject, objectText, template) {
+  if (template && typeof template.label === 'string' && template.label.trim()) {
+    return template.label.trim().replaceAll('{subject}', subject.name).replaceAll('{object}', objectText);
+  }
+  return subject.name + ' ' + f.predicate.replaceAll('_', ' ');
+}
+
+// The rows { fact, value, source? } of a triples facts file `data`
+// ({ entities, facts, templates }), and how many facts were skipped (an
+// unknown subject or object id, or a missing predicate). Entities with no
+// id or name are left out, so facts naming them are skipped too.
+export function factsFromTriples(data) {
+  const entities = new Map();
+  (Array.isArray(data.entities) ? data.entities : []).forEach((e) => {
+    if (e && typeof e.id === 'string' && e.id && typeof e.name === 'string' && e.name.trim()) entities.set(e.id, { ...e, name: e.name.trim() });
+  });
+  const templates = new Map();
+  (Array.isArray(data.templates) ? data.templates : []).forEach((tp) => {
+    if (tp && typeof tp.predicate === 'string' && !templates.has(tp.predicate)) templates.set(tp.predicate, tp);
+  });
+  const rows = Array.isArray(data.facts) ? data.facts : [];
+  const facts = [];
+  rows.forEach((f) => {
+    if (!f || typeof f !== 'object' || typeof f.predicate !== 'string' || !f.predicate.trim()) return;
+    const subject = entities.get(f.subject);
+    if (!subject) return;
+    const object = typeof f.object === 'number' ? (Number.isFinite(f.object) ? f.object : null) : entities.get(f.object);
+    if (object === null || object === undefined) return;
+    const value = typeof object === 'number' ? object : object.name;
+    facts.push({
+      fact: tripleLabel(f, subject, String(value), templates.get(f.predicate)),
+      value,
+      ...(typeof f.source === 'string' && f.source.trim() ? { source: f.source.trim() } : {}),
+    });
+  });
+  return { facts, skipped: rows.length - facts.length };
+}
+
 // Returns the facts list in `file` (relative to lists/), or [] when there
 // is none or it can't be had.
 export async function fetchFacts(file) {
@@ -79,7 +129,12 @@ export async function fetchFacts(file) {
     const res = await fetch('lists/' + file);
     if (!res.ok) { factsWarn('lists/' + file + ' not found (' + res.status + '); the set plays with no facts'); return []; }
     const data = await res.json();
-    if (!Array.isArray(data)) { factsWarn('lists/' + file + ' is not a list; the set plays with no facts'); return []; }
+    if (data && !Array.isArray(data) && typeof data === 'object') {
+      const { facts, skipped } = factsFromTriples(data);
+      if (skipped) factsWarn('lists/' + file + ': ' + skipped + ' bad facts skipped');
+      return cleanFacts(facts);
+    }
+    if (!Array.isArray(data)) { factsWarn('lists/' + file + ' is not a facts file; the set plays with no facts'); return []; }
     const facts = cleanFacts(data);
     if (facts.length < data.length) factsWarn('lists/' + file + ': ' + (data.length - facts.length) + ' bad rows skipped');
     return facts;

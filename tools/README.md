@@ -6,7 +6,7 @@ Python 3, standard library only. Run them from the repo root.
 
 | Script | Needs internet | What it does |
 |---|---|---|
-| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), every answer is in the subject's dictionary when it has one, fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", no old field names (`term`, `meaning`, `factNote`, `fact`), a `note` is never empty, no `label` on a question; a set's facts file (`facts` in its manifest entry) is a list of `{ "fact", "value", "source"? }` with a 1-34 character name, a number value without quotes (or text), no repeated fact names, and a `"220-1201 2.5"` source for CompTIA. Run it before every PR that touches a question set. |
+| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), every answer is in the subject's dictionary when it has one, fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", no old field names (`term`, `meaning`, `factNote`, `fact`), a `note` is never empty, no `label` on a question; a set's facts file (`facts` in its manifest entry) is one `{ "entities", "facts", "templates" }` object: unique snake_case entity ids, entity `type` an answerType, every fact's subject an entity id and its object an entity id or a number without quotes, no fact twice, labels 1-34 characters and not repeated, and a `"220-1201 2.5"` source for CompTIA. Run it before every PR that touches a question set. |
 | `stem_check.mjs` | no | `node tools/stem_check.mjs` (Node): per set, how many questions a stem cue covers (`STEM_CUES` in `js/config.js`: "Who…?" → people, "How many…?" → numbers) and which tagged questions have a type their stem doesn't allow. The tag wins in play, so each listed one is a tagging mistake to fix or a real exception to leave. Reports only. |
 | `import_acronyms.py` | no | `python3 tools/import_acronyms.py comptia-aplus OBJECTIVES.pdf [MORE.pdf]` (needs `pdftotext`): adds a CompTIA objectives PDF's acronym list to the subject's dictionary, one `term` entry per definition with its `acronym`. Reports spellings it merged and definitions listed twice. Re-running only adds what's new. |
 | `wording_check.py` | no | `python3 tools/wording_check.py lists/comptia-aplus.json ~/ForClaude/CompTIA_A+_Core1_Lessons_Split/*.pdf` (needs `pdftotext`): lists questions that share a run of 5 words (`--words N`) with CompTIA's course books, so they get reworded. Our questions are in our own words. Exits 1 if any share. |
@@ -62,13 +62,29 @@ cached so re-runs are quick.
 
 A set's facts sit apart from its questions, in `lists/facts/<id>.json`, named
 by `"facts": "facts/<id>.json"` in the set's `lists/manifest.json` entry (no
-entry, no facts):
+entry, no facts). Each fact is a Subject · Predicate · Object triple:
 
-    [{ "fact": "Days Moses spent on the mountain", "value": 40, "source": "Ex 24:18" }]
+```json
+{
+  "entities":  [{ "id": "moses", "name": "Moses", "type": "name" }],
+  "facts":     [{ "subject": "moses", "predicate": "days_on_mountain", "object": 40, "source": "Ex 24:18" }],
+  "templates": [{ "predicate": "days_on_mountain", "label": "Days {subject} spent on the mountain" }]
+}
+```
 
-`value` is a number (no quotes) or text. Inference (the Science Officer's job)
-uses the whole-number values of 1 or more; a set with fewer than three it can
-use sits its Science Officer out. Add a new facts file to `service-worker.js`.
+- `entities`: `id` is lowercase words joined by `_`, written by hand; `name` is
+  what the player sees; `type` is an answerType word (`name`, `location`,
+  `book` ...); `aliases` (optional) are other right answers.
+- `facts`: one row per pair. `subject` is an entity id; `object` is an entity
+  id or a number (no quotes). Any word can be a predicate.
+- `templates` (optional, one per predicate): `label` names the fact, with
+  `{subject}` / `{object}` filled in by names. No template: the label is
+  "<subject name> <predicate with spaces>".
+
+Inference (the Science Officer's job) uses the facts whose object is a whole
+number of 1 or more, shown by their label; a set with fewer than three it can
+use sits its Science Officer out. An old plain list of `{ "fact", "value" }`
+rows still loads in the game. Add a new facts file to `service-worker.js`.
 
 ## Subject dictionaries
 

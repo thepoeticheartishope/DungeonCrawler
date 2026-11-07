@@ -89,10 +89,21 @@ for set_info in manifest:
                 err(f'category {e.get("category")!r} should be {domains[source.group(2)]!r} (domain {source.group(2)})')
 
 # A set's facts (lists/facts/<id>.json, named by "facts" in its manifest
-# entry; facts list plan step B) are optional: a list of
-# { "fact": short name, "value": number or text, "source"?: text }.
-# Inference uses the whole-number values of 1 or more.
-FACT_FIELDS = {'fact', 'value', 'source'}
+# entry; facts list plan steps B and C1) are optional. The file is one object
+# of Subject-Predicate-Object triples:
+#   { "entities":  [{ "id", "name", "type", "aliases"? }],
+#     "facts":     [{ "subject", "predicate", "object", "source"? }],
+#     "templates": [{ "predicate", "label"?, "ask_object"?, "ask_subject"?,
+#                     "category"?, "difficulty"?, "min"?, "max"? }] }
+# Ids are lowercase words joined by "_" and unique. `type` is an answerType
+# word. `subject` is an entity id; `object` is an entity id or a number (no
+# quotes). No fact twice. A fact's label (its template's, or the fallback
+# "<subject name> <predicate>") is 1-34 characters and no two are the same,
+# as Inference shows it. Inference uses the whole-number objects of 1 or more.
+ENTITY_ID = re.compile(r'^[a-z0-9]+(_[a-z0-9]+)*$')
+ENTITY_FIELDS = {'id', 'name', 'type', 'aliases'}
+TRIPLE_FIELDS = {'subject', 'predicate', 'object', 'source'}
+TEMPLATE_FIELDS = {'predicate', 'label', 'ask_object', 'ask_subject', 'category', 'difficulty', 'min', 'max'}
 for set_info in manifest:
     if 'facts' not in set_info:
         continue
@@ -100,35 +111,102 @@ for set_info in manifest:
     if not os.path.isfile(os.path.join(ROOT, path)):
         errors.append(f'lists/manifest.json {set_info["id"]}: facts file not found: {path}')
         continue
-    facts = json.load(open(os.path.join(ROOT, path), encoding='utf-8'))
-    if not isinstance(facts, list):
-        errors.append(f'{path}: must be a list of facts')
+    data = json.load(open(os.path.join(ROOT, path), encoding='utf-8'))
+    if not isinstance(data, dict):
+        errors.append(f'{path}: must be one object {{ "entities", "facts", "templates" }} (the old plain list is gone)')
         continue
+    for extra in sorted(set(data) - {'entities', 'facts', 'templates'}):
+        errors.append(f'{path}: unknown part {extra!r} (entities / facts / templates)')
     is_comptia = str(set_info.get('subject', '')).startswith('comptia')
-    names = {}
-    for i, f in enumerate(facts):
-        tag = f'{path} #{i + 1}'
-        if not isinstance(f, dict):
-            errors.append(f'{tag}: a fact must be {{"fact": ..., "value": ...}}')
+
+    entities = {}
+    for i, e in enumerate(data.get('entities', [])):
+        tag = f'{path} entity #{i + 1}'
+        if not isinstance(e, dict):
+            errors.append(f'{tag}: an entity must be {{"id": ..., "name": ..., "type": ...}}')
             continue
-        name = f.get('fact')
-        if not isinstance(name, str) or not name.strip() or len(name) > 34:
-            errors.append(f'{tag}: "fact" must be 1-34 characters: {name!r}')
-        elif name.strip().lower() in names:
-            errors.append(f'{tag}: {name!r} is already fact #{names[name.strip().lower()]}')
+        eid = e.get('id')
+        if not isinstance(eid, str) or not ENTITY_ID.match(eid):
+            errors.append(f'{tag}: id must be lowercase words joined by "_": {eid!r}')
+        elif eid in entities:
+            errors.append(f'{tag}: id {eid!r} is used twice')
         else:
-            names[name.strip().lower()] = i + 1
-        value = f.get('value')
-        if isinstance(value, bool) or not (isinstance(value, (int, float)) or (isinstance(value, str) and value.strip())):
-            errors.append(f'{tag}: "value" must be a number (no quotes) or text: {value!r}')
-        elif isinstance(value, str) and re.fullmatch(r'\s*-?\d+(\.\d+)?\s*', value):
-            errors.append(f'{tag}: write the number {value!r} without quotes')
+            entities[eid] = e
+        if not isinstance(e.get('name'), str) or not e['name'].strip():
+            errors.append(f'{tag}: "name" must be text')
+        if e.get('type') not in TYPES:
+            errors.append(f'{tag}: unknown type {e.get("type")!r} (use an answerType word)')
+        if 'aliases' in e and not (isinstance(e['aliases'], list) and all(isinstance(a, str) and a.strip() for a in e['aliases'])):
+            errors.append(f'{tag}: "aliases" must be a list of text')
+        for extra in sorted(set(e) - ENTITY_FIELDS):
+            errors.append(f'{tag}: unknown field {extra!r} (id / name / type / aliases)')
+
+    templates = {}
+    for i, tp in enumerate(data.get('templates', [])):
+        tag = f'{path} template #{i + 1}'
+        if not isinstance(tp, dict) or not isinstance(tp.get('predicate'), str) or not tp['predicate'].strip():
+            errors.append(f'{tag}: a template must have a "predicate"')
+            continue
+        if tp['predicate'] in templates:
+            errors.append(f'{tag}: predicate {tp["predicate"]!r} has two templates')
+        templates[tp['predicate']] = tp
+        for key in ('label', 'ask_object', 'ask_subject', 'category'):
+            if key in tp and (not isinstance(tp[key], str) or not tp[key].strip()):
+                errors.append(f'{tag}: "{key}" must be text when present')
+        if 'difficulty' in tp and tp['difficulty'] not in DIFFICULTIES:
+            errors.append(f'{tag}: unknown difficulty {tp["difficulty"]!r}')
+        for key in ('min', 'max'):
+            if key in tp and (isinstance(tp[key], bool) or not isinstance(tp[key], int)):
+                errors.append(f'{tag}: "{key}" must be a whole number')
+        for extra in sorted(set(tp) - TEMPLATE_FIELDS):
+            errors.append(f'{tag}: unknown field {extra!r}')
+
+    triples, labels = {}, {}
+    for i, f in enumerate(data.get('facts', [])):
+        tag = f'{path} fact #{i + 1}'
+        if not isinstance(f, dict):
+            errors.append(f'{tag}: a fact must be {{"subject": ..., "predicate": ..., "object": ...}}')
+            continue
+        subject, predicate, obj = f.get('subject'), f.get('predicate'), f.get('object')
+        ok = True
+        if subject not in entities:
+            errors.append(f'{tag}: subject {subject!r} is not an entity id')
+            ok = False
+        if not isinstance(predicate, str) or not ENTITY_ID.match(predicate):
+            errors.append(f'{tag}: predicate must be lowercase words joined by "_": {predicate!r}')
+            ok = False
+        if isinstance(obj, bool) or not isinstance(obj, (int, float, str)):
+            errors.append(f'{tag}: "object" must be an entity id or a number: {obj!r}')
+            ok = False
+        elif isinstance(obj, str) and obj not in entities:
+            hint = ' (write the number without quotes)' if re.fullmatch(r'\s*-?\d+(\.\d+)?\s*', obj) else ''
+            errors.append(f'{tag}: object {obj!r} is not an entity id{hint}')
+            ok = False
         if 'source' in f and (not isinstance(f['source'], str) or not f['source'].strip()):
             errors.append(f'{tag}: "source" must be text when present')
         if is_comptia and not COMPTIA_SOURCE.match(str(f.get('source', ''))):
             errors.append(f'{tag}: source {f.get("source")!r} is not like "220-1201 2.5"')
-        for extra in sorted(set(f) - FACT_FIELDS):
-            errors.append(f'{tag}: unknown field {extra!r} (fact / value / source)')
+        for extra in sorted(set(f) - TRIPLE_FIELDS):
+            errors.append(f'{tag}: unknown field {extra!r} (subject / predicate / object / source)')
+        if not ok:
+            continue
+        key = (subject, predicate, obj)
+        if key in triples:
+            errors.append(f'{tag}: the same fact as #{triples[key]}')
+        else:
+            triples[key] = i + 1
+        # The label as the game builds it (js/sets.js factsFromTriples).
+        obj_text = str(obj) if not isinstance(obj, str) else str(entities[obj].get('name', '')).strip()
+        tp = templates.get(predicate, {})
+        label = tp['label'].strip() if isinstance(tp.get('label'), str) and tp['label'].strip() else None
+        name = str(entities[subject].get('name', '')).strip()
+        label = label.replace('{subject}', name).replace('{object}', obj_text) if label else f'{name} {predicate.replace("_", " ")}'
+        if len(label) > 34:
+            errors.append(f'{tag}: label must be 1-34 characters: {label!r}')
+        elif label.lower() in labels and isinstance(obj, (int, float)):
+            errors.append(f'{tag}: label {label!r} is already fact #{labels[label.lower()]}')
+        elif isinstance(obj, (int, float)):
+            labels[label.lower()] = i + 1
 
 # A subject's dictionary (lists/dictionaries/<subject>.json, built by
 # tools/build_dictionary.py) is optional; when there is one, every answer of
