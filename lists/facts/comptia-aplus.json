@@ -11,14 +11,17 @@
     {"id": "molex", "name": "Molex", "type": "connector"},
     {"id": "hdmi", "name": "HDMI", "type": "connector"},
     {"id": "vga", "name": "VGA", "type": "connector"},
+
     {"id": "ddr3_dimm", "name": "DDR3 DIMM", "type": "memory"},
     {"id": "ddr3_sodimm", "name": "DDR3 SODIMM", "type": "memory"},
     {"id": "ddr4_dimm", "name": "DDR4 DIMM", "type": "memory"},
     {"id": "ddr4_sodimm", "name": "DDR4 SODIMM", "type": "memory"},
+    
     {"id": "twisted_pair", "name": "twisted pair", "type": "cable"},
     {"id": "coaxial", "name": "coaxial", "type": "cable"},
     {"id": "fiber", "name": "fiber optic", "type": "cable"},
     {"id": "serial_cable", "name": "serial", "type": "cable"},
+    
     {"id": "serial_interface", "name": "serial", "type": "interface"},
     {"id": "ssh", "name": "SSH", "type": "protocol"},
     {"id": "telnet", "name": "Telnet", "type": "protocol"},
@@ -28,6 +31,7 @@
     {"id": "ldap", "name": "LDAP", "type": "protocol"},
     {"id": "https", "name": "HTTPS", "type": "protocol"},
     {"id": "rdp", "name": "RDP", "type": "protocol"},
+    
     {"id": "docking_station", "name": "Docking station", "type": "accessory"},
     {"id": "drawing_pad", "name": "Drawing pad", "type": "accessory"},
     {"id": "headset", "name": "Headset", "type": "accessory"},
@@ -38,6 +42,7 @@
     {"id": "track_point", "name": "Track point", "type": "accessory"},
     {"id": "trackpad", "name": "Trackpad", "type": "accessory"},
     {"id": "webcam", "name": "Webcam", "type": "accessory"},
+    
     {"id": "atx", "name": "ATX", "type": "board"},
     {"id": "capture_card", "name": "Capture card", "type": "board"},
     {"id": "microatx", "name": "microATX", "type": "board"},
@@ -45,6 +50,7 @@
     {"id": "mini_itx", "name": "Mini-ITX", "type": "board"},
     {"id": "pci", "name": "PCI", "type": "board"},
     {"id": "pcie", "name": "PCIe", "type": "board"},
+    
     {"id": "cat_5", "name": "Cat 5", "type": "cable"},
     {"id": "cat_5e", "name": "Cat 5e", "type": "cable"},
     {"id": "cat_6", "name": "Cat 6", "type": "cable"},
@@ -57,6 +63,7 @@
     {"id": "single_mode", "name": "Single-mode", "type": "cable"},
     {"id": "stp", "name": "STP", "type": "cable"},
     {"id": "utp", "name": "UTP", "type": "cable"},
+    
     {"id": "burn_in", "name": "Burn-in", "type": "causeDisplay"},
     {"id": "failed_backlight", "name": "Failed backlight", "type": "causeDisplay"},
     {"id": "failing_bulb", "name": "Failing bulb", "type": "causeDisplay"},
@@ -73,6 +80,7 @@
     {"id": "not_enough_ram", "name": "Not enough RAM", "type": "causeDrive"},
     {"id": "one_failed_disk", "name": "One failed disk", "type": "causeDrive"},
     {"id": "unformatted_drive", "name": "Unformatted drive", "type": "causeDrive"},
+    
     {"id": "blocked_vents", "name": "Blocked vents", "type": "causeMobile"},
     {"id": "damaged_charging_port", "name": "Damaged charging port", "type": "causeMobile"},
     {"id": "dead_mouse_battery", "name": "Dead mouse battery", "type": "causeMobile"},
@@ -81,6 +89,7 @@
     {"id": "malware", "name": "Malware", "type": "causeMobile"},
     {"id": "swollen_battery", "name": "Swollen battery", "type": "causeMobile"},
     {"id": "touchpad_too_sensitive", "name": "Touchpad too sensitive", "type": "causeMobile"},
+    
     {"id": "bad_cabling", "name": "Bad cabling", "type": "causeNetwork"},
     {"id": "crosstalk", "name": "Crosstalk", "type": "causeNetwork"},
     {"id": "duplex_mismatch", "name": "Duplex mismatch", "type": "causeNetwork"},
@@ -90,6 +99,7 @@
     {"id": "weak_signal", "name": "Weak signal", "type": "causeNetwork"},
     {"id": "wrong_password", "name": "Wrong password", "type": "causeNetwork"},
     {"id": "wrong_vlan", "name": "Wrong VLAN", "type": "causeNetwork"},
+    
     {"id": "dual_channel_disabled", "name": "Dual-channel disabled", "type": "causePC"},
     {"id": "failed_firmware_update", "name": "Failed firmware update", "type": "causePC"},
     {"id": "failing_cmos_battery", "name": "Failing CMOS battery", "type": "causePC"},
@@ -99,6 +109,7 @@
     {"id": "overheating_causepc", "name": "Overheating", "type": "causePC"},
     {"id": "power_supply", "name": "Power supply", "type": "causePC"},
     {"id": "stuck_key", "name": "Stuck key", "type": "causePC"},
+    
     {"id": "blocked_nozzle", "name": "Blocked nozzle", "type": "causePrinter"},
     {"id": "dirty_charge_roller", "name": "Dirty charge roller", "type": "causePrinter"},
     {"id": "dirty_drum", "name": "Dirty drum", "type": "causePrinter"},
@@ -108,9 +119,11 @@
     {"id": "stuck_pin", "name": "Stuck pin", "type": "causePrinter"},
     {"id": "worn_pickup_rollers", "name": "Worn pickup rollers", "type": "causePrinter"},
     {"id": "wrong_paper_type", "name": "Wrong paper type", "type": "causePrinter"},
+    
     {"id": "3g", "name": "3G", "type": "cellular"},
     {"id": "4g", "name": "4G", "type": "cellular"},
     {"id": "5g", "name": "5G", "type": "cellular"},
+    
     {"id": "egress", "name": "Egress", "type": "cloud"},
     {"id": "elasticity", "name": "Elasticity", "type": "cloud"},
     {"id": "file_synchronization", "name": "File synchronization", "type": "cloud"},
@@ -118,14 +131,17 @@
     {"id": "ingress", "name": "Ingress", "type": "cloud"},
     {"id": "metered_utilization", "name": "Metered utilization", "type": "cloud"},
     {"id": "multitenancy", "name": "Multitenancy", "type": "cloud"},
+    
     {"id": "community_cloud", "name": "Community cloud", "type": "cloudModel"},
     {"id": "hybrid_cloud", "name": "Hybrid cloud", "type": "cloudModel"},
     {"id": "private_cloud", "name": "Private cloud", "type": "cloudModel"},
     {"id": "public_cloud", "name": "Public cloud", "type": "cloudModel"},
+    
     {"id": "daas", "name": "DaaS", "type": "cloudService"},
     {"id": "iaas", "name": "IaaS", "type": "cloudService"},
     {"id": "paas", "name": "PaaS", "type": "cloudService"},
     {"id": "saas", "name": "SaaS", "type": "cloudService"},
+    
     {"id": "arm", "name": "ARM", "type": "component"},
     {"id": "biometric_sensor", "name": "Biometric sensor", "type": "component"},
     {"id": "heat_sink", "name": "Heat sink", "type": "component"},
@@ -139,6 +155,7 @@
     {"id": "thermal_paste", "name": "Thermal paste", "type": "component"},
     {"id": "tpm", "name": "TPM", "type": "component"},
     {"id": "x64", "name": "x64", "type": "component"},
+    
     {"id": "apipa", "name": "APIPA", "type": "config"},
     {"id": "default_gateway", "name": "Default gateway", "type": "config"},
     {"id": "reservation", "name": "Reservation", "type": "config"},
@@ -146,12 +163,14 @@
     {"id": "subnet_mask", "name": "Subnet mask", "type": "config"},
     {"id": "vlan", "name": "VLAN", "type": "config"},
     {"id": "vpn", "name": "VPN", "type": "config"},
+    
     {"id": "cable", "name": "Cable", "type": "connection"},
     {"id": "cellular", "name": "Cellular", "type": "connection"},
     {"id": "dsl", "name": "DSL", "type": "connection"},
     {"id": "fiber_connection", "name": "Fiber", "type": "connection"},
     {"id": "satellite", "name": "Satellite", "type": "connection"},
     {"id": "wisp", "name": "WISP", "type": "connection"},
+    
     {"id": "gg45", "name": "GG45", "type": "connector"},
     {"id": "lightning", "name": "Lightning", "type": "connector"},
     {"id": "micro_usb", "name": "Micro-USB", "type": "connector"},
@@ -159,11 +178,13 @@
     {"id": "punchdown_block", "name": "Punchdown block", "type": "connector"},
     {"id": "usb_type_b", "name": "USB Type B", "type": "connector"},
     {"id": "usb_c", "name": "USB-C", "type": "connector"},
+    
     {"id": "amd_v", "name": "AMD-V", "type": "cpuFeature"},
     {"id": "ept", "name": "EPT", "type": "cpuFeature"},
     {"id": "hyperthreading", "name": "HyperThreading", "type": "cpuFeature"},
     {"id": "slat", "name": "SLAT", "type": "cpuFeature"},
     {"id": "vt_x", "name": "VT-x", "type": "cpuFeature"},
+    
     {"id": "aaa_server", "name": "AAA server", "type": "device"},
     {"id": "access_point_device", "name": "Access point", "type": "device"},
     {"id": "firewall", "name": "Firewall", "type": "device"},
@@ -179,6 +200,7 @@
     {"id": "switch", "name": "Switch", "type": "device"},
     {"id": "syslog_server", "name": "Syslog server", "type": "device"},
     {"id": "utm", "name": "UTM", "type": "device"},
+    
     {"id": "color_gamut", "name": "Color gamut", "type": "display"},
     {"id": "digitizer", "name": "Digitizer", "type": "display"},
     {"id": "inverter", "name": "Inverter", "type": "display"},
@@ -191,6 +213,7 @@
     {"id": "resolution", "name": "Resolution", "type": "display"},
     {"id": "tn", "name": "TN", "type": "display"},
     {"id": "va", "name": "VA", "type": "display"},
+    
     {"id": "displayport", "name": "DisplayPort", "type": "interface"},
     {"id": "dvi", "name": "DVI", "type": "interface"},
     {"id": "esata", "name": "eSATA", "type": "interface"},
@@ -199,6 +222,7 @@
     {"id": "usb_2_0", "name": "USB 2.0", "type": "interface"},
     {"id": "usb_3_0", "name": "USB 3.0", "type": "interface"},
     {"id": "usb4", "name": "USB4", "type": "interface"},
+    
     {"id": "ddr3", "name": "DDR3", "type": "memory"},
     {"id": "ddr4", "name": "DDR4", "type": "memory"},
     {"id": "ddr5", "name": "DDR5", "type": "memory"},
@@ -207,6 +231,7 @@
     {"id": "rdimm", "name": "RDIMM", "type": "memory"},
     {"id": "sodimm", "name": "SODIMM", "type": "memory"},
     {"id": "udimm", "name": "UDIMM", "type": "memory"},
+    
     {"id": "airplane_mode", "name": "Airplane mode", "type": "mobileSetting"},
     {"id": "autodiscover", "name": "Autodiscover", "type": "mobileSetting"},
     {"id": "byod", "name": "BYOD", "type": "mobileSetting"},
@@ -219,11 +244,13 @@
     {"id": "mdm", "name": "MDM", "type": "mobileSetting"},
     {"id": "sim", "name": "SIM", "type": "mobileSetting"},
     {"id": "tethering", "name": "Tethering", "type": "mobileSetting"},
+    
     {"id": "man", "name": "MAN", "type": "networkType"},
     {"id": "pan", "name": "PAN", "type": "networkType"},
     {"id": "san", "name": "SAN", "type": "networkType"},
     {"id": "wan", "name": "WAN", "type": "networkType"},
     {"id": "wlan", "name": "WLAN", "type": "networkType"},
+    
     {"id": "100", "name": "100", "type": "number"},
     {"id": "12", "name": "12", "type": "number"},
     {"id": "127", "name": "127", "type": "number"},
@@ -241,9 +268,11 @@
     {"id": "8", "name": "8", "type": "number"},
     {"id": "80_number", "name": "80", "type": "number"},
     {"id": "99", "name": "99", "type": "number"},
+    
     {"id": "pcl", "name": "PCL", "type": "pdl"},
     {"id": "postscript", "name": "PostScript", "type": "pdl"},
     {"id": "xps", "name": "XPS", "type": "pdl"},
+    
     {"id": "110", "name": "110", "type": "port"},
     {"id": "143", "name": "143", "type": "port"},
     {"id": "21", "name": "21", "type": "port"},
@@ -255,6 +284,7 @@
     {"id": "445", "name": "445", "type": "port"},
     {"id": "53", "name": "53", "type": "port"},
     {"id": "80_port", "name": "80", "type": "port"},
+    
     {"id": "audit_log", "name": "Audit log", "type": "printSetting"},
     {"id": "badging", "name": "Badging", "type": "printSetting"},
     {"id": "calibration", "name": "Calibration", "type": "printSetting"},
@@ -263,6 +293,7 @@
     {"id": "orientation", "name": "Orientation", "type": "printSetting"},
     {"id": "scan_to_email", "name": "Scan to email", "type": "printSetting"},
     {"id": "secured_print", "name": "Secured print", "type": "printSetting"},
+    
     {"id": "adf", "name": "ADF", "type": "printer"},
     {"id": "flatbed_scanner", "name": "Flatbed scanner", "type": "printer"},
     {"id": "fuser", "name": "Fuser", "type": "printer"},
@@ -276,6 +307,7 @@
     {"id": "ribbon", "name": "Ribbon", "type": "printer"},
     {"id": "thermal_printer", "name": "Thermal printer", "type": "printer"},
     {"id": "toner_cartridge", "name": "Toner cartridge", "type": "printer"},
+    
     {"id": "dhcp", "name": "DHCP", "type": "protocol"},
     {"id": "exchange_activesync", "name": "Exchange ActiveSync", "type": "protocol"},
     {"id": "ftp", "name": "FTP", "type": "protocol"},
@@ -285,16 +317,19 @@
     {"id": "smb", "name": "SMB", "type": "protocol"},
     {"id": "tcp", "name": "TCP", "type": "protocol"},
     {"id": "udp", "name": "UDP", "type": "protocol"},
+    
     {"id": "raid_0", "name": "RAID 0", "type": "raid"},
     {"id": "raid_1", "name": "RAID 1", "type": "raid"},
     {"id": "raid_10", "name": "RAID 10", "type": "raid"},
     {"id": "raid_5", "name": "RAID 5", "type": "raid"},
     {"id": "raid_6", "name": "RAID 6", "type": "raid"},
+    
     {"id": "a", "name": "A", "type": "record"},
     {"id": "aaaa", "name": "AAAA", "type": "record"},
     {"id": "cname", "name": "CNAME", "type": "record"},
     {"id": "mx", "name": "MX", "type": "record"},
     {"id": "txt", "name": "TXT", "type": "record"},
+    
     {"id": "802_11a", "name": "802.11a", "type": "standard"},
     {"id": "802_11ac", "name": "802.11ac", "type": "standard"},
     {"id": "802_11ax", "name": "802.11ax", "type": "standard"},
@@ -308,6 +343,7 @@
     {"id": "rfid", "name": "RFID", "type": "standard"},
     {"id": "t568a", "name": "T568A", "type": "standard"},
     {"id": "t568b", "name": "T568B", "type": "standard"},
+    
     {"id": "1_8_inch", "name": "1.8-inch", "type": "storage"},
     {"id": "2_5_inch", "name": "2.5-inch", "type": "storage"},
     {"id": "3_5_inch", "name": "3.5-inch", "type": "storage"},
@@ -319,6 +355,7 @@
     {"id": "optical_drive", "name": "Optical drive", "type": "storage"},
     {"id": "sas", "name": "SAS", "type": "storage"},
     {"id": "ssd", "name": "SSD", "type": "storage"},
+    
     {"id": "32_bit_file_allocation_table", "name": "32-bit File Allocation Table", "type": "term", "acronym": "FAT32"},
     {"id": "acceptable_use_policy", "name": "Acceptable Use Policy", "type": "term", "acronym": "AUP"},
     {"id": "access_control_list", "name": "Access Control List", "type": "term", "acronym": "ACL"},
@@ -522,6 +559,7 @@
     {"id": "wireless_lan", "name": "Wireless LAN", "type": "term", "aliases": ["Wireless LAN [Local Area Network]"], "acronym": "WLAN"},
     {"id": "wireless_wide_area_network", "name": "Wireless Wide Area Network", "type": "term", "acronym": "WWAN"},
     {"id": "written_internet_service_provider", "name": "Written Internet Service Provider", "type": "term", "acronym": "WISP"},
+    
     {"id": "cable_stripper", "name": "Cable stripper", "type": "tool"},
     {"id": "cable_tester", "name": "Cable tester", "type": "tool"},
     {"id": "crimper", "name": "Crimper", "type": "tool"},
@@ -530,6 +568,7 @@
     {"id": "punchdown_tool", "name": "Punchdown tool", "type": "tool"},
     {"id": "toner_probe", "name": "Toner probe", "type": "tool"},
     {"id": "wi_fi_analyzer", "name": "Wi-Fi analyzer", "type": "tool"},
+    
     {"id": "application_virtualization", "name": "Application virtualization", "type": "virtualization"},
     {"id": "container", "name": "Container", "type": "virtualization"},
     {"id": "cross_platform_virtualization", "name": "Cross-platform virtualization", "type": "virtualization"},
