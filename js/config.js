@@ -704,9 +704,12 @@ export const INFERENCE = {
 // `difficulty` gets these (Timothy 2026-11-07: "Facts" / medium). A number
 // question short of real wrong numbers gets up to `madeUpCount` made-up
 // ones within `madeUpSpread` of the answer (0.25 = about ±25%, at least ±1).
+// An open-list question (factgen.js: its right answers may not all be in
+// the file) needs `openMinWrong` wrong choices from the file itself, or it
+// is left out: it may not borrow any from the rest of the set.
 export const FACT_QUESTIONS = {
   category: 'Facts', difficulty: 'medium',
-  madeUpSpread: 0.25, madeUpCount: 3,
+  madeUpSpread: 0.25, madeUpCount: 3, openMinWrong: 3,
 };
 // Asteroids (ship minigames plan step F; the Gunner's job, a new role on
 // the Bridge, the recognition game in place of Verdict): rocks carry

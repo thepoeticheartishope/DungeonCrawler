@@ -169,6 +169,8 @@ function renderRows() {
       entry.draft ? '<span class="data-draft">' + escapeHtml(t('data.draft')) + '</span>' : '',
       entry.note ? '<span class="data-hasnote">' + escapeHtml(t('data.hasNote')) + '</span>' : '',
       entry.generated ? '<span class="data-generated">' + escapeHtml(t('data.generated')) + '</span>' : '',
+      // Its facts may not hold every right answer: multiple choice only (factgen.js).
+      entry.openList ? '<span class="data-generated">' + escapeHtml(t('data.openList')) + '</span>' : '',
       entry.category ? '<span>' + escapeHtml(entry.category) + '</span>' : '',
       entry.difficulty ? '<span>' + escapeHtml(entry.difficulty) + '</span>' : ''
     ].join('');

@@ -531,6 +531,7 @@ export const TEXT = {
   'data.hasNote': 'NOTE',
   'data.filterGenerated': 'GENERATED {count}',
   'data.generated': 'GENERATED',
+  'data.openList': 'OPEN LIST',
   'data.accepted': 'ALSO RIGHT: {answers}',
   'data.note': 'Note: {note}',
   'data.filterCommented': 'COMMENTED {count}',

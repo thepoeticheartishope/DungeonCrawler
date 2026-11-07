@@ -87,6 +87,13 @@ entry, no facts). Each fact is a Subject · Predicate · Object triple:
   group (plus aliases) counts as right. Optional `category` / `difficulty`
   (default "Facts" / medium) and, for number answers, `min` / `max` for
   made-up wrong numbers. A written question with the same text wins.
+- A generated question is an **open list** unless the template's
+  `"exhaustive"` names that way (`["ask_subject"]`: a person has one father).
+  The facts may not hold every right answer ("Name a child of Saul." with
+  only Michal listed), so an open-list question is plain multiple choice
+  only, never a minigame, with wrong choices from the facts file alone; with
+  fewer than 3 there it is left out. Mark a way exhaustive only when the
+  file really lists every answer.
   Wrong choices never come from entities that share a fact with the one
   asked about, so link everything you know (David married Maacah, as well as
   Maacah mother_of Absalom). The questions appear in DATA.SYS, tagged GENERATED.

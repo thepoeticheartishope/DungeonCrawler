@@ -106,7 +106,7 @@ for set_info in manifest:
 ENTITY_ID = re.compile(r'^[a-z0-9]+(_[a-z0-9]+)*$')
 ENTITY_FIELDS = {'id', 'name', 'type', 'aliases'}
 TRIPLE_FIELDS = {'subject', 'predicate', 'object', 'source'}
-TEMPLATE_FIELDS = {'predicate', 'label', 'ask_object', 'ask_subject', 'category', 'difficulty', 'min', 'max'}
+TEMPLATE_FIELDS = {'predicate', 'label', 'ask_object', 'ask_subject', 'category', 'difficulty', 'min', 'max', 'exhaustive'}
 for set_info in manifest:
     if 'facts' not in set_info:
         continue
@@ -158,6 +158,9 @@ for set_info in manifest:
                 errors.append(f'{tag}: "{key}" must be text when present')
         if 'difficulty' in tp and tp['difficulty'] not in DIFFICULTIES:
             errors.append(f'{tag}: unknown difficulty {tp["difficulty"]!r}')
+        ways = tp.get('exhaustive')
+        if 'exhaustive' in tp and (not isinstance(ways, list) or not ways or any(w not in ('ask_object', 'ask_subject') or w not in tp for w in ways)):
+            errors.append(f'{tag}: "exhaustive" must list "ask_object" / "ask_subject", each one the template has')
         for key in ('min', 'max'):
             if key in tp and (isinstance(tp[key], bool) or not isinstance(tp[key], int)):
                 errors.append(f'{tag}: "{key}" must be a whole number')

@@ -11,6 +11,15 @@
 // ask_object by (subject, predicate), ask_subject by (predicate, object).
 // David's four sons make one "Name a child of David." whose
 // `acceptedAnswers` holds all four (and their aliases).
+//
+// Open lists (Timothy 2026-11-07): the facts may not list every right
+// answer (Saul's children in the file: only Michal, not Jonathan). Marking
+// "Jonathan" wrong would break the player's trust, so a generated row is
+// `openList` unless its template lists that way in `exhaustive`
+// (["ask_subject"]: a person has one father). An open row is only ever a
+// plain multiple-choice question whose wrong choices come from this file
+// alone (quiz.js buildChoices), never a minigame (minigames.js), and it is
+// left out when the file gives it fewer than FACT_QUESTIONS.openMinWrong.
 
 import { FACT_QUESTIONS } from './config.js';
 import { numberQuestion, normalizeSpaces } from './quiz.js';
@@ -147,10 +156,11 @@ function groupFacts(facts, keyFn) {
 
 // One generated question row: the normal question shape plus
 // `acceptedAnswers` (every right answer and its aliases), `wrongTiers`
-// (buildChoices tries these before its own tiers) and `generated: true`.
+// (buildChoices tries these before its own tiers), `openList` (see the
+// top: unless the template's `exhaustive` lists `way`) and `generated: true`.
 // `answers` are the asked side of each fact in `group` (file order: the
 // first is `answer`, so it stays the same for review).
-function questionRow(prompt, answers, group, wrongTiers, template) {
+function questionRow(prompt, answers, group, wrongTiers, template, way) {
   const right = distinct(answers.map(textOf));
   const aliases = answers.flatMap(a => (typeof a === 'number' ? [] : a.aliases));
   const sources = distinct(group.map(f => f.source).filter(Boolean));
@@ -165,6 +175,7 @@ function questionRow(prompt, answers, group, wrongTiers, template) {
     category: typeof template.category === 'string' && template.category.trim() ? template.category.trim() : FACT_QUESTIONS.category,
     difficulty: DIFFICULTIES.includes(difficulty) ? difficulty : FACT_QUESTIONS.difficulty,
     source: sources.length ? sources.join('; ') : undefined,
+    openList: !(Array.isArray(template.exhaustive) && template.exhaustive.includes(way)) || undefined,
     generated: true,
   };
 }
@@ -186,6 +197,8 @@ export function generateQuestions(data, written = []) {
   const rows = [];
   const add = (row) => {
     if (writtenKeys.has(keyOf(row.question))) return;
+    // An open row has only this file's wrong answers to offer.
+    if (row.openList && distinct(row.wrongTiers.flat()).length < FACT_QUESTIONS.openMinWrong) return;
     writtenKeys.add(keyOf(row.question));
     rows.push(row);
   };
@@ -203,7 +216,7 @@ export function generateQuestions(data, written = []) {
         const tiers = typeof first === 'number'
           ? numberWrongTiers(first, same.map(f => f.object).filter(o => typeof o === 'number'), setNumbers, rightKeys, template)
           : entityWrongTiers(same.map(f => f.object).filter(o => typeof o !== 'number'), first.type, linkedTo(subject, facts), rightKeys, entities);
-        add(questionRow(fill(template.ask_object, { subject: subject.name }), answers, group, tiers, template));
+        add(questionRow(fill(template.ask_object, { subject: subject.name }), answers, group, tiers, template, 'ask_object'));
       });
     }
 
@@ -214,7 +227,7 @@ export function generateQuestions(data, written = []) {
         const rightKeys = new Set(answers.map(a => keyOf(a.name)));
         const linked = typeof object === 'number' ? new Set(answers) : linkedTo(object, facts);
         const tiers = entityWrongTiers(same.map(f => f.subject), answers[0].type, linked, rightKeys, entities);
-        add(questionRow(fill(template.ask_subject, { object: textOf(object) }), answers, group, tiers, template));
+        add(questionRow(fill(template.ask_subject, { object: textOf(object) }), answers, group, tiers, template, 'ask_subject'));
       });
     }
   });

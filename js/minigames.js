@@ -97,6 +97,16 @@ const FITS = {
   match: q => Boolean(q.match),
 };
 
+// An open-list question (factgen.js: its facts may not hold every right
+// answer) fits no minigame: each one either wants one exact answer typed
+// or built (Slow Spell, Crosswire ...) or shows decoys from the whole set
+// (Verdict, Asteroids), which could be a right answer the facts left out.
+// It is asked as plain multiple choice only.
+Object.keys(FITS).forEach((id) => {
+  const fits = FITS[id];
+  FITS[id] = q => !q.openList && fits(q);
+});
+
 // Whether question `q`'s wording holds its own answer ("Spell
 // Bartimaeus."): a minigame that spells the answer out would be free.
 function answerInStem(q) {
@@ -1265,7 +1275,7 @@ function verdictDecoys(q) {
 // VERDICT_MIN_DECOYS other answers, no image (a claim shows words only),
 // and its wording doesn't hold its answer (a true claim would be free).
 function verdictFits(q) {
-  return Boolean(q.answerType) && !q.image && !q.letterPool && !answerInStem(q) && verdictDecoys(q).length >= VERDICT_MIN_DECOYS;
+  return !q.openList && Boolean(q.answerType) && !q.image && !q.letterPool && !answerInStem(q) && verdictDecoys(q).length >= VERDICT_MIN_DECOYS;
 }
 
 // How many claims the Verdict showing asks: VERDICT_BOSS_CLAIMS against
@@ -1333,7 +1343,8 @@ function crosswirePartners(q) {
   if (!word || answerInStem(q)) return [];
   const own = word.join('');
   const inner = word.slice(1);
-  return crosswireWords().filter(w => w.q !== q && w.word.join('') !== own && inner.some(letter => w.inner.has(letter)));
+  // An open-list question is never the down word either (see FITS).
+  return crosswireWords().filter(w => w.q !== q && !w.q.openList && w.word.join('') !== own && inner.some(letter => w.inner.has(letter)));
 }
 
 // A new grid for question `q` (one Crosswire can run): `across` is `q`,

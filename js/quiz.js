@@ -457,6 +457,10 @@ export function buildChoices(item) {
       // (factgen.js: same predicate, then same type, real numbers before
       // made-up ones); the tiers below fill whatever they leave.
       ...(item.wrongTiers || []).map(tier => tier.filter(isWrong)),
+      // An open-list question (factgen.js) stops there: a wrong answer
+      // from the rest of the set could be a right one its facts left out
+      // ("Jonathan" for "Name a child of Saul.").
+      ...(item.openList ? [] : [
       terms(dictPool.filter(e => sharesPart(e, own) && sameForm(e) && sameDraft(e))),
       terms(dictPool.filter(e => acronymLikeness(e, own) === 2)),
       terms(dictPool.filter(e => acronymLikeness(e, own) === 1)),
@@ -476,6 +480,7 @@ export function buildChoices(item) {
       meanings(groupPool),
       meanings(numberPool),
       meanings(basePool)
+      ])
     ];
     const distractors = [];
     const seen = new Set();

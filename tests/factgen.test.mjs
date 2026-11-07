@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 
 import { generateQuestions } from '../js/factgen.js';
 import { buildChoices, rightAnswers, parseListInput } from '../js/quiz.js';
+import { minigamesFor } from '../js/minigames.js';
 import { state } from '../js/state.js';
 import { FACT_QUESTIONS } from '../js/config.js';
 import { withRandom } from './helpers.mjs';
@@ -24,6 +25,8 @@ const family = {
     { id: 'absalom', name: 'Absalom', type: 'name' },
     { id: 'solomon', name: 'Solomon', type: 'name', aliases: ['Jedidiah'] },
     { id: 'ruth', name: 'Ruth', type: 'name' },
+    { id: 'boaz', name: 'Boaz', type: 'name' },
+    { id: 'naomi', name: 'Naomi', type: 'name' },
     { id: 'bethlehem', name: 'Bethlehem', type: 'location' },
   ],
   facts: [
@@ -36,7 +39,7 @@ const family = {
     { subject: 'david', predicate: 'born_in', object: 'bethlehem' },
   ],
   templates: [
-    { predicate: 'father_of', ask_object: 'Name a child of {subject}.', ask_subject: 'Who was the father of {object}?' },
+    { predicate: 'father_of', ask_object: 'Name a child of {subject}.', ask_subject: 'Who was the father of {object}?', exhaustive: ['ask_subject'] },
     { predicate: 'born_in', ask_subject: 'Who was born in {object}?', category: 'OT', difficulty: 'hard' },
   ],
 };
@@ -90,7 +93,37 @@ test('wrong answers are never right, never linked to the subject, and keep to it
   assert.ok(!wrong.includes('Bethlehem'));
   // Same predicate first: David is a father_of object, but linked; Ruth comes second.
   assert.deepEqual(q.wrongTiers[0], []);
-  assert.deepEqual(q.wrongTiers[1], ['Saul', 'Ruth']);
+  assert.deepEqual(q.wrongTiers[1], ['Saul', 'Ruth', 'Boaz', 'Naomi']);
+});
+
+test('a generated row is an open list unless its template calls that way exhaustive', () => {
+  const rows = generateQuestions(family);
+  assert.equal(ask(rows, 'Name a child of David.').openList, true);
+  assert.equal(ask(rows, 'Who was born in Bethlehem?').openList, true);
+  assert.equal(ask(rows, 'Who was the father of Solomon?').openList, undefined);
+});
+
+test('an open list with fewer than openMinWrong wrong answers from its file is left out', () => {
+  const few = {
+    entities: [{ id: 'saul', name: 'Saul', type: 'name' }, { id: 'michal', name: 'Michal', type: 'name' }, { id: 'ruth', name: 'Ruth', type: 'name' }],
+    facts: [{ subject: 'saul', predicate: 'father_of', object: 'michal' }],
+    templates: [{ predicate: 'father_of', ask_object: 'Name a child of {subject}.', ask_subject: 'Who was the father of {object}?', exhaustive: ['ask_subject'] }],
+  };
+  const rows = generateQuestions(few);
+  assert.ok(!rows.some(r => r.question === 'Name a child of Saul.'));
+  // The closed way has no such floor: buildChoices may fill it from the set.
+  assert.ok(rows.some(r => r.question === 'Who was the father of Michal?'));
+});
+
+test('an open list fits no minigame and takes wrong choices from its file only', () => {
+  const rows = generateQuestions(family);
+  const open = ask(rows, 'Name a child of David.');
+  assert.deepEqual(minigamesFor(open), []);
+  state.settings.activeDictionary = [{ term: 'Jonathan', type: 'name' }, { term: 'Mephibosheth', type: 'name' }];
+  state.settings.activeData = [...rows, { question: 'Who was Saul\'s eldest son?', answer: 'Jonathan', answerType: 'name' }];
+  const fromFile = new Set(['Amnon', ...open.wrongTiers.flat()]);
+  for (let i = 0; i < 30; i++) assert.ok(buildChoices(open).every(c => fromFile.has(c)));
+  state.settings.activeDictionary = null;
 });
 
 test('a written question with the same text stays, and the generated one is left out', () => {
@@ -116,7 +149,7 @@ const ports = {
     { subject: 'http', predicate: 'uses_port', object: 80 },
     { subject: 'ssh', predicate: 'uses_port', object: 22 },
   ],
-  templates: [{ predicate: 'uses_port', max: 445,
+  templates: [{ predicate: 'uses_port', max: 445, exhaustive: ['ask_subject'],
     ask_object: 'Which port does {subject} use by default?',
     ask_subject: 'Which protocol uses port {object} by default?' }],
 };
@@ -141,7 +174,7 @@ test('made-up numbers stay at 1 or more and within the template bounds', () => {
   const small = {
     entities: [{ id: 'a', name: 'A', type: 'name' }],
     facts: [{ subject: 'a', predicate: 'count', object: 1 }],
-    templates: [{ predicate: 'count', ask_object: 'How many for {subject}?', max: 3 }],
+    templates: [{ predicate: 'count', ask_object: 'How many for {subject}?', max: 3, exhaustive: ['ask_object'] }],
   };
   const [q] = withRandom(0.5, () => generateQuestions(small));
   assert.deepEqual([...q.wrongTiers[2]].sort(), ['2']);
@@ -178,11 +211,13 @@ test('the parser keeps acceptedAnswers on a written row', () => {
   assert.equal(data[1].acceptedAnswers, undefined);
 });
 
-test('the Bible facts file makes the David\'s family trial questions, none a written one', () => {
+test('the Bible facts file makes the family trial questions, none a written one', () => {
   const written = JSON.parse(readFileSync(new URL('../lists/bible-quiz-bowl.json', import.meta.url)));
   const file = JSON.parse(readFileSync(new URL('../lists/facts/bible-quiz-bowl.json', import.meta.url)));
   const rows = generateQuestions(file, written);
-  assert.equal(rows.length, 21);
+  assert.equal(rows.length, 36);
+  assert.ok(rows.filter(r => r.question.startsWith('Who was the')).every(r => !r.openList));
+  assert.ok(rows.filter(r => r.question.startsWith('Name a')).every(r => r.openList));
   const keys = new Set(written.map(q => q.question.toLowerCase()));
   assert.ok(rows.every(r => !keys.has(r.question.toLowerCase())));
   const david = ask(rows, 'Name a child of David.');
