@@ -94,6 +94,7 @@ export function initSetLoader({ showSets }) {
     state.settings.activeData = set.data;
     state.settings.activeDictionary = wordBank(facts);
     state.settings.activeFacts = set.facts;
+    state.settings.activeTriples = set.triples;
   }
 
   // A teacher's file's problems (quiz.js parseListInput, factcheck.js), as

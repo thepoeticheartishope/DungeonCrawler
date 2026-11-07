@@ -298,6 +298,7 @@ export const SHIP_ROLES = [
   { id: 'sensors', minigame: 'scanner', benefit: { kind: 'panicDown' } }, // was Fog Reveal (ship minigames plan step B)
   { id: 'lifeSupport', minigame: 'hullPatch', benefit: { kind: 'shield' } }, // was Sum Lock (ship minigames plan step D)
   { id: 'gunner', minigame: 'asteroids', benefit: { kind: 'shield' } }, // new on the Bridge (ship minigames plan step F)
+  { id: 'signals', minigame: 'patchBay', benefit: { kind: 'shield' } }, // new in Quarters by Comms (facts list plan step E); name and benefit are drafts
 ];
 // `crew`: how many crew members the player picks to learn and teach in a
 // run (Timothy 2026-11-01, ship minigames plan step G2); the Engineer is
@@ -654,6 +655,7 @@ export const HULL_PATCH = { minLetters: 3, maxLetters: 12, decoys: 7, strain2: 2
 //   letterPool    flip: share of tiles flipped
 //   codeBreak     tiers: one guess each; flip: older guesses flipped
 //   crosswire     free: the shared letter starts filled in; reveal: REVEAL offered
+//   patchBay      cables: pairs on the board; spare: one more right plug with no partner
 export const MINIGAME_LEVELS = {
   games: {
     starChart: [{ decoys: 6 }, { decoys: 8 }, { decoys: 10 }, { decoys: 12 }],
@@ -669,6 +671,7 @@ export const MINIGAME_LEVELS = {
     letterPool: [{ flip: 0 }, { flip: 0.25 }, { flip: 0.4 }, { flip: 0.6 }],
     codeBreak: [{ tiers: ['X', '2', '1'], flip: false }, { tiers: ['X', '2', '1'], flip: true }, { tiers: ['X', '2'], flip: true }],
     crosswire: [{ free: true, reveal: true }, { free: false, reveal: true }, { free: false, reveal: false }],
+    patchBay: [{ cables: 3, spare: false }, { cables: 4, spare: false }, { cables: 5, spare: true }],
   },
 };
 // Inference (ship minigames plan step E; the Science job, in place of
@@ -699,6 +702,17 @@ export const INFERENCE = {
   ],
   solvesPerLevel: 2, hardShare: 0.75, maxTotal: 2500, maxChecks: 4,
 };
+// Patch Bay (facts list plan step E; the Signals officer's job, Timothy
+// 2026-11-07): one predicate of the set's facts per board, its subjects as
+// plugs on the left and objects on the right; the player cables each left
+// plug to its partner. A board needs `minCables` pairs where no subject and
+// no object repeats (and no plug could go to two); a set with none sits
+// the Signals officer out. Cables and the spare plug by level
+// (MINIGAME_LEVELS). CHECK locks right cables and drops wrong ones: solved
+// on CHECK 1 = X, 2 = 2, up to `maxChecks` = 1, a wrong last CHECK is a
+// miss. Picking a board tries `tries` shuffles of the predicate's facts
+// and keeps the biggest.
+export const PATCH_BAY = { minCables: 3, maxChecks: 3, tries: 20 };
 // Questions made from a set's facts and templates (js/factgen.js; facts
 // list plan step C2). A template without its own `category` /
 // `difficulty` gets these (Timothy 2026-11-07: "Facts" / medium). A number

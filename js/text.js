@@ -195,6 +195,25 @@ export const TEXT = {
   'mg.inference.scored.2': '{name|upper}: worked out.', // draft
   'mg.inference.scored.1': '{name|upper}: worked out in the end. It was {answer}.', // draft
   'mg.inference.scored.miss': '{name|upper}: the numbers never added up. It was {answer}.', // draft
+  'mg.patchBay': 'Patch Bay', // draft. The Signals officer's job (facts list plan step E)
+  'mg.patchBay.term': 'PATCH THE LINES: {words|upper}.', // draft. Stands in for a question: the predicate on the board
+  'mg.patchBay.hint': 'Tap a plug on the left, then its match on the right. Tap again to move a cable.', // draft
+  'mg.patchBay.pair': '{left} \u2192 {right}', // draft. One pair, in the answer shown after a miss
+  'mg.patchBay.check': 'Check', // draft
+  'mg.patchBay.fill': 'Cable every plug on the left first.', // draft
+  'mg.patchBay.off': 'Wrong cables dropped. Checks left: {left}', // draft
+  'mg.patchBay.wrong': '{left} \u2192 {right}: no. {nudge}', // draft. One dropped cable and its nudge
+  'mg.patchBay.fact': '{label}: {value}.', // draft. A nudge from a fact with a label ("Boaz\'s wife: Ruth.")
+  'mg.patchBay.plain': '{subject} {words} {object}.', // draft. A nudge from a fact with no label
+  'mg.patchBay.higher': '{left} goes higher than {n}.', // draft
+  'mg.patchBay.lower': '{left} goes lower than {n}.', // draft
+  'mg.patchBay.noFact': 'No other fact about {left} here.', // draft
+  'mg.patchBay.plugLeft': '{text}, plug {id}', // draft. For screen readers
+  'mg.patchBay.plugRight': '{text}, cabled to {id}', // draft. For screen readers
+  'mg.patchBay.scored.X': '{name|upper}: every line clear first time.', // draft
+  'mg.patchBay.scored.2': '{name|upper}: lines patched.', // draft
+  'mg.patchBay.scored.1': '{name|upper}: patched in the end. It was {answer}.', // draft
+  'mg.patchBay.scored.miss': '{name|upper}: the lines stayed crossed. It was {answer}.', // draft
   'mg.asteroids': 'Asteroids', // draft. The Gunner's job (ship minigames plan step F)
   'mg.asteroids.hint': 'Aim at the rock with the answer, then fire.', // draft
   'mg.asteroids.sky': 'Asteroid field: arrow keys aim, Space fires', // draft. For screen readers
@@ -399,6 +418,7 @@ export const TEXT = {
   'role.systems': 'Systems tech', // draft. Code Break
   'role.science': 'Science officer', // draft. Inference
   'role.gunner': 'Gunner', // draft. Asteroids (ship minigames plan step F)
+  'role.signals': 'Signals officer', // draft. Patch Bay (facts list plan step E)
   'role.quartermaster': 'Quartermaster', // draft. Crosswire
   'role.sensors': 'Sensor operator', // draft. Fog Reveal
   'role.lifeSupport': 'Life support', // draft. Sum Lock

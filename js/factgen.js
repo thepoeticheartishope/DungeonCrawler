@@ -3,7 +3,8 @@
 // written ones. The author writes only true facts; a template says how a
 // question about one predicate is asked. sets.js reads the file and
 // calls generateQuestions when a set loads; it also uses tripleEntities and
-// tripleTemplates to read the same file for Inference. No DOM access here.
+// tripleTemplates to read the same file for Inference, and readTriples for
+// Patch Bay. No DOM access here.
 //
 // A template's `ask_object` asks for a fact's object ("Name a child of
 // {subject}."), its `ask_subject` for its subject ("Who was the father of
@@ -64,6 +65,19 @@ function readFacts(data, entities) {
     out.push({ subject, predicate: f.predicate, object, source: typeof f.source === 'string' && f.source.trim() ? f.source.trim() : undefined });
   });
   return out;
+}
+
+// The facts of facts file `data` as Patch Bay reads them (minigames.js;
+// facts list plan step E): { facts, labels }. `facts` are readFacts'
+// (entities looked up, bad rows left out), `labels` each template's label
+// by predicate. An old plain-array file, or none, gives no facts.
+export function readTriples(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return { facts: [], labels: {} };
+  const labels = {};
+  tripleTemplates(data).forEach((tp, predicate) => {
+    if (typeof tp.label === 'string' && tp.label.trim()) labels[predicate] = tp.label.trim();
+  });
+  return { facts: readFacts(data, tripleEntities(data)), labels };
 }
 
 // What a fact's side prints as: an entity's name (never its id), or a number.

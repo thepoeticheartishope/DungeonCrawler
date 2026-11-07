@@ -2,7 +2,7 @@
 // lists/), and player-saved custom sets (browser localStorage). No DOM
 // access here — main.js wires this into the UI.
 
-import { tripleEntities, tripleTemplates, generateQuestions } from './factgen.js';
+import { tripleEntities, tripleTemplates, generateQuestions, readTriples } from './factgen.js';
 
 const CUSTOM_SETS_KEY = 'termDungeon.customSets';
 
@@ -199,10 +199,11 @@ function writeCustomSets(sets) {
 // A set's written questions `data` with the questions its facts file
 // `factsFile` makes (factgen.js, tagged `generated`) after them, unless
 // `makeQuestions` is false (DEV -> Fact Qs off), and the facts rows for
-// Inference: { data, facts }. No facts file: `data` as it is and [].
+// Inference, and the triples for Patch Bay (factgen.js readTriples):
+// { data, facts, triples }. No facts file: `data` as it is, [] and no triples.
 export function withFacts(data, factsFile, makeQuestions = true, file = 'facts') {
   const made = factsFile && makeQuestions ? generateQuestions(factsFile, data) : [];
-  return { data: [...data, ...made], facts: factRows(factsFile, file) };
+  return { data: [...data, ...made], facts: factRows(factsFile, file), triples: readTriples(factsFile) };
 }
 
 // [{name, savedAt, count}], most recently saved first. `count` takes in

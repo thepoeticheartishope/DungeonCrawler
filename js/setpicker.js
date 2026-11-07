@@ -169,6 +169,7 @@ async function pick(value, builtins) {
   state.settings.activeData = set.data;
   state.settings.activeDictionary = set.dictionary;
   state.settings.activeFacts = set.facts;
+  state.settings.activeTriples = set.triples;
   writeLastSet(value);
   // startGame's showScreen only knows the game screens, so leave this one first.
   pickScreen.classList.remove('show');

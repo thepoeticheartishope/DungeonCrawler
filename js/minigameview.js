@@ -13,7 +13,7 @@ import {
   CLOSE_ENOUGH_TICKS, HIGHER_LOWER_TIERS,
   SLOW_SPELL_STEP_MS, SLOW_SPELL_FLIP_SHARE, SYLLABLE_SPLIT_TIERS, SYLLABLE_SPLIT_FLIP_SHARE,
   LETTER_POOL_FORM, LETTER_POOL_TIMER_SECONDS, LETTER_POOL_FLIP_SHARE, VERDICT_TIMER_SECONDS,
-  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX, SCANNER, STAR_CHART, INFERENCE, ASTEROIDS, MATCH_BOSS,
+  CROSSWIRE_TIMER_SECONDS, FOG_REVEAL_SIDE, FOG_REVEAL_CLEAR, FOG_REVEAL_STEP_MS, SUM_LOCK_TIER, FUEL_MIX, SCANNER, STAR_CHART, INFERENCE, PATCH_BAY, ASTEROIDS, MATCH_BOSS,
 } from './config.js';
 import {
   closeEnoughDial, closeEnoughTier, higherLowerBar, higherLowerHint, higherLowerTier, slowSpellWord, slowSpellTier, slowSpellMatches,
@@ -22,7 +22,7 @@ import {
   crosswireSetup, crosswireTier, fogRevealTier, sumLockMatches,
   fuelMixSetup, fuelMixPour, fuelMixDry, fuelMixTier, scannerGrid, scannerTier,
   starChartSetup, starChartPick, starChartTier, hullPatchSetup, hullPatchPlate, hullPatchTier,
-  inferenceSetup, inferenceCheck, inferenceTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout, levelOf,
+  inferenceSetup, inferenceCheck, inferenceTier, patchBayCheck, patchBayTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout, levelOf,
   matchSwap, matchEndTurn, matchWon, matchUse, matchCrisis, matchNear,
 } from './minigames.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
@@ -50,6 +50,8 @@ let fogClock = null;
 let aimClock = null;
 // The final boss's clock, counting its time down while the page is seen.
 let bossClock = null;
+// Patch Bay's watch on its board's size, redrawing the cables.
+let patchObserver = null;
 
 // Builders, one per minigame: each fills `slot` and returns the parts the
 // shared code needs: `lock` (its answer button), `finish()` (DEV ->
@@ -74,6 +76,7 @@ const BUILDERS = {
   starChart: buildStarChart,
   hullPatch: buildHullPatch,
   inference: buildInference,
+  patchBay: buildPatchBay,
   asteroids: buildAsteroids,
   match: buildMatch,
 };
@@ -108,6 +111,8 @@ export function hideMinigame() {
   aimClock = null;
   clearInterval(bossClock);
   bossClock = null;
+  if (patchObserver) patchObserver.disconnect();
+  patchObserver = null;
   shown = null;
   slot.hidden = true;
   slot.innerHTML = '';
@@ -1481,6 +1486,143 @@ function buildInference() {
     focus: () => inputs[ids[0]].focus(),
     // DEV -> Auto-win: solved on the first CHECK (tier X).
     finish: () => finish({ right: true, tier: 'X', given: String(puzzle.facts.T.value) }),
+    flip: () => {},
+  };
+}
+
+// ---- Patch Bay: cable each left plug to its match on the right ----
+// The Signals officer's job (facts list plan step E). Tap a left plug,
+// then a right one (either order) to run a cable; tap a cabled plug to
+// move its cable. Each left plug has a letter, and the right plug it is
+// cabled to shows the same letter, so crossed cables can still be told
+// apart without colour. CHECK locks the right cables and drops the wrong
+// ones, each with its light nudge (minigames.js patchBayNudge). No timer;
+// the cables are drawn still, never animated.
+function buildPatchBay() {
+  slot.classList.add('mg-patch');
+  const board = state.battle.currentQuestion.patchBay;
+  add(slot, 'div', 'term-line mg-hint').textContent = t('mg.patchBay.hint');
+  const bay = add(slot, 'div', 'mg-patch-bay');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'mg-patch-wires');
+  svg.setAttribute('aria-hidden', 'true');
+  bay.appendChild(svg);
+  const leftCol = add(bay, 'div', 'mg-patch-col');
+  add(bay, 'div', 'mg-patch-gap');
+  const rightCol = add(bay, 'div', 'mg-patch-col');
+  const check = add(slot, 'button', 'mg-lock');
+  const said = add(slot, 'div', 'term-line mg-said');
+  check.type = 'button';
+  check.textContent = t('mg.patchBay.check');
+  said.setAttribute('aria-live', 'polite');
+
+  const cables = {}; // left id -> right id
+  let held = null;   // the plug tapped first: { side, id }, or null
+  const plug = (col, side, p) => {
+    const btn = add(col, 'button', 'mg-patch-plug ' + side);
+    btn.type = 'button';
+    const tag = add(btn, 'span', 'mg-patch-tag');
+    add(btn, 'span', 'mg-patch-text').textContent = p.text;
+    if (side === 'left') tag.textContent = p.id;
+    btn.addEventListener('click', () => tap(side, p.id));
+    return { btn, tag };
+  };
+  const lefts = Object.fromEntries(board.left.map(p => [p.id, plug(leftCol, 'left', p)]));
+  const rights = Object.fromEntries(board.right.map(p => [p.id, plug(rightCol, 'right', p)]));
+  const leftOf = rightId => Object.keys(cables).find(id => cables[id] === rightId);
+  const isLocked = (side, id) => Boolean(board.locked[side === 'left' ? id : leftOf(id)]);
+
+  // Cable `leftId` to `rightId`, taking any other cable off that right plug.
+  const connect = (leftId, rightId) => {
+    const other = leftOf(rightId);
+    if (other) delete cables[other];
+    cables[leftId] = rightId;
+    held = null;
+  };
+  const tap = (side, id) => {
+    if (shown.done || isLocked(side, id)) return;
+    if (held && held.side !== side) {
+      if (side === 'left') connect(id, held.id);
+      else connect(held.id, id);
+    } else {
+      held = held && held.id === id ? null : { side, id };
+    }
+    draw();
+  };
+
+  // The plugs' marks and labels, then the cables as straight still lines
+  // from each left plug's edge to its right plug's.
+  const draw = () => {
+    board.left.forEach((p) => {
+      const { btn } = lefts[p.id];
+      btn.classList.toggle('on', Boolean(cables[p.id]));
+      btn.classList.toggle('held', Boolean(held && held.side === 'left' && held.id === p.id));
+      btn.classList.toggle('locked', Boolean(board.locked[p.id]));
+      btn.setAttribute('aria-label', t('mg.patchBay.plugLeft', { text: p.text, id: p.id }));
+    });
+    board.right.forEach((p) => {
+      const { btn, tag } = rights[p.id];
+      const from = leftOf(p.id);
+      tag.textContent = from || '';
+      btn.classList.toggle('on', Boolean(from));
+      btn.classList.toggle('held', Boolean(held && held.side === 'right' && held.id === p.id));
+      btn.classList.toggle('locked', Boolean(from && board.locked[from]));
+      btn.setAttribute('aria-label', from ? t('mg.patchBay.plugRight', { text: p.text, id: from }) : p.text);
+    });
+    drawWires();
+  };
+  const drawWires = () => {
+    const box = bay.getBoundingClientRect();
+    svg.setAttribute('viewBox', '0 0 ' + box.width + ' ' + box.height);
+    svg.innerHTML = '';
+    Object.keys(cables).forEach((leftId) => {
+      const a = lefts[leftId].btn.getBoundingClientRect();
+      const b = rights[cables[leftId]].btn.getBoundingClientRect();
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', a.right - box.left);
+      line.setAttribute('y1', a.top + a.height / 2 - box.top);
+      line.setAttribute('x2', b.left - box.left);
+      line.setAttribute('y2', b.top + b.height / 2 - box.top);
+      line.setAttribute('class', board.locked[leftId] ? 'locked' : '');
+      svg.appendChild(line);
+    });
+  };
+  // The plugs only have a size once the panel shows, and they move when
+  // the text size or the screen changes: redraw the cables then.
+  if (typeof ResizeObserver !== 'undefined') {
+    patchObserver = new ResizeObserver(drawWires);
+    patchObserver.observe(bay);
+  }
+
+  const given = () => board.left.map(p => t('mg.patchBay.pair', { left: p.text, right: (board.right.find(r => r.id === cables[p.id]) || {}).text || '' })).join(', ');
+  check.addEventListener('click', () => {
+    if (shown.done) return;
+    if (board.left.some(p => !cables[p.id])) { said.textContent = t('mg.patchBay.fill'); return; }
+    const result = patchBayCheck(board, cables);
+    if (result.solved) { finish({ right: true, tier: patchBayTier(board.checks), given: given() }); return; }
+    if (board.checks >= PATCH_BAY.maxChecks) { finish({ right: false, tier: null, given: given() }); return; }
+    // The wrong cables drop, each with its nudge: something taken away,
+    // so the wrong sound plays (finish's rule for sounds inside a game).
+    said.innerHTML = '';
+    result.wrong.forEach((w) => {
+      const text = { left: board.left.find(p => p.id === w.left).text, right: board.right.find(p => p.id === w.right).text };
+      add(said, 'div').textContent = t('mg.patchBay.wrong', { ...text, nudge: w.nudge });
+      delete cables[w.left];
+    });
+    add(said, 'div').textContent = t('mg.patchBay.off', { left: PATCH_BAY.maxChecks - board.checks });
+    held = null;
+    playSfx('wrong');
+    draw();
+  });
+  draw();
+  return {
+    lock: check,
+    focus: () => lefts[board.left[0].id].btn.focus(),
+    // DEV -> Auto-win: every cable right on the first CHECK (tier X).
+    finish: () => {
+      board.left.forEach((p) => { cables[p.id] = board.pairs[p.id]; });
+      finish({ right: true, tier: 'X', given: given() });
+    },
     flip: () => {},
   };
 }

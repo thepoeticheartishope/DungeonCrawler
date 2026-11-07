@@ -18,7 +18,8 @@
 //
 //   Ship run: the tragedy, TAKE COMMAND, the ship HUD, the console's
 //   training wires and a breaker, the Engineer's board, COMMAND.SYS, and a
-//   role learned and taught (runShip's detail says it all).
+//   role learned and taught, and the Signals officer's Patch Bay played by
+//   tapping plugs (runShip's detail says it all).
 //
 // The dungeon's runs (skip-room, battle, gun, tutorial, test rooms and the
 // rest) went with its floors in dungeon removal step B; the old PRs keep
@@ -122,7 +123,7 @@ async function runShip(browser, url) {
   if (consoleErrors.length || pageErrors.length) {
     return { ok: false, reason: 'console/page errors were recorded', consoleErrors, pageErrors };
   }
-  return { ok: true, detail: '"Ship (test)" told the tragedy, a tap put every line up and a second took command, putting the player in Command with the ship HUD (TAUGHT, CALM, no clock, no burns), lit, no stick men; the console\'s Engineer opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; COMMAND.SYS listed the roles, BACK left a lesson for the list again, a right round learned the Navigator, and its three rounds of Close Enough taught it (TAUGHT 1 on the HUD)', consoleErrors, pageErrors };
+  return { ok: true, detail: '"Ship (test)" told the tragedy, a tap put every line up and a second took command, putting the player in Command with the ship HUD (TAUGHT, CALM, no clock, no burns), lit, no stick men; the console\'s Engineer opened POWER.SYS training wires, a breaker asked its question, a right answer closed it and the wires came back; the Engineer\'s board stayed shut until trained, then opened to teach; COMMAND.SYS listed the roles, BACK left a lesson for the list again, a right round learned the Navigator, and its three rounds of Close Enough taught it (TAUGHT 1 on the HUD); the Signals officer was learned, a Patch Bay cabled all wrong dropped every cable with a nudge, cabled right it solved, and three rounds taught it', consoleErrors, pageErrors };
 }
 
 // Stands the player at (row, col) facing up and holds ArrowUp: a walk up
@@ -193,7 +194,7 @@ async function checkShip(page, url) {
   await bumpUpFrom(page, start.console.row + 1, start.console.col);
   await waitUntil(page, () => !document.getElementById('consolePanel').hidden);
   const listed = await page.$$eval('.console-role', bs => bs.map(b => b.dataset.role));
-  if (listed.length !== 12 || listed[0] !== 'engineer') return 'COMMAND.SYS did not list the Engineer and eleven roles: ' + listed.join(',');
+  if (listed.length !== 13 || listed[0] !== 'engineer') return 'COMMAND.SYS did not list the Engineer and twelve roles: ' + listed.join(',');
   await page.click('.console-role[data-role="engineer"]');
   await waitUntil(page, () => !document.getElementById('chargerPanel').hidden);
   const title = await page.textContent('#chargerTitle');
@@ -281,6 +282,72 @@ async function checkShip(page, url) {
   await page.waitForTimeout(300);
   const counted = await page.textContent('#shipTaught');
   if (!/^1\/\d+$/.test(counted)) return 'the HUD did not count the Navigator taught: ' + counted;
+
+  // The Signals officer (facts list plan step E): learned at the console,
+  // then a Patch Bay round played by tapping plugs. Cabled all wrong, CHECK
+  // drops every cable with a nudge; cabled right, CHECK solves it. The
+  // other two rounds are Auto-win's.
+  await bumpUpFrom(page, start.console.row + 1, start.console.col);
+  await waitUntil(page, () => !document.getElementById('consolePanel').hidden);
+  await page.click('.console-role[data-role="signals"]');
+  await waitUntil(page, () => /LEARNING SIGNALS/.test(document.getElementById('askTitle').textContent) && document.getElementById('askTitle').offsetParent);
+  await page.evaluate(async () => (await import('./js/gunactions.js')).autoWinGun());
+  await page.waitForTimeout(400);
+  await page.evaluate(async () => {
+    if ((await import('./js/gunpanels.js')).askHeld()) (await import('./js/gunactions.js')).autoWinGun();
+  });
+  await page.waitForTimeout(400);
+  const signalsLearned = await page.evaluate(async () => (await import('./js/state.js')).state.run.trained);
+  if (!signalsLearned.includes('signals')) return 'a right learning round did not learn the Signals officer: ' + JSON.stringify(signalsLearned);
+  const signals = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    return state.floor.props.find(p => p.kind === 'crew' && p.role === 'signals');
+  });
+  if (!signals) return 'no Signals officer on the ship';
+  await bumpUpFrom(page, signals.row + 1, signals.col);
+  await waitUntil(page, () => /SIGNALS/.test(document.getElementById('askTitle').textContent) && document.querySelector('.mg-patch-plug'));
+  const bay = await page.evaluate(async () => {
+    const { state } = await import('./js/state.js');
+    const b = state.battle.currentQuestion.patchBay;
+    return { left: b.left.map(l => l.id), right: b.right.map(r => r.id), pairs: b.pairs };
+  });
+  const plugs = await page.$$('.mg-patch-plug');
+  const leftBtn = id => plugs[bay.left.indexOf(id)];
+  const rightBtn = id => plugs[bay.left.length + bay.right.indexOf(id)];
+  // Every left plug to the next one's partner: all wrong.
+  for (let i = 0; i < bay.left.length; i++) {
+    await leftBtn(bay.left[i]).click();
+    await rightBtn(bay.pairs[bay.left[(i + 1) % bay.left.length]]).click();
+  }
+  const wires = await page.$$eval('.mg-patch-wires line', ls => ls.length);
+  if (wires !== bay.left.length) return 'Patch Bay drew ' + wires + ' cables for ' + bay.left.length + ' plugs';
+  await page.click('.mg-patch .mg-lock');
+  await waitUntil(page, () => document.querySelectorAll('.mg-patch-wires line').length === 0);
+  const nudges = await page.$$eval('.mg-patch .mg-said div', ds => ds.length);
+  if (nudges !== bay.left.length + 1) return 'Patch Bay did not give a nudge per dropped cable: ' + nudges;
+  for (const id of bay.left) {
+    await leftBtn(id).click();
+    await rightBtn(bay.pairs[id]).click();
+  }
+  await page.click('.mg-patch .mg-lock');
+  await page.waitForTimeout(400);
+  await page.evaluate(async () => {
+    if ((await import('./js/gunpanels.js')).askHeld()) (await import('./js/gunactions.js')).autoWinGun();
+  });
+  await page.waitForTimeout(400);
+  const firstRound = await page.evaluate(async () => (await import('./js/state.js')).state.run.ship.job);
+  if (!firstRound || firstRound.round !== 1 || firstRound.right !== 1) return 'the solved Patch Bay did not count as a right round: ' + JSON.stringify(firstRound);
+  for (let round = 1; round < 3; round++) {
+    await waitUntil(page, () => document.querySelector('.mg-patch-plug'));
+    await page.evaluate(async () => (await import('./js/gunactions.js')).autoWinGun());
+    await page.waitForTimeout(400);
+    await page.evaluate(async () => {
+      if ((await import('./js/gunpanels.js')).askHeld()) (await import('./js/gunactions.js')).autoWinGun();
+    });
+    await page.waitForTimeout(400);
+  }
+  const taughtSignals = await page.evaluate(async () => (await import('./js/state.js')).state.run.ship.taught);
+  if (!taughtSignals.includes('signals')) return 'three right rounds did not teach the Signals officer: ' + JSON.stringify(taughtSignals);
   return null;
 }
 
