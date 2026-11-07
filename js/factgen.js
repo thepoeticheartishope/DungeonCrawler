@@ -100,14 +100,19 @@ function linkedTo(e, facts) {
 }
 
 // Wrong entity answers, best first: entities on the asked side of the same
-// predicate with the same type, then any entity of that type. Neither tier
-// holds anything `linked` or right (`rightKeys`). An empty type matches
-// only other empty types. Returns [tier1, tier2] as name lists.
-function entityWrongTiers(predicateSide, type, linked, rightKeys, entities) {
+// predicate with the same type, then any entity of that type that some
+// fact uses (`inFacts`). Neither tier holds anything `linked` or right
+// (`rightKeys`). An empty type matches only other empty types. Returns
+// [tier1, tier2] as name lists.
+// An entity no fact uses is only a word for wrong choices (the old subject
+// dictionary): the file knows nothing about it, so it could be a right
+// answer the facts left out (Jonathan for "Name a child of Saul."). It is
+// left to buildChoices' word-bank tiers, which an open-list question skips.
+function entityWrongTiers(predicateSide, type, linked, rightKeys, inFacts) {
   const fair = e => e.type === type && !linked.has(e) && !rightKeys.has(keyOf(e.name));
   const first = distinct(predicateSide.filter(fair).map(e => e.name));
   const firstKeys = new Set(first.map(keyOf));
-  const second = distinct([...entities.values()].filter(fair).map(e => e.name).filter(n => !firstKeys.has(keyOf(n))));
+  const second = distinct(inFacts.filter(fair).map(e => e.name).filter(n => !firstKeys.has(keyOf(n))));
   return [first, second];
 }
 
@@ -199,6 +204,8 @@ export function generateQuestions(data, written = []) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return [];
   const entities = tripleEntities(data);
   const facts = readFacts(data, entities);
+  const used = new Set(facts.flatMap(f => [f.subject, f.object]));
+  const inFacts = [...entities.values()].filter(e => used.has(e));
   const writtenKeys = new Set(written.map(q => keyOf(q.question || '')));
   const setNumbers = [
     ...written.map(numberQuestion).filter(n => n && !n.unit).map(n => n.value),
@@ -225,7 +232,7 @@ export function generateQuestions(data, written = []) {
         const first = answers[0];
         const tiers = typeof first === 'number'
           ? numberWrongTiers(first, same.map(f => f.object).filter(o => typeof o === 'number'), setNumbers, rightKeys, template)
-          : entityWrongTiers(same.map(f => f.object).filter(o => typeof o !== 'number'), first.type, linkedTo(subject, facts), rightKeys, entities);
+          : entityWrongTiers(same.map(f => f.object).filter(o => typeof o !== 'number'), first.type, linkedTo(subject, facts), rightKeys, inFacts);
         add(questionRow(fill(template.ask_object, { subject: subject.name }), answers, group, tiers, template, 'ask_object'));
       });
     }
@@ -236,7 +243,7 @@ export function generateQuestions(data, written = []) {
         const answers = group.map(f => f.subject);
         const rightKeys = new Set(answers.map(a => keyOf(a.name)));
         const linked = typeof object === 'number' ? new Set(answers) : linkedTo(object, facts);
-        const tiers = entityWrongTiers(same.map(f => f.subject), answers[0].type, linked, rightKeys, entities);
+        const tiers = entityWrongTiers(same.map(f => f.subject), answers[0].type, linked, rightKeys, inFacts);
         add(questionRow(fill(template.ask_subject, { object: textOf(object) }), answers, group, tiers, template, 'ask_subject'));
       });
     }

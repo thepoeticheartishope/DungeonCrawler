@@ -13,8 +13,9 @@
     python3 tools/convert_batch.py check
         For the questions that are new compared with origin/main: the KJV
         check, translation notes (tools/fact_check.py) with anything still needing
-        review, new answers added to lists/dictionaries/bible.json
-        (tools/build_dictionary.py), and tools/validate.py. Re-run after
+        review, new answers added to the set's entities in
+        lists/facts/bible-quiz-bowl.json (tools/build_entities.py), and
+        tools/validate.py. Re-run after
         fixing or reviewing.
 
     python3 tools/convert_batch.py pr NUMBER
@@ -221,8 +222,8 @@ def cmd_check(a=None):
             batch = [data[i - 1] for i in sorted(idx)]
             print(f'{path}: {sum(1 for e in batch if e.get("note"))} with a note, '
                   f'{sum(1 for e in batch if e.get("draft"))} draft')
-    print('\n### Dictionary (new answers are added for review)')
-    d = run('build_dictionary.py', 'bible')
+    print('\n### Entities (new answers are added for review)')
+    d = run('build_entities.py', 'bible-quiz-bowl')
     print((d.stdout + d.stderr).strip())
     print('\n### validate')
     v = run('validate.py')

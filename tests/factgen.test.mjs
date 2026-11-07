@@ -37,6 +37,8 @@ const family = {
     { subject: 'saul', predicate: 'father_of', object: 'michal' },
     { subject: 'david', predicate: 'married', object: 'michal' },
     { subject: 'david', predicate: 'born_in', object: 'bethlehem' },
+    { subject: 'boaz', predicate: 'married', object: 'ruth' },
+    { subject: 'naomi', predicate: 'mother_in_law_of', object: 'ruth' },
   ],
   templates: [
     { predicate: 'father_of', ask_object: 'Name a child of {subject}.', ask_subject: 'Who was the father of {object}?', exhaustive: ['ask_subject'] },
@@ -104,6 +106,15 @@ test('wrong answers are never right, never linked to the subject, and keep to it
   // Same predicate first: David is a father_of object, but linked; Ruth comes second.
   assert.deepEqual(q.wrongTiers[0], []);
   assert.deepEqual(q.wrongTiers[1], ['Saul', 'Ruth', 'Boaz', 'Naomi']);
+});
+
+test('an entity no fact uses (a word for wrong choices) is never a generated wrong answer', () => {
+  // Jonathan is a word only: the file knows nothing about him, and he is
+  // in fact a child of Saul, so the open list must not call him wrong.
+  const withWord = { ...family, entities: [...family.entities, { id: 'jonathan', name: 'Jonathan', type: 'name' }] };
+  const rows = generateQuestions(withWord);
+  assert.ok(rows.every(r => !r.wrongTiers.flat().includes('Jonathan')));
+  assert.deepEqual(ask(rows, 'Name a child of David.').wrongTiers, ask(generateQuestions(family), 'Name a child of David.').wrongTiers);
 });
 
 test('a generated row is an open list unless its template calls that way exhaustive', () => {

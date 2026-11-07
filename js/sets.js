@@ -11,10 +11,9 @@ const CUSTOM_SETS_KEY = 'termDungeon.customSets';
 // Each manifest entry: { id, subject, name, description, file, facts? }
 // (facts: the set's facts file, see fetchFacts below). Sets with
 // the same "subject" (e.g. both Bible sets are "bible") cover the same
-// material; CompTIA subjects are per exam ("comptia-aplus"). The subject
-// picks the term dictionary wrong answers are drawn from
-// (lists/dictionaries/<subject>.json, see quiz.js buildChoices). Pasted and
-// saved custom sets have no subject, so no dictionary.
+// material; CompTIA subjects are per exam ("comptia-aplus"). Wrong answers
+// are drawn from the set's facts file entities (wordBank below), for every
+// kind of set.
 
 // Returns the manifest array, or [] if it can't be fetched (offline before
 // the service worker has cached it, opened over file://, etc.) — the start
@@ -48,7 +47,8 @@ export async function fetchBundledSet(file) {
 // A set's facts are their own file, apart from its questions. The manifest
 // entry names it ("facts": "facts/<id>.json"); no entry, no facts. The file
 // is one object of triples (step C1):
-//   { entities: [{ id, name, type, aliases? }],
+//   { entities: [{ id, name, type, aliases?, acronym?, of?, relation?,
+//                  description?, list?, draft? }],
 //     facts: [{ subject, predicate, object, source? }],
 //     templates: [{ predicate, label?, ... }] }
 // `subject` is an entity id; `object` is an entity id or a number. The
@@ -151,20 +151,24 @@ export function factRows(data, file = 'facts') {
   return facts;
 }
 
-// Returns a subject's term dictionary (lists/dictionaries/<subject>.json),
-// or null when the set has no subject, the subject has no dictionary, or it
-// can't be fetched. Null just means wrong answers come from the set's own
-// answers, as before dictionaries existed.
-export async function fetchDictionary(subject) {
-  if (!subject) return null;
-  try {
-    const res = await fetch('lists/dictionaries/' + subject + '.json');
-    if (!res.ok) return null;
-    const data = await res.json();
-    return Array.isArray(data) ? data : null;
-  } catch (e) {
-    return null;
-  }
+// The word bank wrong answers are drawn from (quiz.js buildChoices) for
+// facts file `data`: every entity, as { term, type, aka?, acronym?, of?,
+// relation?, description?, list?, draft? }. An entity no fact uses is a
+// word kept as a wrong choice (the subject dictionaries moved into the
+// entities, dictionary-entities plan). Fields of the wrong kind are left
+// out, so a teacher's file can't break buildChoices. No facts file (or an
+// old plain-array one): [], and wrong answers come from the set's own
+// answers.
+export function wordBank(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return [];
+  const text = v => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
+  return [...tripleEntities(data).values()].map((e) => {
+    const word = { term: e.name, type: e.type };
+    if (e.aliases.length) word.aka = e.aliases;
+    for (const f of ['acronym', 'of', 'relation']) if (text(e[f])) word[f] = text(e[f]);
+    for (const f of ['description', 'list', 'draft']) if (e[f] === true) word[f] = true;
+    return word;
+  });
 }
 
 // ---- Player-saved custom sets (localStorage) ----

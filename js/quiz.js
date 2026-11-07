@@ -421,15 +421,15 @@ function answerTypeOf(d) {
 // up from the next tier only when the previous runs out. No wrong answer
 // is ever one of the question's right answers (rightAnswers).
 //
-// When the set has a subject dictionary (state.settings.activeDictionary,
-// lists/dictionaries/) and the question has an answerType, the first tiers
+// When the set has a word bank (state.settings.activeDictionary: its facts
+// file's entities, sets.js wordBank) and the question has an answerType, the first tiers
 // are dictionary entries of that type: for a person named through another
 // ("Pharaoh's daughter"), ones sharing a part first ("Jairus' daughter",
 // "Pharaoh's ..."; sharesPart), and for an acronym's definition ones whose
 // acronym looks alike (same first two letters, then first letter;
 // acronymLikeness); then same kind (term / description / list, entryForm)
 // and same draft status, then same kind, then any kind.
-// The dictionary holds every term of the subject, not just the answers of
+// The word bank holds every term of the subject, not just the answers of
 // the set in play, so a small set still gets close wrong answers.
 //
 // Then the answers of the other questions in the set: same answerType and
