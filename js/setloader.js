@@ -6,9 +6,9 @@
 // the set itself after Enter (setpicker.js). Uses only state, sets.js,
 // quiz.js and text.js.
 import { state } from './state.js';
-import { PLAYER_NAME_MAX_LENGTH } from './config.js';
+import { PLAYER_NAME_MAX_LENGTH, WORKSHOP_PROBLEMS_SHOWN } from './config.js';
 import { defaultSample, parseListInput, escapeHtml } from './quiz.js';
-import { listSavedSets, saveSet, deleteSet } from './sets.js';
+import { listSavedSets, saveSet, deleteSet, withFacts } from './sets.js';
 import { t } from './text.js';
 
 const revealToggle = document.getElementById('revealToggle');
@@ -84,12 +84,30 @@ export function initSetLoader({ showSets }) {
   }
 
   // The workshop's list is what the run plays until the player picks
-  // another set, and the set screen offers it as "Workshop list".
-  function useWorkshopList(data) {
+  // another set, and the set screen offers it as "Workshop list". `facts`
+  // is a teacher's facts parts (factcheck.js), or null: their questions
+  // join the written ones and Inference plays their numbers.
+  function useWorkshopList(data, facts = null) {
     state.settings.workshopData = data;
-    state.settings.activeData = data;
+    state.settings.workshopFacts = facts;
+    const set = withFacts(data, facts, state.settings.factQuestions);
+    state.settings.activeData = set.data;
     state.settings.activeDictionary = null;
-    state.settings.activeFacts = [];
+    state.settings.activeFacts = set.facts;
+  }
+
+  // A teacher's file's problems (quiz.js parseListInput, factcheck.js), as
+  // HTML lines under the status: how many rows were skipped and warned,
+  // then the first WORKSHOP_PROBLEMS_SHOWN, each naming its row.
+  function problemsHtml(problems) {
+    if (!problems || !problems.length) return '';
+    const skipped = problems.filter(p => p.skipped).length;
+    const warned = problems.length - skipped;
+    const head = [skipped ? t('workshop.skipped', { count: skipped }) : '', warned ? t('workshop.warned', { count: warned }) : ''].filter(Boolean).join(' ');
+    const shown = problems.slice(0, WORKSHOP_PROBLEMS_SHOWN).map(p =>
+      '<li class="' + (p.skipped ? 'loader-error' : 'loader-warn') + '">' + escapeHtml(p.text) + '</li>').join('');
+    const more = problems.length > WORKSHOP_PROBLEMS_SHOWN ? '<li>' + escapeHtml(t('workshop.moreProblems', { count: problems.length - WORKSHOP_PROBLEMS_SHOWN })) + '</li>' : '';
+    return '<div class="loader-problems">' + escapeHtml(head) + '<ul>' + shown + more + '</ul></div>';
   }
 
   fileInput.addEventListener('change', () => {
@@ -107,9 +125,17 @@ export function initSetLoader({ showSets }) {
       loaderStatus.innerHTML = '<span class="loader-error">' + result.error + '</span>';
       return;
     }
-    useWorkshopList(result.data);
+    const facts = result.facts || null;
+    const total = withFacts(result.data, facts).data.length;
+    if (total < 2) {
+      loaderStatus.innerHTML = '<span class="loader-error">' + escapeHtml(t('workshop.tooFew')) + '</span>' + problemsHtml(result.problems);
+      return;
+    }
+    useWorkshopList(result.data, facts);
     state.settings.usingSample = false;
-    showStatus('workshop.loaded', { count: result.data.length }, false, result.warning ? ' ' + result.warning : '');
+    const made = total - result.data.length;
+    showStatus(made ? 'workshop.loadedFacts' : 'workshop.loaded', { count: total, made }, false, result.warning ? ' ' + result.warning : '');
+    loaderStatus.innerHTML += problemsHtml(result.problems);
   });
 
   resetListBtn.addEventListener('click', () => {
@@ -152,7 +178,7 @@ export function initSetLoader({ showSets }) {
       showStatus('workshop.needList', {}, true);
       return;
     }
-    saveSet(name, data);
+    saveSet(name, data, state.settings.workshopFacts);
     saveSetName.value = '';
     showStatus('workshop.saved', { name });
     renderSavedSets();

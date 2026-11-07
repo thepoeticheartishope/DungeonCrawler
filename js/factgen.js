@@ -29,10 +29,11 @@ const DIFFICULTIES = ['easy', 'medium', 'hard'];
 
 // The entities of facts file `data` by id: { id, name, type, aliases }.
 // One with no id or no name is left out, so facts naming it are skipped.
+// When two share an id, the first one wins.
 export function tripleEntities(data) {
   const entities = new Map();
   (Array.isArray(data.entities) ? data.entities : []).forEach((e) => {
-    if (!e || typeof e.id !== 'string' || !e.id || typeof e.name !== 'string' || !e.name.trim()) return;
+    if (!e || typeof e.id !== 'string' || !e.id || entities.has(e.id) || typeof e.name !== 'string' || !e.name.trim()) return;
     const aliases = Array.isArray(e.aliases) ? e.aliases.filter(a => typeof a === 'string' && a.trim()).map(a => a.trim()) : [];
     entities.set(e.id, { ...e, name: e.name.trim(), type: typeof e.type === 'string' ? e.type.trim() : '', aliases });
   });

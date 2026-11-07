@@ -5,6 +5,7 @@ import { state } from './state.js';
 import { TYPING_SAMPLE_DATA, MC_SAMPLE_DATA, CATEGORY_LABELS, ANSWER_TYPE_GROUPS, EXPLICIT_ANSWER_TERMS, TYPE_CHOICE_MIN, TYPE_SPLIT_DOMINANCE, CHOICE_TYPES, NUMBER_NEAR_POOL, STEM_CUES } from './config.js';
 import { t } from './text.js';
 import { shuffle } from './random.js';
+import { checkFacts, hasFactParts } from './factcheck.js';
 
 const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'];
 
@@ -14,12 +15,6 @@ export function defaultSample(mcMode) {
   return mcMode ? MC_SAMPLE_DATA : TYPING_SAMPLE_DATA;
 }
 
-// Parses pasted text as either a JSON array of {question, answer} objects,
-// or plain lines of "Prompt | Answer". Returns { data } or { error }, with
-// an optional { warning } when some lines had to be skipped. Old field
-// names (term, meaning, factNote) are still read, so files from before the
-// rename load; the old "fact" flag is ignored. The result uses only the
-// new names.
 // A row's note, read from "note" or the old "factNote".
 function noteOf(item) {
   const note = item && (typeof item.note === 'string' ? item.note : item.factNote);
@@ -33,9 +28,85 @@ function acceptedOf(item) {
   return list.length ? list : undefined;
 }
 
+// The good question rows of `rows` (a JSON list), each cleaned. A row with
+// no question or no answer is skipped and named in `problems`.
+function cleanRows(rows, problems) {
+  const out = [];
+  rows.forEach((item, i) => {
+    const row = cleanRow(item);
+    if (row.question && row.answer) out.push(row);
+    else problems.push({ skipped: true, text: 'question #' + (i + 1) + ': needs both a "question" and an "answer"; skipped' });
+  });
+  return out;
+}
+
+// One JSON question row in the game's names.
+function cleanRow(item) {
+  const category = String((item && item.category) || '').trim();
+  const rawDifficulty = String((item && item.difficulty) || '').trim().toLowerCase();
+  const source = String((item && item.source) || '').trim();
+  const image = String((item && item.image) || '').trim();
+  const answerType = String((item && item.answerType) || '').trim();
+  return {
+    question: String((item && (item.question ?? item.term)) || '').trim(),
+    answer: String((item && (item.answer ?? item.meaning)) || '').trim(),
+    options: Array.isArray(item && item.options)
+      ? item.options.map(o => String(o).trim()).filter(Boolean)
+      : undefined,
+    category: category || undefined,
+    difficulty: VALID_DIFFICULTIES.includes(rawDifficulty) ? rawDifficulty : 'medium',
+    source: source || undefined,
+    image: image || undefined,
+    answerType: answerType || undefined,
+    draft: (item && item.draft === true) || undefined,
+    // Other right answers (David's sons for "Name a child of
+    // David."): typed checks take any of them, and none is offered
+    // as a wrong choice (rightAnswers).
+    acceptedAnswers: acceptedOf(item),
+    // Why an answer can differ (a Bible translation, an older exam).
+    note: noteOf(item),
+    // A name's pieces for Syllable Split ("Ne-bu-chad-nez-zar"), when
+    // its own split on the vowels is wrong (minigames.js).
+    syllables: (item && typeof item.syllables === 'string' && item.syllables.trim()) || undefined
+  };
+}
+
+// Parses pasted text as a JSON array of {question, answer} objects, a
+// JSON object { questions, entities, facts, templates } (a teacher's file,
+// with facts), or plain lines of "Prompt | Answer". Returns { data } or
+// { error }, with an optional { warning } when some lines had to be
+// skipped, `problems` ([{ skipped, text }], each naming its row) for JSON,
+// and for the object form `facts` (the checked facts parts, factcheck.js). Old field
+// names (term, meaning, factNote) are still read, so files from before the
+// rename load; the old "fact" flag is ignored. The result uses only the
+// new names.
 export function parseListInput(text) {
   const trimmed = text.trim();
   if (!trimmed) return { error: 'Paste a list or choose a file first.' };
+
+  // A teacher's file (facts list plan step D): { questions, entities,
+  // facts, templates }, every part optional. The facts parts are checked
+  // (factcheck.js); the caller makes their questions and needs 2 in all.
+  if (trimmed.startsWith('{')) {
+    let parsed;
+    try {
+      parsed = JSON.parse(trimmed);
+    } catch (e) {
+      return { error: 'That JSON could not be parsed. Check the format.' };
+    }
+    if (!hasFactParts(parsed) && parsed.questions === undefined) {
+      return { error: 'A JSON object needs "questions", or "entities", "facts" and "templates".' };
+    }
+    const problems = [];
+    let data = [];
+    if (parsed.questions !== undefined && !Array.isArray(parsed.questions)) {
+      problems.push({ skipped: true, text: '"questions" must be a list [ ... ]; it is skipped' });
+    } else if (parsed.questions) {
+      data = cleanRows(parsed.questions, problems);
+    }
+    const checked = checkFacts(parsed);
+    return { data, facts: checked.clean, problems: [...problems, ...checked.problems] };
+  }
 
   if (trimmed.startsWith('[')) {
     let parsed;
@@ -45,39 +116,10 @@ export function parseListInput(text) {
       return { error: 'That JSON could not be parsed. Check the format.' };
     }
     if (!Array.isArray(parsed)) return { error: 'JSON must be an array of {"question","answer"} objects.' };
-    const cleaned = parsed
-      .map(item => {
-        const category = String((item && item.category) || '').trim();
-        const rawDifficulty = String((item && item.difficulty) || '').trim().toLowerCase();
-        const source = String((item && item.source) || '').trim();
-        const image = String((item && item.image) || '').trim();
-        const answerType = String((item && item.answerType) || '').trim();
-        return {
-          question: String((item && (item.question ?? item.term)) || '').trim(),
-          answer: String((item && (item.answer ?? item.meaning)) || '').trim(),
-          options: Array.isArray(item && item.options)
-            ? item.options.map(o => String(o).trim()).filter(Boolean)
-            : undefined,
-          category: category || undefined,
-          difficulty: VALID_DIFFICULTIES.includes(rawDifficulty) ? rawDifficulty : 'medium',
-          source: source || undefined,
-          image: image || undefined,
-          answerType: answerType || undefined,
-          draft: (item && item.draft === true) || undefined,
-          // Other right answers (David's sons for "Name a child of
-          // David."): typed checks take any of them, and none is offered
-          // as a wrong choice (rightAnswers).
-          acceptedAnswers: acceptedOf(item),
-          // Why an answer can differ (a Bible translation, an older exam).
-          note: noteOf(item),
-          // A name's pieces for Syllable Split ("Ne-bu-chad-nez-zar"), when
-          // its own split on the vowels is wrong (minigames.js).
-          syllables: (item && typeof item.syllables === 'string' && item.syllables.trim()) || undefined
-        };
-      })
-      .filter(item => item.question && item.answer);
+    const problems = [];
+    const cleaned = cleanRows(parsed, problems);
     if (cleaned.length < 2) return { error: 'Need at least 2 valid entries with both a prompt and an answer.' };
-    return { data: cleaned };
+    return problems.length ? { data: cleaned, problems } : { data: cleaned };
   }
 
   const lines = trimmed.split('\n').map(l => l.trim()).filter(Boolean);

@@ -6,8 +6,7 @@
 // way into the workshop (setloader.js showWorkshop).
 import { state } from './state.js';
 import { escapeHtml } from './quiz.js';
-import { fetchManifest, fetchBundledSet, fetchDictionary, fetchFacts, factRows, listSavedSets, loadSavedSet } from './sets.js';
-import { generateQuestions } from './factgen.js';
+import { fetchManifest, fetchBundledSet, fetchDictionary, fetchFacts, withFacts, listSavedSets, loadSavedSet, loadSavedFacts } from './sets.js';
 import { t } from './text.js';
 
 // Which set was picked last: 'builtin:<id>', 'saved:<name>' or 'workshop'.
@@ -74,7 +73,7 @@ function renderList(builtins) {
   const last = readLastSet();
   const own = listSavedSets().map(s => ({ value: 'saved:' + s.name, name: s.name, meta: t('pick.count', { count: s.count }) }));
   if (state.settings.workshopData) {
-    own.unshift({ value: 'workshop', name: t('pick.workshopList'), meta: t('pick.count', { count: state.settings.workshopData.length }) });
+    own.unshift({ value: 'workshop', name: t('pick.workshopList'), meta: t('pick.count', { count: withFacts(state.settings.workshopData, state.settings.workshopFacts).data.length }) });
   }
   const groups = [
     { label: t('pick.builtinGroup'), sets: builtins.map(s => ({ value: 'builtin:' + s.id, name: s.name, meta: s.description || '' })) },
@@ -119,26 +118,32 @@ export async function setChoices() {
   return [...builtins.map(s => ({ value: 'builtin:' + s.id, name: s.name })), ...own];
 }
 
-// Fetches set `value` with its subject dictionary and its facts (built-in
-// sets only): { data, dictionary, facts }, or null if it can't be had. No
+// Fetches set `value` with its subject dictionary (built-in sets only) and
+// its facts (a built-in set's facts file, or the facts parts of a teacher's
+// file in the workshop or a saved set): { data, dictionary, facts }, or null if it can't be had. No
 // facts (or a facts file that can't be had) is [], and the set still plays.
 // The questions the facts file's templates make (factgen.js, tagged
 // `generated`) join `data` after the written ones, unless DEV -> Fact Qs
 // is off (state.settings.factQuestions). `builtins` is the manifest,
 // fetched again when not given.
 export async function fetchSet(value, builtins = null) {
-  if (value === 'workshop') return state.settings.workshopData ? { data: state.settings.workshopData, dictionary: null, facts: [] } : null;
+  const makeQuestions = state.settings.factQuestions;
+  if (value === 'workshop') {
+    return state.settings.workshopData ? { ...withFacts(state.settings.workshopData, state.settings.workshopFacts, makeQuestions), dictionary: null } : null;
+  }
   if (value.startsWith('saved:')) {
-    const data = loadSavedSet(value.slice('saved:'.length));
-    return data && data.length ? { data, dictionary: null, facts: [] } : null;
+    const name = value.slice('saved:'.length);
+    const data = loadSavedSet(name);
+    if (!data) return null;
+    const set = withFacts(data, loadSavedFacts(name), makeQuestions);
+    return set.data.length ? { ...set, dictionary: null } : null;
   }
   if (!value.startsWith('builtin:')) return null;
   const chosen = (builtins || await fetchManifest()).find(s => s.id === value.slice('builtin:'.length));
   if (!chosen) return null;
   const [data, dictionary, factsFile] = await Promise.all([fetchBundledSet(chosen.file), fetchDictionary(chosen.subject), fetchFacts(chosen.facts)]);
   if (!data || !data.length) return null;
-  const made = state.settings.factQuestions ? generateQuestions(factsFile, data) : [];
-  return { data: [...data, ...made], dictionary, facts: factRows(factsFile, chosen.facts) };
+  return { ...withFacts(data, factsFile, makeQuestions, chosen.facts), dictionary };
 }
 
 // Loads the picked set into state.settings and starts the run. A built-in
