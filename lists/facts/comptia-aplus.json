@@ -11,12 +11,15 @@
     {"id": "molex", "name": "Molex", "type": "connector"},
     {"id": "hdmi", "name": "HDMI", "type": "connector"},
     {"id": "vga", "name": "VGA", "type": "connector"},
+    {"id": "ddr3_dimm", "name": "DDR3 DIMM", "type": "memory"},
+    {"id": "ddr3_sodimm", "name": "DDR3 SODIMM", "type": "memory"},
     {"id": "ddr4_dimm", "name": "DDR4 DIMM", "type": "memory"},
     {"id": "ddr4_sodimm", "name": "DDR4 SODIMM", "type": "memory"},
     {"id": "twisted_pair", "name": "twisted pair", "type": "cable"},
     {"id": "coaxial", "name": "coaxial", "type": "cable"},
     {"id": "fiber", "name": "fiber optic", "type": "cable"},
-    {"id": "serial", "name": "serial", "type": "interface"},
+    {"id": "serial_cable", "name": "serial", "type": "cable"},
+    {"id": "serial_interface", "name": "serial", "type": "interface"},
     {"id": "ssh", "name": "SSH", "type": "protocol"},
     {"id": "telnet", "name": "Telnet", "type": "protocol"},
     {"id": "smtp", "name": "SMTP", "type": "protocol"},
@@ -546,6 +549,8 @@
     {"subject": "molex", "predicate": "pin_count", "object": 4, "source": "220-1201 3.2"},
     {"subject": "hdmi", "predicate": "pin_count", "object": 19, "source": "220-1201 3.2"},
     {"subject": "vga", "predicate": "pin_count", "object": 15, "source": "220-1201 3.2"},
+    {"subject": "ddr3_dimm", "predicate": "module_pins", "object": 240, "source": "220-1201 3.3"},
+    {"subject": "ddr3_sodimm", "predicate": "module_pins", "object": 204, "source": "220-1201 3.3"},
     {"subject": "ddr4_dimm", "predicate": "module_pins", "object": 288, "source": "220-1201 3.3"},
     {"subject": "ddr4_sodimm", "predicate": "module_pins", "object": 260, "source": "220-1201 3.3"},
     {"subject": "ssh", "predicate": "uses_port", "object": 22, "source": "220-1201 2.1"},
@@ -559,15 +564,45 @@
     {"subject": "rj45", "predicate": "used_on", "object": "twisted_pair", "source": "220-1201 3.2"},
     {"subject": "rj11", "predicate": "used_on", "object": "twisted_pair", "source": "220-1201 3.2"},
     {"subject": "f_type", "predicate": "used_on", "object": "coaxial", "source": "220-1201 3.2"},
-    {"subject": "db9", "predicate": "used_on", "object": "serial", "source": "220-1201 3.2"},
+    {"subject": "db9", "predicate": "used_on", "object": "serial_cable", "source": "220-1201 3.2"},
     {"subject": "st", "predicate": "used_on", "object": "fiber", "source": "220-1201 3.2"},
     {"subject": "sc", "predicate": "used_on", "object": "fiber", "source": "220-1201 3.2"},
     {"subject": "lc", "predicate": "used_on", "object": "fiber", "source": "220-1201 3.2"}
   ],
   "templates": [
-    {"predicate": "pin_count", "label": "{subject} pins", "category": "Hardware", "difficulty": "medium", "ask_object": "How many pins are in a standard {subject} connector?", "exhaustive": ["ask_object"]},
-    {"predicate": "module_pins", "label": "{subject} pins", "category": "Hardware", "difficulty": "hard", "ask_object": "How many pins line the edge of a {subject}?", "exhaustive": ["ask_object"]},
-    {"predicate": "uses_port", "label": "{subject} port", "category": "Networking", "difficulty": "medium", "ask_subject": "Which protocol listens on port {object} by default?", "exhaustive": ["ask_subject"]},
-    {"predicate": "used_on", "label": "{subject} cable", "category": "Hardware", "difficulty": "easy", "ask_object": "Which kind of cable uses the {subject} connector?", "ask_subject": "Name a connector made for {object} cable.", "exhaustive": ["ask_object"]}
+    {
+      "predicate": "pin_count",
+      "label": "{subject} pins",
+      "category": "Hardware",
+      "difficulty": "medium",
+      "ask_object": "How many pins are in a standard {subject} connector?",
+      "exhaustive": ["ask_object"]
+    },
+    {
+      "predicate": "module_pins",
+      "label": "{subject} pins",
+      "category": "Hardware",
+      "difficulty": "hard",
+      "ask_object": "How many pins line the edge of a {subject}?",
+      "exhaustive": ["ask_object"]
+    },
+    {
+      "predicate": "uses_port",
+      "label": "{subject} port",
+      "category": "Networking",
+      "difficulty": "medium",
+      "ask_subject": "Which protocol listens on port {object} by default?",
+      "ask_object": "Which port does {subject} use by default?",
+      "exhaustive": ["ask_subject", "ask_object"]
+    },
+    {
+      "predicate": "used_on",
+      "label": "{subject} cable",
+      "category": "Hardware",
+      "difficulty": "easy",
+      "ask_object": "Which kind of cable uses the {subject} connector?",
+      "ask_subject": "Name a connector made for {object} cable.",
+      "exhaustive": ["ask_object"]
+    }
   ]
 }
