@@ -699,6 +699,18 @@ export const INFERENCE = {
   ],
   solvesPerLevel: 2, hardShare: 0.75, maxTotal: 2500, maxChecks: 4,
 };
+// Questions made from a set's facts and templates (js/factgen.js; facts
+// list plan step C2). A template without its own `category` /
+// `difficulty` gets these (Timothy 2026-11-07: "Facts" / medium). A number
+// question short of real wrong numbers gets up to `madeUpCount` made-up
+// ones within `madeUpSpread` of the answer (0.25 = about ±25%, at least ±1).
+// An open-list question (factgen.js: its right answers may not all be in
+// the file) needs `openMinWrong` wrong choices from the file itself, or it
+// is left out: it may not borrow any from the rest of the set.
+export const FACT_QUESTIONS = {
+  category: 'Facts', difficulty: 'medium',
+  madeUpSpread: 0.25, madeUpCount: 3, openMinWrong: 3,
+};
 // Asteroids (ship minigames plan step F; the Gunner's job, a new role on
 // the Bridge, the recognition game in place of Verdict): rocks carry
 // whole answers, the question's and decoys (other answers of its kind in

@@ -24,7 +24,7 @@ import {
   SUM_LOCK_MAX_ADDEND,
   LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS, SHIP_JOB, BATTLE_CHOICE_COUNT,
 } from './config.js';
-import { numberQuestion, pickQuestion, normalizeSpaces, fightGroups } from './quiz.js';
+import { numberQuestion, pickQuestion, normalizeSpaces, fightGroups, rightAnswers } from './quiz.js';
 import { shuffle } from './random.js';
 import { ZODIAC } from './zodiac.js';
 import { MINIGAME_LEVELS } from './config.js';
@@ -96,6 +96,16 @@ const FITS = {
   asteroids: q => asteroidsFits(q),
   match: q => Boolean(q.match),
 };
+
+// An open-list question (factgen.js: its facts may not hold every right
+// answer) fits no minigame: each one either wants one exact answer typed
+// or built (Slow Spell, Crosswire ...) or shows decoys from the whole set
+// (Verdict, Asteroids), which could be a right answer the facts left out.
+// It is asked as plain multiple choice only.
+Object.keys(FITS).forEach((id) => {
+  const fits = FITS[id];
+  FITS[id] = q => !q.openList && fits(q);
+});
 
 // Whether question `q`'s wording holds its own answer ("Spell
 // Bartimaeus."): a minigame that spells the answer out would be free.
@@ -645,12 +655,13 @@ function asteroidsIndex() {
 }
 
 // The decoys question `q` can fly with: the other short answers of its
-// kind in the set, each with a question it answers.
+// kind in the set, each with a question it answers. None is one of `q`'s
+// own right answers (rightAnswers: any of David's sons).
 function asteroidsDecoys(q) {
   const answers = asteroidsIndex().get(q.answerType);
   if (!answers) return [];
-  const own = normalizeSpaces(q.answer || '').toLowerCase();
-  return [...answers.values()].filter(a => a.key !== own);
+  const own = rightAnswers(q);
+  return [...answers.values()].filter(a => !own.has(a.key));
 }
 
 // Whether Asteroids can run `q`: a short answer, no picture, the stem
@@ -1251,19 +1262,20 @@ function verdictIndex() {
 }
 
 // The other answers of question `q`'s answerType in the set: what a false
-// claim can show.
+// claim can show. Never one of `q`'s right answers (rightAnswers), or a
+// "false" claim would be true.
 function verdictDecoys(q) {
   const answers = verdictIndex().byType.get(q.answerType);
   if (!answers) return [];
-  const own = normalizeSpaces(q.answer).toLowerCase();
-  return [...answers].filter(([key]) => key !== own).map(([, answer]) => answer);
+  const own = rightAnswers(q);
+  return [...answers].filter(([key]) => !own.has(key)).map(([, answer]) => answer);
 }
 
 // Whether question `q` can be a claim: it has an answerType with
 // VERDICT_MIN_DECOYS other answers, no image (a claim shows words only),
 // and its wording doesn't hold its answer (a true claim would be free).
 function verdictFits(q) {
-  return Boolean(q.answerType) && !q.image && !q.letterPool && !answerInStem(q) && verdictDecoys(q).length >= VERDICT_MIN_DECOYS;
+  return !q.openList && Boolean(q.answerType) && !q.image && !q.letterPool && !answerInStem(q) && verdictDecoys(q).length >= VERDICT_MIN_DECOYS;
 }
 
 // How many claims the Verdict showing asks: VERDICT_BOSS_CLAIMS against
@@ -1331,7 +1343,8 @@ function crosswirePartners(q) {
   if (!word || answerInStem(q)) return [];
   const own = word.join('');
   const inner = word.slice(1);
-  return crosswireWords().filter(w => w.q !== q && w.word.join('') !== own && inner.some(letter => w.inner.has(letter)));
+  // An open-list question is never the down word either (see FITS).
+  return crosswireWords().filter(w => w.q !== q && !w.q.openList && w.word.join('') !== own && inner.some(letter => w.inner.has(letter)));
 }
 
 // A new grid for question `q` (one Crosswire can run): `across` is `q`,

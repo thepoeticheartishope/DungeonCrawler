@@ -441,6 +441,7 @@
   .data-draft::before { content: '* '; }
   /* Answer depends on one translation's wording; hover for why. */
   .data-hasnote { color: var(--torch-bright); outline: 1px dashed var(--line); padding: 0 4px; }
+  .data-generated { color: var(--torch-bright); outline: 1px dotted var(--line); padding: 0 4px; }
   .data-q { color: var(--text); margin: 4px 0 2px; }
   .data-a { color: var(--torch-bright); text-shadow: var(--glow-strong); }
   .data-a::before { content: '=> '; color: var(--muted); text-shadow: var(--glow); }
@@ -1482,6 +1483,7 @@
     <div class="dev-panel" id="devPanel">
       <button class="dev-skip" id="devBookPaperBtn" type="button" title="Testing only: the record book's page (the ask screen): dark, as the game has it, or cold paper or cream, to compare">Book paper: dark (dev)</button>
       <button class="dev-skip" id="devMinigameBtn" type="button" title="Testing only: minigames roll as usual, never, or always (one picked), swapping in a question it fits">Minigame: roll (dev)</button>
+      <button class="dev-skip" id="devFactQsBtn" type="button" aria-pressed="true" title="Testing only: questions made from the set's facts join the written ones, or not (from the next set picked)">Fact Qs: ON (dev)</button>
       <output class="dev-skip" id="devFrameOut" title="Testing only: how long the map takes to draw, median and slowest of the last 120 frames drawn">Draw: - (dev)</output>
       <button class="dev-skip" id="devAutoWinBtn" type="button" aria-pressed="false" title="Testing only: every encounter plays itself out with correct answers">Auto-win: OFF (dev)</button>
       <button class="dev-skip" id="devLearnRolesBtn" type="button" title="Testing only: learn every ship crew role at once (crew roles plan)">Learn all roles (dev)</button>

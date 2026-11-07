@@ -6,7 +6,8 @@
 // way into the workshop (setloader.js showWorkshop).
 import { state } from './state.js';
 import { escapeHtml } from './quiz.js';
-import { fetchManifest, fetchBundledSet, fetchDictionary, fetchFacts, listSavedSets, loadSavedSet } from './sets.js';
+import { fetchManifest, fetchBundledSet, fetchDictionary, fetchFacts, factRows, listSavedSets, loadSavedSet } from './sets.js';
+import { generateQuestions } from './factgen.js';
 import { t } from './text.js';
 
 // Which set was picked last: 'builtin:<id>', 'saved:<name>' or 'workshop'.
@@ -120,8 +121,11 @@ export async function setChoices() {
 
 // Fetches set `value` with its subject dictionary and its facts (built-in
 // sets only): { data, dictionary, facts }, or null if it can't be had. No
-// facts (or a facts file that can't be had) is [], and the set still plays. `builtins` is the
-// manifest, fetched again when not given.
+// facts (or a facts file that can't be had) is [], and the set still plays.
+// The questions the facts file's templates make (factgen.js, tagged
+// `generated`) join `data` after the written ones, unless DEV -> Fact Qs
+// is off (state.settings.factQuestions). `builtins` is the manifest,
+// fetched again when not given.
 export async function fetchSet(value, builtins = null) {
   if (value === 'workshop') return state.settings.workshopData ? { data: state.settings.workshopData, dictionary: null, facts: [] } : null;
   if (value.startsWith('saved:')) {
@@ -131,8 +135,10 @@ export async function fetchSet(value, builtins = null) {
   if (!value.startsWith('builtin:')) return null;
   const chosen = (builtins || await fetchManifest()).find(s => s.id === value.slice('builtin:'.length));
   if (!chosen) return null;
-  const [data, dictionary, facts] = await Promise.all([fetchBundledSet(chosen.file), fetchDictionary(chosen.subject), fetchFacts(chosen.facts)]);
-  return data && data.length ? { data, dictionary, facts } : null;
+  const [data, dictionary, factsFile] = await Promise.all([fetchBundledSet(chosen.file), fetchDictionary(chosen.subject), fetchFacts(chosen.facts)]);
+  if (!data || !data.length) return null;
+  const made = state.settings.factQuestions ? generateQuestions(factsFile, data) : [];
+  return { data: [...data, ...made], dictionary, facts: factRows(factsFile, chosen.facts) };
 }
 
 // Loads the picked set into state.settings and starts the run. A built-in

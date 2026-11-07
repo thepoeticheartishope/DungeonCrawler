@@ -26,6 +26,13 @@ function noteOf(item) {
   return (typeof note === 'string' && note.trim()) || undefined;
 }
 
+// A row's other right answers, as trimmed text, or undefined for none.
+function acceptedOf(item) {
+  if (!item || !Array.isArray(item.acceptedAnswers)) return undefined;
+  const list = item.acceptedAnswers.map(a => String(a).trim()).filter(Boolean);
+  return list.length ? list : undefined;
+}
+
 export function parseListInput(text) {
   const trimmed = text.trim();
   if (!trimmed) return { error: 'Paste a list or choose a file first.' };
@@ -57,6 +64,10 @@ export function parseListInput(text) {
           image: image || undefined,
           answerType: answerType || undefined,
           draft: (item && item.draft === true) || undefined,
+          // Other right answers (David's sons for "Name a child of
+          // David."): typed checks take any of them, and none is offered
+          // as a wrong choice (rightAnswers).
+          acceptedAnswers: acceptedOf(item),
           // Why an answer can differ (a Bible translation, an older exam).
           note: noteOf(item),
           // A name's pieces for Syllable Split ("Ne-bu-chad-nez-zar"), when
@@ -202,6 +213,16 @@ export function escapeHtml(s) {
 
 export function normalizeSpaces(s) {
   return s.trim().replace(/\s+/g, ' ');
+}
+
+// Every right answer of question `item`, as case/space-insensitive keys:
+// its `answer` and any `acceptedAnswers` (a written row may have them; a
+// question made from facts has all of a group's answers, factgen.js).
+// Typed checks accept any of them, and no game offers one as wrong.
+export function rightAnswers(item) {
+  const keys = new Set([normalizeSpaces(String(item.answer || '')).toLowerCase()]);
+  (item.acceptedAnswers || []).forEach(a => keys.add(normalizeSpaces(String(a)).toLowerCase()));
+  return keys;
 }
 
 // Shuffles `meanings` and returns the distinct ones (case/space-insensitive,
@@ -355,7 +376,8 @@ function answerTypeOf(d) {
 // Builds 2-4 answer choices for a question. Uses the item's own "options"
 // list if the loaded JSON provided one (adding the correct meaning in if
 // it's missing); otherwise picks up to 3 wrong answers, in tiers, topping
-// up from the next tier only when the previous runs out.
+// up from the next tier only when the previous runs out. No wrong answer
+// is ever one of the question's right answers (rightAnswers).
 //
 // When the set has a subject dictionary (state.settings.activeDictionary,
 // lists/dictionaries/) and the question has an answerType, the first tiers
@@ -404,8 +426,8 @@ export function buildChoices(item) {
     const own = dictionaryEntry(dictionary, item.answer, itemType);
     // A set answer's shown spelling: its dictionary entry's term, if any.
     const shown = m => { const e = dictionaryEntry(dictionary, m); return e ? e.term : m; };
-    const rightKey = spellingKey(shown(item.answer));
-    const isWrong = m => spellingKey(shown(m)) !== rightKey && !EXPLICIT_ANSWER_TERMS.test(m);
+    const rightKeys = new Set([...rightAnswers(item)].map(a => spellingKey(shown(a))));
+    const isWrong = m => !rightKeys.has(spellingKey(shown(m))) && !EXPLICIT_ANSWER_TERMS.test(m);
 
     const dictPool = itemType
       ? dictionary.filter(e => e.type === itemType && isWrong(e.term))
@@ -431,6 +453,14 @@ export function buildChoices(item) {
     const terms = entries => entries.map(e => e.term);
     const meanings = items => items.map(d => shown(d.answer));
     const tiers = [
+      // A question made from facts brings its own best wrong answers
+      // (factgen.js: same predicate, then same type, real numbers before
+      // made-up ones); the tiers below fill whatever they leave.
+      ...(item.wrongTiers || []).map(tier => tier.filter(isWrong)),
+      // An open-list question (factgen.js) stops there: a wrong answer
+      // from the rest of the set could be a right one its facts left out
+      // ("Jonathan" for "Name a child of Saul.").
+      ...(item.openList ? [] : [
       terms(dictPool.filter(e => sharesPart(e, own) && sameForm(e) && sameDraft(e))),
       terms(dictPool.filter(e => acronymLikeness(e, own) === 2)),
       terms(dictPool.filter(e => acronymLikeness(e, own) === 1)),
@@ -450,6 +480,7 @@ export function buildChoices(item) {
       meanings(groupPool),
       meanings(numberPool),
       meanings(basePool)
+      ])
     ];
     const distractors = [];
     const seen = new Set();
