@@ -482,7 +482,7 @@ function inferenceHelpers(target) {
 }
 
 // The facts Inference can ask for: ones with at least two others to help.
-// None (CompTIA for now, or a set with no facts file): the Science Officer
+// None (a set with no facts file, or too few number facts): the Science Officer
 // sits out (roleCanRun).
 export function inferenceTargets() {
   return inferenceFacts().filter(f => inferenceHelpers(f).length >= 2);

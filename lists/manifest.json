@@ -4,7 +4,8 @@
     "subject": "comptia-aplus",
     "name": "CompTIA A+ Core 1",
     "description": "317 short-answer questions from A+ Core 1 (220-1201): Hardware, Networking, Troubleshooting, Mobile Devices, and Virtualization & Cloud, with 22 picture questions.",
-    "file": "comptia-aplus.json"
+    "file": "comptia-aplus.json",
+    "facts": "facts/comptia-aplus.json"
   },
   {
     "id": "bible-quiz-bowl",
