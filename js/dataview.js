@@ -7,7 +7,7 @@
 
 import { state } from './state.js';
 import { escapeHtml } from './quiz.js';
-import { fetchManifest, fetchBundledSet, fetchFacts, listSavedSets, loadSavedSet } from './sets.js';
+import { fetchManifest, fetchBundledSet, fetchFacts, listSavedSets, loadSavedSet, loadSavedFacts } from './sets.js';
 import { generateQuestions } from './factgen.js';
 import { t } from './text.js';
 
@@ -148,7 +148,9 @@ async function viewSet(value) {
     viewedFile = file.replace(/\.json$/, '');
   } else {
     const name = value.slice('saved:'.length);
-    entries = loadSavedSet(name) || [];
+    const data = loadSavedSet(name) || [];
+    const facts = loadSavedFacts(name);
+    entries = facts ? [...data, ...generateQuestions(facts, data)] : data;
     viewedLabel = label;
     viewedFile = name.replace(/[^\w-]+/g, '-');
   }

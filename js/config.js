@@ -707,6 +707,9 @@ export const INFERENCE = {
 // An open-list question (factgen.js: its right answers may not all be in
 // the file) needs `openMinWrong` wrong choices from the file itself, or it
 // is left out: it may not borrow any from the rest of the set.
+// The workshop names at most this many of a teacher's file's problems
+// (factcheck.js), then "and N more".
+export const WORKSHOP_PROBLEMS_SHOWN = 6;
 export const FACT_QUESTIONS = {
   category: 'Facts', difficulty: 'medium',
   madeUpSpread: 0.25, madeUpCount: 3, openMinWrong: 3,

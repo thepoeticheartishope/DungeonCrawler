@@ -2,7 +2,7 @@
 // lists/), and player-saved custom sets (browser localStorage). No DOM
 // access here — main.js wires this into the UI.
 
-import { tripleEntities, tripleTemplates } from './factgen.js';
+import { tripleEntities, tripleTemplates, generateQuestions } from './factgen.js';
 
 const CUSTOM_SETS_KEY = 'termDungeon.customSets';
 
@@ -192,22 +192,33 @@ function writeCustomSets(sets) {
   }
 }
 
-// [{name, savedAt, count}], most recently saved first.
+// A set's written questions `data` with the questions its facts file
+// `factsFile` makes (factgen.js, tagged `generated`) after them, unless
+// `makeQuestions` is false (DEV -> Fact Qs off), and the facts rows for
+// Inference: { data, facts }. No facts file: `data` as it is and [].
+export function withFacts(data, factsFile, makeQuestions = true, file = 'facts') {
+  const made = factsFile && makeQuestions ? generateQuestions(factsFile, data) : [];
+  return { data: [...data, ...made], facts: factRows(factsFile, file) };
+}
+
+// [{name, savedAt, count}], most recently saved first. `count` takes in
+// the questions the set's facts make.
 export function listSavedSets() {
   const sets = readCustomSets();
   return Object.keys(sets)
-    .map((name) => ({
-      name,
-      savedAt: sets[name].savedAt,
-      count: Array.isArray(sets[name].data) ? sets[name].data.length : 0
-    }))
+    .map((name) => {
+      const data = Array.isArray(sets[name].data) ? sets[name].data : [];
+      return { name, savedAt: sets[name].savedAt, count: withFacts(data, sets[name].facts || null).data.length };
+    })
     .sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
 }
 
-// Overwrites any existing set with the same name.
-export function saveSet(name, data) {
+// Overwrites any existing set with the same name. `facts` is a teacher's
+// facts parts { entities, facts, templates } (facts list plan step D), or
+// null for none; it is kept beside the questions.
+export function saveSet(name, data, facts = null) {
   const sets = readCustomSets();
-  sets[name] = { data, savedAt: Date.now() };
+  sets[name] = facts ? { data, facts, savedAt: Date.now() } : { data, savedAt: Date.now() };
   return writeCustomSets(sets);
 }
 
@@ -229,6 +240,14 @@ export function upgradeOldNames(row) {
 export function loadSavedSet(name) {
   const sets = readCustomSets();
   return sets[name] && Array.isArray(sets[name].data) ? sets[name].data.map(upgradeOldNames) : null;
+}
+
+// The facts parts a saved set was saved with, or null for none (sets
+// saved before step D, or with no facts).
+export function loadSavedFacts(name) {
+  const sets = readCustomSets();
+  const facts = sets[name] && sets[name].facts;
+  return facts && typeof facts === 'object' && !Array.isArray(facts) ? facts : null;
 }
 
 export function deleteSet(name) {

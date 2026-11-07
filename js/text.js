@@ -506,6 +506,11 @@ export const TEXT = {
   'workshop.back': 'Back to sets',
   'workshop.loaded': 'Loaded {count} items. Pick "Workshop list" on the set screen to play it.',
   'workshop.sample': 'Loaded the built-in multiple choice sample ({count} items) as the workshop list.',
+  'workshop.loadedFacts': 'Loaded {count} items ({made} made from facts). Pick "Workshop list" on the set screen to play it.', // draft
+  'workshop.tooFew': 'Need at least 2 questions. Add questions, or facts with a template that asks about them.', // draft
+  'workshop.skipped': '{count} rows skipped.', // draft
+  'workshop.warned': '{count} warnings.', // draft
+  'workshop.moreProblems': 'and {count} more', // draft
   'workshop.fileFailed': 'Could not read that file.',
   'workshop.needName': 'Give this set a name first.',
   'workshop.needList': 'Paste or load a list before saving.',

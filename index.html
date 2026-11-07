@@ -353,6 +353,11 @@
   .loader-status .loader-ok { color: var(--hit); }
   .loader-status .loader-error { color: var(--block); }
   .loader-status .loader-error::before { content: '! '; }
+  .loader-status .loader-warn { color: var(--text); }
+  .loader-status .loader-warn::before { content: '? '; }
+  .loader-problems { margin-top: 6px; }
+  .loader-problems ul { margin: 4px 0 0; padding-left: 0; list-style: none; overflow-wrap: anywhere; }
+  .loader-help pre { margin: 6px 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: calc(15px * var(--text-scale, 1)); }
 
   .loader-section { margin-bottom: 14px; }
   .loader-section-label {
@@ -1634,6 +1639,22 @@
               answer when "Reveal the correct answer" is on and you miss one.
               An optional <code>"image"</code> field (a URL, or a path relative
               to a bundled set's own folder) displays above the question. An optional <code>"note"</code> says why an answer can differ (a Bible translation, an older exam).
+            </p>
+            <p class="loader-hint">
+              <b>Facts.</b> A JSON object can add facts, and the game makes
+              questions from them. Each part is optional:
+            </p>
+<pre>{ "questions": [ {"question": "RAM is what?", "answer": "Memory"} ],
+  "entities": [ {"id": "rj45", "name": "RJ45", "type": "connector"},
+                {"id": "rj11", "name": "RJ11", "type": "connector"} ],
+  "facts": [ {"subject": "rj45", "predicate": "pin_count", "object": 8},
+             {"subject": "rj11", "predicate": "pin_count", "object": 6} ],
+  "templates": [ {"predicate": "pin_count",
+    "ask_object": "How many pins does {subject} have?"} ] }</pre>
+            <p class="loader-hint">
+              A fact's subject and object are entity ids. Write a number
+              object with no quotes. A template asks about one predicate.
+              Rows with mistakes are skipped, and the workshop names each one.
             </p>
           </details>
           <div class="loader-actions">
