@@ -1,98 +1,67 @@
-[
-  {
-    "fact": "Books of the Pentateuch",
-    "value": 5
-  },
-  {
-    "fact": "Years of the captivity in Babylon",
-    "value": 70,
-    "source": "2 Chron 36:21"
-  },
-  {
-    "fact": "Beatitudes in Matthew",
-    "value": 9,
-    "source": "Matt 5:1-12"
-  },
-  {
-    "fact": "Years between Jubilees",
-    "value": 50,
-    "source": "Lev 25"
-  },
-  {
-    "fact": "Joseph's age when sold",
-    "value": 17,
-    "source": "Gen 37:2"
-  },
-  {
-    "fact": "Rulers of Judah",
-    "value": 20,
-    "source": "1 & 2 Kings"
-  },
-  {
-    "fact": "Marches around Jericho",
-    "value": 13,
-    "source": "Josh 6"
-  },
-  {
-    "fact": "Silver pieces paid to Judas",
-    "value": 30,
-    "source": "Matt 26:14-15"
-  },
-  {
-    "fact": "People saved in Noah's ark",
-    "value": 8,
-    "source": "1 Pet 3:20"
-  },
-  {
-    "fact": "Loaves that fed the 4,000",
-    "value": 7,
-    "source": "Matt 15:34"
-  },
-  {
-    "fact": "Sarah's age at the promise",
-    "value": 90,
-    "source": "Gen 17:17"
-  },
-  {
-    "fact": "Abraham's age when Isaac was born",
-    "value": 100,
-    "source": "Gen 21:5"
-  },
-  {
-    "fact": "Days to walk across Nineveh",
-    "value": 3,
-    "source": "Jonah 3:3"
-  },
-  {
-    "fact": "Epistles in the New Testament",
-    "value": 21
-  },
-  {
-    "fact": "Soldiers casting lots",
-    "value": 4,
-    "source": "John 19:23"
-  },
-  {
-    "fact": "Gates of the New Jerusalem",
-    "value": 12,
-    "source": "Rev 21:12"
-  },
-  {
-    "fact": "Books in the Old Testament",
-    "value": 39
-  },
-  {
-    "fact": "Elders around the throne",
-    "value": 24,
-    "source": "Rev 4:4"
-  },
-  {
-    "fact": "Kings of the Northern Kingdom",
-    "value": 19
-  },
-  {
-    "fact": "Days Moses spent on the mountain",
-    "value": 40,
-    "source": "Ex 24:18"
-  }
-]
+{
+  "entities": [
+    {"id": "pentateuch", "name": "Pentateuch", "type": "book"},
+    {"id": "old_testament", "name": "Old Testament", "type": "book"},
+    {"id": "new_testament", "name": "New Testament", "type": "book"},
+    {"id": "matthew", "name": "Matthew", "type": "book"},
+    {"id": "babylon", "name": "Babylon", "type": "location"},
+    {"id": "judah", "name": "Judah", "type": "location"},
+    {"id": "northern_kingdom", "name": "Northern Kingdom", "type": "location"},
+    {"id": "jericho", "name": "Jericho", "type": "location"},
+    {"id": "nineveh", "name": "Nineveh", "type": "location"},
+    {"id": "new_jerusalem", "name": "New Jerusalem", "type": "location"},
+    {"id": "joseph", "name": "Joseph", "type": "name"},
+    {"id": "judas", "name": "Judas", "type": "name"},
+    {"id": "sarah", "name": "Sarah", "type": "name"},
+    {"id": "abraham", "name": "Abraham", "type": "name"},
+    {"id": "moses", "name": "Moses", "type": "name"},
+    {"id": "noahs_ark", "name": "Noah's ark", "type": "object"},
+    {"id": "the_4000", "name": "the 4,000", "type": "group"},
+    {"id": "jubilee", "name": "Jubilee", "type": "object"},
+    {"id": "crucifixion", "name": "the crucifixion", "type": "object"},
+    {"id": "the_throne", "name": "the throne", "type": "object"}
+  ],
+  "facts": [
+    {"subject": "pentateuch", "predicate": "book_count", "object": 5},
+    {"subject": "babylon", "predicate": "captivity_years", "object": 70, "source": "2 Chron 36:21"},
+    {"subject": "matthew", "predicate": "beatitude_count", "object": 9, "source": "Matt 5:1-12"},
+    {"subject": "jubilee", "predicate": "years_between", "object": 50, "source": "Lev 25"},
+    {"subject": "joseph", "predicate": "age_when_sold", "object": 17, "source": "Gen 37:2"},
+    {"subject": "judah", "predicate": "ruler_count", "object": 20, "source": "1 & 2 Kings"},
+    {"subject": "jericho", "predicate": "march_count", "object": 13, "source": "Josh 6"},
+    {"subject": "judas", "predicate": "silver_pieces_paid", "object": 30, "source": "Matt 26:14-15"},
+    {"subject": "noahs_ark", "predicate": "people_saved", "object": 8, "source": "1 Pet 3:20"},
+    {"subject": "the_4000", "predicate": "loaves_fed", "object": 7, "source": "Matt 15:34"},
+    {"subject": "sarah", "predicate": "age_at_promise", "object": 90, "source": "Gen 17:17"},
+    {"subject": "abraham", "predicate": "age_when_isaac_born", "object": 100, "source": "Gen 21:5"},
+    {"subject": "nineveh", "predicate": "days_to_walk_across", "object": 3, "source": "Jonah 3:3"},
+    {"subject": "new_testament", "predicate": "epistle_count", "object": 21},
+    {"subject": "crucifixion", "predicate": "soldiers_casting_lots", "object": 4, "source": "John 19:23"},
+    {"subject": "new_jerusalem", "predicate": "gate_count", "object": 12, "source": "Rev 21:12"},
+    {"subject": "old_testament", "predicate": "book_count", "object": 39},
+    {"subject": "the_throne", "predicate": "elder_count", "object": 24, "source": "Rev 4:4"},
+    {"subject": "northern_kingdom", "predicate": "king_count", "object": 19},
+    {"subject": "moses", "predicate": "days_on_mountain", "object": 40, "source": "Ex 24:18"}
+  ],
+  "templates": [
+    {"predicate": "captivity_years", "label": "Years of the captivity in {subject}"},
+    {"predicate": "beatitude_count", "label": "Beatitudes in {subject}"},
+    {"predicate": "years_between", "label": "Years between {subject}s"},
+    {"predicate": "age_when_sold", "label": "{subject}'s age when sold"},
+    {"predicate": "ruler_count", "label": "Rulers of {subject}"},
+    {"predicate": "march_count", "label": "Marches around {subject}"},
+    {"predicate": "silver_pieces_paid", "label": "Silver pieces paid to {subject}"},
+    {"predicate": "people_saved", "label": "People saved in {subject}"},
+    {"predicate": "loaves_fed", "label": "Loaves that fed {subject}"},
+    {"predicate": "age_at_promise", "label": "{subject}'s age at the promise"},
+    {"predicate": "age_when_isaac_born", "label": "{subject}'s age when Isaac was born"},
+    {"predicate": "days_to_walk_across", "label": "Days to walk across {subject}"},
+    {"predicate": "epistle_count", "label": "Epistles in the {subject}"},
+    {"predicate": "soldiers_casting_lots", "label": "Soldiers casting lots"},
+    {"predicate": "gate_count", "label": "Gates of the {subject}"},
+    {"predicate": "book_count", "label": "Books in the {subject}"},
+    {"predicate": "elder_count", "label": "Elders around {subject}"},
+    {"predicate": "king_count", "label": "Kings of the {subject}"},
+    {"predicate": "days_on_mountain", "label": "Days {subject} spent on the mountain"}
+  ]
+}

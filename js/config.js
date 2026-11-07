@@ -672,9 +672,10 @@ export const MINIGAME_LEVELS = {
   },
 };
 // Inference (ship minigames plan step E; the Science job, in place of
-// Verdict): a fact from the set's facts list (lists/facts/<id>.json, a
-// { fact, value } with a whole-number value of 1 or more, "Days Moses
-// spent on the mountain" = 40; facts list plan step B) is worked out from
+// Verdict): a fact from the set's facts file (lists/facts/<id>.json, a
+// triple whose object is a whole number of 1 or more, moses ·
+// days_on_mountain · 40, shown by its template label "Days Moses spent on
+// the mountain"; facts list plan steps B and C1) is worked out from
 // lines of other such facts; a set with too few sits its Science Officer
 // out. The player never needs to know the facts first
 // (Timothy: most of the problem is deduction, the data is given). Each
