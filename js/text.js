@@ -452,6 +452,13 @@ export const TEXT = {
   'end.ship.panic.stats': 'Too many failures. No one is listening to orders now. Failures: {failures}.', // draft
   'end.ship.crew': 'Crew you taught ({taught}/{of}): {names}.', // draft. After the stats, crew roles plan step C
   'end.ship.noCrew': 'You taught no one else.', // draft. No crew role was taught this run
+  // Credits on both end screens (1.0 checklist D; Jeremy Blake's licence asks for his credit).
+  'credits.title': 'CREDITS',
+  'credits.music': 'Music: Jeremy Blake — Recovery Mission (Helios’s Dreams), Nightscape and Exoplanet (Circular Reality), Novum (Infinity Zero)',
+  'credits.font': 'Font: VT323 by Peter Hull (SIL Open Font License 1.1)',
+  'credits.space': 'Space view: a port of PixelSpace by Deep-Fold (MIT)',
+  'credits.moves': 'Moves: Universal Animation Library by Quaternius (CC0)',
+  'credits.icons': 'Zodiac symbols: from the 1-bit Pixel Icons pack',
 
   // ---- Intro, start and end screens ----
   'start.enter': 'Begin', // Timothy 2026-11-01 (was "Enter the LABYRINTH")
