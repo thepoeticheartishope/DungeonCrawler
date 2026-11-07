@@ -157,7 +157,10 @@ function groupFacts(facts, keyFn) {
 // One generated question row: the normal question shape plus
 // `acceptedAnswers` (every right answer and its aliases), `wrongTiers`
 // (buildChoices tries these before its own tiers), `openList` (see the
-// top: unless the template's `exhaustive` lists `way`) and `generated: true`.
+// top: unless the template's `exhaustive` lists `way`), `fromFacts` (the
+// triples in `group` as the file writes them, ids not names, and `asks`:
+// which side the question asks for; DATA.SYS shows them) and
+// `generated: true`.
 // `answers` are the asked side of each fact in `group` (file order: the
 // first is `answer`, so it stays the same for review).
 function questionRow(prompt, answers, group, wrongTiers, template, way) {
@@ -176,6 +179,12 @@ function questionRow(prompt, answers, group, wrongTiers, template, way) {
     difficulty: DIFFICULTIES.includes(difficulty) ? difficulty : FACT_QUESTIONS.difficulty,
     source: sources.length ? sources.join('; ') : undefined,
     openList: !(Array.isArray(template.exhaustive) && template.exhaustive.includes(way)) || undefined,
+    fromFacts: group.map(f => ({
+      subject: f.subject.id,
+      predicate: f.predicate,
+      object: typeof f.object === 'number' ? f.object : f.object.id,
+      asks: way === 'ask_subject' ? 'subject' : 'object',
+    })),
     generated: true,
   };
 }

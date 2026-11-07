@@ -65,6 +65,16 @@ test('ask_subject groups by object, and prompts use names, never ids', () => {
   assert.ok(!rows.some(r => r.question.includes('{')));
 });
 
+test('a generated row keeps the triples it came from (ids) and the side it asks, for DATA.SYS', () => {
+  const rows = generateQuestions(family);
+  assert.deepEqual(ask(rows, 'Who was the father of Solomon?').fromFacts, [
+    { subject: 'david', predicate: 'father_of', object: 'solomon', asks: 'subject' },
+  ]);
+  const david = ask(rows, 'Name a child of David.').fromFacts;
+  assert.deepEqual(david.map(f => f.object), ['amnon', 'absalom', 'solomon']);
+  assert.ok(david.every(f => f.subject === 'david' && f.asks === 'object'));
+});
+
 test('a predicate with no template, or a template with neither ask, makes no questions', () => {
   const rows = generateQuestions(family);
   assert.ok(!rows.some(r => /michal/i.test(r.question) && /wife/i.test(r.question)));
