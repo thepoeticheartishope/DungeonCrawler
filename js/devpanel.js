@@ -1,7 +1,7 @@
 // DEV panel (only with ?dev on the address: a small tag in the corner, its
 // panel over the screen), the ship's testing tools (dungeon removal plan,
 // call 1): Auto-win, Learn all roles, Boss now, Panic, Book paper,
-// Minigame, Inspect, and the map's frame meter. main.js passes in the game
+// Minigame, Fact Qs, Inspect, and the map's frame meter. main.js passes in the game
 // actions it needs.
 import { state } from './state.js';
 import { mapDrawTimes } from './mapview.js';
@@ -21,6 +21,7 @@ const devLearnRolesBtn = document.getElementById('devLearnRolesBtn');
 const devBookPaperBtn = document.getElementById('devBookPaperBtn');
 const devFrameOut = document.getElementById('devFrameOut');
 const devMinigameBtn = document.getElementById('devMinigameBtn');
+const devFactQsBtn = document.getElementById('devFactQsBtn');
 
 export function initDevPanel({ autoWinGun, openBoss }) {
   // Players never see DEV: it shows only when the address has ?dev
@@ -105,6 +106,17 @@ export function initDevPanel({ autoWinGun, openBoss }) {
     const next = MINIGAME_MODES[(MINIGAME_MODES.indexOf(state.settings.minigame) + 1) % MINIGAME_MODES.length];
     state.settings.minigame = next;
     devMinigameBtn.textContent = 'Minigame: ' + next + ' (dev)';
+  });
+
+  // Dev tool (facts list plan step C2): the questions a set's facts make
+  // (factgen.js) join the written ones, or not. Off gives the written pool
+  // exactly. A set is built when it is picked, so this counts from the
+  // next set picked.
+  devFactQsBtn.addEventListener('click', () => {
+    const on = !state.settings.factQuestions;
+    state.settings.factQuestions = on;
+    devFactQsBtn.textContent = on ? 'Fact Qs: ON (dev)' : 'Fact Qs: OFF, next set (dev)';
+    devFactQsBtn.setAttribute('aria-pressed', String(on));
   });
 }
 

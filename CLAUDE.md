@@ -107,6 +107,7 @@ Rules and data (no page/DOM access):
 | `roles.js` | The ship's crew roles, one per minigame: who sits out, learning, a 3-round job, the benefit a taught role gives the run, how each crew member looks. |
 | `quiz.js` | Picking questions, building options, fight choice labels, answer types. |
 | `sets.js` | Bundled sets (`lists/`) and saved custom sets. |
+| `factgen.js` | Questions made from a set's facts and templates (`generateQuestions`). |
 
 Drawing and page code:
 

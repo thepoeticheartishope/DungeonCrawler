@@ -6,7 +6,7 @@ Python 3, standard library only. Run them from the repo root.
 
 | Script | Needs internet | What it does |
 |---|---|---|
-| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), every answer is in the subject's dictionary when it has one, fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", no old field names (`term`, `meaning`, `factNote`, `fact`), a `note` is never empty, no `label` on a question; a set's facts file (`facts` in its manifest entry) is one `{ "entities", "facts", "templates" }` object: unique snake_case entity ids, entity `type` an answerType, every fact's subject an entity id and its object an entity id or a number without quotes, no fact twice, labels 1-34 characters and not repeated, and a `"220-1201 2.5"` source for CompTIA. Run it before every PR that touches a question set. |
+| `validate.py` | no | Rules every set must pass: every manifest entry has a `subject` (sets on the same material share one, e.g. `bible`), every answer is in the subject's dictionary when it has one, fields present, known `answerType`, no duplicate questions, no explicit terms in answers, verse answers look like "Micah 1:1", no old field names (`term`, `meaning`, `factNote`, `fact`), a `note` is never empty, no `label` on a question, `acceptedAnswers` a list of answers; a set's facts file (`facts` in its manifest entry) is one `{ "entities", "facts", "templates" }` object: unique snake_case entity ids, entity `type` an answerType, every fact's subject an entity id and its object an entity id or a number without quotes, no fact twice, labels 1-34 characters and not repeated, and a `"220-1201 2.5"` source for CompTIA. Run it before every PR that touches a question set. |
 | `stem_check.mjs` | no | `node tools/stem_check.mjs` (Node): per set, how many questions a stem cue covers (`STEM_CUES` in `js/config.js`: "Who…?" → people, "How many…?" → numbers) and which tagged questions have a type their stem doesn't allow. The tag wins in play, so each listed one is a tagging mistake to fix or a real exception to leave. Reports only. |
 | `import_acronyms.py` | no | `python3 tools/import_acronyms.py comptia-aplus OBJECTIVES.pdf [MORE.pdf]` (needs `pdftotext`): adds a CompTIA objectives PDF's acronym list to the subject's dictionary, one `term` entry per definition with its `acronym`. Reports spellings it merged and definitions listed twice. Re-running only adds what's new. |
 | `wording_check.py` | no | `python3 tools/wording_check.py lists/comptia-aplus.json ~/ForClaude/CompTIA_A+_Core1_Lessons_Split/*.pdf` (needs `pdftotext`): lists questions that share a run of 5 words (`--words N`) with CompTIA's course books, so they get reworded. Our questions are in our own words. Exits 1 if any share. |
@@ -80,6 +80,16 @@ entry, no facts). Each fact is a Subject · Predicate · Object triple:
 - `templates` (optional, one per predicate): `label` names the fact, with
   `{subject}` / `{object}` filled in by names. No template: the label is
   "<subject name> <predicate with spaces>".
+- A template can also make questions (`js/factgen.js`): `ask_object` asks for
+  the object (`"Name a child of {subject}."`), `ask_subject` for the subject
+  (`"Who was the father of {object}?"`). Either one, both or neither. Facts
+  are grouped first, so each prompt is asked once and every object of the
+  group (plus aliases) counts as right. Optional `category` / `difficulty`
+  (default "Facts" / medium) and, for number answers, `min` / `max` for
+  made-up wrong numbers. A written question with the same text wins.
+  Wrong choices never come from entities that share a fact with the one
+  asked about, so link everything you know (David married Maacah, as well as
+  Maacah mother_of Absalom). The questions appear in DATA.SYS, tagged GENERATED.
 
 Inference (the Science Officer's job) uses the facts whose object is a whole
 number of 1 or more, shown by their label; a set with fewer than three it can

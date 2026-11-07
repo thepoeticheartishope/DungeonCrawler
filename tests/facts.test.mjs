@@ -71,8 +71,11 @@ test('an old plain list still reads (step B files)', () => {
 
 test('the Bible facts file gives the 20 Inference facts with the same values as v396', () => {
   const data = JSON.parse(readFileSync(new URL('../lists/facts/bible-quiz-bowl.json', import.meta.url), 'utf8'));
-  const { facts, skipped } = factsFromTriples(data);
+  const { facts: all, skipped } = factsFromTriples(data);
   assert.equal(skipped, 0);
+  // Inference reads only the number facts; the David's family trial
+  // (step C2) adds name facts, which it leaves alone.
+  const facts = all.filter(f => typeof f.value === 'number');
   assert.deepEqual(facts.map(f => f.value), [5, 70, 9, 50, 17, 20, 13, 30, 8, 7, 90, 100, 3, 21, 4, 12, 39, 24, 19, 40]);
   assert.ok(facts.every(f => Number.isInteger(f.value) && f.value >= 1));
   assert.ok(facts.some(f => f.fact === 'Days Moses spent on the mountain' && f.source === 'Ex 24:18'));

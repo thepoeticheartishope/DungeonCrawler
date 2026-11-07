@@ -7,7 +7,8 @@
 
 import { state } from './state.js';
 import { escapeHtml } from './quiz.js';
-import { fetchManifest, fetchBundledSet, listSavedSets, loadSavedSet } from './sets.js';
+import { fetchManifest, fetchBundledSet, fetchFacts, listSavedSets, loadSavedSet } from './sets.js';
+import { generateQuestions } from './factgen.js';
 import { t } from './text.js';
 
 // { [question text]: comment }. Keyed by the question itself, so a comment
@@ -19,7 +20,8 @@ const els = {};
 let entries = [];        // the set being viewed
 let viewedLabel = '';    // its name, for the export header
 let viewedFile = 'current-list';
-let filter = 'all';      // 'all' | 'draft' | 'commented' | 'type:<answerType>'
+let filter = 'all';      // 'all' | 'draft' | 'note' | 'generated' | 'commented' | 'type:<answerType>'
+let builtinSets = [];    // the manifest, from the last buildSetOptions
 let comments = readComments();
 
 function readComments() {
@@ -104,6 +106,7 @@ function close() {
 // both have changed since last time.
 async function buildSetOptions() {
   const builtins = await fetchManifest();
+  builtinSets = builtins;
   const saved = listSavedSets();
   let html = '<option value="current">' + escapeHtml(t('data.currentList', { count: state.settings.activeData.length })) + '</option>';
   if (builtins.length) {
@@ -130,13 +133,16 @@ async function viewSet(value) {
   } else if (value.startsWith('builtin:')) {
     const file = value.slice('builtin:'.length);
     els.list.innerHTML = '<div class="data-empty">' + escapeHtml(t('data.loading')) + '</div>';
-    const data = await fetchBundledSet(file);
+    // A built-in set's facts make questions too (factgen.js): they are
+    // listed after the written ones, tagged, whatever DEV -> Fact Qs says.
+    const chosen = builtinSets.find(s => s.file === file);
+    const [data, factsFile] = await Promise.all([fetchBundledSet(file), fetchFacts(chosen && chosen.facts)]);
     if (els.select.value !== value) return; // switched again while loading
     if (!data) {
       entries = [];
       els.status.innerHTML = '<span class="loader-error">' + escapeHtml(t('data.loadFailed')) + '</span>';
     } else {
-      entries = data;
+      entries = [...data, ...generateQuestions(factsFile, data)];
     }
     viewedLabel = label + ' (' + file + ')';
     viewedFile = file.replace(/\.json$/, '');
@@ -162,11 +168,16 @@ function renderRows() {
       '<span class="data-type' + (type ? '' : ' untyped') + '">' + escapeHtml((type || t('data.untyped')).toUpperCase()) + '</span>',
       entry.draft ? '<span class="data-draft">' + escapeHtml(t('data.draft')) + '</span>' : '',
       entry.note ? '<span class="data-hasnote">' + escapeHtml(t('data.hasNote')) + '</span>' : '',
+      entry.generated ? '<span class="data-generated">' + escapeHtml(t('data.generated')) + '</span>' : '',
       entry.category ? '<span>' + escapeHtml(entry.category) + '</span>' : '',
       entry.difficulty ? '<span>' + escapeHtml(entry.difficulty) + '</span>' : ''
     ].join('');
     const opts = Array.isArray(entry.options) && entry.options.length
       ? '<div class="data-opts">' + escapeHtml(t('data.options', { options: entry.options.join(' / ') })) + '</div>' : '';
+    // Every right answer, when there are more than the one shown.
+    const also = (entry.acceptedAnswers || []).filter(a => a.trim().toLowerCase() !== String(entry.answer).trim().toLowerCase());
+    const accepted = also.length
+      ? '<div class="data-opts">' + escapeHtml(t('data.accepted', { answers: also.join(' / ') })) + '</div>' : '';
     const src = entry.source
       ? '<div class="data-src">' + escapeHtml(t('data.source', { source: entry.source })) + '</div>' : '';
     const note = entry.note
@@ -176,7 +187,7 @@ function renderRows() {
       '<div class="data-meta">' + meta + '</div>' +
       '<div class="data-q">' + escapeHtml(entry.question) + '</div>' +
       '<div class="data-a">' + escapeHtml(entry.answer) + '</div>' +
-      opts + src + note +
+      opts + accepted + src + note +
       '<label class="data-comment"><textarea rows="1" placeholder="' + escapeHtml(t('data.commentPlaceholder')) +
       '">' + escapeHtml(comment) + '</textarea></label>' +
       '</div>';
@@ -230,6 +241,9 @@ function renderFilters() {
   // A note says why an answer can differ (a Bible translation, an older exam).
   const notes = entries.filter(e => e.note).length;
   if (notes) buttons.push(['note', t('data.filterNote', { count: notes })]);
+  // Questions made from the set's facts and templates (factgen.js).
+  const made = entries.filter(e => e.generated).length;
+  if (made) buttons.push(['generated', t('data.filterGenerated', { count: made })]);
   buttons.push(['commented', t('data.filterCommented', { count: commentedCount() })]);
   els.filters.innerHTML = buttons.map(([key, label]) =>
     '<button type="button" data-filter="' + escapeHtml(key) + '" aria-pressed="' + (key === filter) + '">' + escapeHtml(label) + '</button>'
@@ -248,6 +262,7 @@ function syncFilters() {
 function matchesFilter(entry) {
   if (filter === 'draft') return Boolean(entry.draft);
   if (filter === 'note') return Boolean(entry.note);
+  if (filter === 'generated') return Boolean(entry.generated);
   if (filter === 'commented') return Boolean(commentFor(entry).trim());
   if (filter.startsWith('type:')) return typeOf(entry) === filter.slice(5);
   return true;
@@ -285,6 +300,7 @@ function buildExport() {
     const tags = [typeOf(entry) || t('data.untyped')];
     if (entry.draft) tags.push('draft');
     if (entry.note) tags.push('note');
+    if (entry.generated) tags.push('generated');
     lines.push('#' + (i + 1) + ' [' + tags.join(', ') + '] ' + commentKey(entry));
     lines.push('  ' + t('data.exportAnswer', { answer: entry.answer }));
     comment.split('\n').forEach((line, n) => {

@@ -10,7 +10,7 @@
 import { state } from './state.js';
 import { TIMER_SECONDS } from './config.js';
 import { rollFlip, maxWager, blindReadMs } from './modifiers.js';
-import { escapeHtml, buildChoices, resolveImageSrc, normalizeSpaces } from './quiz.js';
+import { escapeHtml, buildChoices, resolveImageSrc, normalizeSpaces, rightAnswers } from './quiz.js';
 import { t } from './text.js';
 import { showMinigame, hideMinigame, applyMinigameModifier, lockMinigame, minigameSeconds, minigameTimeUp, minigameAsks, minigameDrawsImage } from './minigameview.js';
 import { playSfx } from './sfx.js';
@@ -52,7 +52,7 @@ export function parkQuestionPanel() {
 // Whether `given` is the current question's answer, ignoring case and
 // extra spaces.
 export function matchesAnswer(given) {
-  return normalizeSpaces(given).toLowerCase() === normalizeSpaces(state.battle.currentQuestion.answer).toLowerCase();
+  return rightAnswers(state.battle.currentQuestion).has(normalizeSpaces(given).toLowerCase());
 }
 
 // Draws state.battle.currentChoices as lettered option buttons.

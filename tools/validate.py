@@ -48,6 +48,9 @@ for set_info in manifest:
         for old in ('term', 'meaning', 'factNote', 'fact'):
             if old in e:
                 err(f'old field "{old}" (use question / answer / note; fact is gone)')
+        accepted = e.get('acceptedAnswers')
+        if 'acceptedAnswers' in e and (not isinstance(accepted, list) or not accepted or not all(isinstance(a, str) and a.strip() for a in accepted)):
+            err('"acceptedAnswers" must be a list of non-empty answers when present')
         if 'note' in e and (not isinstance(e['note'], str) or not e['note'].strip()):
             err('"note" must be a non-empty string when present')
         if e.get('answerType') not in TYPES:

@@ -24,7 +24,7 @@ import {
   SUM_LOCK_MAX_ADDEND,
   LETTER_POOL_FORM, LETTER_POOL_WEAK, LETTER_POOL_MIN_LETTERS, LETTER_POOL_MAX_LETTERS, SHIP_JOB, BATTLE_CHOICE_COUNT,
 } from './config.js';
-import { numberQuestion, pickQuestion, normalizeSpaces, fightGroups } from './quiz.js';
+import { numberQuestion, pickQuestion, normalizeSpaces, fightGroups, rightAnswers } from './quiz.js';
 import { shuffle } from './random.js';
 import { ZODIAC } from './zodiac.js';
 import { MINIGAME_LEVELS } from './config.js';
@@ -645,12 +645,13 @@ function asteroidsIndex() {
 }
 
 // The decoys question `q` can fly with: the other short answers of its
-// kind in the set, each with a question it answers.
+// kind in the set, each with a question it answers. None is one of `q`'s
+// own right answers (rightAnswers: any of David's sons).
 function asteroidsDecoys(q) {
   const answers = asteroidsIndex().get(q.answerType);
   if (!answers) return [];
-  const own = normalizeSpaces(q.answer || '').toLowerCase();
-  return [...answers.values()].filter(a => a.key !== own);
+  const own = rightAnswers(q);
+  return [...answers.values()].filter(a => !own.has(a.key));
 }
 
 // Whether Asteroids can run `q`: a short answer, no picture, the stem
@@ -1251,12 +1252,13 @@ function verdictIndex() {
 }
 
 // The other answers of question `q`'s answerType in the set: what a false
-// claim can show.
+// claim can show. Never one of `q`'s right answers (rightAnswers), or a
+// "false" claim would be true.
 function verdictDecoys(q) {
   const answers = verdictIndex().byType.get(q.answerType);
   if (!answers) return [];
-  const own = normalizeSpaces(q.answer).toLowerCase();
-  return [...answers].filter(([key]) => key !== own).map(([, answer]) => answer);
+  const own = rightAnswers(q);
+  return [...answers].filter(([key]) => !own.has(key)).map(([, answer]) => answer);
 }
 
 // Whether question `q` can be a claim: it has an answerType with

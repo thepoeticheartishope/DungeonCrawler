@@ -2,6 +2,8 @@
 // lists/), and player-saved custom sets (browser localStorage). No DOM
 // access here — main.js wires this into the UI.
 
+import { tripleEntities, tripleTemplates } from './factgen.js';
+
 const CUSTOM_SETS_KEY = 'termDungeon.customSets';
 
 // ---- Bundled sets (lists/manifest.json + lists/<file>.json) ----
@@ -93,16 +95,11 @@ function tripleLabel(f, subject, objectText, template) {
 // The rows { fact, value, source? } of a triples facts file `data`
 // ({ entities, facts, templates }), and how many facts were skipped (an
 // unknown subject or object id, or a missing predicate). Entities with no
-// id or name are left out, so facts naming them are skipped too.
+// id or name are left out, so facts naming them are skipped too
+// (factgen.js tripleEntities, shared with the question generator).
 export function factsFromTriples(data) {
-  const entities = new Map();
-  (Array.isArray(data.entities) ? data.entities : []).forEach((e) => {
-    if (e && typeof e.id === 'string' && e.id && typeof e.name === 'string' && e.name.trim()) entities.set(e.id, { ...e, name: e.name.trim() });
-  });
-  const templates = new Map();
-  (Array.isArray(data.templates) ? data.templates : []).forEach((tp) => {
-    if (tp && typeof tp.predicate === 'string' && !templates.has(tp.predicate)) templates.set(tp.predicate, tp);
-  });
+  const entities = tripleEntities(data);
+  const templates = tripleTemplates(data);
   const rows = Array.isArray(data.facts) ? data.facts : [];
   const facts = [];
   rows.forEach((f) => {
@@ -121,27 +118,37 @@ export function factsFromTriples(data) {
   return { facts, skipped: rows.length - facts.length };
 }
 
-// Returns the facts list in `file` (relative to lists/), or [] when there
-// is none or it can't be had.
+// Returns the facts file `file` (relative to lists/) as read: a triples
+// object, an old plain array, or null when there is none or it can't be
+// had. factRows reads it for Inference; factgen.js generateQuestions for
+// the questions it makes.
 export async function fetchFacts(file) {
-  if (!file) return [];
+  if (!file) return null;
   try {
     const res = await fetch('lists/' + file);
-    if (!res.ok) { factsWarn('lists/' + file + ' not found (' + res.status + '); the set plays with no facts'); return []; }
+    if (!res.ok) { factsWarn('lists/' + file + ' not found (' + res.status + '); the set plays with no facts'); return null; }
     const data = await res.json();
-    if (data && !Array.isArray(data) && typeof data === 'object') {
-      const { facts, skipped } = factsFromTriples(data);
-      if (skipped) factsWarn('lists/' + file + ': ' + skipped + ' bad facts skipped');
-      return cleanFacts(facts);
-    }
-    if (!Array.isArray(data)) { factsWarn('lists/' + file + ' is not a facts file; the set plays with no facts'); return []; }
-    const facts = cleanFacts(data);
-    if (facts.length < data.length) factsWarn('lists/' + file + ': ' + (data.length - facts.length) + ' bad rows skipped');
-    return facts;
+    if (data && typeof data === 'object') return data;
+    factsWarn('lists/' + file + ' is not a facts file; the set plays with no facts');
+    return null;
   } catch (e) {
     factsWarn('lists/' + file + ' could not be read (' + e.message + '); the set plays with no facts');
-    return [];
+    return null;
   }
+}
+
+// The facts list rows { fact, value, source? } of facts file `data` (as
+// fetchFacts gave it; `file` names it in warnings), or [] for none.
+export function factRows(data, file = 'facts') {
+  if (!data) return [];
+  if (!Array.isArray(data)) {
+    const { facts, skipped } = factsFromTriples(data);
+    if (skipped) factsWarn('lists/' + file + ': ' + skipped + ' bad facts skipped');
+    return cleanFacts(facts);
+  }
+  const facts = cleanFacts(data);
+  if (facts.length < data.length) factsWarn('lists/' + file + ': ' + (data.length - facts.length) + ' bad rows skipped');
+  return facts;
 }
 
 // Returns a subject's term dictionary (lists/dictionaries/<subject>.json),
