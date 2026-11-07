@@ -533,6 +533,7 @@ export const TEXT = {
   'data.generated': 'GENERATED',
   'data.openList': 'OPEN LIST',
   'data.accepted': 'ALSO RIGHT: {answers}',
+  'data.fact': 'FACT: {fact}',
   'data.note': 'Note: {note}',
   'data.filterCommented': 'COMMENTED {count}',
   'data.untyped': 'untyped',

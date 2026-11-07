@@ -159,6 +159,17 @@ async function viewSet(value) {
   applyFilter();
 }
 
+// A generated row's facts (factgen.js fromFacts) as file ids, one line
+// each, with the side the question asks for in [ ]:
+// "st · used_on · [fiber]". Written rows have none.
+function factLines(entry) {
+  return (Array.isArray(entry.fromFacts) ? entry.fromFacts : []).map((f) => {
+    const s = f.asks === 'subject' ? '[' + f.subject + ']' : String(f.subject);
+    const o = f.asks === 'object' ? '[' + f.object + ']' : String(f.object);
+    return s + ' · ' + f.predicate + ' · ' + o;
+  });
+}
+
 function renderRows() {
   const pad = String(entries.length).length;
   els.list.innerHTML = entries.map((entry, i) => {
@@ -180,6 +191,8 @@ function renderRows() {
     const also = (entry.acceptedAnswers || []).filter(a => a.trim().toLowerCase() !== String(entry.answer).trim().toLowerCase());
     const accepted = also.length
       ? '<div class="data-opts">' + escapeHtml(t('data.accepted', { answers: also.join(' / ') })) + '</div>' : '';
+    // A generated row: the facts it was made from, asked side in [ ].
+    const facts = factLines(entry).map(line => '<div class="data-src">' + escapeHtml(t('data.fact', { fact: line })) + '</div>').join('');
     const src = entry.source
       ? '<div class="data-src">' + escapeHtml(t('data.source', { source: entry.source })) + '</div>' : '';
     const note = entry.note
@@ -189,7 +202,7 @@ function renderRows() {
       '<div class="data-meta">' + meta + '</div>' +
       '<div class="data-q">' + escapeHtml(entry.question) + '</div>' +
       '<div class="data-a">' + escapeHtml(entry.answer) + '</div>' +
-      opts + accepted + src + note +
+      opts + accepted + facts + src + note +
       '<label class="data-comment"><textarea rows="1" placeholder="' + escapeHtml(t('data.commentPlaceholder')) +
       '">' + escapeHtml(comment) + '</textarea></label>' +
       '</div>';
@@ -276,7 +289,7 @@ function applyFilter() {
   els.list.querySelectorAll('.data-row').forEach((row) => {
     const entry = entries[Number(row.dataset.i)];
     const hit = matchesFilter(entry) &&
-      (!q || (entry.question + '\n' + entry.answer + '\n' + (entry.source || '')).toLowerCase().includes(q));
+      (!q || (entry.question + '\n' + entry.answer + '\n' + (entry.source || '') + '\n' + factLines(entry).join('\n')).toLowerCase().includes(q));
     row.hidden = !hit;
     if (hit) shown++;
   });
@@ -305,6 +318,7 @@ function buildExport() {
     if (entry.generated) tags.push('generated');
     lines.push('#' + (i + 1) + ' [' + tags.join(', ') + '] ' + commentKey(entry));
     lines.push('  ' + t('data.exportAnswer', { answer: entry.answer }));
+    factLines(entry).forEach(line => lines.push('  ' + t('data.fact', { fact: line })));
     comment.split('\n').forEach((line, n) => {
       lines.push('  ' + (n === 0 ? t('data.exportComment', { comment: line }) : line));
     });
