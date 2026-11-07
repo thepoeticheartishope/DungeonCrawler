@@ -771,8 +771,12 @@ export const MATCH_BOSS = {
   size: 5, minWords: 6, maxChars: 7, full: 5, bonus: 1, crisisStart: [7, 17], spreadEvery: 2, loseAt: 8,
   revealTurns: 2, seconds: 914, popMs: 300, dropMs: 420,
   // How many phases the boss has (boss plan): 0 Sort (kind colours), 1 Dark
-  // (words only). Step B adds phase 2, Call.
-  phases: 2,
+  // (words only), 2 Call (a set question; a line through its answer).
+  phases: 3,
+  // Call: the answers that win it (Timothy 2026-11-07: 3 for now), and the
+  // hint ladder's steps (kind, row, the column glows) after this many turns
+  // with no answer, each one turn later per panic level.
+  callAnswers: 3, hintTurns: [2, 4, 6],
 };
 export const SCANNER = { xShare: 0.2, twoShare: 0.4, wrongsAllowed: 1 };
 // Sum Lock: a trapped box only. When a trapped box rolls a minigame it is

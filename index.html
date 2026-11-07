@@ -1279,6 +1279,11 @@
   .mg-match-board.tints .mg-match-tile[data-kind="1"] { background: #2a2216; }
   .mg-match-board.tints .mg-match-tile[data-kind="2"] { background: #16261f; }
   .mg-match-tile[data-kind="crisis"] { background: #3a1914; border-color: var(--text); color: var(--text); cursor: default; }
+  .mg-match-ask { margin: 6px 0 0; padding: 6px 8px; border: 1px solid var(--line); text-align: left; }
+  .mg-match-ask[hidden] { display: none; }
+  .mg-match-ask p { margin: 0; }
+  .mg-match-ask p:empty { display: none; }
+  .mg-match-tile.glow { border-color: var(--torch-bright); box-shadow: inset 0 0 0 1px var(--torch-bright); }
   .mg-match-tile.sel { outline: 2px solid var(--torch-bright); outline-offset: -2px; }
   .mg-match-kind { display: block; font-size: calc(11px * var(--text-scale, 1)); color: var(--torch-bright); margin-top: 2px; }
   .mg-match-tile.pop { animation: mg-match-pop .3s ease-in forwards; }

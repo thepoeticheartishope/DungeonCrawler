@@ -24,6 +24,7 @@ import {
   starChartSetup, starChartPick, starChartTier, hullPatchSetup, hullPatchPlate, hullPatchTier,
   inferenceSetup, inferenceCheck, inferenceTier, patchBayCheck, patchBayTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout, levelOf,
   matchSwap, matchEndTurn, matchWon, matchUse, matchCrisis, matchNear, matchNextPhase, matchRetry, matchTints, matchLastPhase,
+  matchAnswerAt, matchHint, MATCH_CALL,
 } from './minigames.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
 import { normalizeSpaces, buildChoices, resolveImageSrc } from './quiz.js';
@@ -1831,6 +1832,10 @@ function buildAsteroids() {
 // kinds and spends the turn. A phase is won with all three meters full;
 // a short beat (a line and a button) then starts the next on a fresh
 // board, and phase 1 (Dark) hides the kind colours (boss plan step A).
+// Phase 2 (Call) asks a set question above the board: a line through its
+// answer tile answers it, MATCH_BOSS.callAnswers answers win; with no
+// answer for a while the hint ladder names its kind, then its row, then
+// its column glows (later with more panic; boss plan step B).
 // Winning the last phase wins the boss. Lose: the crisis on
 // MATCH_BOSS.loseAt tiles (the first time, the one retry restarts the
 // phase after a beat), or the time (its song's length, one clock across
@@ -1850,6 +1855,10 @@ function buildMatch() {
   const beatGo = add(beat, 'button');
   beatGo.type = 'button';
   beat.hidden = true;
+  const ask = add(slot, 'div', 'mg-match-ask');
+  ask.setAttribute('aria-live', 'polite');
+  const askQ = add(ask, 'p', 'term-line');
+  const askHint = add(ask, 'p', 'term-line mg-hint');
   const grid = add(slot, 'div', 'mg-match-board');
   const meters = add(slot, 'div', 'mg-match-meters');
   const said = add(slot, 'div', 'term-line mg-said');
@@ -1868,6 +1877,17 @@ function buildMatch() {
     grid.innerHTML = '';
     grid.classList.toggle('tints', matchTints(board));
     phaseLabel.textContent = t('match.phase', { n: board.phase + 1, of: MATCH_BOSS.phases, name: t('match.phase.' + board.phase) });
+    // Call: the question, and the hint ladder's step (the column glows last).
+    const calling = board.phase === MATCH_CALL && Boolean(board.ask);
+    ask.hidden = !calling;
+    const hint = calling ? matchHint(board, (state.run.ship && state.run.ship.panic) || 0) : 0;
+    const at = calling ? matchAnswerAt(board) : -1;
+    const glowCol = hint >= 3 && at >= 0 && cells === board.cells ? at % MATCH_BOSS.size : -1;
+    if (calling) {
+      askQ.textContent = t('match.call.q', { n: board.answers + 1, of: MATCH_BOSS.callAnswers, question: board.ask.q.question });
+      askHint.textContent = hint >= 2 && at >= 0 ? t('match.call.row', { kind: kindName(board.ask.kind), row: Math.floor(at / MATCH_BOSS.size) + 1 })
+        : hint >= 1 ? t('match.call.kind', { kind: kindName(board.ask.kind) }) : '';
+    }
     cells.forEach((tile, k) => {
       const b = add(grid, 'button', 'mg-match-tile');
       b.type = 'button';
@@ -1876,6 +1896,7 @@ function buildMatch() {
       b.textContent = tile.word;
       if (show) add(b, 'span', 'mg-match-kind').textContent = kindName(tile.kind);
       if (sel === k) b.classList.add('sel');
+      if (glowCol >= 0 && k % MATCH_BOSS.size === glowCol) b.classList.add('glow');
       if (pop.includes(k)) b.classList.add('pop');
       if (fall[k]) { b.classList.add('drop'); b.style.setProperty('--fall', fall[k]); }
       if (shake.includes(k)) b.classList.add('shake');
@@ -1975,7 +1996,8 @@ function buildMatch() {
     }
     busy = false;
     const parts = [0, 1, 2].filter(i => gained[i]).map(i => '+' + gained[i] + ' ' + (crew[i] ? t('role.' + crew[i]) : kindName(i)));
-    said.textContent = t(got.waves.length > 1 ? 'match.chain' : 'match.line', { n: got.waves.length, gains: parts.join(', ') }) + (freed ? ' ' + t('match.freed', { n: freed }) : '');
+    said.textContent = (got.answered ? t('match.call.right', { word: got.answered.word }) + ' ' : '')
+      + t(got.waves.length > 1 ? 'match.chain' : 'match.line', { n: got.waves.length, gains: parts.join(', ') }) + (freed ? ' ' + t('match.freed', { n: freed }) : '');
     if (matchWon(board)) { phaseWon(); return; }
     endTurn();
   };
@@ -2003,7 +2025,7 @@ function buildMatch() {
     lock: grid,
     focus: () => { const b = grid.querySelector('button'); if (b) b.focus(); },
     // DEV -> Auto-win: the crew all charged (the ship arrives).
-    finish: () => { board.charge = [MATCH_BOSS.full, MATCH_BOSS.full, MATCH_BOSS.full]; finish({ right: true, tier: 'X', given: '' }); },
+    finish: () => { board.charge = [MATCH_BOSS.full, MATCH_BOSS.full, MATCH_BOSS.full]; board.answers = MATCH_BOSS.callAnswers; finish({ right: true, tier: 'X', given: '' }); },
     flip: () => {},
   };
 }
