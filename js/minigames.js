@@ -986,10 +986,16 @@ const CRISIS = { kind: 'crisis', word: '!!' };
 // tiles, no line to start with, crisis on MATCH_BOSS.crisisStart), each
 // crew slot's `charge`, the `turn`, turns until the crisis next spreads
 // (`toSpread`), a spread to skip (`skip`), turns of kinds shown
-// (`reveal`), the boss's `phase` (0 Sort, 1 Dark; boss plan step A) and
-// whether its one retry is spent (`retried`).
+// (`reveal`), the boss's `phase` (0 Sort, 1 Dark, 2 Call; boss plan
+// steps A-B), whether its one retry is spent (`retried`), and for Call:
+// the question asked (`ask`: { q, word, kind }), the `answers` so far,
+// the questions already `asked` (none twice) and the turns `stuck` since
+// the last answer (the hint ladder).
 export function matchSetup(groups) {
-  const board = { groups, cells: [], charge: [0, 0, 0], turn: 0, toSpread: 0, skip: 0, reveal: 0, phase: 0, retried: false };
+  const board = {
+    groups, cells: [], charge: [0, 0, 0], turn: 0, toSpread: 0, skip: 0, reveal: 0, phase: 0, retried: false,
+    ask: null, answers: 0, asked: [], stuck: 0, answeredNow: false,
+  };
   matchFreshPhase(board);
   return board;
 }
@@ -1008,6 +1014,65 @@ function matchFreshPhase(board) {
   board.toSpread = MATCH_BOSS.spreadEvery;
   board.skip = 0;
   board.reveal = 0;
+  board.ask = null;
+  board.answers = 0;
+  board.stuck = 0;
+  board.answeredNow = false;
+  if (board.phase === MATCH_CALL) matchAsk(board);
+}
+
+// The Call phase's number (boss plan step B).
+export const MATCH_CALL = 2;
+
+// Asks `board` a new Call question: one from the set whose answer is a
+// word of the board's kinds (no image, none asked before; once all have
+// been asked they may come again), and puts its answer on the board if
+// it is missing, on a tile that makes no line. Null when the set has none.
+function matchAsk(board) {
+  const data = state.settings.activeData || [];
+  const kindOf = (q) => {
+    const word = normalizeSpaces(q.answer || '');
+    const kinds = [0, 1, 2].filter(i => board.groups[i].words.includes(word));
+    return kinds.find(i => [q.answerType, q.category].includes(board.groups[i].key)) ?? kinds[0];
+  };
+  const fits = q => !q.image && q.question && kindOf(q) !== undefined;
+  let pool = data.filter(q => fits(q) && !board.asked.includes(q));
+  if (!pool.length) pool = data.filter(fits);
+  if (!pool.length) { board.ask = null; return null; }
+  const q = shuffle(pool)[0];
+  board.asked.push(q);
+  board.ask = { q, word: normalizeSpaces(q.answer), kind: kindOf(q) };
+  if (matchAnswerAt(board) < 0) {
+    const cells = board.cells;
+    const spots = shuffle(cells.map((t, k) => k).filter(k => cells[k].kind !== 'crisis'));
+    for (const k of spots) {
+      const was = cells[k];
+      cells[k] = { kind: board.ask.kind, word: board.ask.word };
+      if (!matchRuns(board).length) break;
+      cells[k] = was;
+    }
+  }
+  return board.ask;
+}
+
+// Whether tile `tile` is the answer to `board`'s Call question.
+function matchIsAnswer(board, tile) {
+  return Boolean(board.ask) && tile.kind !== 'crisis' && tile.word === board.ask.word;
+}
+
+// Where the answer to `board`'s Call question sits (the first such
+// tile), or -1 (no question, or not on the board).
+export function matchAnswerAt(board) {
+  return board.cells.findIndex(tile => matchIsAnswer(board, tile));
+}
+
+// How far up the hint ladder `board` is for its Call question (boss plan):
+// 0 none, 1 its kind, 2 its row, 3 its column glows. Each step comes
+// MATCH_BOSS.hintTurns turns with no answer, one turn later per `panic`
+// level; it starts again after an answer.
+export function matchHint(board, panic = 0) {
+  if (board.phase !== MATCH_CALL || !board.ask) return 0;
+  return MATCH_BOSS.hintTurns.filter(n => board.stuck >= n + panic).length;
 }
 
 // Whether `board` is on its last phase: winning it wins the boss.
@@ -1074,7 +1139,10 @@ export function matchNear(k) {
 // (`fall`: how many rows each tile fell; new tiles never make a line by
 // themselves; `cells` the board after it; `start` the board just after
 // the swap), and `gained` charge per crew slot (1 a line, MATCH_BOSS.bonus
-// more for 4 or more). Charge stops at MATCH_BOSS.full.
+// more for 4 or more). Charge stops at MATCH_BOSS.full. In Call, a line
+// through the answer tile (in any wave) is an answer: `answered` is the
+// question it answers, and a new question is asked unless the phase is
+// won.
 export function matchSwap(board, a, b) {
   const cells = board.cells;
   if (!matchNear(a).includes(b) || cells[a].kind === 'crisis' || cells[b].kind === 'crisis') return { lined: false, invalid: true };
@@ -1086,9 +1154,11 @@ export function matchSwap(board, a, b) {
   const waves = [];
   const start = cells.map(t => ({ ...t }));
   const size = MATCH_BOSS.size;
+  let answered = null;
   for (let runs = matchRuns(board); runs.length; runs = matchRuns(board)) {
     const hit = new Set();
     const gained = [0, 0, 0];
+    if (!answered && runs.some(run => run.cells.some(k => matchIsAnswer(board, cells[k])))) answered = board.ask;
     runs.forEach((run) => {
       gained[run.kind] += 1 + (run.cells.length >= 4 ? MATCH_BOSS.bonus : 0);
       run.cells.forEach(k => hit.add(k));
@@ -1117,20 +1187,33 @@ export function matchSwap(board, a, b) {
     gained.forEach((g, i) => { board.charge[i] = Math.min(MATCH_BOSS.full, board.charge[i] + g); });
     waves.push({ hit: [...hit], fall, gained, freed, cells: cells.map(t => ({ ...t })) });
   }
-  return { lined: true, start, waves };
+  if (answered) {
+    board.answers++;
+    board.answeredNow = true;
+    board.ask = null;
+    if (!matchWon(board)) matchAsk(board);
+  }
+  return { lined: true, start, waves, answered };
 }
 
-// Whether `board`'s phase is won: every crew slot charged full.
+// Whether `board`'s phase is won: every crew slot charged full, or in
+// Call, MATCH_BOSS.callAnswers answers.
 export function matchWon(board) {
+  if (board.phase === MATCH_CALL) return board.answers >= MATCH_BOSS.callAnswers;
   return board.charge.every(c => c >= MATCH_BOSS.full);
 }
 
 // A turn ends on `board`: kinds shown count down, and every
 // MATCH_BOSS.spreadEvery turns the crisis spreads one tile (next to a
 // crisis tile, or anywhere if none is left), unless a spread is skipped.
+// The crisis never spreads onto Call's answer tile. In Call a turn with
+// no answer adds to `stuck` (the hint ladder); one with an answer starts
+// it again.
 // Returns { spread (the tile, or null), lost (MATCH_BOSS.loseAt reached) }.
 export function matchEndTurn(board) {
   board.turn++;
+  if (board.phase === MATCH_CALL) board.stuck = board.answeredNow ? 0 : board.stuck + 1;
+  board.answeredNow = false;
   if (board.reveal > 0) board.reveal--;
   board.toSpread--;
   let spread = null;
@@ -1140,9 +1223,10 @@ export function matchEndTurn(board) {
     else {
       const cells = board.cells;
       const crisis = cells.map((t, k) => (t.kind === 'crisis' ? k : -1)).filter(k => k >= 0);
-      const edge = shuffle(crisis.flatMap(matchNear).filter(n => cells[n].kind !== 'crisis'));
-      spread = edge.length ? edge[0] : shuffle(cells.map((t, k) => k).filter(k => cells[k].kind !== 'crisis'))[0];
-      cells[spread] = { ...CRISIS };
+      const open = k => cells[k].kind !== 'crisis' && !matchIsAnswer(board, cells[k]);
+      const edge = shuffle(crisis.flatMap(matchNear).filter(open));
+      spread = edge.length ? edge[0] : shuffle(cells.map((t, k) => k).filter(open))[0] ?? null;
+      if (spread !== null) cells[spread] = { ...CRISIS };
     }
   }
   return { spread, lost: matchCrisis(board) >= MATCH_BOSS.loseAt };

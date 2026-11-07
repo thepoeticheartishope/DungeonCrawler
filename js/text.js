@@ -251,6 +251,13 @@ export const TEXT = {
   'match.phase': 'Phase {n}/{of} · {name}', // draft. The boss's phase (boss plan step A)
   'match.phase.0': 'Sort', // draft. Phase 1: the kind colours are on
   'match.phase.1': 'Dark', // draft. Phase 2: the colours are off, words only
+  'match.phase.2': 'Call', // draft. Phase 3: a set question; line up its answer (boss plan step B)
+  'match.beat.2': 'The comms come alive. The crew calls out questions now: find each answer on the board and clear it in a line.', // draft. Between phase 2 and 3
+  'match.start.2': 'Read the question, find its answer on the board, and swap it into a line.', // draft. Phase 3 starts
+  'match.call.q': 'Question {n}/{of}: {question}', // draft. Phase 3: the question asked
+  'match.call.kind': 'Hint: the answer is one of the {kind} words.', // draft. Hint ladder step 1: its kind
+  'match.call.row': 'Hint: the answer is one of the {kind} words, in row {row} from the top.', // draft. Hint ladder step 2: its row (step 3 adds its column glowing)
+  'match.call.right': 'Answered: {word}!', // draft. A line through the answer tile
   'match.beat.1': 'The lights fail. The colours are gone: from now on you sort by the words alone.', // draft. Between phase 1 and 2
   'match.beat.go': 'GO ON', // draft. The button that starts the next phase
   'match.start.1': 'Dark now. Read each word and line up the ones that belong together.', // draft. Phase 2 starts

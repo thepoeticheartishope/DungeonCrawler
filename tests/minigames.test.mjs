@@ -960,9 +960,131 @@ test('Match boss phases (boss plan A): a won phase moves on to a fresh board, co
   board.charge = [5, 5, 5];
   assert.ok(matchUse(board, 2));
   assert.ok(matchTints(board), 'a crew member showing kinds lights them for a while');
-  assert.ok(matchLastPhase(board), 'two phases until step B');
+  assert.ok(!matchLastPhase(board), 'Call comes after Dark');
+  assert.ok(matchNextPhase(board));
+  assert.equal(board.phase, 2);
+  assert.ok(matchLastPhase(board), 'Call is the last phase');
   assert.ok(!matchNextPhase(board), 'no phase after the last');
-  assert.equal(board.phase, 1);
+  assert.equal(board.phase, 2);
+});
+
+// A Call board: phase 2, every tile a plain no-line pattern of `w<kind>`
+// words, and the question's answer placed by hand at `at`.
+async function callBoard(at) {
+  const { matchGroups, matchSetup, matchNextPhase } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeData = BOSS_SET;
+  const board = matchSetup(matchGroups());
+  matchNextPhase(board);
+  matchNextPhase(board);
+  const T = k => ({ kind: k, word: 'w' + k });
+  board.cells = Array.from({ length: 25 }, (_, i) => T(((i % 5) + 2 * Math.floor(i / 5)) % 3));
+  board.cells[at] = { kind: board.ask.kind, word: board.ask.word };
+  return board;
+}
+
+test('Match boss Call (boss plan B): the question is from the set, its answer is on the board, and not in a line', async () => {
+  const { matchGroups, matchSetup, matchNextPhase, matchAnswerAt, matchRuns, matchWon, MATCH_CALL } = await import('../js/minigames.js');
+  reset();
+  state.settings.activeData = BOSS_SET;
+  for (let i = 0; i < 20; i++) {
+    const board = matchSetup(matchGroups());
+    assert.equal(board.ask, null, 'no question before Call');
+    matchNextPhase(board);
+    matchNextPhase(board);
+    assert.equal(board.phase, MATCH_CALL);
+    assert.ok(BOSS_SET.includes(board.ask.q), 'a set question');
+    assert.equal(board.ask.word, board.ask.q.answer);
+    assert.ok(board.groups[board.ask.kind].words.includes(board.ask.word));
+    assert.equal(board.groups[board.ask.kind].key, board.ask.q.answerType, 'the kind of its answer type');
+    const at = matchAnswerAt(board);
+    assert.ok(at >= 0, 'the answer is on the board');
+    assert.notEqual(board.cells[at].kind, 'crisis');
+    assert.equal(matchRuns(board).length, 0, 'no line to start with');
+    assert.equal(board.answers, 0);
+    assert.ok(!matchWon(board), 'full meters do not win Call');
+    board.charge = [5, 5, 5];
+    assert.ok(!matchWon(board));
+  }
+});
+
+test('Match boss Call: a line through the answer answers it and asks a new question; 3 answers win', async () => {
+  const { matchSwap, matchWon, matchAnswerAt, matchEndTurn, matchHint } = await import('../js/minigames.js');
+  const { MATCH_BOSS } = await import('../js/config.js');
+  // Row 2 laid out as k k other answer(k) x: swapping 12 and 13 makes a
+  // line of three through the answer.
+  const board = await callBoard(12);
+  const k = board.ask.kind;
+  const T = x => ({ kind: x, word: 'w' + x });
+  const other = (k + 1) % 3;
+  board.cells.splice(10, 5, T(k), T(k), T(other), { kind: k, word: board.ask.word }, T((k + 2) % 3));
+  board.cells[7] = T(other);
+  board.cells[17] = T((k + 2) % 3);
+  const first = board.ask;
+  const got = matchSwap(board, 12, 13);
+  assert.ok(got.lined);
+  assert.equal(got.answered, first, 'the line runs through the answer');
+  assert.equal(board.answers, 1);
+  assert.notEqual(board.ask.q, first.q, 'a new question, never the same one twice');
+  assert.ok(matchAnswerAt(board) >= 0, 'its answer is on the board');
+  matchEndTurn(board);
+  assert.equal(board.stuck, 0, 'the turn with an answer starts the ladder again');
+  // A line that misses the answer is no answer.
+  const b2 = await callBoard(24);
+  const k2 = (b2.ask.kind + 1) % 3;
+  b2.cells.splice(0, 5, T(k2), T(k2), T((k2 + 1) % 3), T(k2), T((k2 + 2) % 3));
+  const miss = matchSwap(b2, 2, 3);
+  assert.ok(miss.lined);
+  assert.ok(!miss.waves[0].hit.includes(24), 'the first line is in row 0');
+  // A chain could fall onto the answer by luck; only then is it answered.
+  assert.equal(Boolean(miss.answered), miss.waves.slice(1).length > 0 && b2.answers === 1);
+  // Three answers win.
+  b2.answers = MATCH_BOSS.callAnswers - 1;
+  assert.ok(!matchWon(b2));
+  b2.answers++;
+  assert.ok(matchWon(b2));
+  assert.equal(matchHint(b2), 0, 'no hint at the start');
+});
+
+test('Match boss Call: the crisis never spreads onto the answer; the retry starts the answers again', async () => {
+  const { matchEndTurn, matchAnswerAt, matchRetry, matchCrisis } = await import('../js/minigames.js');
+  const { MATCH_BOSS } = await import('../js/config.js');
+  for (let i = 0; i < 10; i++) {
+    const board = await callBoard(12);
+    // The answer is boxed in by the crisis: it still never spreads there.
+    [6, 7, 8, 11, 13, 16, 17, 18].forEach((k) => { board.cells[k] = { kind: 'crisis', word: '!!' }; });
+    for (let turn = 0; turn < 12; turn++) matchEndTurn(board);
+    assert.notEqual(board.cells[12].kind, 'crisis');
+    assert.equal(matchAnswerAt(board), 12);
+    board.answers = 2;
+    assert.ok(matchRetry(board));
+    assert.equal(board.answers, 0, 'the phase starts again');
+    assert.equal(board.phase, 2);
+    assert.ok(matchAnswerAt(board) >= 0);
+    assert.equal(matchCrisis(board), MATCH_BOSS.crisisStart.length);
+  }
+});
+
+test('Match boss Call: the hint ladder climbs with turns stuck, one turn later per panic level', async () => {
+  const { matchEndTurn, matchHint } = await import('../js/minigames.js');
+  const board = await callBoard(12);
+  board.skip = 99;
+  const steps = (panic) => {
+    board.stuck = 0;
+    const at = [];
+    for (let turn = 1; turn <= 12; turn++) {
+      board.stuck = turn;
+      at.push(matchHint(board, panic));
+    }
+    return [1, 2, 3].map(n => at.indexOf(n) + 1);
+  };
+  assert.deepEqual(steps(0), [2, 4, 6]);
+  assert.deepEqual(steps(3), [5, 7, 9]);
+  board.stuck = 0;
+  matchEndTurn(board);
+  matchEndTurn(board);
+  assert.equal(board.stuck, 2, 'turns with no answer count');
+  assert.equal(matchHint(board, 0), 1, 'its kind');
 });
 
 test('Match boss retry (boss plan A): the first loss restarts the same phase; there is only one', async () => {
