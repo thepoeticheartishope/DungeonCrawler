@@ -24,8 +24,9 @@ import {
   starChartSetup, starChartPick, starChartTier, hullPatchSetup, hullPatchPlate, hullPatchTier,
   inferenceSetup, inferenceCheck, inferenceTier, patchBayCheck, patchBayTier, asteroidsSetup, asteroidsHit, asteroidsTier, asteroidsLayout, levelOf,
   matchSwap, matchEndTurn, matchWon, matchUse, matchCrisis, matchNear, matchNextPhase, matchRetry, matchTints, matchLastPhase,
-  matchAnswerAt, matchHint, MATCH_CALL,
+  matchAnswerAt, matchHint, matchHintAt, MATCH_CALL,
 } from './minigames.js';
+import { moveLine, phaseLine } from './bosschat.js';
 import { blindReadMs, rollFlip } from './modifiers.js';
 import { normalizeSpaces, buildChoices, resolveImageSrc } from './quiz.js';
 import { shuffle } from './random.js';
@@ -1836,6 +1837,10 @@ function buildAsteroids() {
 // answer tile answers it, MATCH_BOSS.callAnswers answers win; with no
 // answer for a while the hint ladder names its kind, then its row, then
 // its column glows (later with more panic; boss plan step B).
+// Above the board the crew chat (boss plan step C): the three taught crew
+// (a dot lights while one speaks) and their last few lines, at most one a
+// move (bosschat.js), new lines fading in slowly, older ones dimmed; Call's
+// question sits under them.
 // Winning the last phase wins the boss. Lose: the crisis on
 // MATCH_BOSS.loseAt tiles (the first time, the one retry restarts the
 // phase after a beat), or the time (its song's length, one clock across
@@ -1855,20 +1860,53 @@ function buildMatch() {
   const beatGo = add(beat, 'button');
   beatGo.type = 'button';
   beat.hidden = true;
-  const ask = add(slot, 'div', 'mg-match-ask');
+  const chat = add(slot, 'div', 'mg-match-chat');
+  const chips = add(chat, 'div', 'mg-match-crew');
+  const log = add(chat, 'div', 'mg-match-lines');
+  log.setAttribute('aria-live', 'polite');
+  const ask = add(chat, 'div', 'mg-match-ask');
   ask.setAttribute('aria-live', 'polite');
   const askQ = add(ask, 'p', 'term-line');
   const askHint = add(ask, 'p', 'term-line mg-hint');
   const grid = add(slot, 'div', 'mg-match-board');
   const meters = add(slot, 'div', 'mg-match-meters');
-  const said = add(slot, 'div', 'term-line mg-said');
-  said.setAttribute('aria-live', 'polite');
   grid.style.gridTemplateColumns = 'repeat(' + MATCH_BOSS.size + ', minmax(0, 1fr))';
   let sel = null;
   let busy = false;
   let arming = false;
   let left = MATCH_BOSS.seconds * 1000;
   const kindName = k => board.groups[k].label && t('type.' + board.groups[k].label) !== 'type.' + board.groups[k].label ? t('type.' + board.groups[k].label) : board.groups[k].label;
+  const who = i => (crew[i] ? t('role.' + crew[i]) : t('match.crew'));
+  const panic = () => (state.run.ship && state.run.ship.panic) || 0;
+  const chipFor = [0, 1, 2].map((i) => {
+    const chip = add(chips, 'span', 'mg-match-chip');
+    add(chip, 'i');
+    add(chip, 'span').textContent = who(i);
+    return chip;
+  });
+
+  // Adds a chat line: `text` said by crew slot `by` (null: no one, a plain
+  // line). Only the last MATCH_BOSS.chatLines stay; all but the newest two
+  // dim, and the speaker's dot lights.
+  const say = (by, text) => {
+    const line = add(log, 'p', 'mg-match-ln' + (still ? '' : ' new') + (by === null ? ' sys' : ''));
+    if (by !== null) add(line, 'span', 'mg-match-by').textContent = t('boss.chat.who', { role: who(by) });
+    line.append((by === null ? '' : ' ') + text.replace(/\s+/g, ' ').trim());
+    while (log.children.length > MATCH_BOSS.chatLines) log.firstChild.remove();
+    [...log.children].forEach((el, n, all) => el.classList.toggle('old', n < all.length - 2));
+    chipFor.forEach((chip, i) => chip.classList.toggle('talking', i === by));
+  };
+  // Says a bosschat.js line (none: nothing), its tile kinds, charge,
+  // ability and set note put in words.
+  const sayLine = (line) => {
+    if (!line) return;
+    const v = { ...line.vars };
+    if (typeof v.kind === 'number') v.kind = kindName(v.kind);
+    if (v.gained) v.gains = [0, 1, 2].filter(i => v.gained[i]).map(i => '+' + v.gained[i] + ' ' + who(i)).join(', ');
+    if (typeof v.ability === 'number') v.ability = t('match.ability.' + v.ability);
+    v.note = v.note ? t('boss.chat.note', { note: v.note }) : '';
+    say(line.slot, t(line.key, v));
+  };
 
   // Draws `cells` (the board, or a snapshot mid-clear) with tiles `pop`
   // shrinking away, tiles that fell `fall` rows easing in, and `shake`
@@ -1880,9 +1918,10 @@ function buildMatch() {
     // Call: the question, and the hint ladder's step (the column glows last).
     const calling = board.phase === MATCH_CALL && Boolean(board.ask);
     ask.hidden = !calling;
-    const hint = calling ? matchHint(board, (state.run.ship && state.run.ship.panic) || 0) : 0;
+    const hint = matchHint(board, panic());
     const at = calling ? matchAnswerAt(board) : -1;
-    const glowCol = hint >= 3 && at >= 0 && cells === board.cells ? at % MATCH_BOSS.size : -1;
+    const lead = hint >= 3 && cells === board.cells ? matchHintAt(board) : null;
+    const glowCol = lead ? lead.at % MATCH_BOSS.size : -1;
     if (calling) {
       askQ.textContent = t('match.call.q', { n: board.answers + 1, of: MATCH_BOSS.callAnswers, question: board.ask.q.question });
       askHint.textContent = hint >= 2 && at >= 0 ? t('match.call.row', { kind: kindName(board.ask.kind), row: Math.floor(at / MATCH_BOSS.size) + 1 })
@@ -1945,25 +1984,31 @@ function buildMatch() {
   const endTurn = (shake = []) => {
     const turn = matchEndTurn(board);
     draw(board.cells, { shake });
-    if (!turn.lost) return;
+    if (!turn.lost) return turn;
     if (!board.retried) {
-      showBeat(t('match.retry'), t('match.retry.go'), () => { matchRetry(board); said.textContent = t('match.retried'); });
-      return;
+      showBeat(t('match.retry'), t('match.retry.go'), () => { matchRetry(board); sayLine(phaseLine(board, true)); });
+      return turn;
     }
-    said.textContent = t('match.lost');
+    say(null, t('match.lost'));
     finish({ right: false, tier: null, given: '' });
+    return turn;
+  };
+  // The crew's one line for a move (bosschat.js), unless it lost the board.
+  const react = (move) => {
+    if (move.turn && move.turn.lost) return;
+    sayLine(moveLine(board, { ...move, panic: panic() }));
   };
   // A phase won: the boss if it was the last, else a beat and the next.
   const phaseWon = () => {
     if (matchLastPhase(board)) { draw(); finish({ right: true, tier: 'X', given: '' }); return; }
-    showBeat(t('match.beat.' + (board.phase + 1)), t('match.beat.go'), () => { matchNextPhase(board); said.textContent = t('match.start.' + board.phase); });
+    showBeat(t('match.beat.' + (board.phase + 1)), t('match.beat.go'), () => { matchNextPhase(board); sayLine(phaseLine(board)); });
   };
   const tap = async (k) => {
     if (busy || shown.done) return;
     if (arming) {
       arming = false;
       matchUse(board, 0, Math.floor(k / MATCH_BOSS.size));
-      said.textContent = t('match.used.0');
+      say(0, t('match.used.0'));
       draw();
       return;
     }
@@ -1972,17 +2017,18 @@ function buildMatch() {
     const a = sel;
     sel = null;
     if (a === k || !matchNear(a).includes(k)) { sel = a === k ? null : k; draw(); return; }
+    const hintWas = matchHint(board, panic());
+    const chargeWas = [...board.charge];
     const got = matchSwap(board, a, k);
     if (got.invalid) { draw(); return; }
     if (!got.lined) {
-      said.textContent = t('match.noLine', { a: board.cells[a].word, ak: kindName(board.cells[a].kind), b: board.cells[k].word, bk: kindName(board.cells[k].kind) });
-      endTurn([a, k]);
+      // The two tiles, before a spread at the turn's end can take one.
+      const tiles = { a: board.cells[a], b: board.cells[k] };
+      react({ ...tiles, got, turn: endTurn([a, k]), hintWas, chargeWas });
       return;
     }
     busy = true;
     let prev = got.start;
-    const gained = [0, 0, 0];
-    let freed = 0;
     for (const wave of got.waves) {
       draw(prev, { pop: wave.hit });
       await wait(MATCH_BOSS.popMs);
@@ -1990,22 +2036,17 @@ function buildMatch() {
       draw(wave.cells, { fall: wave.fall });
       await wait(MATCH_BOSS.dropMs);
       if (!shown || shown.done) return;
-      wave.gained.forEach((g, i) => { gained[i] += g; });
-      freed += wave.freed;
       prev = wave.cells;
     }
     busy = false;
-    const parts = [0, 1, 2].filter(i => gained[i]).map(i => '+' + gained[i] + ' ' + (crew[i] ? t('role.' + crew[i]) : kindName(i)));
-    said.textContent = (got.answered ? t('match.call.right', { word: got.answered.word }) + ' ' : '')
-      + t(got.waves.length > 1 ? 'match.chain' : 'match.line', { n: got.waves.length, gains: parts.join(', ') }) + (freed ? ' ' + t('match.freed', { n: freed }) : '');
-    if (matchWon(board)) { phaseWon(); return; }
-    endTurn();
+    if (matchWon(board)) { react({ got, turn: null, hintWas, chargeWas }); phaseWon(); return; }
+    react({ got, turn: endTurn(), hintWas, chargeWas });
   };
   const useAbility = (i) => {
     if (busy || shown.done || board.charge[i] < MATCH_BOSS.full) return;
-    if (i === 0) { arming = true; said.textContent = t('match.arm'); return; }
+    if (i === 0) { arming = true; say(0, t('match.arm')); return; }
     matchUse(board, i);
-    said.textContent = t('match.used.' + i);
+    say(i, t('match.used.' + i));
     draw();
   };
   // The time limit: counts only while the page is seen (its song pauses
@@ -2016,11 +2057,11 @@ function buildMatch() {
     if (!document.hidden && shown && !shown.done) left -= now - last;
     last = now;
     showClock();
-    if (left <= 0 && shown && !shown.done) { said.textContent = t('match.time'); finish({ right: false, tier: null, given: '' }); }
+    if (left <= 0 && shown && !shown.done) { say(null, t('match.time')); finish({ right: false, tier: null, given: '' }); }
   }, 250);
   draw();
   showClock();
-  said.textContent = t('match.start');
+  sayLine(phaseLine(board));
   return {
     lock: grid,
     focus: () => { const b = grid.querySelector('button'); if (b) b.focus(); },

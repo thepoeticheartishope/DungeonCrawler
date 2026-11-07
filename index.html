@@ -1279,7 +1279,20 @@
   .mg-match-board.tints .mg-match-tile[data-kind="1"] { background: #2a2216; }
   .mg-match-board.tints .mg-match-tile[data-kind="2"] { background: #16261f; }
   .mg-match-tile[data-kind="crisis"] { background: #3a1914; border-color: var(--text); color: var(--text); cursor: default; }
-  .mg-match-ask { margin: 6px 0 0; padding: 6px 8px; border: 1px solid var(--line); text-align: left; }
+  .mg-match-chat { margin: 6px 0 0; padding: 6px 8px; border: 1px solid var(--line); text-align: left; }
+  .mg-match-crew { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 4px; font-size: calc(15px * var(--text-scale, 1)); color: var(--muted); }
+  .mg-match-chip { display: inline-flex; align-items: center; gap: 5px; }
+  .mg-match-chip i { width: 9px; height: 9px; border-radius: 50%; background: #8fd8e4; opacity: .3; transition: opacity .6s; }
+  .mg-match-chip.talking { color: var(--text); }
+  .mg-match-chip.talking i { opacity: 1; box-shadow: 0 0 5px #8fd8e4; }
+  .mg-match-lines { height: calc(4 * 1.15em); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; font-size: calc(16px * var(--text-scale, 1)); line-height: 1.15; }
+  .mg-match-ln { margin: 0; transition: opacity .8s; }
+  .mg-match-ln.old { opacity: .5; }
+  .mg-match-ln.sys { color: var(--muted); }
+  .mg-match-ln.new { animation: mg-match-fade .9s ease-out; }
+  .mg-match-by { color: var(--torch-bright); }
+  @keyframes mg-match-fade { from { opacity: 0; } }
+  .mg-match-ask { margin: 6px 0 0; padding: 4px 0 0; border-top: 1px solid var(--line); text-align: left; }
   .mg-match-ask[hidden] { display: none; }
   .mg-match-ask p { margin: 0; }
   .mg-match-ask p:empty { display: none; }
@@ -1298,7 +1311,7 @@
   .mg-match-bar { position: relative; height: 10px; border: 1px solid var(--muted); }
   .mg-match-bar i { position: absolute; left: 1px; top: 1px; bottom: 1px; background: var(--torch-bright); }
   .mg-match-use { font-size: calc(15px * var(--text-scale, 1)); padding: 0 4px; }
-  @media (prefers-reduced-motion: reduce) { .mg-match-tile.pop, .mg-match-tile.drop, .mg-match-tile.shake { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .mg-match-tile.pop, .mg-match-tile.drop, .mg-match-tile.shake, .mg-match-ln.new { animation: none; } .mg-match-ln, .mg-match-chip i { transition: none; } }
   /* Asteroids (the Gunner's job): rocks on an arc, a turret that turns, a bolt. */
   .mg-ast-field { position: relative; margin: 6px 0; border: 1px solid var(--line); background: var(--stone-dark); overflow: hidden; }
   .mg-ast-field:focus-visible { outline: 1px dashed var(--text); outline-offset: 2px; }

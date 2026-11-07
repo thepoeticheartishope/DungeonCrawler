@@ -130,6 +130,7 @@ Drawing and page code:
 | `moves3d.js` | Generated 3D move data (Quaternius, CC0). Don't edit by hand. |
 | `questionview.js` | The one question panel, its modifiers, mounted where it's needed (`parkQuestionPanel`, `matchesAnswer`). |
 | `minigameview.js` | Draws each minigame in the question panel. |
+| `bosschat.js` | The final boss's crew chat: which one line the crew says after a move, and who. |
 | `gunpanels.js` | The ask screen, the book held after an answer, `mapPanelShown()`. |
 | `chargerview.js` | CHARGE.SYS, a ship station's wires panel. |
 | `bookview.js` | The record book: ASK / LOG / MAP tabs, held answers. |

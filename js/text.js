@@ -237,11 +237,6 @@ export const TEXT = {
   'match.ability.2': 'Show kinds', // draft. The 3rd's: every tile's kind shows for 2 turns
   'match.meta': 'Crisis {crisis}/{lose} · spreads in {spread}', // draft
   'match.skipped': 'held back', // draft
-  'match.start': 'Tap a tile, then a neighbour, to swap. Three that belong together clear and charge your crew.', // draft
-  'match.line': 'A line! {gains}.', // draft
-  'match.chain': 'Chain x{n}! {gains}.', // draft
-  'match.freed': 'Crisis cleared: {n}.', // draft
-  'match.noLine': 'No line: {a} is {ak}, {b} is {bk}. Turn spent.', // draft. The light nudge: both kinds
   'match.arm': 'Tap a tile in the row to clear.', // draft
   'match.used.0': 'The crisis in that row is gone.', // draft
   'match.used.1': 'The crisis will hold back its next spread.', // draft
@@ -253,17 +248,34 @@ export const TEXT = {
   'match.phase.1': 'Dark', // draft. Phase 2: the colours are off, words only
   'match.phase.2': 'Call', // draft. Phase 3: a set question; line up its answer (boss plan step B)
   'match.beat.2': 'The comms come alive. The crew calls out questions now: find each answer on the board and clear it in a line.', // draft. Between phase 2 and 3
-  'match.start.2': 'Read the question, find its answer on the board, and swap it into a line.', // draft. Phase 3 starts
   'match.call.q': 'Question {n}/{of}: {question}', // draft. Phase 3: the question asked
   'match.call.kind': 'Hint: the answer is one of the {kind} words.', // draft. Hint ladder step 1: its kind
   'match.call.row': 'Hint: the answer is one of the {kind} words, in row {row} from the top.', // draft. Hint ladder step 2: its row (step 3 adds its column glowing)
-  'match.call.right': 'Answered: {word}!', // draft. A line through the answer tile
   'match.beat.1': 'The lights fail. The colours are gone: from now on you sort by the words alone.', // draft. Between phase 1 and 2
   'match.beat.go': 'GO ON', // draft. The button that starts the next phase
-  'match.start.1': 'Dark now. Read each word and line up the ones that belong together.', // draft. Phase 2 starts
   'match.retry': 'The crisis broke through, but the crew pulls it back. One more try at this phase. The clock keeps running.', // draft. The first loss: the one retry
   'match.retry.go': 'TRY AGAIN', // draft
-  'match.retried': 'A fresh start on this phase. There is no second retry.', // draft
+  // The crew chat over the boss (boss plan step C): at most one line a move.
+  'boss.chat.who': '{role}:', // draft. Who says a chat line
+  'boss.chat.phase.0': 'The breach is open. Line up three of a kind: each kind charges one of us. A line next to the red clears it.', // draft. Sort starts
+  'boss.chat.phase.1': 'The lights are gone. Read the words: you know which kind each one is.', // draft. Dark starts
+  'boss.chat.phase.2': 'A call is coming in. Find its answer on the board and swap it into a line.', // draft. Call starts
+  'boss.chat.retry': 'We pulled it back. A fresh start on this phase, and there is no second one.', // draft. The one retry used
+  'boss.chat.answer': 'That is the one: {word}. {note}', // draft. A line through Call's answer; {note} the set's note, or nothing
+  'boss.chat.spread': 'The red spreads after your next move.', // draft. One move before the crisis grows
+  'boss.chat.hint.call.1': 'That answer is one of my {kind}.', // draft. Call hint ladder step 1
+  'boss.chat.hint.call.2': 'That answer is one of my {kind}, in row {row} from the top.', // draft. Step 2
+  'boss.chat.hint.call.3': 'I have lit its column for you.', // draft. Step 3: its column glows
+  'boss.chat.hint.dark.1': 'One swap makes a line of my {kind}.', // draft. Dark hint ladder step 1 (after swaps with no line)
+  'boss.chat.hint.dark.2': 'One of my {kind} in row {row} from the top can move into a line.', // draft. Step 2
+  'boss.chat.hint.dark.3': 'I have lit its column for you.', // draft. Step 3: its column glows
+  'boss.chat.miss': 'No line. {word} is one of my {kind}. {note}', // draft. The light nudge: never the answer
+  'boss.chat.note': 'Note: {note}', // draft. A set's note on a word, after a nudge or an answer
+  'boss.chat.wrong': 'Right shelf, wrong word. {note}', // draft. Call: a line of the answer's kind without the answer
+  'boss.chat.freed': 'Crisis cleared: {n}. Lines that touch the red take it with them.', // draft
+  'boss.chat.chain': 'Chain x{n}! {gains}.', // draft. Falling tiles lined up again
+  'boss.chat.charged': 'I am charged. {ability} when you need it.', // draft. A meter just filled
+  'boss.chat.cheer': 'A line! {gains}.', // draft
   'mg.scanner': 'Scanner', // draft. The Sensors' job (ship minigames plan step B)
   'mg.scanner.hint': 'Tap the fog to scan a patch. Answer when you know.', // draft
   'mg.scanner.patch': 'Scan patch {n}', // draft. A fog patch's label for screen readers
