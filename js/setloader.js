@@ -8,7 +8,7 @@
 import { state } from './state.js';
 import { PLAYER_NAME_MAX_LENGTH, WORKSHOP_PROBLEMS_SHOWN } from './config.js';
 import { defaultSample, parseListInput, escapeHtml } from './quiz.js';
-import { listSavedSets, saveSet, deleteSet, withFacts } from './sets.js';
+import { listSavedSets, saveSet, deleteSet, withFacts, wordBank } from './sets.js';
 import { t } from './text.js';
 
 const revealToggle = document.getElementById('revealToggle');
@@ -92,7 +92,7 @@ export function initSetLoader({ showSets }) {
     state.settings.workshopFacts = facts;
     const set = withFacts(data, facts, state.settings.factQuestions);
     state.settings.activeData = set.data;
-    state.settings.activeDictionary = null;
+    state.settings.activeDictionary = wordBank(facts);
     state.settings.activeFacts = set.facts;
   }
 

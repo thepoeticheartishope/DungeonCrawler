@@ -4,10 +4,11 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { state } from '../js/state.js';
 import { buildChoices, numericAnswer, stemTypes, parseListInput } from '../js/quiz.js';
-import { upgradeOldNames, saveSet, loadSavedSet } from '../js/sets.js';
+import { upgradeOldNames, saveSet, loadSavedSet, wordBank } from '../js/sets.js';
 
 const q = (question, answer, extra = {}) => ({ question, answer, ...extra });
 
@@ -64,15 +65,20 @@ test('the same number written two ways is offered once, never as a wrong answer'
   for (let i = 0; i < 20; i++) assert.ok(!buildChoices(item).includes('144,000'));
 });
 
-// ---- Subject dictionary (state.settings.activeDictionary) ----
+// ---- Word bank (state.settings.activeDictionary: the facts file's
+// entities, sets.js wordBank) ----
 
-const entry = (term, type, extra = {}) => ({ term, type, ...extra });
+// An entity named `term`; an "aka" list becomes its aliases.
+const entry = (term, type, { aka, ...extra } = {}) =>
+  ({ id: term.toLowerCase().replace(/[^a-z0-9]+/g, '_'), name: term, type, ...(aka ? { aliases: aka } : {}), ...extra });
+// The word bank of `entities`, as a set with that facts file gets it.
+const useWords = entities => { state.settings.activeDictionary = wordBank({ entities, facts: [], templates: [] }); };
 
-test('a small set draws its wrong answers from the dictionary', () => {
+test('a small set draws its wrong answers from the word bank', () => {
   const item = q('Who killed Goliath?', 'David', { answerType: 'name' });
   state.settings.activeData = [item, q('Which book?', 'Ruth', { answerType: 'book' })];
-  state.settings.activeDictionary = [entry('David', 'name'), entry('Saul', 'name'), entry('Jonathan', 'name'),
-    entry('Samuel', 'name'), entry('Ruth', 'book')];
+  useWords([entry('David', 'name'), entry('Saul', 'name'), entry('Jonathan', 'name'),
+    entry('Samuel', 'name'), entry('Ruth', 'book')]);
   for (let i = 0; i < 20; i++) {
     const got = buildChoices(item);
     assert.equal(got.length, 4);
@@ -84,9 +90,9 @@ test('a small set draws its wrong answers from the dictionary', () => {
 test('descriptions are offered next to descriptions, plain names next to names', () => {
   const item = q('Who?', 'The gardener', { answerType: 'name' });
   state.settings.activeData = [item];
-  state.settings.activeDictionary = [entry('The gardener', 'name', { description: true }),
+  useWords([entry('The gardener', 'name', { description: true }),
     entry('The sons of thunder', 'name', { description: true }), entry('The moneychangers', 'name', { description: true }),
-    entry('The house of Jehu', 'name', { description: true }), entry('Moses', 'name'), entry('Aaron', 'name')];
+    entry('The house of Jehu', 'name', { description: true }), entry('Moses', 'name'), entry('Aaron', 'name')]);
   for (let i = 0; i < 20; i++) {
     const got = buildChoices(item);
     assert.ok(!got.includes('Moses') && !got.includes('Aaron'));
@@ -98,7 +104,7 @@ test('an aka spelling is never offered as a wrong answer, and is shown as its te
   const item = q('Whose city?', "David's", { answerType: 'name' });
   const other = q('Who?', "Benjamin's", { answerType: 'name' });
   state.settings.activeData = [item, other, q('Who?', 'David', { answerType: 'name' })];
-  state.settings.activeDictionary = [entry('David', 'name', { aka: ["David's"] }), entry('Benjamin', 'name', { aka: ["Benjamin's"] })];
+  useWords([entry('David', 'name', { aka: ["David's"] }), entry('Benjamin', 'name', { aka: ["Benjamin's"] })]);
   for (let i = 0; i < 20; i++) {
     const got = buildChoices(item);
     assert.ok(!got.includes('David'));
@@ -108,20 +114,20 @@ test('an aka spelling is never offered as a wrong answer, and is shown as its te
   state.settings.activeDictionary = null;
 });
 
-test('a type the dictionary is short of tops up from the set', () => {
+test('a type the word bank is short of tops up from the set', () => {
   const item = q('Which verb?', 'Wept', { answerType: 'verb' });
   state.settings.activeData = [item, q('?', 'Ran', { answerType: 'verb' }), q('?', 'Slept', { answerType: 'verb' })];
-  state.settings.activeDictionary = [entry('Wept', 'verb'), entry('Prayed', 'verb')];
+  useWords([entry('Wept', 'verb'), entry('Prayed', 'verb')]);
   for (let i = 0; i < 20; i++) {
     assert.deepEqual(buildChoices(item).slice().sort(), ['Prayed', 'Ran', 'Slept', 'Wept']);
   }
   state.settings.activeDictionary = null;
 });
 
-test('dictionary numbers are offered nearest in size first', () => {
+test('word bank numbers are offered nearest in size first', () => {
   const item = q('How many?', '40', { answerType: 'number' });
   state.settings.activeData = [item];
-  state.settings.activeDictionary = ['1', '2', '3', '30', '40', '42', '50', '144000'].map(n => entry(n, 'number'));
+  useWords(['1', '2', '3', '30', '40', '42', '50', '144000'].map(n => entry(n, 'number')));
   for (let i = 0; i < 20; i++) {
     assert.deepEqual(buildChoices(item).slice().sort(), ['30', '40', '42', '50']);
   }
@@ -132,9 +138,9 @@ test('a person named through another gets wrong answers sharing a part first', (
   const item = q('Who was turned into a pillar of salt?', "Lot's wife", { answerType: 'related' });
   state.settings.activeData = [item];
   const rel = (term, of, relation) => entry(term, 'related', { of, relation });
-  state.settings.activeDictionary = [rel("Lot's wife", 'Lot', 'wife'), rel("Lot's daughters", 'Lot', 'daughters'),
+  useWords([rel("Lot's wife", 'Lot', 'wife'), rel("Lot's daughters", 'Lot', 'daughters'),
     rel("Job's wife", 'Job', 'wife'), rel("Noah's wife", 'Noah', 'wife'),
-    rel("Jairus' daughter", 'Jairus', 'daughter'), rel("Pharaoh's daughter", 'Pharaoh', 'daughter')];
+    rel("Jairus' daughter", 'Jairus', 'daughter'), rel("Pharaoh's daughter", 'Pharaoh', 'daughter')]);
   for (let i = 0; i < 20; i++) {
     assert.deepEqual(buildChoices(item).slice().sort(), ["Job's wife", "Lot's daughters", "Lot's wife", "Noah's wife"]);
   }
@@ -145,9 +151,9 @@ test('a relation shared only by plural ("daughters") still counts', () => {
   const item = q('Who adopted Moses?', "Pharaoh's daughter", { answerType: 'related' });
   state.settings.activeData = [item];
   const rel = (term, of, relation) => entry(term, 'related', { of, relation });
-  state.settings.activeDictionary = [rel("Pharaoh's daughter", 'Pharaoh', 'daughter'), rel("Lot's daughters", 'Lot', 'daughters'),
+  useWords([rel("Pharaoh's daughter", 'Pharaoh', 'daughter'), rel("Lot's daughters", 'Lot', 'daughters'),
     rel("Jairus' daughter", 'Jairus', 'daughter'), rel("Jephthah's daughter", 'Jephthah', 'daughter'),
-    rel("Job's wife", 'Job', 'wife'), rel("Noah's wife", 'Noah', 'wife')];
+    rel("Job's wife", 'Job', 'wife'), rel("Noah's wife", 'Noah', 'wife')]);
   for (let i = 0; i < 20; i++) {
     const got = buildChoices(item);
     assert.ok(!got.includes("Job's wife") && !got.includes("Noah's wife"));
@@ -209,14 +215,52 @@ test('an acronym question gets definitions of look-alike acronyms first', () => 
   const item = q('RAID', 'Redundant Array of Independent Disks', { answerType: 'term' });
   state.settings.activeData = [item];
   const term = (t, acronym) => entry(t, 'term', { acronym });
-  state.settings.activeDictionary = [term('Redundant Array of Independent Disks', 'RAID'),
+  useWords([term('Redundant Array of Independent Disks', 'RAID'),
     term('Random-access Memory', 'RAM'), term('Rivest, Shamir, Adleman', 'RSA'), term('Remote Desktop Protocol', 'RDP'),
-    term('Domain Name System', 'DNS'), term('Liquid Crystal Display', 'LCD'), term('Secure Shell', 'SSH')];
+    term('Domain Name System', 'DNS'), term('Liquid Crystal Display', 'LCD'), term('Secure Shell', 'SSH')]);
   for (let i = 0; i < 20; i++) {
     const got = buildChoices(item);
     assert.ok(got.includes('Random-access Memory'));
     assert.ok(got.every(c => c[0] === 'R'));
   }
+  state.settings.activeDictionary = null;
+});
+
+test('wordBank: every entity is a word, with its extra fields; aliases become aka', () => {
+  const words = wordBank({ entities: [
+    { id: 'david', name: ' David ', type: 'name', aliases: ["David's"] },
+    { id: 'pharaohs_daughter', name: "Pharaoh's daughter", type: 'related', of: 'Pharaoh', relation: 'daughter', draft: true },
+    { id: 'raid', name: 'Redundant Array of Independent Disks', type: 'term', acronym: 'RAID' },
+    { id: 'the_gardener', name: 'The gardener', type: 'name', description: true },
+    { id: 'abraham_and_sarah', name: 'Abraham and Sarah', type: 'name', list: true },
+  ], facts: [], templates: [] });
+  assert.deepEqual(words, [
+    { term: 'David', type: 'name', aka: ["David's"] },
+    { term: "Pharaoh's daughter", type: 'related', of: 'Pharaoh', relation: 'daughter', draft: true },
+    { term: 'Redundant Array of Independent Disks', type: 'term', acronym: 'RAID' },
+    { term: 'The gardener', type: 'name', description: true },
+    { term: 'Abraham and Sarah', type: 'name', list: true },
+  ]);
+});
+
+test('wordBank: no facts is no words, and fields of the wrong kind are left out', () => {
+  assert.deepEqual(wordBank(null), []);
+  assert.deepEqual(wordBank([{ fact: 'Old', value: 1 }]), []);
+  assert.deepEqual(wordBank({ facts: [] }), []);
+  // A teacher's file could hold anything: an acronym that isn't text would
+  // break the look-alike check, so it is dropped, as is a flag that isn't true.
+  assert.deepEqual(wordBank({ entities: [{ id: 'x', name: 'X', type: 'term', acronym: 5, draft: 'yes', of: '' }] }),
+    [{ term: 'X', type: 'term' }]);
+});
+
+test('a word that only the facts file has (SMTP) is a wrong choice for its type', () => {
+  const file = JSON.parse(readFileSync(new URL('../lists/facts/comptia-aplus.json', import.meta.url), 'utf8'));
+  const item = q('Which protocol lets a mail app read mail kept on the server?', 'IMAP', { answerType: 'protocol' });
+  state.settings.activeData = [item];
+  state.settings.activeDictionary = wordBank(file);
+  const seen = new Set();
+  for (let i = 0; i < 200; i++) buildChoices(item).forEach(c => seen.add(c));
+  assert.ok(seen.has('SMTP'));
   state.settings.activeDictionary = null;
 });
 

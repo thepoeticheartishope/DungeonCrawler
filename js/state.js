@@ -38,7 +38,7 @@ export const state = {
     minigame: 'roll',       // DEV -> Minigame: 'roll' (minigames roll as usual), 'off' (never), or a minigame id (always, when it fits)
     usingSample: true, // the workshop list is the built-in sample (it can't be saved as a set); false once a list is pasted or loaded there
     activeData: MC_SAMPLE_DATA, // whichever list is currently in play
-    activeDictionary: null, // the active set's subject dictionary (lists/dictionaries/), or null (pasted, saved and sample sets)
+    activeDictionary: null, // the active set's word bank (sets.js wordBank: its facts file's entities), or null
     activeFacts: [],        // the active set's facts ({ fact, value, source? }, lists/facts/), or [] (none; pasted, saved and sample sets for now)
     workshopFacts: null,    // the workshop list's facts parts { entities, facts, templates } (a teacher's file, factcheck.js), or null
     workshopData: null,     // the list last loaded in the workshop (pasted, file or the sample), offered on the set screen; null until then

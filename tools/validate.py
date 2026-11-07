@@ -1,4 +1,4 @@
-"""Offline rules every bundled question set (and subject dictionary) must pass. Run it before every PR
+"""Offline rules every bundled question set (and its facts file) must pass. Run it before every PR
 that touches a question set; it exits non-zero on any problem.
 
     python3 tools/validate.py
@@ -25,7 +25,7 @@ COMPTIA_DOMAINS = {
 COMPTIA_SOURCE = re.compile(r'^(\d{3}-\d{4}) (\d+)\.\d+$')
 
 errors = []
-answers_by_subject = {}  # subject -> {(answer, answerType)}
+answers_by_set = {}  # set id -> {(answer, answerType)}
 manifest = json.load(open(os.path.join(ROOT, 'lists', 'manifest.json'), encoding='utf-8'))
 for set_info in manifest:
     path = os.path.join('lists', set_info['file'])
@@ -35,9 +35,9 @@ for set_info in manifest:
         errors.append(f'lists/manifest.json {set_info["id"]}: "subject" must be a lowercase name like "bible" or "comptia-aplus", got {subject!r}')
     is_comptia = subject.startswith('comptia')
     seen = {}
-    subject_answers = answers_by_subject.setdefault(subject, set())
+    set_answers = answers_by_set.setdefault(set_info['id'], set())
     for i, e in enumerate(data):
-        subject_answers.add((' '.join(str(e.get('answer', '')).split()).lower(), e.get('answerType')))
+        set_answers.add((' '.join(str(e.get('answer', '')).split()).lower(), e.get('answerType')))
         tag = f'{path} #{i + 1}'
         def err(msg): errors.append(f'{tag}: {msg} | {str(e.get("question", ""))[:70]}')
         for field in ('question', 'answer'):
@@ -94,7 +94,8 @@ for set_info in manifest:
 # A set's facts (lists/facts/<id>.json, named by "facts" in its manifest
 # entry; facts list plan steps B and C1) are optional. The file is one object
 # of Subject-Predicate-Object triples:
-#   { "entities":  [{ "id", "name", "type", "aliases"? }],
+#   { "entities":  [{ "id", "name", "type", "aliases"?, "acronym"?, "of"?,
+#                     "relation"?, "description"?, "list"?, "draft"? }],
 #     "facts":     [{ "subject", "predicate", "object", "source"? }],
 #     "templates": [{ "predicate", "label"?, "ask_object"?, "ask_subject"?,
 #                     "category"?, "difficulty"?, "min"?, "max"? }] }
@@ -104,7 +105,18 @@ for set_info in manifest:
 # "<subject name> <predicate>") is 1-34 characters and no two are the same,
 # as Inference shows it. Inference uses the whole-number objects of 1 or more.
 ENTITY_ID = re.compile(r'^[a-z0-9]+(_[a-z0-9]+)*$')
-ENTITY_FIELDS = {'id', 'name', 'type', 'aliases'}
+# An entity is also a word wrong choices are drawn from (the subject
+# dictionaries moved in, dictionary-entities plan), so it may carry the old
+# dictionary's optional fields, same meanings:
+#   acronym      the acronym a definition stands for (look-alikes first)
+#   of, relation type "related": "Pharaoh's daughter" is of "Pharaoh",
+#                relation "daughter" (wrong answers sharing a part first)
+#   description  true: the answer describes rather than names ("The gardener")
+#   list         true: the answer names several terms ("Abraham and Sarah")
+#   draft        true: every question with this answer is a draft
+# No spelling twice for one type. Every answer of the set is an entity's
+# name or alias (any type); tools/build_entities.py adds missing ones.
+ENTITY_FIELDS = {'id', 'name', 'type', 'aliases', 'acronym', 'of', 'relation', 'description', 'list', 'draft'}
 TRIPLE_FIELDS = {'subject', 'predicate', 'object', 'source'}
 TEMPLATE_FIELDS = {'predicate', 'label', 'ask_object', 'ask_subject', 'category', 'difficulty', 'min', 'max', 'exhaustive'}
 for set_info in manifest:
@@ -122,7 +134,7 @@ for set_info in manifest:
         errors.append(f'{path}: unknown part {extra!r} (entities / facts / templates)')
     is_comptia = str(set_info.get('subject', '')).startswith('comptia')
 
-    entities = {}
+    entities, spellings = {}, {}
     for i, e in enumerate(data.get('entities', [])):
         tag = f'{path} entity #{i + 1}'
         if not isinstance(e, dict):
@@ -142,7 +154,25 @@ for set_info in manifest:
         if 'aliases' in e and not (isinstance(e['aliases'], list) and all(isinstance(a, str) and a.strip() for a in e['aliases'])):
             errors.append(f'{tag}: "aliases" must be a list of text')
         for extra in sorted(set(e) - ENTITY_FIELDS):
-            errors.append(f'{tag}: unknown field {extra!r} (id / name / type / aliases)')
+            errors.append(f'{tag}: unknown field {extra!r} ({" / ".join(sorted(ENTITY_FIELDS))})')
+        for field in ('acronym', 'of', 'relation'):
+            if field in e and (not isinstance(e[field], str) or not e[field].strip()):
+                errors.append(f'{tag}: "{field}" must be text when present')
+        if e.get('type') == 'related' and not (str(e.get('of', '')).strip() and str(e.get('relation', '')).strip()):
+            errors.append(f'{tag}: a "related" entity needs "of" and "relation" ("Pharaoh\'s daughter": of Pharaoh, relation daughter)')
+        for flag in ('description', 'list', 'draft'):
+            if flag in e and e[flag] is not True:
+                errors.append(f'{tag}: "{flag}" must be true when present')
+        if isinstance(e.get('name'), str):
+            for spelling in [e['name']] + [a for a in (e.get('aliases') or []) if isinstance(a, str)]:
+                k = (' '.join(spelling.split()).lower(), e.get('type'))
+                if k in spellings:
+                    errors.append(f'{tag}: {spelling!r} ({e.get("type")}) is already entity #{spellings[k]}')
+                spellings[k] = i + 1
+    spelled = {k[0] for k in spellings}
+    for answer, answer_type in sorted(answers_by_set.get(set_info['id'], set()), key=str):
+        if answer not in spelled:
+            errors.append(f'{path}: no entity for answer {answer!r} ({answer_type}); run python3 tools/build_entities.py {set_info["id"]}')
 
     templates = {}
     for i, tp in enumerate(data.get('templates', [])):
@@ -214,38 +244,9 @@ for set_info in manifest:
         elif isinstance(obj, (int, float)):
             labels[label.lower()] = i + 1
 
-# A subject's dictionary (lists/dictionaries/<subject>.json, built by
-# tools/build_dictionary.py) is optional; when there is one, every answer of
-# the subject's sets must be in it, by its term or an "aka" spelling.
-for subject, answers in answers_by_subject.items():
-    path = os.path.join('lists', 'dictionaries', f'{subject}.json')
-    if not subject or not os.path.exists(os.path.join(ROOT, path)):
-        continue
-    entries = json.load(open(os.path.join(ROOT, path), encoding='utf-8'))
-    spellings = {}
-    for i, e in enumerate(entries):
-        tag = f'{path} #{i + 1} {str(e.get("term", ""))[:50]!r}'
-        if not isinstance(e.get('term'), str) or not e['term'].strip():
-            errors.append(f'{tag}: missing "term"')
-            continue
-        if e.get('type') not in TYPES:
-            errors.append(f'{tag}: unknown type {e.get("type")!r}')
-        if e.get('type') == 'related' and not (str(e.get('of', '')).strip() and str(e.get('relation', '')).strip()):
-            errors.append(f'{tag}: a "related" entry needs "of" and "relation" ("Pharaoh\'s daughter": of Pharaoh, relation daughter)')
-        for flag in ('description', 'list', 'draft'):
-            if flag in e and e[flag] is not True:
-                errors.append(f'{tag}: "{flag}" must be true when present')
-        for spelling in [e['term']] + list(e.get('aka') or []):
-            k = (' '.join(spelling.split()).lower(), e.get('type'))
-            if k in spellings:
-                errors.append(f'{tag}: {spelling!r} is already entry #{spellings[k]}')
-            spellings[k] = i + 1
-    for answer, answer_type in sorted(answers - spellings.keys(), key=str):
-        errors.append(f'{path}: no entry for answer {answer!r} ({answer_type}); run python3 tools/build_dictionary.py {subject}')
-
 if errors:
     print(f'{len(errors)} problem(s):')
     for line in errors:
         print('  ' + line)
     sys.exit(1)
-print('All question sets and dictionaries pass.')
+print('All question sets and facts files pass.')
