@@ -1281,3 +1281,21 @@ test('Patch Bay grows a level with each perfect solve, up to its last', async ()
   }
   state.run.ship = null;
 });
+
+test('Practice settings: a picked or changed level is played, and only for its game', async () => {
+  const { setPracticeSettings, levelOf, patchBaySetup, inferenceSetup } = await import('../js/minigames.js');
+  reset();
+  setPracticeSettings('starChart', { decoys: 3 });
+  assert.equal(levelOf('starChart').decoys, 3);
+  assert.deepEqual(levelOf('scanner'), MINIGAME_LEVELS.games.scanner[0], 'another game keeps its own level');
+  state.settings.activeTriples = PORT_TRIPLES;
+  setPracticeSettings('patchBay', { cables: 3, spare: true });
+  const board = patchBaySetup('uses_port');
+  assert.equal(board.left.length, 3);
+  assert.equal(board.right.length, 4, 'three partners and a spare');
+  setPracticeSettings('inference', { facts: 2, ops: [], three: false });
+  state.settings.activeFacts = BIBLE_FACTS;
+  assert.equal(Object.keys(inferenceSetup(BIBLE_FACTS[19], 4).facts).length, 2, 'the practice level, not level 5');
+  setPracticeSettings(null);
+  assert.deepEqual(levelOf('starChart'), MINIGAME_LEVELS.games.starChart[0], 'cleared, back to the run level');
+});

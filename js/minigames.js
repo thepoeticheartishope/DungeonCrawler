@@ -222,9 +222,20 @@ export function minigameLevel(id) {
   return Math.min(levels.length - 1, perfect);
 }
 
-// Minigame `id`'s settings at its level now (minigameLevel).
+// Minigame practice (practice.js) plays one game at settings the player
+// picked or edited there (a level of MINIGAME_LEVELS, or of
+// INFERENCE.levels): { id, settings }, null for none. Runs never set it.
+let practiceSettings = null;
+export function setPracticeSettings(id, settings) {
+  practiceSettings = id ? { id, settings } : null;
+}
+function practiceFor(id) {
+  return practiceSettings && practiceSettings.id === id ? practiceSettings.settings : null;
+}
+
+// Minigame `id`'s settings at its level now (minigameLevel), or practice's.
 export function levelOf(id) {
-  return MINIGAME_LEVELS.games[id][minigameLevel(id)];
+  return practiceFor(id) || MINIGAME_LEVELS.games[id][minigameLevel(id)];
 }
 
 // The minigame showing has ended with `result`. Clears
@@ -531,7 +542,7 @@ export function inferenceLevel() {
 // allow (a whole division, a total no bigger than INFERENCE.maxTotal), so
 // a level whose sums the set's numbers can't make falls back to + and -.
 export function inferenceSetup(target, level = inferenceLevel()) {
-  const lv = INFERENCE.levels[Math.max(0, Math.min(level, INFERENCE.levels.length - 1))];
+  const lv = practiceFor('inference') || INFERENCE.levels[Math.max(0, Math.min(level, INFERENCE.levels.length - 1))];
   const T = target;
   const pool = shuffle(inferenceHelpers(target));
   const helpers = [];
@@ -734,7 +745,7 @@ export function patchBayPredicates() {
 export function patchBaySetup(predicate, level = minigameLevel('patchBay')) {
   const facts = patchBayByPredicate().get(predicate) || [];
   const linked = linkedPairs(facts);
-  const { cables, spare } = MINIGAME_LEVELS.games.patchBay[level];
+  const { cables, spare } = practiceFor('patchBay') || MINIGAME_LEVELS.games.patchBay[level];
   let best = cleanPairs(facts, cables, linked);
   for (let i = 0; i < PATCH_BAY.tries && best.length < cables; i++) {
     const tried = cleanPairs(shuffle(facts.slice()), cables, linked);
