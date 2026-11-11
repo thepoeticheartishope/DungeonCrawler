@@ -535,6 +535,12 @@ export const TEXT = {
   'practice.prompt': 'Play a minigame on its own. Nothing is scored.', // draft
   'practice.set': 'Questions from', // draft
   'practice.mods': 'Modifiers', // draft
+  'practice.level': 'Level', // draft. Then the level's settings, which can be changed
+  'practice.levelName': 'Level {n}', // draft. n: 1 = the game as it starts
+  'practice.copy': 'Copy', // draft. Copies the preset line for config.js
+  'practice.copied': 'Copied. Paste it to Claude to make it the preset.', // draft
+  'practice.copyFailed': 'Could not copy. Select the line above instead.', // draft
+  'practice.reset': 'Reset', // draft. Back to the level's preset
   'practice.play': 'Play', // draft
   'practice.again': 'Again', // draft
   'practice.menu': 'Menu', // draft

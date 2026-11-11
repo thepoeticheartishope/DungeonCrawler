@@ -3,14 +3,18 @@
 // title, on the start screen only, open it. The player picks a minigame,
 // the modifiers it can carry (PRACTICE_MODIFIERS: no Gambler) and the set
 // its questions come from (the last one played, else PRACTICE_DEFAULT_SET).
+// A game with levels (MINIGAME_LEVELS, Inference's INFERENCE.levels) also
+// gets a level picker (Timothy 2026-11-10): the level's settings show as
+// fields to change for a try, and COPY gives the preset line to put in
+// config.js. Changes last until the page reloads and never reach a run.
 // No points: a result only shows its tier. Nothing pays out, nothing is
 // recorded as a haunt, and the run's "not the same minigame twice"
 // memory is left alone. Shares the one question panel (questionview.js)
 // with the ask screen; main.js passes in letterPoolQuestion and
 // sumLockQuestion (the stand-in questions).
 import { state } from './state.js';
-import { BATTLE_CHOICE_COUNT, PRACTICE_TAPS, PRACTICE_TAP_MS, PRACTICE_MODIFIERS, PRACTICE_DEFAULT_SET } from './config.js';
-import { MINIGAMES, MINIGAME_MODIFIERS, minigamesFor, letterPoolFits, sumLockQuestions, inferenceTargets, inferenceQuestion, patchBayPredicates, patchBayQuestion } from './minigames.js';
+import { BATTLE_CHOICE_COUNT, PRACTICE_TAPS, PRACTICE_TAP_MS, PRACTICE_MODIFIERS, PRACTICE_DEFAULT_SET, MINIGAME_LEVELS, INFERENCE } from './config.js';
+import { MINIGAMES, MINIGAME_MODIFIERS, setPracticeSettings, minigamesFor, letterPoolFits, sumLockQuestions, inferenceTargets, inferenceQuestion, patchBayPredicates, patchBayQuestion } from './minigames.js';
 import { mountQuestionPanel, parkQuestionPanel, setQuestion, setMinigame, applyModifier, clearModifier } from './questionview.js';
 import { fightGroups, pickQuestion } from './quiz.js';
 import { lastSetValue, setChoices, fetchSet } from './setpicker.js';
@@ -32,6 +36,12 @@ const result = document.getElementById('practiceResult');
 const resultButtons = document.getElementById('practiceResultButtons');
 const againBtn = document.getElementById('practiceAgainBtn');
 const menuBtn = document.getElementById('practiceMenuBtn');
+const levelBox = document.getElementById('practiceLevelBox');
+const levelList = document.getElementById('practiceLevels');
+const fieldList = document.getElementById('practiceFields');
+const presetLine = document.getElementById('practicePreset');
+const copyBtn = document.getElementById('practiceCopyBtn');
+const resetBtn = document.getElementById('practiceResetBtn');
 
 let actions = {};
 let taps = 0;
@@ -42,6 +52,10 @@ let chosenGame = MINIGAMES[0];
 let fitting = new Map();
 // The question showing has been settled; a late Timer is ignored.
 let settled = true;
+// The level picked for each minigame (0 = the game as it starts), and the
+// settings changed for a level, by 'game:level'.
+const chosenLevel = new Map();
+const edited = new Map();
 
 // Wires the title taps and the screen's buttons.
 export function initPractice({ letterPoolQuestion, sumLockQuestion }) {
@@ -51,6 +65,8 @@ export function initPractice({ letterPoolQuestion, sumLockQuestion }) {
   playBtn.addEventListener('click', play);
   againBtn.addEventListener('click', play);
   menuBtn.addEventListener('click', showMenu);
+  copyBtn.addEventListener('click', copyPreset);
+  resetBtn.addEventListener('click', () => { edited.delete(levelKey()); renderLevels(); });
   backBtn.addEventListener('click', leave);
   practiceScreen.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !menu.hidden) leave();
@@ -122,6 +138,7 @@ function renderGames() {
     btn.addEventListener('click', () => { chosenGame = id; renderGames(); });
     gameList.appendChild(btn);
   });
+  renderLevels();
   const ticked = new Set([...modList.querySelectorAll('input:checked')].map(i => i.value));
   modList.innerHTML = '';
   PRACTICE_MODIFIERS.filter(mod => MINIGAME_MODIFIERS[chosenGame].includes(mod)).forEach(mod => {
@@ -137,6 +154,115 @@ function renderGames() {
   const any = ready && questionsFor(chosenGame).length;
   playBtn.disabled = !any;
   status.textContent = !ready ? status.textContent : any ? '' : t('practice.nothingFits', { game: t('mg.' + chosenGame) });
+}
+
+// ---- Levels ----
+
+// Minigame `id`'s levels, or none.
+function levelsOf(id) {
+  return id === 'inference' ? INFERENCE.levels : MINIGAME_LEVELS.games[id] || [];
+}
+
+function levelKey() {
+  return chosenGame + ':' + (chosenLevel.get(chosenGame) || 0);
+}
+
+// The chosen game's chosen level's settings: as changed here, else its preset.
+function currentSettings() {
+  const preset = levelsOf(chosenGame)[chosenLevel.get(chosenGame) || 0];
+  return edited.get(levelKey()) || preset;
+}
+
+// The level buttons, the chosen level's settings as fields, and its
+// preset line. Hidden for a game with no levels.
+function renderLevels() {
+  const levels = levelsOf(chosenGame);
+  levelBox.hidden = !levels.length;
+  if (!levels.length) return;
+  const at = chosenLevel.get(chosenGame) || 0;
+  levelList.innerHTML = '';
+  levels.forEach((_, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'set-option';
+    btn.setAttribute('aria-pressed', String(i === at));
+    btn.innerHTML = '<span class="set-name"></span>';
+    btn.querySelector('.set-name').textContent = t('practice.levelName', { n: i + 1 }) + (edited.has(chosenGame + ':' + i) ? ' *' : '');
+    btn.addEventListener('click', () => { chosenLevel.set(chosenGame, i); renderLevels(); });
+    levelList.appendChild(btn);
+  });
+  const preset = levels[at];
+  const settings = currentSettings();
+  fieldList.innerHTML = '';
+  Object.keys(preset).forEach(name => {
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    const value = preset[name];
+    if (typeof value === 'boolean') {
+      input.type = 'checkbox';
+      input.checked = settings[name];
+    } else if (Array.isArray(value)) {
+      input.type = 'text';
+      input.value = settings[name].join(', ');
+    } else {
+      input.type = 'number';
+      input.step = 'any';
+      input.value = settings[name];
+    }
+    const span = document.createElement('span');
+    span.textContent = name;
+    label.append(span, input);
+    label.classList.toggle('changed', !same(settings[name], value));
+    input.addEventListener(input.type === 'checkbox' ? 'change' : 'input', () => {
+      const next = { ...currentSettings(), [name]: readField(input, value) };
+      if (same(next, preset)) edited.delete(levelKey());
+      else edited.set(levelKey(), next);
+      label.classList.toggle('changed', !same(next[name], value));
+      levelList.children[at].querySelector('.set-name').textContent = t('practice.levelName', { n: at + 1 }) + (edited.has(levelKey()) ? ' *' : '');
+      presetLine.textContent = presetText();
+    });
+    fieldList.appendChild(label);
+  });
+  presetLine.textContent = presetText();
+}
+
+// A field's value, the same kind as the preset's `like`: a number (the
+// preset's when the box is empty or not a number), a tick, or a list
+// split on commas.
+function readField(input, like) {
+  if (typeof like === 'boolean') return input.checked;
+  if (Array.isArray(like)) {
+    const items = input.value.split(',').map(x => x.trim()).filter(Boolean);
+    return typeof like[0] === 'number' ? items.map(Number).filter(n => !Number.isNaN(n)) : items;
+  }
+  const n = parseFloat(input.value);
+  return Number.isNaN(n) ? like : n;
+}
+
+function same(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+// A value written the way config.js writes it.
+function literal(v) {
+  if (Array.isArray(v)) return '[' + v.map(literal).join(', ') + ']';
+  if (typeof v === 'string') return "'" + v + "'";
+  if (v && typeof v === 'object') return '{ ' + Object.keys(v).map(k => k + ': ' + literal(v[k])).join(', ') + ' }';
+  return String(v);
+}
+
+// The chosen level's preset line, e.g. "starChart level 2: { decoys: 8 }".
+function presetText() {
+  return chosenGame + ' level ' + ((chosenLevel.get(chosenGame) || 0) + 1) + ': ' + literal(currentSettings());
+}
+
+async function copyPreset() {
+  try {
+    await navigator.clipboard.writeText(presetText());
+    status.textContent = t('practice.copied');
+  } catch {
+    status.textContent = t('practice.copyFailed');
+  }
 }
 
 // What minigame `id` can run in the set loaded: questions, or for a
@@ -168,6 +294,7 @@ function play() {
   result.textContent = '';
   resultButtons.hidden = true;
   settled = false;
+  setPracticeSettings(levelsOf(chosenGame).length ? chosenGame : null, currentSettings());
   mountQuestionPanel(slot, { onChoice() {}, onTyped() {}, onTimeout: () => settle(null), onResult: settle, log() {} });
   const standIn = {
     letterPool: () => actions.letterPoolQuestion(pool[Math.floor(Math.random() * pool.length)]),
@@ -209,6 +336,7 @@ function putAway() {
   clearModifier();
   setMinigame(null);
   parkQuestionPanel();
+  setPracticeSettings(null);
 }
 
 // Back to the start screen.

@@ -260,12 +260,27 @@
   .practice-games .set-option[aria-pressed="true"] .set-name,
   .practice-games .set-option[aria-pressed="true"] .set-name::before { color: var(--ink); }
   .practice-result { margin-top: 10px; min-height: 1.2em; }
+  /* Practice levels: the level buttons, its settings as fields, and the
+     preset line to copy into config.js. */
+  .practice-levels { display: flex; flex-wrap: wrap; gap: 6px; }
+  .practice-levels .set-option { width: auto; }
+  .practice-levels .set-option[aria-pressed="true"] { background: var(--torch-bright); }
+  .practice-levels .set-option[aria-pressed="true"] .set-name,
+  .practice-levels .set-option[aria-pressed="true"] .set-name::before { color: var(--ink); }
+  .practice-fields { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 8px 0; }
+  .practice-fields label { display: flex; gap: 6px; align-items: baseline; }
+  .practice-fields input[type="number"], .practice-fields input[type="text"] { font: inherit; width: 6em; background: var(--stone-light); color: var(--torch-bright); border: 1px solid var(--line); padding: 2px 4px; }
+  .practice-fields input[type="text"] { width: 10em; }
+  .practice-fields label.changed span { color: var(--torch-bright); text-decoration: underline; }
+  .practice-preset { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-bottom: 8px; }
+  .practice-preset code { color: var(--muted); overflow-wrap: anywhere; font-size: calc(16px * var(--text-scale, 1)); }
   .set-option .set-meta { color: var(--muted); font-size: calc(16px * var(--text-scale, 1)); line-height: 1.25; padding-left: 1.2em; }
   .set-option:hover .set-name, .set-option:focus-visible .set-name,
   .set-option:hover .set-name::before, .set-option:focus-visible .set-name::before,
   .set-option:hover .set-meta, .set-option:focus-visible .set-meta,
   .set-option:hover .set-last, .set-option:focus-visible .set-last { color: var(--ink); }
   .pick-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-top: 10px; }
+  .pick-footer[hidden] { display: none; }
   .pick-footer .pick-workshop { color: var(--muted); }
   .loader-hint {
     font-size: calc(18px * var(--text-scale, 1));
@@ -1610,8 +1625,9 @@
   </section>
 
   <!-- Minigame practice (js/practice.js): hidden, five quick taps on the
-       title on the start screen. Pick a minigame, its modifiers and the
-       set, and play it on its own, with no points. -->
+       title on the start screen. Pick a minigame, its level (and tweak that
+       level's settings), its modifiers and the set, and play it on its own,
+       with no points. -->
   <section class="screen" id="practiceScreen">
     <div class="terminal">
       <div class="rule"><span data-t="practice.title"></span></div>
@@ -1623,6 +1639,16 @@
             <select id="practiceSet"></select>
           </label>
           <div class="set-list practice-games" id="practiceGames" role="group"></div>
+          <div id="practiceLevelBox" hidden>
+            <div class="loader-section-label" data-t="practice.level"></div>
+            <div class="practice-levels" id="practiceLevels" role="group"></div>
+            <div class="practice-fields" id="practiceFields"></div>
+            <div class="practice-preset">
+              <code id="practicePreset"></code>
+              <button type="button" class="ghost small" id="practiceCopyBtn" data-t="practice.copy"></button>
+              <button type="button" class="ghost small" id="practiceResetBtn" data-t="practice.reset"></button>
+            </div>
+          </div>
           <div class="loader-section-label" data-t="practice.mods"></div>
           <div class="practice-mods" id="practiceMods"></div>
           <div class="loader-status" id="practiceStatus" aria-live="polite"></div>
