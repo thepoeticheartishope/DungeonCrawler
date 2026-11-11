@@ -568,10 +568,10 @@ export const LETTER_POOL_FLIP_SHARE = 0.4;
 // better, but a port is a code. Each guess of the code's length marks
 // every character: right place, elsewhere in the code, or not in it.
 // Cracked on guess n pays CODE_BREAK_TIERS[n - 1]; one guess per tier
-// (Timothy, 2026-10-11: three guesses).
+// (Timothy, 2026-10-11: three guesses; 2026-11-10: five, X / 2 / 2 / 1 / 1).
 export const CODE_BREAK_MIN_CHARS = 2;
 export const CODE_BREAK_MAX_CHARS = 9;
-export const CODE_BREAK_TIERS = ['X', '2', '1'];
+export const CODE_BREAK_TIERS = ['X', '2', '2', '1', '1'];
 // Verdict: VERDICT_CLAIMS claims in a row, each a question with an answer
 // filled in: the real one, or VERDICT_FALSE_SHARE of the time another
 // answer of the same answerType. The question asked is one of them; the
@@ -669,7 +669,7 @@ export const MINIGAME_LEVELS = {
     slowSpell: [{ flip: 0 }, { flip: 0.25 }, { flip: 0.5 }, { flip: 0.75 }],
     syllableSplit: [{ decoys: 4, flip: 0 }, { decoys: 6, flip: 0 }, { decoys: 8, flip: 0 }, { decoys: 8, flip: 0.4 }],
     letterPool: [{ flip: 0 }, { flip: 0.25 }, { flip: 0.4 }, { flip: 0.6 }],
-    codeBreak: [{ tiers: ['X', '2', '1'], flip: false }, { tiers: ['X', '2', '1'], flip: true }, { tiers: ['X', '2'], flip: true }],
+    codeBreak: [{ tiers: ['X', '2', '2', '1', '1'], flip: false }, { tiers: ['X', '2', '2', '1', '1'], flip: true }, { tiers: ['X', '2', '2', '1'], flip: true }],
     crosswire: [{ free: true, reveal: true }, { free: false, reveal: true }, { free: false, reveal: false }],
     patchBay: [{ cables: 3, spare: false }, { cables: 4, spare: false }, { cables: 5, spare: true }],
   },

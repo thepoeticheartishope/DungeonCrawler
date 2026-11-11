@@ -368,12 +368,14 @@ test('Code Break marks right places first, and each character only as often as t
   assert.equal(codeBreakMarks(code, '44'), null, 'the wrong length is not a guess');
 });
 
-test('Code Break tiers: guess 1 = X, 2 = 2, 3 = 1, then out of guesses', () => {
-  assert.equal(CODE_BREAK_TIERS.length, 3);
+test('Code Break tiers: guess 1 = X, 2-3 = 2, 4-5 = 1, then out of guesses', () => {
+  assert.equal(CODE_BREAK_TIERS.length, 5);
   assert.equal(codeBreakTier(1), 'X');
   assert.equal(codeBreakTier(2), '2');
-  assert.equal(codeBreakTier(3), '1');
-  assert.equal(codeBreakTier(4), null);
+  assert.equal(codeBreakTier(3), '2');
+  assert.equal(codeBreakTier(4), '1');
+  assert.equal(codeBreakTier(5), '1');
+  assert.equal(codeBreakTier(6), null);
 });
 
 // A small set for Verdict: five names, two books, one number.
@@ -797,9 +799,9 @@ test('each game\'s setup follows its level', async () => {
   at('fuelMix', 3); const engine = m.fuelMixSetup({ answer: '13', answerType: 'number' });
   assert.ok(engine.hideTotal && engine.slack1 === 5 && engine.slack2 === 1);
   at('codeBreak', 2); const code = m.codeBreakSetup({ answer: 'Noah' });
-  assert.deepEqual(code.tiers, ['X', '2']);
+  assert.deepEqual(code.tiers, ['X', '2', '2', '1']);
   assert.equal(m.codeBreakTier(2, code.tiers), '2');
-  assert.equal(m.codeBreakTier(3, code.tiers), null, 'out of guesses sooner');
+  assert.equal(m.codeBreakTier(5, code.tiers), null, 'out of guesses sooner');
   at('asteroids', 3);
   state.settings.activeData = NAMES;
   const field = m.asteroidsSetup(NAMES[0]);
