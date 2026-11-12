@@ -108,6 +108,7 @@ Rules and data (no page/DOM access):
 | `quiz.js` | Picking questions, building options, fight choice labels, answer types. |
 | `sets.js` | Bundled sets (`lists/`) and saved custom sets. |
 | `factgen.js` | Questions made from a set's facts and templates (`generateQuestions`). |
+| `mastery.js` | Mastery (practice only): a fact's tier, credits, rests and the answer log; `masteryNext`, `settleMastery`. |
 
 Drawing and page code:
 
@@ -142,6 +143,7 @@ Drawing and page code:
 | `setloader.js` | Start screen options and the workshop. |
 | `setpicker.js` | The set screen; `fetchSet()` shared with practice.js. |
 | `practice.js` | Hidden minigame practice screen. |
+| `masteryview.js` | Mastery's card in practice: bet, options or typed answer, saved record per set. |
 | `dpad.js` | The walk stick (`initWalkStick`, `stickGestures`) and `SCREEN_WAYS`. |
 | `devpanel.js` | The DEV panel (`?dev`) and the Inspect view. |
 

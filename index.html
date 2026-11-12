@@ -274,6 +274,23 @@
   .practice-fields label.changed span { color: var(--torch-bright); text-decoration: underline; }
   .practice-preset { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-bottom: 8px; }
   .practice-preset code { color: var(--muted); overflow-wrap: anywhere; font-size: calc(16px * var(--text-scale, 1)); }
+  /* Mastery (js/masteryview.js, mastery plan): the fact's tier and the
+     score on one line, the optional bets as a row of buttons (pressed =
+     inverse, like the level picker), the options and typed row reused
+     from the question panel. */
+  .mastery { display: flex; flex-direction: column; gap: 8px; }
+  .mastery-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .mastery-tier { color: var(--torch-bright); letter-spacing: .06em; }
+  .mastery-score, .mastery-credits, .mastery-status { color: var(--muted); }
+  .mastery-question { color: var(--torch-bright); font-size: calc(22px * var(--text-scale, 1)); }
+  .mastery-image { max-width: min(100%, 280px); }
+  .mastery-bets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mastery-bets .set-option { width: auto; }
+  .mastery-bets .set-option[aria-pressed="true"] { background: var(--torch-bright); }
+  .mastery-bets .set-option[aria-pressed="true"] .set-name,
+  .mastery-bets .set-option[aria-pressed="true"] .set-name::before { color: var(--ink); }
+  .mastery-change { color: var(--torch-bright); }
+  .mastery-dev { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
   .set-option .set-meta { color: var(--muted); font-size: calc(16px * var(--text-scale, 1)); line-height: 1.25; padding-left: 1.2em; }
   .set-option:hover .set-name, .set-option:focus-visible .set-name,
   .set-option:hover .set-name::before, .set-option:focus-visible .set-name::before,

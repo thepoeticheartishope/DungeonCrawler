@@ -551,6 +551,30 @@ export const TEXT = {
   'practice.nothingFits': 'Nothing in this set fits {game}. Try another set.', // draft
   'practice.tier': 'Tier {tier}.', // draft. A right answer: 1, 2 or X
   'practice.miss': 'Missed. It was {answer}.', // draft
+  'practice.mastery': 'Mastery', // draft. Not a minigame of a run: the tier system (mastery plan)
+  'mastery.tier.1': 'PRACTICING', // draft
+  'mastery.tier.2': 'NEARLY MASTERED', // draft
+  'mastery.tier.3': 'MASTERED CHECK', // draft
+  'mastery.tier.4': 'MASTERED', // draft
+  'mastery.score': 'Score {n}', // draft. May go below 0
+  'mastery.credits': 'Credits {n} / {bar}', // draft. On this fact's tier
+  'mastery.bet': 'How sure are you? Optional.', // draft
+  'mastery.bet.1': 'Low (1)', // draft
+  'mastery.bet.2': 'Medium (2)', // draft
+  'mastery.bet.3': 'High (3)', // draft
+  'mastery.pick': 'Pick the answer.', // draft
+  'mastery.type': 'Type the answer.', // draft
+  'mastery.check': 'Check', // draft
+  'mastery.right': 'Right. +{n} {n|plural:credit}.', // draft
+  'mastery.wrong': 'Not this time. -{n} {n|plural:credit}. It was {answer}.', // draft
+  'mastery.movedUp': 'Moved up to {tier}. Back after {questions} {questions|plural:question} and {days} {days|plural:day}.', // draft
+  'mastery.kept': 'Still mastered. Back after {questions} {questions|plural:question} and {days} {days|plural:day}.', // draft
+  'mastery.dropped': 'Dropped to {tier}.', // draft
+  'mastery.next': 'Next', // draft
+  'mastery.status': '{learning} learning, {resting} resting, {mastered} mastered, {fresh} new', // draft
+  'mastery.allResting': 'Every fact is resting. Come back tomorrow.', // draft
+  'mastery.nextDay': 'DEV: next day', // draft. Only with ?dev, to test rests
+  'mastery.day': 'Day +{n}', // draft. DEV only: days skipped
 
   // ---- Workshop (set making, for authors; reached from the set screen) ----
   'workshop.title': 'WORKSHOP',

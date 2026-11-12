@@ -11,13 +11,17 @@
 // recorded as a haunt, and the run's "not the same minigame twice"
 // memory is left alone. Shares the one question panel (questionview.js)
 // with the ask screen; main.js passes in letterPoolQuestion and
-// sumLockQuestion (the stand-in questions).
+// sumLockQuestion (the stand-in questions). Mastery (mastery plan,
+// Timothy 2026-11-12) sits at the end of the list but is not a minigame
+// of a run: it draws its own card (masteryview.js) and keeps a saved
+// record per set.
 import { state } from './state.js';
 import { BATTLE_CHOICE_COUNT, PRACTICE_TAPS, PRACTICE_TAP_MS, PRACTICE_MODIFIERS, PRACTICE_DEFAULT_SET, MINIGAME_LEVELS, INFERENCE } from './config.js';
 import { MINIGAMES, MINIGAME_MODIFIERS, setPracticeSettings, minigamesFor, letterPoolFits, sumLockQuestions, inferenceTargets, inferenceQuestion, patchBayPredicates, patchBayQuestion } from './minigames.js';
 import { mountQuestionPanel, parkQuestionPanel, setQuestion, setMinigame, applyModifier, clearModifier } from './questionview.js';
 import { fightGroups, pickQuestion } from './quiz.js';
 import { lastSetValue, setChoices, fetchSet } from './setpicker.js';
+import { openMastery, closeMastery } from './masteryview.js';
 import { t } from './text.js';
 
 const title = document.querySelector('header h1');
@@ -128,20 +132,20 @@ async function loadSet(value) {
 // chosen one can carry. Says so when the set has nothing it can run.
 function renderGames() {
   gameList.innerHTML = '';
-  MINIGAMES.forEach(id => {
+  [...MINIGAMES, 'mastery'].forEach(id => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'set-option';
     btn.setAttribute('aria-pressed', String(id === chosenGame));
     btn.innerHTML = '<span class="set-name"></span>';
-    btn.querySelector('.set-name').textContent = t('mg.' + id);
+    btn.querySelector('.set-name').textContent = t(id === 'mastery' ? 'practice.mastery' : 'mg.' + id);
     btn.addEventListener('click', () => { chosenGame = id; renderGames(); });
     gameList.appendChild(btn);
   });
   renderLevels();
   const ticked = new Set([...modList.querySelectorAll('input:checked')].map(i => i.value));
   modList.innerHTML = '';
-  PRACTICE_MODIFIERS.filter(mod => MINIGAME_MODIFIERS[chosenGame].includes(mod)).forEach(mod => {
+  PRACTICE_MODIFIERS.filter(mod => (MINIGAME_MODIFIERS[chosenGame] || []).includes(mod)).forEach(mod => {
     const label = document.createElement('label');
     label.className = 'option-toggle';
     label.innerHTML = '<input type="checkbox"><span></span>';
@@ -277,6 +281,7 @@ function questionsFor(id) {
       sumLock: () => (sumLockQuestions().length >= 2 ? sumLockQuestions() : []),
       inference: () => inferenceTargets(),
       patchBay: () => patchBayPredicates(),
+      mastery: () => data,
     };
     fitting.set(id, runs[id] ? runs[id]() : data.filter(q => minigamesFor(q).includes(id)));
   }
@@ -288,11 +293,13 @@ function questionsFor(id) {
 function play() {
   const pool = questionsFor(chosenGame);
   if (!pool.length) return;
+  if (chosenGame === 'mastery') { playMastery(); return; }
   const mods = [...modList.querySelectorAll('input:checked')].map(i => i.value);
   menu.hidden = true;
   playArea.hidden = false;
   result.textContent = '';
   resultButtons.hidden = true;
+  againBtn.hidden = false;
   settled = false;
   setPracticeSettings(levelsOf(chosenGame).length ? chosenGame : null, currentSettings());
   mountQuestionPanel(slot, { onChoice() {}, onTyped() {}, onTimeout: () => settle(null), onResult: settle, log() {} });
@@ -306,6 +313,16 @@ function play() {
   setQuestion(q);
   setMinigame(chosenGame);
   mods.forEach(applyModifier);
+}
+
+// Mastery runs on until the player goes back, so only MENU shows under it.
+function playMastery() {
+  menu.hidden = true;
+  playArea.hidden = false;
+  result.textContent = '';
+  resultButtons.hidden = false;
+  againBtn.hidden = true;
+  openMastery(slot, setSelect.value);
 }
 
 // The minigame ended with `outcome` ({ right, tier }), or null when the
@@ -333,6 +350,7 @@ function showMenu() {
 // (questionview.js parkQuestionPanel), so a run starts clean.
 function putAway() {
   settled = true;
+  closeMastery();
   clearModifier();
   setMinigame(null);
   parkQuestionPanel();
