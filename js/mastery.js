@@ -97,6 +97,20 @@ export function masteryCounts(record, questions, today) {
   return counts;
 }
 
+// DEV only (Timothy 2026-11-12): moves fact `q` one tier up (`step` 1) or
+// down (-1), to see a question at every tier without earning it. Skips
+// tier 2 when the fact has no evidence task; stays within 1–4. Clears its
+// credits and rest so it can show at once. Returns the new tier.
+export function shiftMasteryTier(record, q, step, today, hasEvidence = false) {
+  const key = masteryKey(q);
+  if (!record.facts[key]) record.facts[key] = { tier: 1, credits: 0, restQuestions: 0, restDay: today, kept: 0 };
+  const entry = record.facts[key];
+  let tier = Math.min(4, Math.max(1, entry.tier + step));
+  if (tier === 2 && !hasEvidence) tier = step > 0 ? 3 : 1;
+  Object.assign(entry, { tier, credits: 0, restQuestions: 0, restDay: today });
+  return tier;
+}
+
 // Checks the phrases picked in a fact's evidence scenario: `parts` is the
 // question's `evidence` and `picked` the indexes of the parts tapped.
 // Returns how many clues there are, the indexes found, missed and wrongly

@@ -3,11 +3,12 @@
 // another until the player goes back to the menu. Draws the fact's tier,
 // its credits, the optional bet, then options (tier 1), the evidence
 // scenario to tap (tier 2, plan step B) or a typed answer (tiers 3 and 4); settles through mastery.js and saves the set's record
-// in localStorage (MASTERY.storageKey + the set). With ?dev a button
-// moves the day on, to test rests. practice.js calls openMastery and
+// in localStorage (MASTERY.storageKey + the set). With ?dev, buttons move
+// the day on (to test rests) and move the question showing a tier up or
+// down (to see each tier's card at once). practice.js calls openMastery and
 // closeMastery.
 import { MASTERY } from './config.js';
-import { newMasteryRecord, masteryDay, masteryNext, masteryTier, masteryTask, masteryCredits, masteryCounts, settleMastery, evidenceCheck } from './mastery.js';
+import { newMasteryRecord, masteryDay, masteryNext, masteryTier, masteryTask, masteryCredits, masteryCounts, settleMastery, evidenceCheck, shiftMasteryTier } from './mastery.js';
 import { buildChoices, rightAnswers, normalizeSpaces, resolveImageSrc, escapeHtml } from './quiz.js';
 import { state } from './state.js';
 import { t } from './text.js';
@@ -65,6 +66,12 @@ function today() {
 // Picks the next question and draws it.
 function next() {
   open.q = masteryNext(open.record, state.settings.activeData, today());
+  show();
+}
+
+// Sets up the question in `open.q` at its tier, fresh (no bet, no answer)
+// and draws it.
+function show() {
   open.tier = open.q ? masteryTier(open.record, open.q) : 1;
   open.task = open.q ? masteryTask(open.record, open.q) : 1;
   open.bet = 0;
@@ -355,20 +362,34 @@ function statusLine() {
   return line('mastery-status', t('mastery.status', masteryCounts(open.record, state.settings.activeData, today())));
 }
 
-// DEV only: move the day on by one, so rests can be tested now.
+// DEV only: move the question showing a tier down or up (it redraws at
+// once, fresh), and move the day on by one so rests can be tested now.
 function devRow() {
   const row = document.createElement('div');
   row.className = 'mastery-dev';
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'ghost small';
-  btn.textContent = t('mastery.nextDay');
-  btn.addEventListener('click', () => {
+  const button = (key, onClick) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ghost small';
+    btn.textContent = t(key);
+    btn.addEventListener('click', onClick);
+    row.append(btn);
+  };
+  const shift = step => () => {
+    shiftMasteryTier(open.record, open.q, step, today(), !!open.q.evidence);
+    save();
+    show();
+  };
+  if (open.q) {
+    button('mastery.tierDown', shift(-1));
+    button('mastery.tierUp', shift(1));
+  }
+  button('mastery.nextDay', () => {
     open.record.dayShift = (open.record.dayShift || 0) + 1;
     save();
     if (!open.q || open.answered) next();
     else draw();
   });
-  row.append(btn, line('mastery-status', t('mastery.day', { n: open.record.dayShift || 0 })));
+  row.append(line('mastery-status', t('mastery.day', { n: open.record.dayShift || 0 })));
   return row;
 }

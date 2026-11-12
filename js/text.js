@@ -583,6 +583,8 @@ export const TEXT = {
   'mastery.status': '{learning} learning, {resting} resting, {mastered} mastered, {fresh} new', // draft
   'mastery.allResting': 'Every fact is resting. Come back tomorrow.', // draft
   'mastery.nextDay': 'DEV: next day', // draft. Only with ?dev, to test rests
+  'mastery.tierUp': 'DEV: tier up', // draft. Only with ?dev: the question showing, one tier up
+  'mastery.tierDown': 'DEV: tier down', // draft. Only with ?dev: the question showing, one tier down
   'mastery.day': 'Day +{n}', // draft. DEV only: days skipped
 
   // ---- Workshop (set making, for authors; reached from the set screen) ----

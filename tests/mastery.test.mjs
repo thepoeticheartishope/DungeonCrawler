@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { MASTERY } from '../js/config.js';
-import { newMasteryRecord, masteryKey, masteryNext, masteryTier, masteryTask, masteryCounts, settleMastery, evidenceCheck } from '../js/mastery.js';
+import { newMasteryRecord, masteryKey, masteryNext, masteryTier, masteryTask, masteryCounts, settleMastery, evidenceCheck, shiftMasteryTier } from '../js/mastery.js';
 import { parseListInput } from '../js/quiz.js';
 
 const q = (n) => ({ question: 'Question ' + n + '?', answer: 'Answer ' + n });
@@ -180,4 +180,20 @@ test('every bundled scenario has 2+ clues, a phrase that is not one, and never s
       assert.ok(!text.includes(r.answer.toLowerCase()), r.answer + ': the scenario does not name the answer');
     });
   }
+});
+
+test('DEV tier shift moves one tier, skips 2 without evidence, stays in 1-4, clears rest', () => {
+  const record = newMasteryRecord();
+  const a = q(1);
+  assert.equal(shiftMasteryTier(record, a, 1, DAY, true), 2);
+  assert.equal(shiftMasteryTier(record, a, -1, DAY, true), 1);
+  assert.equal(shiftMasteryTier(record, a, -1, DAY, true), 1, 'not below 1');
+  assert.equal(shiftMasteryTier(record, a, 1, DAY), 3, 'no evidence: 1 -> 3');
+  assert.equal(shiftMasteryTier(record, a, -1, DAY), 1, 'no evidence: 3 -> 1');
+  climb(record, a, 3);
+  assert.equal(masteryCounts(record, [a], DAY).resting, 1);
+  assert.equal(shiftMasteryTier(record, a, 1, DAY), 4);
+  assert.equal(shiftMasteryTier(record, a, 1, DAY), 4, 'not above 4');
+  assert.equal(masteryCounts(record, [a], DAY).mastered, 1);
+  assert.equal(record.facts[masteryKey(a)].restQuestions, 0);
 });
