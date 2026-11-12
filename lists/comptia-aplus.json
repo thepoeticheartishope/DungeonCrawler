@@ -77,7 +77,35 @@
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.4",
-    "answerType": "protocol"
+    "answerType": "protocol",
+    "evidence": [
+      "A user ",
+      {
+        "clue": "cannot open the intranet by its name",
+        "why": "Only the name fails, which points at the step that turns names into addresses."
+      },
+      ", but ",
+      {
+        "clue": "the same site opens by its IP address",
+        "why": "The path to the server works. Only the name-to-address step is broken."
+      },
+      ". The browser says ",
+      {
+        "clue": "the server address could not be found",
+        "why": "This message means the name lookup got no answer."
+      },
+      ". ",
+      {
+        "tap": "Their IP address and gateway look correct",
+        "why": "Good addressing rules out DHCP and gateway faults. It points away from them, not toward the answer."
+      },
+      ". ",
+      {
+        "tap": "It is the third call this week",
+        "why": "How often it happens does not tell you what is broken."
+      },
+      "."
+    ]
   },
   {
     "question": "Which protocol gives an encrypted command-line session on a remote host?",
@@ -181,7 +209,40 @@
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.8",
-    "answerType": "tool"
+    "answerType": "tool",
+    "evidence": [
+      "A tech has just ",
+      {
+        "clue": "put new plugs on both ends of a patch cord",
+        "why": "A cord with fresh plugs is the thing to check before it goes into use."
+      },
+      ". Before ",
+      {
+        "tap": "the user comes back from lunch",
+        "why": "When the user returns says nothing about the tool."
+      },
+      ", they want to ",
+      {
+        "clue": "confirm each wire lands on the right pin",
+        "why": "Checking every pin from one end to the other is what this tool is for."
+      },
+      ". They ",
+      {
+        "clue": "plug one part into each end",
+        "why": "This tool comes as a pair: one part sends, the other shows each wire in turn."
+      },
+      " and ",
+      {
+        "clue": "watch the lights step through 1 to 8",
+        "why": "The lights show the signal reaching each pin, one by one."
+      },
+      ". ",
+      {
+        "tap": "The cord will later join a bundle in the closet",
+        "why": "Finding one cable in a bundle is the toner probe's job, not this one."
+      },
+      "."
+    ]
   },
   {
     "question": "Which tool puts a tone on a cable so you can find it in an unlabeled bundle?",
@@ -189,7 +250,40 @@
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.8",
-    "answerType": "tool"
+    "answerType": "tool",
+    "evidence": [
+      "In ",
+      {
+        "tap": "a warm wiring closet",
+        "why": "The room temperature has nothing to do with the tool."
+      },
+      ", ",
+      {
+        "clue": "forty cables hang with no labels",
+        "why": "An unlabeled bundle is the problem this tool solves."
+      },
+      ". The tech must ",
+      {
+        "clue": "find which one runs to Room 12",
+        "why": "The job is to trace one cable, not to test it."
+      },
+      ". They ",
+      {
+        "clue": "clip a small box onto the cable at the Room 12 jack",
+        "why": "That box puts the tone on the cable."
+      },
+      ", then ",
+      {
+        "clue": "move a wand along the bundle, listening",
+        "why": "The wand picks up the tone to find the right cable."
+      },
+      ". ",
+      {
+        "tap": "Later each wire must go to the right pin",
+        "why": "Checking pins is a cable tester's job, a different tool."
+      },
+      "."
+    ]
   },
   {
     "question": "Which adapter, plugged into a network card or switch port, makes the link light come on if that port works?",
@@ -636,7 +730,34 @@
     "category": "Networking",
     "difficulty": "medium",
     "source": "220-1201 2.6",
-    "answerType": "config"
+    "answerType": "config",
+    "evidence": [
+      {
+        "tap": "On Monday morning",
+        "why": "The day tells you nothing about how the address was set."
+      },
+      ", a laptop is plugged into the office network but no web pages load. ipconfig shows ",
+      {
+        "clue": "an address of 169.254.12.40",
+        "why": "169.254.x.x is the range Windows gives itself when it gets no lease."
+      },
+      ". The tech learns ",
+      {
+        "clue": "the address server was switched off",
+        "why": "No DHCP server was there to answer. That is what sets off APIPA."
+      },
+      ", so ",
+      {
+        "clue": "no address was ever leased",
+        "why": "The laptop never got a configuration, so it picked one for itself."
+      },
+      ". The ",
+      {
+        "tap": "link light on the port is green",
+        "why": "A green light shows the cable works. It says nothing about how the address was set."
+      },
+      "."
+    ]
   },
   {
     "question": "Which setting holds the router address a host uses to reach other networks?",
@@ -644,7 +765,35 @@
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.6",
-    "answerType": "config"
+    "answerType": "config",
+    "evidence": [
+      "A new PC ",
+      {
+        "clue": "can print to the printer on its own subnet",
+        "why": "Local traffic works, so the fault is only in leaving the subnet."
+      },
+      " but ",
+      {
+        "clue": "cannot reach servers on other networks or the internet",
+        "why": "Anything off the subnet needs the router, and the PC has no way to it."
+      },
+      ". ipconfig shows ",
+      {
+        "tap": "a valid IP address, a valid mask",
+        "why": "These let it talk on its own network. They are fine here, so they are not the fault."
+      },
+      " and ",
+      {
+        "clue": "a blank router entry",
+        "why": "The router address is the missing setting."
+      },
+      ". ",
+      {
+        "tap": "The user started on Monday",
+        "why": "Their start day says nothing about the setting."
+      },
+      "."
+    ]
   },
   {
     "question": "Which setting shows which bits of an IPv4 address are the network ID?",
@@ -676,7 +825,30 @@
     "category": "Networking",
     "difficulty": "easy",
     "source": "220-1201 2.7",
-    "answerType": "connection"
+    "answerType": "connection",
+    "evidence": [
+      "A ranger station ",
+      {
+        "clue": "far from any phone or cable lines",
+        "why": "No lines rules out DSL, cable and fiber, which leaves the wireless kinds."
+      },
+      " gets internet through ",
+      {
+        "clue": "a dish aimed high at the sky",
+        "why": "A dish pointed up, not at a nearby tower, is aimed at a satellite."
+      },
+      ". ",
+      {
+        "tap": "Downloads are fine",
+        "why": "Good download speed fits many connection types, so it is not evidence for one."
+      },
+      ", but ",
+      {
+        "clue": "video calls lag almost a second",
+        "why": "That much delay comes from the long trip to orbit and back."
+      },
+      "."
+    ]
   },
   {
     "question": "Which internet connection uses a mobile carrier's 4G or 5G network?",
@@ -716,7 +888,35 @@
     "category": "Hardware",
     "difficulty": "easy",
     "source": "220-1201 3.2",
-    "answerType": "cable"
+    "answerType": "cable",
+    "evidence": [
+      "A factory needs a network cable run ",
+      {
+        "clue": "right beside large electric motors",
+        "why": "Motors give off interference that can spoil the signal."
+      },
+      ". The last cable ",
+      {
+        "clue": "dropped data whenever the machines started",
+        "why": "Errors that follow the machines point at interference, not a broken cable."
+      },
+      ", so the tech picks one ",
+      {
+        "clue": "with foil around its twisted pairs",
+        "why": "Foil or braid is the shielding that keeps the interference out."
+      },
+      ". ",
+      {
+        "tap": "The run is 40 meters",
+        "why": "40 m is well inside the limit for twisted pair, so the length decides nothing."
+      },
+      ". ",
+      {
+        "tap": "It runs along the floor, not above the ceiling",
+        "why": "An air space above the ceiling would call for plenum cable. This run is not in one, so it rules that out rather than pointing at the answer."
+      },
+      "."
+    ]
   },
   {
     "question": "Which fire-safe cable must be used in the air-handling space above a false ceiling?",
@@ -724,7 +924,35 @@
     "category": "Hardware",
     "difficulty": "medium",
     "source": "220-1201 3.2",
-    "answerType": "cable"
+    "answerType": "cable",
+    "evidence": [
+      "A tech will run new network cable ",
+      {
+        "clue": "above the drop ceiling",
+        "why": "The space above a false ceiling is where the fire rule applies."
+      },
+      " in a school. ",
+      {
+        "clue": "Air for the heating system flows back through that space",
+        "why": "An air-handling space spreads smoke through the building."
+      },
+      ", and ",
+      {
+        "clue": "the fire inspector will check the cable jacket",
+        "why": "The rule is about what the jacket gives off when it burns."
+      },
+      ". ",
+      {
+        "tap": "The run passes close to fluorescent lights",
+        "why": "Lights cause interference, which calls for shielding (STP). They do not decide the fire rating."
+      },
+      ". ",
+      {
+        "tap": "The job is due by Friday",
+        "why": "The deadline says nothing about the cable type."
+      },
+      "."
+    ]
   },
   {
     "question": "Which cable type is gel-filled, often armored, and laid straight into the ground?",

@@ -4,9 +4,11 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { MASTERY } from '../js/config.js';
-import { newMasteryRecord, masteryKey, masteryNext, masteryTier, masteryTask, masteryCounts, settleMastery } from '../js/mastery.js';
+import { newMasteryRecord, masteryKey, masteryNext, masteryTier, masteryTask, masteryCounts, settleMastery, evidenceCheck } from '../js/mastery.js';
+import { parseListInput } from '../js/quiz.js';
 
 const q = (n) => ({ question: 'Question ' + n + '?', answer: 'Answer ' + n });
 const DAY = 20000;
@@ -129,4 +131,53 @@ test('picture questions with one wording are different facts', () => {
   const a = { question: 'Which tool is shown?', answer: 'Crimper', image: 'a.svg' };
   const b = { question: 'Which tool is shown?', answer: 'Punchdown tool', image: 'b.svg' };
   assert.notEqual(masteryKey(a), masteryKey(b));
+});
+
+// ---- Evidence (plan step B) ----
+
+const scene = ['A user ', { clue: 'a', why: 'w' }, ', ', { tap: 'b', why: 'w' }, ' and ', { clue: 'c', why: 'w' }, '.'];
+
+test('an evidence check is perfect only with every clue and no false mark', () => {
+  assert.deepEqual(evidenceCheck(scene, new Set([1, 5])), { clues: 2, found: [1, 5], missed: [], falseMarks: [], perfect: true });
+  const some = evidenceCheck(scene, new Set([1, 3]));
+  assert.deepEqual([some.found, some.missed, some.falseMarks, some.perfect], [[1], [5], [3], false]);
+  assert.equal(evidenceCheck(scene, new Set([1, 3, 5])).perfect, false, 'a false mark spoils it');
+});
+
+test('a fact with evidence climbs 1 -> 2 -> 3 and drops 3 -> 2', () => {
+  const record = newMasteryRecord();
+  const a = q(1);
+  settleMastery(record, a, { bet: 3, right: true }, DAY, true);
+  assert.equal(settleMastery(record, a, { bet: 3, right: true }, DAY, true)[1].tier, 2);
+  assert.equal(masteryTask(record, a), 2);
+  settleMastery(record, a, { bet: 3, right: true }, DAY + 5, true);
+  const up = settleMastery(record, a, { bet: 3, right: true }, DAY + 5, true);
+  assert.deepEqual([up[1].tier, up[1].days], [3, MASTERY.rests[3].days]);
+  const miss = settleMastery(record, a, { bet: 1, right: false }, DAY + 20, true);
+  assert.deepEqual(miss[1], { type: 'masteryDropped', tier: 2 });
+});
+
+test('a row keeps its evidence; bad parts drop, and none without a clue', () => {
+  const rows = [
+    { question: 'Q1?', answer: 'A1', evidence: ['x ', { clue: ' c ', why: 'w' }, { tap: 't', why: 'w' }, { tap: 'no why' }, 7] },
+    { question: 'Q2?', answer: 'A2', evidence: [{ tap: 't', why: 'w' }] },
+  ];
+  const { data } = parseListInput(JSON.stringify(rows));
+  assert.deepEqual(data[0].evidence, ['x ', { clue: 'c', why: 'w' }, { tap: 't', why: 'w' }]);
+  assert.equal(data[1].evidence, undefined);
+});
+
+test('every bundled scenario has 2+ clues, a phrase that is not one, and never says its answer', () => {
+  for (const file of ['lists/comptia-aplus.json', 'lists/bible-quiz-bowl.json']) {
+    const raw = JSON.parse(readFileSync(new URL('../' + file, import.meta.url), 'utf8'));
+    const rows = Array.isArray(raw) ? raw : raw.questions || [];
+    rows.filter(r => r.evidence).forEach(r => {
+      const parts = r.evidence;
+      assert.ok(parts.filter(p => p.clue).length >= 2, r.answer + ': 2+ clues');
+      assert.ok(parts.some(p => p.tap), r.answer + ': a phrase that is not evidence');
+      assert.ok(parts.every(p => typeof p === 'string' || (typeof p.why === 'string' && p.why)), r.answer + ': every phrase says why');
+      const text = parts.map(p => (typeof p === 'string' ? p : p.clue || p.tap)).join('').toLowerCase();
+      assert.ok(!text.includes(r.answer.toLowerCase()), r.answer + ': the scenario does not name the answer');
+    });
+  }
 });

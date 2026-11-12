@@ -564,6 +564,15 @@ export const TEXT = {
   'mastery.bet.3': 'High (3)', // draft
   'mastery.pick': 'Pick the answer.', // draft
   'mastery.type': 'Type the answer.', // draft
+  'mastery.answer': 'Answer: {answer}', // draft. Tier 2 shows the answer; the player proves it
+  'mastery.evidence': 'Tap every phrase that is evidence for this answer.', // draft
+  'mastery.checkEvidence': 'Check evidence', // draft
+  'mastery.tryAgain': 'Try again', // draft. Scores nothing: only the first check counts
+  'mastery.evidenceCount': '{found} of {clues} clues found, {wrong} false {wrong|plural:mark}.', // draft
+  'mastery.mark.found': 'FOUND', // draft
+  'mastery.mark.missed': 'MISSED', // draft
+  'mastery.mark.false': 'FALSE MARK', // draft
+  'mastery.wrongEvidence': 'Not this time. -{n} {n|plural:credit}.', // draft. Tier 2: the answer was shown already
   'mastery.check': 'Check', // draft
   'mastery.right': 'Right. +{n} {n|plural:credit}.', // draft
   'mastery.wrong': 'Not this time. -{n} {n|plural:credit}. It was {answer}.', // draft

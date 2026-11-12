@@ -1,13 +1,13 @@
 // Mastery's page (mastery plan step A, ideas/mastery-plan.md outside the
 // repo): the practice screen's Mastery runs here, one question after
 // another until the player goes back to the menu. Draws the fact's tier,
-// its credits, the optional bet, then options (tier 1) or a typed answer
-// (tiers 3 and 4); settles through mastery.js and saves the set's record
+// its credits, the optional bet, then options (tier 1), the evidence
+// scenario to tap (tier 2, plan step B) or a typed answer (tiers 3 and 4); settles through mastery.js and saves the set's record
 // in localStorage (MASTERY.storageKey + the set). With ?dev a button
 // moves the day on, to test rests. practice.js calls openMastery and
 // closeMastery.
 import { MASTERY } from './config.js';
-import { newMasteryRecord, masteryDay, masteryNext, masteryTier, masteryTask, masteryCredits, masteryCounts, settleMastery } from './mastery.js';
+import { newMasteryRecord, masteryDay, masteryNext, masteryTier, masteryTask, masteryCredits, masteryCounts, settleMastery, evidenceCheck } from './mastery.js';
 import { buildChoices, rightAnswers, normalizeSpaces, resolveImageSrc, escapeHtml } from './quiz.js';
 import { state } from './state.js';
 import { t } from './text.js';
@@ -17,8 +17,10 @@ const letters = ['A', 'B', 'C', 'D'];
 
 let box = null;
 // The open Mastery: the set's value, its record, the question showing,
-// its options, the bet picked (0 = none) and, once answered, what
-// happened ({ given, events }).
+// the tier and task it was asked at (kept, so the card still shows them
+// after the answer moves the fact), its options, the bet picked (0 = none), the evidence phrases picked and
+// the last check of them (tier 2), and once answered, what happened
+// ({ given, right, events }).
 let open = null;
 
 // Starts Mastery inside `host` on the set loaded (state.settings.activeData),
@@ -28,7 +30,7 @@ export function openMastery(host, setValue) {
   box = document.createElement('div');
   box.className = 'mastery';
   host.appendChild(box);
-  open = { setValue, record: load(setValue), q: null, choices: [], bet: 0, answered: null };
+  open = { setValue, record: load(setValue), q: null, tier: 1, task: 1, choices: [], bet: 0, answered: null, picked: new Set(), checked: null };
   next();
 }
 
@@ -63,9 +65,13 @@ function today() {
 // Picks the next question and draws it.
 function next() {
   open.q = masteryNext(open.record, state.settings.activeData, today());
+  open.tier = open.q ? masteryTier(open.record, open.q) : 1;
+  open.task = open.q ? masteryTask(open.record, open.q) : 1;
   open.bet = 0;
   open.answered = null;
-  open.choices = open.q && masteryTask(open.record, open.q) === 1 ? buildChoices(open.q) : [];
+  open.picked = new Set();
+  open.checked = null;
+  open.choices = open.task === 1 && open.q ? buildChoices(open.q) : [];
   draw();
 }
 
@@ -73,10 +79,25 @@ function next() {
 function answer(given) {
   if (open.answered) return;
   const right = rightAnswers(open.q).has(normalizeSpaces(given).toLowerCase());
-  const events = settleMastery(open.record, open.q, { bet: open.bet, right }, today());
+  settle(given, right);
+}
+
+// Settles the answer and draws what happened. A fact with an evidence
+// scenario has a tier 2 to move up to and drop back to.
+function settle(given, right) {
+  const events = settleMastery(open.record, open.q, { bet: open.bet, right }, today(), !!open.q.evidence);
   open.answered = { given, right, events };
   save();
   draw();
+}
+
+// Tier 2's CHECK: marks the phrases picked. Only the first check of a
+// question settles it (right = every clue, no false mark); a check after
+// TRY AGAIN only shows the marks.
+function checkEvidence() {
+  open.checked = evidenceCheck(open.q.evidence, open.picked);
+  if (open.answered) draw();
+  else settle(null, open.checked.perfect);
 }
 
 // Draws the whole card from `open`.
@@ -88,14 +109,15 @@ function draw() {
     return;
   }
   const q = open.q;
-  const task = masteryTask(open.record, q);
+  const task = open.task;
   const head = document.createElement('div');
   head.className = 'mastery-head';
-  head.append(line('mastery-tier', t('mastery.tier.' + masteryTier(open.record, q))), line('mastery-score', t('mastery.score', { n: open.record.score })));
+  head.append(line('mastery-tier', t('mastery.tier.' + open.tier)), line('mastery-score', t('mastery.score', { n: open.record.score })));
   box.append(head);
-  if (masteryTier(open.record, q) < 4) box.append(line('mastery-credits', t('mastery.credits', { n: masteryCredits(open.record, q), bar: MASTERY.bar })));
+  if (open.tier < 4) box.append(line('mastery-credits', t('mastery.credits', { n: shownCredits(), bar: MASTERY.bar })));
   box.append(line('term-line', t('mastery.bet')), betRow());
   box.append(line('mastery-question', q.question));
+  if (task === 2) box.append(line('mastery-answer', t('mastery.answer', { answer: q.answer })));
   const src = resolveImageSrc(q.image);
   if (src) {
     const img = document.createElement('img');
@@ -104,11 +126,25 @@ function draw() {
     img.alt = '';
     box.append(img);
   }
-  box.append(line('term-line', t(task === 1 ? 'mastery.pick' : 'mastery.type')));
-  box.append(task === 1 ? optionList() : typedRow());
-  if (open.answered) box.append(...resultLines(), nextRow());
+  box.append(line('term-line', t({ 1: 'mastery.pick', 2: 'mastery.evidence', 3: 'mastery.type' }[task])));
+  if (task === 2) {
+    box.append(evidenceScene());
+    if (open.answered) box.append(...resultLines());
+    if (open.checked) box.append(...evidenceLines());
+    box.append(evidenceButtons());
+  } else {
+    box.append(task === 1 ? optionList() : typedRow());
+    if (open.answered) box.append(...resultLines(), nextRow());
+  }
   box.append(statusLine());
   if (isDev) box.append(devRow());
+}
+
+// The fact's credits on the tier it was asked at: a full bar once the
+// answer moved it up (the record has already started the next tier at 0).
+function shownCredits() {
+  const movedUp = open.answered && open.answered.events.some(e => e.type === 'masteryMovedUp');
+  return movedUp ? MASTERY.bar : masteryCredits(open.record, open.q);
 }
 
 function line(className, text) {
@@ -188,6 +224,101 @@ function typedRow() {
   return row;
 }
 
+// Tier 2: the scenario, its phrases tappable in the flow of the text
+// (spans acting as buttons, so a long phrase wraps like the words around
+// it instead of becoming a box of its own). Once checked, each phrase
+// shows its mark: found, missed or false mark.
+function evidenceScene() {
+  const scene = document.createElement('div');
+  scene.className = 'mastery-scene';
+  const marks = open.checked;
+  open.q.evidence.forEach((part, i) => {
+    if (typeof part === 'string') { scene.append(part); return; }
+    const phrase = document.createElement('span');
+    phrase.className = 'mastery-phrase';
+    phrase.textContent = part.clue || part.tap;
+    phrase.setAttribute('role', 'button');
+    phrase.setAttribute('aria-pressed', String(open.picked.has(i)));
+    if (marks) {
+      phrase.setAttribute('aria-disabled', 'true');
+      const mark = markOf(marks, i);
+      if (mark) phrase.classList.add('mark-' + mark);
+      scene.append(phrase);
+      return;
+    }
+    phrase.tabIndex = 0;
+    const flip = () => {
+      if (open.picked.has(i)) open.picked.delete(i);
+      else open.picked.add(i);
+      draw();
+      const again = box.querySelectorAll('.mastery-phrase')[[...scene.querySelectorAll('.mastery-phrase')].indexOf(phrase)];
+      if (again) again.focus();
+    };
+    phrase.addEventListener('click', flip);
+    phrase.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      flip();
+    });
+    scene.append(phrase);
+  });
+  return scene;
+}
+
+// Phrase `i`'s mark in check `marks`: 'found', 'missed', 'false' or null.
+function markOf(marks, i) {
+  if (marks.found.includes(i)) return 'found';
+  if (marks.missed.includes(i)) return 'missed';
+  if (marks.falseMarks.includes(i)) return 'false';
+  return null;
+}
+
+// Tier 2's buttons: CHECK EVIDENCE before a check; after one, TRY AGAIN
+// (clears the marks for another go that scores nothing) and, once the
+// question is settled, NEXT.
+function evidenceButtons() {
+  const row = document.createElement('div');
+  row.className = 'pick-footer';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  if (!open.checked) {
+    btn.textContent = t('mastery.checkEvidence');
+    btn.addEventListener('click', checkEvidence);
+    row.append(btn);
+    return row;
+  }
+  btn.className = 'ghost small';
+  btn.textContent = t('mastery.tryAgain');
+  btn.addEventListener('click', () => {
+    open.picked = new Set();
+    open.checked = null;
+    draw();
+  });
+  row.append(btn);
+  if (open.answered) row.append(...nextRow().children);
+  return row;
+}
+
+// The last check's count, then each marked phrase with its mark and why.
+function evidenceLines() {
+  const marks = open.checked;
+  const lines = [line('term-line mastery-change', t('mastery.evidenceCount', { found: marks.found.length, clues: marks.clues, wrong: marks.falseMarks.length }))];
+  const list = document.createElement('ul');
+  list.className = 'mastery-whys';
+  open.q.evidence.forEach((part, i) => {
+    const mark = markOf(marks, i);
+    if (!mark) return;
+    const item = document.createElement('li');
+    const head = document.createElement('span');
+    head.className = 'mark-' + mark;
+    head.textContent = t('mastery.mark.' + mark) + ' ' + (part.clue || part.tap) + ':';
+    item.append(head, ' ' + part.why);
+    list.append(item);
+  });
+  lines.push(list);
+  return lines;
+}
+
 // The answer's lines: right or wrong with its credits, the question's
 // note, then a move up, a kept mastery or a drop.
 function resultLines() {
@@ -196,7 +327,9 @@ function resultLines() {
     if (e.type === 'masteryAnswered') {
       lines.push(line('term-line mastery-result', e.right
         ? t('mastery.right', { n: e.credits })
-        : t('mastery.wrong', { n: -e.credits, answer: open.q.answer })));
+        : open.task === 2
+          ? t('mastery.wrongEvidence', { n: -e.credits })
+          : t('mastery.wrong', { n: -e.credits, answer: open.q.answer })));
       if (open.q.note) lines.push(line('term-line mastery-note', open.q.note));
     }
     if (e.type === 'masteryMovedUp') lines.push(line('term-line mastery-change', t('mastery.movedUp', { tier: t('mastery.tier.' + e.tier), questions: e.questions, days: e.days })));
