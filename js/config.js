@@ -1026,3 +1026,23 @@ export const PRACTICE_MODIFIERS = ['blind', 'flip', 'timer'];
 // The set practice starts on when none has been played yet: Bible Quiz
 // Bowl has questions for every minigame.
 export const PRACTICE_DEFAULT_SET = 'builtin:bible-quiz-bowl';
+
+// Mastery (mastery plan, ideas/mastery-plan.md outside the repo; Timothy
+// 2026-11-12; js/mastery.js): practice only. Each fact climbs tiers 1
+// Practicing (options), 2 Nearly mastered (evidence), 3 Mastered check
+// (typed), 4 Mastered.
+export const MASTERY = {
+  bar: 5,             // credits on a tier that move a fact up
+  bets: [1, 2, 3],    // Low / Medium / High; the bet is optional and none counts as the first
+  // How long a fact rests after it reaches a tier (by the tier reached):
+  // this many other questions AND days must both pass. A Mastered fact
+  // that passes its check rests this times (checks passed + 1).
+  rests: {
+    2: { questions: 3, days: 1 },
+    3: { questions: 6, days: 3 },
+    4: { questions: 15, days: 7 },
+  },
+  activeFacts: 6,     // a new fact joins only while fewer unmastered facts than this are ready
+  logMax: 500,        // answers kept in the log (each with its bet), newest last
+  storageKey: 'noesisProtocol.mastery.', // + the set's value; one record per set
+};
