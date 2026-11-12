@@ -291,6 +291,26 @@
   .mastery-bets .set-option[aria-pressed="true"] .set-name::before { color: var(--ink); }
   .mastery-change { color: var(--torch-bright); }
   .mastery-dev { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  /* Tier 2 evidence (mastery plan step B): phrases are dashed boxes in
+     the text, picked = solid. After CHECK, the marks differ in shape as
+     well as by the FOUND / MISSED / FALSE MARK words below, since the
+     screen has one ink: found = inverse, missed = dashed bright, false
+     mark = struck through. */
+  .mastery-answer { color: var(--torch-bright); }
+  .mastery-scene { line-height: 2.1; color: var(--text); font-size: calc(20px * var(--text-scale, 1)); }
+  .mastery-phrase {
+    color: var(--text); cursor: pointer; border: 1px dashed var(--line); padding: 0 3px;
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  }
+  .mastery-phrase[aria-pressed="true"] { border-style: solid; border-color: var(--torch-bright); color: var(--torch-bright); }
+  .mastery-phrase:focus-visible { outline: 1px solid var(--torch-bright); outline-offset: 2px; }
+  .mastery-phrase[aria-disabled="true"] { cursor: default; }
+  .mastery-phrase.mark-found { background: var(--torch-bright); color: var(--ink); border: 1px solid var(--torch-bright); }
+  .mastery-phrase.mark-missed { border: 1px dashed var(--torch-bright); color: var(--torch-bright); }
+  .mastery-phrase.mark-false { text-decoration: line-through 2px; color: var(--muted); border-color: var(--muted); }
+  .mastery-whys { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+  .mastery-whys .mark-found, .mastery-whys .mark-missed { color: var(--torch-bright); }
+  .mastery-whys .mark-false { color: var(--muted); }
   .set-option .set-meta { color: var(--muted); font-size: calc(16px * var(--text-scale, 1)); line-height: 1.25; padding-left: 1.2em; }
   .set-option:hover .set-name, .set-option:focus-visible .set-name,
   .set-option:hover .set-name::before, .set-option:focus-visible .set-name::before,

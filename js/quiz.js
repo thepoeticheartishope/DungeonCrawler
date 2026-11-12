@@ -28,6 +28,22 @@ function acceptedOf(item) {
   return list.length ? list : undefined;
 }
 
+// A row's evidence scenario for Mastery's tier 2 (mastery plan step B):
+// a list of parts, each plain text or a phrase to tap, { clue, why } (it
+// is evidence for the answer) or { tap, why } (it is not). Undefined
+// unless it is a list with at least one clue; bad parts are dropped.
+function evidenceOf(item) {
+  if (!item || !Array.isArray(item.evidence)) return undefined;
+  const parts = item.evidence.flatMap(p => {
+    if (typeof p === 'string') return [p];
+    if (!p || typeof p.why !== 'string') return [];
+    if (typeof p.clue === 'string' && p.clue.trim()) return [{ clue: p.clue.trim(), why: p.why.trim() }];
+    if (typeof p.tap === 'string' && p.tap.trim()) return [{ tap: p.tap.trim(), why: p.why.trim() }];
+    return [];
+  });
+  return parts.some(p => p.clue) ? parts : undefined;
+}
+
 // The good question rows of `rows` (a JSON list), each cleaned. A row with
 // no question or no answer is skipped and named in `problems`.
 function cleanRows(rows, problems) {
@@ -67,7 +83,9 @@ function cleanRow(item) {
     note: noteOf(item),
     // A name's pieces for Syllable Split ("Ne-bu-chad-nez-zar"), when
     // its own split on the vowels is wrong (minigames.js).
-    syllables: (item && typeof item.syllables === 'string' && item.syllables.trim()) || undefined
+    syllables: (item && typeof item.syllables === 'string' && item.syllables.trim()) || undefined,
+    // A scenario whose phrases are evidence for the answer (Mastery tier 2).
+    evidence: evidenceOf(item)
   };
 }
 

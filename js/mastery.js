@@ -1,8 +1,9 @@
 // Mastery rules (mastery plan step A, ideas/mastery-plan.md outside the
 // repo; Timothy 2026-11-12). Practice only, never in a run. Each question
 // of the set is a fact that climbs tiers: 1 Practicing (pick it from the
-// options), 2 Nearly mastered (tap the evidence; plan step B, so a fact
-// skips it until it has a scenario), 3 Mastered check (type it), 4
+// options), 2 Nearly mastered (tap the phrases of the question's
+// `evidence` scenario that prove the answer; plan step B, and a fact with
+// no scenario skips it), 3 Mastered check (type it), 4
 // Mastered. A right answer earns the player's optional bet in credits (no
 // bet counts as MASTERY.bets[0]); MASTERY.bar credits on a tier move the
 // fact up, and then it rests: MASTERY.rests questions AND days must pass
@@ -94,6 +95,33 @@ export function masteryCounts(record, questions, today) {
     else counts.resting++;
   });
   return counts;
+}
+
+// DEV only (Timothy 2026-11-12): moves fact `q` one tier up (`step` 1) or
+// down (-1), to see a question at every tier without earning it. Skips
+// tier 2 when the fact has no evidence task; stays within 1–4. Clears its
+// credits and rest so it can show at once. Returns the new tier.
+export function shiftMasteryTier(record, q, step, today, hasEvidence = false) {
+  const key = masteryKey(q);
+  if (!record.facts[key]) record.facts[key] = { tier: 1, credits: 0, restQuestions: 0, restDay: today, kept: 0 };
+  const entry = record.facts[key];
+  let tier = Math.min(4, Math.max(1, entry.tier + step));
+  if (tier === 2 && !hasEvidence) tier = step > 0 ? 3 : 1;
+  Object.assign(entry, { tier, credits: 0, restQuestions: 0, restDay: today });
+  return tier;
+}
+
+// Checks the phrases picked in a fact's evidence scenario: `parts` is the
+// question's `evidence` and `picked` the indexes of the parts tapped.
+// Returns how many clues there are, the indexes found, missed and wrongly
+// marked, and whether it was perfect (every clue, no false mark), which is
+// what counts as right on tier 2.
+export function evidenceCheck(parts, picked) {
+  const clues = parts.map((p, i) => (p && p.clue ? i : -1)).filter(i => i >= 0);
+  const found = clues.filter(i => picked.has(i));
+  const missed = clues.filter(i => !picked.has(i));
+  const falseMarks = [...picked].filter(i => parts[i] && parts[i].tap).sort((a, b) => a - b);
+  return { clues: clues.length, found, missed, falseMarks, perfect: !missed.length && !falseMarks.length };
 }
 
 // Sets `entry` resting for `rest` (MASTERY.rests row) times `times`, from
